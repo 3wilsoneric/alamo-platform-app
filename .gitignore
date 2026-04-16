@@ -4,3 +4,7 @@ node_modules/
 .next/
 .env
 .DS_Store
+node_modules/
+.next/
+.env
+.DS_Store
