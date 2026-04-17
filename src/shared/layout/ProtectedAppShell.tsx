@@ -35,7 +35,7 @@ export default function ProtectedAppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex min-h-screen flex-col bg-white">
       <PlatformHeader />
       <FloatingUtilityStack />
       {showBackToHelper && (
@@ -53,42 +53,61 @@ export default function ProtectedAppShell() {
           Back to Ask Helper
         </button>
       )}
-      <div className="mx-auto max-w-7xl px-4 pt-3 pb-6 sm:px-6 lg:pl-20">
-        {showBreadcrumbs && (
-          <div className="mb-3 flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            <button
-              onClick={() => navigate("/home")}
-              className="transition-colors hover:text-slate-600"
-            >
-              Home
-            </button>
-            {pathSegments.map((item, index) => {
-              const targetPath = `/${pathSegments
-                .slice(0, index + 1)
-                .map((segment) => segment.segment)
-                .join("/")}`;
-              const isCurrent = index === pathSegments.length - 1;
+      <main className="flex-1">
+        <div className="mx-auto max-w-7xl px-4 pt-3 pb-6 sm:px-6 lg:pl-20">
+          {showBreadcrumbs && (
+            <div className="mb-3 flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              <button
+                onClick={() => navigate("/home")}
+                className="transition-colors hover:text-slate-600"
+              >
+                Home
+              </button>
+              {pathSegments.map((item, index) => {
+                const targetPath = `/${pathSegments
+                  .slice(0, index + 1)
+                  .map((segment) => segment.segment)
+                  .join("/")}`;
+                const isCurrent = index === pathSegments.length - 1;
 
-              return (
-                <div key={targetPath} className="flex items-center gap-1.5">
-                  <span className="text-slate-300">/</span>
-                  {isCurrent ? (
-                    <span className="text-slate-600">{item.label}</span>
-                  ) : (
-                    <button
-                      onClick={() => navigate(targetPath)}
-                      className="transition-colors hover:text-slate-600"
-                    >
-                      {item.label}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <Outlet />
-      </div>
+                return (
+                  <div key={targetPath} className="flex items-center gap-1.5">
+                    <span className="text-slate-300">/</span>
+                    {isCurrent ? (
+                      <span className="text-slate-600">{item.label}</span>
+                    ) : (
+                      <button
+                        onClick={() => navigate(targetPath)}
+                        className="transition-colors hover:text-slate-600"
+                      >
+                        {item.label}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <Outlet />
+        </div>
+      </main>
+
+      <footer className="border-t border-slate-200/80 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-6 py-3 text-[11px] text-slate-500 lg:pl-20">
+          <span className="font-medium text-slate-600">Alamo Health Data Platform</span>
+          <span className="hidden text-slate-300 sm:inline">•</span>
+          <span>Snapshot status available after Azure connection</span>
+          <span className="hidden text-slate-300 sm:inline">•</span>
+          <span>Access governed by role</span>
+          <span className="hidden text-slate-300 sm:inline">•</span>
+          <button
+            onClick={() => navigate("/command-center")}
+            className="font-medium text-slate-600 transition-colors hover:text-slate-900"
+          >
+            Command Center
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -118,7 +118,13 @@ export default function FloatingUtilityStack() {
 
   return (
     <>
-      <div className="fixed left-5 top-1/2 z-40 -translate-y-1/2">
+      <div
+        className={`z-40 ${
+          isHome
+            ? "fixed left-7 top-[116px]"
+            : "fixed left-5 top-1/2 -translate-y-1/2"
+        }`}
+      >
         <div className="relative flex flex-col items-start gap-3">
         {!isHome && (
           <button
@@ -132,7 +138,7 @@ export default function FloatingUtilityStack() {
                 return next;
               });
             }}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.22)] transition-colors hover:bg-slate-50 hover:text-slate-900"
+            className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.22)] transition-colors hover:bg-slate-50 hover:text-slate-900"
           >
             {expanded ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           </button>
@@ -142,20 +148,36 @@ export default function FloatingUtilityStack() {
           <>
             <button
               onClick={openAskHelper}
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-sky-200 bg-white px-3.5 text-[13px] font-medium text-slate-700 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.22)] transition-colors hover:bg-sky-50 hover:text-sky-800"
+              title="Ask Helper"
+              aria-label="Open Ask Helper"
+              className={`group inline-flex items-center overflow-hidden rounded-[15px] border shadow-[0_14px_30px_-22px_rgba(15,23,42,0.2)] transition-all duration-200 hover:-translate-y-0.5 ${
+                isHome
+                  ? "h-10 w-10 justify-start border-[#aac6e3] bg-[linear-gradient(180deg,#ffffff_0%,#f1f7fc_100%)] px-0 text-[#5678a7] hover:w-[138px] hover:border-[#91b7db]"
+                  : "h-10 w-10 justify-start border-slate-200 bg-white px-0 text-[#5678a7] hover:w-[138px] hover:border-[#aac6e3]"
+              }`}
             >
-              <Bot className="h-4 w-4 text-sky-700" />
-              Ask Helper
+              <span className="flex h-10 w-10 flex-none items-center justify-center">
+                <Bot className="h-[18px] w-[18px] text-[#5678a7]" strokeWidth={2.2} />
+              </span>
+              <span className="pr-3 whitespace-nowrap text-[12px] font-medium leading-none text-[#5678a7] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                Ask Helper
+              </span>
             </button>
 
             {isHome && (
               <div className="relative">
                 <button
                   onClick={() => setNotificationsOpen((value) => !value)}
-                  className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 text-[13px] font-medium text-slate-700 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.22)] transition-colors hover:bg-slate-50 hover:text-slate-900"
+                  title="Notifications"
+                  aria-label="Open Notifications"
+                  className="group inline-flex h-10 w-10 items-center justify-start overflow-hidden rounded-[15px] border border-[#c7d0de] bg-[linear-gradient(180deg,#ffffff_0%,#f6f8fb_100%)] px-0 text-[#6f788a] shadow-[0_14px_30px_-22px_rgba(15,23,42,0.2)] transition-all duration-200 hover:w-[146px] hover:border-[#b5c2d4] hover:-translate-y-0.5"
                 >
-                  <Bell className="h-4 w-4 text-slate-500" />
-                  Notifications
+                  <span className="flex h-10 w-10 flex-none items-center justify-center">
+                    <Bell className="h-[18px] w-[18px] text-[#6f788a]" strokeWidth={2.2} />
+                  </span>
+                  <span className="pr-3 whitespace-nowrap text-[12px] font-medium leading-none text-[#6f788a] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                    Notifications
+                  </span>
                 </button>
 
                 {notificationsOpen && (

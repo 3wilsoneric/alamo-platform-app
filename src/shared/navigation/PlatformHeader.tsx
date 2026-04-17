@@ -18,7 +18,6 @@ export default function PlatformHeader({
 }: PlatformHeaderProps) {
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [searchExpanded, setSearchExpanded] = useState(false);
   const [internalSearchTerm, setInternalSearchTerm] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -35,7 +34,6 @@ export default function PlatformHeader({
   const openSearchResult = (route?: string) => {
     if (!route) return;
     navigate(route);
-    setSearchExpanded(false);
     setSearchFocused(false);
     onSearchChange("");
   };
@@ -45,32 +43,20 @@ export default function PlatformHeader({
       <div className="flex items-center">
         <button onClick={() => navigate("/home")} className="mr-6">
           <div className="flex flex-col leading-none transition-opacity hover:opacity-80">
-            <span className="text-[24px] font-bold tracking-tight text-gray-900">
-              Alamo <span className="font-semibold text-gray-700">Health</span>
+            <span className="text-[24px] font-bold tracking-tight text-slate-900">
+              Alamo <span className="font-semibold text-[#5f7c63]">Health</span>
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-700">
+            <span className="pl-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700/90">
               Data Platform
             </span>
           </div>
         </button>
 
         <div className="relative mr-auto flex items-center gap-3">
-          <div
-            className={`relative overflow-visible transition-all duration-300 ${
-              searchExpanded || searchTerm.trim()
-                ? "w-[520px] border-b border-slate-300"
-                : "w-9"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setSearchExpanded(true);
-              }}
-              className="absolute left-0 top-0 z-10 flex h-9 w-9 items-center justify-center text-gray-400"
-            >
+          <div className="relative w-[520px] overflow-visible border-b border-slate-300 transition-all duration-300">
+            <div className="absolute left-0 top-0 z-10 flex h-9 w-9 items-center justify-center text-gray-400">
               <Search size={17} />
-            </button>
+            </div>
             <input
               type="text"
               placeholder="Search dashboards, reports, workforce..."
@@ -82,20 +68,14 @@ export default function PlatformHeader({
                 }
               }}
               onFocus={() => {
-                setSearchExpanded(true);
                 setSearchFocused(true);
               }}
               onBlur={() => {
                 window.setTimeout(() => {
                   setSearchFocused(false);
-                  if (!searchTerm.trim()) {
-                    setSearchExpanded(false);
-                  }
                 }, 120);
               }}
-              className={`h-9 w-full bg-transparent pl-9 pr-3 text-[13px] text-gray-700 outline-none placeholder:text-gray-400 ${
-                searchExpanded || searchTerm.trim() ? "opacity-100" : "opacity-0"
-              }`}
+              className="h-9 w-full bg-transparent pl-9 pr-3 text-[13px] text-gray-700 outline-none placeholder:text-gray-400"
             />
 
             {showResults && (
