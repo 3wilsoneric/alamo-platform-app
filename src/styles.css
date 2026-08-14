@@ -4,17 +4,466 @@
 
 :root {
   color-scheme: light;
+  --app-bg: #ffffff;
+  --sidebar-bg: #fbf7f0;
+  --canvas-bg: #ffffff;
+  --text-primary: #111111;
+  --text-muted: #5f5f5f;
+  --border-soft: rgba(17, 17, 17, 0.16);
+  --pill-active: #fffdfa;
+  --action-green: #6dd9a2;
+  --accent-blue: #0f8b73;
+  --ap-accent: #0f8b73;
+  --ap-accent-hover: #0c705f;
+  --ap-accent-soft: #effaf5;
+  --ap-ink: #111111;
+  --ap-muted: #595959;
+  --ap-rule: #d9d9d9;
+  --ap-rule-strong: #111111;
+  --ap-canvas: #f5f4ef;
+  --ap-sans: "Avenir Next", Manrope, "SF Pro Display", ui-sans-serif, system-ui, sans-serif;
+  --ap-serif: Georgia, "Times New Roman", Times, serif;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f8fafc;
-  color: #0f172a;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--app-bg);
+  color: var(--text-primary);
+  font-family: var(--ap-sans);
+  font-size: 15px;
+  letter-spacing: -0.02em;
 }
 
 * {
   box-sizing: border-box;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--ap-accent);
+  outline-offset: 2px;
+}
+
+#root {
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.app-theme-root {
+  background: var(--app-bg);
+  color: var(--text-primary);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+/* Editorial platform skin.
+   Inspired by the Economist references: white canvas, black rules, serif
+   reading surfaces, sans wayfinding, one Alamo green accent, and fewer soft
+   SaaS shadows. Keep behavior untouched; this only changes presentation. */
+.app-theme-root {
+  --text-primary: var(--ap-ink);
+  --text-muted: var(--ap-muted);
+  background: #ffffff !important;
+  color: var(--ap-ink) !important;
+}
+
+.app-theme-root h1,
+.app-theme-root h2,
+.app-theme-root h3,
+.app-theme-root [data-chat-module-content-id] h1,
+.app-theme-root [data-chat-module-content-id] h2,
+.app-theme-root [data-chat-module-content-id] h3 {
+  font-family: var(--ap-serif);
+  letter-spacing: -0.035em;
+}
+
+.app-theme-root button,
+.app-theme-root input,
+.app-theme-root select,
+.app-theme-root textarea,
+.app-theme-root table,
+.app-theme-root [class*="uppercase"],
+.app-theme-root [class*="tracking-"] {
+  font-family: var(--ap-sans);
+}
+
+.app-theme-root [class*="shadow-"] {
+  box-shadow: none !important;
+}
+
+.app-theme-root [class*="bg-[#fffdfa]"],
+.app-theme-root [class*="bg-[#fffaf3]"],
+.app-theme-root [class*="bg-white/"],
+.app-theme-root [class*="bg-[linear-gradient"] {
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+.app-theme-root [class*="bg-[#f5efe6]"],
+.app-theme-root [class*="bg-[#f7f0e7]"],
+.app-theme-root [class*="bg-[#f7f1e8]"] {
+  background: var(--ap-canvas) !important;
+}
+
+.app-theme-root [class*="bg-[#eef3ff]"],
+.app-theme-root [class*="bg-[#f8fbff]"] {
+  background: var(--ap-accent-soft) !important;
+}
+
+.app-theme-root [class*="text-[#465480]"],
+.app-theme-root [class*="text-[#8ea2ff]"],
+.app-theme-root [class*="text-[#293866]"],
+.app-theme-root [class*="text-[#5f6da8]"] {
+  color: var(--ap-accent) !important;
+}
+
+.app-theme-root [class*="border-[#8ea2ff]"],
+.app-theme-root [class*="border-[#c8d0ff]"],
+.app-theme-root [class*="border-[#b9c7f4]"] {
+  border-color: var(--ap-accent) !important;
+}
+
+.app-theme-root [class*="border-[#ddd4c8]"],
+.app-theme-root [class*="border-[#d8d0c3]"],
+.app-theme-root [class*="border-[#eee6da]"],
+.app-theme-root [class*="border-[#e7ded1]"],
+.app-theme-root [class*="border-[#e4dbcf]"] {
+  border-color: var(--ap-rule) !important;
+}
+
+.app-theme-root [class*="text-[#201a14]"],
+.app-theme-root [class*="text-[#241f18]"],
+.app-theme-root [class*="text-[#2d261d]"],
+.app-theme-root [class*="text-[#3e3429]"] {
+  color: var(--ap-ink) !important;
+}
+
+.app-theme-root [class*="text-[#736657]"],
+.app-theme-root [class*="text-[#8b7b68]"],
+.app-theme-root [class*="text-[#9b8e7b]"],
+.app-theme-root [class*="text-[#6f6253]"] {
+  color: var(--ap-muted) !important;
+}
+
+.app-theme-root [class*="rounded-[30px]"],
+.app-theme-root [class*="rounded-[28px]"],
+.app-theme-root [class*="rounded-[26px]"],
+.app-theme-root [class*="rounded-[24px]"],
+.app-theme-root [class*="rounded-[22px]"],
+.app-theme-root [class*="rounded-[20px]"],
+.app-theme-root [class*="rounded-[18px]"],
+.app-theme-root [class*="rounded-[16px]"],
+.app-theme-root [class*="rounded-[14px]"],
+.app-theme-root [class*="rounded-[12px]"],
+.app-theme-root [class*="rounded-[8px]"],
+.app-theme-root [class*="rounded-[34px]"],
+.app-theme-root .rounded-2xl {
+  border-radius: 2px !important;
+}
+
+.app-theme-root [data-certified-question-guide="true"],
+.app-theme-root [data-chat-module-content-id],
+.app-theme-root [data-chat-item-id] > div[class*="border"] {
+  background: #ffffff !important;
+  border-color: var(--ap-rule) !important;
+}
+
+.app-theme-root [data-certified-question-guide="true"] {
+  border-top: 3px solid var(--ap-accent) !important;
+}
+
+.app-theme-root [data-certified-question-button="true"] {
+  border-left: 3px solid transparent !important;
+  letter-spacing: normal !important;
+}
+
+.app-theme-root [data-certified-question-button="true"]:hover,
+.app-theme-root [data-certified-question-button="true"]:focus,
+.app-theme-root [data-certified-question-button="true"]:focus-within {
+  border-color: var(--ap-rule) !important;
+  border-left-color: var(--ap-accent) !important;
+  background: #ffffff !important;
+}
+
+.app-theme-root [data-dark-action="true"]:not(:disabled),
+.app-theme-root [data-dark-action="true"]:not(:disabled) * {
+  color: #ffffff !important;
+}
+
+.app-theme-root [data-chat-role="user"] > div {
+  border-radius: 2px !important;
+  border-color: var(--ap-ink) !important;
+}
+
+.app-theme-root table thead tr {
+  border-bottom: 1px solid var(--ap-ink);
+  background: #ffffff !important;
+}
+
+.app-theme-root table tbody tr {
+  background: #ffffff !important;
+}
+
+.app-theme-root table tbody tr + tr {
+  border-top: 1px solid var(--ap-rule);
+}
+
+.app-theme-root [data-command-center="true"] [class*="text-[10px]"] {
+  font-size: 0.75rem !important;
+}
+
+.app-theme-root [data-command-center="true"] [class*="text-[11px]"] {
+  font-size: 0.8125rem !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Light-only product baseline. These overrides keep utility colors aligned
+   while the remaining feature pages are being simplified onto the light design system. */
+.app-theme-root .text-white,
+.app-theme-root .text-white\/24,
+.app-theme-root .text-white\/26,
+.app-theme-root .text-white\/28,
+.app-theme-root .text-white\/30,
+.app-theme-root .text-white\/32,
+.app-theme-root .text-white\/34,
+.app-theme-root .text-white\/36,
+.app-theme-root .text-white\/38,
+.app-theme-root .text-white\/40,
+.app-theme-root .text-white\/42,
+.app-theme-root .text-white\/44,
+.app-theme-root .text-white\/45,
+.app-theme-root .text-white\/46,
+.app-theme-root .text-white\/48,
+.app-theme-root .text-white\/50,
+.app-theme-root .text-white\/52,
+.app-theme-root .text-white\/54,
+.app-theme-root .text-white\/56,
+.app-theme-root .text-white\/58,
+.app-theme-root .text-white\/60,
+.app-theme-root .text-white\/62,
+.app-theme-root .text-white\/68,
+.app-theme-root .text-white\/70,
+.app-theme-root .text-white\/72,
+.app-theme-root .text-white\/74,
+.app-theme-root .text-white\/76,
+.app-theme-root .text-white\/78,
+.app-theme-root .text-white\/80,
+.app-theme-root .text-white\/82,
+.app-theme-root .text-white\/84,
+.app-theme-root .text-white\/88 {
+  color: #241f18 !important;
+}
+
+.app-theme-root .border-white\/\[0\.05\],
+.app-theme-root .border-white\/\[0\.06\],
+.app-theme-root .border-white\/\[0\.07\],
+.app-theme-root .border-white\/\[0\.08\],
+.app-theme-root .border-white\/\[0\.1\],
+.app-theme-root .border-white\/10,
+.app-theme-root .border-white\/16,
+.app-theme-root .border-white\/18 {
+  border-color: #ddd4c8 !important;
+}
+
+.app-theme-root .bg-white\/\[0\.02\],
+.app-theme-root .bg-white\/\[0\.025\],
+.app-theme-root .bg-white\/\[0\.03\],
+.app-theme-root .bg-white\/\[0\.035\],
+.app-theme-root .bg-white\/\[0\.04\],
+.app-theme-root .bg-white\/\[0\.05\],
+.app-theme-root .bg-white\/\[0\.06\],
+.app-theme-root .bg-white\/\[0\.07\],
+.app-theme-root .bg-white\/\[0\.08\] {
+  background-color: rgba(255, 253, 250, 0.78) !important;
+}
+
+.app-theme-root .bg-\[\#08090d\],
+.app-theme-root .bg-\[\#09090b\],
+.app-theme-root .bg-\[\#0a0b10\],
+.app-theme-root .bg-\[\#0b0d12\],
+.app-theme-root .bg-\[\#0b0f16\],
+.app-theme-root .bg-\[\#0c1017\],
+.app-theme-root .bg-\[\#0d1018\],
+.app-theme-root .bg-\[\#0d1118\],
+.app-theme-root .bg-\[\#0d1219\],
+.app-theme-root .bg-\[\#0f1117\],
+.app-theme-root .bg-\[\#0f131b\],
+.app-theme-root .bg-\[\#0f131c\],
+.app-theme-root .bg-\[\#0f141d\],
+.app-theme-root .bg-\[\#10141d\],
+.app-theme-root .bg-\[\#10151f\],
+.app-theme-root .bg-\[\#11141c\],
+.app-theme-root .bg-\[\#11161f\],
+.app-theme-root .bg-\[\#111720\],
+.app-theme-root .bg-\[\#111722\],
+.app-theme-root .bg-\[\#121722\],
+.app-theme-root .bg-\[\#131925\],
+.app-theme-root .bg-\[\#141927\],
+.app-theme-root .bg-\[\#141a26\],
+.app-theme-root .bg-\[\#151d2b\],
+.app-theme-root .bg-\[\#151b27\],
+.app-theme-root .bg-\[\#161c28\],
+.app-theme-root .bg-\[\#161d2b\],
+.app-theme-root .bg-\[\#171f2d\],
+.app-theme-root .bg-\[\#172037\],
+.app-theme-root .bg-\[\#171c2a\] {
+  background-color: #fffdfa !important;
+}
+
+.app-theme-root [class*="bg-\[linear-gradient\(180deg\,\#0"],
+.app-theme-root [class*="bg-\[linear-gradient\(180deg\,\#1"] {
+  background-image: linear-gradient(180deg, #fffdfa 0%, #f5efe6 100%) !important;
+}
+
+.app-theme-root .shadow-\[0_24px_44px_-34px_rgba\(0\,0\,0\,0\.9\)\],
+.app-theme-root .shadow-\[0_24px_48px_-34px_rgba\(0\,0\,0\,0\.9\)\],
+.app-theme-root .shadow-\[0_24px_60px_-42px_rgba\(0\,0\,0\,0\.92\)\],
+.app-theme-root .shadow-\[0_28px_52px_-38px_rgba\(0\,0\,0\,0\.9\)\],
+.app-theme-root .shadow-\[0_28px_72px_-44px_rgba\(0\,0\,0\,0\.82\)\],
+.app-theme-root .shadow-\[0_36px_80px_-48px_rgba\(0\,0\,0\,0\.92\)\],
+.app-theme-root .shadow-\[0_40px_90px_-48px_rgba\(0\,0\,0\,0\.98\)\] {
+  box-shadow: 0 24px 52px -36px rgba(94, 78, 59, 0.24) !important;
+}
+
+.app-theme-root .bg-black\/12,
+.app-theme-root .bg-black\/46,
+.app-theme-root .bg-black\/48,
+.app-theme-root .bg-black\/50,
+.app-theme-root .bg-black\/56,
+.app-theme-root .bg-black\/58,
+.app-theme-root .bg-black\/62,
+.app-theme-root .bg-black\/66 {
+  background-color: rgba(110, 100, 87, 0.2) !important;
+}
+
+/* Surfaced modules reserve the top-right corner for workspace controls. */
+::view-transition-old(ask-helper-portal),
+::view-transition-new(ask-helper-portal) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+::view-transition-old(navigator-icon-portal),
+::view-transition-new(navigator-icon-portal) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+::view-transition-old(ask-helper-portal) {
+  animation-name: ask-helper-portal-out;
+}
+
+::view-transition-new(ask-helper-portal) {
+  animation-name: ask-helper-portal-in;
+}
+
+::view-transition-old(navigator-icon-portal) {
+  animation-name: navigator-icon-out;
+}
+
+::view-transition-new(navigator-icon-portal) {
+  animation-name: navigator-icon-in;
+}
+
+@keyframes ask-helper-portal-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+    filter: blur(2px);
+  }
+}
+
+@keyframes ask-helper-portal-in {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes navigator-icon-out {
+  from {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.12) rotate(4deg) translateX(4px);
+    filter: blur(2px);
+  }
+}
+
+@keyframes navigator-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) rotate(-4deg) translateX(-4px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+}
+
+.ask-helper-enter {
+  animation: ask-helper-page-in 280ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+@keyframes ask-helper-page-in {
+  from {
+    opacity: 0;
+    transform: scale(0.99) translateY(6px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+.navigator-home-enter {
+  animation: navigator-home-in 280ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+@keyframes navigator-home-in {
+  from {
+    opacity: 0;
+    transform: scale(1.01) translateY(-4px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
 }

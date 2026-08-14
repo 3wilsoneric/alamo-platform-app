@@ -1,0 +1,104 @@
+{
+  "name": "Daily Snapshot Refresh",
+  "timeout_seconds": 3600,
+  "max_concurrent_runs": 1,
+  "schedule": {
+    "quartz_cron_expression": "0 0 6 * * ?",
+    "timezone_id": "America/Los_Angeles",
+    "pause_status": "UNPAUSED"
+  },
+  "tasks": [
+    {
+      "task_key": "mar_gold_views",
+      "description": "Build and validate governed MAR and medication-order gold views.",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/alamo-platform/mar_gold_views",
+        "base_parameters": {
+          "catalog": "alamohealth",
+          "silver_schema": "silver",
+          "gold_schema": "gold",
+          "governed_start_date": "2021-01-01",
+          "date_partition": "<business-date-YYYY-MM-DD>"
+        }
+      },
+      "existing_cluster_id": "<existing-job-cluster-id>"
+    },
+    {
+      "task_key": "tool_context_views",
+      "description": "Create analyst-ready gold views for AH Analyst tools and snapshot context.",
+      "depends_on": [
+        {
+          "task_key": "mar_gold_views"
+        }
+      ],
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/alamo-platform/tool_context_views",
+        "base_parameters": {
+          "catalog": "alamohealth",
+          "gold_schema": "gold",
+          "date_partition": "<business-date-YYYY-MM-DD>"
+        }
+      },
+      "existing_cluster_id": "<existing-job-cluster-id>"
+    },
+    {
+      "task_key": "analyst_context_qa",
+      "description": "Validate analyst-facing gold views and block snapshot publication on critical contract failures.",
+      "depends_on": [
+        {
+          "task_key": "tool_context_views"
+        }
+      ],
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/alamo-platform/analyst_context_qa",
+        "base_parameters": {
+          "catalog": "alamohealth",
+          "gold_schema": "gold",
+          "date_partition": "<business-date-YYYY-MM-DD>"
+        }
+      },
+      "existing_cluster_id": "<existing-job-cluster-id>"
+    },
+    {
+      "task_key": "census_quality_audit",
+      "description": "Audit governed census outputs against resident countability, active roster, and weekly/monthly coverage before snapshot publication.",
+      "depends_on": [
+        {
+          "task_key": "analyst_context_qa"
+        }
+      ],
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/alamo-platform/census_quality_audit",
+        "base_parameters": {
+          "catalog": "alamohealth",
+          "silver_schema": "silver",
+          "gold_schema": "gold",
+          "date_partition": "<business-date-YYYY-MM-DD>"
+        }
+      },
+      "existing_cluster_id": "<existing-job-cluster-id>"
+    },
+    {
+      "task_key": "snapshot_publish",
+      "description": "Build and publish the Alamo Platform application snapshot to ADLS.",
+      "depends_on": [
+        {
+          "task_key": "census_quality_audit"
+        }
+      ],
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/alamo-platform/snapshot_publish",
+        "base_parameters": {
+          "storage_account": "alamodatalake",
+          "container": "alamo-platform-snapshots",
+          "snapshot_root": "snapshots/daily",
+          "date_partition": "<business-date-YYYY-MM-DD>",
+          "entra_tenant_id": "<entra-tenant-id>",
+          "entra_client_id": "<entra-client-id>",
+          "entra_client_secret": "<entra-client-secret>"
+        }
+      },
+      "existing_cluster_id": "<existing-job-cluster-id>"
+    }
+  ]
+}
