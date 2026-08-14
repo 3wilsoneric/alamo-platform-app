@@ -1,0 +1,205 @@
+{
+  "version": "regression-replay-v1",
+  "cases": [
+    {
+      "id": "awol-people-count-may",
+      "title": "AWOL people count must return unique residents, not generic incident comparison",
+      "priority": "critical",
+      "source": "historical failure: missing requested category / wrong grain",
+      "turns": [
+        {
+          "prompt": "how many people went AWOL in May 2026",
+          "expect": {
+            "tool": "incident_breakdown",
+            "valueLabel": "Residents",
+            "period": "2026-05",
+            "category": "AWOL/Elopement",
+            "includes": ["unique resident"],
+            "excludes": ["missing requested category", "Analysis tool unavailable"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "awol-detail-followup-state",
+      "title": "AWOL detail-list follow-ups must preserve mode/category/fields",
+      "priority": "critical",
+      "source": "historical failure: follow-up lost the detail-list request",
+      "turns": [
+        {
+          "prompt": "List every AWOL incident from May through June by community, including resident name, date, incident type, and description",
+          "expect": {
+            "tool": "incident_detail_list",
+            "artifact": true,
+            "visualType": "table",
+            "category": "AWOL/Elopement",
+            "includes": ["The CSV includes all 375 exact matches"],
+            "excludes": ["scope did not match", "I stopped this result"]
+          }
+        },
+        {
+          "prompt": "do that for April now",
+          "expect": {
+            "tool": "incident_detail_list",
+            "artifact": true,
+            "visualType": "table",
+            "period": "2026-04",
+            "category": "AWOL/Elopement",
+            "includes": ["April 2026"],
+            "excludes": ["not enough context", "does not have an active analysis"]
+          }
+        },
+        {
+          "prompt": "now San Pablo",
+          "expect": {
+            "tool": "incident_detail_list",
+            "artifact": true,
+            "visualType": "table",
+            "facilityId": "337",
+            "category": "AWOL/Elopement",
+            "includes": ["A & A Health Services San Pablo"],
+            "excludes": ["not enough context"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "san-pablo-january-census",
+      "title": "Historical census lookup must answer from census trend, not community current profile",
+      "priority": "critical",
+      "source": "historical failure: community_profile rejected 2026-01",
+      "turns": [
+        {
+          "prompt": "how many clients at san pablo in january of 2026",
+          "expect": {
+            "tool": "census_trend",
+            "period": "2026-01",
+            "facilityId": "337",
+            "includes": ["January 2026", "A & A Health Services San Pablo"],
+            "excludes": ["missing requested period 2026-01", "I could not answer that exact slice safely"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "santa-clarita-typo-census",
+      "title": "Common typos must correct to Santa Clarita census, not portfolio census",
+      "priority": "high",
+      "source": "historical failure: typo routed to portfolio",
+      "turns": [
+        {
+          "prompt": "show santa clartia censsus trend",
+          "expect": {
+            "tool": "census_trend",
+            "correctedText": "show santa clarita census trend",
+            "facilityId": "345",
+            "includes": ["Santa Clarita"],
+            "excludes": ["Portfolio Census Trend"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "resident-profile-no-longest-stay-fallback",
+      "title": "Exact resident profile must render profile, not longest-stay list",
+      "priority": "critical",
+      "source": "historical failure: resident profile fell back to roster ranking",
+      "turns": [
+        {
+          "prompt": "show Shannon Romero resident profile",
+          "expect": {
+            "tool": "resident_lookup",
+            "facilityId": "345",
+            "includes": ["Shannon Romero", "Resident #", "Santa Clarita"],
+            "excludes": ["Longest Stay Residents", "Portfolio residents ranked"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "unknown-resident-recovery",
+      "title": "Unknown resident search should recover cleanly and not show unrelated rows",
+      "priority": "high",
+      "source": "historical failure: John Smith returned longest-stay residents",
+      "turns": [
+        {
+          "prompt": "show john smith resident profile",
+          "expect": {
+            "tool": "data_recovery",
+            "truthStates": ["verified_zero", "not_loaded"],
+            "includes": ["current roster has no verified exact match for John Smith", "different spelling, resident number, unit, or community"],
+            "excludes": ["Longest Stay Residents", "Audrey West"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "incident-freshness-explains-feed-lag",
+      "title": "Today incident questions must explain latest loaded data, not pretend zero means none",
+      "priority": "critical",
+      "source": "historical failure: Incident Center looked empty / today rows missing",
+      "turns": [
+        {
+          "prompt": "why are today's incidents not showing up",
+          "expect": {
+            "tool": "data_availability",
+            "includes": ["most recent incident detail", "Records dated today"],
+            "excludes": ["zero incidents today because"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "unsupported-november-incident-period",
+      "title": "Unsupported historical incident period must fail safely with loaded-window detail",
+      "priority": "high",
+      "source": "historical failure: November request silently answered June",
+      "turns": [
+        {
+          "prompt": "give me the top category of each community in incidents November of last year",
+          "expect": {
+            "truthState": "not_loaded",
+            "includes": ["not available"],
+            "excludes": ["June 2026 incidents", "Medication Refusal is the largest incident category in this slice"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "large-detail-preview-export",
+      "title": "Large row lists must preview and attach exact CSV rows",
+      "priority": "high",
+      "source": "historical requirement: top-five preview with full export",
+      "turns": [
+        {
+          "prompt": "list every resident row",
+          "expect": {
+            "tool": "detail_list",
+            "artifact": true,
+            "visualType": "table",
+            "artifactRowCountAtLeast": 100,
+            "visualRowsMax": 50,
+            "includes": ["The CSV includes all 503 exact matches"],
+            "excludes": ["same rows shown in the module"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "surface-resident-search",
+      "title": "Resident search request must surface resident search, not census chart",
+      "priority": "high",
+      "source": "historical failure: search census wording surfaced census trend",
+      "turns": [
+        {
+          "prompt": "can i just get the search census module",
+          "expect": {
+            "tool": "surface_module",
+            "includes": ["Opened Resident Search"],
+            "excludes": ["Portfolio Census Trend"]
+          }
+        }
+      ]
+    }
+  ]
+}

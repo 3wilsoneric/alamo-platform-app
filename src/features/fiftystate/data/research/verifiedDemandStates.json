@@ -1,0 +1,641 @@
+{
+  "dataset": "Behavioral-Health Step-Down / Conservatorship Atlas \u2014 Verified Core (Top 15)",
+  "prepared_for": "Alamo (residential behavioral-health operator, high-acuity populations)",
+  "as_of": "2026-08-02",
+  "provenance_rule": "Every numeric cell is either (a) a value traceable to a cited public source with a year, or (b) null with reason 'not_published'. No estimated, interpolated, or model-generated values. Where a whole metric is not collected in comparable form across states, the cell is null even when a plausible number could be guessed. UPDATE (this pass): per-100k bed column fully populated from the complete TAC 2023 table; two previously-carried values (NC, MA) corrected to the authoritative figures; NY and VA involuntary-volume figures added with precise scope labels.",
+  "structure_credit": "Column design and top-tier ranking logic adapted from a Gemini-authored draft; ALL numeric values in that draft were discarded and rebuilt from primary/near-primary sources. Cells that could not be independently sourced are left null.",
+  "confidence_legend": {
+    "confirmed": "Value stated in a primary or near-primary source with a year.",
+    "qualitative": "Statutory/structural fact verified, but not a number.",
+    "not_published": "No comparable state-level figure located in a citable public source."
+  },
+  "column_definitions": {
+    "state_psych_beds_per_100k": "STATE-OPERATED psychiatric hospital beds per 100k. Single consistent definition. Source: Treatment Advocacy Center, survey Apr-Aug 2023, published Jan 2024 (via Becker's ranking). NULL where the specific state value was not exposed in a citable source \u2014 NOT back-filled from all-payer counts.",
+    "involuntary_or_conservatorship": "Verified statutory mechanism + any sourced volume figure. Volume is null unless a specific citable count was found.",
+    "state_hospital_pressure": "Documented congestion / forensic dominance / waitlist, with the specific sourced fact.",
+    "placement_bottleneck": "Court action or sourced wait figure. Null if only anecdotal.",
+    "step_down_registry": "Whether a real-time bed registry / availability dashboard exists (sourced). Bed-count inventories deliberately NOT numericized \u2014 no federal repository tracks intermediate step-down beds comparably across states, so any per-state count would be fabricated."
+  },
+  "national_context": {
+    "bed_shortage_prevalence": {
+      "value": "43 of 48 responding states reported an inpatient psychiatric bed shortage",
+      "year": 2025,
+      "source": "NRI-2025-hosp",
+      "confidence": "confirmed"
+    },
+    "minimally_adequate_benchmark": {
+      "value": "50 state psychiatric beds per 100k",
+      "source": "TAC",
+      "confidence": "confirmed"
+    },
+    "note": "Because ~90% of states report a shortage, the shortage flag does not discriminate between states; ranking is driven by legal inflow + placement bottleneck + data availability."
+  },
+  "states": [
+    {
+      "rank": 1,
+      "state": "California",
+      "abbr": "CA",
+      "involuntary_or_conservatorship": {
+        "mechanism": "LPS conservatorship; 5150/5250 holds; SB 43 grave-disability expansion (eff. 2024-2025); CARE Court statewide by Dec 2024",
+        "volume": null,
+        "volume_reason": "not_published (no standardized statewide LPS conservatorship count; CA data is county-fragmented)",
+        "confidence": "qualitative",
+        "source": "CA-SB43"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 16.8,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)"
+      },
+      "state_hospital_pressure": {
+        "fact": "LPS conservatees waitlisted ~1 year for locked DSH beds per State Auditor; DSH heavily forensic",
+        "confidence": "confirmed",
+        "source": "CA-auditor"
+      },
+      "placement_bottleneck": {
+        "fact": "IST/competency waitlist litigation; DSH capacity expansion mandated toward 2027",
+        "confidence": "confirmed",
+        "source": "CA-auditor"
+      },
+      "step_down_registry": {
+        "exists": "partial/county-fragmented; AB 531 ~$6.38B bond funds crisis-residential/subacute/residential build-out",
+        "confidence": "confirmed",
+        "source": "CA-SB43"
+      },
+      "why_ranked_here": "Expanding involuntary criteria + large capital funding + severe placement lag = strongest composite."
+    },
+    {
+      "rank": 2,
+      "state": "Washington",
+      "abbr": "WA",
+      "involuntary_or_conservatorship": {
+        "mechanism": "ITA civil commitment; strong forensic pipeline",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "WA-Trueblood"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 13.3,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "Trueblood federal contempt; >$100M fines paid; forensic beds diverted from civil use; longest single admission wait cited at 681 days",
+        "confidence": "confirmed",
+        "source": "WA-Trueblood"
+      },
+      "placement_bottleneck": {
+        "fact": "Under active federal court supervision for competency admission delays; ongoing daily contempt fines",
+        "confidence": "confirmed",
+        "source": "WA-Trueblood"
+      },
+      "step_down_registry": {
+        "exists": "diversion/community capacity being funded under Trueblood remediation",
+        "confidence": "qualitative",
+        "source": "WA-Trueblood"
+      },
+      "why_ranked_here": "Court-forced demand to move people out of jails/hospitals into community/residential settings."
+    },
+    {
+      "rank": 3,
+      "state": "Oregon",
+      "abbr": "OR",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Civil commitment; aid-and-assist (competency) pipeline dominant at OSH",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "OR-contempt"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 16.6,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "Federal contempt (2025); $500/day per-person fines; avg 20.7-day jail wait Apr 2025; Mosman order caps OSH stays and restricts civil use",
+        "confidence": "confirmed",
+        "source": "OR-contempt"
+      },
+      "placement_bottleneck": {
+        "fact": "Active federal contempt over hospital admission delays; jail deaths cited",
+        "confidence": "confirmed",
+        "source": "OR-contempt"
+      },
+      "step_down_registry": {
+        "exists": "community restoration/residential diversion expanding under court pressure",
+        "confidence": "qualitative",
+        "source": "OR-contempt"
+      },
+      "why_ranked_here": "Court order actively forces civil patients OUT of the state hospital into community/residential care."
+    },
+    {
+      "rank": 4,
+      "state": "Texas",
+      "abbr": "TX",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Court-ordered mental health services; large forensic commitment volume",
+        "volume": null,
+        "volume_reason": "not_published (civil-commitment statewide count not sourced)",
+        "confidence": "qualitative",
+        "source": "TX-HB305"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 5.0,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)"
+      },
+      "state_hospital_pressure": {
+        "fact": "Competency-restoration waitlist >2,250 (Dec 2023), +247% since 2018; 341 individuals appeared multiple times for same charges 2018-2023",
+        "confidence": "confirmed",
+        "source": "TX-HB305"
+      },
+      "placement_bottleneck": {
+        "fact": "HB 305 (2025) targets the decompensation/re-restoration loop; large ongoing forensic backlog",
+        "confidence": "confirmed",
+        "source": "TX-HB305"
+      },
+      "step_down_registry": {
+        "exists": null,
+        "reason": "not_published (no statewide public registry located)",
+        "confidence": "not_published"
+      },
+      "why_ranked_here": "Very low state beds + huge forensic backlog + large population = large absolute demand."
+    },
+    {
+      "rank": 5,
+      "state": "New York",
+      "abbr": "NY",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Kendra's Law (AOT); FY26 budget strengthened involuntary-commitment definition + $16.5M AOT expansion",
+        "volume": "Cumulative Nov 1999-Nov 2024: 48,197 AOT investigations, 37,385 petitions filed, 35,747 granted (96%). NOT an annual or active-order count.",
+        "volume_scope": "cumulative_15yr",
+        "confidence": "confirmed",
+        "source": "NY-AOT-steptwo",
+        "note": "From OMH public AOT dashboard as reported June 2025. NYC = ~47% of investigations, ~61% of petitions."
+      },
+      "state_psych_beds_per_100k": {
+        "value": 16.8,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)"
+      },
+      "state_hospital_pressure": {
+        "fact": "Adding capacity: 875 beds online since 2022; +100 forensic beds ($160M) in FY26; largest expansion in decades",
+        "confidence": "confirmed",
+        "source": "NY-FY26"
+      },
+      "placement_bottleneck": {
+        "fact": "Historic boarding; state responding with beds + transitional/specialized housing",
+        "confidence": "confirmed",
+        "source": "NY-FY26"
+      },
+      "step_down_registry": {
+        "exists": "$1B continuum plan incl. transitional & specialized housing",
+        "confidence": "confirmed",
+        "source": "NY-FY26"
+      },
+      "why_ranked_here": "Expanding involuntary criteria + explicit transitional/specialized housing funding."
+    },
+    {
+      "rank": 6,
+      "state": "Florida",
+      "abbr": "FL",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Baker Act involuntary exam; expanding involuntary outpatient (IOP) via HB 915 (2024)",
+        "volume": "over 170,000 involuntary exams",
+        "volume_year": "FY2021-2022",
+        "confidence": "confirmed",
+        "source": "FL-Baker",
+        "note": "Gemini cited 161,576 for FY24; that specific figure was NOT verified here. The verified figure is >170k for FY21-22 from the FL Senate analysis."
+      },
+      "state_psych_beds_per_100k": {
+        "value": 11.3,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "High Baker Act throughput; forensic pressure",
+        "confidence": "qualitative",
+        "source": "FL-Baker"
+      },
+      "placement_bottleneck": {
+        "fact": "HB 915 / HB 7021 (2024) streamlining involuntary in/out-patient placement",
+        "confidence": "confirmed",
+        "source": "FL-Baker"
+      },
+      "step_down_registry": {
+        "exists": null,
+        "reason": "not_published (Managing Entities coordinate; no strong public real-time registry located)",
+        "confidence": "not_published"
+      },
+      "why_ranked_here": "Largest raw involuntary-exam volume in US; large population; IOP expansion feeds step-down demand."
+    },
+    {
+      "rank": 7,
+      "state": "Iowa",
+      "abbr": "IA",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Civil commitment; system consolidation underway 2025",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "IA-worst"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 2.0,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)"
+      },
+      "state_hospital_pressure": {
+        "fact": "Ranked last nationally; state bed count flat since 2016; fell ~80% 2010-2016",
+        "confidence": "confirmed",
+        "source": "IA-worst"
+      },
+      "placement_bottleneck": {
+        "fact": "Extreme scarcity; ~84k Iowans with SMI, ~35k treated/yr",
+        "confidence": "confirmed",
+        "source": "IA-worst"
+      },
+      "step_down_registry": {
+        "exists": "named in ASPE/Psychiatric Services bed-tracking study set",
+        "confidence": "confirmed",
+        "source": "registry-17"
+      },
+      "why_ranked_here": "Worst-in-nation state-bed scarcity = maximum unmet residential need per capita; active reform window."
+    },
+    {
+      "rank": 8,
+      "state": "Michigan",
+      "abbr": "MI",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Civil commitment; SB 219 (2025) updating AOT procedures",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "MI-47th"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 5.0,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)"
+      },
+      "state_hospital_pressure": {
+        "fact": "Ranked 47th for inpatient bed availability; ED boarding (63% of ER waiters were behavioral-health patients per MHA testimony)",
+        "confidence": "confirmed",
+        "source": "MI-47th"
+      },
+      "placement_bottleneck": {
+        "fact": "Upper Peninsula alone ~57-bed shortage vs need; ED-boarding reimbursement legislation moving",
+        "confidence": "confirmed",
+        "source": "MI-47th"
+      },
+      "step_down_registry": {
+        "exists": null,
+        "reason": "not_published (no statewide public registry located)",
+        "confidence": "not_published"
+      },
+      "why_ranked_here": "Low beds + AOT expansion + documented boarding, especially rural/UP."
+    },
+    {
+      "rank": 9,
+      "state": "Massachusetts",
+      "abbr": "MA",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Section 12 involuntary; Section 35 SUD commitment; licensure tied to accepting committed patients",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "MA-dashboard"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 9.5,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "Historically nation-worst ED boarding (esp. pediatric; ~47% of admitted children boarded); added hundreds of beds 2021-2024",
+        "confidence": "confirmed",
+        "source": "MA-dashboard"
+      },
+      "placement_bottleneck": {
+        "fact": "Severe boarding, now measured publicly via HPC Behavioral Health Inpatient Data Dashboard",
+        "confidence": "confirmed",
+        "source": "MA-dashboard"
+      },
+      "step_down_registry": {
+        "exists": "public real-time bed availability + HPC dashboard; ASPE-listed public-access registry",
+        "confidence": "confirmed",
+        "source": "registry-17"
+      },
+      "why_ranked_here": "Best-in-class data transparency (usable proxies) + licensure leverage model + documented boarding."
+    },
+    {
+      "rank": 10,
+      "state": "North Carolina",
+      "abbr": "NC",
+      "involuntary_or_conservatorship": {
+        "mechanism": "IVC (involuntary commitment) with ED bed-search process",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "NC-BHSCAN"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 4.2,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "~3,200 inpatient psych beds statewide; IVC ED boarding documented",
+        "confidence": "confirmed",
+        "source": "NC-BHSCAN"
+      },
+      "placement_bottleneck": {
+        "fact": "BH SCAN surfaces the licensed-vs-operational-vs-open bed gap",
+        "confidence": "confirmed",
+        "source": "NC-BHSCAN"
+      },
+      "step_down_registry": {
+        "exists": "BH SCAN statewide registry (launched Jan 2023): 3,500+ beds, 112 facilities, 42 county DSS integrated; searchable by acuity & commitment status",
+        "confidence": "confirmed",
+        "source": "NC-BHSCAN"
+      },
+      "why_ranked_here": "Strongest usable bed-continuum data in the US; ideal for quantifying step-down gaps."
+    },
+    {
+      "rank": 11,
+      "state": "Virginia",
+      "abbr": "VA",
+      "involuntary_or_conservatorship": {
+        "mechanism": "ECO/TDO; 'bed of last resort' law forcing state-hospital admits",
+        "volume": "~5,000 total state-hospital admissions in FY23, largest share under civil TDO. (Separately: TDO admissions rose from 2,192 in 2015 to 6,649 in 2019.)",
+        "volume_scope": "annual_state_hospital_admissions_FY23",
+        "confidence": "confirmed",
+        "source": "VA-JLARC-landing",
+        "note": "Replaces unverified '26,000 ECO/TDO holds/yr' from the Gemini draft, which conflated broader ECO/TDO events with state-hospital admissions."
+      },
+      "state_psych_beds_per_100k": {
+        "value": 14.3,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "State hospitals routinely at maximum census; JLARC 2023 recommended overhaul of 'bed of last resort' law",
+        "confidence": "confirmed",
+        "source": "VA-JLARC"
+      },
+      "placement_bottleneck": {
+        "fact": "460 TDO patients not admitted (paperwork) in one year; loss-of-custody events roughly tripled since 2020",
+        "confidence": "confirmed",
+        "source": "VA-JLARC"
+      },
+      "step_down_registry": {
+        "exists": "statutory bed-registry data; HIE integration emerging",
+        "confidence": "confirmed",
+        "source": "MA-dashboard"
+      },
+      "why_ranked_here": "Legal mandate to admit + no capacity + explicit state intent to offload to private/residential."
+    },
+    {
+      "rank": 12,
+      "state": "Georgia",
+      "abbr": "GA",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Civil commitment (1013 form); DOJ/Olmstead settlement legacy shaping community capacity",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "registry-17"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 9.7,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "Longstanding capacity strain; statewide crisis line + real-time bed registry infrastructure (Behavioral Health Link)",
+        "confidence": "confirmed",
+        "source": "registry-17"
+      },
+      "placement_bottleneck": {
+        "fact": "Olmstead/DOJ community-integration mandates create step-down demand",
+        "confidence": "qualitative",
+        "source": "registry-17"
+      },
+      "step_down_registry": {
+        "exists": "statewide real-time bed registry (Behavioral Health Link) \u2014 a national leader",
+        "confidence": "confirmed",
+        "source": "registry-17"
+      },
+      "why_ranked_here": "Registry maturity + DOJ community-integration mandates push placements toward residential/community."
+    },
+    {
+      "rank": 13,
+      "state": "Delaware",
+      "abbr": "DE",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Civil commitment; registry supports outpatient/PHP appointment-booking",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "NRI-2025-registry"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 35.7,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)"
+      },
+      "state_hospital_pressure": {
+        "fact": "Comparatively well-supplied",
+        "confidence": "qualitative",
+        "source": "Beckers-beds"
+      },
+      "placement_bottleneck": {
+        "fact": null,
+        "reason": "not_published (lower relative bottleneck; no specific figure)",
+        "confidence": "not_published"
+      },
+      "step_down_registry": {
+        "exists": "registry tracks crisis stabilization + enables outpatient/PHP appointments (NRI 2025 leader)",
+        "confidence": "confirmed",
+        "source": "NRI-2025-registry"
+      },
+      "why_ranked_here": "Data/continuum benchmark and high-supply contrast; useful for methodology, lower for raw demand."
+    },
+    {
+      "rank": 14,
+      "state": "Arizona",
+      "abbr": "AZ",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Court-ordered treatment (Title 36) \u2014 historically one of the most-used civil-commitment systems",
+        "volume": null,
+        "volume_reason": "not_published (current statewide COT order count not sourced this pass)",
+        "confidence": "qualitative",
+        "source": "MHA-2025"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 3.5,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "Ranked among lowest states for access/outcomes (MHA 2025, second consecutive report)",
+        "confidence": "confirmed",
+        "source": "MHA-2025"
+      },
+      "placement_bottleneck": {
+        "fact": null,
+        "reason": "not_published",
+        "confidence": "not_published"
+      },
+      "step_down_registry": {
+        "exists": null,
+        "reason": "not_published",
+        "confidence": "not_published"
+      },
+      "why_ranked_here": "Strong court-ordered-treatment culture + worst-tier access ranking; thinner data \u2014 verify COT volume before use."
+    },
+    {
+      "rank": 15,
+      "state": "Nevada",
+      "abbr": "NV",
+      "involuntary_or_conservatorship": {
+        "mechanism": "Legal 2000 involuntary hold; civil commitment",
+        "volume": null,
+        "volume_reason": "not_published",
+        "confidence": "qualitative",
+        "source": "MHA-2025"
+      },
+      "state_psych_beds_per_100k": {
+        "value": 9.0,
+        "year": 2023,
+        "confidence": "confirmed",
+        "source": "Beckers-beds (full TAC 2023 table)",
+        "fill_note": "Previously null; filled from full TAC 2023 table."
+      },
+      "state_hospital_pressure": {
+        "fact": "Ranked lowest overall in MHA 2025 (second consecutive report)",
+        "confidence": "confirmed",
+        "source": "MHA-2025"
+      },
+      "placement_bottleneck": {
+        "fact": null,
+        "reason": "not_published (historic ER-boarding/'patient dumping' scrutiny is documented but not as a current figure here)",
+        "confidence": "not_published"
+      },
+      "step_down_registry": {
+        "exists": null,
+        "reason": "not_published",
+        "confidence": "not_published"
+      },
+      "why_ranked_here": "Worst overall MHA ranking = large unmet need; data thin, so most cells blank."
+    }
+  ],
+  "removed_from_gemini_and_why": {
+    "state_hospital_forensic_pct": "REMOVED as a column. Gemini gave a clean whole-percent value for all 50 states; forensic-vs-civil occupancy is not collected in comparable form nationally (it requires per-state legislative-audit pulls). Any full column is fabricated.",
+    "step_down_continuum_beds_counts": "REMOVED as numbers. No federal repository tracks intermediate/step-down bed inventories across states; per-state counts (450, 1100, 6500...) are not sourceable. Replaced with a sourced yes/no on registry existence.",
+    "per_100k_mixed_definitions": "Gemini's bed column silently mixed state-hospital and all-facility figures (e.g., Alaska 80.2). Rebuilt as state-hospital-only, single definition, blanks where the specific value wasn't in a citable source.",
+    "specific_volume_figures": "Several Gemini volume figures (FL 161,576 FY24; VA 26,000 ECO/TDO; NY 45,000) were not verifiable in this pass and were replaced with the specific figures that ARE sourced, or nulled."
+  },
+  "sources": [
+    {
+      "id": "NRI-2025-hosp",
+      "url": "https://nri-inc.org/media/4bofjpqy/smha-use-of-state-psychiatric-hospitals-july-2025-final.pdf"
+    },
+    {
+      "id": "NRI-2025-registry",
+      "url": "https://nri-inc.org/media/b3hlh1ui/bh-crisis-service-registries-2025.pdf"
+    },
+    {
+      "id": "Beckers-beds",
+      "url": "https://www.beckersbehavioralhealth.com/behavioral-health-news/states-with-the-highest-ratio-of-state-psychiatric-beds-by-population/"
+    },
+    {
+      "id": "MHA-2025",
+      "url": "https://markets.financialcontent.com/bostonherald/article/gnwcq-2025-10-1-state-mental-health-rankings-released-new-york-and-hawaii-rank-highest-nevada-and-arizona-rank-lowest"
+    },
+    {
+      "id": "CA-SB43",
+      "url": "https://hooperlundy.com/changes-to-californias-behavioral-health-care-system-expansion-of-eligibility-for-conservatorship-or-involuntary-care-funding-and-capital-projects-sud-treatment/"
+    },
+    {
+      "id": "CA-auditor",
+      "url": "https://sjud.senate.ca.gov/sites/sjud.senate.ca.gov/files/sb_565_jones_sjud_analysis.pdf"
+    },
+    {
+      "id": "WA-Trueblood",
+      "url": "https://www.prisonlegalnews.org/news/2025/jun/1/washingtons-continuing-competency-crisis-strains-jails/"
+    },
+    {
+      "id": "OR-contempt",
+      "url": "https://www.ijpr.org/law-and-justice/2025-06-07/federal-judge-finds-oregon-in-contempt-over-mental-health-care-delays-for-people-in-jail"
+    },
+    {
+      "id": "TX-HB305",
+      "url": "https://capitol.texas.gov/tlodocs/89R/analysis/doc/HB00305E.docx"
+    },
+    {
+      "id": "VA-JLARC",
+      "url": "https://virginiamercury.com/2023/12/12/jlarc-recommends-changes-to-bed-of-last-resort-law-more-private-psychiatric-admissions/"
+    },
+    {
+      "id": "NY-FY26",
+      "url": "https://www.governor.ny.gov/news/governor-hochul-signs-legislation-improve-mental-health-care-and-strengthen-treatment-serious"
+    },
+    {
+      "id": "FL-Baker",
+      "url": "https://www.flsenate.gov/Session/Bill/2024/7021/Analyses/h7021c.HHS.PDF"
+    },
+    {
+      "id": "IA-worst",
+      "url": "https://www.aol.com/iowa-worst-nation-state-psychiatric-112819918.html"
+    },
+    {
+      "id": "MI-47th",
+      "url": "https://www.uppermichiganssource.com/2025/05/29/michigan-ranks-near-last-nation-inpatient-psychiatric-bed-availability/"
+    },
+    {
+      "id": "NC-BHSCAN",
+      "url": "https://www.ncdhhs.gov/news/press-releases/2026/03/12/statewide-mental-health-bed-registry-connecting-people-crisis-care"
+    },
+    {
+      "id": "registry-17",
+      "url": "https://psychiatryonline.org/doi/10.1176/appi.ps.201900079"
+    },
+    {
+      "id": "MA-dashboard",
+      "url": "https://www.convergehlth.com/post/real-time-bed-availability-the-next-frontier-for-behavioral-health-and-crisis-interoperability"
+    },
+    {
+      "id": "NY-AOT-steptwo",
+      "url": "https://www.steptwopolicy.org/post/the-law-and-practice-of-assisted-outpatient-treatment-involuntary-removal-and-involuntary-admissio"
+    },
+    {
+      "id": "VA-JLARC-landing",
+      "url": "https://jlarc.virginia.gov/landing-2023-virginias-state-psychiatric-hospitals.asp"
+    }
+  ]
+}
