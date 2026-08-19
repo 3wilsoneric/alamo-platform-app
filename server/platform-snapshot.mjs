@@ -14,6 +14,7 @@ const snapshotDir = path.resolve(__dirname, "../generated/platform-snapshot");
 const snapshotPath = path.join(snapshotDir, "latest.json");
 const DEFAULT_SNAPSHOT_CACHE_TTL_MS = 5 * 60_000;
 const DEFAULT_SNAPSHOT_MAX_BYTES = 64 * 1024 * 1024;
+const DEFAULT_CLIENT_DATABASE_MAX_BYTES = 16 * 1024 * 1024;
 
 /**
  * @typedef {object} PlatformSnapshotCache
@@ -28,6 +29,13 @@ let platformSnapshotCache = {
   key: null,
   value: null,
   expiresAt: 0,
+  promise: null
+};
+
+/** @type {{ key: string | null, value: any | null, promise: Promise<any | null> | null }} */
+let platformClientDatabaseCache = {
+  key: null,
+  value: null,
   promise: null
 };
 
@@ -57,10 +65,26 @@ export function getPlatformSnapshotMaxBytes() {
   );
 }
 
+export function getPlatformClientDatabaseMaxBytes() {
+  return getBoundedIntegerEnv(
+    "PLATFORM_CLIENT_DATABASE_MAX_BYTES",
+    DEFAULT_CLIENT_DATABASE_MAX_BYTES,
+    1024 * 1024,
+    64 * 1024 * 1024
+  );
+}
+
 function assertSnapshotSize(sizeBytes, source) {
   const maxBytes = getPlatformSnapshotMaxBytes();
   if (Number.isFinite(sizeBytes) && sizeBytes > maxBytes) {
     throw new Error(`Platform snapshot from ${source} exceeds the configured ${maxBytes}-byte limit.`);
+  }
+}
+
+function assertClientDatabaseSize(sizeBytes, source) {
+  const maxBytes = getPlatformClientDatabaseMaxBytes();
+  if (Number.isFinite(sizeBytes) && sizeBytes > maxBytes) {
+    throw new Error(`Platform client database from ${source} exceeds the configured ${maxBytes}-byte limit.`);
   }
 }
 
@@ -84,6 +108,104 @@ function assertOptionalIsoCalendarDate(value, pathLabel, source) {
   if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== text) {
     throw new Error(`Platform snapshot from ${source} has an invalid ${pathLabel}.`);
   }
+}
+
+function assertClientDatabasePath(value, source) {
+  const clientDatabasePath = typeof value === "string" ? value.trim() : "";
+  if (
+    !clientDatabasePath ||
+    clientDatabasePath.startsWith("/") ||
+    clientDatabasePath.includes("\\") ||
+    clientDatabasePath.split("/").includes("..") ||
+    !/^snapshots\/[a-z0-9][a-z0-9/_-]*\.json$/i.test(clientDatabasePath)
+  ) {
+    throw new Error(`Platform snapshot from ${source} has an invalid clientDatabase.path.`);
+  }
+  return clientDatabasePath;
+}
+
+function assertClientDatabasePointer(value, source) {
+  if (!isObject(value)) {
+    throw new Error(`Platform snapshot from ${source} has an invalid clientDatabase pointer.`);
+  }
+  const clientDatabasePath = assertClientDatabasePath(value.path, source);
+  if (value.primary_key !== "canonical_client_id") {
+    throw new Error(`Platform snapshot from ${source} must use canonical_client_id as the client database primary key.`);
+  }
+  if (!Number.isInteger(value.client_count) || value.client_count < 1) {
+    throw new Error(`Platform snapshot from ${source} has an invalid clientDatabase.client_count.`);
+  }
+  assertOptionalIsoCalendarDate(value.baseline_date, "clientDatabase.baseline_date", source);
+  return {
+    ...value,
+    path: clientDatabasePath
+  };
+}
+
+/**
+ * @param {any} payload
+ * @param {string} [source]
+ * @param {any | null} [pointer]
+ */
+export function assertPlatformClientDatabasePayload(payload, source = "unknown source", pointer = null) {
+  if (!isObject(payload)) {
+    throw new Error(`Platform client database from ${source} is not a JSON object.`);
+  }
+  if (payload.primary_key !== "canonical_client_id") {
+    throw new Error(`Platform client database from ${source} must use canonical_client_id as its primary key.`);
+  }
+  if (!Array.isArray(payload.columns)) {
+    throw new Error(`Platform client database from ${source} has an invalid columns list.`);
+  }
+  const columnNames = payload.columns.map((column) => {
+    if (typeof column === "string") return column.trim();
+    if (isObject(column) && typeof column.name === "string" && typeof column.type === "string") {
+      return column.name.trim();
+    }
+    return "";
+  });
+  if (columnNames.some((column) => !column)) {
+    throw new Error(`Platform client database from ${source} has an invalid column descriptor.`);
+  }
+  if (new Set(columnNames).size !== columnNames.length || !columnNames.includes("canonical_client_id")) {
+    throw new Error(`Platform client database from ${source} has duplicate columns or no canonical_client_id column.`);
+  }
+  if (!Number.isInteger(payload.column_count) || payload.column_count !== payload.columns.length) {
+    throw new Error(`Platform client database from ${source} has a column-count mismatch.`);
+  }
+  assertObjectRows(payload.clients, "clients", source);
+  if (!Number.isInteger(payload.client_count) || payload.client_count !== payload.clients.length) {
+    throw new Error(`Platform client database from ${source} has a client-count mismatch.`);
+  }
+  assertOptionalIsoCalendarDate(payload.baseline_date, "baseline_date", source);
+  if (typeof payload.generated_at !== "string" || !Number.isFinite(Date.parse(payload.generated_at))) {
+    throw new Error(`Platform client database from ${source} has no valid generated timestamp.`);
+  }
+
+  const canonicalIds = payload.clients.map((client) => String(client.canonical_client_id ?? "").trim());
+  if (canonicalIds.some((canonicalId) => !canonicalId) || new Set(canonicalIds).size !== canonicalIds.length) {
+    throw new Error(`Platform client database from ${source} has missing or duplicate canonical client identifiers.`);
+  }
+  if (payload.clients.some((client) => columnNames.some((column) => !Object.hasOwn(client, column)))) {
+    throw new Error(`Platform client database from ${source} has a client row missing a published column.`);
+  }
+  const publishedColumns = new Set(columnNames);
+  if (payload.clients.some((client) => Object.keys(client).some((column) => !publishedColumns.has(column)))) {
+    throw new Error(`Platform client database from ${source} has a client row with an undeclared column.`);
+  }
+  if (pointer && pointer.client_count !== payload.client_count) {
+    throw new Error(`Platform client database from ${source} does not match the published pointer client count.`);
+  }
+  if (pointer?.baseline_date && payload.baseline_date !== pointer.baseline_date) {
+    throw new Error(`Platform client database from ${source} does not match the published pointer baseline date.`);
+  }
+  if (pointer?.dataset && payload.dataset !== pointer.dataset) {
+    throw new Error(`Platform client database from ${source} does not match the published pointer dataset.`);
+  }
+  if (pointer?.version != null && payload.version !== pointer.version) {
+    throw new Error(`Platform client database from ${source} does not match the published pointer version.`);
+  }
+  return payload;
 }
 
 export function assertPlatformSnapshotPayload(payload, source = "unknown source", options = {}) {
@@ -130,6 +252,9 @@ export function assertPlatformSnapshotPayload(payload, source = "unknown source"
   }
   if (payload.communitySnapshots !== undefined && !isObject(payload.communitySnapshots)) {
     throw new Error(`Platform snapshot from ${source} has an invalid communitySnapshots section.`);
+  }
+  if (payload.clientDatabase !== undefined) {
+    assertClientDatabasePointer(payload.clientDatabase, source);
   }
 
   const facilityIds = payload.communities.facilities.map((facility) => String(facility.facility_id ?? "").trim());
@@ -273,6 +398,42 @@ async function readAzureSnapshot() {
   return assertPlatformSnapshotPayload(JSON.parse(raw), "Azure storage");
 }
 
+function getLocalClientDatabasePath(clientDatabasePath) {
+  return path.resolve(__dirname, "../generated", clientDatabasePath.replace(/^snapshots\//, ""));
+}
+
+async function readLocalClientDatabase(pointer) {
+  const localPath = getLocalClientDatabasePath(pointer.path);
+  try {
+    const file = await stat(localPath);
+    assertClientDatabaseSize(file.size, "local storage");
+    const raw = await readFile(localPath, "utf8");
+    assertClientDatabaseSize(Buffer.byteLength(raw, "utf8"), "local storage");
+    return assertPlatformClientDatabasePayload(JSON.parse(raw), "local storage", pointer);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function readAzureClientDatabase(pointer) {
+  const config = getAzureSnapshotConfig();
+  if (!config) return null;
+
+  const service = createBlobServiceClient(config);
+  const containerClient = service.getContainerClient(config.container);
+  const blobClient = containerClient.getBlobClient(pointer.path);
+  if (!(await blobClient.exists())) return null;
+
+  const download = await blobClient.download();
+  assertClientDatabaseSize(download.contentLength, "Azure storage");
+  const raw = await streamToString(download.readableStreamBody);
+  assertClientDatabaseSize(Buffer.byteLength(raw, "utf8"), "Azure storage");
+  return assertPlatformClientDatabasePayload(JSON.parse(raw), "Azure storage", pointer);
+}
+
 async function writeAzureSnapshot(payload) {
   const config = getAzureSnapshotConfig();
   if (!config) return null;
@@ -384,6 +545,48 @@ export async function readPlatformSnapshot() {
     promise
   };
 
+  return promise;
+}
+
+export async function readPlatformClientDatabase(snapshot) {
+  if (!snapshot?.clientDatabase) return null;
+  const pointer = assertClientDatabasePointer(snapshot.clientDatabase, "loaded platform snapshot");
+  const preferLocal = shouldPreferLocalSnapshot();
+  const sourceKey = preferLocal ? "local-first" : "azure";
+  const cacheKey = [
+    sourceKey,
+    pointer.path,
+    pointer.version ?? "",
+    pointer.baseline_date ?? "",
+    pointer.client_count
+  ].join(":");
+
+  if (platformClientDatabaseCache.key === cacheKey && platformClientDatabaseCache.value) {
+    return platformClientDatabaseCache.value;
+  }
+  if (platformClientDatabaseCache.key === cacheKey && platformClientDatabaseCache.promise) {
+    return platformClientDatabaseCache.promise;
+  }
+
+  const promise = (async () => {
+    if (preferLocal) {
+      const localDatabase = await readLocalClientDatabase(pointer);
+      if (localDatabase) return localDatabase;
+    }
+    const azureDatabase = await readAzureClientDatabase(pointer);
+    if (azureDatabase) return azureDatabase;
+    throw new Error(`Published platform client database ${pointer.path} is unavailable.`);
+  })()
+    .then((value) => {
+      platformClientDatabaseCache = { key: cacheKey, value, promise: null };
+      return value;
+    })
+    .catch((error) => {
+      platformClientDatabaseCache = { key: null, value: null, promise: null };
+      throw error;
+    });
+
+  platformClientDatabaseCache = { key: cacheKey, value: null, promise };
   return promise;
 }
 

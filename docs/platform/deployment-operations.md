@@ -229,11 +229,18 @@ Pipeline clinical integration:
 - `PIPELINE_CLINICAL_API_ROLE`: service application role, normally `Pipeline.Clinical.Read.All`
 - `PIPELINE_CLINICAL_SNAPSHOT_MAX_AGE_HOURS`: freshness target, defaults to 24
 - `PIPELINE_CLINICAL_API_MAX_RESPONSE_BYTES`: per-response bound, defaults to 2 MB
+- `PLATFORM_CLIENT_DATABASE_MAX_BYTES`: bounded static client database read,
+  defaults to 16 MB
 
 Assign the Pipeline service principal the Alamo API application role and grant
 tenant admin consent before enabling the Pipeline production adapter. Do not
 copy ElderMark, Databricks, Azure snapshot, or Alamo server credentials into a
 Pipeline browser variable.
+
+Pipeline clinical health is ready only when the QA-approved daily snapshot,
+census, roster, medication summary, and referenced client database all validate.
+The client database remains server-only and is never included in the platform
+bootstrap or delivered in bulk to Pipeline.
 
 ## Common Operator Fixes
 

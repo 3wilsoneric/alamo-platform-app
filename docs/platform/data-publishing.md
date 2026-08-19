@@ -409,6 +409,16 @@ This is intentionally separate from the normal local MAR check. Local
 development prefers `generated/platform-snapshot/latest.json` by default;
 production and the Azure validation command read `snapshots/daily/latest.json`.
 
+The daily snapshot can include a `clientDatabase` pointer to
+`snapshots/client-database/latest.json`. The pointed object must declare
+`canonical_client_id` as its primary key, match the published client count,
+contain every declared column on every row, and have unique non-empty canonical
+IDs. Runtime reads are bounded by `PLATFORM_CLIENT_DATABASE_MAX_BYTES` and
+cached by pointer identity; a missing, malformed, or mismatched object keeps the
+Pipeline clinical health endpoint unready rather than serving partial client
+profiles. Azure/production reads fail closed and never substitute a bundled
+local client database.
+
 ## Important Failure Modes
 
 - Wrong `date_partition` can publish a believable but wrong day.

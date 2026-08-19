@@ -291,6 +291,8 @@ GET /api/integrations/pipeline/clinical/health
 GET /api/integrations/pipeline/clinical/census
 GET /api/integrations/pipeline/clinical/roster?q=&community=&limit=&cursor=
 GET /api/integrations/pipeline/clinical/residents/{residentId}
+GET /api/integrations/pipeline/clinical/clients?q=&community=&limit=&cursor=
+GET /api/integrations/pipeline/clinical/clients/{canonicalClientId}
 GET /api/integrations/pipeline/clinical/medications/summary
 ```
 
@@ -315,6 +317,16 @@ snapshot identifier and offset, not names or other PHI. A bare resident ID that
 exists in more than one community returns `409` with the matching qualified
 keys; a qualified key such as `337:R-100` resolves one resident.
 
+The governed snapshot may point to the static enhanced client database through
+`clientDatabase.path`. Alamo validates and loads that object server-side once
+per pointer identity, indexes it by `canonical_client_id`, and joins current
+`resident_profile` and `resident_episode_history` rows on that canonical key
+only. Name and resident-number values are searchable aliases, never automatic
+join keys. The directory returns a bounded projection; the 141-field enrichment
+record is returned only for one requested canonical client. The roster exposes
+nullable `canonical_client_id` and source `resident_number` fields and never
+infers a missing resident number from another identifier.
+
 Medication output is limited to the latest common governed monthly aggregate:
 scheduled, given, compliance percentage, refusals, and combined held/not-given
 counts by community and portfolio. Medication names, resident-level MAR rows,
@@ -337,6 +349,7 @@ PIPELINE_CLINICAL_API_SCOPE=Pipeline.Clinical.Read
 PIPELINE_CLINICAL_API_ROLE=Pipeline.Clinical.Read.All
 PIPELINE_CLINICAL_SNAPSHOT_MAX_AGE_HOURS=24
 PIPELINE_CLINICAL_API_MAX_RESPONSE_BYTES=2097152
+PLATFORM_CLIENT_DATABASE_MAX_BYTES=16777216
 ```
 
 ElderMark credentials remain exclusively in the governed ingestion job. They
