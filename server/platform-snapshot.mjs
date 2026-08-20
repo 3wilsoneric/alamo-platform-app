@@ -2,7 +2,7 @@ import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { gunzip as gunzipCallback } from "node:zlib";
+import { gzip as gzipCallback, gunzip as gunzipCallback } from "node:zlib";
 import { ClientSecretCredential } from "@azure/identity";
 import { BlobServiceClient } from "@azure/storage-blob";
 import {
@@ -19,6 +19,7 @@ const DEFAULT_SNAPSHOT_MAX_BYTES = 64 * 1024 * 1024;
 const DEFAULT_CLIENT_DATABASE_MAX_BYTES = 16 * 1024 * 1024;
 const DEFAULT_CLIENT_DOCUMENT_MAX_BYTES = 32 * 1024 * 1024;
 const DEFAULT_CLIENT_THUMBNAIL_MAX_BYTES = 2 * 1024 * 1024;
+const gzip = promisify(gzipCallback);
 const gunzip = promisify(gunzipCallback);
 
 /**
@@ -444,10 +445,26 @@ async function readAzureSnapshot() {
   const service = createBlobServiceClient(config);
   const containerClient = service.getContainerClient(config.container);
   const blobClient = containerClient.getBlobClient(`${config.root}/latest.json`);
+  const compressedBlobClient = containerClient.getBlobClient(`${config.root}/latest.json.gz`);
+  const [compressedProperties, sourceProperties] = await Promise.all([
+    getAzureBlobPropertiesOrNull(compressedBlobClient),
+    getAzureBlobPropertiesOrNull(blobClient)
+  ]);
 
-  if (!(await blobClient.exists())) {
-    return null;
+  if (compressedBlobIsCurrent(compressedProperties, sourceProperties)) {
+    const compressedDownload = await compressedBlobClient.download();
+    assertSnapshotSize(compressedDownload.contentLength, "compressed Azure storage");
+    const compressed = await streamToBuffer(
+      compressedDownload.readableStreamBody,
+      getPlatformSnapshotMaxBytes(),
+      "Platform snapshot from compressed Azure storage exceeds its configured size limit."
+    );
+    const raw = await gunzip(compressed, { maxOutputLength: getPlatformSnapshotMaxBytes() });
+    assertSnapshotSize(raw.byteLength, "compressed Azure storage");
+    return assertPlatformSnapshotPayload(JSON.parse(raw.toString("utf8")), "compressed Azure storage");
   }
+
+  if (!sourceProperties) return null;
 
   const download = await blobClient.download();
   assertSnapshotSize(download.contentLength, "Azure storage");
@@ -488,7 +505,7 @@ async function readAzureClientDatabase(pointer) {
     getAzureBlobPropertiesOrNull(compressedBlobClient),
     getAzureBlobPropertiesOrNull(blobClient)
   ]);
-  if (compressedDatabaseIsCurrent(compressedProperties, sourceProperties)) {
+  if (compressedBlobIsCurrent(compressedProperties, sourceProperties)) {
     const compressedDownload = await compressedBlobClient.download();
     assertClientDatabaseSize(compressedDownload.contentLength, "compressed Azure storage");
     const compressed = await streamToBuffer(
@@ -522,7 +539,7 @@ async function getAzureBlobPropertiesOrNull(blobClient) {
   }
 }
 
-function compressedDatabaseIsCurrent(compressedProperties, sourceProperties) {
+function compressedBlobIsCurrent(compressedProperties, sourceProperties) {
   const compressedModified = compressedProperties?.lastModified?.getTime?.();
   const sourceModified = sourceProperties?.lastModified?.getTime?.();
   return Number.isFinite(compressedModified) &&
@@ -547,18 +564,24 @@ async function writeAzureSnapshot(payload) {
   const { latest, dated } = getAzureBlobNames(payload);
   const serialized = JSON.stringify(payload, null, 2);
   assertSnapshotSize(Buffer.byteLength(serialized, "utf8"), "Azure publish payload");
+  const compressed = await gzip(Buffer.from(serialized));
 
   await containerClient.createIfNotExists();
 
   await Promise.all(
-    [latest, dated].map(async (blobName) => {
-      const blockBlob = containerClient.getBlockBlobClient(blobName);
-      await blockBlob.upload(serialized, Buffer.byteLength(serialized), {
+    [latest, dated].flatMap((blobName) => [
+      containerClient.getBlockBlobClient(blobName).upload(serialized, Buffer.byteLength(serialized), {
         blobHTTPHeaders: {
           blobContentType: "application/json; charset=utf-8"
         }
-      });
-    })
+      }),
+      containerClient.getBlockBlobClient(`${blobName}.gz`).upload(compressed, compressed.byteLength, {
+        blobHTTPHeaders: {
+          blobContentType: "application/gzip",
+          blobCacheControl: "private, max-age=300"
+        }
+      })
+    ])
   );
 
   return {

@@ -301,7 +301,9 @@ const snapshotSource = await readFile(path.join(appRoot, "server/platform-snapsh
 const profileSource = await readFile(path.join(appRoot, "src/shared/modules/ResidentSearchModule.tsx"), "utf8");
 assert.match(snapshotSource, /platformClientDatabaseCache\.key === cacheKey/);
 assert.match(snapshotSource, /getBlobClient\(`\$\{pointer\.path\}\.gz`\)/);
-assert.match(snapshotSource, /compressedDatabaseIsCurrent\(compressedProperties, sourceProperties\)/);
+assert.match(snapshotSource, /compressedBlobIsCurrent\(compressedProperties, sourceProperties\)/);
+assert.match(snapshotSource, /getBlobClient\(`\$\{config\.root\}\/latest\.json\.gz`\)/);
+assert.match(snapshotSource, /getBlockBlobClient\(`\$\{blobName\}\.gz`\)/);
 assert.match(profileSource, /selectedResidentFacts/);
 assert.match(profileSource, /rowMatchesQuery/);
 

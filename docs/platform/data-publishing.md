@@ -126,6 +126,12 @@ Default storage:
 - container: `alamo-platform-snapshots`
 - root: `snapshots/daily`
 
+The app publisher writes gzip companions beside the latest and dated daily JSON
+objects. Readers use a compressed companion only when Azure reports that it is
+at least as new as the corresponding JSON object; otherwise they fail safely to
+the source JSON. This reduces cold API transport without changing snapshot
+content or freshness semantics.
+
 Core snapshot sections:
 
 - `snapshot`: metadata, version, generated timestamp, and governed `as_of_date`
