@@ -144,6 +144,12 @@ one validated copy per pointer identity, and joins it to `resident_profile` and
 without a canonical match remain visible and are marked unmatched; the runtime
 does not infer links from names or resident numbers.
 
+Production may publish a gzip companion at `<clientDatabase.path>.gz`. The
+server prefers that smaller transport, applies the same decompressed-size and
+payload validation, and uses it only when it is at least as new as the source
+JSON. It falls back to the original JSON object when the companion is absent or
+older. The pointer and governed dataset remain unchanged.
+
 The protected client directory response contains searchable identity aliases and
 summary fields but not all client records in bulk. Selecting one client requests
 that client's complete 141-field record, current resident profile, and governed

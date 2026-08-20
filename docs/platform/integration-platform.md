@@ -88,7 +88,9 @@ client directory and client detail endpoint. The server loads the static object
 referenced by `clientDatabase.path` once per pointer identity, indexes it by
 `canonical_client_id`, and joins current resident profiles and episode history
 only on that key. Directory search supports name, canonical ID, and resident
-number; full enrichment is returned only for one selected client.
+number; full enrichment is returned only for one selected client. A validated
+gzip companion is preferred for the server-side cold load, with the original
+JSON object retained as the fallback.
 
 Pipeline owns assessment history. For a confirmed existing client it stores the
 Alamo `canonical_client_id` with each assessment and never replaces the static

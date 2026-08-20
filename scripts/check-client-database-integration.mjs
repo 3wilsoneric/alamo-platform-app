@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { gzipSync } from "node:zlib";
 import {
   buildDataExplorerPayload,
   indexClientDatabaseClients
 } from "../server/data-explorer.mjs";
 import {
   assertPlatformClientDatabasePayload,
+  decodeCompressedPlatformClientDatabase,
   readPlatformClientDocumentAsset
 } from "../server/platform-snapshot.mjs";
 
@@ -181,6 +183,15 @@ assert.equal(assertPlatformClientDatabasePayload({
   columns: clientDatabase.columns.map((name) => ({ name, type: "string" }))
 }, "descriptor fixture").column_count, 141);
 assert.equal(indexClientDatabaseClients(clientDatabase).size, 2);
+const compressedClientDatabase = gzipSync(Buffer.from(JSON.stringify(clientDatabase)));
+assert.deepEqual(
+  await decodeCompressedPlatformClientDatabase(compressedClientDatabase, "compressed sanitized fixture"),
+  clientDatabase
+);
+await assert.rejects(
+  () => decodeCompressedPlatformClientDatabase(Buffer.from("not-gzip"), "invalid compressed fixture"),
+  /incorrect header check|unexpected end of file/
+);
 
 const thumbnailPath = path.join(appRoot, "generated/client-documents/thumbnails/client-001/document-001.png");
 await mkdir(path.dirname(thumbnailPath), { recursive: true });
@@ -289,7 +300,9 @@ assert.throws(
 const snapshotSource = await readFile(path.join(appRoot, "server/platform-snapshot.mjs"), "utf8");
 const profileSource = await readFile(path.join(appRoot, "src/shared/modules/ResidentSearchModule.tsx"), "utf8");
 assert.match(snapshotSource, /platformClientDatabaseCache\.key === cacheKey/);
-assert.match(profileSource, /Every published field is shown below in source-column order/);
-assert.match(profileSource, /row\.client_name_search/);
+assert.match(snapshotSource, /getBlobClient\(`\$\{pointer\.path\}\.gz`\)/);
+assert.match(snapshotSource, /compressedDatabaseIsCurrent\(compressedProperties, sourceProperties\)/);
+assert.match(profileSource, /selectedResidentFacts/);
+assert.match(profileSource, /rowMatchesQuery/);
 
 console.log("client database integration checks passed");

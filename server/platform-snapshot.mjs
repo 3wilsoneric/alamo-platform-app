@@ -1,6 +1,8 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+import { gunzip as gunzipCallback } from "node:zlib";
 import { ClientSecretCredential } from "@azure/identity";
 import { BlobServiceClient } from "@azure/storage-blob";
 import {
@@ -17,6 +19,7 @@ const DEFAULT_SNAPSHOT_MAX_BYTES = 64 * 1024 * 1024;
 const DEFAULT_CLIENT_DATABASE_MAX_BYTES = 16 * 1024 * 1024;
 const DEFAULT_CLIENT_DOCUMENT_MAX_BYTES = 32 * 1024 * 1024;
 const DEFAULT_CLIENT_THUMBNAIL_MAX_BYTES = 2 * 1024 * 1024;
+const gunzip = promisify(gunzipCallback);
 
 /**
  * @typedef {object} PlatformSnapshotCache
@@ -479,14 +482,60 @@ async function readAzureClientDatabase(pointer) {
 
   const service = createBlobServiceClient(config);
   const containerClient = service.getContainerClient(config.container);
+  const compressedBlobClient = containerClient.getBlobClient(`${pointer.path}.gz`);
   const blobClient = containerClient.getBlobClient(pointer.path);
-  if (!(await blobClient.exists())) return null;
+  const [compressedProperties, sourceProperties] = await Promise.all([
+    getAzureBlobPropertiesOrNull(compressedBlobClient),
+    getAzureBlobPropertiesOrNull(blobClient)
+  ]);
+  if (compressedDatabaseIsCurrent(compressedProperties, sourceProperties)) {
+    const compressedDownload = await compressedBlobClient.download();
+    assertClientDatabaseSize(compressedDownload.contentLength, "compressed Azure storage");
+    const compressed = await streamToBuffer(
+      compressedDownload.readableStreamBody,
+      getPlatformClientDatabaseMaxBytes(),
+      "Platform client database from compressed Azure storage exceeds its configured size limit."
+    );
+    return decodeCompressedPlatformClientDatabase(compressed, "compressed Azure storage", pointer);
+  }
+
+  if (!sourceProperties) return null;
 
   const download = await blobClient.download();
   assertClientDatabaseSize(download.contentLength, "Azure storage");
   const raw = await streamToString(download.readableStreamBody);
   assertClientDatabaseSize(Buffer.byteLength(raw, "utf8"), "Azure storage");
   return assertPlatformClientDatabasePayload(JSON.parse(raw), "Azure storage", pointer);
+}
+
+async function getAzureBlobPropertiesOrNull(blobClient) {
+  try {
+    return await blobClient.getProperties();
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      (("statusCode" in error && error.statusCode === 404) ||
+        ("code" in error && error.code === "BlobNotFound"))
+    ) return null;
+    throw error;
+  }
+}
+
+function compressedDatabaseIsCurrent(compressedProperties, sourceProperties) {
+  const compressedModified = compressedProperties?.lastModified?.getTime?.();
+  const sourceModified = sourceProperties?.lastModified?.getTime?.();
+  return Number.isFinite(compressedModified) &&
+    Number.isFinite(sourceModified) &&
+    compressedModified >= sourceModified;
+}
+
+export async function decodeCompressedPlatformClientDatabase(body, source = "compressed source", pointer = null) {
+  const maximumBytes = getPlatformClientDatabaseMaxBytes();
+  assertClientDatabaseSize(body?.byteLength, source);
+  const raw = await gunzip(body, { maxOutputLength: maximumBytes });
+  assertClientDatabaseSize(raw.byteLength, source);
+  return assertPlatformClientDatabasePayload(JSON.parse(raw.toString("utf8")), source, pointer);
 }
 
 async function writeAzureSnapshot(payload) {
@@ -723,14 +772,18 @@ async function readAzureClientDocumentAsset(assetPath, maximumBytes) {
   };
 }
 
-async function streamToBuffer(readableStream, maximumBytes) {
+async function streamToBuffer(
+  readableStream,
+  maximumBytes,
+  oversizeMessage = "Platform client document asset exceeds its configured size limit."
+) {
   if (!readableStream) return Buffer.alloc(0);
   const chunks = [];
   let received = 0;
   for await (const chunk of readableStream) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     received += buffer.byteLength;
-    if (received > maximumBytes) throw new Error("Platform client document asset exceeds its configured size limit.");
+    if (received > maximumBytes) throw new Error(oversizeMessage);
     chunks.push(buffer);
   }
   return Buffer.concat(chunks);
