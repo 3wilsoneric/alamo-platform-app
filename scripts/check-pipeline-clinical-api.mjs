@@ -181,6 +181,7 @@ check("canonical client search covers names and resident numbers and returns enr
   equal(detail.body.client.source_documents[0].thumbnail_available, true);
   equal(detail.body.client.source_documents[0].preview_available, false);
   equal(detail.body.client_database.baseline_date, "2026-08-18");
+  equal(detail.body.client_database.client_count, 3);
   const serialized = JSON.stringify(detail.body);
   assert(!serialized.includes("thumbnail_path"), "Storage paths must not be exposed to Pipeline");
   assert(!serialized.includes("preview_path"), "Storage paths must not be exposed to Pipeline");

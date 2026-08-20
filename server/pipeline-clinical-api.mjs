@@ -636,6 +636,7 @@ function buildClientResponse(snapshot, context, clientDatabase, canonicalClientI
       version: clientDatabaseMetadata.version,
       baseline_date: clientDatabaseMetadata.baseline_date,
       generated_at: clientDatabaseMetadata.generated_at,
+      client_count: clientDatabaseMetadata.client_count,
       field_count: clientDatabaseMetadata.field_count,
       fields: clientDatabaseMetadata.columns
     }
