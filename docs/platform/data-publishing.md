@@ -132,6 +132,32 @@ Core snapshot sections:
 - `communitiesDashboard`: communities, governed resident profiles, incident rollups, census
 - `reportsSummary`: internal analytics-support slices plus `toolContext`
 - analyst context manifest and tables under `reportsSummary.toolContext`
+- `clientDatabase`: a lightweight pointer to the separately published static client database
+
+The optional `clientDatabase.path` points to a QA-approved JSON object in the
+same protected Azure container. The application validates that object against
+its published client count, baseline date, unique `canonical_client_id` primary
+key, dataset version, and complete source column list before serving it. It is not copied into the general
+platform bootstrap: the server loads it only for resident/client search, caches
+one validated copy per pointer identity, and joins it to `resident_profile` and
+`resident_episode_history` only on `canonical_client_id`. Current resident rows
+without a canonical match remain visible and are marked unmatched; the runtime
+does not infer links from names or resident numbers.
+
+The protected client directory response contains searchable identity aliases and
+summary fields but not all client records in bulk. Selecting one client requests
+that client's complete 141-field record, current resident profile, and governed
+episode history. This keeps the directory response bounded while the server
+continues to reuse the same validated static client-database index.
+
+The client database may add an optional `documents` manifest without changing
+the frozen August 18 client rows or columns. Every manifest row must reference
+an existing `canonical_client_id`, use a unique client/document pair, and carry
+only approved PDF/image metadata plus private asset paths under
+`snapshots/client-documents`. The application validates those paths against a
+fixed allowlist and never returns them to Pipeline. The initial additive
+publication contains re-encoded first-page PNG thumbnails only; the dated
+August 18 baseline blob and the original source files are not overwritten.
 
 Incident narratives are serialized once under
 `reportsSummary.toolContext.tables.incident_detail_history`. Community

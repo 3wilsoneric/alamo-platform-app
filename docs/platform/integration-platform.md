@@ -64,11 +64,11 @@ owner. Pipeline remains the transactional owner for referral packets,
 assessment work, files, corrections, and admission decisions. The two products
 must share identity and bounded APIs, not browser state or database tables.
 
-The Alamo `/admissions` route is therefore a PHI-free launcher to the
-Azure-hosted Pipeline application. It never embeds Pipeline, forwards record
-identifiers in a URL, or reads referral data into the Alamo browser. Pipeline
-continues to obtain census and resident context through the existing server-only
-clinical API.
+The Alamo `/admissions` route is a governed aggregate dashboard for census and
+placement context. It links to, but never embeds, the Pipeline application; it
+does not forward record identifiers in a URL or read referral documents into
+the Alamo browser. Pipeline continues to obtain census and resident context
+through the existing server-only clinical API.
 
 Entra app roles define the browser boundary:
 
@@ -82,6 +82,18 @@ Entra app roles define the browser boundary:
 The application role `Pipeline.Clinical.Read.All` remains service-principal
 only and does not grant browser access. Role assignments take effect after the
 user signs out and signs back in.
+
+The dedicated read-only Pipeline namespace also exposes a bounded canonical
+client directory and client detail endpoint. The server loads the static object
+referenced by `clientDatabase.path` once per pointer identity, indexes it by
+`canonical_client_id`, and joins current resident profiles and episode history
+only on that key. Directory search supports name, canonical ID, and resident
+number; full enrichment is returned only for one selected client.
+
+Pipeline owns assessment history. For a confirmed existing client it stores the
+Alamo `canonical_client_id` with each assessment and never replaces the static
+August 18, 2026 baseline. New-client and incremental Databricks writes remain
+disabled until a separate payload, QA, rollback, cost, and approval review.
 
 ## Current Limitations
 
@@ -291,6 +303,10 @@ GET /api/integrations/pipeline/clinical/health
 GET /api/integrations/pipeline/clinical/census
 GET /api/integrations/pipeline/clinical/roster?q=&community=&limit=&cursor=
 GET /api/integrations/pipeline/clinical/residents/{residentId}
+GET /api/integrations/pipeline/clinical/clients?q=&community=&limit=&cursor=
+GET /api/integrations/pipeline/clinical/clients/{canonicalClientId}
+GET /api/integrations/pipeline/clinical/clients/{canonicalClientId}/documents/{documentId}/thumbnail
+GET /api/integrations/pipeline/clinical/clients/{canonicalClientId}/documents/{documentId}/preview
 GET /api/integrations/pipeline/clinical/medications/summary
 ```
 
@@ -321,6 +337,13 @@ counts by community and portfolio. Medication names, resident-level MAR rows,
 administration records, and notes are deliberately excluded until a separate
 authorization and disclosure policy is approved.
 
+Enhanced client detail is joined only on `canonical_client_id`. Its optional
+`source_documents` list contains safe metadata and availability flags, not
+internal Allo paths or Azure blob names. Document bytes use exact authenticated
+asset routes, an allowlisted PDF/image MIME contract, private no-store headers,
+and separate size bounds. The first publication is thumbnail-only; raw source
+files and previews remain unavailable until a separate PHI disclosure decision.
+
 ### Pipeline Authorization
 
 The Alamo Entra API registration must expose delegated scope
@@ -337,6 +360,8 @@ PIPELINE_CLINICAL_API_SCOPE=Pipeline.Clinical.Read
 PIPELINE_CLINICAL_API_ROLE=Pipeline.Clinical.Read.All
 PIPELINE_CLINICAL_SNAPSHOT_MAX_AGE_HOURS=24
 PIPELINE_CLINICAL_API_MAX_RESPONSE_BYTES=2097152
+PLATFORM_CLIENT_THUMBNAIL_MAX_BYTES=2097152
+PLATFORM_CLIENT_DOCUMENT_MAX_BYTES=33554432
 ```
 
 ElderMark credentials remain exclusively in the governed ingestion job. They

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { assertApiClaimsPermission } from "../server/api-auth.mjs";
 import {
   buildPipelineClinicalApiResponse,
+  parsePipelineClinicalClientDocumentPath,
   PIPELINE_CLINICAL_API_PREFIX
 } from "../server/pipeline-clinical-api.mjs";
 
@@ -12,6 +13,107 @@ const fixture = JSON.parse(
   await readFile(path.join(root, "scripts/fixtures/pipeline-clinical-snapshot.sanitized.json"), "utf8")
 );
 const now = new Date("2026-08-07T13:00:00.000Z");
+const clientDatabase = {
+  dataset: "platform_client_database",
+  version: 1,
+  primary_key: "canonical_client_id",
+  baseline_date: "2026-08-18",
+  generated_at: "2026-08-18T12:00:00.000Z",
+  client_count: 3,
+  column_count: 6,
+  columns: [
+    "canonical_client_id",
+    "resident_name",
+    "resident_numbers",
+    "communities",
+    "prior_placements",
+    "assessment_notes"
+  ],
+  document_count: 1,
+  documents: [
+    {
+      canonical_client_id: "client-history",
+      document_id: "document-sanitized-001",
+      display_name: "Sanitized historical packet.pdf",
+      content_type: "application/pdf",
+      page_count: 5,
+      linked_at: "2026-08-18T12:00:00.000Z",
+      link_source: "governed_client_document_link",
+      thumbnail_path: "snapshots/client-documents/thumbnails/client-history/document-sanitized-001.png",
+      preview_path: null
+    }
+  ],
+  clients: [
+    {
+      canonical_client_id: "client-avery",
+      resident_name: "Avery Example",
+      resident_numbers: ["R-100"],
+      communities: ["San Pablo"],
+      prior_placements: "Sanitized prior placement",
+      assessment_notes: null
+    },
+    {
+      canonical_client_id: "client-jordan",
+      resident_name: "Jordan Fixture",
+      resident_numbers: ["R-101"],
+      communities: ["San Pablo"],
+      prior_placements: null,
+      assessment_notes: "Sanitized baseline note"
+    },
+    {
+      canonical_client_id: "client-history",
+      resident_name: "Casey Historical",
+      resident_numbers: ["R-090"],
+      communities: ["JC Wallace House"],
+      prior_placements: "Sanitized historical placement",
+      assessment_notes: null
+    }
+  ]
+};
+fixture.reportsSummary.toolContext.tables.resident_profile = [
+  {
+    canonical_client_id: "client-avery",
+    res_number: "R-100",
+    resident_name: "Avery Example",
+    first_name: "Avery",
+    last_name: "Example",
+    facility_id: "337",
+    facility_name: "San Pablo",
+    unit_number: "A-1",
+    age: 41,
+    admit_date: "2026-01-10",
+    los_days: 209,
+    care_level: "Level 2"
+  },
+  {
+    canonical_client_id: "client-jordan",
+    res_number: "R-101",
+    resident_name: "Jordan Fixture",
+    first_name: "Jordan",
+    last_name: "Fixture",
+    facility_id: "337",
+    facility_name: "San Pablo",
+    unit_number: "B-2",
+    age: 52,
+    admit_date: "2025-11-01",
+    los_days: 279,
+    care_level: "Level 1"
+  }
+];
+fixture.reportsSummary.toolContext.tables.resident_episode_history = [
+  {
+    canonical_client_id: "client-history",
+    resident_id: "R-090",
+    resident_name: "Casey Historical",
+    facility_id: "343",
+    facility_name: "JC Wallace House",
+    admit_date: "2024-01-01",
+    discharge_date: "2025-01-01",
+    episode_status: "discharged"
+  }
+];
+fixture.communities.residents[0].canonical_client_id = "client-avery";
+fixture.communities.residents[1].canonical_client_id = "client-jordan";
 const checks = [];
 
 check("census preserves reconciliation and source metadata", () => {
@@ -39,11 +141,21 @@ check("roster search is deterministic, bounded, and cursor based", () => {
   const first = request("/roster?q=level&limit=1");
   equal(first.body.total, 3);
   equal(first.body.residents.length, 1);
+  equal(first.body.residents[0].resident_number, first.body.residents[0].resident_id);
   assert(first.body.next_cursor && first.body.next_cursor !== "1", "Expected an opaque cursor");
   const second = request(`/roster?q=level&limit=1&cursor=${encodeURIComponent(first.body.next_cursor)}`);
   assert(second.body.residents[0].resident_key !== first.body.residents[0].resident_key, "Cursor should advance");
   const invalid = capture(() => request("/roster?limit=201"));
   equal(invalid.statusCode, 400);
+});
+
+check("missing resident numbers remain null instead of being inferred", () => {
+  const missing = structuredClone(fixture);
+  missing.communities.residents[0].resident_id = "internal-only-100";
+  delete missing.communities.residents[0].res_number;
+  const response = request("/roster", missing);
+  const resident = response.body.residents.find((row) => row.resident_id === "internal-only-100");
+  equal(resident.resident_number, null);
 });
 
 check("resident lookup never guesses between duplicate source identifiers", () => {
@@ -53,6 +165,38 @@ check("resident lookup never guesses between duplicate source identifiers", () =
   const qualified = request("/residents/337%3AR-100");
   equal(qualified.body.resident.resident_key, "337:R-100");
   equal(capture(() => request("/residents/R-999")).statusCode, 404);
+});
+
+check("canonical client search covers names and resident numbers and returns enrichment", () => {
+  const byName = request("/clients?q=casey&limit=10");
+  equal(byName.body.total, 1);
+  equal(byName.body.clients[0].canonical_client_id, "client-history");
+  equal(byName.body.clients[0].current_resident, false);
+  const byNumber = request("/clients?q=R-100&limit=10");
+  equal(byNumber.body.clients[0].canonical_client_id, "client-avery");
+  const detail = request("/clients/client-history");
+  equal(detail.body.client.enrichment.prior_placements, "Sanitized historical placement");
+  equal(detail.body.client.resident_episode_history.length, 1);
+  equal(detail.body.client.source_documents.length, 1);
+  equal(detail.body.client.source_documents[0].thumbnail_available, true);
+  equal(detail.body.client.source_documents[0].preview_available, false);
+  equal(detail.body.client_database.baseline_date, "2026-08-18");
+  const serialized = JSON.stringify(detail.body);
+  assert(!serialized.includes("thumbnail_path"), "Storage paths must not be exposed to Pipeline");
+  assert(!serialized.includes("preview_path"), "Storage paths must not be exposed to Pipeline");
+});
+
+check("client-document routes are exact and preserve opaque identifiers", () => {
+  const parsed = parsePipelineClinicalClientDocumentPath(
+    `${PIPELINE_CLINICAL_API_PREFIX}/clients/client-history/documents/document-sanitized-001/thumbnail`
+  );
+  equal(parsed.canonicalClientId, "client-history");
+  equal(parsed.documentId, "document-sanitized-001");
+  equal(parsed.variant, "thumbnail");
+  equal(parsePipelineClinicalClientDocumentPath(`${PIPELINE_CLINICAL_API_PREFIX}/clients/client-history`), null);
+  equal(parsePipelineClinicalClientDocumentPath(
+    `${PIPELINE_CLINICAL_API_PREFIX}/clients/client-history/documents/document-sanitized-001/download`
+  ), null);
 });
 
 check("duplicate community-qualified keys and failed QA fail closed", () => {
@@ -111,9 +255,9 @@ const failures = checks.filter((entry) => entry.ok === false);
 console.log(JSON.stringify({ ok: failures.length === 0, checks }, null, 2));
 if (failures.length) process.exit(1);
 
-function request(suffix, snapshot = fixture, requestNow = now) {
+function request(suffix, snapshot = fixture, requestNow = now, database = clientDatabase) {
   const url = new URL(`${PIPELINE_CLINICAL_API_PREFIX}${suffix}`, "https://www.alamoplatform.com");
-  return buildPipelineClinicalApiResponse(snapshot, url, requestNow);
+  return buildPipelineClinicalApiResponse(snapshot, url, requestNow, database);
 }
 
 function check(name, run) {

@@ -2,13 +2,18 @@ import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../shared/commun
 import { normalizeDisplayDateKey } from "../shared/display-date.mjs";
 import { requireApiUser } from "./api-auth.mjs";
 import { createHttpError, getApiError, getRequestUrl } from "./http-errors.mjs";
-import { readPlatformSnapshot } from "./platform-snapshot.mjs";
 import { applyProtectedApiHeaders } from "./http-response.mjs";
 import { getBoundedIntegerEnv, getBoundedNumberEnv } from "./runtime-environment.mjs";
 import { getSnapshotFreshness } from "./snapshot-status.mjs";
+import { buildDataExplorerPayload } from "./data-explorer.mjs";
+import {
+  readPlatformClientDatabase,
+  readPlatformClientDocumentAsset,
+  readPlatformSnapshot
+} from "./platform-snapshot.mjs";
 
 export const PIPELINE_CLINICAL_API_PREFIX = "/api/integrations/pipeline/clinical";
-export const PIPELINE_CLINICAL_CONTRACT_VERSION = "1.0";
+export const PIPELINE_CLINICAL_CONTRACT_VERSION = "1.1";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -97,6 +102,15 @@ function governedSourceDate(value, label) {
     throw clinicalError(502, "snapshot_invalid", `The governed snapshot has an invalid ${label}.`);
   }
   const normalized = normalizeDisplayDateKey(raw);
+  if (!normalized) {
+    throw clinicalError(502, "snapshot_invalid", `The governed snapshot has an invalid ${label}.`);
+  }
+  return normalized;
+}
+
+function governedDisplayDate(value, label) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
+  const normalized = normalizeDisplayDateKey(String(value).trim());
   if (!normalized) {
     throw clinicalError(502, "snapshot_invalid", `The governed snapshot has an invalid ${label}.`);
   }
@@ -230,6 +244,23 @@ function buildMetadata(context, snapshot, now) {
   };
 }
 
+function attachCanonicalClientIndex(snapshot, context, clientDatabase) {
+  const canonicalByResidentKey = new Map();
+  if (clientDatabase) {
+    const explorer = getClientExplorer(snapshot, clientDatabase);
+    for (const row of explorer.rows) {
+      if (!row.current_resident || !row.canonical_client_id || !row.facility_id || !row.res_number) continue;
+      const residentKey = `${row.facility_id}:${row.res_number}`;
+      const existing = canonicalByResidentKey.get(residentKey);
+      if (existing && existing !== row.canonical_client_id) {
+        throw clinicalError(502, "canonical_identity_ambiguous", "A current resident maps to more than one canonical client identifier.");
+      }
+      canonicalByResidentKey.set(residentKey, row.canonical_client_id);
+    }
+  }
+  return { ...context, canonicalByResidentKey };
+}
+
 function projectRoster(context) {
   const projected = [];
   const seenKeys = new Set();
@@ -261,6 +292,12 @@ function projectRoster(context) {
     projected.push({
       resident_id: id,
       resident_key: residentKey,
+      canonical_client_id: nullableText(
+        row.canonical_client_id ?? context.canonicalByResidentKey?.get(residentKey),
+        "canonical client identifier",
+        256
+      ),
+      resident_number: nullableText(row.res_number, "resident number", 128),
       display_name: displayName,
       first_name: firstName,
       last_name: lastName,
@@ -427,11 +464,182 @@ function matchesRosterQuery(resident, query) {
     resident.last_name,
     resident.resident_id,
     resident.resident_key,
+    resident.canonical_client_id,
     resident.community_id,
     resident.community_name,
     resident.unit,
     resident.care_level
   ].some((value) => String(value ?? "").toLowerCase().includes(normalized));
+}
+
+function requireClientDatabase(clientDatabase) {
+  if (!clientDatabase) {
+    throw clinicalError(
+      503,
+      "client_database_unavailable",
+      "The governed enhanced client database is not available in this snapshot."
+    );
+  }
+  return clientDatabase;
+}
+
+function getClientExplorer(snapshot, clientDatabase, residentClientId = "") {
+  const explorer = buildDataExplorerPayload(snapshot, "residents", getSnapshotFreshness(snapshot), {
+    clientDatabase: requireClientDatabase(clientDatabase),
+    residentClientId
+  });
+  if (!explorer.client_database) {
+    throw clinicalError(502, "client_database_invalid", "The governed client database metadata is missing.");
+  }
+  return explorer;
+}
+
+function boundedStringList(value, maximumItems = 100, maximumLength = 256) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value
+    .map((item) => String(item ?? "").trim())
+    .filter((item) => item && item.length <= maximumLength))]
+    .slice(0, maximumItems);
+}
+
+function projectClientDirectoryRow(row) {
+  const canonicalClientId = requiredText(row.canonical_client_id, "canonical client identifier", 256);
+  return {
+    canonical_client_id: canonicalClientId,
+    display_name: requiredText(row.resident_name, "client display name", 400),
+    resident_numbers: boundedStringList(row.resident_numbers),
+    current_resident: row.current_resident === true,
+    community_names: boundedStringList(row.community_names, 25, 200),
+    current_community: nullableText(row.community_name, "client community", 200),
+    unit: nullableText(row.unit, "client unit", 200),
+    admit_date: governedDisplayDate(row.admit_date, "client admit date"),
+    care_level: nullableText(row.care_level, "client care level", 500),
+    episode_count: nullableInteger(row.resident_episode_count, "client episode count") ?? 0
+  };
+}
+
+function projectClientSourceDocuments(clientDatabase, canonicalClientId) {
+  const documents = Array.isArray(clientDatabase?.documents) ? clientDatabase.documents : [];
+  return documents
+    .filter((document) => String(document.canonical_client_id ?? "").trim() === canonicalClientId)
+    .map((document) => {
+      const contentType = requiredText(document.content_type, "client document content type", 128).toLowerCase();
+      if (!["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(contentType)) {
+        throw clinicalError(502, "client_database_invalid", "The governed client database contains an unapproved document content type.");
+      }
+      const linkedAt = nullableText(document.linked_at, "client document linked timestamp", 64);
+      if (linkedAt && !Number.isFinite(Date.parse(linkedAt))) {
+        throw clinicalError(502, "client_database_invalid", "The governed client database contains an invalid document timestamp.");
+      }
+      return {
+        document_id: requiredText(document.document_id, "client document identifier", 256),
+        display_name: requiredText(document.display_name, "client document display name", 500),
+        content_type: contentType,
+        page_count: nullableInteger(document.page_count, "client document page count", 1, 10_000),
+        linked_at: linkedAt,
+        link_source: nullableText(document.link_source, "client document link source", 128),
+        thumbnail_available: Boolean(document.thumbnail_path),
+        preview_available: Boolean(document.preview_path)
+      };
+    })
+    .sort((left, right) =>
+      String(right.linked_at ?? "").localeCompare(String(left.linked_at ?? "")) ||
+      left.display_name.localeCompare(right.display_name) ||
+      left.document_id.localeCompare(right.document_id)
+    );
+}
+
+function matchesClientQuery(row, query) {
+  if (!query) return true;
+  const normalized = query.toLowerCase();
+  return [
+    row.client_name_search,
+    row.resident_name,
+    row.canonical_client_id,
+    ...(Array.isArray(row.resident_numbers) ? row.resident_numbers : [])
+  ].some((value) => String(value ?? "").toLowerCase().includes(normalized));
+}
+
+function matchesClientCommunity(row, query) {
+  if (!query) return true;
+  const normalized = query.toLowerCase();
+  return [row.community_name, ...(Array.isArray(row.community_names) ? row.community_names : [])]
+    .some((value) => String(value ?? "").toLowerCase().includes(normalized));
+}
+
+function buildClientDirectoryResponse(snapshot, context, clientDatabase, requestUrl, now) {
+  const q = normalizeSearchParameter(requestUrl.searchParams.get("q"), "q");
+  const community = normalizeSearchParameter(requestUrl.searchParams.get("community"), "community");
+  const limit = parseLimit(requestUrl.searchParams.get("limit"));
+  const offset = decodeCursor(requestUrl.searchParams.get("cursor"), context.snapshotId);
+  const explorer = getClientExplorer(snapshot, clientDatabase);
+  const clientDatabaseMetadata = explorer.client_database;
+  if (!clientDatabaseMetadata) {
+    throw clinicalError(502, "client_database_invalid", "The governed client database metadata is missing.");
+  }
+  const matching = explorer.rows
+    .filter((row) => row.canonical_client_id && matchesClientQuery(row, q) && matchesClientCommunity(row, community));
+  if (offset > matching.length) {
+    throw clinicalError(400, "cursor_invalid", "The client-directory cursor is outside the current result set.");
+  }
+  const clients = matching.slice(offset, offset + limit).map(projectClientDirectoryRow);
+  const nextOffset = offset + clients.length;
+  return {
+    ...buildMetadata(context, snapshot, now),
+    clients,
+    total: matching.length,
+    limit,
+    next_cursor: nextOffset < matching.length ? encodeCursor(context.snapshotId, nextOffset) : null,
+    query: q,
+    community: community || null,
+    client_database: {
+      dataset: clientDatabaseMetadata.dataset,
+      version: clientDatabaseMetadata.version,
+      baseline_date: clientDatabaseMetadata.baseline_date,
+      generated_at: clientDatabaseMetadata.generated_at,
+      client_count: clientDatabaseMetadata.client_count,
+      field_count: clientDatabaseMetadata.field_count
+    }
+  };
+}
+
+function buildClientResponse(snapshot, context, clientDatabase, canonicalClientId, now) {
+  const identifier = requiredText(canonicalClientId, "canonical client identifier", 256);
+  const explorer = getClientExplorer(snapshot, clientDatabase, identifier);
+  const clientDatabaseMetadata = explorer.client_database;
+  if (!clientDatabaseMetadata) {
+    throw clinicalError(502, "client_database_invalid", "The governed client database metadata is missing.");
+  }
+  const row = explorer.rows[0];
+  if (!row || row.canonical_client_id !== identifier) {
+    throw clinicalError(404, "client_not_found", "Client was not found in the governed client database.");
+  }
+  return {
+    ...buildMetadata(context, snapshot, now),
+    client: {
+      ...projectClientDirectoryRow({
+        ...row,
+        resident_episode_count: Array.isArray(row.resident_episode_history)
+          ? row.resident_episode_history.length
+          : 0
+      }),
+      resident_profile: row.resident_profile ?? null,
+      resident_profiles: Array.isArray(row.resident_profiles) ? row.resident_profiles : [],
+      resident_episode_history: Array.isArray(row.resident_episode_history)
+        ? row.resident_episode_history
+        : [],
+      enrichment: row.client_profile,
+      source_documents: projectClientSourceDocuments(clientDatabase, identifier)
+    },
+    client_database: {
+      dataset: clientDatabaseMetadata.dataset,
+      version: clientDatabaseMetadata.version,
+      baseline_date: clientDatabaseMetadata.baseline_date,
+      generated_at: clientDatabaseMetadata.generated_at,
+      field_count: clientDatabaseMetadata.field_count,
+      fields: clientDatabaseMetadata.columns
+    }
+  };
 }
 
 function buildRosterResponse(snapshot, context, requestUrl, now) {
@@ -616,7 +824,7 @@ function medicationReady(snapshot, context) {
   return Boolean(latestSharedMedicationMonth(compliance, mar, context.dataAsOf));
 }
 
-function buildHealthResponse(snapshot, now) {
+function buildHealthResponse(snapshot, clientDatabase, now) {
   if (!snapshot) {
     return {
       statusCode: 503,
@@ -630,6 +838,7 @@ function buildHealthResponse(snapshot, now) {
           qa_approved: false,
           census_ready: false,
           roster_ready: false,
+          client_database_ready: false,
           medication_summary_ready: false
         }
       }
@@ -637,12 +846,13 @@ function buildHealthResponse(snapshot, now) {
   }
 
   try {
-    const context = validateSnapshot(snapshot);
+    const context = attachCanonicalClientIndex(snapshot, validateSnapshot(snapshot), clientDatabase);
     projectRoster(context);
     latestCensusByFacility(context);
     const metadata = buildMetadata(context, snapshot, now);
     const medicationsReady = medicationReady(snapshot, context);
-    const ready = metadata.freshness.status === "fresh" && medicationsReady;
+    const clientDatabaseReady = Boolean(clientDatabase);
+    const ready = metadata.freshness.status === "fresh" && medicationsReady && clientDatabaseReady;
     return {
       statusCode: ready ? 200 : 503,
       body: {
@@ -655,6 +865,7 @@ function buildHealthResponse(snapshot, now) {
           qa_approved: context.qa.approved,
           census_ready: true,
           roster_ready: true,
+          client_database_ready: clientDatabaseReady,
           medication_summary_ready: medicationsReady
         }
       }
@@ -672,6 +883,7 @@ function buildHealthResponse(snapshot, now) {
           qa_approved: false,
           census_ready: false,
           roster_ready: false,
+          client_database_ready: false,
           medication_summary_ready: false
         }
       }
@@ -683,18 +895,43 @@ export function isPipelineClinicalPath(pathname) {
   return pathname === PIPELINE_CLINICAL_API_PREFIX || pathname.startsWith(`${PIPELINE_CLINICAL_API_PREFIX}/`);
 }
 
-export function buildPipelineClinicalApiResponse(snapshot, requestUrl, now = new Date()) {
+export function parsePipelineClinicalClientDocumentPath(pathname) {
+  const prefix = `${PIPELINE_CLINICAL_API_PREFIX}/clients/`;
+  if (!pathname.startsWith(prefix)) return null;
+  const segments = pathname.slice(prefix.length).split("/");
+  if (segments.length !== 4 || segments[1] !== "documents" || !["thumbnail", "preview"].includes(segments[3])) {
+    return null;
+  }
+  try {
+    return {
+      canonicalClientId: requiredText(decodeURIComponent(segments[0]), "canonical client identifier", 256),
+      documentId: requiredText(decodeURIComponent(segments[2]), "client document identifier", 256),
+      variant: segments[3]
+    };
+  } catch (error) {
+    if (error && typeof error === "object" && "statusCode" in error) throw error;
+    throw clinicalError(400, "client_document_identifier_invalid", "The client document identifier is invalid.");
+  }
+}
+
+export function buildPipelineClinicalApiResponse(snapshot, requestUrl, now = new Date(), clientDatabase = null) {
   const pathname = requestUrl.pathname;
   if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/health`) {
-    return buildHealthResponse(snapshot, now);
+    return buildHealthResponse(snapshot, clientDatabase, now);
   }
-  const context = validateSnapshot(snapshot);
+  const context = attachCanonicalClientIndex(snapshot, validateSnapshot(snapshot), clientDatabase);
 
   if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/census`) {
     return { statusCode: 200, body: buildCensusResponse(snapshot, context, now) };
   }
   if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/roster`) {
     return { statusCode: 200, body: buildRosterResponse(snapshot, context, requestUrl, now) };
+  }
+  if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/clients`) {
+    return {
+      statusCode: 200,
+      body: buildClientDirectoryResponse(snapshot, context, clientDatabase, requestUrl, now)
+    };
   }
   if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/medications/summary`) {
     return { statusCode: 200, body: buildMedicationSummaryResponse(snapshot, context, now) };
@@ -708,6 +945,19 @@ export function buildPipelineClinicalApiResponse(snapshot, requestUrl, now = new
       throw clinicalError(400, "resident_identifier_invalid", "The resident lookup identifier is invalid.");
     }
     return { statusCode: 200, body: buildResidentResponse(snapshot, context, identifier, now) };
+  }
+  const clientPrefix = `${PIPELINE_CLINICAL_API_PREFIX}/clients/`;
+  if (pathname.startsWith(clientPrefix)) {
+    let identifier;
+    try {
+      identifier = decodeURIComponent(pathname.slice(clientPrefix.length));
+    } catch {
+      throw clinicalError(400, "client_identifier_invalid", "The canonical client identifier is invalid.");
+    }
+    return {
+      statusCode: 200,
+      body: buildClientResponse(snapshot, context, clientDatabase, identifier, now)
+    };
   }
   throw clinicalError(404, "route_not_found", "Clinical integration route not found.");
 }
@@ -755,7 +1005,39 @@ export async function handlePipelineClinicalApiRequest(req, res) {
     if (!snapshot && requestUrl.pathname !== `${PIPELINE_CLINICAL_API_PREFIX}/health`) {
       throw clinicalError(503, "snapshot_unavailable", "No governed clinical snapshot is available.");
     }
-    const response = buildPipelineClinicalApiResponse(snapshot, requestUrl);
+    let clientDatabase = null;
+    if (snapshot?.clientDatabase) {
+      try {
+        clientDatabase = await readPlatformClientDatabase(snapshot);
+      } catch (error) {
+        if (requestUrl.pathname !== `${PIPELINE_CLINICAL_API_PREFIX}/health`) throw error;
+      }
+    }
+    const documentRequest = parsePipelineClinicalClientDocumentPath(requestUrl.pathname);
+    if (documentRequest) {
+      const context = attachCanonicalClientIndex(snapshot, validateSnapshot(snapshot), clientDatabase);
+      const metadata = buildMetadata(context, snapshot, new Date());
+      const asset = await readPlatformClientDocumentAsset(
+        requireClientDatabase(clientDatabase),
+        documentRequest.canonicalClientId,
+        documentRequest.documentId,
+        documentRequest.variant
+      );
+      if (!asset) {
+        throw clinicalError(404, "client_document_not_found", "The governed client document is not available.");
+      }
+      res.setHeader("Content-Disposition", `inline; filename="client-document.${asset.contentType === "application/pdf" ? "pdf" : asset.contentType.split("/")[1]}"`);
+      res.setHeader("Content-Length", String(asset.body.byteLength));
+      res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
+      res.setHeader("Content-Type", asset.contentType);
+      res.setHeader("X-Alamo-Clinical-Contract", PIPELINE_CLINICAL_CONTRACT_VERSION);
+      res.setHeader("X-Alamo-Data-As-Of", metadata.data_as_of);
+      res.setHeader("X-Alamo-Data-Freshness", metadata.freshness.status);
+      res.setHeader("X-Alamo-Snapshot-Id", metadata.snapshot_id);
+      res.status(200).send(asset.body);
+      return;
+    }
+    const response = buildPipelineClinicalApiResponse(snapshot, requestUrl, new Date(), clientDatabase);
     assertResponseSize(response.body);
     applyClinicalFreshnessHeaders(res, response.body);
     res.status(response.statusCode).json(response.body);

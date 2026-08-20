@@ -229,6 +229,8 @@ Pipeline clinical integration:
 - `PIPELINE_CLINICAL_API_ROLE`: service application role, normally `Pipeline.Clinical.Read.All`
 - `PIPELINE_CLINICAL_SNAPSHOT_MAX_AGE_HOURS`: freshness target, defaults to 24
 - `PIPELINE_CLINICAL_API_MAX_RESPONSE_BYTES`: per-response bound, defaults to 2 MB
+- `PLATFORM_CLIENT_THUMBNAIL_MAX_BYTES`: private client-thumbnail bound, defaults to 2 MB
+- `PLATFORM_CLIENT_DOCUMENT_MAX_BYTES`: private client-preview bound, defaults to 32 MB
 
 Assign the Pipeline service principal the Alamo API application role and grant
 tenant admin consent before enabling the Pipeline production adapter. Do not
