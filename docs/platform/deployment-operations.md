@@ -281,6 +281,33 @@ It also schedules `/api/reports/weekly`. Changing the human-readable
 
 ## Security Notes
 
+### Pipeline read-performance release (2026-09-12)
+
+`Dockerfile.pipeline-performance` is a four-source-owner overlay on the exact
+deployed acquisition image, not a deployment of an older checkout's frontend.
+It preserves all other deployed source, dependencies, identity configuration,
+resource sizing and scheduled jobs. The rollback image is the immutable base
+digest in that Dockerfile. Do not build a general release from this overlay.
+
+The owners reuse native date formatters, canonical community lookup, and a
+resident projection only for the current validated published snapshot and
+manifest identity. Freshness, authorization, filtering and not-found checks
+still run per request. Snapshot TTL refresh still checks both Azure objects;
+only an unchanged selected-object ETag reuses parsed validated data. Changed,
+deleted, invalid or inaccessible publications never use stale cached records.
+There is no binary asset, browser PHI, or authorization-response cache added.
+The process's first snapshot read remains a cold read. Revisit startup warming
+if cold-replica useful content exceeds the 800 ms goal in live measurements.
+
+Run `npm run check:pipeline-performance`, `npm run check:pipeline-clinical`,
+`npm run check:eldermark-dates`, server typecheck and changed-owner lint. The
+sanitized revalidation harness exercises the actual private Azure reader with
+fake blob objects, including replacement, deletion and storage failure.
+
+The release branch is `codex/pipeline-clinical-performance`. Integrate its narrow
+performance-owner changes before any future general image build; do not replace
+work-in-progress clinical API or snapshot modules with the overlay baseline.
+
 - Browser never calls Databricks or Claude directly.
 - Browser sends a delegated Entra access token to every platform API request.
 - Serverless API handlers validate token signature, issuer, audience, and scope before data access.

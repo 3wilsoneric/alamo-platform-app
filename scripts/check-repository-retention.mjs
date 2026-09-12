@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const rootFiles = new Set([
+  "Dockerfile.pipeline-performance",
+  "Dockerfile.pipeline-performance.dockerignore",
   ".env.example",
   ".gitignore",
   "AGENTS.md",

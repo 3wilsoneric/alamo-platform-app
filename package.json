@@ -42,6 +42,7 @@
     "check:full-reports": "node scripts/check-full-reporting.mjs",
     "check:platform-api": "npm run check:auth-redirect && node scripts/check-platform-api-boundaries.mjs",
     "check:pipeline-clinical": "node scripts/check-pipeline-clinical-api.mjs",
+    "check:pipeline-performance": "node scripts/check-display-formatters-performance.mjs && node scripts/check-client-projection-performance.mjs && node scripts/check-snapshot-revalidation-performance.mjs",
     "check:admissions-access": "node scripts/check-admissions-access.mjs",
     "check:regression-replays": "node scripts/check-regression-replays.mjs",
     "check:operator-prompts": "node scripts/check-operator-prompts.mjs",

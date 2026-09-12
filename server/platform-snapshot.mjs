@@ -41,6 +41,12 @@ let platformSnapshotCache = {
   promise: null
 };
 
+// One validated Azure publication, not an authorization/response cache. Every
+// TTL refresh still checks both source objects. An unchanged ETag can reuse the
+// parsed publication; a changed/missing object or storage failure cannot.
+/** @type {{ key: string | null, etag: string | null, value: any | null, bytes: number }} */
+let azureSnapshotReadCache = { key: null, etag: null, value: null, bytes: 0 };
+
 /** @type {{ key: string | null, value: any | null, promise: Promise<any | null> | null }} */
 let platformClientDatabaseCache = {
   key: null,
@@ -579,7 +585,15 @@ async function readAzureSnapshot() {
     getAzureBlobPropertiesOrNull(blobClient)
   ]);
 
-  if (compressedBlobIsCurrent(compressedProperties, sourceProperties)) {
+  const useCompressed = compressedBlobIsCurrent(compressedProperties, sourceProperties);
+  const selectedBlob = useCompressed ? compressedBlobClient : blobClient;
+  const selectedProperties = useCompressed ? compressedProperties : sourceProperties;
+  if (selectedProperties?.etag && azureSnapshotReadCache.key === selectedBlob.url && azureSnapshotReadCache.etag === selectedProperties.etag) {
+    assertSnapshotSize(azureSnapshotReadCache.bytes, "validated Azure storage");
+    return azureSnapshotReadCache.value;
+  }
+
+  if (useCompressed) {
     const compressedDownload = await compressedBlobClient.download();
     assertSnapshotSize(compressedDownload.contentLength, "compressed Azure storage");
     const compressed = await streamToBuffer(
@@ -589,7 +603,9 @@ async function readAzureSnapshot() {
     );
     const raw = await gunzip(compressed, { maxOutputLength: getPlatformSnapshotMaxBytes() });
     assertSnapshotSize(raw.byteLength, "compressed Azure storage");
-    return assertPlatformSnapshotPayload(JSON.parse(raw.toString("utf8")), "compressed Azure storage");
+    const value = assertPlatformSnapshotPayload(JSON.parse(raw.toString("utf8")), "compressed Azure storage");
+    azureSnapshotReadCache = { key: selectedBlob.url, etag: compressedDownload.etag ?? null, value, bytes: raw.byteLength };
+    return value;
   }
 
   if (!sourceProperties) return null;
@@ -598,7 +614,9 @@ async function readAzureSnapshot() {
   assertSnapshotSize(download.contentLength, "Azure storage");
   const raw = await streamToString(download.readableStreamBody);
   assertSnapshotSize(Buffer.byteLength(raw, "utf8"), "Azure storage");
-  return assertPlatformSnapshotPayload(JSON.parse(raw), "Azure storage");
+  const value = assertPlatformSnapshotPayload(JSON.parse(raw), "Azure storage");
+  azureSnapshotReadCache = { key: selectedBlob.url, etag: download.etag ?? null, value, bytes: Buffer.byteLength(raw, "utf8") };
+  return value;
 }
 
 function getLocalClientDatabasePath(clientDatabasePath) {
