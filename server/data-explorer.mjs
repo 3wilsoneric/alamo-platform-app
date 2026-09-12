@@ -647,11 +647,23 @@ function buildExplorerFilters(kind, rows) {
   };
 }
 
+// Published snapshots/client manifests are read-only and replaced on refresh.
+// Weak keys release the old projection with its snapshot. This is deliberately
+// opt-in: ordinary/mutable builder inputs never receive memoized data.
+const publishedResidentProjections = new WeakMap();
+
 export function buildDataExplorerPayload(snapshot, kindValue, snapshotStatus, options = {}) {
   const kind = normalizeExplorerKind(kindValue);
-  const residentExplorer = kind === "residents" && options.clientDatabase
-    ? buildEnhancedResidentExplorer(snapshot, options.clientDatabase)
-    : null;
+  let residentExplorer = null;
+  if (kind === "residents" && options.clientDatabase) {
+    const cached = options.cachePublishedProjection ? publishedResidentProjections.get(snapshot) : null;
+    residentExplorer = cached?.database === options.clientDatabase
+      ? cached.explorer
+      : buildEnhancedResidentExplorer(snapshot, options.clientDatabase);
+    if (options.cachePublishedProjection && cached?.database !== options.clientDatabase) {
+      publishedResidentProjections.set(snapshot, { database: options.clientDatabase, explorer: residentExplorer });
+    }
+  }
   const completeRows = kind === "incidents"
     ? buildIncidentExplorerRows(snapshot)
     : kind === "census"

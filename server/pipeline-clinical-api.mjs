@@ -8,6 +8,7 @@ import { getBoundedIntegerEnv, getBoundedNumberEnv } from "./runtime-environment
 import { getSnapshotFreshness } from "./snapshot-status.mjs";
 import { buildDataExplorerPayload } from "./data-explorer.mjs";
 import {
+  isCurrentPlatformSnapshot,
   readPlatformClientDatabase,
   readPlatformClientDocumentAsset,
   readPlatformClientIntelligence,
@@ -532,7 +533,8 @@ function requireClientDatabase(clientDatabase) {
 function getClientExplorer(snapshot, clientDatabase, residentClientId = "") {
   const explorer = buildDataExplorerPayload(snapshot, "residents", getSnapshotFreshness(snapshot), {
     clientDatabase: requireClientDatabase(clientDatabase),
-    residentClientId
+    residentClientId,
+    cachePublishedProjection: isCurrentPlatformSnapshot(snapshot)
   });
   if (!explorer.client_database) {
     throw clinicalError(502, "client_database_invalid", "The governed client database metadata is missing.");

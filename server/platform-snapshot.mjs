@@ -735,6 +735,13 @@ export function getPlatformSnapshotTargets(payload) {
   };
 }
 
+// Only the validated, currently published read is eligible for projection
+// reuse. Publishing/refreshing replaces this object; fixtures and callers'
+// mutable objects must continue through the ordinary pure builder.
+export function isCurrentPlatformSnapshot(snapshot) {
+  return Boolean(snapshot && platformSnapshotCache.value === snapshot && platformSnapshotCache.expiresAt > Date.now());
+}
+
 export async function readPlatformSnapshot() {
   const azureConfigured = Boolean(getAzureSnapshotConfig());
   if (requiresAzureSnapshot() && isAzureSnapshotDeclared() && !azureConfigured) {

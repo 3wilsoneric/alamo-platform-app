@@ -3,4 +3,6 @@
 !shared/display-date.mjs
 !server/
 !server/data-explorer.mjs
+!server/platform-snapshot.mjs
+!server/pipeline-clinical-api.mjs
 !Dockerfile.pipeline-performance
