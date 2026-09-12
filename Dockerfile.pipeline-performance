@@ -1,0 +1,5 @@
+# Overlay only the two verified deployed source owners. Preserve the deployed
+# application, auth, acquisition features, dependencies, and configuration.
+FROM pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:f834b7ffb2ba1aac325f8bbf8651d3f3d501434a47ccb946b8f9ed4c97c2845b
+COPY --chown=node:node shared/display-date.mjs /app/shared/display-date.mjs
+COPY --chown=node:node server/data-explorer.mjs /app/server/data-explorer.mjs

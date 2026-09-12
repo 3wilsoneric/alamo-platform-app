@@ -1,0 +1,6 @@
+**
+!shared/
+!shared/display-date.mjs
+!server/
+!server/data-explorer.mjs
+!Dockerfile.pipeline-performance

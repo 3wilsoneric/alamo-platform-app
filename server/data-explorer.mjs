@@ -79,15 +79,23 @@ function normalizeCommunityLookup(value) {
     .trim();
 }
 
+const clientCommunityNames = new Map();
+for (const facility of ALAMO_FACILITIES) {
+  for (const alias of [
+    facility.communityName,
+    facility.shortName,
+    facility.operatingSiteName,
+    ...facility.aliases
+  ]) {
+    const key = normalizeCommunityLookup(alias);
+    // Preserve the original find() ordering when facilities share an alias.
+    if (!clientCommunityNames.has(key)) clientCommunityNames.set(key, facility.shortName);
+  }
+}
+
 function normalizeClientCommunityName(value) {
   const normalizedValue = normalizeCommunityLookup(normalizeKnownCommunityNames(value));
-  const facility = ALAMO_FACILITIES.find((candidate) => [
-    candidate.communityName,
-    candidate.shortName,
-    candidate.operatingSiteName,
-    ...candidate.aliases
-  ].some((alias) => normalizeCommunityLookup(alias) === normalizedValue));
-  return facility?.shortName ?? normalizeKnownCommunityNames(normalizeString(value));
+  return clientCommunityNames.get(normalizedValue) ?? normalizeKnownCommunityNames(normalizeString(value));
 }
 
 export function normalizeExplorerKind(value) {

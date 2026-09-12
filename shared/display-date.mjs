@@ -1,6 +1,24 @@
 import { PLATFORM_REPORTING_TIME_ZONE } from "./reporting-date.mjs";
 import { formatMonthLabel } from "./period-utils.mjs";
 
+// Intl construction is expensive across a full roster. Cache only the native
+// month vocabulary; invalid/custom options still receive native validation.
+// Like other runtime locale configuration, a default-timezone change requires
+// restarting the process. Timestamp formatting uses the explicit reporting zone.
+const dateFormatters = new Map();
+const timestampFormatters = new Map();
+const cacheableMonths = new Set(["numeric", "2-digit", "long", "short", "narrow"]);
+
+function displayFormatter(cache, month, options) {
+  if (!cacheableMonths.has(month)) return new Intl.DateTimeFormat("en-GB", options);
+  let formatter = cache.get(month);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-GB", options);
+    cache.set(month, formatter);
+  }
+  return formatter;
+}
+
 function isEmptyDateValue(value) {
   return (
     value == null ||
@@ -91,11 +109,11 @@ export function formatDisplayDate(value, options = {}) {
   } = options;
   const date = parseDisplayDate(value);
   if (!date) return fallback;
-  return date.toLocaleDateString("en-GB", {
+  return displayFormatter(dateFormatters, month, {
     day: "numeric",
     month,
     year: "numeric"
-  });
+  }).format(date);
 }
 
 export function formatDisplayDateTime(value, options = {}) {
@@ -105,7 +123,7 @@ export function formatDisplayDateTime(value, options = {}) {
   } = options;
   const date = parseDisplayTimestamp(value);
   if (!date) return fallback;
-  return date.toLocaleString("en-GB", {
+  return displayFormatter(timestampFormatters, month, {
     timeZone: PLATFORM_REPORTING_TIME_ZONE,
     day: "numeric",
     month,
@@ -113,7 +131,7 @@ export function formatDisplayDateTime(value, options = {}) {
     hour: "numeric",
     minute: "2-digit",
     hour12: true
-  });
+  }).format(date);
 }
 
 export function cleanDisplayDateText(value) {
