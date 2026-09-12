@@ -4,7 +4,7 @@ import { normalizeDisplayDateKey } from "../shared/display-date.mjs";
 import { requireApiUser } from "./api-auth.mjs";
 import { createHttpError, getApiError, getRequestUrl } from "./http-errors.mjs";
 import { applyProtectedApiHeaders } from "./http-response.mjs";
-import { getBoundedIntegerEnv, getBoundedNumberEnv } from "./runtime-environment.mjs";
+import { getBoundedIntegerEnv, getBoundedNumberEnv, isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { getSnapshotFreshness } from "./snapshot-status.mjs";
 import { buildDataExplorerPayload } from "./data-explorer.mjs";
 import {
@@ -25,6 +25,73 @@ const MAX_INTELLIGENCE_PAGE_SIZE = 50;
 const DEFAULT_MAX_AGE_HOURS = 24;
 const DEFAULT_MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const facilityById = new Map(ALAMO_FACILITIES.map((facility) => [facility.facilityId, facility]));
+
+let clinicalPrewarmPromise = null;
+
+// Prepare only the canonical validated publication and its directory projection.
+// No user, response authorization, clinical write, or document-byte cache exists
+// here. Protected requests still run their normal authorization/freshness checks.
+export function prewarmPipelineClinicalDirectories() {
+  if (clinicalPrewarmPromise) return clinicalPrewarmPromise;
+  clinicalPrewarmPromise = (async () => {
+    const snapshot = await readPlatformSnapshot();
+    if (!snapshot) throw clinicalError(503, "snapshot_unavailable", "No governed clinical snapshot is available.");
+    const database = snapshot.clientDatabase ? await readPlatformClientDatabase(snapshot) : null;
+    const now = new Date();
+    const roster = buildPipelineClinicalApiResponse(snapshot, new URL(`${PIPELINE_CLINICAL_API_PREFIX}/roster?limit=200`, "https://localhost"), now, database);
+    const clients = buildPipelineClinicalApiResponse(snapshot, new URL(`${PIPELINE_CLINICAL_API_PREFIX}/clients?limit=200`, "https://localhost"), now, database);
+    return { resident_count: "total" in roster.body ? roster.body.total : null, client_count: "total" in clients.body ? clients.body.total : null };
+  })().finally(() => { clinicalPrewarmPromise = null; });
+  return clinicalPrewarmPromise;
+}
+
+// Runtime-owned timer warms every Azure replica; a scheduled HTTP request would
+// reach only whichever replica the load balancer selected. Native TZ conversion
+// keeps 6 a.m. Pacific correct across DST. No metered standalone job is created.
+export function startPipelineClinicalPrewarming({
+  warm = prewarmPipelineClinicalDirectories,
+  now = () => new Date(),
+  schedule = setInterval,
+  log = console.log,
+} = {}) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23",
+  });
+  let morningDay = "";
+  let nextAttemptAt = 0;
+  let pending = false;
+  function clockParts(date) {
+    const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]));
+    return { day: `${parts.year}-${parts.month}-${parts.day}`, hour: parts.hour };
+  }
+  async function run(reason) {
+    if (pending || now().getTime() < nextAttemptAt) return;
+    pending = true;
+    const start = now().getTime();
+    try {
+      const counts = await warm();
+      const time = clockParts(now());
+      if (time.hour === "06") morningDay = time.day;
+      log(JSON.stringify({ level: "info", msg: "pipeline_clinical_prewarmed", reason, duration_ms: now().getTime() - start, ...counts }));
+    } catch {
+      nextAttemptAt = now().getTime() + 5 * 60_000;
+      log(JSON.stringify({ level: "warn", msg: "pipeline_clinical_prewarm_failed", reason }));
+    } finally { pending = false; }
+  }
+  const startup = run("startup");
+  const timer = schedule(() => {
+    const time = clockParts(now());
+    if (time.hour === "06" && time.day !== morningDay) void run("morning");
+  }, 60_000);
+  timer.unref?.();
+  return { startup, stop: () => clearInterval(timer) };
+}
+
+// This module is imported by each long-running Azure API server. Serverless
+// handlers and development/fixtures keep their existing on-demand reads.
+if (isProductionLikeRuntime() && !process.env.VERCEL && process.env.PIPELINE_CLINICAL_PREWARM_ENABLED !== "false") {
+  startPipelineClinicalPrewarming();
+}
 
 /**
  * @param {number} statusCode

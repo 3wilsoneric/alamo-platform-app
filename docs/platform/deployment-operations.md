@@ -296,8 +296,15 @@ still run per request. Snapshot TTL refresh still checks both Azure objects;
 only an unchanged selected-object ETag reuses parsed validated data. Changed,
 deleted, invalid or inaccessible publications never use stale cached records.
 There is no binary asset, browser PHI, or authorization-response cache added.
-The process's first snapshot read remains a cold read. Revisit startup warming
-if cold-replica useful content exceeds the 800 ms goal in live measurements.
+Each long-running Azure API replica now prepares its validated source, canonical
+resident projection and client-directory projection at startup and at 6 a.m.
+America/Los_Angeles, including DST. The runtime-owned timer avoids a paid separate
+job or a load-balanced cron request that would warm only one replica. It has one
+in-flight warmup, five-minute outage backoff and count-only logs; development and
+serverless handlers retain their on-demand reads. Set
+`PIPELINE_CLINICAL_PREWARM_ENABLED=false` to disable it. No files, clinical writes,
+publication, invitations, or authorization-response caching are performed.
+Storage validation and ordinary freshness checks still run on protected reads.
 
 Run `npm run check:pipeline-performance`, `npm run check:pipeline-clinical`,
 `npm run check:eldermark-dates`, server typecheck and changed-owner lint. The
