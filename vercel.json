@@ -1,7 +1,8 @@
 {
   "functions": {
     "api/*.js": {
-      "excludeFiles": "generated/**"
+      "excludeFiles": "generated/**",
+      "includeFiles": "src/features/fiftystate/data/stateTargetingData.ts"
     }
   },
   "redirects": [

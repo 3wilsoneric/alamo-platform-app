@@ -6,6 +6,7 @@ import {
 } from "../shared/knowledge-contracts.mjs";
 
 const stateTargetingUrl = new URL("../src/features/fiftystate/data/stateTargetingData.ts", import.meta.url);
+const builtStateTargetingUrl = new URL("../src/features/fiftystate/data/stateTargetingData.js", import.meta.url);
 const nationalBedSupplyUrl = new URL("../src/features/fiftystate/data/research/stateBedSupply.json", import.meta.url);
 const verifiedDemandUrl = new URL("../src/features/fiftystate/data/research/verifiedDemandStates.json", import.meta.url);
 const buyerResearchUrl = new URL("../src/features/fiftystate/data/research/fiveStateBuyerSprint.json", import.meta.url);
@@ -54,11 +55,18 @@ function stableId(prefix, value) {
 }
 
 function parseStateTargetingRows() {
-  const source = readFileSync(stateTargetingUrl, "utf8");
+  let source;
+  let endMarker = "] as const;";
+  try {
+    source = readFileSync(stateTargetingUrl, "utf8");
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    source = readFileSync(builtStateTargetingUrl, "utf8");
+    endMarker = "];";
+  }
   const marker = "const RAW_STATE_TARGETING_ROWS = ";
   const markerIndex = source.indexOf(marker);
   const start = source.indexOf("[", markerIndex + marker.length);
-  const endMarker = "] as const;";
   const end = source.indexOf(endMarker, start);
   if (markerIndex < 0 || start < 0 || end < 0) {
     throw new Error("The maintained 50-state targeting dataset could not be located.");
