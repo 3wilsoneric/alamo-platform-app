@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/*.js": {
+      "excludeFiles": "generated/**"
+    }
+  },
   "redirects": [
     {
       "source": "/pipeline",
