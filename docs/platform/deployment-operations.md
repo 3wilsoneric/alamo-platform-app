@@ -25,10 +25,13 @@ the current image and revision with `az containerapp show` before every change.
 The Vercel variables, API adapter, and cron settings below describe that
 deployment target, not the current public `www` host. Do not treat a Vercel
 promotion as an Azure production release. The September 2026 iPhone polish
-release uses `Dockerfile.iphone-overlay` to add only CSS and Home Screen HTML
-metadata to the exact preceding Azure image digest; it does not rebuild the
-browser bundle or server. Rollback is an Azure Container App image update to
-that recorded preceding digest.
+release used `Dockerfile.iphone-overlay` to add CSS and Home Screen HTML
+metadata to the exact preceding Azure image digest. The follow-up phone
+experience release uses `Dockerfile.mobile-experience-overlay` on that digest
+and adds only phone CSS, same-origin choice controls, and their HTML references.
+Neither overlay rebuilds the browser bundle or server. Rollback is an Azure
+Container App image update to the recorded preceding digest, not a Vercel
+promotion.
 
 ## Local Development
 

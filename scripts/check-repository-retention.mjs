@@ -13,6 +13,7 @@ const rootFiles = new Set([
   "AGENTS.md",
   "Dockerfile.acquisition-overlay",
   "Dockerfile.iphone-overlay",
+  "Dockerfile.mobile-experience-overlay",
   "README.md",
   "eslint.config.js",
   "index.html",
@@ -76,7 +77,10 @@ const approvedWorkflowFiles = new Set([
 ]);
 const approvedIphoneOverlayFiles = new Set([
   "deploy/inject-iphone-head.mjs",
-  "deploy/iphone-polish.css"
+  "deploy/iphone-polish.css",
+  "deploy/inject-mobile-experience-head.mjs",
+  "deploy/mobile-app-experience.css",
+  "deploy/mobile-app-experience.js"
 ]);
 const manualDatabricksDiagnostics = new Set([
   "databricks/notebooks/census_fast_check.py",

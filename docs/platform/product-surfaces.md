@@ -13,9 +13,9 @@
 
 ## Product Model
 
-The current product is not primarily a sidebar app. On desktop it begins with a
-California community map; on phones and portrait tablets it begins with a
-governed portfolio pulse and five touch-sized community actions:
+The current public Azure product is not primarily a sidebar app. It begins
+with the California community map on desktop and phones; phones also have five
+touch-sized community actions beneath the map:
 
 - the user starts at `/home`
 - five facility markers are projected from maintained city longitude/latitude coordinates;
@@ -43,20 +43,18 @@ governed portfolio pulse and five touch-sized community actions:
 
 ## Small-Screen Product Decision
 
-The mobile home prioritizes three jobs: **check the governed current census and
-change**, **open a community profile**, and **read or ask for governed analysis**.
-It shows the five current communities as large rows with census and comparable-
-period change, then keeps Reports and Ask a question one tap away. The profile
-opens as a full-height phone view with its existing Overview, Census, Incidents,
-Medications, and Residents sections; its controls meet a 44px touch target at
-phone and tablet widths.
+The public Azure mobile home prioritizes three jobs: **find and open a
+community**, **read governed analysis**, and **ask a governed question**. The
+California view is enlarged for phone widths, keeps all five community labels
+on-screen, and adds five 44px-or-larger name actions so nearby map markers do
+not become ambiguous tap targets. The profile remains a full-height phone view
+with Overview, Census, Incidents, Medications, and Residents sections.
 
-The desktop map is not shrunk onto phones or portrait tablets: marker labels and
-hit areas become too small to be useful there. The map remains the desktop
-geographic overview. The mobile report library becomes a native picker so the
-report reader gets the width. The mobile question-category chip grid becomes a
-picker so search and actual question choices remain visible without three rows
-of filter chrome.
+The mobile report library and question-category chip grid become compact native
+pickers, preserving the report reader and question list width. The source branch
+also contains a separate `MobileCommunityHome` portfolio-pulse design, but that
+is not included in the current public Azure image; do not roll it into a mobile
+release without a separate product decision.
 
 Admissions is still temporarily disabled in primary navigation while that
 surface is unfinished. Fifty States acquisition research, Command Center,

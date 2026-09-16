@@ -1,0 +1,203 @@
+/* Phone presentation layered after the existing Azure app stylesheet. */
+@media (max-width: 639px) {
+  [data-california-neighbor-context="true"] {
+    display: none !important;
+  }
+
+  [data-california-map="true"] {
+    width: min(60vw, 250px) !important;
+    transform: translate(10px, -45px) !important;
+  }
+
+  [data-california-community-tooltip] {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+  }
+
+  [data-california-community-dot] {
+    r: 5px !important;
+  }
+
+  [data-california-community-marker] {
+    touch-action: manipulation;
+  }
+
+  #alamo-mobile-community-tray {
+    position: fixed;
+    z-index: 45;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid #cbd8d3;
+    background: #ffffff;
+    box-shadow: 0 -8px 24px rgb(16 67 54 / 8%);
+    font-family: var(--ap-sans), system-ui, sans-serif;
+  }
+
+  #alamo-mobile-community-tray[hidden] {
+    display: none !important;
+  }
+
+  #alamo-mobile-community-tray .alamo-tray-heading {
+    margin: 0 0 7px;
+    color: #315b54;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  #alamo-mobile-community-tray .alamo-tray-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  #alamo-mobile-community-tray button {
+    display: flex;
+    min-width: 0;
+    min-height: 44px;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 9px;
+    border: 1px solid #ccd7d3;
+    border-radius: 0;
+    background: #ffffff;
+    color: #111111;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: left;
+    touch-action: manipulation;
+  }
+
+  #alamo-mobile-community-tray button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  #alamo-mobile-community-tray button::before {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: #0f8b73;
+    content: "";
+  }
+
+  #alamo-mobile-community-tray button:active,
+  #alamo-mobile-community-tray button:focus-visible {
+    border-color: #0f8b73;
+    background: #eef7f3;
+    outline: 2px solid #0f8b73;
+    outline-offset: 1px;
+  }
+
+  .alamo-mobile-picker {
+    display: block;
+    margin-top: 8px;
+  }
+
+  .alamo-mobile-picker label {
+    display: block;
+    margin-bottom: 5px;
+    color: #315b54;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .alamo-mobile-picker select {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    padding: 9px 12px;
+    border: 1px solid #bfd1cb;
+    border-radius: 0;
+    background: #f5faf8;
+    color: #173e36;
+    font-family: var(--ap-sans), system-ui, sans-serif;
+    font-size: 16px !important;
+    font-weight: 700;
+  }
+
+  .alamo-mobile-picker select:focus-visible {
+    outline: 2px solid #0f8b73;
+    outline-offset: 2px;
+  }
+
+  [data-alamo-report-picker-ready="true"] > p:first-child,
+  [data-alamo-report-picker-ready="true"] [data-analytics-report-library],
+  [data-alamo-category-picker-ready="true"] [aria-label="Question categories"] {
+    display: none !important;
+  }
+
+  [data-reports-page="true"],
+  [data-reports-page="true"] main,
+  [data-reports-page="true"] article {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  [data-reports-page="true"] main select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 16px !important;
+  }
+
+  [data-reports-page="true"] main table,
+  [data-reports-page="true"] main pre {
+    max-width: 100%;
+  }
+
+  [data-certified-question-guide="true"] {
+    width: calc(100% + 16px);
+    margin-right: -8px;
+    margin-left: -8px;
+    padding: 14px !important;
+  }
+
+  [data-certified-question-search="true"] {
+    font-size: 16px !important;
+  }
+
+  [data-certified-question-button="true"] {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 8px !important;
+  }
+
+  [data-certified-question-button="true"] > div:first-child {
+    min-width: 0;
+    flex: 1;
+  }
+
+  [data-certified-question-prompt-text="true"] {
+    font-size: 16px !important;
+    line-height: 1.45 !important;
+  }
+
+  [data-certified-question-button="true"] select {
+    max-width: 100%;
+    min-height: 32px;
+    font-size: 16px !important;
+  }
+
+  [data-certified-question-submit="true"] {
+    width: 44px !important;
+    height: 44px !important;
+    flex: none;
+  }
+}
+
+@media (min-width: 640px) {
+  #alamo-mobile-community-tray,
+  .alamo-mobile-picker {
+    display: none !important;
+  }
+}
