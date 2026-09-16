@@ -47,11 +47,11 @@ export interface CommunityIncidentDetailRecord {
   police_called: boolean;
   sentinel_event: boolean;
   previous_history: boolean;
-  staff_name: string | null;
+  staff_name?: string | null;
   email_body: string | null;
   assistance_given: string | null;
-  notifications: Array<{ recipient: string; status: string }>;
-  flags: string[];
+  notifications?: Array<{ recipient: string; status: string }>;
+  flags?: string[];
 }
 
 export interface LiveCommunitiesDashboardResponse {
@@ -483,6 +483,12 @@ export interface HomeDashboardResponse {
     currentWeeklyCensus: number | null;
     priorWeeklyCensus: number | null;
     censusChange7d: number | null;
+    censusCadence: "weekly" | "monthly" | null;
+    currentCensusPeriod: string | null;
+    priorCensusPeriod: string | null;
+    currentCensus: number | null;
+    priorCensus: number | null;
+    censusChange: number | null;
   };
   incidentTrend: Array<{
     month_bucket: string;
@@ -500,6 +506,12 @@ export interface HomeDashboardResponse {
     priorWeeklyCensus: number | null;
     censusChange7d: number | null;
     latestCensusWeek: string | null;
+    censusCadence: "weekly" | "monthly" | null;
+    currentCensusPeriod: string | null;
+    priorCensusPeriod: string | null;
+    currentCensus: number | null;
+    priorCensus: number | null;
+    censusChange: number | null;
     averageAge: number;
     averageLengthOfStay: number;
     residentSharePct: number;
@@ -589,6 +601,30 @@ export interface DataExplorerColumn {
   numeric?: boolean;
 }
 
+export interface ClientDatabaseMetadata {
+  available: true;
+  dataset: string;
+  version: string | number | null;
+  baseline_date: string | null;
+  generated_at: string;
+  client_count: number;
+  field_count: number;
+  columns: string[];
+  matched_current_profiles: number;
+  unmatched_current_profiles: number;
+  unmatched_episode_rows: number;
+}
+
+export interface DataExplorerRow extends Record<string, unknown> {
+  id: string;
+  facility_id: string;
+  community_name: string;
+  client_profile?: Record<string, unknown> | null;
+  resident_profile?: Record<string, unknown> | null;
+  resident_profiles?: Array<Record<string, unknown>>;
+  resident_episode_history?: Array<Record<string, unknown>>;
+}
+
 export interface DataExplorerResponse {
   kind: DataExplorerKind;
   title: string;
@@ -602,5 +638,6 @@ export interface DataExplorerResponse {
     months: string[];
     categories: string[];
   };
-  rows: Array<Record<string, string | number | boolean | null>>;
+  client_database?: ClientDatabaseMetadata;
+  rows: DataExplorerRow[];
 }

@@ -109,7 +109,12 @@ function getExplorerDataThroughLabel(payload: DataExplorerResponse | null) {
   return latestMonth ? `Data through ${formatMonthLabel(latestMonth, { fallback: "the latest reporting month" })}` : "";
 }
 
-function getExplorerSummaryCards(kind: DataExplorerKind, rows: ExplorerRow[], loadedRows: number) {
+function getExplorerSummaryCards(
+  kind: DataExplorerKind,
+  rows: ExplorerRow[],
+  loadedRows: number,
+  clientDatabaseAvailable = false
+) {
   const communities = new Set(rows.map((row) => String(row.community_name ?? "").trim()).filter(Boolean));
   const months = uniqueSorted(rows.map((row) => row.month_bucket));
 
@@ -133,15 +138,17 @@ function getExplorerSummaryCards(kind: DataExplorerKind, rows: ExplorerRow[], lo
   }
 
   if (kind === "residents") {
-    const averageLos = rows.length
-      ? rows.reduce((total, row) => total + Number(row.los_days || 0), 0) / rows.length
+    const currentRows = rows.filter((row) => row.current_resident !== false);
+    const losRows = currentRows.filter((row) => Number.isFinite(Number(row.los_days)));
+    const averageLos = losRows.length
+      ? losRows.reduce((total, row) => total + Number(row.los_days), 0) / losRows.length
       : 0;
     const diagnoses = new Set(rows.map((row) => String(row.primary_diagnosis ?? "").trim()).filter(Boolean));
 
     return [
-      { label: "Residents", value: rows.length.toLocaleString(), detail: `${loadedRows.toLocaleString()} loaded` },
-      { label: "Communities", value: communities.size.toLocaleString(), detail: "current roster" },
-      { label: "Avg LOS", value: rows.length ? `${Math.round(averageLos).toLocaleString()} days` : "-", detail: "filtered residents" },
+      { label: clientDatabaseAvailable ? "Clients" : "Residents", value: rows.length.toLocaleString(), detail: `${loadedRows.toLocaleString()} loaded` },
+      { label: "Current", value: currentRows.length.toLocaleString(), detail: "governed resident profiles" },
+      { label: "Avg LOS", value: losRows.length ? `${Math.round(averageLos).toLocaleString()} days` : "-", detail: "current residents with LOS" },
       { label: "Diagnoses", value: diagnoses.size.toLocaleString(), detail: "shown in results" }
     ];
   }
@@ -355,7 +362,11 @@ export default function DataExplorerPage() {
     const selectedMonths = month === "all" ? [] : month.split(",").map((value) => value.trim()).filter(Boolean);
 
     return payload.rows.filter((row) => {
-      if (!matchesSelected(row.community_name, community) && !matchesSelected(row.facility_id, community)) return false;
+      const matchesCommunity =
+        matchesSelected(row.community_name, community) ||
+        matchesSelected(row.facility_id, community) ||
+        (Array.isArray(row.community_names) && row.community_names.includes(community));
+      if (!matchesCommunity) return false;
       if (kind === "incidents" && !matchesSelected(row.category, category)) return false;
       if (kind === "residents" && !matchesSelected(row.primary_diagnosis, diagnosis)) return false;
       if (kind === "residents" && !matchesSelected(row.unit, unit)) return false;
@@ -383,8 +394,8 @@ export default function DataExplorerPage() {
   const communityFacets = useMemo(() => topCounts(filteredRows, "community_name", 6), [filteredRows]);
   const monthFacets = useMemo(() => topCounts(filteredRows, "month_bucket", 6), [filteredRows]);
   const summaryCards = useMemo(
-    () => getExplorerSummaryCards(kind, filteredRows, payload?.row_count ?? 0),
-    [filteredRows, kind, payload?.row_count]
+    () => getExplorerSummaryCards(kind, filteredRows, payload?.row_count ?? 0, Boolean(payload?.client_database)),
+    [filteredRows, kind, payload?.client_database, payload?.row_count]
   );
   const exportedRowsLabel = `${filteredRows.length.toLocaleString()} filtered ${activeKindLabel} record${filteredRows.length === 1 ? "" : "s"}`;
 
@@ -453,33 +464,39 @@ export default function DataExplorerPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(280px,1.2fr)_220px_180px_220px]">
+        <div className="mt-4 grid min-w-0 gap-3 xl:grid-cols-[minmax(280px,1.2fr)_220px_180px_220px]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a8b78]" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={kind === "incidents" ? "Search resident, category, description, staff..." : kind === "residents" ? "Search resident, unit, diagnosis, physician..." : "Search communities or months..."}
+              placeholder={kind === "incidents"
+                ? "Search resident, category, description, staff..."
+                : kind === "residents"
+                  ? payload?.client_database
+                    ? "Search client name, alias, ID, unit, or diagnosis..."
+                    : "Search resident, unit, diagnosis, physician..."
+                  : "Search communities or months..."}
               aria-label="Search records"
               className="h-[52px] w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 pl-11 pr-4 text-[14px] font-medium text-[#201a14] outline-none transition-colors placeholder:text-[#a79986] focus:border-[#8ea2ff]"
             />
           </label>
-          <select value={community} onChange={(event) => setCommunity(event.target.value)} aria-label="Filter by community" className="h-[52px] rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
+          <select value={community} onChange={(event) => setCommunity(event.target.value)} aria-label="Filter by community" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
             <option value="all">All communities</option>
             {payload?.filters.communities.map((name) => <option key={name} value={name}>{name}</option>)}
           </select>
-          <select value={month} onChange={(event) => setMonth(event.target.value)} aria-label="Filter by month" className="h-[52px] rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
+          <select value={month} onChange={(event) => setMonth(event.target.value)} aria-label="Filter by month" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
             {month.includes(",") ? <option value={month}>Selected months</option> : null}
             <option value="all">All months</option>
             {payload?.filters.months.map((monthOption) => <option key={monthOption} value={monthOption}>{formatMonthBucket(monthOption)}</option>)}
           </select>
           {kind === "incidents" ? (
-            <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by incident category" className="h-[52px] rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
+            <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by incident category" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
               <option value="all">All categories</option>
               {payload?.filters.categories.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>
           ) : kind === "residents" ? (
-            <select value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} aria-label="Filter by diagnosis" className="h-[52px] rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
+            <select value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} aria-label="Filter by diagnosis" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
               <option value="all">All diagnoses</option>
               {residentFilterOptions.diagnoses.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>

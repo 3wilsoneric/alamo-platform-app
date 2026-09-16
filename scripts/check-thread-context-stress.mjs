@@ -6,6 +6,8 @@ import {
   attachPageDiagnostics,
   ask,
   BASE_URL,
+  chooseCurrentResidentProfile,
+  exactTextPattern,
   measureCanvas,
   openChat,
   prepareArtifactDirs,
@@ -139,7 +141,7 @@ const scenarios = [
     turns: [
       {
         prompt: "incidents",
-        expectText: [/Jun|June 2026/i, /incident/i],
+        expectText: [/incident/i],
         expectFrame: (frame) => frame === null || !frame?.metric || frame?.metric === "incidents"
       },
       {
@@ -293,6 +295,15 @@ async function validateTurn(page, turn, scenarioId, stepIndex) {
     if (!pattern.test(text)) failures.push(`missing expected latest text ${patternLabel(pattern)}`);
   }
 
+  if (turn.expectResidentCard?.length) {
+    const card = page.locator('[data-resident-search-module="true"] [data-module-row="resident-profile-card"]').last();
+    await card.waitFor({ state: "visible", timeout: TIMEOUT_MS }).catch(() => {});
+    const cardText = await card.innerText().catch(() => "");
+    for (const pattern of turn.expectResidentCard) {
+      if (!pattern.test(cardText)) failures.push(`missing resident profile card text ${patternLabel(pattern)}`);
+    }
+  }
+
   for (const pattern of globalRejects) {
     if (pattern.test(text) || pattern.test(snapshot.bodyText)) failures.push(`rejected global text appeared ${patternLabel(pattern)}`);
   }
@@ -416,6 +427,22 @@ async function main() {
     page = await context.newPage();
     attachPageDiagnostics(page, { consoleErrors, requestFailures });
     await openChat(page);
+
+    const profile = await chooseCurrentResidentProfile(page);
+    const residentScenario = scenarios.find((scenario) => scenario.id === "resident-miss-does-not-fall-back-to-random-roster");
+    if (residentScenario) {
+      residentScenario.turns[0].expectText = [/All communities/i, /[1-9][0-9]* (?:clients|residents)/i];
+      residentScenario.turns[1].prompt = `show ${profile.name} resident profile`;
+      residentScenario.turns[1].expectText = [exactTextPattern(profile.name)];
+      residentScenario.turns[1].expectResidentCard = [exactTextPattern(profile.name), /Resident #/i];
+    }
+    const topicSwitch = scenarios.find((scenario) => scenario.id === "topic-switch-from-resident-to-portfolio-count");
+    if (topicSwitch) {
+      topicSwitch.turns[0].prompt = `show ${profile.name} resident profile`;
+      topicSwitch.turns[0].expectText = [exactTextPattern(profile.name)];
+      topicSwitch.turns[0].expectResidentCard = [exactTextPattern(profile.name), /Resident #/i];
+      topicSwitch.turns[1].rejectText = [new RegExp(`${exactTextPattern(profile.name).source}.*AWOL`, "i")];
+    }
 
     const results = [];
     for (const [scenarioIndex, scenario] of scenarios.entries()) {

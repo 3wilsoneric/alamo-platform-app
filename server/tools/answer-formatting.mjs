@@ -142,7 +142,7 @@ export function createAnswerFormattingTools({
         const today = rowFor("Incident records dated today")?.cells?.[2];
         const lag = parseDisplayNumber(rowFor("Lag to today")?.value);
         if (!latest || latest === "-") return "No dated incident detail is available, so the Incident Center cannot verify any current events.";
-        if (lag === 0) return `Incident detail is current through today (${latest}).`;
+        if (lag === 0) return `The most recent incident detail is dated ${latest} and is current through today.`;
         return `The most recent incident detail is dated ${latest}, ${formatNumber(lag ?? 0)} day${lag === 1 ? "" : "s"} behind today${today ? ` (${today})` : ""}. Today's incidents will not appear until a newer incident feed is published.`;
       }
 
@@ -178,7 +178,7 @@ export function createAnswerFormattingTools({
         ].filter(Boolean);
         const marBoundary = missingMar.length
           ? ` ${formatNaturalList(missingMar)} ${missingMar.length === 1 ? "is" : "are"} not populated, so resident-level medication analysis is limited.`
-          : "";
+          : " No published data area is currently unavailable.";
         const loadedDatasetCount = rows.filter((row) => (parseDisplayNumber(row.cells?.[2]) ?? 0) > 0).length;
         return `${loadedDatasetCount} of ${rows.length} published data areas are populated. Historical coverage includes ${formatNaturalList(historicalParts)}. Resident roster and documentation are current-only.${marBoundary}`;
       }
@@ -317,17 +317,22 @@ export function createAnswerFormattingTools({
       const period = result.trace?.period ? formatMonthLabel(result.trace.period) : "the latest month";
       const direction = totalDelta === 0 ? "was unchanged" : totalDelta > 0 ? `increased by ${formatNumber(totalDelta)}` : `decreased by ${formatNumber(Math.abs(totalDelta))}`;
       const relativeLatest = isRelativeLatestIntent(text) || (result.certifiedQuestion?.id === "census-movement" && !hasExplicitMonthIntent(text));
-      const latestAvailableSentence = relativeLatest ? `${period} is the latest available census month. ` : "";
+      const scope = result.trace?.communityName ?? "Portfolio";
+      const latestAvailableLead = relativeLatest
+        ? `In ${period}, the latest available census month, ${scope === "Portfolio" ? "portfolio" : scope}`
+        : scope;
+      const movementLead = `${latestAvailableLead} census ${direction} to ${formatNumber(latestTotal)}${relativeLatest ? "" : ` in ${period}`}`;
       const latestCensus = String(largestMove?.meta ?? "").match(/census\s+([\d,]+)/i)?.[1];
       const largestMoveValue = Number(largestMove?.value ?? 0);
       const leader = largestMove
         ? ` ${largestMove.label} had the largest move, ${largestMoveValue === 0 ? "holding steady" : `${largestMoveValue > 0 ? "increasing" : "decreasing"} by ${formatNumber(Math.abs(largestMoveValue))}`}${latestCensus ? ` to ${latestCensus}` : ""}.`
         : "";
-      const scope = result.trace?.communityName ?? "Portfolio";
       if (rows.length === 1) {
-        return `${latestAvailableSentence}${scope} census ${direction} to ${formatNumber(latestTotal)} in ${period}.`;
+        return `${movementLead}.`;
       }
-      return `${latestAvailableSentence}${scope} census ${direction} to ${formatNumber(latestTotal)} in ${period}. Across communities, ${upRows.length} increased, ${flatRows.length} were unchanged, and ${downRows.length} decreased.${leader}`;
+      const leaderClause = leader.trim().replace(/\.$/, "");
+      const unchanged = flatRows.length === 1 ? "1 was unchanged" : `${flatRows.length} were unchanged`;
+      return `${movementLead}. Across communities, ${upRows.length} increased, ${unchanged}, and ${downRows.length} decreased. ${leaderClause}.`;
     }
 
     if (result.tool === "incident_category_comparison" && rows.length) {
@@ -512,15 +517,15 @@ export function createAnswerFormattingTools({
           return `${noun} ${summary.delta > 0 ? "increased" : "decreased"} by ${formatNumber(Math.abs(summary.delta))} to ${formatNumber(summary.end)}${percentage ? ` (${percentage})` : ""}`;
         };
         const censusMover = census.mover
-          ? `${census.mover.communityName} had the largest census ${census.mover.delta >= 0 ? "increase" : "decrease"}, at ${formatNumber(Math.abs(census.mover.delta))}`
+          ? `${census.mover.communityName} census ${census.mover.delta >= 0 ? "rose" : "fell"} ${formatNumber(Math.abs(census.mover.delta))}`
           : null;
         const incidentMover = incidents.mover
-          ? `${incidents.mover.communityName} had the largest incident ${incidents.mover.delta >= 0 ? "increase" : "decrease"}, at ${formatNumber(Math.abs(incidents.mover.delta))}`
+          ? `${incidents.mover.communityName} incidents ${incidents.mover.delta >= 0 ? "rose" : "fell"} ${formatNumber(Math.abs(incidents.mover.delta))}`
           : null;
         const latestLeaders = census.leader?.communityName === incidents.leader?.communityName
-          ? `${census.leader.communityName} led both measures, with census at ${formatNumber(census.leader.latestValue)} and ${formatNumber(incidents.leader.latestValue)} incidents`
-          : `${census.leader?.communityName} had the highest census at ${formatNumber(census.leader?.latestValue)}, and ${incidents.leader?.communityName} had the highest incident count at ${formatNumber(incidents.leader?.latestValue)}`;
-        return `From ${census.firstLabel} through ${census.lastLabel}, portfolio ${movementPhrase(census, "census")}, while ${movementPhrase(incidents, "incidents")}. In ${census.lastLabel}, ${latestLeaders}. ${[censusMover, incidentMover].filter(Boolean).join(", while ")}.`;
+          ? `${census.leader.communityName} led both: census ${formatNumber(census.leader.latestValue)} and incidents ${formatNumber(incidents.leader.latestValue)}`
+          : `${census.leader?.communityName} led census at ${formatNumber(census.leader?.latestValue)}; ${incidents.leader?.communityName} led incidents at ${formatNumber(incidents.leader?.latestValue)}`;
+        return `From ${census.firstLabel} through ${census.lastLabel}, portfolio ${movementPhrase(census, "census")}, while ${movementPhrase(incidents, "incidents")}. In ${census.lastLabel}, ${latestLeaders}. Largest shifts: ${[censusMover, incidentMover].filter(Boolean).join("; ")}.`;
       }
       const first = rows[0];
       const last = rows.at(-1);
@@ -1063,7 +1068,7 @@ export function createAnswerFormattingTools({
       if ((result.truthState ?? result.trace?.truthState) === "not_loaded") {
         return `Current medication orders are not published for ${scope}.`;
       }
-      return `${scope} has ${formatNumber(orderCount)} current medication orders for ${formatNumber(residentCount)} residents. The table shows the exact active orders, dosing, route, schedule, indication, and medication flags.`;
+      return `${scope} has ${formatNumber(orderCount)} current medication orders for ${formatNumber(residentCount)} residents. Order details include dose, route, schedule, indication, and medication flags.`;
     }
 
     if (result.tool === "top_incident_category_by_community" && rows.length) {
@@ -1207,8 +1212,10 @@ export function createAnswerFormattingTools({
     }
 
     if (result.tool === "tool_context_catalog" && rows.length) {
-      const available = rows.map((row) => `${row.cells?.[0] ?? row.label} (${row.cells?.[1] ?? "available coverage"})`);
-      return `The current data bundle supports ${formatNaturalList(available)}. Fields outside those areas are not published yet, so analysis stays inside these core areas.`;
+      if (result.visual?.title === "Core Platform Surfaces") {
+        return "The current data bundle supports community operations, incident reporting, and resident search. Analysis is limited to those published domains.";
+      }
+      return `The current data bundle supports ${formatNumber(rows.length)} analytical slices across census, incidents, medication and MAR, resident profiles and history, assessments, documentation, and services. Analysis is limited to those published domains.`;
     }
 
     if (result.tool === "census_trend" && rows.length) {

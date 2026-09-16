@@ -83,11 +83,16 @@ async function main() {
     await ask(page, DETAIL_PROMPT);
 
     const expected = await waitForExpectations(page, [
-      /Portfolio recorded 375 matching AWOL\/Elopement incidents/i,
-      /The monthly split was 195 in May 2026 and 180 in June 2026/i,
-      /Showing 5 of 375 incidents/i,
+      /Portfolio recorded [\d,]+ matching AWOL\/Elopement incidents/i,
+      /The monthly split was [\d,]+ in May 2026 and [\d,]+ in June 2026/i,
       /Download portfolio-awol-elopement-2026-05-2026-06\.csv/i
     ]);
+    const detailModule = page.locator('[data-chat-visual-renderer="incident-detail-list"]').last();
+    const previewLabel = detailModule.locator('[data-datasheet-preview-label="true"]');
+    await previewLabel.waitFor({ state: "visible", timeout: 10_000 });
+    const initialPreviewText = String(await previewLabel.textContent() || "").trim();
+    const previewMatch = initialPreviewText.match(/^Showing 5 of ([\d,]+) incidents$/i);
+    const incidentTotal = Number(previewMatch?.[1]?.replace(/,/g, "") || 0);
     const initialLayout = await page.evaluate(collectMobileLayout);
 
     const expandButton = page.getByRole("button", { name: "Show 50 incidents" });
@@ -96,7 +101,12 @@ async function main() {
     await page.waitForTimeout(50);
     const initialControlBox = await expandButton.boundingBox();
     await expandButton.click();
-    await page.getByText("Showing 50 of 375 incidents", { exact: true }).waitFor({ timeout: 10_000 });
+    await page.waitForFunction(
+      (expectedTotal) => Array.from(document.querySelectorAll('[data-datasheet-preview-label="true"]'))
+        .some((element) => String(element.textContent || "").trim() === `Showing 50 of ${expectedTotal.toLocaleString()} incidents`),
+      incidentTotal,
+      { timeout: 10_000 }
+    );
     await page.waitForTimeout(120);
     const collapseButton = page.getByRole("button", { name: "Collapse preview" });
     const expandedControlBox = await collapseButton.boundingBox();
@@ -105,7 +115,12 @@ async function main() {
     await page.screenshot({ path: screenshotPath, fullPage: false });
 
     await collapseButton.click();
-    await page.getByText("Showing 5 of 375 incidents", { exact: true }).waitFor({ timeout: 10_000 });
+    await page.waitForFunction(
+      (expectedTotal) => Array.from(document.querySelectorAll('[data-datasheet-preview-label="true"]'))
+        .some((element) => String(element.textContent || "").trim() === `Showing 5 of ${expectedTotal.toLocaleString()} incidents`),
+      incidentTotal,
+      { timeout: 10_000 }
+    );
     await page.waitForTimeout(120);
     const restoredExpandButton = page.getByRole("button", { name: "Show 50 incidents" });
     const collapsedControlBox = await restoredExpandButton.boundingBox();
@@ -128,6 +143,9 @@ async function main() {
 
     const failures = [];
     if (expected.missing.length) failures.push(`missing answer content: ${expected.missing.join(", ")}`);
+    if (!previewMatch || incidentTotal <= 50) {
+      failures.push(`incident preview did not expose a valid dynamic total: ${initialPreviewText || "missing"}`);
+    }
     for (const [stage, layout] of [["initial", initialLayout], ["expanded", expandedLayout], ["collapsed", collapsedLayout]]) {
       if (layout.viewport.width !== VIEWPORT.width || layout.viewport.height !== VIEWPORT.height) {
         failures.push(`${stage} viewport was ${layout.viewport.width}x${layout.viewport.height}`);

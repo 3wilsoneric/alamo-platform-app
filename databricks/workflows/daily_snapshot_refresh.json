@@ -92,6 +92,7 @@
           "storage_account": "alamodatalake",
           "container": "alamo-platform-snapshots",
           "snapshot_root": "snapshots/daily",
+          "client_database_pointer_blob": "snapshots/client-database/release-pointer.json",
           "date_partition": "<business-date-YYYY-MM-DD>",
           "entra_tenant_id": "<entra-tenant-id>",
           "entra_client_id": "<entra-client-id>",

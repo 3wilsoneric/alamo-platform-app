@@ -23,26 +23,30 @@ unreachable code are deleted rather than archived in the app repository.
 | Class | Paths | Owner | Why it exists |
 |---|---|---|---|
 | App shell and tooling | approved root files | engineering | Build, typecheck, dependency, deployment, and local-development configuration. |
+| Data ingestion configuration | `config/**/*.json` | backend and data platform | Versioned source URLs, source-member names, field mappings, and controlled ingestion identifiers used by repeatable refresh jobs. |
 | Browser runtime | `src/**` | frontend and product | Shipped React routes, workspace modules, authentication, data clients, UI utilities, and source-traceable static research consumed directly by a product surface. |
-| Static browser assets | approved image files in `public/**` | frontend and product | Shipped favicon and other directly served brand assets. |
+| Static browser assets | approved images, manifest, offline shell, and service worker in `public/**` | frontend and product | Shipped branding and installable-browser assets that are served directly. |
 | Vercel API | `api/**` | backend | Production HTTP boundaries consumed by the browser or operations. |
 | Server domain | `server/**` | backend and data platform | Snapshot access, deterministic analysis, validation, and local API behavior. |
 | Shared contracts | `shared/**` | frontend and backend | Runtime-neutral intent, session, module, metric, period, and display contracts. |
 | Data publishing | `databricks/notebooks/**`, `databricks/workflows/**` | data platform | Governed ElderMark transformation, QA, tool context, and snapshot publication. |
 | Verification | `scripts/**` | engineering and QA | Package-invoked checks, browser journeys, artifact generation, and shared QA helpers. |
 | Handbook | `README.md`, `AGENTS.md`, `docs/platform/**` | product and engineering | Current product, architecture, operations, testing, and ownership guidance. |
-| Live specifications | six files in `docs/reference/**` | named domain owners | Detailed contracts still implemented by current code or required by operators. |
+| Live specifications | allowlisted files in `docs/reference/**` | named domain owners | Detailed contracts still implemented by current code or required by operators. |
 
 ## Retained Specifications
 
 The reference directory is an allowlist, not an archive:
 
+- [adult-behavioral-health-residential-pivot-acquisition-thesis.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/adult-behavioral-health-residential-pivot-acquisition-thesis.md)
 - [alamo-platform-complete-data-strategy-map-2026-08-03.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/alamo-platform-complete-data-strategy-map-2026-08-03.md)
 - [analysis-session-state-spec.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/analysis-session-state-spec.md)
 - [analytics-tool-context-views.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/analytics-tool-context-views.md)
 - [mar-source-inventory-findings.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/mar-source-inventory-findings.md)
 - [platform-daily-publish-runbook.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/platform-daily-publish-runbook.md)
 - [platform-module-registry-spec.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/platform-module-registry-spec.md)
+- [private-behavioral-health-operator-filtering-universe.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-operator-filtering-universe.md)
+- [private-behavioral-health-acquisition-master-dossier.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-acquisition-master-dossier.md)
 
 ## Generated And Local State
 

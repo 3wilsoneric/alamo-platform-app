@@ -12,6 +12,7 @@ import {
 } from "../shared/community-names.mjs";
 import { getBoundedIntegerEnv } from "./runtime-environment.mjs";
 import { createHttpError } from "./http-errors.mjs";
+import { getGovernedIncidentDetailRows } from "./governed-incident-details.mjs";
 
 const MAX_CLAUDE_THREADS = 500;
 const MAX_THREAD_MESSAGES = 10;
@@ -160,7 +161,7 @@ function buildOperationalSlices(snapshot) {
   const facilities = communities?.facilities ?? [];
   const residents = communities?.residents ?? [];
   const incidents = communities?.incidents ?? [];
-  const incidentDetails = communities?.incidentDetails ?? [];
+  const incidentDetails = getGovernedIncidentDetailRows(communities, reportsSummary);
   const census = communities?.census ?? [];
   const residentGroups = groupResidentsByFacility(residents);
   const facilityNames = new Map(

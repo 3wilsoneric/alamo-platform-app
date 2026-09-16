@@ -7,6 +7,7 @@
 - tags: alamo-platform, vite, react, vercel, snapshot, analyst
 - labels: app-readme, current-state
 - related files:
+  - [docs/platform/admissions-zone.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/admissions-zone.md)
   - [docs/platform/README.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/README.md)
   - [docs/platform/architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md)
   - [docs/platform/integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md)

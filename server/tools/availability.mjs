@@ -85,7 +85,7 @@ export function createAvailabilityTools(dependencies) {
     const status = !latestIncidentDate
       ? "No dated incident detail is currently available."
       : latestDateKey === todayKey
-        ? `Incident detail is current through today (${formatDateLabel(latestDateKey)}).`
+        ? `The most recent incident detail is dated ${formatDateLabel(latestDateKey)} and is current through today.`
         : `Incident detail is available through ${formatDateLabel(latestIncidentDate)}, which is ${formatNumber(lagDays ?? 0)} day${lagDays === 1 ? "" : "s"} behind today (${formatDateLabel(todayKey)}).`;
     const rows = [
       { label: "Latest incident detail date", value: latestIncidentDate ? 1 : 0, cells: ["Latest incident detail date", latestIncidentDate ? formatDateLabel(latestIncidentDate) : "-", latestIncidentDate ? formatDateLabel(latestIncidentDate) : "No dated incident detail"] },

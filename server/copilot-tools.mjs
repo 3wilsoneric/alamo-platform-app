@@ -98,6 +98,7 @@ import { createAnalysisExecutionPlanner } from "./tools/execution-planning.mjs";
 import { createResultFinalizationTools } from "./tools/result-finalization.mjs";
 import { createStructuredToolResultRenderer } from "./tools/result-contracts.mjs";
 import { attachToolResultSchemaValidation } from "./tools/result-schema.mjs";
+import { getGovernedIncidentDetailRows } from "./governed-incident-details.mjs";
 import {
   displayValue,
   fingerprintRows,
@@ -224,7 +225,7 @@ const {
   formatIncidentBreakdownSubject
 } = createIncidentCategoryTools({ normalizeText });
 
-function understandPlatformQuery(content, communities) {
+function understandPlatformQuery(content, communities, reportsSummary = {}) {
   const normalizedContent = normalizeQueryText(content);
   const hasResidentIntent = /\b(resident|client|profile|who is|find|lookup|person)\b/.test(normalizedContent);
   const residentTerms = hasResidentIntent
@@ -243,7 +244,9 @@ function understandPlatformQuery(content, communities) {
   ];
   const sourceCategoryTerms = [...new Set([
     ...(communities.incidents ?? []).map((row) => row.category),
-    ...(communities.incidentDetails ?? []).map((row) => row.category ?? row.incident_type)
+    ...getGovernedIncidentDetailRows(communities, reportsSummary).map(
+      (row) => row.category ?? row.incident_type
+    )
   ].filter(Boolean))].flatMap((category) =>
     normalizeQueryText(category)
       .split(" ")
@@ -764,7 +767,8 @@ const residentTools = createResidentTools({
 });
 
 const residentToolDefinitions = createResidentToolDefinitions({
-  ad_hoc_resident_list: ({ content }, { communities }) => residentTools.buildAdHocResidentVisual(content, communities),
+  ad_hoc_resident_list: ({ content }, { communities, reportsSummary }) =>
+    residentTools.buildAdHocResidentVisual(content, communities, reportsSummary),
   resident_lookup: ({ content }, { communities, reportsSummary }) => residentTools.buildResidentLookupTool(content, communities, reportsSummary),
   resident_search: ({ content }, { communities, reportsSummary }) => residentTools.buildResidentSearchTool(content, communities, reportsSummary),
   resident_flow_weekly: ({ content }, { communities, reportsSummary }) => residentTools.buildResidentFlowWeeklyTool(content, communities, reportsSummary),
@@ -1086,8 +1090,8 @@ function canBypassQueryConfirmation({ content, understanding, certifiedQuestion 
  * @param {any} communities
  * @param {import("../shared/certified-analyst-questions.mjs").CertifiedQuestionRoute | null} [certifiedQuestionRoute]
  */
-function interpretCopilotRequest(content, communities, certifiedQuestionRoute = null) {
-  const understanding = understandPlatformQuery(content, communities);
+function interpretCopilotRequest(content, communities, reportsSummary, certifiedQuestionRoute = null) {
+  const understanding = understandPlatformQuery(content, communities, reportsSummary);
   const originalCertifiedQuestion = certifiedQuestionRoute?.question ?? matchCertifiedQuestion(content, {
     analysisFrame: createEmptyAnalysisFrame(),
     facilities: communities.facilities ?? [],
@@ -1214,7 +1218,7 @@ export async function runCopilotTool(payload = {}) {
     understanding,
     canBypassConfirmation,
     interpretedContent
-  } = interpretCopilotRequest(content, communities, certifiedQuestionRoute);
+  } = interpretCopilotRequest(content, communities, reportsSummary, certifiedQuestionRoute);
   if (understanding.requiresConfirmation && !canBypassConfirmation) {
     const clarification = normalizeToolResultContract(makeClarificationResult(understanding), {
       tool: "clarification",
@@ -1665,7 +1669,7 @@ export async function runRelevantCopilotTools(payload = {}) {
   }
 
   const [communities, reportsSummary] = await loadToolData();
-  const understanding = understandPlatformQuery(content, communities);
+  const understanding = understandPlatformQuery(content, communities, reportsSummary);
   if (understanding.requiresConfirmation) {
     return [summarizeToolForClaude(normalizeToolResultContract(makeClarificationResult(understanding), {
       tool: "clarification",

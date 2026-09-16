@@ -3,7 +3,7 @@
 - purpose: explain current Alamo Platform architecture and boundaries
 - status: authoritative current-state reference
 - owners: engineering, data platform
-- updated: 2026-07-22
+- updated: 2026-09-07
 - tags: architecture, react, vercel, databricks, snapshot, azure
 - labels: platform-handbook, current-state
 - related files:
@@ -30,6 +30,7 @@ flowchart TD
       Gold["Gold views"]
       ToolContext["v_tool_* analyst views"]
       Blob["Azure Blob platform snapshot"]
+      Knowledge["Alamo knowledge records and evidence"]
     end
 
     subgraph Server["Vercel API / Node modules"]
@@ -39,6 +40,7 @@ flowchart TD
       Tools["copilot-tools.mjs orchestrator + server/tools/* domains"]
       Claude["claude-copilot.mjs"]
       Reports["api/reports.js + governed reporting"]
+      KnowledgeApi["platform-knowledge-api.mjs"]
     end
 
     subgraph Client["React app"]
@@ -52,6 +54,7 @@ flowchart TD
     Raw --> Silver --> Gold --> ToolContext
     Gold --> Blob
     ToolContext --> Blob
+    Knowledge --> KnowledgeApi
     Blob --> Snapshot --> PlatformData
     PlatformData --> Client
     Home --> ChatApi --> Tools
@@ -81,6 +84,8 @@ Current protected routes:
 - `/explorer/:kind`: full-screen governed incident, census, or resident data.
 - `/glossary`: definitions and metric support.
 - `/command-center`: platform health, analyst QA, intent compiler workbench.
+- `/fiftystate`: national market research plus an owner-only private-acquisition
+  research and valuation view.
 
 Unknown paths redirect to `/home`; retired product routes are not maintained as separate aliases.
 
@@ -116,6 +121,16 @@ Core API contracts:
 - `GET /api/platform/health`
 - `GET /api/platform/analyst-qa`
 - `GET /api/platform/analyst-traces`
+- `GET /api/platform/knowledge`
+- `GET /api/platform/knowledge/search?q=...&state=...&kind=...`
+- `GET /api/platform/knowledge/record?id=...`
+- `GET /api/platform/acquisition`
+- `GET /api/platform/acquisition/search?q=...&state=...&disposition=...`
+- `GET /api/platform/acquisition/operators?q=...&state=...&stage=...&fit=...&maturity=...&selectionBucket=...&ownerDecision=...`
+- `POST /api/platform/acquisition/operator-decision`
+- `GET /api/platform/acquisition/research?queue=...&q=...&state=...`
+- `POST /api/platform/acquisition/research`
+- `POST /api/platform/acquisition/valuation`
 - `GET /api/platform/snapshot-health`
 - `GET /api/platform/snapshot-metadata`
 - `GET /api/communities/dashboard`
@@ -152,6 +167,123 @@ calculates every displayed value deterministically, attaches named evidence
 slices, and emits both a renderer-neutral document and a self-contained
 print-ready HTML artifact. Claude is not required to compile a full report and
 cannot select, calculate, or alter its evidence.
+
+## Platform Knowledge Boundary
+
+The first company-knowledge read model is owned by Alamo Platform, not by a
+second application shell. [platform-knowledge-catalog.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-knowledge-catalog.mjs)
+normalizes the existing maintained 50-state, demand, buyer, and procurement
+research into one searchable seed catalog. The authenticated platform API
+returns record identity, evidence links, freshness dates, and explicit source
+boundaries. [platform-knowledge-store.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-knowledge-store.mjs)
+adds a local file-backed source registry, discovery queue, content-addressed
+archive, deterministic revision ledger, text-extraction queue, assertion review
+state, cited notes, and full-text retrieval for locally archived or extracted
+text.
+
+The repository seed plus `generated/platform-knowledge/` file store is the
+current local datastore, not the production write store. The CLI entrypoint is
+`npm run knowledge -- <command>`. Production source state, document metadata,
+assertions, approval decisions, and search projections belong inside the
+shared Alamo Azure environment, with archived bytes in Blob. A purpose-built
+frontend may use different inputs and workflows, but it must call the same
+Entra-protected Alamo APIs and preserve the same contracts. It must not create
+a parallel identity boundary or browser-side database.
+
+The knowledge routes are intentionally absent from product navigation and have
+a second authorization boundary after normal Entra verification. Only the
+configured `PLATFORM_KNOWLEDGE_OWNER_OBJECT_ID` or
+`PLATFORM_KNOWLEDGE_OWNER_EMAIL` may read them; every other authenticated
+identity receives the same generic `404 Not found` response as an absent route.
+Local development bypass remains available only outside production-like
+runtimes.
+
+## Private Acquisition Intelligence Boundary
+
+[acquisition-intelligence.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-intelligence.mjs)
+owns the first deterministic private-acquisition read model and valuation
+calculation. Its operator rows are explicitly discovery-only leads from the
+supplied workbook. Current official company sources calibrate each visible
+footprint and identify whether capacity is reported or estimated. Workbook bed
+ranges and prior enterprise-value ranges remain screening anchors rather than
+verified ownership, licensed-capacity, or transaction facts. The overview
+reports zero verified facilities, operators, and ranked targets until
+facility-level evidence supports them.
+
+The model preserves the workbook arithmetic:
+
+- base beds are the midpoint of low and high beds
+- revenue is beds times occupancy times 365 times net revenue per occupied
+  bed-day
+- normalized EBITDA is revenue times EBITDA margin
+- enterprise value is normalized EBITDA times the selected multiple
+
+The owner-facing browser presents precomputed low/base/high screening values
+from each operator's bed range and segment defaults. The valuation API still
+accepts explicit bounded inputs for future workflows and rejects invalid,
+missing, or incorrectly ordered bed ranges rather than treating them as zero.
+The API and the Fifty States view use the same owner allowlist as private
+platform knowledge; other signed-in users receive a generic 404 and never see
+the acquisition view.
+
+`npm run acquisition:refresh` builds the source-of-truth national discovery
+datastore under ignored `generated/acquisition-intelligence/` storage. It
+downloads the 2024 N-SUMHSS PUF and codebook, archives raw per-state
+FindTreatment API responses, validates the configured PUF schema, preserves
+hashes and field mappings, and writes a searchable normalized facility index.
+The two source layers remain separate because the public PUF suppresses names
+and addresses and exposes no record key shared with the named directory.
+The same refresh builds a California-excluded organization-proposal index using
+all named directory records as the broad universe and the private, adult,
+residential screen as the target-candidate boundary. Shared primary domains and
+normalized names create proposals only. The derived funnel contains a broad
+universe bucketed by observable scale, service fit, and private-company
+likelihood, plus a deterministic 500-company screen and a maturity-biased
+100-company research suggestion. No discovery rule can assign high
+parent-company confidence.
+`npm run acquisition:publish:azure` publishes the raw lineage, manifest, and a
+compressed facility and operator-proposal indexes into the existing private
+Azure Blob container. The
+first production initialization may also seed the research store by setting
+`ACQUISITION_PUBLISH_RESEARCH_INITIALIZE=true`; the conditional write refuses
+to replace an existing production research store.
+
+[acquisition-research-store.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-research-store.mjs)
+adds a third, analyst-authored layer. It uses ignored
+`generated/acquisition-intelligence/research/` storage in development and an
+ETag-protected, gzip-compressed Azure Blob store in production. It creates one
+durable case for every include or review facility, preserves case status, scope
+review, ownership and license work, licensed-bed inputs, analyst notes, cited
+evidence, and an immutable Azure revision archive. Source refreshes never
+rewrite those decisions.
+[acquisition-operator-selection-store.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-operator-selection-store.mjs)
+stores the owner's company-level research, hold, and pass decisions separately
+from the generated proposal index. It uses a mode-0600 local file in
+development and conditional Azure Blob writes in production, so source
+refreshes and reranking never erase the selected 50–100 company list.
+[acquisition-research.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-research.mjs)
+derives bounded ownership, license, scope, capacity, and Top-25 evidence-priority
+queues. Shared website domains and normalized facility names can create proposed
+operator clusters, but every cluster remains explicitly unverified.
+
+The target entity hierarchy is sponsor → operating parent → legal operator →
+brand → facility → license. The owner-facing company row resolves to the
+operating parent, while sponsor ownership remains separate metadata. A high
+confidence parent edge requires authoritative legal-entity evidence, current
+effective dates, and contradiction review; a shared domain alone cannot cross
+that gate.
+
+The facility discovery and research components are preserved in the codebase,
+and their protected APIs and Azure persistence remain operational. They are
+intentionally not rendered in the current company-level operator screen.
+
+This is not yet the verified national private facility/operator database. The
+directory screen produces include, review, and excluded-context queues, not
+ownership or license conclusions. The Azure-backed case store supports manual
+state-license matching and legal-owner resolution. Automated registry adapters,
+relational legal-entity modeling, and Top 100 generation remain later slices in
+the shared Azure knowledge plane. A ranked operator cannot exist until the
+required facility and ownership evidence passes those workflows.
 
 ## Analyst Server Boundaries
 

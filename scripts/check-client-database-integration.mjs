@@ -2,13 +2,15 @@ import assert from "node:assert/strict";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { gzipSync } from "node:zlib";
 import {
   buildDataExplorerPayload,
   indexClientDatabaseClients
 } from "../server/data-explorer.mjs";
 import {
   assertPlatformClientDatabasePayload,
-  readPlatformClientDocumentAsset
+  readPlatformClientDocumentAsset,
+  readPlatformClientIntelligence
 } from "../server/platform-snapshot.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -89,6 +91,50 @@ const clientDatabase = {
     })
   ]
 };
+
+const intelligenceHash = "a".repeat(64);
+const intelligencePayload = {
+  version: 1,
+  canonical_client_id: "client-001",
+  document_ids: ["document-001"],
+  evidence: [{
+    field_name: "primary_diagnosis",
+    document_id: "document-001",
+    page_number: 2,
+    evidence_text: "Sanitized source excerpt.",
+    candidate_value: "Sanitized diagnosis",
+    confidence: 0.94,
+    status: "accepted"
+  }],
+  pages: [{
+    document_id: "document-001",
+    page_number: 2,
+    section: "Sanitized section",
+    text: "A sanitized page containing the searchable diagnosis phrase."
+  }]
+};
+const intelligenceBody = gzipSync(Buffer.from(JSON.stringify(intelligencePayload)));
+Object.assign(clientDatabase, {
+  version: 3,
+  client_fact_count: 1,
+  client_facts: [{
+    canonical_client_id: "client-001",
+    field_name: "primary_diagnosis",
+    field_value: "Sanitized diagnosis",
+    completion_status: "verified",
+    evidence_count: 1,
+    max_confidence: 0.94
+  }],
+  client_intelligence_count: 1,
+  client_intelligence: [{
+    canonical_client_id: "client-001",
+    shard_path: `snapshots/client-intelligence/shards/v1/${intelligenceHash}.json.gz`,
+    document_count: 1,
+    page_count: 1,
+    evidence_count: 1,
+    compressed_bytes: intelligenceBody.byteLength
+  }]
+});
 
 const snapshot = {
   snapshot: { generated_at: "2026-08-19T16:00:00.000Z", as_of_date: "2026-08-19" },
@@ -183,16 +229,24 @@ assert.equal(assertPlatformClientDatabasePayload({
 assert.equal(indexClientDatabaseClients(clientDatabase).size, 2);
 
 const thumbnailPath = path.join(appRoot, "generated/client-documents/thumbnails/client-001/document-001.png");
+const intelligencePath = path.join(appRoot, `generated/client-intelligence/shards/v1/${intelligenceHash}.json.gz`);
 await mkdir(path.dirname(thumbnailPath), { recursive: true });
+await mkdir(path.dirname(intelligencePath), { recursive: true });
 await writeFile(thumbnailPath, Buffer.from("sanitized-thumbnail"));
+await writeFile(intelligencePath, intelligenceBody);
 try {
   const thumbnail = await readPlatformClientDocumentAsset(clientDatabase, "client-001", "document-001", "thumbnail");
   assert.equal(thumbnail?.contentType, "image/png");
   assert.equal(thumbnail?.body.toString("utf8"), "sanitized-thumbnail");
   assert.equal(await readPlatformClientDocumentAsset(clientDatabase, "client-002", "document-001", "thumbnail"), null);
   assert.equal(await readPlatformClientDocumentAsset(clientDatabase, "client-001", "document-001", "preview"), null);
+  const intelligence = await readPlatformClientIntelligence(clientDatabase, "client-001");
+  assert.equal(intelligence?.evidence[0].field_name, "primary_diagnosis");
+  assert.match(intelligence?.pages[0].text ?? "", /searchable diagnosis phrase/);
+  assert.equal(await readPlatformClientIntelligence(clientDatabase, "client-002"), null);
 } finally {
   await rm(thumbnailPath, { force: true });
+  await rm(intelligencePath, { force: true });
 }
 
 const payload = buildDataExplorerPayload(snapshot, "residents", { status: "fresh" }, { clientDatabase });
@@ -208,6 +262,7 @@ const current = payload.rows.find((row) => row.id === "client-001");
 assert.ok(current);
 assert.equal(current.current_resident, true);
 assert.equal(current.resident_id, "R-100");
+assert.equal(current.community_name, "A & A Health Services San Pablo", "resident search should use the governed Platform community label");
 assert.equal(current.client_profile, undefined, "directory rows must not transport full client profiles");
 assert.equal(current.resident_episode_count, 2);
 assert.match(current.client_name_search, /Current Alias/);

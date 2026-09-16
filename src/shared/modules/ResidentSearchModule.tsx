@@ -1,7 +1,7 @@
 import { Search, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatDisplayDate } from "../../../shared/display-date.mjs";
-import { fetchDataExplorer } from "../api/platformData";
+import { fetchDataExplorer, fetchResidentClientProfile } from "../api/platformData";
 import type { DataExplorerResponse } from "../types/platformSnapshot";
 import { surfaceInPlatformCanvas } from "../canvas/canvasEvents";
 
@@ -63,6 +63,10 @@ function rowMatchesQuery(row: ResidentRow, query: string) {
   return [
     row.resident_name,
     row.id,
+    row.canonical_client_id,
+    row.resident_id,
+    row.res_number,
+    row.client_name_search,
     row.community_name,
     row.unit,
     row.primary_diagnosis,
@@ -77,6 +81,183 @@ function rowMatchesQuery(row: ResidentRow, query: string) {
 function uniqueSorted(values: unknown[]) {
   return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))]
     .sort((left, right) => left.localeCompare(right));
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function humanizeProfileField(field: string) {
+  const acronyms = new Map([
+    ["id", "ID"],
+    ["json", "JSON"],
+    ["dob", "DOB"],
+    ["mrn", "MRN"],
+    ["adl", "ADL"],
+    ["er", "ER"],
+    ["ed", "ED"],
+    ["si", "SI"],
+    ["hi", "HI"],
+    ["lai", "LAI"]
+  ]);
+  return field
+    .replace(/^_+/, "")
+    .split("_")
+    .filter(Boolean)
+    .map((part) => acronyms.get(part.toLowerCase()) ?? `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+function formatProfileValue(value: unknown): string {
+  if (value == null || value === "") return "—";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+  if (Array.isArray(value)) return value.length ? value.map(formatProfileValue).join(" · ") : "—";
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  const text = String(value).trim();
+  if ((text.startsWith("[") && text.endsWith("]")) || (text.startsWith("{") && text.endsWith("}"))) {
+    try {
+      return formatProfileValue(JSON.parse(text));
+    } catch {
+      return text;
+    }
+  }
+  return text || "—";
+}
+
+const CLIENT_PROFILE_GROUPS = [
+  {
+    key: "identity",
+    label: "Identity and status",
+    description: "Canonical identifiers, names, dates, community, and current status.",
+    matches: /^(canonical|resident|name|medical_record|date_of_birth|birth|gender|sex|current_status|facility|communities|unit|first_admit|latest_admit|latest_discharge)/i
+  },
+  {
+    key: "history",
+    label: "Placement and history",
+    description: "Referral, prior setting, placement trajectory, utilization, and episode context.",
+    matches: /(placement|referr|prior|admit|discharge|episode|county|source_file|match_confidence|hospital|crisis|awol|trajectory|setting|housing)/i
+  },
+  {
+    key: "clinical",
+    label: "Clinical and functional",
+    description: "Diagnoses, medications, allergies, assessments, function, behavior, and risk.",
+    matches: /(diagnos|medication|meds|allerg|substance|adl|mobility|behavior|risk|cognition|assessment|clinical|diet|physician|care_level)/i
+  },
+  {
+    key: "legal-social",
+    label: "Legal, contacts, and support",
+    description: "Conservatorship, legal status, family, contacts, preferences, benefits, and goals.",
+    matches: /(legal|conserv|hold|court|probation|parole|justice|family|contact|support|benefit|income|goal|language|preference|social)/i
+  },
+  {
+    key: "quality",
+    label: "Coverage and provenance",
+    description: "Completion status, source coverage, record counts, review flags, and provenance.",
+    matches: /.*/
+  }
+] as const;
+
+function ClientProfileFields({
+  profile,
+  columns
+}: {
+  profile: Record<string, unknown>;
+  columns: string[];
+}) {
+  const sourceColumns = columns.length ? columns : Object.keys(profile);
+  const groupedFields = CLIENT_PROFILE_GROUPS.map((group) => ({
+    ...group,
+    fields: sourceColumns.filter((field) => {
+      const firstMatch = CLIENT_PROFILE_GROUPS.find((candidate) => candidate.matches.test(field));
+      return firstMatch?.key === group.key;
+    })
+  })).filter((group) => group.fields.length);
+
+  return (
+    <div className="mt-5 border-t border-[#111111] pt-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">Canonical client record</div>
+          <div className="mt-1 text-[14px] leading-6 text-[#595959]">
+            Every published field is shown below in source-column order.
+          </div>
+        </div>
+        <div className="border border-[#b9d8cf] bg-[#f1f8f5] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0f6f5d]">
+          {sourceColumns.length.toLocaleString()} fields
+        </div>
+      </div>
+
+      <div className="mt-3 divide-y divide-[#d9d9d9] border-y border-[#d9d9d9]">
+        {groupedFields.map((group, index) => (
+          <details key={group.key} open={index === 0} className="group bg-white">
+            <summary className="cursor-pointer list-none px-1 py-3.5 marker:hidden">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-[14px] font-bold text-[#111111]">{group.label}</div>
+                  <div className="mt-0.5 text-[12px] leading-5 text-[#737373]">{group.description}</div>
+                </div>
+                <div className="shrink-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#737373]">
+                  {group.fields.length} fields
+                </div>
+              </div>
+            </summary>
+            <div className="grid gap-x-5 border-t border-[#eeeeee] px-1 pb-4 sm:grid-cols-2 xl:grid-cols-3">
+              {group.fields.map((field) => (
+                <div key={field} className="min-w-0 border-b border-[#eeeeee] py-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.11em] text-[#737373]">
+                    {humanizeProfileField(field)}
+                  </div>
+                  <div className="mt-1 whitespace-pre-wrap break-words text-[13px] font-medium leading-5 text-[#222222]">
+                    {formatProfileValue(profile[field])}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EpisodeHistory({ episodes }: { episodes: Array<Record<string, unknown>> }) {
+  if (!episodes.length) return null;
+  return (
+    <div className="mt-5 border-t border-[#111111] pt-4">
+      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">Resident episode history</div>
+      <div className="mt-1 text-[14px] leading-6 text-[#595959]">
+        {episodes.length.toLocaleString()} governed episode{episodes.length === 1 ? "" : "s"}, newest first.
+      </div>
+      <div className="mt-3 space-y-2">
+        {episodes.map((episode, index) => {
+          const admitDate = episode.admit_date ?? episode.admission_date ?? episode.episode_start_date ?? episode.latest_admit_date;
+          const dischargeDate = episode.discharge_date ?? episode.latest_discharge_date ?? episode.episode_end_date;
+          const communityName = episode.facility_name ?? episode.community_name ?? episode.facility_canonical ?? episode.facility_id;
+          return (
+            <details key={`${String(admitDate ?? "episode")}-${index}`} className="border border-[#d9d9d9] bg-[#fafafa] px-3 py-2.5">
+              <summary className="cursor-pointer list-none marker:hidden">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[13px] font-semibold text-[#222222]">
+                  <span>{formatDateValue(admitDate)} to {formatDateValue(dischargeDate)}</span>
+                  <span className="text-[#737373]">{displayValue(communityName)}</span>
+                </div>
+              </summary>
+              <div className="mt-3 grid gap-x-4 border-t border-[#d9d9d9] sm:grid-cols-2 xl:grid-cols-3">
+                {Object.entries(episode).map(([field, value]) => (
+                  <div key={field} className="border-b border-[#e6e6e6] py-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#737373]">{humanizeProfileField(field)}</div>
+                    <div className="mt-1 whitespace-pre-wrap break-words text-[12px] leading-5 text-[#222222]">{formatProfileValue(value)}</div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function ProfileFact({
@@ -155,7 +336,8 @@ function selectedResidentFacts(resident: ResidentRow) {
     : [["Medication summary", "Not published in this resident directory", true]];
 
   return [
-    ["Resident #", resident.id],
+    ["Resident #", resident.resident_id ?? resident.res_number],
+    ["Canonical client ID", resident.canonical_client_id],
     ["Community", resident.community_name],
     ["Unit", resident.unit],
     ["Age", resident.age],
@@ -179,10 +361,18 @@ function selectedResidentFacts(resident: ResidentRow) {
 
 function ResidentProfileCard({
   resident,
+  profileColumns,
+  enhancedProfileAvailable = false,
+  profileLoading = false,
+  profileError = null,
   compact = false,
   onOpenIncidentHistory
 }: {
   resident: ResidentRow | null;
+  profileColumns: string[];
+  enhancedProfileAvailable?: boolean;
+  profileLoading?: boolean;
+  profileError?: string | null;
   compact?: boolean;
   onOpenIncidentHistory?: (residentId: string, residentName: string) => void;
 }) {
@@ -193,6 +383,12 @@ function ResidentProfileCard({
       </div>
     );
   }
+
+  const clientProfile = asRecord(resident.client_profile);
+  const episodeHistory = Array.isArray(resident.resident_episode_history)
+    ? resident.resident_episode_history.map(asRecord).filter((episode): episode is Record<string, unknown> => Boolean(episode))
+    : [];
+  const incidentResidentId = String(resident.resident_id ?? resident.res_number ?? "");
 
   return (
     <div data-module-row="resident-profile-card" className={`border-y border-[#111111] bg-white ${compact ? "p-3.5" : "p-5"}`}>
@@ -211,7 +407,7 @@ function ResidentProfileCard({
           </div>
         </div>
         <div className="border border-[#d9d9d9] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#595959]">
-          #{displayValue(resident.id)}
+          {resident.current_resident ? "Current resident" : "Historical client"}
         </div>
       </div>
 
@@ -229,10 +425,10 @@ function ResidentProfileCard({
               "90 days",
               "180 days",
               "Last incident"
-            ].includes(label) && onOpenIncidentHistory
+            ].includes(label) && onOpenIncidentHistory && incidentResidentId
               ? {
                   onClick: () => onOpenIncidentHistory(
-                    String(resident.id ?? ""),
+                    incidentResidentId,
                     residentName(resident)
                   )
                 }
@@ -240,6 +436,23 @@ function ResidentProfileCard({
           />
         ))}
       </div>
+
+      {!enhancedProfileAvailable ? null : profileLoading ? (
+        <div className="mt-4 border-l-4 border-[#0f8b73] bg-[#f1f8f5] px-4 py-3 text-[13px] font-medium leading-5 text-[#0f6f5d]">
+          Loading the enhanced client record...
+        </div>
+      ) : profileError ? (
+        <div className="mt-4 border-l-4 border-[#a04436] bg-[#fff4f1] px-4 py-3 text-[13px] font-medium leading-5 text-[#7e3027]">
+          {profileError}
+        </div>
+      ) : !clientProfile ? (
+        <div className="mt-4 border-l-4 border-[#ba7a20] bg-[#fff8ea] px-4 py-3 text-[13px] font-medium leading-5 text-[#6d4a16]">
+          This current resident profile has no canonical client-database match. The governed resident profile remains available without an inferred identity link.
+        </div>
+      ) : (
+        <ClientProfileFields profile={clientProfile} columns={profileColumns} />
+      )}
+      {enhancedProfileAvailable ? <EpisodeHistory episodes={episodeHistory} /> : null}
     </div>
   );
 }
@@ -258,6 +471,9 @@ export default function ResidentSearchModule({
   const [selectedId, setSelectedId] = useState<string | null>(initialResidentId ?? null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<ResidentRow | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     setQuery(initialQuery ?? "");
@@ -288,24 +504,67 @@ export default function ResidentSearchModule({
   }, [facilityId]);
 
   const communityOptions = useMemo(
-    () => uniqueSorted(payload?.rows.map((row) => row.community_name) ?? []),
+    () => uniqueSorted(payload?.rows.flatMap((row) =>
+      Array.isArray(row.community_names) && row.community_names.length
+        ? row.community_names
+        : [row.community_name]
+    ) ?? []),
     [payload?.rows]
   );
 
   const filteredRows = useMemo(() => {
     const rows = payload?.rows ?? [];
     return rows
-      .filter((row) => community === "all" || row.community_name === community || row.facility_id === community)
+      .filter((row) =>
+        community === "all" ||
+        row.community_name === community ||
+        row.facility_id === community ||
+        (Array.isArray(row.community_names) && row.community_names.includes(community))
+      )
       .filter((row) => rowMatchesQuery(row, query));
   }, [community, payload?.rows, query]);
 
   const selectedResident = useMemo(() => {
     if (!filteredRows.length) return null;
-    return filteredRows.find((row, index) => residentKey(row, index) === selectedId) ?? filteredRows[0];
+    return filteredRows.find((row, index) =>
+      residentKey(row, index) === selectedId || String(row.resident_id ?? row.res_number ?? "") === selectedId
+    ) ?? filteredRows[0];
   }, [filteredRows, selectedId]);
 
   const visibleRows = filteredRows.slice(0, 72);
   const selectedKey = selectedResident ? residentKey(selectedResident) : null;
+  const selectedClientId = payload?.client_database && selectedResident
+    ? String(selectedResident.id ?? "")
+    : "";
+  const profileResident = selectedResident && selectedDetail && String(selectedDetail.id) === String(selectedResident.id)
+    ? { ...selectedResident, ...selectedDetail }
+    : selectedResident;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setSelectedDetail(null);
+    setProfileError(null);
+    if (!selectedClientId) {
+      setProfileLoading(false);
+      return () => controller.abort();
+    }
+
+    setProfileLoading(true);
+    fetchResidentClientProfile(selectedClientId, controller.signal)
+      .then((detail) => {
+        if (controller.signal.aborted) return;
+        setSelectedDetail(detail);
+        setProfileLoading(false);
+      })
+      .catch((nextError) => {
+        if (controller.signal.aborted) return;
+        console.warn("Enhanced client profile failed to load.", nextError);
+        setProfileError("The enhanced client record could not be loaded. The directory summary remains available.");
+        setProfileLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [selectedClientId]);
 
   const selectResident = (row: ResidentRow, index = 0) => {
     setSelectedId(residentKey(row, index));
@@ -334,7 +593,7 @@ export default function ResidentSearchModule({
           : "border border-[#d9d9d9] p-4 sm:p-5"
       }`}
     >
-      <div className={`grid ${compact ? "gap-2 lg:grid-cols-[minmax(260px,1fr)_230px_auto]" : "gap-3 pr-20 sm:pr-24 lg:grid-cols-[minmax(280px,1fr)_300px_auto]"}`}>
+      <div className={`grid ${compact ? "gap-2 lg:grid-cols-[minmax(260px,1fr)_230px_auto]" : "gap-3 lg:pr-24 lg:grid-cols-[minmax(280px,1fr)_300px_auto]"}`}>
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
           <input
@@ -343,7 +602,7 @@ export default function ResidentSearchModule({
               setQuery(event.target.value);
               setSelectedId(null);
             }}
-            placeholder="Search resident, unit, diagnosis, physician, or #"
+            placeholder="Search client name, alias, resident number, unit, or diagnosis"
             className={`${compact ? "h-11" : "h-[52px]"} w-full border border-[#bdbdbd] bg-white pl-11 pr-4 text-[15px] font-medium text-[#111111] outline-none transition-colors placeholder:text-[#8a8a8a] focus:border-[#0f8b73]`}
             aria-label="Search residents"
           />
@@ -367,7 +626,7 @@ export default function ResidentSearchModule({
         <div className={`flex items-center justify-center border border-[#d9d9d9] bg-[#fafafa] px-4 text-[13px] font-semibold text-[#595959] lg:min-w-[140px] ${compact ? "h-11" : "h-[52px]"}`}>
           {loading
             ? "Loading..."
-            : `${filteredRows.length.toLocaleString()} ${filteredRows.length === 1 ? "resident" : "residents"}`}
+            : `${filteredRows.length.toLocaleString()} ${payload?.client_database ? (filteredRows.length === 1 ? "client" : "clients") : (filteredRows.length === 1 ? "resident" : "residents")}`}
         </div>
       </div>
 
@@ -399,7 +658,7 @@ export default function ResidentSearchModule({
                 >
                   <div className="truncate text-[15px] font-semibold text-[#111111]">{residentName(row)}</div>
                   <div className="mt-0.5 truncate text-[13px] leading-5 text-[#595959]">
-                    {displayValue(row.community_name)} · Unit {displayValue(row.unit)}
+                    {displayValue(row.community_name)}{row.unit ? ` · Unit ${displayValue(row.unit)}` : ""}
                   </div>
                   <div className="mt-0.5 line-clamp-2 text-[12px] leading-5 text-[#737373]">
                     {displayValue(row.primary_diagnosis)}
@@ -420,7 +679,11 @@ export default function ResidentSearchModule({
           </div>
         ) : (
           <ResidentProfileCard
-            resident={selectedResident ?? null}
+            resident={profileResident ?? null}
+            profileColumns={payload?.client_database?.columns ?? []}
+            enhancedProfileAvailable={Boolean(payload?.client_database)}
+            profileLoading={profileLoading}
+            profileError={profileError}
             compact={compact}
             onOpenIncidentHistory={openIncidentHistory}
           />

@@ -796,7 +796,7 @@ severityInputs.communities.incidents = [
   { facility_id: "337", category: "Medication Refusal", month_bucket: "2026-07", incident_count: 1 },
   { facility_id: "345", category: "AWOL/Elopement", month_bucket: "2026-07", incident_count: 1 }
 ];
-severityInputs.communities.incidentDetails = [
+const canonicalSeverityDetails = [
   {
     id: "severity-1",
     facility_id: "337",
@@ -816,6 +816,14 @@ severityInputs.communities.incidentDetails = [
     sentinel_event: true
   }
 ];
+severityInputs.communities.incidentDetails = [];
+severityInputs.summary.toolContext = {
+  ...severityInputs.summary.toolContext,
+  tables: {
+    ...severityInputs.summary.toolContext?.tables,
+    incident_detail_history: canonicalSeverityDetails
+  }
+};
 const completeSeverityReport = compileFullReportFromContext(
   { reportId: "incidents", period: "2026-07" },
   severityInputs
@@ -823,7 +831,7 @@ const completeSeverityReport = compileFullReportFromContext(
 assert(
   completeSeverityReport.sections.some((section) => section.id === "incident-severity") &&
     completeSeverityReport.evidence.sources.some((source) => source.slice === "incident_detail_history"),
-  "reconciled incident details must add factual severity indicators with provenance"
+  "canonical incident history must add factual severity indicators when the transport copy is intentionally empty"
 );
 
 const historicalMedication = compileFullReportFromContext(
@@ -870,6 +878,24 @@ assert(
   ) &&
     !currentMedication.sections.some((section) => section.id === "compliance-comparison"),
   "medication reports must pair one monthly trend with one selected-month community table"
+);
+const incompleteMedicationInputs = structuredClone(inputs);
+incompleteMedicationInputs.summary.toolContext.marResidentSummary = marResidentSummary.map((row) => ({
+  ...row,
+  compliance_pct_30d: null
+}));
+const incompleteMedicationBurdenTable = compileFullReportFromContext(
+  { reportId: "medications" },
+  incompleteMedicationInputs
+).sections
+  .find((section) => section.id === "current-medication-burden")
+  ?.blocks.find((block) => block.type === "table");
+assert(
+  incompleteMedicationBurdenTable &&
+    !incompleteMedicationBurdenTable.columns.some(
+      (column) => column.label === "Average resident compliance"
+    ),
+  "medication burden tables must omit optional columns with no governed values"
 );
 const changingMedicationCoverageInputs = structuredClone(inputs);
 changingMedicationCoverageInputs.summary.medicationCompliance.push({

@@ -72,7 +72,11 @@ async function ensureGuideOpen(page) {
 }
 
 async function waitForSignedInWorkspace(page) {
-  await page.locator('a[href="/home"]').first().waitFor({
+  await page.locator('[data-california-workspace-carousel="true"]').waitFor({
+    state: "attached",
+    timeout: 10_000
+  });
+  await page.locator('[data-california-carousel-panel="questions"][aria-hidden="false"]').waitFor({
     state: "visible",
     timeout: 10_000
   });
@@ -310,6 +314,11 @@ async function main() {
     const routes = getCertifiedQuestionMenuRoutes().filter((route) => (
       !ROUTE_FILTER.size || ROUTE_FILTER.has(route.id) || ROUTE_FILTER.has(route.questionId)
     ));
+    if (ROUTE_FILTER.size && !routes.length) {
+      throw new Error(
+        `Production guided question filter matched no routes: ${Array.from(ROUTE_FILTER).join(", ")}`
+      );
+    }
     const page = await context.newPage();
     const results = [];
     for (const [index, route] of routes.entries()) {

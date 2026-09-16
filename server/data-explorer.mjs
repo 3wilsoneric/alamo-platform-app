@@ -87,7 +87,7 @@ function normalizeClientCommunityName(value) {
     candidate.operatingSiteName,
     ...candidate.aliases
   ].some((alias) => normalizeCommunityLookup(alias) === normalizedValue));
-  return facility?.shortName ?? normalizeKnownCommunityNames(normalizeString(value));
+  return facility?.communityName ?? normalizeKnownCommunityNames(normalizeString(value));
 }
 
 export function normalizeExplorerKind(value) {

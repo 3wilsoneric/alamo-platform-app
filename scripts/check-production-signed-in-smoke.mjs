@@ -395,10 +395,28 @@ async function main() {
         carousel.setAttribute("data-production-instance-proof", "preserved");
       });
     await page
+      .locator('[data-platform-page-target="analytics"]')
+      .click({ timeout: ROUTE_READY_TIMEOUT_MS })
+      .catch(() => {
+        questionsFailures.push("Analytics click failed before opening Ask a question");
+      });
+    await page.waitForURL(
+      (url) => url.pathname === "/analytics",
+      { timeout: ROUTE_READY_TIMEOUT_MS }
+    ).catch(() => {
+      questionsFailures.push("Analytics click did not open the analytics route");
+    });
+    await waitForCarouselPanel(page, "reports").catch(() => {
+      questionsFailures.push("Reports workspace did not slide into the viewport");
+    });
+    const activeReportsPanel = page.locator(
+      '[data-california-carousel-panel="reports"][aria-hidden="false"]'
+    );
+    await activeReportsPanel
       .getByRole("button", { name: "Ask a question", exact: true })
       .click({ timeout: ROUTE_READY_TIMEOUT_MS })
       .catch(() => {
-        questionsFailures.push("Ask a question click failed");
+        questionsFailures.push("Ask a question section click failed");
       });
     await page
       .locator('[data-certified-question-guide="true"]')
@@ -410,7 +428,7 @@ async function main() {
       questionsFailures.push("Question workspace did not slide into the viewport");
     });
     const questionsLocation = new URL(page.url());
-    if (questionsLocation.pathname !== "/questions") {
+    if (questionsLocation.pathname !== "/analytics/questions") {
       questionsFailures.push(`Ask a question did not open the question workspace route: ${questionsLocation.pathname}${questionsLocation.hash}`);
     }
     if (
@@ -427,17 +445,20 @@ async function main() {
     });
 
     const analyticsFailures = [];
-    await page
-      .getByRole("button", { name: "Analytics", exact: true })
+    const activeQuestionsPanel = page.locator(
+      '[data-california-carousel-panel="questions"][aria-hidden="false"]'
+    );
+    await activeQuestionsPanel
+      .getByRole("button", { name: "Reports", exact: true })
       .click({ timeout: ROUTE_READY_TIMEOUT_MS })
       .catch(() => {
-        analyticsFailures.push("Analytics click failed");
+        analyticsFailures.push("Reports section click failed");
       });
     await page.waitForURL(
       (url) => url.pathname === "/analytics",
       { timeout: ROUTE_READY_TIMEOUT_MS }
     ).catch(() => {
-      analyticsFailures.push("Analytics click did not update the route");
+      analyticsFailures.push("Reports section click did not update the route");
     });
     await waitForCarouselPanel(page, "reports").catch(() => {
       analyticsFailures.push("Analytics workspace did not slide into the viewport");
@@ -456,26 +477,26 @@ async function main() {
       analyticsFailures.push("Analytics navigation remounted the carousel");
     }
     interactionResults.push({
-      name: "Analytics carousel navigation",
+      name: "Analytics section navigation",
       passed: analyticsFailures.length === 0,
       failures: analyticsFailures
     });
 
     const logoFailures = [];
     await page
-      .getByRole("link", { name: "Return to the California overview" })
+      .locator('[data-platform-page-target="home"]')
       .click({ timeout: ROUTE_READY_TIMEOUT_MS })
       .catch(() => {
-        logoFailures.push("home wordmark click failed");
+        logoFailures.push("Home navigation click failed");
       });
     await page.waitForURL(
       (url) => url.pathname === "/home",
       { timeout: ROUTE_READY_TIMEOUT_MS }
     ).catch(() => {
-      logoFailures.push("home wordmark did not update the route");
+      logoFailures.push("Home navigation did not update the route");
     });
     await waitForCarouselPanel(page, "map").catch(() => {
-      logoFailures.push("home wordmark did not slide the map into the viewport");
+      logoFailures.push("Home navigation did not slide the map into the viewport");
     });
     await page
       .locator("[data-california-community-marker]")
@@ -485,7 +506,7 @@ async function main() {
         logoFailures.push("home screen did not render after wordmark navigation");
       });
     interactionResults.push({
-      name: "Home wordmark navigation",
+      name: "Home navigation",
       passed: logoFailures.length === 0,
       failures: logoFailures
     });

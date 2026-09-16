@@ -30,6 +30,17 @@ function censusChangeColor(value: number | null) {
   return value > 0 ? "#08705d" : "#b34b40";
 }
 
+function formatCensusPeriod(period: string | null, cadence: "weekly" | "monthly" | null) {
+  if (!period) return "prior period";
+  const parsed = Date.parse(cadence === "monthly" ? `${period}-01T00:00:00.000Z` : `${period}T00:00:00.000Z`);
+  if (!Number.isFinite(parsed)) return period;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    ...(cadence === "monthly" ? { year: "numeric" as const } : { day: "numeric" as const, year: "numeric" as const }),
+    timeZone: "UTC"
+  }).format(new Date(parsed));
+}
+
 export default function CaliforniaCommunityMap({
   communities,
   dashboard,
@@ -64,8 +75,8 @@ export default function CaliforniaCommunityMap({
         <title id="california-map-title">Alamo Health communities in California</title>
         <desc id="california-map-description">
           Select one of five community markers to open its operating profile.
-          Hover over a marker to see the governed weekly census and change from
-          the prior week.
+          Hover over a marker to see the latest governed census and change from
+          the prior comparable period.
         </desc>
         <defs>
           <linearGradient id="california-paper-face" x1="12%" y1="0%" x2="88%" y2="100%">
@@ -175,18 +186,21 @@ export default function CaliforniaCommunityMap({
           const isHovered = community.facilityId === hoveredFacilityId;
           const isActive = isHovered || isSelected;
           const metrics = dashboardByFacility.get(community.facilityId);
-          const currentCensus = metrics?.currentWeeklyCensus ?? null;
-          const censusChangeValue = metrics?.censusChange7d ?? null;
+          const currentCensus = metrics?.currentCensus ?? null;
+          const censusChangeValue = metrics?.censusChange ?? null;
+          const censusCadence = metrics?.censusCadence ?? null;
+          const currentPeriodLabel = formatCensusPeriod(metrics?.currentCensusPeriod ?? null, censusCadence);
+          const priorPeriodLabel = formatCensusPeriod(metrics?.priorCensusPeriod ?? null, censusCadence);
           const censusChange = formatSignedChange(censusChangeValue);
           const changeColor = censusChangeColor(censusChangeValue);
           const metricSummary =
             currentCensus === null
               ? dashboard
-                ? "Governed weekly census is unavailable."
+                ? "Governed census is unavailable."
                 : dashboardUnavailable
                   ? "Community metrics could not be loaded."
-                  : "Loading governed weekly census."
-              : `${currentCensus.toLocaleString()} latest weekly census and ${censusChange} versus the prior week.`;
+                  : "Loading governed census."
+              : `${currentCensus.toLocaleString()} governed ${censusCadence ?? "current"} census for ${currentPeriodLabel} and ${censusChange} versus ${priorPeriodLabel}.`;
           const markerY = community.mapY + (community.markerOffsetY ?? 0);
           const lineEndX =
             community.labelAnchor === "start"
@@ -209,6 +223,7 @@ export default function CaliforniaCommunityMap({
               data-california-community-marker={community.facilityId}
               data-california-node-census={currentCensus ?? ""}
               data-california-node-census-change-7d={censusChangeValue ?? ""}
+              data-california-node-census-cadence={censusCadence ?? ""}
               className="group cursor-pointer focus:outline-none"
               onClick={() => onSelectCommunity(community.facilityId)}
               onKeyDown={(event) => {
@@ -297,9 +312,9 @@ export default function CaliforniaCommunityMap({
                   >
                     {currentCensus === null
                       ? dashboard || dashboardUnavailable
-                        ? "Weekly census unavailable"
-                        : "Loading weekly census"
-                      : `${currentCensus.toLocaleString()} latest weekly census`}
+                        ? "Census unavailable"
+                        : "Loading census"
+                      : `${currentCensus.toLocaleString()} · ${currentPeriodLabel} census`}
                   </text>
                   <text
                     data-california-community-census-metrics={community.facilityId}
@@ -314,9 +329,9 @@ export default function CaliforniaCommunityMap({
                   >
                     {censusChangeValue === null
                       ? dashboard || dashboardUnavailable
-                        ? "Prior week unavailable"
-                        : "Loading prior week"
-                      : `${censusChange} vs prior week`}
+                        ? "Prior period unavailable"
+                        : "Loading prior period"
+                      : `${censusChange} vs ${priorPeriodLabel}`}
                   </text>
                 </>
               ) : null}

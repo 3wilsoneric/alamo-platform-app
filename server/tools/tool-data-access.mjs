@@ -1,4 +1,5 @@
 import { wantsAllRows } from "./table-artifacts.mjs";
+import { getGovernedIncidentDetailRows } from "../governed-incident-details.mjs";
 
 export function createToolDataAccess({ normalizeText }) {
   function limitRowsForRequest(rows, content, defaultLimit, maximum = 500) {
@@ -270,19 +271,7 @@ export function createToolDataAccess({ normalizeText }) {
   }
 
   function getIncidentDetailRows(communities, reportsSummary) {
-    const candidates = [
-      reportsSummary.toolContext?.incidentDetailHistory,
-      reportsSummary.toolContext?.tables?.incident_detail_history,
-      reportsSummary.toolContext?.currentIncidentDetails,
-      reportsSummary.toolContext?.tables?.incident_detail_current_month,
-      communities.incidentDetails
-    ].filter((rows) => Array.isArray(rows) && rows.length);
-    if (!candidates.length) return [];
-    return candidates.sort((left, right) => {
-      const leftMonths = new Set(left.map((row) => normalizeMonthBucket(row.month_bucket)).filter(Boolean)).size;
-      const rightMonths = new Set(right.map((row) => normalizeMonthBucket(row.month_bucket)).filter(Boolean)).size;
-      return rightMonths - leftMonths || right.length - left.length;
-    })[0];
+    return getGovernedIncidentDetailRows(communities, reportsSummary);
   }
 
   function getResidentRows(communities, reportsSummary) {

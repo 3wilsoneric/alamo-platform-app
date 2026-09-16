@@ -3,7 +3,7 @@
 - purpose: document platform verification commands, what they protect, and known gaps
 - status: authoritative current-state reference
 - owners: engineering, QA
-- updated: 2026-08-02
+- updated: 2026-09-07
 - tags: qa, testing, analyst, typecheck, build, docs
 - labels: platform-handbook, current-state
 - related files:
@@ -69,6 +69,8 @@ npm run check:analyst-capabilities
 npm run check:analysis-capability-guards
 npm run check:incident-contracts
 npm run check:fiftystate
+npm run check:platform-knowledge
+npm run check:acquisition
 npm run check:user-journeys
 npm run check:user-journey-stress
 npm run check:user-journey-fuzz
@@ -246,6 +248,66 @@ reports browser journey then verifies the default priority scope and opens one v
 baseline-only state, confirms the research-depth label, required dossier
 sections, external sources, and honest evidence boundary, and exercises next,
 close, and route-return behavior.
+
+`npm run check:platform-knowledge` verifies that those maintained datasets
+normalize into one searchable Alamo seed catalog; coverage totals reconcile;
+state, kind, and status filters stay bounded; and every surfaced citation is
+HTTPS. It exercises the local knowledge-base lifecycle in a temporary store:
+curated source registration, idempotent discovery, normalized content hashing,
+one document with multiple source links, deterministic stable-URL revisions,
+capacity qualifiers, proposed-to-approved human review, conflict surfacing,
+cited note search, queued binary-text extraction, source blocking, source
+re-review after configuration changes, atomic metadata persistence, and
+production plus development API route wiring. It also proves that matching
+Entra owners pass while every other signed-in identity receives a generic
+hidden `404`.
+
+`npm run check:acquisition` verifies that the private-acquisition workspace is
+owner-only, its 15 company profiles have sourced public footprints, bed ranges
+are labeled reported or estimated, confidence is explicit, and the visible
+company screen does not render the detailed facility workflow. It also
+reproduces the workbook revenue, normalized EBITDA, and enterprise-value
+arithmetic, checks midpoint-bed behavior, rejects invalid bed ranges, and
+requires protected production and development API wiring. A temporary local
+datastore fixture still proves the bounded facility search, PUF totals,
+discovery-only status, durable research cases, cited evidence, proposed operator
+clusters, and the absence of a public PUF-to-directory facility key. It also
+proves that California rows cannot enter the operator index, shared domains
+remain medium-confidence proposals, discovery cannot mint high-confidence
+parents, state-license rows keep core and adjacent licensed beds separate, and
+the owner-only operator API searches the nested 500/100 funnel by company,
+legal operator, and license number.
+
+`npm run check:browser-acquisition` opens Fifty States at desktop and mobile
+widths, enters the owner-only acquisition view, confirms the company-level
+screen and default active filter, validates SUN's published 579-bed total and
+source link, confirms the facility workflows remain hidden, and rejects browser
+errors, API failures, or viewport overflow.
+
+`npm run acquisition:refresh` is a networked data refresh rather than a default
+CI gate. It downloads the configured official N-SUMHSS PUF and codebook, reads
+all 50 state partitions from the FindTreatment API, preserves raw source
+captures, and rebuilds the ignored local discovery datastore. Run
+`npm run check:acquisition` after any mapping or screening-rule change.
+
+`npm run acquisition:operators` rebuilds only the California-excluded
+organization-proposal index from the existing named facility directory and
+updates the acquisition manifest. This is the fast iteration path for parent
+normalization and screening rules; it does not perform web research or promote
+legal ownership confidence.
+
+`npm run acquisition:verify-license-sources` checks every curated regulator
+row against its current source extraction. It fails on missing or duplicate row
+fingerprints. The extraction endpoint is a transport mechanism; the configured
+state workbook remains the evidence authority.
+
+`npm run acquisition:publish:azure` publishes that validated local output into
+the configured private Azure Blob container. Use
+`ACQUISITION_PUBLISH_RESEARCH_INITIALIZE=true` only for first initialization;
+the publisher uses a create-only condition and will not overwrite existing
+analyst research. A post-publish read check should set
+`ACQUISITION_STORAGE_READ_SOURCE=azure` and verify both search and research
+responses report `azure_blob` persistence before deployment.
 
 `npm run check:browser-community-surfaces` opens every canonical community in
 all six supported focused surface modes at desktop and mobile widths. It also

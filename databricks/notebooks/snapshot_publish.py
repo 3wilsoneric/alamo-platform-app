@@ -23,11 +23,14 @@
 dbutils.widgets.text("storage_account", "alamodatalake")
 dbutils.widgets.text("container", "alamo-platform-snapshots")
 dbutils.widgets.text("snapshot_root", "snapshots/daily")
+dbutils.widgets.text("client_database_pointer_blob", "snapshots/client-database/release-pointer.json")
 dbutils.widgets.text("date_partition", "")
 
 dbutils.widgets.text("entra_tenant_id", "d72d9036-cff8-4f5f-a6fa-d698f621d420")
 dbutils.widgets.text("entra_client_id", "40283155-592b-4565-bd3c-c730a34feaaa")
 dbutils.widgets.text("entra_client_secret", "")
+dbutils.widgets.text("entra_secret_scope", "")
+dbutils.widgets.text("entra_client_secret_key", "")
 
 # COMMAND ----------
 
@@ -64,6 +67,27 @@ def optional_widget(name: str) -> str:
     except Exception:
         return ""
     return value.strip() if value is not None else ""
+
+
+def resolve_entra_client_secret() -> str:
+    direct_secret = optional_widget("entra_client_secret")
+    if direct_secret:
+        return direct_secret
+
+    secret_scope = optional_widget("entra_secret_scope")
+    secret_key = optional_widget("entra_client_secret_key")
+    if not secret_scope or not secret_key:
+        raise ValueError(
+            "Configure entra_secret_scope and entra_client_secret_key, or supply "
+            "entra_client_secret for a one-time manual run"
+        )
+
+    try:
+        return dbutils.secrets.get(scope=secret_scope, key=secret_key)
+    except Exception as exc:
+        raise ValueError(
+            "Could not load the snapshot publisher credential from the configured Databricks secret scope"
+        ) from exc
 
 
 def rows(query: str):
@@ -1855,7 +1879,7 @@ def build_payload_size_report(payload):
     }
 
 
-def build_payload():
+def build_payload(client_database_pointer):
     generated_at = datetime.now(timezone.utc).isoformat()
     communities = build_communities_dashboard()
     reports_summary = build_reports_summary()
@@ -1881,6 +1905,7 @@ def build_payload():
         "communities": communities,
         "reportsSummary": reports_summary,
         "communitySnapshots": community_snapshots,
+        "clientDatabase": client_database_pointer,
     }
 
 
@@ -1902,6 +1927,81 @@ def upload_json(container_client, blob_name, payload_json):
         blob_type="BlockBlob",
         content_settings=ContentSettings(content_type="application/json; charset=utf-8"),
     )
+
+
+def load_client_database_pointer(container_client, blob_name):
+    if not blob_name.startswith("snapshots/client-database/") or not blob_name.endswith(".json"):
+        raise ValueError("client_database_pointer_blob must be a JSON object under snapshots/client-database")
+    if ".." in blob_name or "?" in blob_name or "#" in blob_name:
+        raise ValueError("client_database_pointer_blob contains an unsafe path")
+
+    try:
+        raw = container_client.get_blob_client(blob_name).download_blob(max_concurrency=1).readall()
+    except Exception as exc:
+        raise ValueError("The governed client-database release pointer is unavailable") from exc
+    if len(raw) > 16 * 1024:
+        raise ValueError("The governed client-database release pointer exceeds 16 KB")
+
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise ValueError("The governed client-database release pointer is not valid JSON") from exc
+    pointer = payload.get("clientDatabase") if isinstance(payload, dict) and "clientDatabase" in payload else payload
+    if not isinstance(pointer, dict):
+        raise ValueError("The governed client-database release pointer must be an object")
+
+    expected = {
+        "dataset": "platform_client_database",
+        "primary_key": "canonical_client_id",
+    }
+    for key, value in expected.items():
+        if pointer.get(key) != value:
+            raise ValueError(f"The governed client-database release pointer has an invalid {key}")
+    if not isinstance(pointer.get("version"), int) or pointer["version"] < 1:
+        raise ValueError("The governed client-database release pointer has an invalid version")
+    if not isinstance(pointer.get("client_count"), int) or pointer["client_count"] < 1:
+        raise ValueError("The governed client-database release pointer has an invalid client_count")
+    if not isinstance(pointer.get("baseline_date"), str) or len(pointer["baseline_date"]) != 10:
+        raise ValueError("The governed client-database release pointer has an invalid baseline_date")
+    path = pointer.get("path")
+    if (
+        not isinstance(path, str)
+        or not path.startswith("snapshots/client-database/versions/")
+        or not path.endswith(".json")
+        or ".." in path
+        or "?" in path
+        or "#" in path
+    ):
+        raise ValueError("The governed client-database release pointer has an unsafe data path")
+    return dict(pointer)
+
+
+def record_publish_success(published_partition, snapshot_version):
+    history_table = "alamohealth.gold.platform_publish_history"
+    spark.sql(
+        f"""
+        CREATE TABLE IF NOT EXISTS {history_table} (
+          pipeline STRING NOT NULL,
+          published_partition DATE NOT NULL,
+          snapshot_version STRING NOT NULL,
+          published_at TIMESTAMP NOT NULL
+        )
+        USING DELTA
+        COMMENT 'Successful governed Alamo Platform snapshot publications'
+        """
+    )
+    marker = spark.createDataFrame(
+        [
+            (
+                "daily_platform_snapshot",
+                datetime.strptime(published_partition, "%Y-%m-%d").date(),
+                snapshot_version,
+                datetime.now(timezone.utc),
+            )
+        ],
+        "pipeline string, published_partition date, snapshot_version string, published_at timestamp",
+    )
+    marker.write.mode("append").saveAsTable(history_table)
 
 
 def validate_snapshot_payload(payload, expected_as_of_date=None):
@@ -2159,10 +2259,11 @@ def validate_snapshot_payload(payload, expected_as_of_date=None):
 storage_account = require_widget("storage_account")
 container = require_widget("container")
 snapshot_root = require_widget("snapshot_root").strip("/")
+client_database_pointer_blob = require_widget("client_database_pointer_blob").strip("/")
 date_partition = optional_widget("date_partition")
 entra_tenant_id = require_widget("entra_tenant_id")
 entra_client_id = require_widget("entra_client_id")
-entra_client_secret = require_widget("entra_client_secret")
+entra_client_secret = resolve_entra_client_secret()
 
 expected_as_of_date = None
 if date_partition:
@@ -2175,7 +2276,19 @@ else:
 
 SNAPSHOT_AS_OF_SQL = f"DATE '{expected_as_of_date}'"
 
-payload = build_payload()
+service_client = build_blob_service_client(
+    storage_account=storage_account,
+    tenant_id=entra_tenant_id,
+    client_id=entra_client_id,
+    client_secret=entra_client_secret,
+)
+container_client = service_client.get_container_client(container)
+
+if not container_client.exists():
+    raise ValueError(f"Azure Blob container does not exist: {container}")
+
+client_database_pointer = load_client_database_pointer(container_client, client_database_pointer_blob)
+payload = build_payload(client_database_pointer)
 payload_audit = validate_snapshot_payload(payload, expected_as_of_date=expected_as_of_date)
 payload_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 payload_size_bytes = len(payload_json.encode("utf-8"))
@@ -2193,19 +2306,9 @@ date_key = version[:10]
 latest_blob = f"{snapshot_root}/latest.json"
 dated_blob = f"{snapshot_root}/{date_key}.json"
 
-service_client = build_blob_service_client(
-    storage_account=storage_account,
-    tenant_id=entra_tenant_id,
-    client_id=entra_client_id,
-    client_secret=entra_client_secret,
-)
-container_client = service_client.get_container_client(container)
-
-if not container_client.exists():
-    raise ValueError(f"Azure Blob container does not exist: {container}")
-
 upload_json(container_client, latest_blob, payload_json)
 upload_json(container_client, dated_blob, payload_json)
+record_publish_success(expected_as_of_date, version)
 
 result = {
     "ok": True,

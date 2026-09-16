@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildDataExplorerPayload } from "../server/data-explorer.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const platformDataPath = path.join(root, "src/shared/api/platformData.ts");
@@ -929,6 +930,42 @@ const explorerCases = [
   ]],
   ["census", ["id", "month_bucket", "community_name", "census"]]
 ];
+
+const canonicalIncidentExplorer = buildDataExplorerPayload(
+  {
+    snapshot: { generated_at: "2026-08-14T15:18:31.268Z" },
+    communities: {
+      facilities: [{ facility_id: "337", community_name: "San Pablo" }],
+      incidentDetails: []
+    },
+    reportsSummary: {
+      toolContext: {
+        tables: {
+          incident_detail_history: [{
+            id: "incident-1",
+            incident_date: "2026-08-13",
+            month_bucket: "2026-08",
+            facility_id: "337",
+            resident_id: "resident-1",
+            client_name: "Sanitized Resident",
+            category: "Medication",
+            incident_type: "Medication event",
+            email_body: "Sanitized incident detail"
+          }]
+        }
+      }
+    }
+  },
+  "incidents",
+  { stale: false }
+);
+if (
+  canonicalIncidentExplorer.row_count !== 1 ||
+  canonicalIncidentExplorer.rows[0]?.id !== "incident-1"
+) {
+  console.error("incident explorer did not fall back to canonical history when the deduplicated transport array was empty");
+  process.exit(1);
+}
 
 for (const [kind, requiredRowKeys] of explorerCases) {
   const explorerResponse = createMockResponse();

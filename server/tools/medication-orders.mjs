@@ -20,7 +20,7 @@ export function createMedicationOrderTools({
         String(left.medication ?? "").localeCompare(String(right.medication ?? ""))
       );
     const residents = new Set(rows.map((row) => row.resident_id).filter(Boolean));
-    const topMedications = countBy(rows, (row) => row.medication || "Unspecified medication").slice(0, 5);
+    const topMedications = countBy(rows, (row) => row.medication || "Unspecified medication").slice(0, 3);
     const prnCount = rows.filter((row) => row.is_prn).length;
     const psychotropicCount = rows.filter((row) => row.is_psychotropic).length;
     const narcoticCount = rows.filter((row) => row.is_narcotic).length;

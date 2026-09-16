@@ -490,6 +490,20 @@ export async function fetchDataExplorer(kind: DataExplorerKind, signal?: AbortSi
   return payload;
 }
 
+export async function fetchResidentClientProfile(clientId: string, signal?: AbortSignal) {
+  const payload = await fetchLiveJson<DataExplorerResponse>(
+    `/api/data-explorer?kind=residents&clientId=${encodeURIComponent(clientId)}`,
+    signal,
+    platformResponseValidators.dataExplorer,
+    DEFAULT_CACHE_TTL_MS
+  );
+  const row = payload.rows[0];
+  if (payload.kind !== "residents" || payload.rows.length !== 1 || !row || String(row.id) !== clientId) {
+    throw new Error("Client profile response did not match the selected client.");
+  }
+  return row;
+}
+
 export function fetchPlatformHealth(signal?: AbortSignal) {
   return fetchUncachedLiveJson<PlatformHealthResponse>("/api/platform/health", signal, platformResponseValidators.platformHealth);
 }

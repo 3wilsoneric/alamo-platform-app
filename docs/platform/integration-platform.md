@@ -3,7 +3,7 @@
 - purpose: define how Alamo Platform can become a reusable analytics and operating layer for EHR, eMAR, and dashboard products
 - status: approved platform direction; current capabilities and required productization work are identified separately
 - owners: product, engineering, data platform, security
-- updated: 2026-07-18
+- updated: 2026-09-07
 - tags: integration, ehr, emar, analytics, embedding, recovery, platform
 - labels: platform-handbook, platform-direction, integration-contract
 - related files:
@@ -56,6 +56,142 @@ The current Alamo implementation proves the main operating model:
 
 These are platform assets. They should remain independent of any single source
 vendor as the system is productized.
+
+## Company Knowledge And Workflow Boundary
+
+Alamo Platform also owns a company-knowledge plane for governed public
+research, documents, evidence, workflows, and task continuity. A dedicated
+research interface may have different controls from the operating workspace,
+but Alamo remains the product, identity boundary, backend contract owner, and
+data owner. The interface must use the existing styling system and
+Entra-protected APIs rather than bringing over another application's shell,
+branding, framework, authentication, or demo state.
+
+The first working slice is deliberately local and knowledge-base focused:
+
+- `server/platform-knowledge-catalog.mjs` builds one search index from the
+  maintained 50-state, verified-demand, buyer, and procurement datasets, which
+  act as seed content rather than the persistence architecture.
+- `server/platform-knowledge-store.mjs` persists a curated source registry,
+  source runs, discovered-item queue, immutable content-addressed documents,
+  source links, URL revision history, fetch metadata, a unique per-document
+  processing queue, derived text attachment, append-only assertions, approval
+  state, and cited knowledge notes under the ignored local
+  `generated/platform-knowledge/` directory.
+- `server/platform-knowledge-api.mjs` exposes authenticated overview, search,
+  and record-read contracts through `/api/platform/knowledge/*`. A second owner
+  allowlist hides the entire namespace from all other signed-in users.
+- `shared/knowledge-contracts.mjs` validates source, document, assertion, note,
+  status, evidence, and capacity-qualifier inputs.
+- `scripts/platform-knowledge.mjs` provides local initialization, source
+  registration, discovery, ingest, assertion proposal/review, source blocking,
+  extracted-text attachment, note publication, review-queue inspection,
+  summary, and search commands without adding a second app.
+
+The production data plane should remain in the same Alamo Azure environment:
+
+- immutable document bytes and versioned source captures in Azure Blob
+- transactional document metadata, links, research tasks, workflow state,
+  append-only case events, proposals, and approval decisions in an
+  Azure-hosted relational store
+- a rebuildable search projection over approved and proposed records, with
+  source identity and freshness retained on every hit
+- Databricks projections only where approved knowledge must join the governed
+  analytics layer
+
+The local store is not represented as durable production memory. It proves the
+record and lifecycle contracts while the next backend slice replaces file
+persistence with Postgres and Blob adapters in the same Alamo Azure boundary.
+No agent framework or autonomous research execution is part of this slice.
+Every assertion enters as `proposed`; only the explicit human review operation
+can make it `approved`, and default search excludes proposed assertions and
+draft notes.
+
+### Private acquisition intelligence
+
+Fifty States contains an owner-only acquisition workspace backed by the same
+Entra and platform API boundary. Its current browser surface is an operator
+screen with one company per row. It combines current public footprint sources,
+bounded bed estimates, confidence labels, and deterministic valuation outputs
+without declaring that the national private facility universe already exists.
+The attached operator workbook contributes two bounded inputs:
+
+- operator and state-footprint entries become discovery-only research leads
+- its segment assumption matrix and low/base/high arithmetic become the first
+  screening-model version
+
+Workbook bed and prior EV ranges remain comparison anchors rather than verified
+platform facts. Each operator profile links the current public footprint source
+used to calibrate a reported or estimated bed range. The API applies the
+operator's segment defaults to calculate low/base/high revenue, normalized
+EBITDA, and enterprise value. Results remain screening estimates and omit the
+debt, cash, lease, and real-estate bridge.
+
+The company screen first buckets all proposals by observable location scale,
+service-fit signal, and private-company likelihood. “Mature” is explicitly a
+scale proxy, not verified age or revenue. Owner research, hold, and pass
+decisions persist separately from the generated index, allowing a stable
+50–100 company research list to survive refreshes and reranking.
+
+The deeper workflow persists one analyst-authored research case for every
+include and review facility. Case status, priority, scope decisions, ownership
+and license fields, licensed beds, notes, and cited evidence are written
+atomically to an ignored file store in development and an ETag-protected Azure
+Blob in production. It also derives ownership, license, scope, capacity,
+ready-for-review, and Top-25 evidence-priority queues. Shared domains and
+normalized facility names create only proposed operator clusters and cannot
+establish legal ownership.
+
+That facility-level workflow remains implemented and persisted, but it is not
+rendered in the current operator screen. It can be restored later without
+rebuilding or republishing its data layer.
+
+Parent-company resolution is a progressive graph, not a destructive facility
+rollup:
+
+- sponsor → operating parent → legal operator → brand → facility → license
+- the visible acquisition target is the operating parent, not the sponsor
+- California source rows remain preserved for national source lineage but are
+  excluded from acquisition proposals, rankings, bed totals, and valuations
+- shared domains and normalized names create low- or medium-confidence
+  organization proposals
+- relationship, legal identity, private ownership, target fit, licensed
+  capacity, and valuation carry separate confidence states; certainty in one
+  dimension never raises another
+- a high-confidence operating-parent relationship requires a current
+  authoritative source that explicitly connects a matched brand, domain, or
+  legal operator to that parent
+
+`npm run acquisition:operators` rebuilds the proposal index without a network
+refresh. The current deterministic funnel is the broad organization-proposal
+universe, company screening buckets, a 500-company screen, and a 100-company
+algorithmic suggestion. Deep research is limited to the owner's selected
+50–100 companies. The protected `/api/platform/acquisition/operators` route
+searches that hidden backend index; `POST
+/api/platform/acquisition/operator-decision` persists owner selections.
+Curated, cited parent edges live in
+`config/acquisition-intelligence/parent-assertions-v1.json`; the build merges
+matched brand domains under the operating parent and keeps public-company
+parents as unranked market context.
+
+Production uses the existing private Alamo Azure Blob container for raw source
+lineage, the compressed facility and operator-proposal indexes, the current
+research store, the company-selection store, and immutable research revisions. Automated state-license
+adapters, authoritative relational legal-entity edges, and saved valuation
+cases remain subsequent backend slices. The 100-company queue is research
+priority, not verified ownership or an investment ranking.
+
+The discovery adapter is operational through
+`npm run acquisition:refresh`. It preserves the official 2024 PUF and codebook,
+raw FindTreatment state responses, source hashes, a configurable field map,
+preliminary coded-screen counts, and a named facility index. The protected
+`/api/platform/acquisition/search` route exposes bounded state, disposition,
+and full-text searches to Fifty States. Because SAMHSA does not expose a public
+facility key shared by these two products, the PUF and directory records are
+not joined at facility level; that limitation is stored and shown in the UI.
+The protected `/api/platform/acquisition/research` GET and POST contract owns
+the case queues and mutations and uses the same hidden owner-only authorization
+boundary.
 
 ## Admissions Workspace Boundary
 
@@ -325,6 +461,12 @@ failed QA, invalid facilities, malformed dates, duplicate community-qualified
 resident keys, and impossible census counts fail closed instead of being
 normalized into plausible-looking output.
 
+The enhanced client database is optional enrichment. If its published pointer
+cannot be loaded or validated, `/clients/*` fails closed while the independently
+validated health, census, roster, resident, and medication-summary projections
+remain readable. A client-enrichment publishing defect must not create an
+unrelated outage in the bounded current-roster contract.
+
 Roster pages are sorted by community, last name, first name, resident ID, and
 community-qualified key. Page size is capped at 200. Cursors contain only the
 snapshot identifier and offset, not names or other PHI. A bare resident ID that
@@ -450,6 +592,38 @@ Every material failure should create one durable case with:
 - resolution timestamps
 
 This makes recovery systematic without making it uncontrolled.
+
+## Local AlamoHealth read-only demo bridge
+
+The Platform development server contains one deliberately temporary bridge at
+`/api/integrations/alamohealth/demo`. It exists to populate the local
+AlamoHealth interface from the already-governed published snapshot while the
+one-time protected migration is not yet executed.
+
+The bridge is disabled by default, requires
+`PLATFORM_ALAMOHEALTH_DEMO_READ_ENABLED=true`, accepts only loopback GET
+requests, and never persists or mutates data. It allowlists five facility
+identifiers, eight datasets, and every returned column; pages are limited to 500
+rows and 4 MB. It publishes current medication orders, 90-day MAR exceptions,
+90-day PRN effectiveness, notes, assessments, services, incidents, episodes,
+and the current resident profile/medication summary. Unknown source fields are
+dropped. Resident detail includes exact total/returned coverage for every
+allowlisted dataset and an explicit unavailable-domain list for allergies,
+contacts, pharmacies/packages, documents, routine administrations, and
+observations. Empty and unavailable are therefore not conflated.
+
+The bridge also exposes one aggregate-only facility Today summary. It combines
+the existing governed census projection with current roster and medication
+facts, 30-day clinical activity, the published 90-day MAR-exception count, and
+an explicit unavailable-domain allowlist. It returns no resident row bodies and
+labels the derived difference between PRN administrations and recorded
+follow-ups as historical source evidence, never as an open task.
+
+This route is not a production AlamoHealth dependency. In the final direction,
+AlamoHealth owns clinical transactions and publishes governed analytical facts
+downstream to Platform. The local bridge must never infer dose occurrences,
+open obligations, allergies, pharmacy/package state, bed/presence state, or any
+other fact missing from the snapshot.
 
 ## Integration Onboarding
 

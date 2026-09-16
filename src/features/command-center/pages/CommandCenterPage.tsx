@@ -379,7 +379,7 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
             const Icon = item.icon;
 
             return (
-              <div key={item.label} className="rounded-[20px] border border-[#d8d0c3] bg-white/74 px-4 py-3">
+              <div key={item.label} className="min-h-[116px] rounded-[20px] border border-[#d8d0c3] bg-white/74 px-4 py-3">
                 <div className="flex items-start gap-3">
                   <Icon className={`mt-0.5 h-4 w-4 ${item.healthy ? "text-[#0f7a65]" : "text-[#a04436]"}`} />
                   <div className="min-w-0">

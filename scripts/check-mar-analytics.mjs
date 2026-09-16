@@ -34,7 +34,7 @@ const cases = [
     prompt: "show current medication orders for San Pablo",
     tool: "medication_orders_current",
     visualType: "table",
-    mustInclude: ["Current medication orders"],
+    mustInclude: ["current medication orders"],
     mustExclude: ["Source:", "largest row"],
     requiresToolContextVersion: 8
   },
@@ -80,7 +80,7 @@ const cases = [
     tool: "medication_exception_detail",
     visualType: "table",
     periodIncludes: ["2026-06"],
-    mustInclude: ["Answer\n", "governed MAR exception"],
+    mustInclude: ["Answer\n", "matching medication refusal records"],
     mustExclude: ["current-state data", "historical slice unavailable", "largest row", "Source:"],
     requiresMarReady: true,
     requiresToolContextVersion: 8
@@ -89,7 +89,7 @@ const cases = [
     prompt: "show late medication administrations",
     tool: "medication_exception_detail",
     visualType: "table",
-    mustInclude: ["Answer\n", "late administration"],
+    mustInclude: ["Answer\n", "late medication administrations"],
     mustExclude: ["Source:", "largest row"],
     requiresMarReady: true,
     requiresToolContextVersion: 8
@@ -273,7 +273,7 @@ function runSyntheticLoadedMarContract() {
   );
   if (result.truthState !== "valid_rows") failures.push(`synthetic MAR exception detail: expected valid_rows, received ${result.truthState}`);
   if (result.visual?.type !== "table" || (result.visual?.rows?.length ?? 0) !== 1) failures.push("synthetic MAR exception detail: expected one table row");
-  if (!String(result.text ?? "").includes("1 governed MAR refusal record")) failures.push("synthetic MAR exception detail: missing loaded refusal-record answer text");
+  if (!String(result.text ?? "").includes("1 refusal medication record")) failures.push("synthetic MAR exception detail: missing loaded refusal-record answer text");
   const moduleSpec = planAdHocModule("show San Pablo medication refusal detail in June 2026", result);
   if (moduleSpec?.moduleId !== "medication-exceptions") failures.push(`synthetic MAR exception detail: expected medication-exceptions module, received ${moduleSpec?.moduleId ?? "none"}`);
   if (moduleSpec?.templateId !== "data-table") failures.push(`synthetic MAR exception detail: expected data-table template, received ${moduleSpec?.templateId ?? "none"}`);

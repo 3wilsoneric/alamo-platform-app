@@ -7,8 +7,11 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
 const rootFiles = new Set([
   ".env.example",
+  ".dockerignore",
   ".gitignore",
+  ".vercelignore",
   "AGENTS.md",
+  "Dockerfile.acquisition-overlay",
   "README.md",
   "eslint.config.js",
   "index.html",
@@ -24,11 +27,14 @@ const rootFiles = new Set([
 ]);
 
 const platformDocs = [
+  "docs/platform/admissions-zone.md",
+  "docs/platform/acquisition-parent-company-program.md",
   "docs/platform/README.md",
   "docs/platform/analyst-system.md",
   "docs/platform/architecture.md",
   "docs/platform/data-publishing.md",
   "docs/platform/deployment-operations.md",
+  "docs/platform/desktop-distribution.md",
   "docs/platform/full-reporting.md",
   "docs/platform/integration-platform.md",
   "docs/platform/product-surfaces.md",
@@ -39,12 +45,16 @@ const platformDocs = [
 ];
 
 const referenceDocs = [
+  "docs/reference/adult-behavioral-health-residential-pivot-acquisition-thesis.md",
+  "docs/reference/alamo-knowledge-job-workflow-deferred.md",
   "docs/reference/alamo-platform-complete-data-strategy-map-2026-08-03.md",
   "docs/reference/analysis-session-state-spec.md",
   "docs/reference/analytics-tool-context-views.md",
   "docs/reference/mar-source-inventory-findings.md",
   "docs/reference/platform-daily-publish-runbook.md",
-  "docs/reference/platform-module-registry-spec.md"
+  "docs/reference/platform-module-registry-spec.md",
+  "docs/reference/private-behavioral-health-acquisition-master-dossier.md",
+  "docs/reference/private-behavioral-health-operator-filtering-universe.md"
 ];
 
 const approvedDocs = new Set(["AGENTS.md", "README.md", ...platformDocs, ...referenceDocs]);
@@ -118,6 +128,8 @@ const requiredEnvironmentVariables = [
   "PLATFORM_SNAPSHOT_MAX_BYTES",
   "PLATFORM_SNAPSHOT_READ_SOURCE",
   "PLATFORM_SNAPSHOT_REQUIRED",
+  "PLATFORM_KNOWLEDGE_OWNER_EMAIL",
+  "PLATFORM_KNOWLEDGE_OWNER_OBJECT_ID",
   "PIPELINE_CLINICAL_API_MAX_RESPONSE_BYTES",
   "PIPELINE_CLINICAL_API_ROLE",
   "PIPELINE_CLINICAL_API_SCOPE",
@@ -128,8 +140,7 @@ const requiredEnvironmentVariables = [
   "VITE_E2E_AUTH_BYPASS",
   "VITE_ENTRA_CLIENT_ID",
   "VITE_ENTRA_API_SCOPE",
-  "VITE_ENTRA_TENANT_ID",
-  "VITE_PIPELINE_APP_URL"
+  "VITE_ENTRA_TENANT_ID"
 ];
 
 const rejectedEnvironmentVariables = [
@@ -159,11 +170,12 @@ function ownershipClass(file) {
   if (rootFiles.has(file)) return "app shell and tooling";
   if (approvedDocs.has(file)) return file.startsWith("docs/reference/") ? "live specification" : "handbook";
   if (/^src\/.+\.(?:ts|tsx|css|json)$/.test(file)) return "browser runtime";
-  if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico)$/.test(file)) return "static browser asset";
+  if (/^config\/.+\.json$/.test(file)) return "data ingestion configuration";
+  if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js)$/.test(file)) return "static browser asset";
   if (/^api\/.+\.js$/.test(file)) return "Vercel API";
   if (/^server\/.+\.mjs$/.test(file)) return "server domain";
   if (/^shared\/.+\.(?:mjs|d\.mts)$/.test(file)) return "shared contract";
-  if (/^scripts\/.+\.(?:mjs|json)$/.test(file)) return "verification";
+  if (/^scripts\/.+\.(?:mjs|json|ps1)$/.test(file)) return "verification and operations";
   if (/^databricks\/notebooks\/.+\.py$/.test(file)) return "data publishing notebook";
   if (/^databricks\/workflows\/.+\.json$/.test(file)) return "data publishing workflow";
   return null;

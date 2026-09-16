@@ -8,6 +8,7 @@ const ROOT = process.cwd();
 const PROFILE = String(process.env.PLATFORM_READY_PROFILE || "full").toLowerCase();
 const STOP_ON_FAILURE = process.env.PLATFORM_READY_STOP_ON_FAILURE === "true";
 const INCLUDE_BROWSER = process.env.PLATFORM_READY_SKIP_BROWSER !== "true";
+const INCLUDE_PRODUCTION = process.env.PLATFORM_READY_SKIP_PRODUCTION !== "true";
 const INCLUDE_BUILD = process.env.PLATFORM_READY_INCLUDE_BUILD === "true";
 const START_AT = String(process.env.PLATFORM_READY_START_AT || "").trim();
 const BROWSER_STAGE_SETTLE_MS = Number(
@@ -82,9 +83,9 @@ const commandProfiles = {
           "check:browser-performance"
         ]
       : []),
-    "check:production-smoke",
-    "check:production-signed-in-smoke",
-    "check:production-guided-questions",
+    ...(INCLUDE_PRODUCTION
+      ? ["check:production-smoke", "check:production-signed-in-smoke", "check:production-guided-questions"]
+      : []),
     ...(INCLUDE_BUILD ? ["build"] : [])
   ]
 };

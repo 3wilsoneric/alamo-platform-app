@@ -522,14 +522,14 @@ export function createResidentTools(dependencies) {
     };
   }
 
-  function buildAdHocResidentVisual(content, communities) {
+  function buildAdHocResidentVisual(content, communities, reportsSummary) {
     const facility = findFacility(content, communities);
     const label = facility?.community_name ?? "Portfolio";
     const incidentIntent = /\b(incident|incidents)\b/i.test(content);
     const rows = filterByFacility(communities.residents ?? [], facility);
 
     if (incidentIntent) {
-      const detailRows = filterByFacility(communities.incidentDetails ?? [], facility);
+      const detailRows = filterByFacility(getIncidentDetailRows(communities, reportsSummary), facility);
       const ranked = countBySum(detailRows, (row) => row.client_name || row.resident_id || "Unknown resident").slice(0, 8);
       return {
         handled: true,
@@ -1142,7 +1142,7 @@ export function createResidentTools(dependencies) {
   function buildResidentRiskSummaryTool(content, communities, reportsSummary) {
     const facility = findFacility(content, communities);
     const residents = filterByFacility(communities.residents ?? [], facility);
-    const details = filterByFacility(communities.incidentDetails ?? [], facility);
+    const details = filterByFacility(getIncidentDetailRows(communities, reportsSummary), facility);
     const gaps = filterByFacility(reportsSummary.documentationGaps ?? [], facility);
     const incidentCounts = new Map(countBy(details, (incident) => incident.resident_id || incident.client_name));
     const gapMap = new Map(gaps.map((row) => [String(row.resident_id ?? row.resident_name), row]));

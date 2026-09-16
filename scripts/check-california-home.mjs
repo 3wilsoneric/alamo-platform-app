@@ -4,9 +4,11 @@ import path from "node:path";
 const root = path.resolve(import.meta.dirname, "..");
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
-const [app, page, map, neighborPaths, modal, communities, profile, incidentCenter, shell, wordmark, identity] = await Promise.all([
+const [app, page, platformNavigation, analyticsNavigation, map, neighborPaths, modal, communities, profile, incidentCenter, shell, wordmark, identity] = await Promise.all([
   read("src/app/App.tsx"),
   read("src/features/california/pages/CaliforniaHomePage.tsx"),
+  read("src/features/california/components/PlatformPageNavigation.tsx"),
+  read("src/features/california/components/AnalyticsSectionNavigation.tsx"),
   read("src/features/california/components/CaliforniaCommunityMap.tsx"),
   read("src/features/california/data/californiaNeighborPaths.ts"),
   read("src/features/california/components/CaliforniaCommunityModal.tsx"),
@@ -25,8 +27,8 @@ const requireText = (source, pattern, message) => {
 
 requireText(
   app,
-  /<Route path="\/" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?<Route path="\/home" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?path="\/home\/community\/:facilityId"[\s\S]*?<Route path="\/questions" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?<Route path="\/analytics" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?<Route path="\/reports" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>/,
-  "map, community, Questions, and Analytics routes do not share one warning-free persistent California carousel"
+  /<Route path="\/" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?<Route path="\/home" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?path="\/home\/community\/:facilityId"[\s\S]*?<Route path="\/questions" element=\{<Navigate to="\/analytics\/questions" replace \/>\} \/>[\s\S]*?<Route path="\/analytics" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?path="\/analytics\/questions"[\s\S]*?<Route path="\/reports" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>/,
+  "map, community, and Analytics routes do not share one warning-free persistent California carousel with a legacy Questions redirect"
 );
 requireText(
   page,
@@ -62,33 +64,46 @@ requireText(
   "community profiles do not preserve a truthful medication loading state"
 );
 requireText(
-  page,
-  /data-california-hero-action="questions"[\s\S]*?Ask a question/,
-  "Ask a question is not presented in the California hero menu"
+  analyticsNavigation,
+  /aria-label="Analytics sections"[\s\S]*?label="Reports"[\s\S]*?label="Ask a question"/,
+  "Ask a question is not contained within the Analytics workspace"
+);
+requireText(
+  platformNavigation,
+  /id: "home"[\s\S]*?id: "admissions"[\s\S]*?id: "analytics"/,
+  "platform pages are not registered in the required Home, Admissions, Analytics order"
+);
+if (/id: "questions"/.test(platformNavigation)) {
+  failures.push("Ask a question is still registered as a top-level platform page");
+}
+requireText(
+  platformNavigation,
+  /previousPages[\s\S]*?activeIndex[\s\S]*?nextPages[\s\S]*?activeIndex/,
+  "platform navigation does not partition destinations around the active page"
+);
+requireText(
+  platformNavigation,
+  /destination === "admissions"[\s\S]*?<a[\s\S]*?href=\{page\.href\}/,
+  "the retained Admissions navigation definition is not a hard route link"
+);
+requireText(
+  platformNavigation,
+  /const ADMISSIONS_NAVIGATION_ENABLED = false;[\s\S]*?ADMISSIONS_NAVIGATION_ENABLED && admissionsAllowed/,
+  "unfinished Admissions navigation is not explicitly disabled behind its temporary flag"
 );
 requireText(
   page,
-  /data-california-hero-menu="true"[\s\S]*?data-california-hero-action="questions"[\s\S]*?Ask a question[\s\S]*?data-california-hero-action="analytics"[\s\S]*?Analytics/,
-  "California hero does not expose the Questions and Analytics actions"
+  /<PlatformPageNavigation[\s\S]*?admissionsAllowed=\{admissionsAccess\.allowed\}[\s\S]*?onNavigate=\{openPlatformPage\}/,
+  "California workspace does not use the ordered platform page navigation"
 );
 requireText(
   page,
-  /const ANALYTICS_NAVIGATION_ENABLED = true/,
-  "Analytics navigation is not explicitly enabled"
+  /function openPlatformPage[\s\S]*?page === "home" \? "map" : "reports"[\s\S]*?function openAnalyticsSection[\s\S]*?openPanel\(section\)/,
+  "platform page navigation is not connected to the mounted carousel panels"
 );
 requireText(
   page,
-  /\{ANALYTICS_NAVIGATION_ENABLED \? \([\s\S]*?onClick=\{\(\) => openPanel\("reports"\)\}[\s\S]*?data-california-question-analytics-link="true"[\s\S]*?Analytics[\s\S]*?\) : null\}/,
-  "the Questions workspace does not expose the Analytics handoff"
-);
-requireText(
-  page,
-  /onClick=\{\(\) => openPanel\("questions"\)\}[\s\S]*?data-california-hero-action="questions"/,
-  "Ask a question does not open the analyst panel route"
-);
-requireText(
-  page,
-  /function panelForPath[\s\S]*?pathname === "\/questions"[\s\S]*?pathname\.startsWith\("\/analytics"\)[\s\S]*?pathname\.startsWith\("\/reports"\)[\s\S]*?setActivePanel\(panelForPath\(location\.pathname\)\)[\s\S]*?addEventListener\("popstate"/,
+  /function panelForPath[\s\S]*?pathname === "\/analytics\/questions" \|\| pathname === "\/questions"[\s\S]*?pathname\.startsWith\("\/analytics"\)[\s\S]*?pathname\.startsWith\("\/reports"\)[\s\S]*?setActivePanel\(panelForPath\(location\.pathname\)\)[\s\S]*?addEventListener\("popstate"/,
   "carousel state is not synchronized with canonical routes and browser history"
 );
 requireText(
@@ -107,9 +122,9 @@ requireText(
   "the workspace does not use a reduced-motion-safe horizontal slide track"
 );
 requireText(
-  page,
-  /data-california-carousel-back="true"[\s\S]*?aria-label="Back to California map"[\s\S]*?<ArrowLeft/,
-  "neighboring panels do not provide a clear back control"
+  platformNavigation,
+  /aria-label=\{isHome \? "Back to California map" : page\.label\}[\s\S]*?data-california-carousel-back=\{isHome \? "true" : undefined\}/,
+  "left-side Home navigation does not preserve the clear carousel back action"
 );
 requireText(
   page,
@@ -245,13 +260,13 @@ requireText(
 );
 requireText(
   map,
-  /const currentCensus = metrics\?\.currentWeeklyCensus \?\? null/,
-  "California community census does not come exclusively from the governed weekly series"
+  /const currentCensus = metrics\?\.currentCensus \?\? null/,
+  "California community census does not come from the governed dashboard census contract"
 );
 requireText(
   map,
-  /const currentCensus = metrics\?\.currentWeeklyCensus \?\? null[\s\S]*?data-california-node-census=\{currentCensus \?\? ""\}[\s\S]*?data-california-node-census-change-7d=\{censusChangeValue \?\? ""\}/,
-  "California markers do not expose their governed census and weekly change"
+  /const currentCensus = metrics\?\.currentCensus \?\? null[\s\S]*?data-california-node-census=\{currentCensus \?\? ""\}[\s\S]*?data-california-node-census-change-7d=\{censusChangeValue \?\? ""\}/,
+  "California markers do not expose their governed census and comparable-period change"
 );
 if (/data-california-node-incidents|INCIDENTS · 24H/.test(map)) {
   failures.push("California map still mixes incident metrics into the census view");
@@ -327,8 +342,8 @@ requireText(
   "reports are not included in the California shell experience"
 );
 requireText(
-  page,
-  /data-california-workspace-brand="true"[\s\S]*?<PlatformWordmark \/>/,
+  platformNavigation,
+  /active === "home"[\s\S]*?data-platform-page-active="home"[\s\S]*?<PlatformWordmark \/>/,
   "California workspace does not restore the quiet Alamo Health home anchor"
 );
 if (/PlatformUserIdentity|data-california-hero-identity/.test(page)) {

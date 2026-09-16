@@ -6,6 +6,16 @@ import {
   withBrowserQa
 } from "./browser-qa-utils.mjs";
 
+async function readPlatformPageNavigation(page) {
+  return page.locator('[data-platform-page-navigation="true"]').evaluate((navigation) => ({
+    current: navigation.getAttribute("data-platform-page-current"),
+    left: Array.from(navigation.querySelectorAll('[data-platform-page-side="left"]'))
+      .map((item) => item.getAttribute("data-platform-page-target")),
+    right: Array.from(navigation.querySelectorAll('[data-platform-page-side="right"]'))
+      .map((item) => item.getAttribute("data-platform-page-target"))
+  }));
+}
+
 async function main() {
   const { screenshotDir } = await prepareArtifactDirs("browser-california-home-qa");
   await withBrowserQa(async (browser) => {
@@ -43,26 +53,24 @@ async function main() {
           }
           return response.json();
         });
-        const portfolioCensus = Number(
-          dashboard?.operational?.currentWeeklyCensus
-        );
+        const portfolioCensus = Number(dashboard?.operational?.currentCensus);
         const priorPortfolioCensus = Number(
-          dashboard?.operational?.priorWeeklyCensus
+          dashboard?.operational?.priorCensus
         );
         const portfolioChange = Number(
-          dashboard?.operational?.censusChange7d
+          dashboard?.operational?.censusChange
         );
-        const hasWeeklyCensus =
-          dashboard?.operational?.currentWeeklyCensus !== null &&
-          dashboard?.operational?.currentWeeklyCensus !== undefined;
-        if (hasWeeklyCensus && (!Number.isFinite(portfolioCensus) || portfolioCensus <= 0)) {
+        const hasGovernedCensus =
+          dashboard?.operational?.currentCensus !== null &&
+          dashboard?.operational?.currentCensus !== undefined;
+        if (hasGovernedCensus && (!Number.isFinite(portfolioCensus) || portfolioCensus <= 0)) {
           throw new Error("California map did not load a valid governed portfolio census.");
         }
-        if (hasWeeklyCensus && (!Number.isFinite(priorPortfolioCensus) || priorPortfolioCensus <= 0)) {
+        if (hasGovernedCensus && (!Number.isFinite(priorPortfolioCensus) || priorPortfolioCensus <= 0)) {
           throw new Error("California map did not load a valid prior governed portfolio census.");
         }
-        if (hasWeeklyCensus && !Number.isFinite(portfolioChange)) {
-          throw new Error("California map did not load a valid seven-day portfolio census change.");
+        if (hasGovernedCensus && !Number.isFinite(portfolioChange)) {
+          throw new Error("California map did not load a valid comparable-period portfolio census change.");
         }
         let communityCensusTotal = 0;
         let communityPriorCensusTotal = 0;
@@ -76,37 +84,37 @@ async function main() {
           const censusChange = Number(
             await facilityMarker.getAttribute("data-california-node-census-change-7d")
           );
-          if (hasWeeklyCensus && (!Number.isFinite(census) || census <= 0)) {
+          if (hasGovernedCensus && (!Number.isFinite(census) || census <= 0)) {
             throw new Error(
               `${expectedFacility.communityName} map signal is missing its governed census.`
             );
           }
-          if (hasWeeklyCensus && !Number.isFinite(censusChange)) {
+          if (hasGovernedCensus && !Number.isFinite(censusChange)) {
             throw new Error(
-              `${expectedFacility.communityName} map signal is missing its seven-day census change.`
+              `${expectedFacility.communityName} map signal is missing its comparable-period census change.`
             );
           }
-          if (!hasWeeklyCensus && (census !== 0 || censusChange !== 0)) {
+          if (!hasGovernedCensus && (census !== 0 || censusChange !== 0)) {
             throw new Error(
-              `${expectedFacility.communityName} exposed partial weekly census data from an incomplete snapshot.`
+              `${expectedFacility.communityName} exposed partial census data from an incomplete snapshot.`
             );
           }
-          if (hasWeeklyCensus) {
+          if (hasGovernedCensus) {
             communityCensusTotal += census;
             communityPriorCensusTotal += census - censusChange;
           }
         }
-        if (hasWeeklyCensus && communityCensusTotal !== portfolioCensus) {
+        if (hasGovernedCensus && communityCensusTotal !== portfolioCensus) {
           throw new Error(
             `Portfolio census ${portfolioCensus} does not equal community total ${communityCensusTotal}.`
           );
         }
-        if (hasWeeklyCensus && communityPriorCensusTotal !== priorPortfolioCensus) {
+        if (hasGovernedCensus && communityPriorCensusTotal !== priorPortfolioCensus) {
           throw new Error(
             `Prior portfolio census ${priorPortfolioCensus} does not equal community total ${communityPriorCensusTotal}.`
           );
         }
-        if (hasWeeklyCensus && communityCensusTotal - communityPriorCensusTotal !== portfolioChange) {
+        if (hasGovernedCensus && communityCensusTotal - communityPriorCensusTotal !== portfolioChange) {
           throw new Error(
             "Portfolio census change does not reconcile to the five community changes."
           );
@@ -128,13 +136,13 @@ async function main() {
       const markerCensusText = (await page
         .locator(`[data-california-community-census-metrics="${facility.facilityId}"]`)
         .textContent()) ?? "";
-      const hasMarkerCensus = markerMetricText.includes("latest weekly census") &&
-        markerCensusText.includes("prior week");
-      const hasUnavailableMarkerCensus = markerMetricText.includes("Weekly census unavailable") &&
-        markerCensusText.includes("Prior week unavailable");
+      const hasMarkerCensus = markerMetricText.includes("census") &&
+        markerCensusText.includes("vs");
+      const hasUnavailableMarkerCensus = markerMetricText.includes("Census unavailable") &&
+        markerCensusText.includes("Prior period unavailable");
       if (!hasMarkerCensus && !hasUnavailableMarkerCensus) {
         throw new Error(
-          `${facility.communityName} hover detail did not expose census and weekly change.`
+          `${facility.communityName} hover detail did not expose census and its comparable-period change.`
         );
       }
       if (facility.facilityId === "337") {
@@ -395,11 +403,11 @@ async function main() {
         );
       }
     }
-    const initialQuestionsCount = await page
-      .getByRole("button", { name: "Ask a question", exact: true })
+    const topLevelQuestionsCount = await page
+      .locator('[data-platform-page-target="questions"]')
       .count();
-    if (initialQuestionsCount !== 1) {
-      throw new Error(`Expected one initial Ask a question button, found ${initialQuestionsCount}.`);
+    if (topLevelQuestionsCount !== 0) {
+      throw new Error("Ask a question is still exposed as a top-level platform destination.");
     }
     const questionPanel = page.locator(
       '[data-california-carousel-panel="questions"]'
@@ -423,7 +431,7 @@ async function main() {
       () => document.documentElement.scrollHeight - window.innerHeight
     );
     if (initialVerticalOverflow > 2) {
-      throw new Error(`California entry scrolls by ${initialVerticalOverflow}px before Ask a question is selected.`);
+      throw new Error(`California entry scrolls by ${initialVerticalOverflow}px before Analytics is selected.`);
     }
     const mapBox = await page.locator("[data-california-map]").boundingBox();
     if (!mapBox || mapBox.width < 585 || mapBox.width > 605) {
@@ -455,8 +463,8 @@ async function main() {
     if (!viewport || mapLeftShift < 165 || mapLeftShift > 180) {
       throw new Error(`California map did not preserve its desktop left shift (${mapLeftShift}px).`);
     }
-    const questionBox = await page
-      .getByRole("button", { name: "Ask a question", exact: true })
+    const analyticsMenuBox = await page
+      .locator('[data-california-hero-action="analytics"]')
       .boundingBox();
     const stateFaceBox = await page
       .locator('[data-california-state-face="true"]')
@@ -466,8 +474,8 @@ async function main() {
         `California silhouette did not remain the foreground anchor beneath the northern states (${stateFaceBox?.y ?? "missing"}px).`
       );
     }
-    if (!questionBox || questionBox.x <= mapBox.x + mapBox.width + 24) {
-      throw new Error("Ask a question overlaps the California map instead of sitting beside it.");
+    if (!analyticsMenuBox || analyticsMenuBox.x <= mapBox.x + mapBox.width + 24) {
+      throw new Error("Analytics overlaps the California map instead of sitting beside it.");
     }
     const homeAnalyticsCount = await page
       .locator('[data-california-hero-action="analytics"]')
@@ -475,7 +483,22 @@ async function main() {
     if (homeAnalyticsCount !== 1) {
       throw new Error("Analytics is missing from the California map menu.");
     }
-    await page.getByRole("button", { name: "Ask a question", exact: true }).click();
+    const homeNavigation = await readPlatformPageNavigation(page);
+    if (
+      homeNavigation.current !== "home" ||
+      homeNavigation.left.length !== 0 ||
+      homeNavigation.right.join(",") !== "analytics"
+    ) {
+      throw new Error(`Home platform navigation is out of order: ${JSON.stringify(homeNavigation)}`);
+    }
+    await page.getByRole("button", { name: "Analytics", exact: true }).click();
+    await page.waitForURL((url) => url.pathname === "/analytics", { timeout: 5_000 });
+    await page
+      .locator('[data-reports-page="true"][data-reports-embedded="true"]')
+      .waitFor({ state: "visible", timeout: 10_000 });
+    await page
+      .locator('[data-analytics-section-navigation][data-analytics-section-current="reports"] [data-analytics-section-target="questions"]')
+      .click();
     await page
       .locator('[data-certified-question-guide="true"]')
       .waitFor({ state: "visible", timeout: 5_000 });
@@ -498,11 +521,30 @@ async function main() {
       path: `${screenshotDir}/desktop-questions.png`,
       fullPage: false
     });
-    if (new URL(page.url()).pathname !== "/questions") {
-      throw new Error("Ask a question did not establish the canonical /questions route.");
+    if (new URL(page.url()).pathname !== "/analytics/questions") {
+      throw new Error("Ask a question did not establish the canonical /analytics/questions route.");
     }
     if (await questionPanel.getAttribute("aria-hidden") !== "false") {
       throw new Error("Questions route did not activate the analyst carousel panel.");
+    }
+    const questionNavigation = await readPlatformPageNavigation(page);
+    if (
+      questionNavigation.current !== "analytics" ||
+      questionNavigation.left.join(",") !== "home" ||
+      questionNavigation.right.length !== 0
+    ) {
+      throw new Error(`Analytics question navigation is out of order: ${JSON.stringify(questionNavigation)}`);
+    }
+    const [questionNavigationBox, questionWorkspaceBox] = await Promise.all([
+      page.locator('[data-platform-page-navigation="true"]').boundingBox(),
+      page.locator('[data-california-question-workspace="true"]').boundingBox()
+    ]);
+    if (
+      !questionNavigationBox ||
+      !questionWorkspaceBox ||
+      questionWorkspaceBox.y < questionNavigationBox.y + questionNavigationBox.height + 6
+    ) {
+      throw new Error("Questions content overlaps the positional platform navigation.");
     }
     const questionScroll = await page.evaluate(() => window.scrollY);
     if (questionScroll > 2) {
@@ -564,11 +606,32 @@ async function main() {
       fullPage: false
     });
 
-    await page.getByRole("button", { name: "Analytics", exact: true }).click();
+    await page
+      .locator('[data-analytics-section-navigation][data-analytics-section-current="questions"] [data-analytics-section-target="reports"]')
+      .click();
     await page.waitForURL((url) => url.pathname === "/analytics", { timeout: 5_000 });
     await page
       .locator('[data-reports-page="true"][data-reports-embedded="true"]')
       .waitFor({ state: "visible", timeout: 10_000 });
+    const analyticsNavigation = await readPlatformPageNavigation(page);
+    if (
+      analyticsNavigation.current !== "analytics" ||
+      analyticsNavigation.left.join(",") !== "home" ||
+      analyticsNavigation.right.length !== 0
+    ) {
+      throw new Error(`Analytics platform navigation is out of order: ${JSON.stringify(analyticsNavigation)}`);
+    }
+    const [analyticsNavigationBox, reportsPageBox] = await Promise.all([
+      page.locator('[data-platform-page-navigation="true"]').boundingBox(),
+      page.locator('[data-reports-page="true"][data-reports-embedded="true"]').boundingBox()
+    ]);
+    if (
+      !analyticsNavigationBox ||
+      !reportsPageBox ||
+      reportsPageBox.y < analyticsNavigationBox.y + analyticsNavigationBox.height + 6
+    ) {
+      throw new Error("Analytics content overlaps the positional platform navigation.");
+    }
     await page.waitForFunction(() => {
       const carousel = document.querySelector(
         '[data-california-workspace-carousel="true"]'
@@ -625,8 +688,8 @@ async function main() {
     const tallStateFaceBox = await tallPage
       .locator('[data-california-state-face="true"]')
       .boundingBox();
-    const tallQuestionBox = await tallPage
-      .getByRole("button", { name: "Ask a question", exact: true })
+    const tallAnalyticsBox = await tallPage
+      .locator('[data-california-hero-action="analytics"]')
       .boundingBox();
     if (!tallMapBox || tallMapBox.width < 680 || tallMapBox.width > 695) {
       throw new Error(
@@ -652,12 +715,12 @@ async function main() {
       );
     }
     if (
-      !tallQuestionBox ||
+      !tallAnalyticsBox ||
       !tallStateFaceBox ||
-      tallQuestionBox.x <= tallStateFaceBox.x + tallStateFaceBox.width + 24
+      tallAnalyticsBox.x <= tallStateFaceBox.x + tallStateFaceBox.width + 24
     ) {
       throw new Error(
-        `Ask a question is not positioned beside the tall California silhouette (map ${JSON.stringify(tallMapBox)}, question ${JSON.stringify(tallQuestionBox)}).`
+        `Analytics is not positioned beside the tall California silhouette (map ${JSON.stringify(tallMapBox)}, analytics ${JSON.stringify(tallAnalyticsBox)}).`
       );
     }
     for (const facility of ALAMO_FACILITIES) {
@@ -702,8 +765,8 @@ async function main() {
     const zoomedStateFaceBox = await zoomedDesktopPage
       .locator('[data-california-state-face="true"]')
       .boundingBox();
-    const zoomedQuestionBox = await zoomedDesktopPage
-      .getByRole("button", { name: "Ask a question", exact: true })
+    const zoomedAnalyticsBox = await zoomedDesktopPage
+      .locator('[data-california-hero-action="analytics"]')
       .boundingBox();
     if (!zoomedMapBox || zoomedMapBox.width < 440 || zoomedMapBox.width > 455) {
       throw new Error(
@@ -730,10 +793,10 @@ async function main() {
       }
     }
     if (
-      !zoomedQuestionBox ||
-      zoomedQuestionBox.y + zoomedQuestionBox.height > 702
+      !zoomedAnalyticsBox ||
+      zoomedAnalyticsBox.y + zoomedAnalyticsBox.height > 702
     ) {
-      throw new Error("Ask a question is clipped at the zoomed desktop viewport.");
+      throw new Error("Analytics is clipped at the zoomed desktop viewport.");
     }
     const zoomedOverflow = await zoomedDesktopPage.evaluate(() => ({
       horizontal: document.documentElement.scrollWidth - window.innerWidth,
@@ -753,10 +816,8 @@ async function main() {
     const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const mobilePage = await mobileContext.newPage();
     await mobilePage.goto(`${BASE_URL}/home`, { waitUntil: "domcontentloaded" });
-    await mobilePage.screenshot({
-      path: `${screenshotDir}/mobile-home.png`,
-      fullPage: false
-    });
+    const mobileCommunityHome = mobilePage.locator('[data-mobile-community-home="true"]');
+    await mobileCommunityHome.waitFor({ state: "visible", timeout: 10_000 });
     const mobileWordmarkBox = await mobilePage
       .locator('[data-platform-wordmark="true"]')
       .boundingBox();
@@ -766,20 +827,27 @@ async function main() {
     if (await mobilePage.locator('[aria-label^="Signed in as"]').isVisible()) {
       throw new Error("California carousel reintroduced redundant profile chrome on mobile.");
     }
-    const mobileMapBox = await mobilePage.locator("[data-california-map]").boundingBox();
-    if (!mobileMapBox || mobileMapBox.y < 58) {
-      throw new Error("California state extends beneath the fixed header on mobile.");
+    const mobileHeadingBox = await mobileCommunityHome.getByRole("heading", { name: "Your communities" }).boundingBox();
+    if (!mobileHeadingBox || mobileHeadingBox.y < 58) {
+      throw new Error("Mobile community heading extends beneath the fixed header.");
+    }
+    await mobilePage.screenshot({ path: `${screenshotDir}/mobile-home.png`, fullPage: false });
+    if (await mobilePage.locator('[data-california-map="true"]').isVisible().catch(() => false)) {
+      throw new Error("The desktop California map is exposed on mobile instead of the community list.");
+    }
+    if (await mobilePage.locator('[data-mobile-community-card]').count() !== ALAMO_FACILITIES.length) {
+      throw new Error("Mobile community list is missing a community card.");
     }
     for (const facility of ALAMO_FACILITIES) {
-      const labelBox = await mobilePage
-        .locator(`[data-california-community-tooltip="${facility.facilityId}"]`)
+      const cardBox = await mobilePage
+        .locator(`[data-mobile-community-card="${facility.facilityId}"]`)
         .boundingBox();
       if (
-        !labelBox ||
-        labelBox.x < 4 ||
-        labelBox.x + labelBox.width > 386
+        !cardBox ||
+        cardBox.x < 4 ||
+        cardBox.x + cardBox.width > 386
       ) {
-        throw new Error(`${facility.shortName} label is clipped on mobile.`);
+        throw new Error(`${facility.shortName} card is clipped on mobile.`);
       }
     }
     const mobileOverflow = await mobilePage.evaluate(
@@ -787,12 +855,6 @@ async function main() {
     );
     if (mobileOverflow > 2) {
       throw new Error(`California home has ${mobileOverflow}px of horizontal overflow on mobile.`);
-    }
-    const mobileVerticalOverflow = await mobilePage.evaluate(
-      () => document.documentElement.scrollHeight - window.innerHeight
-    );
-    if (mobileVerticalOverflow > 2) {
-      throw new Error(`California entry scrolls by ${mobileVerticalOverflow}px on mobile before Ask a question is selected.`);
     }
     if (
       await mobilePage
@@ -802,7 +864,7 @@ async function main() {
       throw new Error("Mobile analyst panel is exposed before Ask a question is selected.");
     }
     await mobilePage
-      .locator('[data-california-community-marker="345"]')
+      .locator('[data-mobile-community-card="345"]')
       .click();
     await mobilePage.waitForURL(
       (url) => url.pathname === "/home/community/345",
@@ -843,7 +905,7 @@ async function main() {
   });
 
   console.log(
-    "California home browser QA passed: pre-mounted horizontal panels, route-safe Questions and Analytics slides, zero document scroll, five markers, modal drilldowns, and mobile flow are wired."
+    "California home browser QA passed: pre-mounted desktop panels, route-safe Questions and Analytics slides, five desktop markers, bounded mobile community cards, modal drilldowns, and mobile flow are wired."
   );
 }
 

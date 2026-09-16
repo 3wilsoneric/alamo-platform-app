@@ -1,10 +1,11 @@
 import { getDatabricksAuthMode, getDatabricksConfig, queryDatabricks } from "./databricks.mjs";
-import { buildDataExplorerPayload } from "./data-explorer.mjs";
+import { buildDataExplorerPayload, normalizeExplorerKind } from "./data-explorer.mjs";
 import { buildHomeDashboard } from "./home-dashboard.mjs";
 import { getAnalystQaStatus, getQaArtifactStatuses } from "./qa-artifacts.mjs";
 import {
   getAzureSnapshotStorageSummary,
   getPlatformSnapshotTargets,
+  readPlatformClientDatabase,
   readPlatformSnapshot,
   writePlatformSnapshot
 } from "./platform-snapshot.mjs";
@@ -28,6 +29,7 @@ import {
 } from "../shared/display-date.mjs";
 import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { createHttpError } from "./http-errors.mjs";
+import { getGovernedIncidentDetailRows } from "./governed-incident-details.mjs";
 
 const liveCache = new Map();
 const GOVERNED_AS_OF_CTE = `report_context AS (
@@ -784,11 +786,21 @@ export async function getCommunitiesDashboardData(options = {}) {
   return getCommunitiesDashboardDataLive();
 }
 
-export async function getDataExplorerData(kindValue) {
+export async function getDataExplorerData(kindValue, options = {}) {
   const snapshot = await getRequiredPlatformSnapshot();
-  return normalizeCommunityLabels(
-    buildDataExplorerPayload(snapshot, kindValue, getSnapshotFreshness(snapshot))
-  );
+  const kind = normalizeExplorerKind(kindValue);
+  const residentClientId = normalizeString(options.residentClientId);
+  if (residentClientId.length > 256) {
+    throw createHttpError(400, "client_profile_id_invalid", "Client profile identifier is too long.");
+  }
+  const clientDatabase = kind === "residents"
+    ? await readPlatformClientDatabase(snapshot)
+    : null;
+  const payload = buildDataExplorerPayload(snapshot, kind, getSnapshotFreshness(snapshot), {
+    clientDatabase,
+    residentClientId
+  });
+  return kind === "residents" && clientDatabase ? payload : normalizeCommunityLabels(payload);
 }
 
 export async function getIncidentStream(options = {}) {
@@ -855,11 +867,10 @@ export async function getCommunitySnapshotData(facilityId, options = {}) {
     throw new Error(`No community snapshot found for facility ${normalizedFacilityId}.`);
   }
 
-  const canonicalIncidentDetails =
-    snapshot.reportsSummary?.toolContext?.incidentDetailHistory ??
-    snapshot.reportsSummary?.toolContext?.tables?.incident_detail_history ??
-    snapshot.communities?.incidentDetails ??
-    [];
+  const canonicalIncidentDetails = getGovernedIncidentDetailRows(
+    snapshot.communities,
+    snapshot.reportsSummary
+  );
   const hasDetails = Array.isArray(payload.incidentDetails) && payload.incidentDetails.length > 0;
   const detailPayload =
     hasDetails || !canonicalIncidentDetails.length

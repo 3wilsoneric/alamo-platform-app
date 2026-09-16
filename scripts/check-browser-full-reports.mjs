@@ -274,13 +274,56 @@ async function runDesktop(browser, screenshotDir) {
   attachPageDiagnostics(page, { consoleErrors, requestFailures });
 
   await openReports(page);
+  const analyticsNavigation = page.locator(
+    '[data-analytics-section-navigation][data-analytics-section-current="reports"]'
+  );
+  await analyticsNavigation.waitFor({ state: "visible", timeout: 20_000 });
+  const navigationLayout = await page.evaluate(() => {
+    const navigation = document.querySelector(
+      '[data-analytics-section-navigation][data-analytics-section-current="reports"]'
+    );
+    const reports = document.querySelector('[data-reports-page="true"]');
+    if (!navigation || !reports) return null;
+    const navigationRect = navigation.getBoundingClientRect();
+    const reportsRect = reports.getBoundingClientRect();
+    return {
+      navigationRight: navigationRect.right,
+      navigationBottom: navigationRect.bottom,
+      reportsTop: reportsRect.top,
+      viewportWidth: window.innerWidth
+    };
+  });
   assert(
-    (await page.locator('[data-analytics-report-library="true"] button').count()) === 5 &&
+    navigationLayout &&
+      navigationLayout.navigationRight <= navigationLayout.viewportWidth &&
+      navigationLayout.navigationBottom < navigationLayout.reportsTop,
+    `Analytics view toggle must be visible above the report content: ${JSON.stringify(navigationLayout)}`
+  );
+  assert(
+    (await page.locator('[data-analytics-report-option]').count()) === 5 &&
+      (await page.locator('[data-monday-census-briefing-option="true"]').count()) === 1 &&
       !(await page.getByRole("button", { name: /^Community performance report/ }).count()) &&
       !(await page.getByRole("button", { name: /^Effectiveness evidence report/ }).count()) &&
       !(await page.getByRole("button", { name: /^50-state targeting atlas/ }).count()),
-    "Analytics navigation must contain only the five finished report families"
+    "Analytics navigation must contain the five finished report families and the governed Monday briefing"
   );
+  await page.locator('[data-monday-census-briefing-option="true"]').click();
+  const mondayBriefing = page.locator('[data-monday-census-briefing="true"]');
+  await mondayBriefing.waitFor({ state: "visible", timeout: 20_000 });
+  assert(
+    (await mondayBriefing.locator('[data-monday-census-community-row="true"]').count()) === 5,
+    "Monday census briefing must render all five governed community comparisons"
+  );
+  assert(
+    !(await mondayBriefing.getByText(/Pipeline|pending admission/i).count()),
+    "Monday census briefing must not expose Pipeline data before that feed is governed"
+  );
+  await page.screenshot({
+    path: path.join(screenshotDir, "monday-census-briefing-desktop.png"),
+    fullPage: true
+  });
+  await page.getByRole("button", { name: /^Portfolio overview/ }).click();
+  await waitForReport(page, "overview");
   await assertDocumentFits(page, "portfolio overview");
   await assertContainedReader(page, "portfolio overview");
 

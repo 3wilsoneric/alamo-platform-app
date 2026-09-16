@@ -78,7 +78,7 @@ export function MedicationWatchModule({
             <div className="mt-3 text-[12px] leading-5 text-[#595959]">Last MAR record: {item.lastMar}</div>
           ) : null}
         </>;
-        const className = "border-t border-[#111111] bg-white py-4 text-left transition-colors hover:bg-[#fafafa]";
+        const className = "w-full min-w-0 max-w-full overflow-hidden border-t border-[#111111] bg-white py-4 text-left transition-colors hover:bg-[#fafafa]";
         return onSelect ? (
           <button key={item.id} type="button" data-module-row="medication-watch" aria-label={`Open ${item.resident} resident profile`} onClick={() => onSelect(item)} className={className}>
             {content}

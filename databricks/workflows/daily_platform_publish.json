@@ -7,14 +7,52 @@
     "timezone_id": "America/Los_Angeles",
     "pause_status": "UNPAUSED"
   },
+  "parameters": [
+    {
+      "name": "date_partition_override",
+      "default": ""
+    }
+  ],
   "tasks": [
+    {
+      "task_key": "select_latest_raw_partition",
+      "description": "Select the newest raw business-date partition that is present across every required ElderMark table, or validate an explicit operator override.",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/alamo-platform/select_latest_raw_partition",
+        "base_parameters": {
+          "date_partition_override": "{{job.parameters.date_partition_override}}",
+          "max_raw_partition_age_days": "2"
+        }
+      },
+      "existing_cluster_id": "<existing-job-cluster-id>"
+    },
+    {
+      "task_key": "new_partition_available",
+      "description": "Continue only when the selected raw partition is newer than the last governed snapshot, unless an operator supplied an explicit override.",
+      "depends_on": [
+        {
+          "task_key": "select_latest_raw_partition"
+        }
+      ],
+      "condition_task": {
+        "left": "{{tasks.select_latest_raw_partition.values.should_publish}}",
+        "op": "EQUAL_TO",
+        "right": "true"
+      }
+    },
     {
       "task_key": "eldermark_staged_transform",
       "description": "Normalize the ElderMark raw partition into stable silver datasets for one explicit business date partition.",
+      "depends_on": [
+        {
+          "task_key": "new_partition_available",
+          "outcome": "true"
+        }
+      ],
       "notebook_task": {
         "notebook_path": "/Workspace/Shared/alamo-platform/eldermark_staged_transform",
         "base_parameters": {
-          "date_partition": "<business-date-YYYY-MM-DD>"
+          "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}"
         }
       },
       "existing_cluster_id": "<existing-job-cluster-id>"
@@ -34,7 +72,7 @@
           "silver_schema": "silver",
           "gold_schema": "gold",
           "governed_start_date": "2021-01-01",
-          "date_partition": "<business-date-YYYY-MM-DD>"
+          "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}"
         }
       },
       "existing_cluster_id": "<existing-job-cluster-id>"
@@ -52,7 +90,7 @@
         "base_parameters": {
           "catalog": "alamohealth",
           "gold_schema": "gold",
-          "date_partition": "<business-date-YYYY-MM-DD>"
+          "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}"
         }
       },
       "existing_cluster_id": "<existing-job-cluster-id>"
@@ -70,7 +108,7 @@
         "base_parameters": {
           "catalog": "alamohealth",
           "gold_schema": "gold",
-          "date_partition": "<business-date-YYYY-MM-DD>"
+          "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}"
         }
       },
       "existing_cluster_id": "<existing-job-cluster-id>"
@@ -89,7 +127,7 @@
           "catalog": "alamohealth",
           "silver_schema": "silver",
           "gold_schema": "gold",
-          "date_partition": "<business-date-YYYY-MM-DD>"
+          "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}"
         }
       },
       "existing_cluster_id": "<existing-job-cluster-id>"
@@ -105,13 +143,15 @@
       "notebook_task": {
         "notebook_path": "/Workspace/Shared/alamo-platform/snapshot_publish",
         "base_parameters": {
-          "storage_account": "alamodatalake",
-          "container": "alamo-platform-snapshots",
-          "snapshot_root": "snapshots/daily",
-          "date_partition": "<business-date-YYYY-MM-DD>",
+            "storage_account": "alamodatalake",
+            "container": "alamo-platform-snapshots",
+            "snapshot_root": "snapshots/daily",
+            "client_database_pointer_blob": "snapshots/client-database/release-pointer.json",
+            "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}",
           "entra_tenant_id": "<entra-tenant-id>",
           "entra_client_id": "<entra-client-id>",
-          "entra_client_secret": "<entra-client-secret>"
+          "entra_secret_scope": "alamo-platform-production",
+          "entra_client_secret_key": "snapshot-entra-client-secret"
         }
       },
       "existing_cluster_id": "<existing-job-cluster-id>"

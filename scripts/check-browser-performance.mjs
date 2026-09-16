@@ -27,28 +27,47 @@ function apiPathFromUrl(url) {
   }
 }
 
-async function waitForLatestRenderableReady(page, timeoutMs = SURFACE_READY_MS) {
-  await page.waitForFunction(
-    () => {
-      const renderables = Array.from(
-        document.querySelectorAll("[data-chat-module-content-id], [data-chat-visual-module-id]")
-      );
+async function waitForLatestRenderableReady(page, label, timeoutMs = SURFACE_READY_MS) {
+  try {
+    await page.waitForFunction(
+      () => {
+        const renderables = Array.from(
+          document.querySelectorAll("[data-chat-module-content-id], [data-chat-visual-module-id]")
+        );
+        const root = renderables.at(-1);
+        if (!root) return false;
+        const text = root.textContent || "";
+        return !/Loading [\s\S]*?(data|snapshot|directory|incidents)|Loading\.\.\./i.test(text);
+      },
+      undefined,
+      { timeout: timeoutMs }
+    );
+  } catch (error) {
+    const state = await page.evaluate(() => {
+      const renderables = Array.from(document.querySelectorAll(
+        "[data-chat-module-content-id], [data-chat-visual-module-id]"
+      ));
       const root = renderables.at(-1);
-      if (!root) return false;
-      const text = root.textContent || "";
-      return !/Loading [\s\S]*?(data|snapshot|directory|incidents)|Loading\.\.\./i.test(text);
-    },
-    undefined,
-    { timeout: timeoutMs }
-  );
+      return {
+        path: location.pathname,
+        renderableCount: renderables.length,
+        hasLoadingText: Boolean(root && /Loading [\s\S]*?(data|snapshot|directory|incidents)|Loading\.\.\./i.test(root.textContent || ""))
+      };
+    }).catch(() => null);
+    throw new Error(`${label} renderable readiness timed out: ${JSON.stringify(state)}`, { cause: error });
+  }
 }
 
 async function waitForText(page, pattern, timeoutMs = HEAVY_ROUTE_READY_MS) {
-  await page.waitForFunction(
-    ({ source, flags }) => new RegExp(source, flags).test(document.body.innerText || ""),
-    { source: pattern.source, flags: pattern.flags },
-    { timeout: timeoutMs }
-  );
+  try {
+    await page.waitForFunction(
+      ({ source, flags }) => new RegExp(source, flags).test(document.body.innerText || ""),
+      { source: pattern.source, flags: pattern.flags },
+      { timeout: timeoutMs }
+    );
+  } catch (error) {
+    throw new Error(`Route text readiness timed out at ${new URL(page.url()).pathname}: ${pattern}`, { cause: error });
+  }
 }
 
 async function measureRouteReady(page, pathname, pattern) {
@@ -58,28 +77,25 @@ async function measureRouteReady(page, pathname, pattern) {
   return Math.round(performance.now() - startedAt);
 }
 
-async function openQuestionGuide(page, timeoutMs) {
-  const guide = page.locator('[data-certified-question-guide="true"]').first();
-  if (await guide.isVisible().catch(() => false)) return;
-  const openButton = page
-    .getByRole("button", { name: /^(Ask a question|Questions|Open questions)$/i })
-    .first();
-  await Promise.race([
-    guide.waitFor({ state: "visible", timeout: timeoutMs }),
-    openButton.waitFor({ state: "visible", timeout: timeoutMs })
-  ]);
-  if (await guide.isVisible().catch(() => false)) return;
-  await openButton.click({ timeout: timeoutMs });
-  await guide.waitFor({ state: "visible", timeout: timeoutMs });
+async function openAnalyticsQuestionGuide(page, timeoutMs) {
+  await page.locator('[data-platform-page-target="analytics"]').click({ timeout: timeoutMs });
+  const analyticsSections = page.locator('[data-analytics-section-navigation][data-analytics-section-current="reports"]');
+  await analyticsSections.waitFor({ state: "visible", timeout: timeoutMs });
+  await analyticsSections.locator('[data-analytics-section-target="questions"]').click({ timeout: timeoutMs });
+  await page.locator('[data-california-carousel-panel="questions"][aria-hidden="false"]')
+    .waitFor({ state: "visible", timeout: timeoutMs });
+  await page.locator('[data-certified-question-guide="true"]').first().waitFor({
+    state: "visible",
+    timeout: timeoutMs
+  });
 }
 
 async function measureResidentSearchSurfaceReady(page) {
   const startedAt = performance.now();
-  await page.goto(`${BASE_URL}/questions`, { waitUntil: "domcontentloaded" });
-  await openQuestionGuide(page, SURFACE_READY_MS);
+  await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "domcontentloaded" });
   await startCleanChat(page);
   await ask(page, "Can you show me the Resident Search module?");
-  await waitForLatestRenderableReady(page);
+  await waitForLatestRenderableReady(page, "Resident Search");
   await waitForText(page, /Resident Search|Search residents|Resident profile/i, SURFACE_READY_MS);
   return Math.round(performance.now() - startedAt);
 }
@@ -90,6 +106,7 @@ async function main() {
   const requestFailures = [];
   const apiStarts = new Map();
   const apiRequests = [];
+  let requestPhase = "setup";
   let page;
 
   await withBrowserQa(async (browser) => {
@@ -101,7 +118,10 @@ async function main() {
 
     page.on("request", (request) => {
       if (apiPathFromUrl(request.url()).startsWith("/api/")) {
-        apiStarts.set(request, performance.now());
+        apiStarts.set(request, {
+          startedAt: performance.now(),
+          phase: requestPhase
+        });
       }
     });
 
@@ -109,28 +129,34 @@ async function main() {
       const request = response.request();
       const pathName = apiPathFromUrl(request.url());
       if (!pathName.startsWith("/api/")) return;
-      const startedAt = apiStarts.get(request);
+      const requestStart = apiStarts.get(request);
       apiStarts.delete(request);
       apiRequests.push({
         path: pathName,
         status: response.status(),
-        durationMs: startedAt ? Math.round(performance.now() - startedAt) : null
+        durationMs: requestStart ? Math.round(performance.now() - requestStart.startedAt) : null,
+        phase: requestStart?.phase ?? "unknown"
       });
     });
 
+    requestPhase = "home";
     const homeStart = performance.now();
     await page.goto(`${BASE_URL}/home`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: /Ask a question|Questions/i }).first().waitFor({ timeout: HOME_READY_MS });
+    await page.locator('[data-platform-page-target="analytics"]').waitFor({
+      state: "visible",
+      timeout: HOME_READY_MS
+    });
     const homeReadyMs = Math.round(performance.now() - homeStart);
 
+    requestPhase = "analytics";
     const chatStart = performance.now();
-    await openQuestionGuide(page, CHAT_READY_MS);
+    await openAnalyticsQuestionGuide(page, CHAT_READY_MS);
     const chatReadyMs = Math.round(performance.now() - chatStart);
 
     await startCleanChat(page);
     const surfaceStart = performance.now();
     await ask(page, "Can you compare communities?");
-    await waitForLatestRenderableReady(page);
+    await waitForLatestRenderableReady(page, "community comparison");
     await delay(150);
     const surfaceReadyMs = Math.round(performance.now() - surfaceStart);
 
@@ -143,7 +169,9 @@ async function main() {
     const residentSearchSurfaceReadyMs = await measureResidentSearchSurfaceReady(page);
 
     const bootstrapRequests = apiRequests.filter((entry) => entry.path === "/api/platform/bootstrap");
-    const hiddenReportRequests = apiRequests.filter((entry) => entry.path.startsWith("/api/reports/full/"));
+    const hiddenReportRequests = apiRequests.filter((entry) =>
+      entry.phase === "home" && entry.path.startsWith("/api/reports/full/")
+    );
     const slowApiRequests = apiRequests.filter((entry) => Number(entry.durationMs) > 4_000);
     const failures = [];
 

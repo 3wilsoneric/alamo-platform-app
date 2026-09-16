@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { getCommunitiesDashboardData, getReportsSummaryData } from "../server/platform-data.mjs";
 import { buildCertifiedAnswerDataSignature } from "../server/certified-answer-cache.mjs";
 import { runCopilotTool } from "../server/copilot-tools.mjs";
+import { getGovernedIncidentDetailRows } from "../server/governed-incident-details.mjs";
 import {
   getCertifiedQuestionRoutes,
   makeCertifiedQuestionMeta
@@ -19,7 +20,7 @@ function getMonths(communities, reportsSummary) {
   return [...new Set([
     ...(communities.census ?? []).map((row) => row.month_bucket),
     ...(communities.incidents ?? []).map((row) => row.month_bucket),
-    ...(communities.incidentDetails ?? []).map((row) => row.month_bucket),
+    ...getGovernedIncidentDetailRows(communities, reportsSummary).map((row) => row.month_bucket),
     ...(reportsSummary.medicationCompliance ?? []).map((row) => row.month_bucket)
   ].filter(Boolean))].sort();
 }

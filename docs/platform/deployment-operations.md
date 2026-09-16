@@ -133,6 +133,33 @@ Azure snapshot storage:
 - `PLATFORM_SNAPSHOT_MAX_BYTES` defaults to 64 MB. The publisher emits compact,
   tables-only analyst context so the governed snapshot remains below this bound.
 
+Private acquisition storage uses the same Azure account and private container:
+
+- `ACQUISITION_STORAGE_CONTAINER` optionally overrides
+  `AZURE_STORAGE_CONTAINER`
+- `ACQUISITION_STORAGE_ROOT` defaults to `acquisition-intelligence`
+- `ACQUISITION_STORAGE_READ_SOURCE` may force `local` or `azure` for controlled
+  verification; production defaults to Azure and fails closed
+- `ACQUISITION_STORAGE_CACHE_TTL_MS` defaults to five minutes
+- `npm run acquisition:publish:azure` publishes raw source lineage plus the
+  validated manifest and compressed facility index
+- `ACQUISITION_PUBLISH_RESEARCH_INITIALIZE=true npm run
+  acquisition:publish:azure` is a first-use-only initializer; it cannot replace
+  an existing production research store
+
+Production research mutations use conditional Blob ETags and retry bounded
+conflicts. Successful revisions are archived under the acquisition storage root
+so the owner-authored workflow is durable across Azure Container Apps replicas
+and Vercel serverless instances. The Azure Container Apps runtime uses its
+existing user-assigned managed identity; grant that identity Blob Data
+Contributor only on the private snapshot container so it can persist research
+without receiving account-wide write access.
+
+Company-level research, hold, and pass decisions are stored separately at
+`research/operator-selections-v1.json.gz` with the same owner-only API boundary
+and conditional Blob-write protection. Generated proposal refreshes never
+overwrite this decision store.
+
 Databricks:
 
 - `DATABRICKS_HOST`

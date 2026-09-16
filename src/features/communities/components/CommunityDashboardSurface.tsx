@@ -5,8 +5,10 @@ import { surfaceInPlatformCanvas } from "../../../shared/canvas/canvasEvents";
 import {
   fetchAnalyticsSummary,
   fetchCommunitiesDashboard,
+  fetchCommunitySnapshot,
   readCachedAnalyticsSummary,
   readCachedCommunitiesDashboard,
+  type CommunitySnapshotResponse,
   type LiveCommunitiesDashboardResponse,
   type ReportsSummaryResponse
 } from "../../../shared/api/platformData";
@@ -144,14 +146,14 @@ export default function CommunityDashboardSurface({
   compact?: boolean;
 }) {
   const [dashboard, setDashboard] = useState<LiveCommunitiesDashboardResponse | null>(readCachedCommunitiesDashboard);
+  const [communitySnapshot, setCommunitySnapshot] = useState<CommunitySnapshotResponse | null>(null);
   const [reportsSummary, setReportsSummary] = useState<ReportsSummaryResponse | null>(readCachedAnalyticsSummary);
   const [unavailable, setUnavailable] = useState(false);
   const [reportsSummaryUnavailable, setReportsSummaryUnavailable] = useState(false);
-  const [showIncidentReports, setShowIncidentReports] = useState(Boolean(category || month || residentId));
   const [selectedIncident, setSelectedIncident] = useState<CommunityIncidentDetailRecord | null>(null);
+  const showIncidentReports = Boolean(category || month || residentId);
 
   useEffect(() => {
-    setShowIncidentReports(Boolean(category || month || residentId));
     setSelectedIncident(null);
   }, [category, facilityId, month, residentId]);
 
@@ -165,6 +167,7 @@ export default function CommunityDashboardSurface({
     if (cachedReportsSummary) setReportsSummary(cachedReportsSummary);
     setUnavailable(false);
     setReportsSummaryUnavailable(false);
+    setCommunitySnapshot(null);
 
     fetchCommunitiesDashboard(controller.signal)
       .then((payload) => {
@@ -191,6 +194,23 @@ export default function CommunityDashboardSurface({
     return () => controller.abort();
   }, [facilityId]);
 
+  useEffect(() => {
+    if (!showIncidentReports) {
+      setCommunitySnapshot(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    fetchCommunitySnapshot(facilityId, controller.signal)
+      .then(setCommunitySnapshot)
+      .catch((error) => {
+        if (isAbortError(error)) return;
+        console.warn("Focused community incident detail is unavailable.", error);
+      });
+
+    return () => controller.abort();
+  }, [facilityId, showIncidentReports]);
+
   const model = useMemo(() => {
     if (!dashboard) return null;
 
@@ -206,7 +226,10 @@ export default function CommunityDashboardSurface({
       .filter((row) => String(row.facility_id) === String(facilityId))
       .sort((left, right) => (right.los_days ?? 0) - (left.los_days ?? 0));
     const selectedResidentId = residentId?.trim() || null;
-    const facilityIncidentDetails = (dashboard.incidentDetails ?? [])
+    const governedIncidentDetails = communitySnapshot?.incidentDetails?.length
+      ? communitySnapshot.incidentDetails
+      : dashboard.incidentDetails ?? [];
+    const facilityIncidentDetails = governedIncidentDetails
       .filter((row) => String(row.facility_id) === String(facilityId));
     const residentIncidentDetails = selectedResidentId
       ? facilityIncidentDetails.filter((row) => String(row.resident_id) === selectedResidentId)
@@ -340,7 +363,7 @@ export default function CommunityDashboardSurface({
       averageAge: average(residents.map((resident) => Number(resident.age)).filter(Number.isFinite)),
       averageLos: average(residents.map((resident) => Number(resident.los_days)).filter(Number.isFinite))
     };
-  }, [category, dashboard, facilityId, month, reportsSummary, residentId]);
+  }, [category, communitySnapshot, dashboard, facilityId, month, reportsSummary, residentId]);
 
   const fallbackName = ALAMO_FACILITIES.find((facility) => facility.facilityId === facilityId)?.communityName ?? "Community";
   const facilityName = model?.facility.community_name ?? fallbackName;

@@ -691,7 +691,7 @@ export default function IncidentCenterPage({
           ) : null}
 
           <div className={embedded ? "border-b border-[#d9d9d9] py-2.5" : "border-b border-white/[0.08] px-1 py-2.5"}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2">
                 {contentPages.map((page, index) => (
                   <button
@@ -718,14 +718,14 @@ export default function IncidentCenterPage({
                   </button>
                 ))}
               </div>
-              <div className={embedded ? "text-[11px] text-[#737373]" : "text-[11px] text-white/34"}>
+              <div className={embedded ? "min-w-[64px] text-right text-[11px] tabular-nums text-[#737373]" : "min-w-[64px] text-right text-[11px] tabular-nums text-white/34"}>
                 {totalActive} active
               </div>
             </div>
           </div>
 
           <div className={embedded ? "min-h-0 flex-1 py-3" : "min-h-0 flex-1 px-1 py-2.5"}>
-            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="mb-2.5 grid gap-2.5 px-1 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2.5">
                 <h1 className={embedded
                   ? "text-[11px] font-bold uppercase tracking-[0.14em] text-[#595959]"
@@ -770,20 +770,20 @@ export default function IncidentCenterPage({
               ? "mb-3 border-y border-[#d9d9d9] bg-[#fafafa] px-3.5 py-2.5 text-[12px] text-[#595959]"
               : "mb-3 rounded-[18px] border border-white/[0.08] bg-white/[0.035] px-3.5 py-2.5 text-[12px] text-white/58"
             }>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="grid items-start gap-x-4 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)] xl:flex xl:flex-wrap xl:items-center">
                 <span className={embedded ? "font-semibold text-[#111111]" : "font-semibold text-white/72"}>
                   Freshness
                 </span>
-                <span>{freshnessCopy}</span>
-                <span>{latestLoadedCount.toLocaleString()} on latest loaded day.</span>
-                <span>{incidents.length.toLocaleString()} reports in this {facilityId ? "community" : "stream"}.</span>
+                <span className="min-h-[54px] xl:min-h-0">{freshnessCopy}</span>
+                <span className="tabular-nums">{latestLoadedCount.toLocaleString()} on latest loaded day.</span>
+                <span className="tabular-nums">{incidents.length.toLocaleString()} reports in this {facilityId ? "community" : "stream"}.</span>
               </div>
             </div>
 
             {loading ? (
               <div className={embedded
                 ? "py-20 text-center text-[13px] text-[#737373]"
-                : "py-20 text-center text-[13px] text-white/30"
+                : "flex min-h-[calc(100dvh-330px)] items-center justify-center py-20 text-center text-[13px] text-white/30"
               }>
                 Loading incidents...
               </div>

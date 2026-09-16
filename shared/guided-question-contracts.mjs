@@ -5,6 +5,7 @@ function contract(config) {
     allowedTruthStates: DEFAULT_TRUTH_STATES,
     allowedVisualTypes: Object.freeze([]),
     requiredColumns: Object.freeze([]),
+    alternativeRequiredColumnSets: Object.freeze([]),
     requiredAnswerTerms: Object.freeze([]),
     requiresVisual: true,
     requiresArtifact: false,
@@ -187,9 +188,17 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
     requiredAnswerTerms: [["highest"], ["lowest"]]
   }),
   "medication-exception-detail": contract({
-    allowedTruthStates: ["valid_rows", "not_loaded"],
+    allowedTruthStates: ["valid_rows", "verified_zero", "not_loaded"],
     allowedVisualTypes: ["table"],
-    requiredAnswerTerms: [["MAR exception", "medication exception"]],
+    requiredAnswerTerms: [[
+      "MAR exception",
+      "medication exception",
+      "medication refusal",
+      "late medication administration",
+      "held or on-hold medication",
+      "PRN medication",
+      "not-given medication"
+    ]],
     requiresArtifactWhenValid: true
   }),
   "medication-current-orders": contract({
@@ -228,7 +237,10 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
   }),
   "data-slice-catalog": contract({
     allowedVisualTypes: ["table"],
-    requiredColumns: ["Surface", "Coverage", "Status"],
+    alternativeRequiredColumnSets: [
+      ["Slice", "Level", "Records", "Period"],
+      ["Surface", "Coverage", "Status"]
+    ],
     requiredAnswerTerms: [["supports", "data bundle"]]
   }),
   "operating-snapshot": contract({
@@ -357,6 +369,12 @@ export function validateGuidedQuestionResult({ contract: providedContract, quest
   if (truthState === "valid_rows" && result?.visual && contractValue.requiredColumns.length) {
     const missingColumns = requiredColumnsMissing(result.visual, contractValue.requiredColumns);
     if (missingColumns.length) failures.push(`visual is missing columns: ${missingColumns.join(", ")}`);
+  }
+  if (truthState === "valid_rows" && result?.visual && contractValue.alternativeRequiredColumnSets.length) {
+    const hasValidColumnSet = contractValue.alternativeRequiredColumnSets.some(
+      (requiredColumns) => requiredColumnsMissing(result.visual, requiredColumns).length === 0
+    );
+    if (!hasValidColumnSet) failures.push("visual does not match an allowed column schema");
   }
 
   const requiresArtifact = contractValue.requiresArtifact || (contractValue.requiresArtifactWhenValid && truthState === "valid_rows");

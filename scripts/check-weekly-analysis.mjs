@@ -78,6 +78,9 @@ assert.equal(exactPartialWeek.operational.currentWeeklyCensus, 268);
 assert.equal(exactPartialWeek.operational.priorWeeklyCensus, 260);
 assert.equal(exactPartialWeek.operational.censusChange7d, 8);
 assert.equal(exactPartialWeek.operational.latestCensusWeek, "2026-07-22");
+assert.equal(exactPartialWeek.operational.censusCadence, "weekly");
+assert.equal(exactPartialWeek.operational.currentCensus, 268);
+assert.equal(exactPartialWeek.operational.censusChange, 8);
 
 const legacyCompleteWeeks = buildWithWeeklyRows([
   {
@@ -230,5 +233,24 @@ assert.equal(
   null,
   "published comparisons with a non-seven-day interval must be rejected"
 );
+
+const monthlyFallback = buildHomeDashboard({
+  ...communities,
+  census: [
+    { facility_id: "337", month_bucket: "2026-06", census: 140 },
+    { facility_id: "337", month_bucket: "2026-07", census: 148 },
+    { facility_id: "345", month_bucket: "2026-06", census: 116 },
+    { facility_id: "345", month_bucket: "2026-07", census: 120 }
+  ]
+}, { toolContext: {} });
+
+assert.equal(monthlyFallback.operational.currentWeeklyCensus, null);
+assert.equal(monthlyFallback.operational.censusCadence, "monthly");
+assert.equal(monthlyFallback.operational.currentCensusPeriod, "2026-07");
+assert.equal(monthlyFallback.operational.priorCensusPeriod, "2026-06");
+assert.equal(monthlyFallback.operational.currentCensus, 268);
+assert.equal(monthlyFallback.operational.priorCensus, 256);
+assert.equal(monthlyFallback.operational.censusChange, 12);
+assert.equal(monthlyFallback.communities[0].currentCensus, 148);
 
 console.log("Weekly analysis checks passed.");

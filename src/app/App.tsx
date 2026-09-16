@@ -42,8 +42,12 @@ export default function App() {
           path="/home/community/:facilityId"
           element={withRouteBoundary(<CaliforniaHomePage />)}
         />
-        <Route path="/questions" element={withRouteBoundary(<CaliforniaHomePage />)} />
+        <Route path="/questions" element={<Navigate to="/analytics/questions" replace />} />
         <Route path="/analytics" element={withRouteBoundary(<CaliforniaHomePage />)} />
+        <Route
+          path="/analytics/questions"
+          element={withRouteBoundary(<CaliforniaHomePage />)}
+        />
         <Route path="/reports" element={withRouteBoundary(<CaliforniaHomePage />)} />
         <Route path="/communities" element={withRouteBoundary(<AppHomePage />)} />
         <Route
@@ -52,6 +56,7 @@ export default function App() {
         />
         <Route path="/incidents" element={withRouteBoundary(<IncidentCenterPage />)} />
         <Route path="/admissions" element={withRouteBoundary(<AdmissionsPage />)} />
+        <Route path="/pipeline" element={<Navigate to="/admissions" replace />} />
         <Route path="/glossary" element={withRouteBoundary(<GlossaryPage />)} />
         <Route path="/explorer/:kind" element={withRouteBoundary(<DataExplorerPage />)} />
         <Route path="/command-center" element={withRouteBoundary(<CommandCenterPage />)} />

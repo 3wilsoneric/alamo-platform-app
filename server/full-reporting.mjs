@@ -17,6 +17,7 @@ import { ALAMO_FACILITIES } from "../shared/community-names.mjs";
 import { formatDisplayDate, formatDisplayDateTime } from "../shared/display-date.mjs";
 import { formatMonthLabel } from "../shared/period-utils.mjs";
 import { getEffectivenessEvidencePlan } from "../shared/effectiveness-evidence.mjs";
+import { getGovernedIncidentDetailRows } from "./governed-incident-details.mjs";
 
 const integerFormatter = new Intl.NumberFormat("en-US");
 const decimalFormatter = new Intl.NumberFormat("en-US", {
@@ -982,9 +983,14 @@ function buildCommunityReport(context) {
       value: integer(row.census)
     }));
   const incidentPeriod = request.period ?? community.reporting_month;
+  const communityIncidentDetails = Array.isArray(community.incidentDetails) && community.incidentDetails.length > 0
+    ? community.incidentDetails
+    : getGovernedIncidentDetailRows(communities, summary).filter(
+        (row) => text(row.facility_id) === facilityId
+      );
   const incidentRows = incidentPeriod
-    ? (community.incidentDetails ?? []).filter((row) => text(row.month_bucket) === incidentPeriod)
-    : community.incidentDetails ?? [];
+    ? communityIncidentDetails.filter((row) => text(row.month_bucket) === incidentPeriod)
+    : communityIncidentDetails;
   const complianceRows = latestMonthRows(
     (summary.medicationCompliance ?? []).filter((row) => text(row.facility_id) === facilityId),
     request.period
@@ -1034,7 +1040,7 @@ function buildCommunityReport(context) {
     )
     .reduce((total, row) => total + number(row.incident_count), 0);
   const incidentSeverity = incidentSeverityForPeriod(
-    community.incidentDetails,
+    communityIncidentDetails,
     incidentPeriod,
     facilityId,
     expectedIncidentTotal
@@ -1289,7 +1295,7 @@ function buildCommunityReport(context) {
     sources: [
       evidence("community_snapshot", 1, facilityName),
       evidence("census_monthly_by_community", community.census ?? []),
-      evidence("incident_detail_history", community.incidentDetails ?? []),
+      evidence("incident_detail_history", communityIncidentDetails),
       evidence("resident_profile", communityResidents, "Operational placeholder profiles excluded"),
       evidence("medication_compliance_monthly", complianceRows.rows),
       ...(flowRows.rows.length ? [evidence("resident_flow_monthly_by_community", flowSourceRows)] : []),
@@ -1969,7 +1975,7 @@ function buildFocusedReport(context) {
       displayValue: integer(row.incidents)
     }));
     const severity = incidentSeverityForPeriod(
-      communities.incidentDetails,
+      getGovernedIncidentDetailRows(communities, summary),
       rows.period,
       request.facilityId,
       total
@@ -2120,6 +2126,22 @@ function buildFocusedReport(context) {
           })
           .sort((left, right) => left.community.localeCompare(right.community))
       : [];
+    const burdenCommunityColumns = [
+      { key: "community", label: "Community" },
+      { key: "residents", label: "Residents" },
+      ...(burdenByCommunity.some((row) => row.burden.averageActiveMedications != null)
+        ? [{ key: "active", label: "Average active medications" }]
+        : []),
+      ...(burdenByCommunity.some((row) => row.burden.averagePsychotropics != null)
+        ? [{ key: "psychotropics", label: "Average psychotropics" }]
+        : []),
+      ...(burdenByCommunity.some((row) => row.burden.averageResidentCompliance != null)
+        ? [{ key: "compliance", label: "Average resident compliance" }]
+        : []),
+      ...(burdenByCommunity.some((row) => row.burden.prnFollowupPercentage != null)
+        ? [{ key: "prn", label: "PRN follow-up" }]
+        : [])
+    ];
     return buildBaseReport({
       request,
       definition,
@@ -2185,14 +2207,7 @@ function buildFocusedReport(context) {
               items: medicationBurdenItems(burden, true)
             },
             ...(burdenByCommunity.length ? [table(
-              [
-                { key: "community", label: "Community" },
-                { key: "residents", label: "Residents" },
-                { key: "active", label: "Average active medications" },
-                { key: "psychotropics", label: "Average psychotropics" },
-                { key: "compliance", label: "Average resident compliance" },
-                { key: "prn", label: "PRN follow-up" }
-              ],
+              burdenCommunityColumns,
               burdenByCommunity.map((row) => ({
                 community: row.community,
                 residents: integer(row.burden.rows.length),

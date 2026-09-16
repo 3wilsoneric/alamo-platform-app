@@ -8,6 +8,7 @@ import { authConfig, msalInstance } from "./app/auth/authConfig";
 import { initializeRedirectAuthentication } from "./app/auth/redirectAuthentication";
 import { getAuthenticationErrorMessage } from "../shared/auth-redirect-contract.mjs";
 import { PlatformWordmark } from "./shared/branding/PlatformWordmark";
+import { DesktopRuntime } from "./shared/desktop/DesktopRuntime";
 import "./styles.css";
 
 async function bootstrap() {
@@ -15,6 +16,7 @@ async function bootstrap() {
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
+      <DesktopRuntime />
       <MsalProvider instance={msalInstance}>
         <BrowserRouter>
           <AppProviders>

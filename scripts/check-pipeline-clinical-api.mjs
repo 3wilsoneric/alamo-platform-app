@@ -4,7 +4,10 @@ import { fileURLToPath } from "node:url";
 import { assertApiClaimsPermission } from "../server/api-auth.mjs";
 import {
   buildPipelineClinicalApiResponse,
+  buildPipelineClinicalIntelligenceResponse,
+  pipelineClinicalPathRequiresClientDatabase,
   parsePipelineClinicalClientDocumentPath,
+  parsePipelineClinicalClientIntelligencePath,
   PIPELINE_CLINICAL_API_PREFIX
 } from "../server/pipeline-clinical-api.mjs";
 
@@ -30,6 +33,15 @@ const clientDatabase = {
     "assessment_notes"
   ],
   document_count: 1,
+  client_fact_count: 1,
+  client_facts: [{
+    canonical_client_id: "client-history",
+    field_name: "prior_setting_bucket",
+    field_value: "Sanitized prior setting",
+    completion_status: "verified",
+    evidence_count: 1,
+    max_confidence: 0.96
+  }],
   documents: [
     {
       canonical_client_id: "client-history",
@@ -116,6 +128,15 @@ fixture.communities.residents[0].canonical_client_id = "client-avery";
 fixture.communities.residents[1].canonical_client_id = "client-jordan";
 const checks = [];
 
+check("optional client enrichment cannot disable core clinical projections", () => {
+  assert(pipelineClinicalPathRequiresClientDatabase(`${PIPELINE_CLINICAL_API_PREFIX}/clients`));
+  assert(pipelineClinicalPathRequiresClientDatabase(`${PIPELINE_CLINICAL_API_PREFIX}/clients/client-history`));
+  assert(!pipelineClinicalPathRequiresClientDatabase(`${PIPELINE_CLINICAL_API_PREFIX}/census`));
+  assert(!pipelineClinicalPathRequiresClientDatabase(`${PIPELINE_CLINICAL_API_PREFIX}/roster`));
+  assert(!pipelineClinicalPathRequiresClientDatabase(`${PIPELINE_CLINICAL_API_PREFIX}/residents/R-100`));
+  assert(!pipelineClinicalPathRequiresClientDatabase(`${PIPELINE_CLINICAL_API_PREFIX}/medications/summary`));
+});
+
 check("census preserves reconciliation and source metadata", () => {
   const response = request("/census");
   equal(response.statusCode, 200);
@@ -180,10 +201,64 @@ check("canonical client search covers names and resident numbers and returns enr
   equal(detail.body.client.source_documents.length, 1);
   equal(detail.body.client.source_documents[0].thumbnail_available, true);
   equal(detail.body.client.source_documents[0].preview_available, false);
+  equal(detail.body.client.facts.length, 1);
+  equal(detail.body.client.facts[0].field_name, "prior_setting_bucket");
   equal(detail.body.client_database.baseline_date, "2026-08-18");
   const serialized = JSON.stringify(detail.body);
   assert(!serialized.includes("thumbnail_path"), "Storage paths must not be exposed to Pipeline");
   assert(!serialized.includes("preview_path"), "Storage paths must not be exposed to Pipeline");
+});
+
+check("client fact evidence and page search stay client scoped and cursor bounded", () => {
+  const intelligence = {
+    version: 1,
+    canonical_client_id: "client-history",
+    document_ids: ["document-sanitized-001"],
+    evidence: [{
+      field_name: "prior_setting_bucket",
+      document_id: "document-sanitized-001",
+      page_number: 2,
+      evidence_text: "Sanitized evidence names a prior setting.",
+      candidate_value: "Sanitized prior setting",
+      confidence: 0.96,
+      status: "accepted"
+    }],
+    pages: [{
+      document_id: "document-sanitized-001",
+      page_number: 2,
+      section: "Placement",
+      text: "The sanitized packet records a prior setting for this client."
+    }]
+  };
+  const evidenceUrl = new URL(
+    `${PIPELINE_CLINICAL_API_PREFIX}/clients/client-history/facts/prior_setting_bucket/evidence?limit=1`,
+    "https://www.alamoplatform.com"
+  );
+  const evidence = buildPipelineClinicalIntelligenceResponse(fixture, evidenceUrl, now, clientDatabase, intelligence);
+  equal(evidence.statusCode, 200);
+  equal(evidence.body.evidence[0].document_name, "Sanitized historical packet.pdf");
+  assert(!JSON.stringify(evidence.body).includes("thumbnail_path"), "Evidence must not expose storage paths");
+
+  const searchUrl = new URL(
+    `${PIPELINE_CLINICAL_API_PREFIX}/clients/client-history/search?q=prior%20setting&limit=1`,
+    "https://www.alamoplatform.com"
+  );
+  const search = buildPipelineClinicalIntelligenceResponse(fixture, searchUrl, now, clientDatabase, intelligence);
+  equal(search.statusCode, 200);
+  equal(search.body.total, 1);
+  equal(search.body.results[0].page_number, 2);
+  assert(!JSON.stringify(search.body).includes("resident_name"), "Document search must not add identity fields");
+
+  const parsed = parsePipelineClinicalClientIntelligencePath(searchUrl.pathname);
+  equal(parsed.kind, "search");
+  equal(parsed.canonicalClientId, "client-history");
+  equal(capture(() => buildPipelineClinicalIntelligenceResponse(
+    fixture,
+    new URL(`${searchUrl}&cursor=not-a-cursor`),
+    now,
+    clientDatabase,
+    intelligence
+  )).statusCode, 400);
 });
 
 check("client-document routes are exact and preserve opaque identifiers", () => {

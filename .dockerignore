@@ -1,0 +1,17 @@
+.DS_Store
+.auth/
+.env
+.env.*
+.git/
+.vercel/
+databricks/
+docs/
+generated/
+node_modules/
+output/
+public/
+scripts/
+tmp/
+server/platform-snapshot.mjs
+*.pyc
+__pycache__/

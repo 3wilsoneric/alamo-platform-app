@@ -3,7 +3,7 @@
 - purpose: define the final Alamo Platform release gate for the rails-only analyst workspace
 - status: authoritative current-state release checklist
 - owners: engineering, product, data platform
-- updated: 2026-07-18
+- updated: 2026-09-15
 - tags: release, qa, browser, analyst, snapshot, data
 - labels: platform-handbook, current-state, release-gate
 - related files:
@@ -14,16 +14,20 @@
 
 ## Ship Gate
 
-Run this from the app root before handing off a release:
+Run the predeployment gate from the app root before changing production:
 
 ```bash
 cd /Users/eric/CareEngineMain/alamo-platform-app
-npm run check:ship
+npm run check:ship:predeploy
 ```
 
-This is the strongest local gate. It runs the full platform-ready profile,
-browser journey checks, production smoke checks, and the production build. It
-stops on the first failure so the next action is obvious.
+This runs the full local, browser, dependency, and production-build stages and
+stops on the first failure. It excludes signed-in smoke against the old
+production revision, whose UI can legitimately differ from the candidate.
+After deploying the named revision, run `npm run check:ship` against the new
+production site. That is the strongest end-to-end gate and includes production
+smoke, signed-in navigation, guided questions, and the build. Roll back a
+failed postdeployment gate rather than treating it as a successful release.
 
 The release and full profiles run `check:dependencies`, which fails on high or
 critical production dependency advisories. The only documented exception is
@@ -45,8 +49,9 @@ Before inviting the initial users:
    `access_as_user`.
 4. Publish the latest governed snapshot and confirm its source date, generated
    time, census audit, weekly context, and payload headroom.
-5. Deploy one named production revision, then run `npm run check:ship` against
-   that deployment. Do not launch from an uncommitted or ambiguous local state.
+5. Pass `npm run check:ship:predeploy`, deploy one named production revision,
+   then run `npm run check:ship` against that deployment. Do not launch from an
+   uncommitted or ambiguous local state.
 6. Complete the human smoke pass with one of the six assigned accounts and one
    deliberately unassigned account.
 
@@ -94,7 +99,8 @@ Then verify the published snapshot:
 
 ## No-Go Conditions
 
-- `npm run check:ship` fails.
+- `npm run check:ship:predeploy` fails before cutover, or `npm run check:ship`
+  fails after cutover.
 - The production signed-in smoke cannot reach the app.
 - A guided question returns a fallback for a month/community that exists in the governed snapshot.
 - A vetted question shows an unvetted CTA, report-builder button, or data-explorer link.

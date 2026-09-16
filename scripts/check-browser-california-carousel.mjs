@@ -127,7 +127,7 @@ async function assertNoPanelOverflow(page, panelName, label) {
 
 async function assertMapNavigationPlacement(page, viewport, label) {
   const placement = await page
-    .locator('[data-california-hero-menu="true"]')
+    .locator('[data-platform-page-navigation="true"]')
     .evaluate((menu) => {
       const box = menu.getBoundingClientRect();
       return {
@@ -149,12 +149,14 @@ async function assertAnalyticsComposition(page, viewport, label) {
     const aside = document.querySelector('aside[aria-label="Analytics"]');
     const main = reports?.querySelector('main');
     const library = document.querySelector('[data-analytics-report-library="true"]');
+    const mobileChoice = document.querySelector('[data-mobile-report-choice="true"]');
     const reader = document.querySelector('[data-full-report]');
     if (!reports || !aside || !main || !library || !reader) return null;
     const reportsBox = reports.getBoundingClientRect();
     const asideBox = aside.getBoundingClientRect();
     const mainBox = main.getBoundingClientRect();
     const libraryBox = library.getBoundingClientRect();
+    const mobileChoiceBox = mobileChoice?.getBoundingClientRect();
     const readerBox = reader.getBoundingClientRect();
     return {
       reportsLeft: reportsBox.left,
@@ -167,6 +169,7 @@ async function assertAnalyticsComposition(page, viewport, label) {
       mainTop: mainBox.top,
       mainWidth: mainBox.width,
       libraryBottom: libraryBox.bottom,
+      mobileChoiceBottom: mobileChoiceBox?.bottom ?? null,
       readerTop: readerBox.top,
       readerLeft: readerBox.left,
       readerRight: readerBox.right,
@@ -181,8 +184,9 @@ async function assertAnalyticsComposition(page, viewport, label) {
     );
   } else {
     assert(
-      composition.mainTop >= composition.libraryBottom - 2,
-      `${label} mobile report reader overlaps the report library: ${JSON.stringify(composition)}`
+      composition.mobileChoiceBottom !== null &&
+        composition.mainTop >= composition.mobileChoiceBottom - 2,
+      `${label} mobile report reader overlaps the report picker: ${JSON.stringify(composition)}`
     );
   }
   assert(
@@ -203,9 +207,46 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
   await page
     .locator('[data-california-workspace-carousel="true"]')
     .waitFor({ state: "visible", timeout: 10_000 });
-  await page
-    .locator('[data-california-map="true"]')
-    .waitFor({ state: "visible", timeout: 10_000 });
+  if (viewport.width < 1024) {
+    await page.locator('[data-mobile-community-home="true"]').waitFor({ state: "visible", timeout: 10_000 });
+    assert(
+      (await page.locator('[data-mobile-community-card]').count()) === 5,
+      `${suffix} mobile home does not show five large community actions`
+    );
+    assert(
+      !(await page.locator('[data-california-map="true"]').isVisible()),
+      `${suffix} mobile home retained the undersized desktop map`
+    );
+    const mobileCard = page.locator('[data-mobile-community-card="337"]');
+    const cardBox = await mobileCard.boundingBox();
+    assert(cardBox && cardBox.height >= 72, `${suffix} community card is below the touch target: ${JSON.stringify(cardBox)}`);
+    await page.screenshot({ path: `${screenshotDir}/${suffix}-community-home.png`, fullPage: false });
+    await mobileCard.click();
+    const profile = page.locator('[data-california-community-profile="337"]');
+    await profile.waitFor({ state: "visible", timeout: 5_000 });
+    const close = profile.getByRole("button", { name: /Close .* profile/ });
+    const closeBox = await close.boundingBox();
+    assert(closeBox && closeBox.height >= 44, `${suffix} modal close target is too small: ${JSON.stringify(closeBox)}`);
+    await page.screenshot({ path: `${screenshotDir}/${suffix}-community-profile.png`, fullPage: false });
+    await close.click();
+    await profile.waitFor({ state: "hidden", timeout: 5_000 });
+    if (viewport.width < 640) {
+      await page.locator('[data-mobile-community-home="true"]')
+        .getByRole("button", { name: "Ask a question", exact: true })
+        .click();
+      await page.waitForURL((url) => url.pathname === "/analytics/questions", { timeout: 5_000 });
+      await waitForActivePanel(page, "questions");
+      const categoryPicker = page.locator('[data-mobile-question-category="true"]');
+      await categoryPicker.waitFor({ state: "visible", timeout: 5_000 });
+      await categoryPicker.selectOption("Census");
+      assert((await categoryPicker.inputValue()) === "Census", `${suffix} mobile category picker did not select Census`);
+      await categoryPicker.selectOption("All");
+      await page.getByRole("button", { name: "Back to California map" }).click();
+      await waitForActivePanel(page, "map");
+    }
+  } else {
+    await page.locator('[data-california-map="true"]').waitFor({ state: "visible", timeout: 10_000 });
+  }
 
   assert(
     (await page.locator('[data-california-carousel-panel]').count()) === 3,
@@ -233,9 +274,16 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
   await assertMapNavigationPlacement(page, viewport, `${suffix} map panel`);
 
   await page
-    .getByRole("button", { name: "Ask a question", exact: true })
+    .getByRole("button", { name: "Analytics", exact: true })
     .click();
-  await page.waitForURL((url) => url.pathname === "/questions", {
+  await page.waitForURL((url) => url.pathname === "/analytics", {
+    timeout: 5_000
+  });
+  await waitForActivePanel(page, "reports");
+  await page
+    .locator('[data-analytics-section-navigation][data-analytics-section-current="reports"] [data-analytics-section-target="questions"]')
+    .click();
+  await page.waitForURL((url) => url.pathname === "/analytics/questions", {
     timeout: 5_000
   });
   assert(
@@ -296,10 +344,14 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
   await assertNoDocumentScroll(page, `${suffix} reloaded Questions panel`);
 
   assert(
-    (await page.getByRole("button", { name: "Analytics", exact: true }).count()) === 1,
-    `${suffix} does not expose the Analytics handoff from Questions`
+    (await page
+      .locator('[data-analytics-section-navigation][data-analytics-section-current="questions"] [data-analytics-section-target="reports"]')
+      .count()) === 1,
+    `${suffix} does not expose Reports beside Ask a question within Analytics`
   );
-  await page.getByRole("button", { name: "Analytics", exact: true }).click();
+  await page
+    .locator('[data-analytics-section-navigation][data-analytics-section-current="questions"] [data-analytics-section-target="reports"]')
+    .click();
   await page.waitForURL((url) => url.pathname === "/analytics", {
     timeout: 5_000
   });
@@ -307,6 +359,11 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
   await page
     .locator('[data-reports-page="true"][data-reports-embedded="true"]')
     .waitFor({ state: "visible", timeout: 10_000 });
+  if (viewport.width < 640) {
+    const reportPicker = page.locator('[data-mobile-report-choice="true"]');
+    await reportPicker.waitFor({ state: "visible", timeout: 5_000 });
+    assert((await reportPicker.inputValue()) === "overview", `${suffix} mobile report picker did not default to Portfolio overview`);
+  }
   await page
     .locator('[data-full-report]')
     .waitFor({ state: "visible", timeout: 45_000 });
@@ -354,8 +411,20 @@ async function main() {
     await runViewport(
       browser,
       screenshotDir,
+      { width: 320, height: 740 },
+      "compact-mobile"
+    );
+    await runViewport(
+      browser,
+      screenshotDir,
       { width: 390, height: 844 },
       "mobile"
+    );
+    await runViewport(
+      browser,
+      screenshotDir,
+      { width: 768, height: 1024 },
+      "tablet"
     );
   });
 

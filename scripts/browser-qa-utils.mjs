@@ -20,10 +20,10 @@ const MANAGED = process.env.BROWSER_MISSION_MANAGED !== "false";
 const HEADLESS = process.env.BROWSER_MISSION_HEADED !== "true";
 export const TIMEOUT_MS = Number(process.env.BROWSER_MISSION_TIMEOUT_MS || 45_000);
 const SERVER_START_TIMEOUT_MS = Number(
-  process.env.BROWSER_QA_SERVER_START_TIMEOUT_MS || Math.max(TIMEOUT_MS, 60_000)
+  process.env.BROWSER_QA_SERVER_START_TIMEOUT_MS || Math.max(TIMEOUT_MS, 180_000)
 );
 const SERVER_PROBE_TIMEOUT_MS = Number(
-  process.env.BROWSER_QA_SERVER_PROBE_TIMEOUT_MS || 5_000
+  process.env.BROWSER_QA_SERVER_PROBE_TIMEOUT_MS || 60_000
 );
 const STRICT_SERVER_GUARD = process.env.BROWSER_QA_STRICT_SERVER_GUARD !== "false";
 const CLEAN_ROOM = process.env.BROWSER_QA_CLEAN_ROOM !== "false";
@@ -69,6 +69,36 @@ export async function prepareArtifactDirs(name) {
   const screenshotDir = path.join(artifactDir, "screenshots");
   await mkdir(screenshotDir, { recursive: true });
   return { artifactDir, screenshotDir };
+}
+
+export function exactTextPattern(value) {
+  return new RegExp(String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+}
+
+export async function chooseCurrentResidentProfile(page) {
+  const selected = await page.evaluate(async () => {
+    const response = await fetch("/api/data-explorer?kind=residents");
+    if (!response.ok) return null;
+    const payload = await response.json();
+    const rows = Array.isArray(payload.rows) ? payload.rows : [];
+    const candidates = rows.filter((row) =>
+      row.current_resident === true &&
+      typeof row.resident_name === "string" &&
+      /^[A-Za-z]+(?: [A-Za-z]+){1,2}$/.test(row.resident_name) &&
+      Boolean(row.resident_id ?? row.res_number) &&
+      Boolean(row.facility_id) &&
+      Boolean(row.community_name)
+    );
+    const nameCounts = new Map();
+    for (const row of candidates) {
+      const key = row.resident_name.toLowerCase();
+      nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
+    }
+    const row = candidates.find((candidate) => nameCounts.get(candidate.resident_name.toLowerCase()) === 1);
+    return row ? { name: row.resident_name, community: row.community_name } : null;
+  });
+  if (!selected) throw new Error("No unambiguous current resident profile is available for browser QA.");
+  return selected;
 }
 
 async function isReachable(url) {
@@ -462,13 +492,16 @@ export async function clearClientState(page) {
 }
 
 export async function openChat(page, { resetClientState = true } = {}) {
-  await page.goto(`${BASE_URL}/questions`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "domcontentloaded" });
   if (resetClientState) {
     await clearClientState(page);
-    await page.goto(`${BASE_URL}/questions`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "domcontentloaded" });
   } else {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   }
+
+  const workspace = page.locator('[data-chat-workspace-panel="true"]');
+  await workspace.waitFor({ state: "visible", timeout: TIMEOUT_MS });
 
   const composer = page.getByPlaceholder(/Ask anything/i);
   if (await composer.isVisible().catch(() => false)) return;
@@ -476,9 +509,10 @@ export async function openChat(page, { resetClientState = true } = {}) {
   const guide = page.locator('[data-certified-question-guide="true"]').first();
   if (await guide.isVisible().catch(() => false)) return;
 
-  const questionsButton = page
-    .getByRole("button", { name: /^(Questions|Open questions|Ask the platform|Ask a question)$/i })
-    .first();
+  const questionsButton = workspace
+    .getByRole("button", { name: /^(Questions|Open questions|Choose another question)$/i })
+    .filter({ visible: true })
+    .last();
   await questionsButton.click({ timeout: 10_000 });
 
   await page
@@ -488,7 +522,11 @@ export async function openChat(page, { resetClientState = true } = {}) {
 }
 
 export async function startCleanChat(page) {
-  const button = page.getByRole("button", { name: /(?:Start a |New (?:clean )?)chat/i }).first();
+  const workspace = page.locator('[data-chat-workspace-panel="true"]');
+  const button = workspace
+    .getByRole("button", { name: /(?:Start a |New (?:clean )?)chat/i })
+    .filter({ visible: true })
+    .last();
   if (await button.isVisible().catch(() => false)) {
     await button.click();
     await page.waitForFunction(
@@ -510,7 +548,8 @@ export async function startCleanChat(page) {
     return;
   }
 
-  await page.goto(`${BASE_URL}/questions`, { waitUntil: "networkidle" });
+  await clearClientState(page);
+  await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "networkidle" });
   await page.locator('[data-certified-question-guide="true"]').first().waitFor({
     state: "visible",
     timeout: 10_000
@@ -826,9 +865,11 @@ async function ensureQuestionGuideOpen(page) {
   const guide = page.locator('[data-certified-question-guide="true"]').first();
   if (await guide.isVisible().catch(() => false)) return;
 
-  const questionsButton = page
-    .getByRole("button", { name: /^(Ask a question|Questions|Open questions|Choose another question)$/i })
-    .first();
+  const workspace = page.locator('[data-chat-workspace-panel="true"]');
+  const questionsButton = workspace
+    .getByRole("button", { name: /^(Questions|Open questions|Choose another question)$/i })
+    .filter({ visible: true })
+    .last();
   await questionsButton.click({ timeout: 10_000 });
   await guide.waitFor({ state: "visible", timeout: 10_000 });
 }

@@ -3,18 +3,22 @@
 - purpose: canonical entry point for the current Alamo Platform product, runtime, data publishing path, and analyst workspace
 - status: authoritative current-state handbook
 - owners: product, engineering, data platform
-- updated: 2026-07-18
+- updated: 2026-09-09
 - tags: alamo-platform, architecture, analyst, snapshot, databricks, operations
 - labels: platform-handbook, current-state, authoritative
 - related files:
+  - [admissions-zone.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/admissions-zone.md)
   - [architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md)
   - [integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md)
+  - [acquisition-parent-company-program.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/acquisition-parent-company-program.md)
+  - [private-behavioral-health-acquisition-master-dossier.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-acquisition-master-dossier.md)
   - [product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md)
   - [full-reporting.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/full-reporting.md)
   - [user-journeys.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md)
   - [analyst-system.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/analyst-system.md)
   - [data-publishing.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/data-publishing.md)
   - [deployment-operations.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/deployment-operations.md)
+  - [desktop-distribution.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/desktop-distribution.md)
   - [testing-quality.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/testing-quality.md)
   - [ship-checklist.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/ship-checklist.md)
   - [repository-ownership.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/repository-ownership.md)
@@ -50,17 +54,29 @@ flowchart LR
 
 ## Read Order
 
-1. [architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md) for system boundaries and data flow.
-2. [integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md) for the approved path from the current Alamo implementation to a reusable EHR, eMAR, and analytics integration platform.
-3. [product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md) for the current routes and user-facing modules.
-4. [user-journeys.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md) for the named operator journeys and scenario coverage.
-5. [full-reporting.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/full-reporting.md) for governed long-form reports, artifacts, and the reporting data roadmap.
-6. [analyst-system.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/analyst-system.md) for AH Analyst, deterministic tools, session state, and module rendering.
-7. [data-publishing.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/data-publishing.md) for Databricks notebooks, workflow order, snapshot artifacts, and freshness.
-8. [deployment-operations.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/deployment-operations.md) for local/Vercel/env/auth/health procedures.
-9. [testing-quality.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/testing-quality.md) for verification scripts, performance budgets, and known quality gates.
-10. [ship-checklist.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/ship-checklist.md) for the final release gate.
-11. [repository-ownership.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/repository-ownership.md) for the file-retention contract.
+1. [admissions-zone.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/admissions-zone.md) for the first-party Pipeline Admissions application boundary.
+2. [architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md) for system boundaries and data flow.
+3. [integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md) for the approved path from the current Alamo implementation to a reusable EHR, eMAR, and analytics integration platform.
+4. [acquisition-parent-company-program.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/acquisition-parent-company-program.md) for the private high-acuity behavioral-health parent-company research program.
+5. [private-behavioral-health-acquisition-master-dossier.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-acquisition-master-dossier.md) for the complete owner-facing acquisition context, verified evidence, company universe, state strategy, and next research work.
+6. [product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md) for the current routes and user-facing modules.
+7. [user-journeys.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md) for the named operator journeys and scenario coverage.
+8. [full-reporting.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/full-reporting.md) for governed long-form reports, artifacts, and the reporting data roadmap.
+9. [analyst-system.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/analyst-system.md) for AH Analyst, deterministic tools, session state, and module rendering.
+10. [data-publishing.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/data-publishing.md) for Databricks notebooks, workflow order, snapshot artifacts, and freshness.
+11. [deployment-operations.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/deployment-operations.md) for local/Vercel/env/auth/health procedures.
+12. [desktop-distribution.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/desktop-distribution.md) for installable desktop behavior, security boundaries, and rollback.
+13. [testing-quality.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/testing-quality.md) for verification scripts, performance budgets, and known quality gates.
+14. [ship-checklist.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/ship-checklist.md) for the final release gate.
+15. [repository-ownership.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/repository-ownership.md) for the file-retention contract.
+
+The acquisition program's canonical owner-facing synthesis is maintained in
+[private-behavioral-health-acquisition-master-dossier.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-acquisition-master-dossier.md).
+Its working parent-company screen is maintained in
+[private-behavioral-health-operator-filtering-universe.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-operator-filtering-universe.md).
+The acquisition-versus-conversion logic, state pathways, and pivot-value gates
+are maintained in
+[adult-behavioral-health-residential-pivot-acquisition-thesis.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/adult-behavioral-health-residential-pivot-acquisition-thesis.md).
 
 ## Source Of Truth Rules
 

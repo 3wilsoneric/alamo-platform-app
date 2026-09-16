@@ -3,13 +3,16 @@
 - purpose: provide the exact operator run order for rebuilding and publishing the Alamo Platform snapshot, with the business date handled explicitly so partition/date mismatches do not corrupt the daily publish
 - status: active operator runbook
 - owners: engineering, data platform
-- updated: 2026-07-18
+- updated: 2026-08-16
 - tags: runbook, databricks, eldermark, snapshot, publish, operations
 - labels: operator-guide, daily-run, current-state
 - related files:
   - [alamo-platform-app/databricks/notebooks/eldermark_staged_transform.py](/Users/eric/CareEngineMain/alamo-platform-app/databricks/notebooks/eldermark_staged_transform.py)
+  - [alamo-platform-app/databricks/notebooks/select_latest_raw_partition.py](/Users/eric/CareEngineMain/alamo-platform-app/databricks/notebooks/select_latest_raw_partition.py)
   - [alamo-platform-app/databricks/notebooks/snapshot_publish.py](/Users/eric/CareEngineMain/alamo-platform-app/databricks/notebooks/snapshot_publish.py)
   - [alamo-platform-app/databricks/workflows/daily_platform_publish.json](/Users/eric/CareEngineMain/alamo-platform-app/databricks/workflows/daily_platform_publish.json)
+  - [alamo-platform-app/scripts/windows/Run-ElderMarkPull.ps1](/Users/eric/CareEngineMain/alamo-platform-app/scripts/windows/Run-ElderMarkPull.ps1)
+  - [alamo-platform-app/scripts/azure/eldermark-managed-vm-workflow.json](/Users/eric/CareEngineMain/alamo-platform-app/scripts/azure/eldermark-managed-vm-workflow.json)
   - [data-publishing.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/data-publishing.md)
 
 ## Purpose
@@ -23,6 +26,59 @@ This runbook assumes the architecture is:
 3. Databricks refreshes the approved gold views
 4. Databricks publishes the app snapshot
 5. the platform reads the published Azure snapshot
+
+## Production Automation
+
+- Azure VM lifecycle workflow: `EldermarkDailyPullManaged`
+- Azure VM start: daily at 02:00 `Mountain Standard Time`
+- Windows scheduled task: `Alamo ElderMark Daily Pull Automated`
+- ElderMark raw pull: daily at 02:15 Mountain time, with `StartWhenAvailable`
+- Azure VM deallocation: four hours after the managed start action
+- Databricks job: `alamo_daily_platform_publish_automated`
+- job ID: `15217456536962`
+- schedule: daily at 05:15 `America/Los_Angeles`
+- failure email: `ericwilsonalamo@outlook.com`
+- downstream NetSuite census sync: daily at 09:00 in the NetSuite account timezone
+- legacy Databricks job: `1090336537239329` (`eldermark_staged_transform_nightly`), intentionally unchanged and unscheduled
+
+The managed Logic App starts VM `adf-ir-rg` using its system-assigned identity;
+it does not depend on an operator's Azure connector session. The Windows task
+runs the existing `eldermark_pull.py` as `SYSTEM`. Its wrapper loads the eight
+existing `alamoadmin` user-level configuration values only into the child
+process, forces `ELDERMARK_TRIGGER_DATABRICKS=0`, writes only status messages to
+`C:\ProgramData\Alamo\logs\eldermark-automation.log`, clears the process
+environment, and unloads the profile hive after the pull. No ElderMark,
+Databricks, or Azure credential is copied into the repository or task command.
+
+Databricks begins after the raw pull window. If the upstream pull does not land
+a newer complete partition, the job performs a clean no-op and leaves the
+last-good snapshot untouched so freshness warnings remain truthful. If the
+newest complete raw partition becomes more than two days old, preflight fails
+and sends the Databricks failure notification.
+
+The automation order is therefore:
+
+1. 02:00 Mountain: managed Logic App starts the Azure VM.
+2. 02:15 Mountain: Windows runs the existing ElderMark extraction.
+3. 05:15 Pacific / 06:15 Mountain: Databricks selects and validates the latest complete raw partition, transforms it, runs QA, and publishes the snapshot.
+4. 09:00 NetSuite account time: the NetSuite census sync reads the governed Databricks view.
+
+## Automation Rollback
+
+All new automation is additive and can be disabled without deleting it:
+
+1. Pause Databricks job `15217456536962`.
+2. Disable Logic App `EldermarkDailyPullManaged`.
+3. Disable Windows task `Alamo ElderMark Daily Pull Automated`.
+4. Return temporarily to the prior manual process: start the VM, sign into Windows App, and run the existing `C:\Users\alamoadmin\Desktop\eldermark_pull.py`.
+5. Use legacy Databricks job `1090336537239329` only as the manual downstream fallback. Do not run both publish jobs concurrently.
+
+The prior Windows task XML is retained at
+`C:\ProgramData\Alamo\rollback\Eldermark Daily Pull-20260816.xml`. It points to a
+stale script path and requires an interactive login, so restoring it is forensic
+rollback only, not a working automation path. The two prior Logic Apps also
+remain available but their VM and email connectors return `Unauthorized`; they
+must be reauthorized and their daylight-saving schedules corrected before reuse.
 
 ## Critical Rule
 
@@ -232,7 +288,12 @@ Parameters:
 - `snapshot_root=snapshots/daily`
 - `entra_tenant_id=<entra-tenant-id>`
 - `entra_client_id=<entra-client-id>`
-- `entra_client_secret=<entra-client-secret>`
+- `entra_secret_scope=alamo-platform-production`
+- `entra_client_secret_key=snapshot-entra-client-secret`
+
+For a one-time attended recovery only, `entra_client_secret` remains accepted as
+a direct widget value. Production jobs must use the Databricks secret scope and
+must never put the secret in workflow JSON, notebook source, or logs.
 
 Success means both of these are overwritten:
 
@@ -266,7 +327,7 @@ These are the controls we should enforce so the date stops being a recurring pro
 
 ### Control 1. Never derive `date_partition` from job start time
 
-The business date must be an explicit run parameter or come from a preflight step that reads the actual raw partition.
+The business date must be an explicit run parameter or come from a preflight step that reads the actual raw partition. The automated full publish uses `select_latest_raw_partition`, which selects the newest date present across all 32 required ElderMark tables, verifies parquet files for every table, and publishes that exact date as a Databricks task value.
 
 It should not be derived from:
 
@@ -326,8 +387,27 @@ The repo now reflects this date rule in both workflow scaffolds:
 - [daily_platform_publish.json](/Users/eric/CareEngineMain/alamo-platform-app/databricks/workflows/daily_platform_publish.json)
 - [daily_snapshot_refresh.json](/Users/eric/CareEngineMain/alamo-platform-app/databricks/workflows/daily_snapshot_refresh.json)
 
-They intentionally use:
+The full daily workflow uses:
+
+- `{{tasks.select_latest_raw_partition.values.date_partition}}`
+
+This value comes from raw storage, not scheduler time. An operator can still pass
+`date_partition_override=YYYY-MM-DD`; the same preflight verifies that the override
+exists for all required tables before any transform runs.
+
+If the selected partition is not newer than the current governed snapshot, the
+`new_partition_available` condition excludes the transform and every downstream
+task. This preserves the last-good snapshot timestamp and prevents an old source
+date from appearing freshly published. An explicit operator override intentionally
+bypasses this no-op check for a controlled same-date rebuild.
+
+The shorter manual snapshot refresh intentionally uses:
 
 - `date_partition=<business-date-YYYY-MM-DD>`
 
-instead of assuming scheduler time is the correct partition.
+Both paths avoid assuming scheduler time is the correct partition.
+
+The automated snapshot publisher reads its Azure client credential from the
+Databricks secret scope `alamo-platform-production`, key
+`snapshot-entra-client-secret`. Do not place that secret in workflow JSON,
+notebook defaults, task parameters, source control, or run logs.

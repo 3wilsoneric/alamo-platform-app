@@ -100,7 +100,7 @@ flowchart LR
 5. `census_quality_audit`
 6. `snapshot_publish`
 
-The full workflow is scheduled at 05:15 California time. A shorter snapshot refresh is scheduled at 06:00 and starts from MAR/gold rebuilding when silver is already current. Every task must receive the same explicit `date_partition`.
+The full workflow is scheduled at 05:15 California time. Its preflight selects the newest raw partition that is complete across all required ElderMark tables and passes that one explicit `date_partition` to every downstream task. If that partition is not newer than the last governed snapshot, the workflow exits without rewriting the snapshot. The shorter snapshot-refresh definition remains an operator-run recovery path when Silver is already current; it is not independently scheduled.
 
 ### Published objects
 

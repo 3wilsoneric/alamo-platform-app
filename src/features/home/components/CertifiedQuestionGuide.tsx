@@ -188,7 +188,7 @@ function InlineQuestionVariable({
             setOpen(true);
           }
         }}
-        className={`inline-flex min-h-[28px] items-center justify-between gap-1 border-x-0 border-t-0 border-b bg-transparent px-0 py-0 text-[1em] font-[inherit] leading-[inherit] outline-none transition-colors ${
+        className={`inline-flex min-h-9 items-center justify-between gap-1 border-x-0 border-t-0 border-b bg-transparent px-0 py-0 text-[1em] font-[inherit] leading-[inherit] outline-none transition-colors sm:min-h-[28px] ${
           value
             ? "border-[#0f8b73] text-[#0f6f5d]"
             : "border-[#8a8a8a] text-[#595959]"
@@ -359,7 +359,7 @@ export function CertifiedQuestionGuide({
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-8 w-8 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#0f8b73] hover:text-[#111111]"
+          className="inline-flex h-11 w-11 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#0f8b73] hover:text-[#111111] sm:h-8 sm:w-8"
           aria-label="Close questions"
         >
           <X className="h-3.5 w-3.5" />
@@ -380,7 +380,23 @@ export function CertifiedQuestionGuide({
             className="min-w-0 flex-1 bg-transparent text-[14px] text-[#111111] outline-none placeholder:text-[#8a8a8a]"
           />
         </div>
-        <div className="flex flex-wrap gap-1.5" aria-label="Question categories">
+        <label className="block sm:hidden" htmlFor="mobile-question-category">
+          <span className="sr-only">Question category</span>
+          <select
+            id="mobile-question-category"
+            data-mobile-question-category="true"
+            value={category}
+            onChange={(event) => onCategoryChange(event.currentTarget.value)}
+            className="min-h-11 w-full border border-[#d9d9d9] bg-white px-3 text-[14px] font-semibold text-[#333333] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+          >
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>
+                {option} · {option === "All" ? totalCount : categoryCounts[option] ?? 0}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="hidden flex-wrap gap-1.5 sm:flex" aria-label="Question categories">
           {categoryOptions.map((option) => {
             const isActive = category === option;
             const optionCount = option === "All" ? totalCount : categoryCounts[option] ?? 0;
@@ -457,7 +473,7 @@ export function CertifiedQuestionGuide({
                   aria-label={canRun
                     ? `Run: ${hasRequiredVariables ? compiledPrompt : item.prompt}`
                     : `Choose ${missingVariables.map((variable) => variable.label).join(", ")} for ${item.prompt}`}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors group-hover:border-[#0f8b73] group-hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#bdbdbd] disabled:group-hover:border-[#d9d9d9]"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors group-hover:border-[#0f8b73] group-hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#bdbdbd] disabled:group-hover:border-[#d9d9d9] sm:h-8 sm:w-8"
                 >
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
@@ -490,7 +506,7 @@ export function CertifiedQuestionGuide({
               type="button"
               onClick={() => setPage((current) => Math.max(0, current - 1))}
               disabled={activePage === 0}
-              className="inline-flex h-9 items-center gap-2 border border-[#d9d9d9] bg-white px-3 text-[13px] font-semibold text-[#111111] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#a0a0a0] disabled:opacity-60"
+              className="inline-flex min-h-11 items-center gap-2 border border-[#d9d9d9] bg-white px-3 text-[13px] font-semibold text-[#111111] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               Previous page
@@ -500,7 +516,7 @@ export function CertifiedQuestionGuide({
               onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
               disabled={activePage >= totalPages - 1}
               data-dark-action="true"
-              className="inline-flex h-9 items-center gap-2 border border-[#111111] bg-[#111111] px-3 text-[13px] font-semibold text-white transition-colors hover:border-[#0f8b73] hover:bg-[#0f8b73] disabled:cursor-not-allowed disabled:border-[#d9d9d9] disabled:bg-white disabled:text-[#a0a0a0] disabled:opacity-60"
+              className="inline-flex min-h-11 items-center gap-2 border border-[#111111] bg-[#111111] px-3 text-[13px] font-semibold text-white transition-colors hover:border-[#0f8b73] hover:bg-[#0f8b73] disabled:cursor-not-allowed disabled:border-[#d9d9d9] disabled:bg-white disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
             >
               Next page
               <ChevronRight className="h-3.5 w-3.5" />

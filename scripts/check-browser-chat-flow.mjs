@@ -5,6 +5,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import {
   attachPageDiagnostics,
   ask,
+  chooseCurrentResidentProfile,
+  exactTextPattern,
   measureCanvas,
   openChat,
   prepareArtifactDirs,
@@ -179,10 +181,16 @@ async function runChatFlow(page, screenshotDir) {
   await page.locator('[data-resident-search-module="true"]').last().waitFor({ state: "visible", timeout: TIMEOUT_MS });
   const residentSearch = page.getByLabel(/Search residents/i).last();
   await residentSearch.waitFor({ state: "visible", timeout: TIMEOUT_MS });
-  await residentSearch.fill("Shannon");
-  await page.getByRole("button", { name: /Shannon Romero/i }).first().click({ timeout: 8_000 });
-  await waitForText(page, /Shannon Romero/i);
-  await waitForText(page, /Resident #|Santa Clarita|Datasheet/i);
+  const profile = await chooseCurrentResidentProfile(page);
+  await residentSearch.fill(profile.name);
+  await page.locator('[data-resident-search-module="true"]').last()
+    .locator('[data-module-content-control="true"]')
+    .filter({ hasText: profile.name })
+    .first()
+    .click({ timeout: 8_000 });
+  await waitForText(page, exactTextPattern(profile.name));
+  await waitForText(page, /Resident #|Datasheet/i);
+  await waitForText(page, exactTextPattern(profile.community));
   checkpoints.push({ step: "resident search profile", state: await chatState(page), canvas: await measureCanvas(page) });
 
   mark("run guided AWOL people question");

@@ -1,11 +1,16 @@
 import { ChevronDown, Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EFFECTIVENESS_AUDIENCES,
   type EffectivenessAudienceId
 } from "../../../../shared/effectiveness-evidence.mjs";
 import StateDetailModal from "../components/StateDetailModal";
 import StateTargetingMap from "../components/StateTargetingMap";
+import AcquisitionIntelligenceWorkspace from "../components/AcquisitionIntelligenceWorkspace";
+import {
+  fetchAcquisitionOverview,
+  type AcquisitionOverview
+} from "../data/acquisitionIntelligenceApi";
 import {
   BUYER_RESEARCH_STATE_COUNT,
   getStateBuyerResearch,
@@ -27,6 +32,7 @@ import {
 } from "../data/stateTargetingData";
 
 type AtlasScope = "priority" | "all";
+type FiftyStateView = "markets" | "acquisition";
 type SortMode =
   | "state-name"
   | "bed-scarcity"
@@ -106,10 +112,20 @@ function sortRecords(records: StateTargetingRecord[], sortMode: SortMode) {
 }
 
 export default function FiftyStatePage({ embedded = false }: { embedded?: boolean }) {
+  const [view, setView] = useState<FiftyStateView>("markets");
+  const [acquisitionOverview, setAcquisitionOverview] = useState<AcquisitionOverview | null>(null);
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<AtlasScope>("priority");
   const [sortMode, setSortMode] = useState<SortMode>("verified-demand");
   const [selectedRecord, setSelectedRecord] = useState<StateTargetingRecord | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchAcquisitionOverview(controller.signal)
+      .then((overview) => setAcquisitionOverview(overview))
+      .catch(() => setAcquisitionOverview(null));
+    return () => controller.abort();
+  }, []);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRecords = useMemo(() => {
@@ -158,13 +174,44 @@ export default function FiftyStatePage({ embedded = false }: { embedded?: boolea
         </p>
         <div className="mt-1 grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] lg:items-end lg:gap-8">
           <h1 className="max-w-[720px] font-serif text-[30px] font-semibold leading-[1.02] tracking-[-0.035em] sm:text-[36px]">
-            Priority states and buyer routes.
+            {view === "markets" ? "Priority states and buyer routes." : "Build the private operator universe."}
           </h1>
           <p className="max-w-[480px] text-[13px] leading-5 text-[#595959] lg:pb-0.5">
-            Start with researched demand signals, then open the national baseline only when you need it.
+            {view === "markets"
+              ? "Start with researched demand signals, then open the national baseline only when you need it."
+              : "Move from discovery to ownership, license, capacity, and valuation evidence without turning estimates into facts."}
           </p>
         </div>
       </header>
+
+      {acquisitionOverview ? (
+        <nav aria-label="Fifty States workspace" className="flex border-b border-[#b3b3b3]">
+          <button
+            type="button"
+            aria-pressed={view === "markets"}
+            onClick={() => setView("markets")}
+            className={`border-b-2 px-4 py-3 text-[12px] font-semibold ${view === "markets" ? "border-[#0f8b73] text-[#111111]" : "border-transparent text-[#737373] hover:text-[#111111]"}`}
+          >
+            Market research
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === "acquisition"}
+            onClick={() => setView("acquisition")}
+            className={`border-b-2 px-4 py-3 text-[12px] font-semibold ${view === "acquisition" ? "border-[#0f8b73] text-[#111111]" : "border-transparent text-[#737373] hover:text-[#111111]"}`}
+          >
+            Acquisition intelligence
+          </button>
+        </nav>
+      ) : null}
+
+      {view === "acquisition" && acquisitionOverview ? (
+        <AcquisitionIntelligenceWorkspace
+          overview={acquisitionOverview}
+          states={STATE_TARGETING_RECORDS.map((record) => record.stateCode).sort()}
+        />
+      ) : (
+        <>
 
       <section
         aria-label="Search and organize the targeting atlas"
@@ -384,6 +431,8 @@ export default function FiftyStatePage({ embedded = false }: { embedded?: boolea
           onNext={() => navigateSelectedState(1)}
         />
       ) : null}
+        </>
+      )}
     </div>
   );
 }

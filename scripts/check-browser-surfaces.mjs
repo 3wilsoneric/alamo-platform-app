@@ -5,6 +5,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import {
   attachPageDiagnostics,
   ask,
+  chooseCurrentResidentProfile,
+  exactTextPattern,
   measureCanvas,
   openChat,
   prepareArtifactDirs,
@@ -47,7 +49,7 @@ const surfaceCases = [
     prompt: "Can you open the Incident Center module?",
     expect: [
       /Latest two loaded incident days/i,
-      /Latest received/i,
+      /Received today|Latest received/i,
       /Previous loaded day|[0-9]{1,2} [A-Z][a-z]+ 20[0-9]{2}/i,
       /[1-9][0-9]* reports in this stream/i,
       /\bHigh\b/i,
@@ -62,7 +64,7 @@ const surfaceCases = [
     prompt: "Can you show me the Resident Search module?",
     expect: [
       /All communities/i,
-      /[1-9][0-9]* residents/i,
+      /[1-9][0-9]* (?:clients|residents)/i,
       /Community|Unit|Diagnosis/i
     ]
   },
@@ -136,8 +138,8 @@ const visualCases = [
   {
     name: "Resident profile card",
     kind: "visual",
-    prompt: "Can you give me Shannon Romero's profile?",
-    expect: [/Shannon Romero/i, /Resident #/i, /Santa Clarita/i]
+    prompt: "Can you give me a current resident's profile?",
+    expect: [/Resident #/i]
   }
 ];
 
@@ -183,11 +185,9 @@ const marVisualCases = [
   {
     name: "Resident medication profile card",
     kind: "visual",
-    prompt: "review Shannon Romero's medication summary",
+    prompt: "review a current resident's medication summary",
     selection: { questionId: "resident-current-medications" },
     expect: [
-      /Shannon Romero/i,
-      /Santa Clarita/i,
       /Active medications|Medication summary/i,
       /MAR compliance, 30 days|Not published in this resident directory/i
     ]
@@ -541,6 +541,20 @@ async function main() {
     await openChat(page);
     await assertScopedQuestionSearch(page);
     await assertCommunityRowClickThrough(page);
+
+    if (allCases.some((testCase) => testCase.name === "Resident profile card" || testCase.name === "Resident medication profile card")) {
+      const profile = await chooseCurrentResidentProfile(page);
+      const residentCase = allCases.find((testCase) => testCase.name === "Resident profile card");
+      if (residentCase) {
+        residentCase.prompt = `Can you give me ${profile.name}'s profile?`;
+        residentCase.expect = [exactTextPattern(profile.name), /Resident #/i, exactTextPattern(profile.community)];
+      }
+      const medicationCase = allCases.find((testCase) => testCase.name === "Resident medication profile card");
+      if (medicationCase) {
+        medicationCase.prompt = `review ${profile.name}'s medication summary`;
+        medicationCase.expect = [exactTextPattern(profile.name), exactTextPattern(profile.community), ...medicationCase.expect];
+      }
+    }
 
     const results = [];
     for (const [index, testCase] of allCases.entries()) {

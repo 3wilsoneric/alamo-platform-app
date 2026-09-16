@@ -201,7 +201,7 @@ export function createMedicationExceptionTools({
       text: [
         resultTruthState === "not_loaded"
           ? `MAR exception detail is not published for ${label}.`
-          : `There ${rows.length === 1 ? "is" : "are"} ${rows.length ? formatNumber(rows.length) : "0 verified"} governed MAR ${kindLabel} record${rows.length === 1 ? "" : "s"} for ${periodLabel}.`,
+          : `There ${rows.length === 1 ? "is" : "are"} ${rows.length ? formatNumber(rows.length) : "0 verified"} ${kindLabel} medication record${rows.length === 1 ? "" : "s"} for ${periodLabel}.`,
         residentLabel ? `Resident filter: ${residentLabel}.` : null,
         requestedMedication ? `Medication filter: ${requestedMedication}.` : null,
         ...formatRankedSentences(topResidents),

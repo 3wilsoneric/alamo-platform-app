@@ -15,6 +15,7 @@ function assert(condition, message) {
 const appSource = read("src/app/App.tsx");
 const shellSource = read("src/shared/layout/ProtectedAppShell.tsx");
 const reportsSource = read("src/features/reports/pages/ReportsPage.tsx");
+const mondayBriefingSource = read("src/features/reports/components/MondayCensusBriefing.tsx");
 const reportCatalogSource = read("shared/full-report.mjs");
 const workspaceSource = read("src/features/home/pages/WorkspaceHomePage.tsx");
 const californiaSource = read("src/features/california/pages/CaliforniaHomePage.tsx");
@@ -22,6 +23,7 @@ const californiaSource = read("src/features/california/pages/CaliforniaHomePage.
 assert(
   appSource.includes('path="/" element={withRouteBoundary(<CaliforniaHomePage />)}') &&
     appSource.includes('path="/analytics" element={withRouteBoundary(<CaliforniaHomePage />)}') &&
+    appSource.includes('path="/analytics/questions"') &&
     appSource.includes('path="/reports" element={withRouteBoundary(<CaliforniaHomePage />)}') &&
     !appSource.includes('<Route path="analytics" />') &&
     !appSource.includes('<Route path="reports" />'),
@@ -54,12 +56,12 @@ assert(
   "reports must expose a stable page marker"
 );
 assert(
-  !reportsSource.includes("Deeper operating analysis.") &&
+    !reportsSource.includes("Deeper operating analysis.") &&
     !reportsSource.includes("6 report families") &&
     reportsSource.includes("Choose an analysis to review.") &&
-    />\s*Analytics\s*</.test(reportsSource) &&
+    !/>\s*Analytics\s*</.test(reportsSource) &&
     reportsSource.includes('aria-label="Analytics"'),
-  "Analytics must open directly into the streamlined analysis picker"
+  "Analytics must open directly into the streamlined picker without a redundant visible title"
 );
 assert(
   !reportsSource.includes("REPORT_FAMILIES") &&
@@ -67,6 +69,16 @@ assert(
     reportsSource.includes("report.showInAnalyticsNav") &&
     reportsSource.includes('useState<FullReportId>("overview")'),
   "the report library must use the server-owned visibility contract and open on Portfolio overview"
+);
+assert(
+  reportsSource.includes('data-monday-census-briefing-option="true"') &&
+    reportsSource.includes("<MondayCensusBriefing") &&
+    mondayBriefingSource.includes('data-monday-census-briefing="true"') &&
+    mondayBriefingSource.includes("dashboard.operational.currentCensus") &&
+    mondayBriefingSource.includes("ALAMO_FACILITIES") &&
+    !mondayBriefingSource.includes("monday-census-email.sanitized.json") &&
+    !mondayBriefingSource.includes("acceptedPending"),
+  "Analytics must expose the live governed Monday census briefing without fixture or ungoverned Pipeline data"
 );
 assert(
   /id:\s*"effectiveness"[\s\S]*?showInAnalyticsNav:\s*false/.test(reportCatalogSource),
@@ -90,8 +102,9 @@ assert(
     reportsSource.includes("if (!active) return") &&
     reportsSource.includes('data-reports-embedded={embedded ? "true" : "false"}') &&
     reportsSource.includes('data-analytics-page="true"') &&
-    californiaSource.includes('data-california-hero-action="analytics"') &&
-    californiaSource.includes("<span>Analytics</span>"),
+    californiaSource.includes("<PlatformPageNavigation") &&
+    californiaSource.includes('active={activePanel === "map" ? "home" : "analytics"}') &&
+    californiaSource.includes("<AnalyticsSectionNavigation"),
   "Analytics must be available as a governed home surface without loading reports behind the inactive map"
 );
 assert(

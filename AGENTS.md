@@ -30,6 +30,7 @@ Use progressive disclosure:
 - Tool-context views: [docs/reference/analytics-tool-context-views.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/analytics-tool-context-views.md)
 - MAR source inventory: [docs/reference/mar-source-inventory-findings.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/mar-source-inventory-findings.md)
 - Daily publish runbook: [docs/reference/platform-daily-publish-runbook.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/platform-daily-publish-runbook.md)
+- Deferred Knowledge Atlas + jobs workflow: [docs/reference/alamo-knowledge-job-workflow-deferred.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/alamo-knowledge-job-workflow-deferred.md)
 
 ## Hard Boundaries
 

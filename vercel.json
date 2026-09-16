@@ -1,4 +1,16 @@
 {
+  "redirects": [
+    {
+      "source": "/pipeline",
+      "destination": "https://alamo-pipeline.com",
+      "permanent": false
+    },
+    {
+      "source": "/pipeline/:path*",
+      "destination": "https://alamo-pipeline.com/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/integrations/pipeline/clinical/(.*)",

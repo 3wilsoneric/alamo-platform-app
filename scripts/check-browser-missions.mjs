@@ -5,6 +5,8 @@ import {
   BASE_URL,
   ask,
   attachPageDiagnostics,
+  chooseCurrentResidentProfile,
+  exactTextPattern,
   openChat,
   prepareArtifactDirs,
   startCleanChat,
@@ -173,6 +175,14 @@ async function main() {
     attachPageDiagnostics(page, { consoleErrors, requestFailures });
 
     await openChat(page);
+
+    const profile = await chooseCurrentResidentProfile(page);
+    const profileTurn = missions.find((mission) => mission.name === "Resident profile lookup")?.turns[0];
+    if (profileTurn) {
+      profileTurn.prompt = `show ${profile.name} resident profile`;
+      profileTurn.expect = [exactTextPattern(profile.name), exactTextPattern(profile.community), /Resident #/i];
+      profileTurn.surface = exactTextPattern(profile.name);
+    }
 
     const results = [];
     for (const [missionIndex, mission] of missions.entries()) {

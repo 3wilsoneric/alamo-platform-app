@@ -52,15 +52,15 @@ export function incidentReportFromCommunityRecord(
     category: incident.category,
     incidentType: incident.incident_type,
     location: incident.location,
-    staff: incident.staff_name,
+    staff: incident.staff_name ?? null,
     narrative: incident.email_body,
     assistance: incident.assistance_given,
     injuryOccurred: incident.injury_occurred,
     policeCalled: incident.police_called,
     sentinelEvent: incident.sentinel_event,
     previousHistory: incident.previous_history,
-    notifications: incident.notifications,
-    flags: incident.flags
+    notifications: incident.notifications ?? [],
+    flags: incident.flags ?? []
   };
 }
 
@@ -83,7 +83,7 @@ export function incidentListItemFromCommunityRecord(
       incident.police_called,
       incident.sentinel_event,
       incident.previous_history
-    ].filter(Boolean).length + incident.flags.length
+    ].filter(Boolean).length + (incident.flags?.length ?? 0)
   };
 }
 

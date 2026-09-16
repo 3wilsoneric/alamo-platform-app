@@ -938,7 +938,7 @@ export default function CommunitiesPage({
                           Notifications
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {selectedIncident.notifications.length ? (
+                          {selectedIncident.notifications?.length ? (
                             selectedIncident.notifications.map((notification) => (
                               <DetailPill key={`${selectedIncident.id}-${notification.recipient}`}>
                                 {notification.recipient}

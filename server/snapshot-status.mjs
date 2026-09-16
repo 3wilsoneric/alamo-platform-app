@@ -3,6 +3,7 @@ import {
   getPlatformSnapshotMaxBytes
 } from "./platform-snapshot.mjs";
 import { getBoundedNumberEnv } from "./runtime-environment.mjs";
+import { getGovernedIncidentDetailRows } from "./governed-incident-details.mjs";
 
 function normalizeString(value) {
   return value == null ? "" : String(value).trim();
@@ -75,11 +76,10 @@ export function getSnapshotDiagnostics(snapshot) {
   const generatedAt = snapshot.snapshot?.generated_at ?? snapshot.generated_at ?? null;
   const snapshotVersion = snapshot.snapshot?.version ?? snapshot.version ?? null;
   const snapshotSource = snapshot.snapshot?.source ?? (storage ? "azure-storage" : "local-fallback");
-  const incidentDetailRows =
-    snapshot.reportsSummary?.toolContext?.incidentDetailHistory?.length ??
-    snapshot.reportsSummary?.toolContext?.tables?.incident_detail_history?.length ??
-    snapshot.communities?.incidentDetails?.length ??
-    0;
+  const incidentDetailRows = getGovernedIncidentDetailRows(
+    snapshot.communities,
+    snapshot.reportsSummary
+  ).length;
   const toolContext = snapshot.reportsSummary?.toolContext;
   const toolContextTableNames = Object.keys(toolContext?.tables ?? {});
   const toolRows = (camelKey, tableKey) =>

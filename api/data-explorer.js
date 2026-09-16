@@ -6,7 +6,12 @@ export default async function handler(req, res) {
   await handleProtectedGet(
     req,
     res,
-    (request) => getDataExplorerData(getRequestUrl(request).searchParams.get("kind") ?? "incidents"),
+    (request) => {
+      const requestUrl = getRequestUrl(request);
+      return getDataExplorerData(requestUrl.searchParams.get("kind") ?? "incidents", {
+        residentClientId: requestUrl.searchParams.get("clientId") ?? ""
+      });
+    },
     { fallbackMessage: "Data explorer request failed." }
   );
 }

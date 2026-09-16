@@ -224,7 +224,10 @@ export function AdHocVisualModule({
             <div className="mt-1.5 text-[13px] leading-5 text-[#595959]">{displayVisualSubtitle}</div>
           ) : null}
           {datasheetPreviewLabel ? (
-            <div className="mt-2 text-[11px] font-semibold text-[#595959]">
+            <div
+              data-datasheet-preview-label="true"
+              className="mt-2 text-[11px] font-semibold text-[#595959]"
+            >
               {datasheetPreviewLabel}
             </div>
           ) : null}

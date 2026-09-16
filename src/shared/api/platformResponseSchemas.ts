@@ -268,6 +268,28 @@ function validateDataExplorerPayload(value: unknown, endpoint: string) {
   assertArray(filters.communities, endpoint, "filters.communities");
   assertArray(filters.months, endpoint, "filters.months");
   assertArray(filters.categories, endpoint, "filters.categories");
+  if (payload.client_database !== undefined) {
+    const clientDatabase = assertRecord(payload.client_database, endpoint, "client_database");
+    assertBoolean(clientDatabase.available, endpoint, "client_database.available");
+    assertString(clientDatabase.dataset, endpoint, "client_database.dataset");
+    if (
+      clientDatabase.version !== null &&
+      typeof clientDatabase.version !== "string" &&
+      typeof clientDatabase.version !== "number"
+    ) {
+      fail(endpoint, "client_database.version must be a string, number, or null");
+    }
+    assertString(clientDatabase.baseline_date, endpoint, "client_database.baseline_date", { nullable: true });
+    assertString(clientDatabase.generated_at, endpoint, "client_database.generated_at");
+    [
+      "client_count",
+      "field_count",
+      "matched_current_profiles",
+      "unmatched_current_profiles",
+      "unmatched_episode_rows"
+    ].forEach((field) => assertNumber(clientDatabase[field], endpoint, `client_database.${field}`));
+    assertStringArray(clientDatabase.columns, endpoint, "client_database.columns", 200);
+  }
   validateRows<DataExplorerResponse["columns"][number]>(columns, endpoint, "columns", (row, path) => {
     assertString(row.key, endpoint, `${path}.key`);
     assertString(row.label, endpoint, `${path}.label`);
@@ -296,13 +318,38 @@ function validateDataExplorerPayload(value: unknown, endpoint: string) {
     } else if (payload.kind === "residents") {
       assertString(row.resident_name, endpoint, `${path}.resident_name`);
       assertString(row.unit, endpoint, `${path}.unit`, { nullable: true });
-      assertNumber(row.age, endpoint, `${path}.age`);
+      assertNumber(row.age, endpoint, `${path}.age`, { nullable: true });
       assertString(row.admit_date, endpoint, `${path}.admit_date`, { nullable: true });
-      assertNumber(row.los_days, endpoint, `${path}.los_days`);
+      assertNumber(row.los_days, endpoint, `${path}.los_days`, { nullable: true });
       assertString(row.primary_diagnosis, endpoint, `${path}.primary_diagnosis`, { nullable: true });
       assertString(row.care_level, endpoint, `${path}.care_level`, { nullable: true });
       assertString(row.payor, endpoint, `${path}.payor`, { nullable: true });
       assertString(row.physician, endpoint, `${path}.physician`, { nullable: true });
+      if (row.canonical_client_id !== undefined) {
+        assertString(row.canonical_client_id, endpoint, `${path}.canonical_client_id`, { nullable: true });
+      }
+      if (row.resident_id !== undefined) {
+        assertString(row.resident_id, endpoint, `${path}.resident_id`, { nullable: true });
+      }
+      if (row.client_name_search !== undefined) {
+        assertString(row.client_name_search, endpoint, `${path}.client_name_search`);
+      }
+      assertBoolean(row.current_resident, endpoint, `${path}.current_resident`, { optional: true });
+      if (row.resident_profile_match_count !== undefined) {
+        assertNumber(row.resident_profile_match_count, endpoint, `${path}.resident_profile_match_count`);
+      }
+      for (const field of ["client_profile", "resident_profile"]) {
+        if (row[field] !== undefined && row[field] !== null) {
+          assertRecord(row[field], endpoint, `${path}.${field}`);
+        }
+      }
+      for (const field of ["resident_profiles", "resident_episode_history"]) {
+        if (row[field] === undefined) continue;
+        const nestedRows = assertArray(row[field], endpoint, `${path}.${field}`);
+        nestedRows.forEach((nestedRow, index) => {
+          assertRecord(nestedRow, endpoint, `${path}.${field}[${index}]`);
+        });
+      }
     }
   });
   return payload as unknown as DataExplorerResponse;
@@ -340,6 +387,14 @@ export const platformResponseValidators = {
     assertNumber(operational.currentWeeklyCensus, "home dashboard", "operational.currentWeeklyCensus", { nullable: true });
     assertNumber(operational.priorWeeklyCensus, "home dashboard", "operational.priorWeeklyCensus", { nullable: true });
     assertNumber(operational.censusChange7d, "home dashboard", "operational.censusChange7d", { nullable: true });
+    if (operational.censusCadence !== null && !["weekly", "monthly"].includes(String(operational.censusCadence))) {
+      fail("home dashboard", "operational.censusCadence must be weekly, monthly, or null");
+    }
+    assertString(operational.currentCensusPeriod, "home dashboard", "operational.currentCensusPeriod", { nullable: true });
+    assertString(operational.priorCensusPeriod, "home dashboard", "operational.priorCensusPeriod", { nullable: true });
+    assertNumber(operational.currentCensus, "home dashboard", "operational.currentCensus", { nullable: true });
+    assertNumber(operational.priorCensus, "home dashboard", "operational.priorCensus", { nullable: true });
+    assertNumber(operational.censusChange, "home dashboard", "operational.censusChange", { nullable: true });
     assertArray(payload.incidentTrend, "home dashboard", "incidentTrend");
     const communities = assertArray(payload.communities, "home dashboard", "communities");
     validateRows<HomeDashboardResponse["communities"][number]>(
@@ -352,6 +407,9 @@ export const platformResponseValidators = {
         assertNumber(row.currentWeeklyCensus, "home dashboard", `${path}.currentWeeklyCensus`, { nullable: true });
         assertNumber(row.priorWeeklyCensus, "home dashboard", `${path}.priorWeeklyCensus`, { nullable: true });
         assertNumber(row.censusChange7d, "home dashboard", `${path}.censusChange7d`, { nullable: true });
+        assertNumber(row.currentCensus, "home dashboard", `${path}.currentCensus`, { nullable: true });
+        assertNumber(row.priorCensus, "home dashboard", `${path}.priorCensus`, { nullable: true });
+        assertNumber(row.censusChange, "home dashboard", `${path}.censusChange`, { nullable: true });
       }
     );
     const currentWeeklyCensus = operational.currentWeeklyCensus as number | null;
@@ -409,6 +467,43 @@ export const platformResponseValidators = {
       }
       if (currentWeeklyCensus - priorWeeklyCensus !== censusChange7d) {
         fail("home dashboard", "portfolio weekly census change does not reconcile");
+      }
+    }
+    const currentCensus = operational.currentCensus as number | null;
+    const priorCensus = operational.priorCensus as number | null;
+    const censusChange = operational.censusChange as number | null;
+    if (currentCensus !== null || priorCensus !== null || censusChange !== null) {
+      if (
+        currentCensus === null ||
+        priorCensus === null ||
+        censusChange === null ||
+        operational.censusCadence === null ||
+        operational.currentCensusPeriod === null ||
+        operational.priorCensusPeriod === null
+      ) {
+        fail("home dashboard", "governed census fields must be complete when census is present");
+      }
+      let communityCurrentTotal = 0;
+      let communityPriorTotal = 0;
+      communities.forEach((value, index) => {
+        const row = assertRecord(value, "home dashboard", `communities[${index}]`);
+        const current = row.currentCensus;
+        const prior = row.priorCensus;
+        const change = row.censusChange;
+        if (typeof current !== "number" || typeof prior !== "number" || typeof change !== "number") {
+          fail("home dashboard", `communities[${index}] governed census fields must be present`);
+        }
+        if (current - prior !== change) {
+          fail("home dashboard", `communities[${index}] governed census change does not reconcile`);
+        }
+        communityCurrentTotal += current;
+        communityPriorTotal += prior;
+      });
+      if (communityCurrentTotal !== currentCensus || communityPriorTotal !== priorCensus) {
+        fail("home dashboard", "community governed census totals do not reconcile to the portfolio");
+      }
+      if (currentCensus - priorCensus !== censusChange) {
+        fail("home dashboard", "portfolio governed census change does not reconcile");
       }
     }
     assertRecord(payload.reporting, "home dashboard", "reporting");

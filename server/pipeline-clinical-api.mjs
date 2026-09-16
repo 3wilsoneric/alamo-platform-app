@@ -1,4 +1,5 @@
 import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../shared/community-names.mjs";
+import { createHash } from "node:crypto";
 import { normalizeDisplayDateKey } from "../shared/display-date.mjs";
 import { requireApiUser } from "./api-auth.mjs";
 import { createHttpError, getApiError, getRequestUrl } from "./http-errors.mjs";
@@ -9,14 +10,17 @@ import { buildDataExplorerPayload } from "./data-explorer.mjs";
 import {
   readPlatformClientDatabase,
   readPlatformClientDocumentAsset,
+  readPlatformClientIntelligence,
   readPlatformSnapshot
 } from "./platform-snapshot.mjs";
 
 export const PIPELINE_CLINICAL_API_PREFIX = "/api/integrations/pipeline/clinical";
-export const PIPELINE_CLINICAL_CONTRACT_VERSION = "1.1";
+export const PIPELINE_CLINICAL_CONTRACT_VERSION = "1.2";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
+const DEFAULT_INTELLIGENCE_PAGE_SIZE = 20;
+const MAX_INTELLIGENCE_PAGE_SIZE = 50;
 const DEFAULT_MAX_AGE_HOURS = 24;
 const DEFAULT_MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const facilityById = new Map(ALAMO_FACILITIES.map((facility) => [facility.facilityId, facility]));
@@ -421,6 +425,18 @@ function parseLimit(value) {
   return limit;
 }
 
+function parseIntelligenceLimit(value) {
+  if (value === null || value === undefined || value === "") return DEFAULT_INTELLIGENCE_PAGE_SIZE;
+  if (!/^\d+$/.test(value)) {
+    throw clinicalError(400, "limit_invalid", "limit must be an integer between 1 and 50.");
+  }
+  const limit = Number(value);
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_INTELLIGENCE_PAGE_SIZE) {
+    throw clinicalError(400, "limit_invalid", "limit must be an integer between 1 and 50.");
+  }
+  return limit;
+}
+
 function encodeCursor(snapshotId, offset) {
   return Buffer.from(JSON.stringify({ version: 1, snapshot_id: snapshotId, offset }), "utf8").toString("base64url");
 }
@@ -440,6 +456,36 @@ function decodeCursor(value, snapshotId) {
   } catch (error) {
     if (error && typeof error === "object" && "statusCode" in error && error.statusCode === 409) throw error;
     throw clinicalError(400, "cursor_invalid", "The roster cursor is invalid.");
+  }
+}
+
+function intelligenceCursorScope(kind, canonicalClientId, query = "", documentId = "", fieldName = "") {
+  return createHash("sha256")
+    .update(JSON.stringify({ kind, canonicalClientId, query, documentId, fieldName }))
+    .digest("base64url")
+    .slice(0, 24);
+}
+
+function encodeIntelligenceCursor(snapshotId, scope, offset) {
+  return Buffer.from(JSON.stringify({ version: 1, snapshot_id: snapshotId, scope, offset }), "utf8")
+    .toString("base64url");
+}
+
+function decodeIntelligenceCursor(value, snapshotId, scope) {
+  if (!value) return 0;
+  if (value.length > 1024) throw clinicalError(400, "cursor_invalid", "The document-search cursor is invalid.");
+  try {
+    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+    if (!isObject(parsed) || parsed.version !== 1 || !Number.isInteger(parsed.offset) || parsed.offset < 0) {
+      throw new Error("invalid cursor");
+    }
+    if (parsed.snapshot_id !== snapshotId || parsed.scope !== scope) {
+      throw clinicalError(409, "cursor_context_changed", "The document-search context changed. Restart pagination.");
+    }
+    return parsed.offset;
+  } catch (error) {
+    if (error && typeof error === "object" && "statusCode" in error && error.statusCode === 409) throw error;
+    throw clinicalError(400, "cursor_invalid", "The document-search cursor is invalid.");
   }
 }
 
@@ -549,6 +595,22 @@ function projectClientSourceDocuments(clientDatabase, canonicalClientId) {
     );
 }
 
+function projectClientFacts(clientDatabase, canonicalClientId) {
+  const facts = Array.isArray(clientDatabase?.client_facts) ? clientDatabase.client_facts : [];
+  return facts
+    .filter((fact) => String(fact.canonical_client_id ?? "").trim() === canonicalClientId)
+    .map((fact) => ({
+      field_name: requiredText(fact.field_name, "client fact field", 128),
+      value: requiredText(fact.field_value, "client fact value", 20_000),
+      completion_status: requiredText(fact.completion_status, "client fact completion status", 64),
+      evidence_count: nullableInteger(fact.evidence_count, "client fact evidence count", 0, 100_000) ?? 0,
+      confidence: fact.max_confidence === null || fact.max_confidence === undefined
+        ? null
+        : Number(fact.max_confidence)
+    }))
+    .sort((left, right) => left.field_name.localeCompare(right.field_name, "en"));
+}
+
 function matchesClientQuery(row, query) {
   if (!query) return true;
   const normalized = query.toLowerCase();
@@ -629,7 +691,8 @@ function buildClientResponse(snapshot, context, clientDatabase, canonicalClientI
         ? row.resident_episode_history
         : [],
       enrichment: row.client_profile,
-      source_documents: projectClientSourceDocuments(clientDatabase, identifier)
+      source_documents: projectClientSourceDocuments(clientDatabase, identifier),
+      facts: projectClientFacts(clientDatabase, identifier)
     },
     client_database: {
       dataset: clientDatabaseMetadata.dataset,
@@ -895,6 +958,11 @@ export function isPipelineClinicalPath(pathname) {
   return pathname === PIPELINE_CLINICAL_API_PREFIX || pathname.startsWith(`${PIPELINE_CLINICAL_API_PREFIX}/`);
 }
 
+export function pipelineClinicalPathRequiresClientDatabase(pathname) {
+  return pathname === `${PIPELINE_CLINICAL_API_PREFIX}/clients` ||
+    pathname.startsWith(`${PIPELINE_CLINICAL_API_PREFIX}/clients/`);
+}
+
 export function parsePipelineClinicalClientDocumentPath(pathname) {
   const prefix = `${PIPELINE_CLINICAL_API_PREFIX}/clients/`;
   if (!pathname.startsWith(prefix)) return null;
@@ -912,6 +980,191 @@ export function parsePipelineClinicalClientDocumentPath(pathname) {
     if (error && typeof error === "object" && "statusCode" in error) throw error;
     throw clinicalError(400, "client_document_identifier_invalid", "The client document identifier is invalid.");
   }
+}
+
+export function parsePipelineClinicalClientIntelligencePath(pathname) {
+  const prefix = `${PIPELINE_CLINICAL_API_PREFIX}/clients/`;
+  if (!pathname.startsWith(prefix)) return null;
+  const segments = pathname.slice(prefix.length).split("/");
+  try {
+    if (segments.length === 2 && segments[1] === "search") {
+      return {
+        kind: "search",
+        canonicalClientId: requiredText(decodeURIComponent(segments[0]), "canonical client identifier", 256)
+      };
+    }
+    if (segments.length === 4 && segments[1] === "facts" && segments[3] === "evidence") {
+      return {
+        kind: "evidence",
+        canonicalClientId: requiredText(decodeURIComponent(segments[0]), "canonical client identifier", 256),
+        fieldName: requiredText(decodeURIComponent(segments[2]), "client fact field", 128)
+      };
+    }
+    return null;
+  } catch (error) {
+    if (error && typeof error === "object" && "statusCode" in error) throw error;
+    throw clinicalError(400, "client_intelligence_identifier_invalid", "The client intelligence identifier is invalid.");
+  }
+}
+
+function requireCanonicalClient(clientDatabase, canonicalClientId) {
+  const client = clientDatabase.clients.find(
+    (candidate) => String(candidate.canonical_client_id ?? "").trim() === canonicalClientId
+  );
+  if (!client) {
+    throw clinicalError(404, "client_not_found", "Client was not found in the governed client database.");
+  }
+  return client;
+}
+
+export function buildClientFactEvidenceResponse(snapshot, context, clientDatabase, request, intelligence, now) {
+  requireCanonicalClient(clientDatabase, request.canonicalClientId);
+  const facts = projectClientFacts(clientDatabase, request.canonicalClientId);
+  const fact = facts.find((candidate) => candidate.field_name === request.fieldName);
+  if (!fact) {
+    throw clinicalError(404, "client_fact_not_found", "That governed client fact is not available.");
+  }
+  const limit = parseIntelligenceLimit(request.requestUrl.searchParams.get("limit"));
+  const scope = intelligenceCursorScope("evidence", request.canonicalClientId, "", "", request.fieldName);
+  const offset = decodeIntelligenceCursor(
+    request.requestUrl.searchParams.get("cursor"),
+    context.snapshotId,
+    scope
+  );
+  const documents = new Map(
+    projectClientSourceDocuments(clientDatabase, request.canonicalClientId)
+      .map((document) => [document.document_id, document])
+  );
+  const matching = (intelligence?.evidence ?? [])
+    .filter((row) => row.field_name === request.fieldName && documents.has(row.document_id))
+    .sort((left, right) =>
+      String(left.document_id).localeCompare(String(right.document_id), "en") ||
+      Number(left.page_number) - Number(right.page_number) ||
+      String(left.evidence_text).localeCompare(String(right.evidence_text), "en")
+    );
+  if (offset > matching.length) {
+    throw clinicalError(400, "cursor_invalid", "The evidence cursor is outside the current result set.");
+  }
+  const evidence = matching.slice(offset, offset + limit).map((row) => {
+    const document = documents.get(row.document_id);
+    return {
+      document_id: row.document_id,
+      document_name: document.display_name,
+      page_number: row.page_number,
+      excerpt: row.evidence_text,
+      candidate_value: nullableText(row.candidate_value, "client fact candidate value", 20_000),
+      confidence: row.confidence,
+      status: row.status
+    };
+  });
+  const nextOffset = offset + evidence.length;
+  return {
+    ...buildMetadata(context, snapshot, now),
+    canonical_client_id: request.canonicalClientId,
+    fact,
+    evidence,
+    total: matching.length,
+    limit,
+    next_cursor: nextOffset < matching.length
+      ? encodeIntelligenceCursor(context.snapshotId, scope, nextOffset)
+      : null
+  };
+}
+
+function searchSnippet(text, matchIndex, queryLength) {
+  const maximumLength = 420;
+  const before = Math.max(0, matchIndex - 150);
+  const after = Math.min(text.length, matchIndex + queryLength + 240);
+  const excerpt = text.slice(before, after).replace(/\s+/g, " ").trim();
+  return `${before > 0 ? "..." : ""}${excerpt}${after < text.length ? "..." : ""}`.slice(0, maximumLength);
+}
+
+export function buildClientDocumentSearchResponse(snapshot, context, clientDatabase, request, intelligence, now) {
+  requireCanonicalClient(clientDatabase, request.canonicalClientId);
+  const query = normalizeSearchParameter(request.requestUrl.searchParams.get("q"), "q");
+  if (query.length < 2) {
+    throw clinicalError(400, "query_invalid", "q must contain at least two characters.");
+  }
+  const requestedDocumentId = normalizeSearchParameter(
+    request.requestUrl.searchParams.get("document_id"),
+    "document_id"
+  );
+  const documents = new Map(
+    projectClientSourceDocuments(clientDatabase, request.canonicalClientId)
+      .map((document) => [document.document_id, document])
+  );
+  if (requestedDocumentId && !documents.has(requestedDocumentId)) {
+    throw clinicalError(404, "client_document_not_found", "The governed client document is not available.");
+  }
+  const normalizedQuery = query.toLocaleLowerCase("en-US");
+  const limit = parseIntelligenceLimit(request.requestUrl.searchParams.get("limit"));
+  const scope = intelligenceCursorScope(
+    "search",
+    request.canonicalClientId,
+    normalizedQuery,
+    requestedDocumentId
+  );
+  const offset = decodeIntelligenceCursor(
+    request.requestUrl.searchParams.get("cursor"),
+    context.snapshotId,
+    scope
+  );
+  const matching = [];
+  for (const page of intelligence?.pages ?? []) {
+    if (requestedDocumentId && page.document_id !== requestedDocumentId) continue;
+    const document = documents.get(page.document_id);
+    if (!document) continue;
+    const matchIndex = page.text.toLocaleLowerCase("en-US").indexOf(normalizedQuery);
+    if (matchIndex < 0) continue;
+    matching.push({
+      document_id: page.document_id,
+      document_name: document.display_name,
+      page_number: page.page_number,
+      section: nullableText(page.section, "document page section", 256),
+      snippet: searchSnippet(page.text, matchIndex, query.length)
+    });
+  }
+  matching.sort((left, right) =>
+    left.document_name.localeCompare(right.document_name, "en") ||
+    left.page_number - right.page_number
+  );
+  if (offset > matching.length) {
+    throw clinicalError(400, "cursor_invalid", "The document-search cursor is outside the current result set.");
+  }
+  const results = matching.slice(offset, offset + limit);
+  const nextOffset = offset + results.length;
+  return {
+    ...buildMetadata(context, snapshot, now),
+    canonical_client_id: request.canonicalClientId,
+    query,
+    document_id: requestedDocumentId || null,
+    results,
+    total: matching.length,
+    limit,
+    next_cursor: nextOffset < matching.length
+      ? encodeIntelligenceCursor(context.snapshotId, scope, nextOffset)
+      : null
+  };
+}
+
+export function buildPipelineClinicalIntelligenceResponse(
+  snapshot,
+  requestUrl,
+  now = new Date(),
+  clientDatabase = null,
+  intelligence = null
+) {
+  const request = parsePipelineClinicalClientIntelligencePath(requestUrl.pathname);
+  if (!request) return null;
+  const database = requireClientDatabase(clientDatabase);
+  const context = attachCanonicalClientIndex(snapshot, validateSnapshot(snapshot), database);
+  const requestContext = { ...request, requestUrl };
+  return {
+    statusCode: 200,
+    body: request.kind === "evidence"
+      ? buildClientFactEvidenceResponse(snapshot, context, database, requestContext, intelligence, now)
+      : buildClientDocumentSearchResponse(snapshot, context, database, requestContext, intelligence, now)
+  };
 }
 
 export function buildPipelineClinicalApiResponse(snapshot, requestUrl, now = new Date(), clientDatabase = null) {
@@ -1010,7 +1263,7 @@ export async function handlePipelineClinicalApiRequest(req, res) {
       try {
         clientDatabase = await readPlatformClientDatabase(snapshot);
       } catch (error) {
-        if (requestUrl.pathname !== `${PIPELINE_CLINICAL_API_PREFIX}/health`) throw error;
+        if (pipelineClinicalPathRequiresClientDatabase(requestUrl.pathname)) throw error;
       }
     }
     const documentRequest = parsePipelineClinicalClientDocumentPath(requestUrl.pathname);
@@ -1035,6 +1288,28 @@ export async function handlePipelineClinicalApiRequest(req, res) {
       res.setHeader("X-Alamo-Data-Freshness", metadata.freshness.status);
       res.setHeader("X-Alamo-Snapshot-Id", metadata.snapshot_id);
       res.status(200).send(asset.body);
+      return;
+    }
+    const intelligenceRequest = parsePipelineClinicalClientIntelligencePath(requestUrl.pathname);
+    if (intelligenceRequest) {
+      const database = requireClientDatabase(clientDatabase);
+      const intelligence = await readPlatformClientIntelligence(
+        database,
+        intelligenceRequest.canonicalClientId
+      );
+      const response = buildPipelineClinicalIntelligenceResponse(
+        snapshot,
+        requestUrl,
+        new Date(),
+        database,
+        intelligence
+      );
+      if (!response) {
+        throw clinicalError(404, "route_not_found", "Clinical integration route not found.");
+      }
+      assertResponseSize(response.body);
+      applyClinicalFreshnessHeaders(res, response.body);
+      res.status(response.statusCode).json(response.body);
       return;
     }
     const response = buildPipelineClinicalApiResponse(snapshot, requestUrl, new Date(), clientDatabase);

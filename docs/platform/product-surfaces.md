@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-08-02
+- updated: 2026-09-15
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -13,8 +13,9 @@
 
 ## Product Model
 
-The current product is not primarily a sidebar app. It begins with a
-California community map:
+The current product is not primarily a sidebar app. On desktop it begins with a
+California community map; on phones and portrait tablets it begins with a
+governed portfolio pulse and five touch-sized community actions:
 
 - the user starts at `/home`
 - five facility markers are projected from maintained city longitude/latitude coordinates;
@@ -31,10 +32,38 @@ California community map:
 - the modal uses one-level Back navigation so users can return from a resident
   profile to the roster and then to the community overview without losing place
 - Resident Search opens already scoped to the selected community
-- the black **Ask a question** control scrolls to the vertical analyst directly beneath the map
-- **Analytics** opens the mounted governed report library without replacing the
-  California workspace
-- the California map always remains above the analyst thread, including `/questions` deep links
+- **Analytics** opens the mounted governed workspace without replacing the
+  California map; its internal **Reports** and **Ask a question** controls switch
+  between governed documents and the vertical analyst
+- the Analytics report rail also includes a live **Monday census briefing** built
+  from the reconciled current/prior census contract; it mirrors the email's
+  metric-row, community-change chart, and factual context without using the
+  sanitized prototype fixture or ungoverned Pipeline counts
+- legacy `/questions` links redirect to the analyst at `/analytics/questions`
+
+## Small-Screen Product Decision
+
+The mobile home prioritizes three jobs: **check the governed current census and
+change**, **open a community profile**, and **read or ask for governed analysis**.
+It shows the five current communities as large rows with census and comparable-
+period change, then keeps Reports and Ask a question one tap away. The profile
+opens as a full-height phone view with its existing Overview, Census, Incidents,
+Medications, and Residents sections; its controls meet a 44px touch target at
+phone and tablet widths.
+
+The desktop map is not shrunk onto phones or portrait tablets: marker labels and
+hit areas become too small to be useful there. The map remains the desktop
+geographic overview. The mobile report library becomes a native picker so the
+report reader gets the width. The mobile question-category chip grid becomes a
+picker so search and actual question choices remain visible without three rows
+of filter chrome.
+
+Admissions is still temporarily disabled in primary navigation while that
+surface is unfinished. Fifty States acquisition research, Command Center,
+Data Explorer, and other deep tools stay available through governed routes or
+analyst drilldowns, but do not occupy the primary phone header. This is a
+navigation decision, not a deletion of those capabilities. Phone layouts must
+still render any direct route safely.
 
 The URL-only `/data-architecture` route is a print-ready platform explainer. It
 maps live operational inputs, integrating referral and enhanced-profile lanes,
@@ -43,9 +72,18 @@ execution, current data depth, and the evidence still required for deeper
 outcome reporting. It is intentionally absent from primary navigation while it
 is reviewed.
 
+`/admissions` is the aggregate Admissions overview inside Alamo. It uses
+governed portfolio and community census context from the home-dashboard
+contract. Its primary navigation item is temporarily disabled while the surface
+is finished, but the direct route and access boundary remain intact. The
+separate Pipeline application owns referral intake, uploads, OCR, packet
+evidence, assessments, decisions, and other transactional workflow. The
+`/pipeline` path redirects to that full application.
+
 The analyst remains a vertical chat/module workspace:
 
-- the user scrolls beneath the map or opens `/questions`
+- the user opens **Analytics**, then **Ask a question**, or follows an
+  `/analytics/questions` deep link
 - the user chooses a vetted question and its selectors
 - deterministic AH Analyst tools calculate and validate each answer
 - deterministic modules appear in the thread
@@ -251,11 +289,23 @@ Current secondary surfaces:
   supporting demand evidence, buyer targets where researched, recommended entry,
   Alamo evidence requirements, sources, and limitations. Demand relevance,
   buyer fit, opportunity status, and Alamo evidence requirements remain separate
-  rather than collapsing into one market score.
-- `/analytics`: the primary Analytics workspace, with seven governed long-form
-  report families, portfolio/community scope, loaded-period selection,
-  audience tailoring for effectiveness evidence, an in-app reader, and
-  print-ready artifact output
+  rather than collapsing into one market score. The same route now exposes a
+  second **Acquisition intelligence** view only after its owner-protected API
+  succeeds. The visible view is a concise operator screen with one private
+  company per row, current public footprint, source links, a reported or
+  estimated bed range, estimate confidence, and a formula-derived enterprise
+  value range. The supplied workbook provides the valuation arithmetic and
+  original comparison anchors, not verified ownership or licensed-capacity
+  facts. The searchable 50-state facility discovery, durable case workflow,
+  evidence history, ownership and license queues, and proposed clusters remain
+  implemented behind the same owner-only API boundary but are not rendered in
+  the current operator screen. Development uses a local file store; production
+  uses the existing private Azure Blob container with optimistic-concurrency
+  writes and immutable revisions.
+- `/analytics`: the primary Analytics workspace, with internal Reports and Ask
+  a question sections, governed long-form report families, portfolio/community
+  scope, loaded-period selection, an in-app reader, and the deterministic
+  analyst thread
 - `/reports`: compatibility route for previously shared links; new navigation
   uses `/analytics`
 

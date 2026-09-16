@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { getReportingDateKey } from "../shared/reporting-date.mjs";
 import { getBoundedIntegerEnv } from "./runtime-environment.mjs";
 import { validateToolResultSchema } from "./tools/result-schema.mjs";
+import { getGovernedIncidentDetailRows } from "./governed-incident-details.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const defaultCertifiedAnswerCachePath = path.resolve(__dirname, "../generated/certified-answer-cache/latest.json");
@@ -56,7 +57,7 @@ const SIGNATURE_DATASETS = Object.freeze([
   { name: "residents", selectRows: (communities) => communities?.residents, selectFields: (row) => [row.res_number, row.facility_id, row.status, row.admit_date, row.los_days] },
   { name: "census", selectRows: (communities) => communities?.census, selectFields: (row) => [row.facility_id, row.month_bucket, row.census] },
   { name: "incidents", selectRows: (communities) => communities?.incidents, selectFields: (row) => [row.facility_id, row.month_bucket, row.category, row.incident_count] },
-  { name: "incident-details", selectRows: (communities, reportsSummary) => communities?.incidentDetails ?? reportsSummary?.toolContext?.incidentDetailHistory, selectFields: (row) => [row.incident_id, row.facility_id, row.month_bucket, row.incident_date, row.category, row.resident_id, row.client_name] },
+  { name: "incident-details", selectRows: getGovernedIncidentDetailRows, selectFields: (row) => [row.incident_id, row.facility_id, row.month_bucket, row.incident_date, row.category, row.resident_id, row.client_name] },
   { name: "medication-compliance", selectRows: (_communities, reportsSummary) => reportsSummary?.medicationCompliance, selectFields: (row) => [row.facility_id, row.month_bucket, row.scheduled_count, row.given_count, row.not_given_count] },
   { name: "medication-refusals", selectRows: (_communities, reportsSummary) => reportsSummary?.refusalByMedication, selectFields: (row) => [row.facility_id, row.month_bucket, row.medication_name, row.refusal_count] },
   { name: "documentation-gaps", selectRows: (_communities, reportsSummary) => reportsSummary?.documentationGaps, selectFields: (row) => [row.resident_id, row.facility_id, row.last_note_date, row.days_since_last_note] }

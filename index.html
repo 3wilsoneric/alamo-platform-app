@@ -4,7 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#ffffff" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="application-name" content="Alamo Health" />
+    <meta name="apple-mobile-web-app-title" content="Alamo Health" />
+    <link rel="icon" href="/favicon.svg?v=ah-desktop-v1" type="image/svg+xml" />
+    <link rel="icon" href="/pwa/alamo-favicon-32-v1.png" type="image/png" sizes="32x32" />
+    <link rel="shortcut icon" href="/favicon.ico?v=ah-desktop-v1" />
+    <link rel="apple-touch-icon" href="/pwa/alamo-apple-touch-icon-180-v1.png" sizes="180x180" />
+    <link rel="manifest" href="/manifest.json?v=ah-desktop-v1" />
     <style>
       html,
       body,
@@ -33,19 +39,22 @@
 
       .app-boot-title {
         margin: 0;
-        color: #0f8b73;
+        color: #595959;
         font-size: 30px;
-        font-weight: 700;
+        font-weight: 600;
         line-height: 1;
-        letter-spacing: -0.05em;
+        letter-spacing: normal;
+      }
+
+      .app-boot-title-alamo {
+        color: #08745f;
+        font-weight: 900;
       }
 
       .app-boot-title-health {
         margin-left: 4px;
-        color: #315b54;
-        font-size: 23px;
-        font-weight: 500;
-        letter-spacing: -0.04em;
+        color: #595959;
+        font-weight: 600;
       }
 
       .app-boot-status {
@@ -84,7 +93,7 @@
     <div id="root">
       <main class="app-boot-shell" aria-label="Loading Alamo Platform">
         <section class="app-boot-card">
-          <h1 class="app-boot-title">Alamo <span class="app-boot-title-health">Health</span></h1>
+          <h1 class="app-boot-title"><span class="app-boot-title-alamo">Alamo</span><span class="app-boot-title-health">Health</span></h1>
           <div class="app-boot-status" role="status">
             <span class="app-boot-spinner" aria-hidden="true"></span>
             <span>Opening the platform</span>

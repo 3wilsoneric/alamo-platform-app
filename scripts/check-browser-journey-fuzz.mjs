@@ -7,6 +7,8 @@ import {
   TIMEOUT_MS,
   attachPageDiagnostics,
   ask,
+  chooseCurrentResidentProfile,
+  exactTextPattern,
   getBrowserQaServerSnapshot,
   measureCanvas,
   openChat,
@@ -587,6 +589,16 @@ async function main() {
     page = await context.newPage();
     attachPageDiagnostics(page, { consoleErrors, requestFailures });
     await openChat(page);
+
+    if (sessions.some((session) => session.family === "resident-profile")) {
+      const profile = await chooseCurrentResidentProfile(page);
+      for (const session of sessions.filter((candidate) => candidate.family === "resident-profile")) {
+        for (const turn of session.turns) {
+          turn.prompt = `show ${profile.name} resident profile`;
+          turn.expect = [exactTextPattern(profile.name), exactTextPattern(profile.community), /Resident #/i];
+        }
+      }
+    }
 
     const results = [];
     for (const [sessionIndex, session] of sessions.entries()) {

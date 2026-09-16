@@ -17,10 +17,12 @@ import { isAdmissionsPath } from "../../../shared/admissions-access.mjs";
 export default function ProtectedAppShell() {
   const location = useLocation();
   const isAdmissionsExperience = isAdmissionsPath(location.pathname);
+  const isPipelineHandoff = location.pathname === "/pipeline";
   const isStandaloneEditorial = location.pathname === "/fiftystate";
   const isCaliforniaExperience =
     location.pathname === "/" ||
     location.pathname === "/questions" ||
+    isAdmissionsExperience ||
     location.pathname.startsWith("/analytics") ||
     location.pathname.startsWith("/reports") ||
     location.pathname.startsWith("/home");
@@ -37,7 +39,7 @@ export default function ProtectedAppShell() {
     isE2EAuthBypassEnabled
   );
   const skipWorkspacePreparation =
-    isAdmissionsExperience || admissionsAccess.restrictedToAdmissions;
+    isAdmissionsExperience || isPipelineHandoff || admissionsAccess.restrictedToAdmissions;
   const accountKey = isE2EAuthBypassEnabled
     ? "e2e-authenticated"
     : accounts[0]?.homeAccountId ?? "authenticated";
@@ -146,8 +148,12 @@ export default function ProtectedAppShell() {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (admissionsAccess.restrictedToAdmissions && !isAdmissionsExperience) {
-    return <Navigate to="/admissions" replace />;
+  if (
+    admissionsAccess.restrictedToAdmissions &&
+    !isAdmissionsExperience &&
+    !isPipelineHandoff
+  ) {
+    return <AdmissionsZoneRedirect />;
   }
 
   if (preparedAccountKey !== accountKey) {
@@ -200,5 +206,18 @@ export default function ProtectedAppShell() {
         </div>
       </main>
     </div>
+  );
+}
+
+function AdmissionsZoneRedirect() {
+  useEffect(() => {
+    window.location.replace("/admissions");
+  }, []);
+
+  return (
+    <AuthenticationProgress
+      label="Opening Admissions"
+      detail="Loading your Admissions overview..."
+    />
   );
 }

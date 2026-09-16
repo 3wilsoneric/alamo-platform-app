@@ -1,6 +1,5 @@
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useMsal } from "@azure/msal-react";
 import WorkspaceHomePage from "../../home/pages/WorkspaceHomePage";
 import ReportsPage from "../../reports/pages/ReportsPage";
@@ -9,9 +8,15 @@ import {
   readCachedHomeDashboard,
   type HomeDashboardResponse
 } from "../../../shared/api/platformData";
-import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 import CaliforniaCommunityMap from "../components/CaliforniaCommunityMap";
+import MobileCommunityHome from "../components/MobileCommunityHome";
 import CaliforniaCommunityModal from "../components/CaliforniaCommunityModal";
+import PlatformPageNavigation, {
+  type PlatformPage
+} from "../components/PlatformPageNavigation";
+import AnalyticsSectionNavigation, {
+  type AnalyticsSection
+} from "../components/AnalyticsSectionNavigation";
 import {
   CALIFORNIA_COMMUNITIES,
   CALIFORNIA_COMMUNITY_BY_ID
@@ -21,8 +26,6 @@ import { getAccountAdmissionsAccess } from "../../../shared/auth/admissionsAcces
 
 type CaliforniaWorkspacePanel = "map" | "questions" | "reports";
 
-const ANALYTICS_NAVIGATION_ENABLED = true;
-
 const PANEL_INDEX: Record<CaliforniaWorkspacePanel, number> = {
   map: 0,
   questions: 1,
@@ -30,7 +33,7 @@ const PANEL_INDEX: Record<CaliforniaWorkspacePanel, number> = {
 };
 
 function panelForPath(pathname: string): CaliforniaWorkspacePanel {
-  if (pathname === "/questions") return "questions";
+  if (pathname === "/analytics/questions" || pathname === "/questions") return "questions";
   if (pathname.startsWith("/analytics")) return "reports";
   if (pathname.startsWith("/reports")) return "reports";
   return "map";
@@ -119,8 +122,16 @@ export default function CaliforniaHomePage() {
         ? "/home"
         : panel === "reports"
           ? "/analytics"
-          : "/questions"
+          : "/analytics/questions"
     );
+  }
+
+  function openPlatformPage(page: Exclude<PlatformPage, "admissions">) {
+    openPanel(page === "home" ? "map" : "reports");
+  }
+
+  function openAnalyticsSection(section: AnalyticsSection) {
+    openPanel(section);
   }
 
   return (
@@ -132,32 +143,25 @@ export default function CaliforniaHomePage() {
       {activePanel !== "map" ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 z-30 h-16 bg-white sm:h-[72px]"
+          className="pointer-events-none absolute inset-x-0 top-0 z-30 h-[60px] border-b border-[#d9d9d9] bg-white/95 backdrop-blur-[8px] sm:h-16 sm:border-0"
         />
-      ) : null}
+      ) : (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 z-30 h-[60px] border-b border-[#d9d9d9] bg-white/95 backdrop-blur-[8px] sm:h-16 lg:hidden"
+        />
+      )}
 
-      <Link
-        to="/home"
-        onClick={() => setActivePanel("map")}
-        aria-label="Return to the California overview"
-        data-california-workspace-brand="true"
-        className={`absolute top-4 z-40 transition-[left] duration-300 motion-reduce:transition-none sm:top-5 ${
-          activePanel === "map" ? "left-4 sm:left-6" : "left-[68px] sm:left-[84px]"
-        }`}
-      >
-        <PlatformWordmark />
-      </Link>
-
+      <PlatformPageNavigation
+        active={activePanel === "map" ? "home" : "analytics"}
+        admissionsAllowed={admissionsAccess.allowed}
+        onNavigate={openPlatformPage}
+      />
       {activePanel !== "map" ? (
-        <button
-          type="button"
-          onClick={() => openPanel("map")}
-          data-california-carousel-back="true"
-          className="absolute left-4 top-4 z-40 grid h-10 w-10 place-items-center rounded-full border border-[#d9d9d9] bg-white/95 text-[#595959] shadow-[0_6px_18px_rgba(17,17,17,0.08)] backdrop-blur-sm transition-[border-color,color,transform] duration-200 hover:-translate-x-0.5 hover:border-[#111111] hover:text-[#111111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:left-6 sm:top-5"
-          aria-label="Back to California map"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        <AnalyticsSectionNavigation
+          active={activePanel}
+          onNavigate={openAnalyticsSection}
+        />
       ) : null}
 
       <div
@@ -171,11 +175,21 @@ export default function CaliforniaHomePage() {
           data-california-carousel-panel="map"
           aria-hidden={activePanel !== "map"}
           inert={activePanel !== "map"}
-          className="relative h-full w-screen shrink-0 overflow-clip bg-white"
+          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white lg:overflow-clip"
         >
+          <div className="lg:hidden">
+            <MobileCommunityHome
+              communities={CALIFORNIA_COMMUNITIES}
+              dashboard={mapDashboard}
+              dashboardUnavailable={mapDashboardUnavailable}
+              onSelectCommunity={openCommunity}
+              onOpenReports={() => openPanel("reports")}
+              onOpenQuestions={() => openPanel("questions")}
+            />
+          </div>
           <div
             data-california-home-hero="true"
-            className="relative flex h-full flex-col items-center overflow-clip px-2 pb-5 sm:px-4 sm:pb-6"
+            className="relative hidden h-full flex-col items-center overflow-clip px-2 pb-5 sm:px-4 sm:pb-6 lg:flex"
           >
             <div className="flex min-h-0 w-full flex-1 -translate-y-3 items-center justify-center sm:translate-y-0">
               <CaliforniaCommunityMap
@@ -186,42 +200,6 @@ export default function CaliforniaHomePage() {
                 onSelectCommunity={openCommunity}
               />
             </div>
-            <nav
-              data-california-hero-menu="true"
-              aria-label="Platform menu"
-              className="absolute right-4 top-4 z-10 flex flex-col items-end gap-2 sm:right-6 sm:top-5 sm:gap-3"
-            >
-              {admissionsAccess.allowed ? (
-                <Link
-                  to="/admissions"
-                  data-california-hero-action="admissions"
-                  className="group inline-flex items-center gap-2 text-left font-sans text-[15px] font-bold tracking-[-0.055em] text-[#315b54] transition-colors hover:text-[#0f8b73] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:text-[18px]"
-                >
-                  <span>Admissions</span>
-                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-                </Link>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => openPanel("questions")}
-                data-california-hero-action="questions"
-                className="group inline-flex items-center gap-2 text-left font-sans text-[15px] font-bold tracking-[-0.055em] text-[#315b54] transition-colors hover:text-[#0f8b73] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:text-[18px]"
-              >
-                <span>Ask a question</span>
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-              </button>
-              {ANALYTICS_NAVIGATION_ENABLED ? (
-                <button
-                  type="button"
-                  onClick={() => openPanel("reports")}
-                  data-california-hero-action="analytics"
-                  className="group inline-flex items-center gap-2 text-left font-sans text-[15px] font-bold tracking-[-0.055em] text-[#315b54] transition-colors hover:text-[#0f8b73] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:text-[18px]"
-                >
-                  <span>Analytics</span>
-                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-                </button>
-              ) : null}
-            </nav>
           </div>
         </section>
 
@@ -229,28 +207,19 @@ export default function CaliforniaHomePage() {
           data-california-carousel-panel="questions"
           aria-hidden={activePanel !== "questions"}
           inert={activePanel !== "questions"}
-          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-2 pb-8 pt-14 sm:px-4 sm:pt-16"
+          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-3 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-16 lg:px-12"
         >
-          {ANALYTICS_NAVIGATION_ENABLED ? (
-            <button
-              type="button"
-              onClick={() => openPanel("reports")}
-              data-california-question-analytics-link="true"
-              className="absolute right-4 top-4 z-20 inline-flex items-center gap-2 font-sans text-[15px] font-bold tracking-[-0.055em] text-[#0f8b73] transition-colors hover:text-[#0c705f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:right-6 sm:top-5 sm:text-[18px]"
-            >
-              <span>Analytics</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          ) : null}
           <div
             data-california-question-workspace="true"
-            className="mx-auto w-full max-w-[1380px]"
+            className="mx-auto w-full max-w-[1432px]"
           >
-            <WorkspaceHomePage
-              embedded
-              sectionId="questions"
-              initialQuestionsOpen
-            />
+            <div className="mx-auto w-full max-w-[1380px]">
+              <WorkspaceHomePage
+                embedded
+                sectionId="questions"
+                initialQuestionsOpen
+              />
+            </div>
           </div>
         </section>
 
@@ -258,9 +227,11 @@ export default function CaliforniaHomePage() {
           data-california-carousel-panel="reports"
           aria-hidden={activePanel !== "reports"}
           inert={activePanel !== "reports"}
-          className="h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-8 pt-16 sm:px-8 sm:pt-[72px] lg:px-12"
+          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-[76px] lg:px-12"
         >
-          <ReportsPage embedded active={activePanel === "reports"} />
+          <div className="mx-auto w-full max-w-[1432px]">
+            <ReportsPage embedded active={activePanel === "reports"} />
+          </div>
         </section>
       </div>
 

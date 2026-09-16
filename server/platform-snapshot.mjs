@@ -1,6 +1,7 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
 import { ClientSecretCredential } from "@azure/identity";
 import { BlobServiceClient } from "@azure/storage-blob";
 import {
@@ -17,6 +18,9 @@ const DEFAULT_SNAPSHOT_MAX_BYTES = 64 * 1024 * 1024;
 const DEFAULT_CLIENT_DATABASE_MAX_BYTES = 16 * 1024 * 1024;
 const DEFAULT_CLIENT_DOCUMENT_MAX_BYTES = 32 * 1024 * 1024;
 const DEFAULT_CLIENT_THUMBNAIL_MAX_BYTES = 2 * 1024 * 1024;
+const DEFAULT_CLIENT_INTELLIGENCE_MAX_BYTES = 8 * 1024 * 1024;
+const DEFAULT_CLIENT_INTELLIGENCE_MAX_UNCOMPRESSED_BYTES = 32 * 1024 * 1024;
+const MAX_CLIENT_INTELLIGENCE_CACHE_ENTRIES = 50;
 
 /**
  * @typedef {object} PlatformSnapshotCache
@@ -40,6 +44,9 @@ let platformClientDatabaseCache = {
   value: null,
   promise: null
 };
+
+/** @type {Map<string, any>} */
+const platformClientIntelligenceCache = new Map();
 
 function getSnapshotCacheTtlMs() {
   return getBoundedIntegerEnv(
@@ -141,6 +148,90 @@ function assertClientDocumentAssetPath(value, kind, source) {
     throw new Error(`Platform client database from ${source} has an invalid ${kind} asset path.`);
   }
   return assetPath;
+}
+
+function assertClientIntelligencePath(value, source) {
+  const intelligencePath = typeof value === "string" ? value.trim() : "";
+  if (
+    !intelligencePath ||
+    intelligencePath.startsWith("/") ||
+    intelligencePath.includes("\\") ||
+    intelligencePath.split("/").includes("..") ||
+    !/^snapshots\/client-intelligence\/shards\/v\d+\/[a-f0-9]{64}\.json\.gz$/i.test(intelligencePath)
+  ) {
+    throw new Error(`Platform client database from ${source} has an invalid client-intelligence path.`);
+  }
+  return intelligencePath;
+}
+
+function assertBoundedCount(value, label, source, maximum = 1_000_000) {
+  if (!Number.isInteger(value) || value < 0 || value > maximum) {
+    throw new Error(`Platform client database from ${source} has an invalid ${label}.`);
+  }
+  return value;
+}
+
+function assertClientFactFieldName(value, source) {
+  const fieldName = typeof value === "string" ? value.trim() : "";
+  if (!/^[a-z][a-z0-9_]{0,127}$/.test(fieldName)) {
+    throw new Error(`Platform client database from ${source} has an invalid client fact field.`);
+  }
+  return fieldName;
+}
+
+function assertClientFacts(value, canonicalIdSet, source) {
+  const facts = value ?? [];
+  if (!Array.isArray(facts) || !facts.every(isObject)) {
+    throw new Error(`Platform client database from ${source} has an invalid client-facts list.`);
+  }
+  const factKeys = new Set();
+  for (const fact of facts) {
+    const canonicalClientId = String(fact.canonical_client_id ?? "").trim();
+    const fieldName = assertClientFactFieldName(fact.field_name, source);
+    const fieldValue = typeof fact.field_value === "string" ? fact.field_value.trim() : "";
+    const completionStatus = typeof fact.completion_status === "string" ? fact.completion_status.trim() : "";
+    const key = `${canonicalClientId}:${fieldName}`;
+    if (
+      !canonicalIdSet.has(canonicalClientId) ||
+      !fieldValue || fieldValue.length > 20_000 ||
+      !["verified", "needs_review", "not_documented", "no_source_documents"].includes(completionStatus) ||
+      factKeys.has(key)
+    ) {
+      throw new Error(`Platform client database from ${source} has invalid or duplicate client-fact metadata.`);
+    }
+    assertBoundedCount(fact.evidence_count, "client fact evidence count", source, 100_000);
+    if (
+      fact.max_confidence !== null && fact.max_confidence !== undefined &&
+      (typeof fact.max_confidence !== "number" || !Number.isFinite(fact.max_confidence) || fact.max_confidence < 0 || fact.max_confidence > 1)
+    ) {
+      throw new Error(`Platform client database from ${source} has an invalid client fact confidence.`);
+    }
+    factKeys.add(key);
+  }
+  return facts;
+}
+
+function assertClientIntelligenceManifest(value, canonicalIdSet, source) {
+  const manifest = value ?? [];
+  if (!Array.isArray(manifest) || !manifest.every(isObject)) {
+    throw new Error(`Platform client database from ${source} has an invalid client-intelligence manifest.`);
+  }
+  const canonicalIds = new Set();
+  const paths = new Set();
+  for (const entry of manifest) {
+    const canonicalClientId = String(entry.canonical_client_id ?? "").trim();
+    const shardPath = assertClientIntelligencePath(entry.shard_path, source);
+    if (!canonicalIdSet.has(canonicalClientId) || canonicalIds.has(canonicalClientId) || paths.has(shardPath)) {
+      throw new Error(`Platform client database from ${source} has duplicate or unknown client-intelligence metadata.`);
+    }
+    assertBoundedCount(entry.document_count, "client-intelligence document count", source, 100_000);
+    assertBoundedCount(entry.page_count, "client-intelligence page count", source, 100_000);
+    assertBoundedCount(entry.evidence_count, "client-intelligence evidence count", source, 100_000);
+    assertBoundedCount(entry.compressed_bytes, "client-intelligence compressed size", source, 64 * 1024 * 1024);
+    canonicalIds.add(canonicalClientId);
+    paths.add(shardPath);
+  }
+  return manifest;
 }
 
 function assertClientDatabasePointer(value, source) {
@@ -247,6 +338,20 @@ export function assertPlatformClientDatabasePayload(payload, source = "unknown s
     assertClientDocumentAssetPath(document.thumbnail_path, "thumbnail", source);
     assertClientDocumentAssetPath(document.preview_path, "preview", source);
     documentKeys.add(documentKey);
+  }
+  const clientFacts = assertClientFacts(payload.client_facts, canonicalIdSet, source);
+  const clientIntelligence = assertClientIntelligenceManifest(payload.client_intelligence, canonicalIdSet, source);
+  if (
+    (payload.client_facts !== undefined || payload.client_fact_count !== undefined) &&
+    (!Number.isInteger(payload.client_fact_count) || payload.client_fact_count !== clientFacts.length)
+  ) {
+    throw new Error(`Platform client database from ${source} has a client-fact count mismatch.`);
+  }
+  if (
+    (payload.client_intelligence !== undefined || payload.client_intelligence_count !== undefined) &&
+    (!Number.isInteger(payload.client_intelligence_count) || payload.client_intelligence_count !== clientIntelligence.length)
+  ) {
+    throw new Error(`Platform client database from ${source} has a client-intelligence count mismatch.`);
   }
   if (pointer && pointer.client_count !== payload.client_count) {
     throw new Error(`Platform client database from ${source} does not match the published pointer client count.`);
@@ -687,6 +792,174 @@ export async function readPlatformClientDocumentAsset(clientDatabase, canonicalC
     if (local) return { ...local, document };
   }
   return null;
+}
+
+function getClientIntelligenceMaximumBytes() {
+  return getBoundedIntegerEnv(
+    "PLATFORM_CLIENT_INTELLIGENCE_MAX_BYTES",
+    DEFAULT_CLIENT_INTELLIGENCE_MAX_BYTES,
+    256 * 1024,
+    64 * 1024 * 1024
+  );
+}
+
+function getClientIntelligenceMaximumUncompressedBytes() {
+  return getBoundedIntegerEnv(
+    "PLATFORM_CLIENT_INTELLIGENCE_MAX_UNCOMPRESSED_BYTES",
+    DEFAULT_CLIENT_INTELLIGENCE_MAX_UNCOMPRESSED_BYTES,
+    1024 * 1024,
+    128 * 1024 * 1024
+  );
+}
+
+function assertClientIntelligencePayload(payload, clientDatabase, canonicalClientId, manifestEntry, source) {
+  if (!isObject(payload) || payload.version !== 1 || payload.canonical_client_id !== canonicalClientId) {
+    throw new Error(`Platform client intelligence from ${source} has an invalid identity contract.`);
+  }
+  const clientDocuments = new Map(
+    (clientDatabase.documents ?? [])
+      .filter((document) => String(document.canonical_client_id) === canonicalClientId)
+      .map((document) => [String(document.document_id), document])
+  );
+  const evidence = payload.evidence ?? [];
+  const pages = payload.pages ?? [];
+  const documentIds = payload.document_ids ?? [];
+  if (
+    !Array.isArray(evidence) || !evidence.every(isObject) ||
+    !Array.isArray(pages) || !pages.every(isObject) ||
+    !Array.isArray(documentIds) || documentIds.some((documentId) => typeof documentId !== "string")
+  ) {
+    throw new Error(`Platform client intelligence from ${source} has invalid evidence or page rows.`);
+  }
+  const normalizedDocumentIds = documentIds.map((documentId) => documentId.trim());
+  if (
+    normalizedDocumentIds.some((documentId) => !clientDocuments.has(documentId)) ||
+    new Set(normalizedDocumentIds).size !== normalizedDocumentIds.length
+  ) {
+    throw new Error(`Platform client intelligence from ${source} has invalid document identifiers.`);
+  }
+  for (const row of evidence) {
+    const documentId = String(row.document_id ?? "").trim();
+    const document = clientDocuments.get(documentId);
+    const evidenceText = typeof row.evidence_text === "string" ? row.evidence_text.trim() : "";
+    const candidateValue = row.candidate_value === null || row.candidate_value === undefined
+      ? null
+      : typeof row.candidate_value === "string" ? row.candidate_value.trim() : "";
+    assertClientFactFieldName(row.field_name, source);
+    if (
+      !document || !Number.isInteger(row.page_number) || row.page_number < 1 ||
+      (document.page_count && row.page_number > document.page_count) ||
+      !evidenceText || evidenceText.length > 4_000 ||
+      candidateValue === "" || (candidateValue && candidateValue.length > 20_000) ||
+      typeof row.confidence !== "number" || !Number.isFinite(row.confidence) || row.confidence < 0 || row.confidence > 1 ||
+      !["accepted", "needs_review", "candidate"].includes(row.status)
+    ) {
+      throw new Error(`Platform client intelligence from ${source} has invalid evidence metadata.`);
+    }
+  }
+  const pageKeys = new Set();
+  for (const row of pages) {
+    const documentId = String(row.document_id ?? "").trim();
+    const document = clientDocuments.get(documentId);
+    const pageText = typeof row.text === "string" ? row.text : "";
+    const key = `${documentId}:${row.page_number}`;
+    if (
+      !document || !Number.isInteger(row.page_number) || row.page_number < 1 ||
+      (document.page_count && row.page_number > document.page_count) ||
+      !pageText.trim() || pageText.length > 200_000 || pageKeys.has(key)
+    ) {
+      throw new Error(`Platform client intelligence from ${source} has invalid document-page metadata.`);
+    }
+    if (row.section !== null && row.section !== undefined && (typeof row.section !== "string" || row.section.length > 256)) {
+      throw new Error(`Platform client intelligence from ${source} has an invalid document-page section.`);
+    }
+    pageKeys.add(key);
+  }
+  if (
+    manifestEntry.document_count !== normalizedDocumentIds.length ||
+    manifestEntry.page_count !== pages.length ||
+    manifestEntry.evidence_count !== evidence.length
+  ) {
+    throw new Error(`Platform client intelligence from ${source} does not match its published manifest.`);
+  }
+  return { ...payload, evidence, pages };
+}
+
+function cacheClientIntelligence(key, value) {
+  platformClientIntelligenceCache.delete(key);
+  platformClientIntelligenceCache.set(key, value);
+  while (platformClientIntelligenceCache.size > MAX_CLIENT_INTELLIGENCE_CACHE_ENTRIES) {
+    const oldest = platformClientIntelligenceCache.keys().next().value;
+    if (!oldest) break;
+    platformClientIntelligenceCache.delete(oldest);
+  }
+  return value;
+}
+
+export async function readPlatformClientIntelligence(clientDatabase, canonicalClientId) {
+  const entry = (clientDatabase?.client_intelligence ?? []).find(
+    (candidate) => String(candidate.canonical_client_id) === canonicalClientId
+  );
+  if (!entry) return null;
+  const shardPath = assertClientIntelligencePath(entry.shard_path, "loaded platform client database");
+  const cacheKey = `${clientDatabase.version}:${shardPath}`;
+  if (platformClientIntelligenceCache.has(cacheKey)) {
+    const cached = platformClientIntelligenceCache.get(cacheKey);
+    platformClientIntelligenceCache.delete(cacheKey);
+    platformClientIntelligenceCache.set(cacheKey, cached);
+    return cached;
+  }
+
+  const maximumBytes = getClientIntelligenceMaximumBytes();
+  const maximumUncompressedBytes = getClientIntelligenceMaximumUncompressedBytes();
+  let body = null;
+  const preferLocal = shouldPreferLocalSnapshot();
+  if (preferLocal) body = await readLocalClientIntelligence(shardPath, maximumBytes);
+  if (!body) body = await readAzureClientIntelligence(shardPath, maximumBytes);
+  if (!body && !preferLocal) body = await readLocalClientIntelligence(shardPath, maximumBytes);
+  if (!body) return null;
+  if (body.byteLength !== entry.compressed_bytes) {
+    throw new Error("Platform client intelligence does not match its published compressed size.");
+  }
+  const uncompressed = gunzipSync(body, { maxOutputLength: maximumUncompressedBytes });
+  if (uncompressed.byteLength > maximumUncompressedBytes) {
+    throw new Error("Platform client intelligence exceeds its configured uncompressed size limit.");
+  }
+  const payload = assertClientIntelligencePayload(
+    JSON.parse(uncompressed.toString("utf8")),
+    clientDatabase,
+    canonicalClientId,
+    entry,
+    "client-intelligence shard"
+  );
+  return cacheClientIntelligence(cacheKey, payload);
+}
+
+async function readLocalClientIntelligence(shardPath, maximumBytes) {
+  const localPath = path.resolve(__dirname, "../generated", shardPath.replace(/^snapshots\//, ""));
+  try {
+    const file = await stat(localPath);
+    if (file.size < 1 || file.size > maximumBytes) {
+      throw new Error("Platform client intelligence has an invalid compressed size.");
+    }
+    return await readFile(localPath);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function readAzureClientIntelligence(shardPath, maximumBytes) {
+  const config = getAzureSnapshotConfig();
+  if (!config) return null;
+  const service = createBlobServiceClient(config);
+  const blobClient = service.getContainerClient(config.container).getBlobClient(shardPath);
+  if (!(await blobClient.exists())) return null;
+  const download = await blobClient.download();
+  if (Number(download.contentLength ?? 0) < 1 || Number(download.contentLength ?? 0) > maximumBytes) {
+    throw new Error("Platform client intelligence has an invalid compressed size.");
+  }
+  return streamToBuffer(download.readableStreamBody, maximumBytes);
 }
 
 async function readLocalClientDocumentAsset(assetPath, maximumBytes) {

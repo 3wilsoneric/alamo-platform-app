@@ -177,8 +177,9 @@ const dailyPlatformPublish = readRepoFile("databricks/workflows/daily_platform_p
 const workflow = JSON.parse(dailyPlatformPublish);
 const toolContextTask = workflow.tasks.find((task) => task.task_key === "tool_context_views");
 assert(
-  toolContextTask?.notebook_task?.base_parameters?.date_partition === "<business-date-YYYY-MM-DD>",
-  "daily platform publish workflow must pass the explicit business date into tool_context_views"
+  toolContextTask?.notebook_task?.base_parameters?.date_partition ===
+    "{{tasks.select_latest_raw_partition.values.date_partition}}",
+  "daily platform publish workflow must pass the preflight-selected business date into tool_context_views"
 );
 
 console.log("ElderMark date contracts passed.");

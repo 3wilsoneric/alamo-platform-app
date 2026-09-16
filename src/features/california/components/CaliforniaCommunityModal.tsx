@@ -191,17 +191,17 @@ export default function CaliforniaCommunityModal({
         aria-labelledby="california-community-dialog-title"
         data-california-community-profile={community.facilityId}
         data-california-modal-view={currentView.kind === "dashboard" ? currentView.focus : currentView.kind}
-        className="relative z-10 flex h-[96dvh] w-full max-w-[1344px] flex-col overflow-hidden rounded-t-[18px] border-t-[3px] border-t-[#0f8b73] bg-white text-[#111111] shadow-[0_24px_90px_rgba(0,0,0,0.42)] sm:h-[88dvh] sm:rounded-[16px] sm:border sm:border-t-[3px] sm:border-[#b3b3b3] sm:border-t-[#0f8b73]"
+        className="relative z-10 flex h-dvh w-full max-w-[1344px] flex-col overflow-hidden border-t-[3px] border-t-[#0f8b73] bg-white text-[#111111] shadow-[0_24px_90px_rgba(0,0,0,0.42)] sm:h-[88dvh] sm:rounded-[16px] sm:border sm:border-t-[3px] sm:border-[#b3b3b3] sm:border-t-[#0f8b73]"
       >
         <header className="sticky top-0 z-20 shrink-0 border-b border-[#d9d9d9] bg-white">
-          <div className="flex items-center justify-between gap-3 px-3 py-2 sm:px-5 sm:py-2.5">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-5 sm:py-2.5">
             <div className="flex min-w-0 items-center gap-2.5">
               {canGoBack ? (
                 <button
                   type="button"
                   onClick={goBack}
                   aria-label={`Back to ${viewStack.at(-2)?.kind === "resident-search" ? "resident search" : community.communityName}`}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#111111] hover:text-[#111111]"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#111111] hover:text-[#111111] lg:h-8 lg:w-8"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
@@ -226,7 +226,7 @@ export default function CaliforniaCommunityModal({
                   type="button"
                   onClick={openResidentSearch}
                   aria-label="Resident search"
-                  className="inline-flex h-8 items-center gap-2 rounded-lg border border-[#bdbdbd] bg-white px-2.5 text-[11px] font-semibold transition-colors hover:border-[#111111] hover:bg-[#f5f4ef] sm:px-3"
+                  className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-[#bdbdbd] bg-white px-2.5 text-[11px] font-semibold transition-colors hover:border-[#111111] hover:bg-[#f5f4ef] lg:h-8 lg:min-w-0 lg:px-3"
                 >
                   <Search className="h-4 w-4" />
                   <span className="hidden sm:inline">Resident search</span>
@@ -237,7 +237,7 @@ export default function CaliforniaCommunityModal({
                 type="button"
                 onClick={dismissModal}
                 aria-label={`Close ${community.communityName} profile`}
-                className="grid h-8 w-8 place-items-center rounded-lg border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#111111] hover:text-[#111111]"
+                className="grid h-11 w-11 place-items-center rounded-lg border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#111111] hover:text-[#111111] lg:h-8 lg:w-8"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -247,7 +247,7 @@ export default function CaliforniaCommunityModal({
             <nav
               aria-label={`${community.communityName} profile sections`}
               data-community-modal-navigation="true"
-              className="flex overflow-x-auto px-3 sm:px-5"
+              className="flex overflow-x-auto overscroll-x-contain px-3 sm:px-5"
             >
               {([
                 ["detail", "Overview"],
@@ -264,7 +264,7 @@ export default function CaliforniaCommunityModal({
                     data-community-modal-tab={focus}
                     aria-current={active ? "page" : undefined}
                     onClick={() => openPrimaryView(focus)}
-                    className={`shrink-0 border-b-2 px-3 py-2 text-[11px] font-semibold transition-colors sm:px-4 ${
+                    className={`min-h-11 shrink-0 border-b-2 px-3 py-2 text-[12px] font-semibold transition-colors lg:min-h-0 lg:px-4 lg:text-[11px] ${
                       active
                         ? "border-[#0f8b73] text-[#111111]"
                         : "border-transparent text-[#737373] hover:border-[#b3b3b3] hover:text-[#111111]"
@@ -278,7 +278,7 @@ export default function CaliforniaCommunityModal({
           ) : null}
         </header>
 
-        <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-2 sm:px-5 sm:py-3">
+        <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[calc(16px+env(safe-area-inset-bottom))] pt-2 sm:px-5 sm:py-3">
           {currentView.kind === "resident-search" ? (
             <ResidentSearchModule
               facilityId={community.facilityId}

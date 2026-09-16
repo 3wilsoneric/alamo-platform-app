@@ -38,6 +38,10 @@ function weeklyCensusRows(reportsSummary) {
   );
 }
 
+function monthlyCensusRows(communities) {
+  return communities?.census ?? [];
+}
+
 function residentEpisodeRows(reportsSummary) {
   return (
     reportsSummary?.toolContext?.residentEpisodeHistory ??
@@ -241,6 +245,82 @@ function buildOperationalSignals(asOfValue, reportsSummary, facilities) {
   };
 }
 
+function buildMonthlyCensusSignals(asOfValue, communities, facilities) {
+  const parsedAsOf = Date.parse(asOfValue);
+  const asOf = new Date(
+    Number.isFinite(parsedAsOf) ? parsedAsOf : Date.now()
+  ).toISOString();
+  const asOfMonth = asOf.slice(0, 7);
+  const rowsByFacility = new Map();
+
+  for (const row of monthlyCensusRows(communities)) {
+    const facilityId = textValue(row.facility_id ?? row.Facility);
+    const month = textValue(row.month_bucket ?? row.monthBucket).slice(0, 7);
+    const census = optionalWholeNumber(row.census);
+    if (
+      !facilityId ||
+      !/^\d{4}-\d{2}$/.test(month) ||
+      month > asOfMonth ||
+      census === null
+    ) {
+      continue;
+    }
+    const rows = rowsByFacility.get(facilityId) ?? new Map();
+    rows.set(month, census);
+    rowsByFacility.set(facilityId, rows);
+  }
+
+  const facilityIds = facilities.map((facility) => textValue(facility.facility_id));
+  const commonMonths = facilityIds.length
+    ? [...(rowsByFacility.get(facilityIds[0])?.keys() ?? [])]
+        .filter((month) => facilityIds.every((facilityId) => rowsByFacility.get(facilityId)?.has(month)))
+        .sort()
+    : [];
+  const currentPeriod = commonMonths.at(-1) ?? null;
+  const priorPeriod = commonMonths.at(-2) ?? null;
+
+  const communitySignals = facilities.map((facility) => {
+    const facilityId = textValue(facility.facility_id);
+    const rows = rowsByFacility.get(facilityId);
+    const currentCensus = currentPeriod ? rows?.get(currentPeriod) ?? null : null;
+    const priorCensus = priorPeriod ? rows?.get(priorPeriod) ?? null : null;
+    return {
+      facility_id: facilityId,
+      currentCensus,
+      priorCensus,
+      censusChange:
+        currentCensus !== null && priorCensus !== null
+          ? currentCensus - priorCensus
+          : null
+    };
+  });
+  const complete =
+    currentPeriod !== null &&
+    priorPeriod !== null &&
+    communitySignals.every(
+      (community) => community.currentCensus !== null && community.priorCensus !== null
+    );
+  const currentCensus = complete
+    ? communitySignals.reduce((sum, community) => sum + community.currentCensus, 0)
+    : null;
+  const priorCensus = complete
+    ? communitySignals.reduce((sum, community) => sum + community.priorCensus, 0)
+    : null;
+
+  return {
+    asOf,
+    currentPeriod: complete ? currentPeriod : null,
+    priorPeriod: complete ? priorPeriod : null,
+    currentCensus,
+    priorCensus,
+    censusChange:
+      currentCensus !== null && priorCensus !== null
+        ? currentCensus - priorCensus
+        : null,
+    communities: communitySignals
+  };
+}
+
 export function buildHomeDashboard(communities, reportsSummary) {
   const facilities = communities.facilities ?? [];
   const residents = communities.residents ?? [];
@@ -257,8 +337,40 @@ export function buildHomeDashboard(communities, reportsSummary) {
     reportsSummary,
     facilities
   );
+  const monthlyOperational = buildMonthlyCensusSignals(
+    communities.as_of_date ?? generatedAt,
+    communities,
+    facilities
+  );
+  const hasCompleteWeeklyCensus = operational.currentWeeklyCensus !== null;
+  const censusCadence = hasCompleteWeeklyCensus
+    ? "weekly"
+    : monthlyOperational.currentCensus !== null
+      ? "monthly"
+      : null;
+  const preferredCensus = hasCompleteWeeklyCensus
+    ? {
+        currentPeriod: operational.latestCensusWeek,
+        priorPeriod: operational.communities[0]?.priorCensusWeek ?? null,
+        currentCensus: operational.currentWeeklyCensus,
+        priorCensus: operational.priorWeeklyCensus,
+        censusChange: operational.censusChange7d,
+        communities: operational.communities.map((community) => ({
+          facility_id: community.facility_id,
+          currentCensus: community.currentWeeklyCensus,
+          priorCensus: community.priorWeeklyCensus,
+          censusChange: community.censusChange7d
+        }))
+      }
+    : monthlyOperational;
   const operationalByFacility = new Map(
     operational.communities.map((community) => [
+      community.facility_id,
+      community
+    ])
+  );
+  const preferredCensusByFacility = new Map(
+    preferredCensus.communities.map((community) => [
       community.facility_id,
       community
     ])
@@ -300,6 +412,7 @@ export function buildHomeDashboard(communities, reportsSummary) {
       const facilityOperations = operationalByFacility.get(
         facility.facility_id
       );
+      const facilityCensus = preferredCensusByFacility.get(facility.facility_id);
 
       return {
         facility_id: facility.facility_id,
@@ -313,6 +426,12 @@ export function buildHomeDashboard(communities, reportsSummary) {
         priorWeeklyCensus: facilityOperations?.priorWeeklyCensus ?? null,
         censusChange7d: facilityOperations?.censusChange7d ?? null,
         latestCensusWeek: facilityOperations?.latestCensusWeek ?? null,
+        censusCadence,
+        currentCensusPeriod: preferredCensus.currentPeriod,
+        priorCensusPeriod: preferredCensus.priorPeriod,
+        currentCensus: facilityCensus?.currentCensus ?? null,
+        priorCensus: facilityCensus?.priorCensus ?? null,
+        censusChange: facilityCensus?.censusChange ?? null,
         averageAge:
           facilityResidents.length > 0
             ? facilityResidents.reduce(
@@ -328,19 +447,19 @@ export function buildHomeDashboard(communities, reportsSummary) {
               ) / facilityResidents.length
             : 0,
         residentSharePct:
-          operational.currentWeeklyCensus &&
-          facilityOperations?.currentWeeklyCensus !== null &&
-          facilityOperations?.currentWeeklyCensus !== undefined
-            ? (facilityOperations.currentWeeklyCensus /
-                operational.currentWeeklyCensus) *
+          preferredCensus.currentCensus &&
+          facilityCensus?.currentCensus !== null &&
+          facilityCensus?.currentCensus !== undefined
+            ? (facilityCensus.currentCensus /
+                preferredCensus.currentCensus) *
               100
             : 0
       };
     })
     .sort(
       (left, right) =>
-        Number(right.currentWeeklyCensus ?? -1) -
-        Number(left.currentWeeklyCensus ?? -1)
+        Number(right.currentCensus ?? -1) -
+        Number(left.currentCensus ?? -1)
     );
   const compliance = reportsSummary?.medicationCompliance ?? [];
   const complianceMonths = [
@@ -367,7 +486,13 @@ export function buildHomeDashboard(communities, reportsSummary) {
       latestCensusWeek: operational.latestCensusWeek,
       currentWeeklyCensus: operational.currentWeeklyCensus,
       priorWeeklyCensus: operational.priorWeeklyCensus,
-      censusChange7d: operational.censusChange7d
+      censusChange7d: operational.censusChange7d,
+      censusCadence,
+      currentCensusPeriod: preferredCensus.currentPeriod,
+      priorCensusPeriod: preferredCensus.priorPeriod,
+      currentCensus: preferredCensus.currentCensus,
+      priorCensus: preferredCensus.priorCensus,
+      censusChange: preferredCensus.censusChange
     },
     incidentTrend,
     communities: communitiesSummary.slice(0, 5),
@@ -387,7 +512,7 @@ export function buildHomeDashboard(communities, reportsSummary) {
     },
     watch: {
       largestCommunityName: largestCommunity?.community_name ?? null,
-      largestCommunityResidents: largestCommunity?.currentWeeklyCensus ?? 0
+      largestCommunityResidents: largestCommunity?.currentCensus ?? 0
     }
   };
 }

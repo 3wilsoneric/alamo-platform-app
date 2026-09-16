@@ -41,6 +41,7 @@ assertSnapshotPublishesFullHistory();
 function assertSnapshotTransportDedupe() {
   const source = readFileSync("databricks/notebooks/snapshot_publish.py", "utf8");
   const platformDataSource = readFileSync("server/platform-data.mjs", "utf8");
+  const governedIncidentSource = readFileSync("server/governed-incident-details.mjs", "utf8");
   const communitySnapshotBlock =
     source.match(/def build_community_snapshots\([\s\S]*?\n\s*return snapshots/)?.[0] ?? "";
 
@@ -56,8 +57,13 @@ function assertSnapshotTransportDedupe() {
     "community snapshots must not duplicate canonical incident-detail narratives"
   );
   assert.match(
+    governedIncidentSource,
+    /toolContext\?\.tables\?\.incident_detail_history[\s\S]*?communities\?\.incidentDetails/,
+    "the governed selector should prefer canonical incident history while retaining the legacy transport fallback"
+  );
+  assert.match(
     platformDataSource,
-    /canonicalIncidentDetails[\s\S]*?tables\?\.incident_detail_history[\s\S]*?incidentDetails:\s*canonicalIncidentDetails\.filter/,
+    /canonicalIncidentDetails\s*=\s*getGovernedIncidentDetailRows[\s\S]*?incidentDetails:\s*canonicalIncidentDetails\.filter/,
     "the community endpoint should hydrate incident details from the canonical tool-context collection"
   );
   const communitiesBuilder =
@@ -89,11 +95,56 @@ function assertWorkflowCensusGate(workflowPath) {
   const toolContextTask = tasks.get("tool_context_views");
   const analystQaTask = tasks.get("analyst_context_qa");
   const marTask = tasks.get("mar_gold_views");
+  const partitionTask = tasks.get("select_latest_raw_partition");
+  const newPartitionTask = tasks.get("new_partition_available");
   assert.ok(censusTask, `${workflowPath}: expected census_quality_audit task`);
   assert.ok(snapshotTask, `${workflowPath}: expected snapshot_publish task`);
   assert.ok(toolContextTask, `${workflowPath}: expected tool_context_views task`);
   assert.ok(analystQaTask, `${workflowPath}: expected analyst_context_qa task`);
   assert.ok(marTask, `${workflowPath}: expected mar_gold_views task`);
+  const automatedPublish = workflowPath.includes("daily_platform_publish");
+  const expectedDatePartition = automatedPublish
+    ? "{{tasks.select_latest_raw_partition.values.date_partition}}"
+    : "<business-date-YYYY-MM-DD>";
+  if (automatedPublish) {
+    assert.ok(partitionTask, `${workflowPath}: expected select_latest_raw_partition task`);
+    assert.ok(newPartitionTask, `${workflowPath}: expected new_partition_available condition task`);
+    assert.equal(
+      partitionTask.notebook_task?.notebook_path,
+      "/Workspace/Shared/alamo-platform/select_latest_raw_partition",
+      `${workflowPath}: preflight should use the governed raw-partition selector`
+    );
+    assert.equal(
+      partitionTask.notebook_task?.base_parameters?.max_raw_partition_age_days,
+      "2",
+      `${workflowPath}: automated publishing should alert after two days without a complete raw partition`
+    );
+    assert.ok(
+      (tasks.get("eldermark_staged_transform")?.depends_on ?? []).some(
+        (dependency) => dependency.task_key === "new_partition_available" && dependency.outcome === "true"
+      ),
+      `${workflowPath}: staged transformation should run only when the preflight identifies a new partition`
+    );
+    assert.equal(
+      newPartitionTask.condition_task?.left,
+      "{{tasks.select_latest_raw_partition.values.should_publish}}",
+      `${workflowPath}: new-partition condition should use the selector task value`
+    );
+    assert.equal(
+      snapshotTask.notebook_task?.base_parameters?.entra_secret_scope,
+      "alamo-platform-production",
+      `${workflowPath}: automated snapshot publishing should use the production secret scope`
+    );
+    assert.equal(
+      snapshotTask.notebook_task?.base_parameters?.entra_client_secret_key,
+      "snapshot-entra-client-secret",
+      `${workflowPath}: automated snapshot publishing should identify the scoped credential key`
+    );
+    assert.ok(
+      !("entra_client_secret" in (snapshotTask.notebook_task?.base_parameters ?? {})),
+      `${workflowPath}: workflow parameters must not contain a snapshot client secret`
+    );
+  }
   assert.equal(
     censusTask.notebook_task?.notebook_path,
     "/Workspace/Shared/alamo-platform/census_quality_audit",
@@ -109,34 +160,39 @@ function assertWorkflowCensusGate(workflowPath) {
   );
   assert.equal(
     marTask.notebook_task?.base_parameters?.date_partition,
-    "<business-date-YYYY-MM-DD>",
+    expectedDatePartition,
     `${workflowPath}: mar_gold_views should receive the same business date as the source partition`
   );
   assert.equal(
     toolContextTask.notebook_task?.base_parameters?.date_partition,
-    "<business-date-YYYY-MM-DD>",
+    expectedDatePartition,
     `${workflowPath}: tool_context_views should receive the same business date as the source partition`
   );
   assert.equal(
     analystQaTask.notebook_task?.base_parameters?.date_partition,
-    "<business-date-YYYY-MM-DD>",
+    expectedDatePartition,
     `${workflowPath}: analyst_context_qa should receive the same business date as the source partition`
   );
   assert.equal(
     censusTask.notebook_task?.base_parameters?.date_partition,
-    "<business-date-YYYY-MM-DD>",
+    expectedDatePartition,
     `${workflowPath}: census_quality_audit should receive the same business date as the source partition`
   );
   assert.equal(
     snapshotTask.notebook_task?.base_parameters?.date_partition,
-    "<business-date-YYYY-MM-DD>",
+    expectedDatePartition,
     `${workflowPath}: snapshot_publish should receive the same business date as the source partition`
+  );
+  assert.equal(
+    snapshotTask.notebook_task?.base_parameters?.client_database_pointer_blob,
+    "snapshots/client-database/release-pointer.json",
+    `${workflowPath}: snapshot_publish should preserve the governed client-database release pointer`
   );
   assert.ok(
     (toolContextTask.depends_on ?? []).some((dependency) => dependency.task_key === "mar_gold_views"),
     `${workflowPath}: tool_context_views should depend on governed gold/MAR data`
   );
-  if (workflowPath.includes("daily_platform_publish")) {
+  if (automatedPublish) {
     for (const retiredTask of ["report_publish", "report_analysis_publish", "briefing_publish"]) {
       assert.ok(!tasks.has(retiredTask), `${workflowPath}: retired ${retiredTask} task must not return`);
     }
@@ -145,6 +201,102 @@ function assertWorkflowCensusGate(workflowPath) {
 
 assertWorkflowCensusGate("databricks/workflows/daily_platform_publish.json");
 assertWorkflowCensusGate("databricks/workflows/daily_snapshot_refresh.json");
+
+function assertSnapshotCredentialBoundary() {
+  const source = readFileSync("databricks/notebooks/snapshot_publish.py", "utf8");
+  const selector = readFileSync("databricks/notebooks/select_latest_raw_partition.py", "utf8");
+  assert.match(source, /dbutils\.secrets\.get\(scope=secret_scope, key=secret_key\)/);
+  assert.doesNotMatch(
+    source,
+    /dbutils\.widgets\.text\("entra_client_secret",\s*"[^"]+"\)/,
+    "snapshot publisher must not embed an Azure client secret in notebook defaults"
+  );
+  assert.match(
+    source,
+    /upload_json\(container_client, dated_blob, payload_json\)[\s\S]*?record_publish_success\(expected_as_of_date, version\)/,
+    "publish history should be recorded only after both snapshot blobs upload"
+  );
+  assert.match(
+    source,
+    /client_database_pointer = load_client_database_pointer\(container_client, client_database_pointer_blob\)[\s\S]*?payload = build_payload\(client_database_pointer\)/,
+    "snapshot publication should load the immutable client-database pointer before building the daily payload"
+  );
+  assert.match(
+    selector,
+    /FROM \{PUBLISH_HISTORY_TABLE\}[\s\S]*?should_publish/,
+    "the partition selector should compare raw data with governed publish history"
+  );
+}
+
+assertSnapshotCredentialBoundary();
+
+function assertWindowsPullAutomationBoundary() {
+  const source = readFileSync("scripts/windows/Run-ElderMarkPull.ps1", "utf8");
+  for (const name of [
+    "ADLS_CONNECTION_STRING",
+    "DATABRICKS_CLIENT_SECRET",
+    "ELDERMARK_PASSWORD",
+    "ELDERMARK_USERNAME"
+  ]) {
+    assert.match(source, new RegExp(`'${name}'`), `Windows pull wrapper should require ${name} by name`);
+  }
+  assert.match(
+    source,
+    /SetEnvironmentVariable\('ELDERMARK_TRIGGER_DATABRICKS', '0', 'Process'\)/,
+    "the Windows pull must not trigger the legacy Databricks job"
+  );
+  assert.match(
+    source,
+    /SetEnvironmentVariable\(\$name, \$null, 'Process'\)/,
+    "the Windows pull should clear inherited credentials after execution"
+  );
+  assert.doesNotMatch(
+    source,
+    /(?:PASSWORD|SECRET|CONNECTION_STRING)\s*=\s*['"][^'"]+['"]/i,
+    "the Windows automation wrapper must not embed credentials"
+  );
+}
+
+assertWindowsPullAutomationBoundary();
+
+function assertManagedVmWorkflow() {
+  const template = JSON.parse(
+    readFileSync("scripts/azure/eldermark-managed-vm-workflow.json", "utf8")
+  );
+  const workflow = template.resources?.find(
+    (resource) => resource.type === "Microsoft.Logic/workflows"
+  );
+  assert.equal(workflow?.name, "EldermarkDailyPullManaged");
+  assert.equal(workflow?.identity?.type, "SystemAssigned");
+
+  const definition = workflow?.properties?.definition;
+  const recurrence = definition?.triggers?.Recurrence?.recurrence;
+  assert.equal(recurrence?.frequency, "Day");
+  assert.equal(recurrence?.interval, 1);
+  assert.equal(recurrence?.startTime, "2026-08-17T02:00:00");
+  assert.equal(recurrence?.timeZone, "Mountain Standard Time");
+
+  const actions = definition?.actions ?? {};
+  assert.match(actions.Start_VM?.inputs?.uri ?? "", /virtualMachines\/adf-ir-rg\/start/);
+  assert.equal(
+    actions.Start_VM?.inputs?.authentication?.type,
+    "ManagedServiceIdentity"
+  );
+  assert.deepEqual(actions.Wait_for_ElderMark_pull?.inputs?.interval, {
+    count: 4,
+    unit: "Hour"
+  });
+  assert.match(
+    actions.Deallocate_VM?.inputs?.uri ?? "",
+    /virtualMachines\/adf-ir-rg\/deallocate/
+  );
+  assert.equal(
+    actions.Deallocate_VM?.inputs?.authentication?.type,
+    "ManagedServiceIdentity"
+  );
+}
+
+assertManagedVmWorkflow();
 
 function assertCensusTransformContracts() {
   const transformSource = readFileSync("databricks/notebooks/eldermark_staged_transform.py", "utf8");

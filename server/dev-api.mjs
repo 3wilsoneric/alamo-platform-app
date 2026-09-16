@@ -25,6 +25,40 @@ import {
   validateSessionResetRequest
 } from "./http-request-schema.mjs";
 import { getAnalystTraceTelemetry } from "./tools/turn-trace.mjs";
+import {
+  getPlatformKnowledgeOverview,
+  getPlatformKnowledgeRecordResponse,
+  getPlatformKnowledgeSearchResponse
+} from "./platform-knowledge-api.mjs";
+import { assertPlatformKnowledgeOwner } from "./platform-knowledge-access.mjs";
+import {
+  calculateAcquisitionValuation,
+  getAcquisitionIntelligenceOverviewResponse,
+  validateAcquisitionValuationRequest
+} from "./acquisition-intelligence.mjs";
+import { searchNationalFacilityDiscovery } from "./acquisition-intelligence-store.mjs";
+import { searchAcquisitionOperatorUniverse } from "./acquisition-operator-store.mjs";
+import { getAcquisitionOperatorExportResponse } from "./acquisition-operator-export.mjs";
+import {
+  mutateAcquisitionOperatorBulkDecision,
+  mutateAcquisitionOperatorDecision,
+  validateAcquisitionOperatorBulkDecisionRequest,
+  validateAcquisitionOperatorDecisionRequest
+} from "./acquisition-operator-selections.mjs";
+import {
+  freezeSelectedAcquisitionOperatorCohort,
+  getAcquisitionOperatorCohortResponse,
+  validateAcquisitionOperatorCohortRequest
+} from "./acquisition-operator-cohorts.mjs";
+import {
+  mutateAcquisitionOperatorResearchJob,
+  validateAcquisitionOperatorResearchJobRequest
+} from "./acquisition-operator-research-jobs.mjs";
+import {
+  getAcquisitionResearchResponse,
+  mutateAcquisitionResearch,
+  validateAcquisitionResearchRequest
+} from "./acquisition-research.mjs";
 import { getApiSessionOwnerKey, requireApiUser } from "./api-auth.mjs";
 import { readValidatedJsonRequest } from "./http-body.mjs";
 import { appendResponseVaryHeader, applyProtectedApiHeaders } from "./http-response.mjs";
@@ -41,6 +75,10 @@ import {
   handlePipelineClinicalApiRequest,
   isPipelineClinicalPath
 } from "./pipeline-clinical-api.mjs";
+import {
+  handleAlamoHealthDemoApiRequest,
+  isAlamoHealthDemoPath
+} from "./alamohealth-demo-api.mjs";
 
 const PORT = Number(process.env.API_PORT || process.env.PORT || 3002);
 const LOOPBACK_DEV_ORIGIN = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/i;
@@ -125,6 +163,11 @@ const server = http.createServer(async (req, res) => {
 
   if (isPipelineClinicalPath(requestUrl.pathname)) {
     await handlePipelineClinicalApiRequest(req, createVercelResponseAdapter(res));
+    return;
+  }
+
+  if (isAlamoHealthDemoPath(requestUrl.pathname)) {
+    await handleAlamoHealthDemoApiRequest(req, res, requestUrl);
     return;
   }
 
@@ -247,6 +290,72 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "POST" && requestUrl.pathname === "/api/platform/acquisition/valuation") {
+    try {
+      assertPlatformKnowledgeOwner(authContext);
+      const body = await readValidatedJsonRequest(req, validateAcquisitionValuationRequest);
+      sendJson(res, 200, calculateAcquisitionValuation(body));
+    } catch (error) {
+      sendApiError(res, error);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/platform/acquisition/research") {
+    try {
+      assertPlatformKnowledgeOwner(authContext);
+      const body = await readValidatedJsonRequest(req, validateAcquisitionResearchRequest);
+      sendJson(res, 200, await mutateAcquisitionResearch(body, authContext));
+    } catch (error) {
+      sendApiError(res, error);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/platform/acquisition/operator-decision") {
+    try {
+      assertPlatformKnowledgeOwner(authContext);
+      const body = await readValidatedJsonRequest(req, validateAcquisitionOperatorDecisionRequest);
+      sendJson(res, 200, await mutateAcquisitionOperatorDecision(body, authContext));
+    } catch (error) {
+      sendApiError(res, error);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/platform/acquisition/operator-decisions/bulk") {
+    try {
+      assertPlatformKnowledgeOwner(authContext);
+      const body = await readValidatedJsonRequest(req, validateAcquisitionOperatorBulkDecisionRequest);
+      sendJson(res, 200, await mutateAcquisitionOperatorBulkDecision(body, authContext));
+    } catch (error) {
+      sendApiError(res, error);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/platform/acquisition/operator-cohort") {
+    try {
+      assertPlatformKnowledgeOwner(authContext);
+      const body = await readValidatedJsonRequest(req, validateAcquisitionOperatorCohortRequest);
+      sendJson(res, 200, await freezeSelectedAcquisitionOperatorCohort(body, authContext));
+    } catch (error) {
+      sendApiError(res, error);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/platform/acquisition/operator-research-job") {
+    try {
+      assertPlatformKnowledgeOwner(authContext);
+      const body = await readValidatedJsonRequest(req, validateAcquisitionOperatorResearchJobRequest);
+      sendJson(res, 200, await mutateAcquisitionOperatorResearchJob(body, authContext));
+    } catch (error) {
+      sendApiError(res, error);
+    }
+    return;
+  }
+
   if (req.method !== "GET") {
     sendJson(res, 405, { error: "Method not allowed." });
     return;
@@ -265,6 +374,60 @@ const server = http.createServer(async (req, res) => {
 
     if (requestUrl.pathname === "/api/platform/analyst-traces") {
       sendJson(res, 200, getAnalystTraceTelemetry());
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/knowledge") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getPlatformKnowledgeOverview());
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/acquisition/operator-cohort") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getAcquisitionOperatorCohortResponse(requestUrl));
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/knowledge/search") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getPlatformKnowledgeSearchResponse(requestUrl));
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/knowledge/record") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getPlatformKnowledgeRecordResponse(requestUrl));
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/acquisition") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getAcquisitionIntelligenceOverviewResponse());
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/acquisition/search") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await searchNationalFacilityDiscovery(requestUrl));
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/acquisition/operators") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await searchAcquisitionOperatorUniverse(requestUrl));
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/acquisition/operators/export") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getAcquisitionOperatorExportResponse(requestUrl));
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/acquisition/research") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getAcquisitionResearchResponse(requestUrl, authContext));
       return;
     }
 
@@ -302,7 +465,9 @@ const server = http.createServer(async (req, res) => {
 
     if (requestUrl.pathname === "/api/data-explorer") {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-      sendJson(res, 200, await getDataExplorerData(requestUrl.searchParams.get("kind") ?? "incidents"));
+      sendJson(res, 200, await getDataExplorerData(requestUrl.searchParams.get("kind") ?? "incidents", {
+        residentClientId: requestUrl.searchParams.get("clientId") ?? ""
+      }));
       return;
     }
 
