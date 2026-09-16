@@ -28,7 +28,8 @@ promotion as an Azure production release. The September 2026 iPhone polish
 release used `Dockerfile.iphone-overlay` to add CSS and Home Screen HTML
 metadata to the exact preceding Azure image digest. The follow-up phone
 experience release uses `Dockerfile.mobile-experience-overlay` on that digest
-and adds only phone CSS, same-origin choice controls, and their HTML references.
+and adds only phone CSS, the stacked community selector, same-origin profile and
+analytics choice controls, and their HTML references.
 Neither overlay rebuilds the browser bundle or server. Rollback is an Azure
 Container App image update to the recorded preceding digest, not a Vercel
 promotion.

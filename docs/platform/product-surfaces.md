@@ -14,13 +14,14 @@
 ## Product Model
 
 The current public Azure product is not primarily a sidebar app. It begins
-with the California community map on desktop and phones; phones also have five
-touch-sized community actions beneath the map:
+with the California community map on desktop and a stacked community selector
+on phones:
 
 - the user starts at `/home`
 - five facility markers are projected from maintained city longitude/latitude coordinates;
   permanent leader lines keep the nearby Bay Area locations independently readable and clickable
-- selecting a marker opens a compact modal with the comprehensive community profile
+- selecting a desktop marker or phone community row opens the comprehensive
+  community profile; it is a compact desktop modal and a full-screen phone workspace
 - each profile combines census, incidents, medication performance, diagnosis mix,
   and resident context
 - each profile's Incidents tab opens with the same high, medium, and low triage
@@ -44,11 +45,13 @@ touch-sized community actions beneath the map:
 ## Small-Screen Product Decision
 
 The public Azure mobile home prioritizes three jobs: **find and open a
-community**, **read governed analysis**, and **ask a governed question**. The
-California view is enlarged for phone widths, keeps all five community labels
-on-screen, and adds five 44px-or-larger name actions so nearby map markers do
-not become ambiguous tap targets. The profile remains a full-height phone view
-with Overview, Census, Incidents, Medications, and Residents sections.
+community**, **read governed analysis**, and **ask a governed question**. Phone
+widths replace the California map with one vertically stacked row per
+community. Each row exposes the maintained community name and current census,
+uses a touch-sized target, and opens the same governed profile as the desktop
+map marker. The profile becomes a full-screen phone workspace with a compact
+Overview, Census, Incidents, Medications, and Residents picker plus a separate
+Resident Search action. Desktop retains the California map and modal behavior.
 
 The mobile report library and question-category chip grid become compact native
 pickers, preserving the report reader and question list width. The source branch

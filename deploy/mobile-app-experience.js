@@ -4,6 +4,7 @@
   const trayId = "alamo-mobile-community-tray";
   const reportPickerId = "alamo-mobile-report-picker";
   const categoryPickerId = "alamo-mobile-category-picker";
+  const modalControlsId = "alamo-mobile-modal-controls";
   const mondayId = "monday-census-briefing";
   let scheduled = false;
 
@@ -127,13 +128,26 @@
       return;
     }
     let tray = document.getElementById(trayId);
+    if (tray && !tray.querySelector(".alamo-community-selector-intro")) {
+      tray.remove();
+      tray = null;
+    }
     if (!tray) {
       tray = document.createElement("nav");
       tray.id = trayId;
       tray.setAttribute("aria-label", "California communities");
+      const intro = document.createElement("div");
+      intro.className = "alamo-community-selector-intro";
+      const eyebrow = document.createElement("p");
+      eyebrow.className = "alamo-tray-eyebrow";
+      eyebrow.textContent = "Alamo Health communities";
       const heading = document.createElement("p");
       heading.className = "alamo-tray-heading";
-      heading.textContent = "Open a community";
+      heading.textContent = "Choose a community.";
+      const description = document.createElement("p");
+      description.className = "alamo-tray-description";
+      description.textContent = "Open a community profile for census, incidents, medications, and residents.";
+      intro.append(eyebrow, heading, description);
       const grid = document.createElement("div");
       grid.className = "alamo-tray-grid";
       for (const marker of markers) {
@@ -144,7 +158,26 @@
         button.type = "button";
         button.setAttribute("data-alamo-tray-community", id);
         button.setAttribute("aria-label", `Open ${name} profile`);
-        button.textContent = name;
+        const dot = document.createElement("span");
+        dot.className = "alamo-community-dot";
+        dot.setAttribute("aria-hidden", "true");
+        const copy = document.createElement("span");
+        const communityName = document.createElement("span");
+        communityName.className = "alamo-community-name";
+        communityName.textContent = name;
+        const context = document.createElement("span");
+        context.className = "alamo-community-context";
+        context.textContent = "Community profile";
+        copy.append(communityName, context);
+        const census = document.createElement("span");
+        census.className = "alamo-community-census";
+        const censusValue = marker.getAttribute("data-california-node-census");
+        census.textContent = censusValue ? `${Number(censusValue).toLocaleString()} residents` : "Open";
+        const arrow = document.createElement("span");
+        arrow.className = "alamo-community-arrow";
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = "›";
+        button.append(dot, copy, census, arrow);
         button.addEventListener("click", () => {
           const current = [...document.querySelectorAll("[data-california-community-marker]")]
             .find((item) => item.getAttribute("data-california-community-marker") === id);
@@ -152,8 +185,16 @@
         });
         grid.append(button);
       }
-      tray.append(heading, grid);
-      document.body.append(tray);
+      tray.append(intro, grid);
+      document.querySelector('[data-california-carousel-panel="map"]')?.append(tray);
+    }
+
+    for (const marker of markers) {
+      const id = marker.getAttribute("data-california-community-marker");
+      const census = id && tray.querySelector(`[data-alamo-tray-community="${id}"] .alamo-community-census`);
+      if (!census) continue;
+      const censusValue = marker.getAttribute("data-california-node-census");
+      census.textContent = censusValue ? `${Number(censusValue).toLocaleString()} residents` : "Open";
     }
 
     const workspace = document.querySelector("[data-california-workspace-carousel]");
@@ -161,11 +202,55 @@
     tray.hidden = !mobile.matches || workspace?.getAttribute("data-california-active-panel") !== "map" || modalOpen;
   }
 
+  function enhanceCommunityModal() {
+    const profile = document.querySelector("[data-california-community-profile]");
+    const header = profile?.querySelector(":scope > header");
+    const navigation = header?.querySelector('[data-community-modal-navigation="true"]');
+    if (!profile || !header) return;
+    if (!navigation) {
+      header.querySelector(`#${modalControlsId}`)?.remove();
+      header.removeAttribute("data-alamo-modal-picker-ready");
+      return;
+    }
+    const tabs = [...navigation.querySelectorAll("button[data-community-modal-tab]")];
+    if (!tabs.length) return;
+
+    let controls = header.querySelector(`#${modalControlsId}`);
+    if (!controls) {
+      controls = document.createElement("div");
+      controls.id = modalControlsId;
+      controls.className = "alamo-mobile-modal-controls";
+      const field = document.createElement("div");
+      const label = document.createElement("label");
+      label.htmlFor = `${modalControlsId}-choice`;
+      label.textContent = "Community view";
+      const select = document.createElement("select");
+      select.id = `${modalControlsId}-choice`;
+      field.append(label, select);
+      controls.append(field);
+      header.insertBefore(controls, navigation);
+      select.addEventListener("change", (event) => {
+        const target = [...header.querySelectorAll("button[data-community-modal-tab]")]
+          .find((button) => button.getAttribute("data-community-modal-tab") === event.currentTarget.value);
+        target?.click();
+      });
+    }
+
+    const select = controls.querySelector("select");
+    optionList(select, tabs.map((tab) => ({
+      value: tab.getAttribute("data-community-modal-tab") ?? "detail",
+      label: tab.textContent?.trim() || "Overview"
+    })));
+    select.value = tabs.find((tab) => tab.getAttribute("aria-current") === "page")?.getAttribute("data-community-modal-tab") ?? "detail";
+    header.setAttribute("data-alamo-modal-picker-ready", "true");
+  }
+
   function enhance() {
     if (mobile.matches) {
       enhanceReports();
       enhanceQuestions();
       enhanceCommunities();
+      enhanceCommunityModal();
     } else {
       const tray = document.getElementById(trayId);
       if (tray) tray.hidden = true;
@@ -177,7 +262,14 @@
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["aria-pressed", "data-california-active-panel", "inert"]
+    attributeFilter: [
+      "aria-current",
+      "aria-pressed",
+      "data-california-active-panel",
+      "data-california-modal-view",
+      "data-california-node-census",
+      "inert"
+    ]
   });
   mobile.addEventListener("change", schedule);
   schedule();
