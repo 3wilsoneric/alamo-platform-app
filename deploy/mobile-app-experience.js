@@ -121,7 +121,11 @@
 
   function enhanceCommunities() {
     const markers = [...document.querySelectorAll("[data-california-community-marker]")];
-    if (markers.length !== 5) return;
+    if (markers.length !== 5) {
+      const existingTray = document.getElementById(trayId);
+      if (existingTray) existingTray.hidden = true;
+      return;
+    }
     let tray = document.getElementById(trayId);
     if (!tray) {
       tray = document.createElement("nav");
