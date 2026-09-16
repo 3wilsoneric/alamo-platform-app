@@ -50,8 +50,10 @@ widths replace the California map with one vertically stacked row per
 community. Each row exposes the maintained community name and current census,
 uses a touch-sized target, and opens the same governed profile as the desktop
 map marker. The profile becomes a full-screen phone workspace with a compact
-Overview, Census, Incidents, Medications, and Residents picker plus a separate
-Resident Search action. Desktop retains the California map and modal behavior.
+Overview, Census, Incidents, Medications, and Residents picker. Its census
+trend favors the line and summary values over individual point controls, and
+the standalone Resident Search shortcut is omitted. Desktop retains the
+California map and modal behavior.
 
 The mobile report library and question-category chip grid become compact native
 pickers, preserving the report reader and question list width. The source branch

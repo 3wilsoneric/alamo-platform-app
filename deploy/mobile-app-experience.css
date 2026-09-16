@@ -184,7 +184,7 @@
 
   .alamo-mobile-modal-controls {
     display: block;
-    padding: 0 70px 12px 14px;
+    padding: 0 14px 12px;
   }
 
   .alamo-mobile-modal-controls label {
@@ -211,17 +211,11 @@
   }
 
   [data-california-community-profile] > header button[aria-label="Resident search"] {
-    position: absolute;
-    right: 14px;
-    bottom: 12px;
-    display: inline-flex !important;
-    width: 48px;
-    height: 46px;
-    min-width: 48px;
-    border: 1px solid #bfd1cb;
-    border-radius: 0 !important;
-    background: #ffffff;
-    padding: 0 !important;
+    display: none !important;
+  }
+
+  [data-california-community-profile] [data-module-chart="census-trend"] [data-chart-point="census"] {
+    display: none !important;
   }
 
   [data-california-community-profile] > div:last-child {
