@@ -3,8 +3,8 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-07-22
-- tags: deployment, vercel, local-dev, entra, databricks, azure, operations
+- updated: 2026-09-15
+- tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
   - [alamo-platform-app/.env.example](/Users/eric/CareEngineMain/alamo-platform-app/.env.example)
@@ -13,6 +13,22 @@
   - [alamo-platform-app/server/platform-snapshot.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-snapshot.mjs)
   - [alamo-platform-app/vite.config.ts](/Users/eric/CareEngineMain/alamo-platform-app/vite.config.ts)
   - [alamo-platform-app/vercel.json](/Users/eric/CareEngineMain/alamo-platform-app/vercel.json)
+
+## Current Production Host
+
+`www.alamoplatform.com` is served by the Azure Container App
+`alamo-platform-prod-web` in resource group `alamo-data-rg` (West US 2), using
+Azure Container Registry `pipelineprodacra6qdvl6ebenac`. The Container App is
+in single-revision mode; a new image update promotes the new revision. Confirm
+the current image and revision with `az containerapp show` before every change.
+
+The Vercel variables, API adapter, and cron settings below describe that
+deployment target, not the current public `www` host. Do not treat a Vercel
+promotion as an Azure production release. The September 2026 iPhone polish
+release uses `Dockerfile.iphone-overlay` to add only CSS and Home Screen HTML
+metadata to the exact preceding Azure image digest; it does not rebuild the
+browser bundle or server. Rollback is an Azure Container App image update to
+that recorded preceding digest.
 
 ## Local Development
 

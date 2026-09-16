@@ -12,6 +12,7 @@ const rootFiles = new Set([
   ".vercelignore",
   "AGENTS.md",
   "Dockerfile.acquisition-overlay",
+  "Dockerfile.iphone-overlay",
   "README.md",
   "eslint.config.js",
   "index.html",
@@ -72,6 +73,10 @@ const approvedApiFiles = new Set([
 const approvedWorkflowFiles = new Set([
   "databricks/workflows/daily_platform_publish.json",
   "databricks/workflows/daily_snapshot_refresh.json"
+]);
+const approvedIphoneOverlayFiles = new Set([
+  "deploy/inject-iphone-head.mjs",
+  "deploy/iphone-polish.css"
 ]);
 const manualDatabricksDiagnostics = new Set([
   "databricks/notebooks/census_fast_check.py",
@@ -168,6 +173,7 @@ function projectFiles() {
 
 function ownershipClass(file) {
   if (rootFiles.has(file)) return "app shell and tooling";
+  if (approvedIphoneOverlayFiles.has(file)) return "app shell and tooling";
   if (approvedDocs.has(file)) return file.startsWith("docs/reference/") ? "live specification" : "handbook";
   if (/^src\/.+\.(?:ts|tsx|css|json)$/.test(file)) return "browser runtime";
   if (/^config\/.+\.json$/.test(file)) return "data ingestion configuration";
