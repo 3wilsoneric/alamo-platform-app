@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-09-15
+- updated: 2026-09-16
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -48,12 +48,16 @@ The public Azure mobile home prioritizes three jobs: **find and open a
 community**, **read governed analysis**, and **ask a governed question**. Phone
 widths replace the California map with one vertically stacked row per
 community. Each row exposes the maintained community name and current census,
-uses a touch-sized target, and opens the same governed profile as the desktop
+uses a large touch-sized target, and opens the same governed profile as the desktop
 map marker. The profile becomes a full-screen phone workspace with a compact
 Overview, Census, Incidents, Medications, and Residents picker. Its census
 trend favors the line and summary values over individual point controls, and
 the standalone Resident Search shortcut is omitted. Desktop retains the
 California map and modal behavior.
+
+The phone selector's rows expand to fill the available viewport and scroll on
+short screens rather than compressing their labels. The primary Analytics
+action is larger without crowding the persistent home wordmark.
 
 The mobile report library and question-category chip grid become compact native
 pickers, preserving the report reader and question list width. The source branch

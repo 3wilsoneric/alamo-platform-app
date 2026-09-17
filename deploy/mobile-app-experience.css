@@ -1,5 +1,32 @@
 /* Phone presentation layered after the existing Azure app stylesheet. */
 @media (max-width: 639px) {
+  [data-platform-page-navigation="true"] {
+    top: 8px !important;
+    align-items: center !important;
+    gap: 12px;
+  }
+
+  [data-platform-page-navigation="true"] [data-platform-wordmark="true"] {
+    width: auto !important;
+  }
+
+  [data-platform-page-active="home"] {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  [data-platform-page-target="analytics"] {
+    min-height: 44px;
+    gap: 9px;
+    font-size: 18px !important;
+  }
+
+  [data-platform-page-target="analytics"] svg {
+    width: 20px;
+    height: 20px;
+  }
+
   [data-california-carousel-panel="map"] [data-california-home-hero="true"] {
     display: none !important;
   }
@@ -11,6 +38,8 @@
     right: 0;
     bottom: 0;
     left: 0;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     padding: 26px 16px calc(24px + env(safe-area-inset-bottom));
     background: #ffffff;
@@ -23,6 +52,7 @@
   }
 
   #alamo-mobile-community-tray .alamo-community-selector-intro {
+    flex: none;
     padding-bottom: 20px;
     border-bottom: 1px solid #111111;
   }
@@ -55,7 +85,9 @@
 
   #alamo-mobile-community-tray .alamo-tray-grid {
     display: grid;
+    flex: 1 0 auto;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(5, minmax(92px, 1fr));
     gap: 0;
     border-bottom: 1px solid #d9d9d9;
   }
@@ -64,7 +96,7 @@
     display: grid;
     grid-template-columns: 12px minmax(0, 1fr) auto 18px;
     min-width: 0;
-    min-height: 72px;
+    min-height: 92px;
     align-items: center;
     gap: 10px;
     padding: 12px 4px;
@@ -98,7 +130,7 @@
   #alamo-mobile-community-tray .alamo-community-name {
     display: block;
     min-width: 0;
-    font-size: 17px;
+    font-size: 19px;
     font-weight: 750;
     letter-spacing: -0.025em;
     line-height: 1.15;
@@ -108,14 +140,14 @@
     display: block;
     margin-top: 4px;
     color: #737373;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.25;
   }
 
   #alamo-mobile-community-tray .alamo-community-census {
     color: #315b54;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 750;
     white-space: nowrap;
   }
