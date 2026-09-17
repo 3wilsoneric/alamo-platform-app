@@ -128,7 +128,7 @@
       return;
     }
     let tray = document.getElementById(trayId);
-    if (tray && !tray.querySelector(".alamo-community-selector-intro")) {
+    if (tray && tray.getAttribute("data-alamo-community-selector") !== "rows-only") {
       tray.remove();
       tray = null;
     }
@@ -136,18 +136,7 @@
       tray = document.createElement("nav");
       tray.id = trayId;
       tray.setAttribute("aria-label", "California communities");
-      const intro = document.createElement("div");
-      intro.className = "alamo-community-selector-intro";
-      const eyebrow = document.createElement("p");
-      eyebrow.className = "alamo-tray-eyebrow";
-      eyebrow.textContent = "Alamo Health communities";
-      const heading = document.createElement("p");
-      heading.className = "alamo-tray-heading";
-      heading.textContent = "Choose a community.";
-      const description = document.createElement("p");
-      description.className = "alamo-tray-description";
-      description.textContent = "Open a community profile for census, incidents, medications, and residents.";
-      intro.append(eyebrow, heading, description);
+      tray.setAttribute("data-alamo-community-selector", "rows-only");
       const grid = document.createElement("div");
       grid.className = "alamo-tray-grid";
       for (const marker of markers) {
@@ -161,14 +150,9 @@
         const dot = document.createElement("span");
         dot.className = "alamo-community-dot";
         dot.setAttribute("aria-hidden", "true");
-        const copy = document.createElement("span");
         const communityName = document.createElement("span");
         communityName.className = "alamo-community-name";
         communityName.textContent = name;
-        const context = document.createElement("span");
-        context.className = "alamo-community-context";
-        context.textContent = "Community profile";
-        copy.append(communityName, context);
         const census = document.createElement("span");
         census.className = "alamo-community-census";
         const censusValue = marker.getAttribute("data-california-node-census");
@@ -177,7 +161,7 @@
         arrow.className = "alamo-community-arrow";
         arrow.setAttribute("aria-hidden", "true");
         arrow.textContent = "›";
-        button.append(dot, copy, census, arrow);
+        button.append(dot, communityName, census, arrow);
         button.addEventListener("click", () => {
           const current = [...document.querySelectorAll("[data-california-community-marker]")]
             .find((item) => item.getAttribute("data-california-community-marker") === id);
@@ -185,7 +169,7 @@
         });
         grid.append(button);
       }
-      tray.append(intro, grid);
+      tray.append(grid);
       document.querySelector('[data-california-carousel-panel="map"]')?.append(tray);
     }
 

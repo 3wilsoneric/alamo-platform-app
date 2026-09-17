@@ -55,9 +55,11 @@ trend favors the line and summary values over individual point controls, and
 the standalone Resident Search shortcut is omitted. Desktop retains the
 California map and modal behavior.
 
-The phone selector's rows expand to fill the available viewport and scroll on
-short screens rather than compressing their labels. The primary Analytics
-action is larger without crowding the persistent home wordmark.
+The phone home shows only the community rows, without an introductory heading,
+instructions, or repeated profile subtitles. Its rows expand to fill the
+available viewport and scroll on short screens rather than compressing their
+labels. The primary Analytics action is larger without crowding the persistent
+home wordmark.
 
 The mobile report library and question-category chip grid become compact native
 pickers, preserving the report reader and question list width. The source branch
