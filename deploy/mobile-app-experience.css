@@ -99,15 +99,15 @@
     display: block;
     min-width: 0;
     font-size: 19px;
-    font-weight: 750;
-    letter-spacing: -0.025em;
-    line-height: 1.15;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
   }
 
   #alamo-mobile-community-tray .alamo-community-census {
     color: #315b54;
     font-size: 13px;
-    font-weight: 750;
+    font-weight: 500;
     white-space: nowrap;
   }
 
