@@ -354,21 +354,21 @@ requireText(
   /flex min-h-0 w-full flex-1 -translate-y-3 items-center justify-center sm:translate-y-0/,
   "California map does not preserve the approved header-safe hero position"
 );
-for (const word of ["Alamo", "Health"]) {
-  requireText(
-    wordmark,
-    new RegExp(`>${word}<|>\\s*${word}\\s*<`),
-    `platform wordmark is missing ${word}`
-  );
-}
+requireText(
+  wordmark,
+  /aria-label="Alamo Health Management"/,
+  "platform wordmark does not expose the approved organization name"
+);
+requireText(
+  wordmark,
+  /src="\/brand\/alamo-health-management-logo\.png"/,
+  "platform wordmark does not use the approved Alamo Health Management logo"
+);
 requireText(
   identity,
   /data-platform-user-identity="true"[\s\S]*?rounded-full[\s\S]*?\{displayName\}/,
   "signed-in identity is not rendered as a quiet reusable element"
 );
-if (/\bManagement\b/.test(wordmark)) {
-  failures.push("retired Management label remains in the platform wordmark");
-}
 
 for (const facilityId of ["337", "342", "343", "344", "345"]) {
   if (!communities.includes(`"${facilityId}"`)) {

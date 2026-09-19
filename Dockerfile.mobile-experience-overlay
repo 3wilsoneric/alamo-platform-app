@@ -1,11 +1,13 @@
 FROM pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a1d2c3baf60db083c797698d5eb504aa15967ca56c5fc43eac00da73535c49bd
 
-# Keep the running Azure browser/API bundle intact; add focused phone controls.
+# Keep the running Azure browser/API bundle intact; add the approved brand mark
+# and focused phone controls.
 USER root
 WORKDIR /app
+COPY public/brand/alamo-health-management-logo.png ./dist/brand/alamo-health-management-logo.png
 COPY deploy/mobile-app-experience.css ./dist/mobile-app-experience.css
 COPY deploy/mobile-app-experience.js ./dist/mobile-app-experience.js
 COPY deploy/inject-mobile-experience-head.mjs /usr/local/bin/inject-mobile-experience-head.mjs
 RUN node /usr/local/bin/inject-mobile-experience-head.mjs
-RUN chown node:node /app/dist/index.html /app/dist/mobile-app-experience.css /app/dist/mobile-app-experience.js
+RUN chown node:node /app/dist/index.html /app/dist/brand/alamo-health-management-logo.png /app/dist/mobile-app-experience.css /app/dist/mobile-app-experience.js
 USER node

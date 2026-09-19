@@ -59,8 +59,10 @@ The phone home shows only the community rows, without an introductory heading,
 instructions, or repeated profile subtitles. Its rows expand to fill the
 available viewport and scroll on short screens rather than compressing their
 labels. The primary Analytics action is larger without crowding the persistent
-home wordmark. Community names and resident counts use a lighter medium-weight
-sans-serif treatment rather than heavy bold labels.
+official Alamo Health Management logo. The shared mark is also used by login,
+loading, error, and non-California platform headers. Community names and
+resident counts use a lighter medium-weight sans-serif treatment rather than
+heavy bold labels.
 
 The mobile report library and question-category chip grid become compact native
 pickers, preserving the report reader and question list width. The source branch
@@ -115,7 +117,7 @@ Current responsibilities:
 - background conversation persistence without a visible history menu
 - copy/rerun question controls
 - analysis session persistence
-- persistent emerald Alamo Health wordmark that always returns home
+- persistent official Alamo Health Management logo that always returns home
 - a bounded answer ladder: a completed answer may expose up to two registered
   next questions, and each answer appends beneath the prior turn
 - a governed one-page brief action beneath eligible completed answers; audience

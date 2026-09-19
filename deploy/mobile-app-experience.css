@@ -1,4 +1,26 @@
-/* Phone presentation layered after the existing Azure app stylesheet. */
+/* Official platform mark plus phone presentation layered after the Azure app. */
+[data-platform-wordmark="true"] {
+  width: 220px !important;
+  height: 43px;
+}
+
+[data-platform-wordmark="true"][data-platform-wordmark-variant="display"] {
+  width: min(340px, 100%) !important;
+  height: 66px;
+}
+
+[data-platform-wordmark="true"].opacity-0 {
+  width: 0 !important;
+}
+
+[data-platform-wordmark="true"] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: left center;
+}
+
 @media (max-width: 639px) {
   [data-platform-page-navigation="true"] {
     top: 8px !important;
@@ -7,7 +29,8 @@
   }
 
   [data-platform-page-navigation="true"] [data-platform-wordmark="true"] {
-    width: auto !important;
+    width: min(174px, calc(100vw - 138px)) !important;
+    height: auto;
   }
 
   [data-platform-page-active="home"] {

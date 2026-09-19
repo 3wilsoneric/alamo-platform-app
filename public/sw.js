@@ -1,8 +1,9 @@
 const CACHE_PREFIX = "alamo-static-";
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
+  "/brand/alamo-health-management-logo.png",
   "/brand/alamo-ah-mark.svg",
   "/pwa/alamo-favicon-32-v1.png",
   "/pwa/alamo-apple-touch-icon-180-v1.png",

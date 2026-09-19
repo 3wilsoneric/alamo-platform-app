@@ -5,6 +5,7 @@
   const reportPickerId = "alamo-mobile-report-picker";
   const categoryPickerId = "alamo-mobile-category-picker";
   const modalControlsId = "alamo-mobile-modal-controls";
+  const brandLogoPath = "/brand/alamo-health-management-logo.png";
   const mondayId = "monday-census-briefing";
   let scheduled = false;
 
@@ -186,6 +187,25 @@
     tray.hidden = !mobile.matches || workspace?.getAttribute("data-california-active-panel") !== "map" || modalOpen;
   }
 
+  function enhanceBranding() {
+    for (const wordmark of document.querySelectorAll('[data-platform-wordmark="true"]')) {
+      wordmark.setAttribute("aria-label", "Alamo Health Management");
+      if (!wordmark.hasAttribute("data-platform-wordmark-variant")) {
+        const display = wordmark.getBoundingClientRect().width >= 260 || wordmark.className.includes("w-[286px]");
+        wordmark.setAttribute("data-platform-wordmark-variant", display ? "display" : "standard");
+      }
+      const existing = wordmark.querySelector('img[data-platform-brand-logo="true"]');
+      if (existing) continue;
+      const image = document.createElement("img");
+      image.src = brandLogoPath;
+      image.alt = "";
+      image.draggable = false;
+      image.setAttribute("aria-hidden", "true");
+      image.setAttribute("data-platform-brand-logo", "true");
+      wordmark.replaceChildren(image);
+    }
+  }
+
   function enhanceCommunityModal() {
     const profile = document.querySelector("[data-california-community-profile]");
     const header = profile?.querySelector(":scope > header");
@@ -230,6 +250,7 @@
   }
 
   function enhance() {
+    enhanceBranding();
     if (mobile.matches) {
       enhanceReports();
       enhanceQuestions();
