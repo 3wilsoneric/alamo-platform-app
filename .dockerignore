@@ -10,6 +10,11 @@ generated/
 node_modules/
 output/
 public/
+!public/
+public/*
+!public/brand/
+public/brand/*
+!public/brand/alamo-health-management-logo.png
 scripts/
 tmp/
 server/platform-snapshot.mjs
