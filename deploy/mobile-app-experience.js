@@ -190,7 +190,9 @@
   function enhanceBranding() {
     for (const wordmark of document.querySelectorAll('[data-platform-wordmark="true"]')) {
       wordmark.setAttribute("aria-label", "Alamo Health Management");
-      if (!wordmark.hasAttribute("data-platform-wordmark-variant")) {
+      if (wordmark.closest('[data-platform-page-target="home"]')) {
+        wordmark.setAttribute("data-platform-wordmark-variant", "compact");
+      } else if (!wordmark.hasAttribute("data-platform-wordmark-variant")) {
         const display = wordmark.getBoundingClientRect().width >= 260 || wordmark.className.includes("w-[286px]");
         wordmark.setAttribute("data-platform-wordmark-variant", display ? "display" : "standard");
       }

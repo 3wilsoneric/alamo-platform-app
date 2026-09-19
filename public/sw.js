@@ -1,17 +1,17 @@
 const CACHE_PREFIX = "alamo-static-";
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
   "/brand/alamo-health-management-logo.png",
-  "/brand/alamo-ah-mark.svg",
-  "/pwa/alamo-favicon-32-v1.png",
-  "/pwa/alamo-apple-touch-icon-180-v1.png",
-  "/pwa/alamo-app-icon-192-v1.png",
-  "/pwa/alamo-app-icon-512-v1.png",
-  "/pwa/alamo-app-icon-1024-v1.png",
-  "/pwa/alamo-app-icon-maskable-512-v1.png",
-  "/pwa/alamo-app-icon-maskable-1024-v1.png"
+  "/brand/alamo-head-tree-mark.png",
+  "/pwa/alamo-favicon-32-v2.png",
+  "/pwa/alamo-apple-touch-icon-180-v2.png",
+  "/pwa/alamo-app-icon-192-v2.png",
+  "/pwa/alamo-app-icon-512-v2.png",
+  "/pwa/alamo-app-icon-1024-v2.png",
+  "/pwa/alamo-app-icon-maskable-512-v2.png",
+  "/pwa/alamo-app-icon-maskable-1024-v2.png"
 ];
 
 self.addEventListener("install", (event) => {

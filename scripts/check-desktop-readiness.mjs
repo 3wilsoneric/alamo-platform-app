@@ -19,13 +19,13 @@ assert.equal(manifest.orientation, "any");
 assert.ok(manifest.categories.includes("business"));
 
 for (const [size, file] of [
-  [32, "public/pwa/alamo-favicon-32-v1.png"],
-  [180, "public/pwa/alamo-apple-touch-icon-180-v1.png"],
-  [192, "public/pwa/alamo-app-icon-192-v1.png"],
-  [512, "public/pwa/alamo-app-icon-512-v1.png"],
-  [1024, "public/pwa/alamo-app-icon-1024-v1.png"],
-  [512, "public/pwa/alamo-app-icon-maskable-512-v1.png"],
-  [1024, "public/pwa/alamo-app-icon-maskable-1024-v1.png"]
+  [32, "public/pwa/alamo-favicon-32-v2.png"],
+  [180, "public/pwa/alamo-apple-touch-icon-180-v2.png"],
+  [192, "public/pwa/alamo-app-icon-192-v2.png"],
+  [512, "public/pwa/alamo-app-icon-512-v2.png"],
+  [1024, "public/pwa/alamo-app-icon-1024-v2.png"],
+  [512, "public/pwa/alamo-app-icon-maskable-512-v2.png"],
+  [1024, "public/pwa/alamo-app-icon-maskable-1024-v2.png"]
 ]) {
   const dimensions = readPngDimensions(file);
   assert.deepEqual(dimensions, { width: size, height: size }, `${file} must be ${size}x${size}`);
@@ -35,9 +35,12 @@ for (const [size, file] of [
 assert.ok(manifest.icons.some((icon) => icon.sizes === "192x192" && icon.purpose === "any"));
 assert.ok(manifest.icons.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"));
 assert.ok(manifest.icons.some((icon) => icon.sizes === "1024x1024" && icon.purpose === "maskable"));
-assert.match(index, /rel="manifest" href="\/manifest\.json\?v=ah-desktop-v1"/);
-assert.match(index, /alamo-favicon-32-v1\.png/);
-assert.match(index, /alamo-apple-touch-icon-180-v1\.png/);
+assert.match(index, /rel="manifest" href="\/manifest\.json\?v=ah-brand-v2"/);
+assert.match(index, /alamo-favicon-32-v2\.png/);
+assert.match(index, /alamo-apple-touch-icon-180-v2\.png/);
+assert.doesNotMatch(index, /favicon\.svg|favicon\.ico|alamo-.*-v1\.png/);
+assert.equal(manifest.name, "Alamo Health Management");
+assert.ok(statSync("public/brand/alamo-head-tree-mark.png").size > 100);
 
 assert.match(main, /<DesktopRuntime \/>/);
 assert.match(runtime, /serviceWorker\.register/);

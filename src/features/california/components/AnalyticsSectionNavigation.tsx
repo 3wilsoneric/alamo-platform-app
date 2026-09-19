@@ -14,7 +14,7 @@ export default function AnalyticsSectionNavigation({
       aria-label="Analytics sections"
       data-analytics-section-navigation="true"
       data-analytics-section-current={active}
-      className="pointer-events-none absolute inset-x-3 top-[60px] z-40 flex items-center justify-end border-b border-[#d9d9d9] pb-2 sm:inset-x-8 sm:top-2 sm:pb-0 lg:inset-x-12"
+      className="pointer-events-none absolute inset-x-3 top-[60px] z-40 flex items-center justify-end border-b border-[#d9d9d9] pb-2 sm:inset-x-8 sm:top-2 sm:border-b-0 sm:pb-0 lg:inset-x-12"
     >
       <p className="sr-only">
         Analytics workspace view

@@ -90,7 +90,7 @@ function PageLink({
     {side === "left" ? (
       <ArrowLeft className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-1" />
     ) : null}
-    {isHome ? <PlatformWordmark /> : <span>{page.label}</span>}
+    {isHome ? <PlatformWordmark compact /> : <span>{page.label}</span>}
     {side === "right" ? (
       <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-1" />
     ) : null}

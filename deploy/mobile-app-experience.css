@@ -9,6 +9,13 @@
   height: 66px;
 }
 
+[data-platform-wordmark="true"][data-platform-wordmark-variant="compact"] {
+  width: 185px !important;
+  min-width: 0 !important;
+  max-width: 185px !important;
+  height: 36px;
+}
+
 [data-platform-wordmark="true"].opacity-0 {
   width: 0 !important;
 }
@@ -21,6 +28,12 @@
   object-position: left center;
 }
 
+@media (min-width: 640px) {
+  [data-analytics-section-navigation="true"] {
+    border-bottom: 0 !important;
+  }
+}
+
 @media (max-width: 639px) {
   [data-platform-page-navigation="true"] {
     top: 8px !important;
@@ -28,8 +41,13 @@
     gap: 12px;
   }
 
-  [data-platform-page-navigation="true"] [data-platform-wordmark="true"] {
+  [data-platform-page-active="home"] [data-platform-wordmark="true"] {
     width: min(174px, calc(100vw - 138px)) !important;
+    height: auto;
+  }
+
+  [data-platform-page-target="home"] [data-platform-wordmark="true"] {
+    width: min(162px, calc(100vw - 74px)) !important;
     height: auto;
   }
 

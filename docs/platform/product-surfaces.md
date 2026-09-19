@@ -62,7 +62,10 @@ labels. The primary Analytics action is larger without crowding the persistent
 official Alamo Health Management logo. The shared mark is also used by login,
 loading, error, and non-California platform headers. Community names and
 resident counts use a lighter medium-weight sans-serif treatment rather than
-heavy bold labels.
+heavy bold labels. The installed-app, Home Screen, and browser icons use the
+head-and-tree portion of that same approved mark; the old generic AH monogram
+is not part of the active icon set. Analytics back navigation uses a compact
+horizontal mark so zoomed and tablet-width layouts retain clear header spacing.
 
 The mobile report library and question-category chip grid become compact native
 pickers, preserving the report reader and question list width. The source branch

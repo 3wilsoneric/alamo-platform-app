@@ -15,6 +15,12 @@ public/*
 !public/brand/
 public/brand/*
 !public/brand/alamo-health-management-logo.png
+!public/brand/alamo-head-tree-mark.png
+!public/pwa/
+public/pwa/*
+!public/pwa/*-v2.png
+!public/manifest.json
+!public/sw.js
 scripts/
 tmp/
 server/platform-snapshot.mjs
