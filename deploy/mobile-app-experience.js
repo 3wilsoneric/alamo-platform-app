@@ -128,6 +128,22 @@
     return current?.parentElement === section ? current : null;
   }
 
+  function focusExplorerRecord(row) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        if (!row.nextElementSibling?.matches('[data-explorer-row="detail"]')) return;
+        const scroller = row.closest('[data-explorer-table-scroll="true"]');
+        if (!(scroller instanceof HTMLElement)) return;
+        const rowBox = row.getBoundingClientRect();
+        const scrollerBox = scroller.getBoundingClientRect();
+        scroller.scrollTo({
+          top: Math.max(0, scroller.scrollTop + rowBox.top - scrollerBox.top),
+          behavior: "auto"
+        });
+      });
+    });
+  }
+
   function enhanceExplorerSection(section) {
     const isResident = section.getAttribute("data-explorer-kind") === "residents";
     const toolbar = section.querySelector(':scope > div:first-child');
@@ -222,6 +238,13 @@
           if (event.target !== row || (event.key !== "Enter" && event.key !== " ")) return;
           event.preventDefault();
           row.click();
+        });
+      }
+      if (row.getAttribute("data-alamo-mobile-focus-ready") !== "true") {
+        row.setAttribute("data-alamo-mobile-focus-ready", "true");
+        row.addEventListener("click", (event) => {
+          if (event.target instanceof Element && event.target.closest("button, a, input, select, textarea")) return;
+          focusExplorerRecord(row);
         });
       }
       cells.forEach((cell, index) => {

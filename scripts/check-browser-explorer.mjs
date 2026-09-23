@@ -188,6 +188,65 @@ async function runExplorerCase(page, testCase, index, screenshotDir) {
   };
 }
 
+async function runMobileCensusFocusCheck(page, screenshotDir) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${BASE_URL}/explorer/census?community=337`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
+  await waitForExplorerReady(page);
+
+  const records = page.locator('[data-explorer-row="record"]');
+  const target = records.nth(5);
+  await target.scrollIntoViewIfNeeded();
+  await target.click();
+  await page.locator('[data-explorer-row="detail"]').waitFor({ state: "visible", timeout: 5_000 });
+  await delay(200);
+
+  const focusState = await page.evaluate(() => {
+    const scroller = document.querySelector('[data-explorer-table-scroll="true"]');
+    const selected = document.querySelector('[data-explorer-row="record"][aria-expanded="true"]');
+    const detail = selected?.nextElementSibling?.matches('[data-explorer-row="detail"]')
+      ? selected.nextElementSibling
+      : null;
+    if (!(scroller instanceof HTMLElement) || !(selected instanceof HTMLElement) || !(detail instanceof HTMLElement)) {
+      return null;
+    }
+    const scrollerBox = scroller.getBoundingClientRect();
+    const selectedBox = selected.getBoundingClientRect();
+    const detailBox = detail.getBoundingClientRect();
+    const precedingVisible = [...scroller.querySelectorAll('[data-explorer-row="record"]')]
+      .filter((row) => row !== selected && (row.compareDocumentPosition(selected) & Node.DOCUMENT_POSITION_FOLLOWING))
+      .filter((row) => {
+        const box = row.getBoundingClientRect();
+        return box.bottom > scrollerBox.top + 1 && box.top < selectedBox.top;
+      }).length;
+    return {
+      selectedOffset: Math.round(selectedBox.top - scrollerBox.top),
+      detailGap: Math.round(detailBox.top - selectedBox.bottom),
+      precedingVisible,
+      scrollTop: Math.round(scroller.scrollTop)
+    };
+  });
+
+  const failures = [];
+  if (!focusState) {
+    failures.push("expanded census record was not rendered");
+  } else {
+    if (Math.abs(focusState.selectedOffset) > 2) failures.push(`selected record is ${focusState.selectedOffset}px below the results-pane top`);
+    if (Math.abs(focusState.detailGap) > 2) failures.push(`expanded detail is ${focusState.detailGap}px away from its selected record`);
+    if (focusState.precedingVisible) failures.push(`${focusState.precedingVisible} earlier census records remain visible above the selected record`);
+  }
+
+  const screenshotPath = path.join(screenshotDir, "04-mobile-census-focused-detail.png");
+  await page.screenshot({ path: screenshotPath, fullPage: false });
+  return {
+    name: "Mobile census expansion focuses the selected record",
+    path: "/explorer/census?community=337",
+    passed: failures.length === 0,
+    failures,
+    focusState,
+    screenshotPath
+  };
+}
+
 async function main() {
   const { artifactDir, screenshotDir } = await prepareArtifactDirs("browser-explorer-qa");
   const consoleErrors = [];
@@ -211,6 +270,10 @@ async function main() {
       console.log(`explorer QA ${result.passed ? "passed" : "failed"}: ${testCase.name}`);
       results.push(result);
     }
+
+    const mobileCensusFocus = await runMobileCensusFocusCheck(page, screenshotDir);
+    console.log(`explorer QA ${mobileCensusFocus.passed ? "passed" : "failed"}: ${mobileCensusFocus.name}`);
+    results.push(mobileCensusFocus);
 
     const passed = results.every((result) => result.passed) && consoleErrors.length === 0 && requestFailures.length === 0;
     const report = {

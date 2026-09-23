@@ -174,6 +174,23 @@ function getPromptUrl(prompt: string) {
   return `/questions?prompt=${encodeURIComponent(prompt)}`;
 }
 
+function focusMobileExplorerRow(row: HTMLTableRowElement) {
+  if (!window.matchMedia("(max-width: 639px)").matches) return;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      if (!row.nextElementSibling?.matches('[data-explorer-row="detail"]')) return;
+      const scroller = row.closest<HTMLElement>('[data-explorer-table-scroll="true"]');
+      if (!scroller) return;
+      const rowBox = row.getBoundingClientRect();
+      const scrollerBox = scroller.getBoundingClientRect();
+      scroller.scrollTo({
+        top: Math.max(0, scroller.scrollTop + rowBox.top - scrollerBox.top),
+        behavior: "auto"
+      });
+    });
+  });
+}
+
 function FacetChip({
   active,
   count,
@@ -632,11 +649,15 @@ export default function DataExplorerPage() {
                         aria-expanded={expanded}
                         aria-label={`Open ${primaryValue} details`}
                         className={`${rowIndex % 2 ? "bg-[#fffaf3]" : "bg-white"} cursor-pointer transition-colors hover:bg-[#f7efe3]`}
-                        onClick={() => toggleRow(row, globalRowIndex)}
+                        onClick={(event) => {
+                          toggleRow(row, globalRowIndex);
+                          if (!expanded) focusMobileExplorerRow(event.currentTarget);
+                        }}
                         onKeyDown={(event) => {
                           if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
                           event.preventDefault();
                           toggleRow(row, globalRowIndex);
+                          if (!expanded) focusMobileExplorerRow(event.currentTarget);
                         }}
                       >
                         <td className="px-3 py-3 align-top">
