@@ -4,6 +4,7 @@ import {
   Download,
   FileSpreadsheet,
   Search,
+  SlidersHorizontal,
   UserRound
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -317,6 +318,7 @@ export default function DataExplorerPage() {
   const [unit, setUnit] = useState(searchParams.get("unit") ?? "all");
   const [page, setPage] = useState(0);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -380,7 +382,7 @@ export default function DataExplorerPage() {
   const safePage = Math.min(page, pageCount - 1);
   const visibleRows = filteredRows.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
   const expandedRow = filteredRows.find((row, index) => rowKey(row, index) === expandedRowId) ?? null;
-  const activeTitle = payload?.title ?? "Data Explorer";
+  const activeTitle = payload?.title ?? (kind === "residents" ? "Client Search" : "Data Explorer");
   const activeKindLabel = titleCaseKind(kind);
   const slug = makeFileSlug([
     kind,
@@ -424,7 +426,7 @@ export default function DataExplorerPage() {
       data-explorer-status={loading ? "loading" : error ? "error" : "ready"}
       className="mx-auto w-full max-w-[1360px] space-y-4 pb-10 pt-2"
     >
-      <div className="rounded-[28px] border border-[#ddd4c8] bg-[#fffdfa]/88 p-4 shadow-[0_24px_62px_-46px_rgba(91,74,54,0.3)] sm:p-5">
+      <div data-explorer-toolbar="true" className="border-y border-[#ddd4c8] bg-[#fffdfa]/88 p-3 shadow-[0_24px_62px_-46px_rgba(91,74,54,0.3)] sm:rounded-[28px] sm:border sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -452,7 +454,7 @@ export default function DataExplorerPage() {
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div data-explorer-export-actions="true" className="hidden shrink-0 gap-2 sm:flex">
             <button type="button" onClick={exportCsv} disabled={!payload || filteredRows.length === 0} data-dark-action="true" className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#18110a] px-4 text-[11px] font-bold uppercase tracking-[0.13em] text-white transition-colors hover:bg-[#3b3025] disabled:cursor-not-allowed disabled:opacity-35">
               <Download className="h-3.5 w-3.5" />
               CSV
@@ -464,8 +466,8 @@ export default function DataExplorerPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid min-w-0 gap-3 xl:grid-cols-[minmax(280px,1.2fr)_220px_180px_220px]">
-          <label className="relative block">
+        <div data-explorer-filter-grid="true" className="mt-4 grid min-w-0 grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-[minmax(280px,1.2fr)_220px_180px_220px]">
+          <label data-explorer-filter="search" className="relative col-span-2 block xl:col-span-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a8b78]" />
             <input
               value={query}
@@ -473,40 +475,47 @@ export default function DataExplorerPage() {
               placeholder={kind === "incidents"
                 ? "Search resident, category, description, staff..."
                 : kind === "residents"
-                  ? payload?.client_database
-                    ? "Search client name, alias, ID, unit, or diagnosis..."
-                    : "Search resident, unit, diagnosis, physician..."
+                  ? "Search clients"
                   : "Search communities or months..."}
               aria-label="Search records"
               className="h-[52px] w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 pl-11 pr-4 text-[14px] font-medium text-[#201a14] outline-none transition-colors placeholder:text-[#a79986] focus:border-[#8ea2ff]"
             />
           </label>
-          <select value={community} onChange={(event) => setCommunity(event.target.value)} aria-label="Filter by community" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
-            <option value="all">All communities</option>
-            {payload?.filters.communities.map((name) => <option key={name} value={name}>{name}</option>)}
-          </select>
-          <select value={month} onChange={(event) => setMonth(event.target.value)} aria-label="Filter by month" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
-            {month.includes(",") ? <option value={month}>Selected months</option> : null}
-            <option value="all">All months</option>
-            {payload?.filters.months.map((monthOption) => <option key={monthOption} value={monthOption}>{formatMonthBucket(monthOption)}</option>)}
-          </select>
+          <label data-explorer-filter="community" className={kind === "residents" ? "col-span-2 sm:col-span-1" : "contents"}>
+            <span className="sr-only">Community</span>
+            <select value={community} onChange={(event) => setCommunity(event.target.value)} aria-label="Filter by community" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
+              <option value="all">All communities</option>
+              {payload?.filters.communities.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </label>
+          <label data-explorer-filter="month" className={kind === "residents" && !showMobileFilters ? "hidden sm:block" : "block"}>
+            <span className="sr-only">Month</span>
+            <select value={month} onChange={(event) => setMonth(event.target.value)} aria-label="Filter by month" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
+              {month.includes(",") ? <option value={month}>Selected months</option> : null}
+              <option value="all">All months</option>
+              {payload?.filters.months.map((monthOption) => <option key={monthOption} value={monthOption}>{formatMonthBucket(monthOption)}</option>)}
+            </select>
+          </label>
           {kind === "incidents" ? (
             <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by incident category" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
               <option value="all">All categories</option>
               {payload?.filters.categories.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>
           ) : kind === "residents" ? (
-            <select value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} aria-label="Filter by diagnosis" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
-              <option value="all">All diagnoses</option>
-              {residentFilterOptions.diagnoses.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
+            <label data-explorer-filter="diagnosis" className={showMobileFilters ? "block" : "hidden sm:block"}>
+              <span className="sr-only">Diagnosis</span>
+              <select value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} aria-label="Filter by diagnosis" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
+                <option value="all">All diagnoses</option>
+                {residentFilterOptions.diagnoses.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </label>
           ) : (
             <div />
           )}
         </div>
 
         {kind === "residents" ? (
-          <div className="mt-3 max-w-[220px]">
+          <div data-explorer-unit-filter="true" className={`mt-2 max-w-[220px] sm:mt-3 ${showMobileFilters ? "block" : "hidden sm:block"}`}>
             <select value={unit} onChange={(event) => setUnit(event.target.value)} aria-label="Filter by unit" className="h-[48px] w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
               <option value="all">All units</option>
               {residentFilterOptions.units.map((name) => <option key={name} value={name}>{name}</option>)}
@@ -514,9 +523,22 @@ export default function DataExplorerPage() {
           </div>
         ) : null}
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {kind === "residents" ? (
+          <button
+            type="button"
+            data-explorer-mobile-filter-toggle="true"
+            onClick={() => setShowMobileFilters((current) => !current)}
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-between border border-[#ddd4c8] bg-white px-4 text-[13px] font-semibold text-[#3e3429] sm:hidden"
+            aria-expanded={showMobileFilters}
+          >
+            <span className="inline-flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> More filters</span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${showMobileFilters ? "rotate-180" : ""}`} />
+          </button>
+        ) : null}
+
+        <div data-explorer-summary-grid="true" className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 xl:grid-cols-4">
           {summaryCards.map((card) => (
-            <div key={card.label} className="rounded-[18px] bg-[#f7f0e7]/72 px-4 py-3 shadow-[inset_0_0_0_1px_rgba(221,212,200,0.52)]">
+            <div key={card.label} className="min-w-0 rounded-[14px] bg-[#f7f0e7]/72 px-3 py-2.5 shadow-[inset_0_0_0_1px_rgba(221,212,200,0.52)] sm:rounded-[18px] sm:px-4 sm:py-3">
               <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9a8b78]">{card.label}</div>
               <div className="mt-1 text-[20px] font-semibold tracking-[-0.04em] text-[#201a14]">{card.value}</div>
               <div className="mt-0.5 truncate text-[12px] font-medium text-[#736657]">{card.detail}</div>
@@ -549,24 +571,26 @@ export default function DataExplorerPage() {
       ) : null}
 
       {kind === "residents" ? (
-        <ResidentPreview row={expandedRow ?? visibleRows[0] ?? null} onSurfaceProfile={(residentName) => surfacePrompt(`show ${residentName} resident profile`)} />
+        <div data-explorer-preview="true" className="hidden sm:block">
+          <ResidentPreview row={expandedRow ?? visibleRows[0] ?? null} onSurfaceProfile={(residentName) => surfacePrompt(`show ${residentName} resident profile`)} />
+        </div>
       ) : null}
 
       {kind === "census" ? <CensusPreview rows={filteredRows} /> : null}
 
-      <div className="overflow-hidden rounded-[28px] border border-[#ddd4c8] bg-[#fffdfa]/88 shadow-[0_22px_58px_-46px_rgba(91,74,54,0.26)]">
-        <div className="flex flex-col gap-2 border-b border-[#eee6da] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div data-explorer-results="true" className="overflow-hidden border-y border-[#ddd4c8] bg-[#fffdfa]/88 shadow-[0_22px_58px_-46px_rgba(91,74,54,0.26)] sm:rounded-[28px] sm:border">
+        <div data-explorer-results-header="true" className="flex flex-col gap-2 border-b border-[#eee6da] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="text-[13px] font-medium text-[#736657]">
             Showing <span className="font-semibold text-[#201a14]">{visibleRows.length.toLocaleString()}</span> of {exportedRowsLabel}
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[11px] font-semibold text-[#6f6253] disabled:opacity-35">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:flex">
+            <button type="button" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="min-h-11 rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[11px] font-semibold text-[#6f6253] disabled:opacity-35 sm:min-h-0">
               Previous
             </button>
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9a8b78]">
               Page {safePage + 1} / {pageCount}
             </span>
-            <button type="button" disabled={safePage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[11px] font-semibold text-[#6f6253] disabled:opacity-35">
+            <button type="button" disabled={safePage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="min-h-11 rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[11px] font-semibold text-[#6f6253] disabled:opacity-35 sm:min-h-0">
               Next
             </button>
           </div>
@@ -579,7 +603,7 @@ export default function DataExplorerPage() {
         ) : !visibleRows.length ? (
           <div className="flex min-h-[360px] items-center justify-center px-6 text-center text-[14px] font-medium text-[#736657]">No records match the current filters.</div>
         ) : (
-          <div className="max-h-[68vh] overflow-auto [scrollbar-width:thin]">
+          <div data-explorer-table-scroll="true" className="max-h-[68vh] overflow-auto [scrollbar-width:thin]">
             <table className="min-w-full border-collapse text-left text-[12px]">
               <thead className="sticky top-0 z-20">
                 <tr className="bg-[#f5efe6] text-[10px] uppercase tracking-[0.13em] text-[#8b7b68]">
@@ -598,7 +622,7 @@ export default function DataExplorerPage() {
                   const expanded = expandedRowId === key;
                   return (
                     <Fragment key={key}>
-                      <tr key={key} className={`${rowIndex % 2 ? "bg-[#fffaf3]" : "bg-white"} cursor-pointer transition-colors hover:bg-[#f7efe3]`} onClick={() => toggleRow(row, globalRowIndex)}>
+                      <tr key={key} data-explorer-row="record" className={`${rowIndex % 2 ? "bg-[#fffaf3]" : "bg-white"} cursor-pointer transition-colors hover:bg-[#f7efe3]`} onClick={() => toggleRow(row, globalRowIndex)}>
                         <td className="px-3 py-3 align-top">
                           <ChevronDown className={`h-4 w-4 text-[#8b7b68] transition-transform ${expanded ? "rotate-180" : ""}`} />
                         </td>
@@ -607,7 +631,7 @@ export default function DataExplorerPage() {
                           const long = value.length > 90 || column.key === "description";
                           const isResidentLink = ["resident_name", "client_name"].includes(column.key) && value !== "-";
                           return (
-                            <td key={`${key}-${column.key}`} className={`px-4 py-3 align-top ${columnIndex === 0 ? `sticky left-0 z-10 font-semibold text-[#201a14] ${rowIndex % 2 ? "bg-[#fffaf3]" : "bg-white"}` : column.numeric ? "whitespace-nowrap text-right tabular-nums text-[#3e3429]" : long ? "min-w-[360px] max-w-[760px] whitespace-normal leading-6 text-[#5f5346]" : "max-w-[280px] truncate whitespace-nowrap text-[#5f5346]"}`}>
+                            <td key={`${key}-${column.key}`} data-explorer-column-index={columnIndex} data-explorer-column-label={column.label} className={`px-4 py-3 align-top ${columnIndex === 0 ? `sticky left-0 z-10 font-semibold text-[#201a14] ${rowIndex % 2 ? "bg-[#fffaf3]" : "bg-white"}` : column.numeric ? "whitespace-nowrap text-right tabular-nums text-[#3e3429]" : long ? "min-w-[360px] max-w-[760px] whitespace-normal leading-6 text-[#5f5346]" : "max-w-[280px] truncate whitespace-nowrap text-[#5f5346]"}`}>
                               {isResidentLink ? (
                                 <button
                                   type="button"
@@ -627,7 +651,7 @@ export default function DataExplorerPage() {
                         })}
                       </tr>
                       {expanded ? (
-                        <tr key={`${key}-detail`} className="bg-[#fbf6ee]">
+                        <tr key={`${key}-detail`} data-explorer-row="detail" className="bg-[#fbf6ee]">
                           <td />
                           <td colSpan={(payload?.columns.length ?? 1)} className="px-4 py-5">
                             <div className="grid gap-4 lg:grid-cols-[1fr_auto]">

@@ -5,6 +5,7 @@
   const reportPickerId = "alamo-mobile-report-picker";
   const categoryPickerId = "alamo-mobile-category-picker";
   const modalControlsId = "alamo-mobile-modal-controls";
+  const explorerFilterToggleId = "alamo-mobile-explorer-filters";
   const brandLogoPath = "/brand/alamo-health-management-logo.png";
   const mondayId = "monday-census-briefing";
   let scheduled = false;
@@ -119,6 +120,104 @@
     })));
     select.value = categoryName(buttons.find((button) => button.getAttribute("aria-pressed") === "true") ?? buttons[0]);
     guide.setAttribute("data-alamo-category-picker-ready", "true");
+  }
+
+  function directChildOf(section, node) {
+    let current = node;
+    while (current?.parentElement && current.parentElement !== section) current = current.parentElement;
+    return current?.parentElement === section ? current : null;
+  }
+
+  function enhanceExplorer() {
+    const section = document.querySelector('[data-explorer-kind="residents"]');
+    if (!section) return;
+
+    const toolbar = section.querySelector(':scope > div:first-child');
+    const search = section.querySelector('input[aria-label="Search records"]');
+    const table = section.querySelector("table");
+    if (!toolbar || !search) return;
+
+    toolbar.setAttribute("data-explorer-toolbar", "true");
+    search.placeholder = "Search clients";
+    search.closest("label")?.setAttribute("data-explorer-filter", "search");
+
+    const filterGrid = search.closest("div.grid");
+    filterGrid?.setAttribute("data-explorer-filter-grid", "true");
+    const filters = [
+      ["community", 'select[aria-label="Filter by community"]'],
+      ["month", 'select[aria-label="Filter by month"]'],
+      ["diagnosis", 'select[aria-label="Filter by diagnosis"]']
+    ];
+    for (const [name, selector] of filters) {
+      const control = section.querySelector(selector);
+      if (control) control.setAttribute("data-explorer-filter", name);
+    }
+
+    const unit = section.querySelector('select[aria-label="Filter by unit"]');
+    const unitWrapper = unit?.parentElement;
+    unitWrapper?.setAttribute("data-explorer-unit-filter", "true");
+
+    const directToolbarChildren = [...toolbar.children];
+    const summaryGrid = directToolbarChildren.find((child) => (
+      child.children.length === 4 && /Avg LOS/i.test(child.textContent ?? "")
+    ));
+    summaryGrid?.setAttribute("data-explorer-summary-grid", "true");
+
+    const exportButton = [...toolbar.querySelectorAll("button")]
+      .find((button) => button.textContent?.trim() === "CSV");
+    exportButton?.parentElement?.setAttribute("data-explorer-export-actions", "true");
+
+    const title = toolbar.querySelector("h1");
+    if (title && title.textContent?.trim() === "Data Explorer") title.textContent = "Client Search";
+
+    let toggle = toolbar.querySelector(`#${explorerFilterToggleId}`);
+    if (!toggle && filterGrid) {
+      toggle = document.createElement("button");
+      toggle.id = explorerFilterToggleId;
+      toggle.type = "button";
+      toggle.setAttribute("data-explorer-mobile-filter-toggle", "true");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.innerHTML = '<span>More filters</span><span aria-hidden="true">⌄</span>';
+      toggle.addEventListener("click", () => {
+        const open = section.getAttribute("data-alamo-mobile-filters-open") !== "true";
+        section.setAttribute("data-alamo-mobile-filters-open", String(open));
+        toggle.setAttribute("aria-expanded", String(open));
+      });
+      filterGrid.insertAdjacentElement("afterend", toggle);
+    }
+    if (toggle) {
+      section.setAttribute(
+        "data-alamo-mobile-filters-open",
+        String(toggle.getAttribute("aria-expanded") === "true")
+      );
+    }
+
+    const preview = [...section.children].find((child) => (
+      child !== toolbar && /Resident preview|Select a resident to preview/i.test(child.textContent ?? "")
+    ));
+    preview?.setAttribute("data-explorer-preview", "true");
+
+    if (!table) return;
+    const results = directChildOf(section, table);
+    results?.setAttribute("data-explorer-results", "true");
+    results?.firstElementChild?.setAttribute("data-explorer-results-header", "true");
+    table.parentElement?.setAttribute("data-explorer-table-scroll", "true");
+
+    const labels = [...table.querySelectorAll("thead th")].slice(1).map((header) => header.textContent?.trim() || "Field");
+    for (const row of table.querySelectorAll("tbody tr")) {
+      const detailCell = row.querySelector("td[colspan]");
+      if (detailCell) {
+        row.setAttribute("data-explorer-row", "detail");
+        continue;
+      }
+      const cells = [...row.querySelectorAll(":scope > td")].slice(1);
+      if (!cells.length) continue;
+      row.setAttribute("data-explorer-row", "record");
+      cells.forEach((cell, index) => {
+        cell.setAttribute("data-explorer-column-index", String(index));
+        cell.setAttribute("data-explorer-column-label", labels[index] || `Field ${index + 1}`);
+      });
+    }
   }
 
   function enhanceCommunities() {
@@ -256,6 +355,7 @@
     if (mobile.matches) {
       enhanceReports();
       enhanceQuestions();
+      enhanceExplorer();
       enhanceCommunities();
       enhanceCommunityModal();
     } else {
@@ -271,6 +371,7 @@
     attributes: true,
     attributeFilter: [
       "aria-current",
+      "aria-expanded",
       "aria-pressed",
       "data-california-active-panel",
       "data-california-modal-view",

@@ -49,6 +49,51 @@ function getPlaceholderText(variable: CertifiedQuestionVariable) {
     .toLowerCase();
 }
 
+function getMobilePrompt(item: CertifiedQuestionCatalogItem) {
+  const variableById = new Map((item.variables ?? []).map((variable) => [variable.id, variable]));
+  return item.prompt.replace(/\{([a-zA-Z0-9_-]+)\}/g, (_match, variableId: string) => {
+    const variable = variableById.get(variableId);
+    return variable ? getPlaceholderText(variable) : variableId;
+  });
+}
+
+function MobileQuestionVariables({
+  item,
+  selections,
+  onSelectionChange
+}: {
+  item: CertifiedQuestionCatalogItem;
+  selections: QuestionVariableSelections;
+  onSelectionChange: (questionId: string, variableId: string, value: string) => void;
+}) {
+  const variables = getRequiredVariables(item);
+  if (!variables.length) return null;
+
+  return (
+    <div data-question-mobile-fields="true" className="mt-3 grid gap-2 sm:hidden">
+      {variables.map((variable) => (
+        <label key={variable.id} className="grid gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#737373]">
+            {variable.label}
+          </span>
+          <select
+            data-question-variable-select={variable.id}
+            value={selections[item.id]?.[variable.id] ?? ""}
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => onSelectionChange(item.id, variable.id, event.currentTarget.value)}
+            className="min-h-11 w-full min-w-0 border border-[#bdbdbd] bg-white px-3 text-[16px] font-medium text-[#111111] outline-none focus:border-[#0f8b73]"
+          >
+            <option value="">Choose {getPlaceholderText(variable)}</option>
+            {getVariableOptions(variable).map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 function InlineQuestionVariable({
   itemId,
   variable,
@@ -449,21 +494,29 @@ export function CertifiedQuestionGuide({
                   if ((event.target as HTMLElement).closest("select, button")) return;
                   runItem(item);
                 }}
-                className="group flex w-full items-center justify-between gap-3 border-x-0 border-b border-t-0 border-[#d9d9d9] bg-white px-2 py-3.5 text-left transition-colors first:border-t-0 last:border-b-0 hover:bg-[#f7fbf9]"
+                className="group grid w-full gap-3 border-x-0 border-b border-t-0 border-[#d9d9d9] bg-white px-1 py-4 text-left transition-colors first:border-t-0 last:border-b-0 hover:bg-[#f7fbf9] sm:flex sm:items-center sm:justify-between sm:px-2 sm:py-3.5"
               >
                 <div className="min-w-0 flex-1">
                   <div className="grid gap-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-baseline">
                     <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#737373]">
                       {item.category}
                     </span>
-                    <span data-certified-question-prompt-text="true" className="text-[15px] font-semibold leading-6 tracking-normal text-[#111111]">
-                      <TemplatePrompt
-                        item={item}
-                        selections={selections}
-                        onSelectionChange={updateSelection}
-                      />
+                    <span data-certified-question-prompt-text="true" className="text-[16px] font-semibold leading-6 tracking-normal text-[#111111] sm:text-[15px]">
+                      <span className="sm:hidden">{getMobilePrompt(item)}</span>
+                      <span className="hidden sm:inline">
+                        <TemplatePrompt
+                          item={item}
+                          selections={selections}
+                          onSelectionChange={updateSelection}
+                        />
+                      </span>
                     </span>
                   </div>
+                  <MobileQuestionVariables
+                    item={item}
+                    selections={selections}
+                    onSelectionChange={updateSelection}
+                  />
                 </div>
                 <button
                   type="button"
@@ -473,8 +526,12 @@ export function CertifiedQuestionGuide({
                   aria-label={canRun
                     ? `Run: ${hasRequiredVariables ? compiledPrompt : item.prompt}`
                     : `Choose ${missingVariables.map((variable) => variable.label).join(", ")} for ${item.prompt}`}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors group-hover:border-[#0f8b73] group-hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#bdbdbd] disabled:group-hover:border-[#d9d9d9] sm:h-8 sm:w-8"
+                  className={`inline-flex min-h-11 w-full shrink-0 items-center justify-between border px-3 text-[13px] font-semibold transition-colors sm:h-8 sm:min-h-0 sm:w-8 sm:justify-center sm:px-0 ${canRun
+                    ? "border-[#0f8b73] bg-[#0f8b73] text-white hover:bg-[#0b745f] sm:bg-white sm:text-[#0f8b73]"
+                    : "border-[#d9d9d9] bg-[#f7f7f7] text-[#8a8a8a] disabled:cursor-not-allowed sm:bg-white sm:text-[#bdbdbd]"
+                  }`}
                 >
+                  <span className="sm:hidden">{canRun ? "Run question" : "Choose options to run"}</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
             </div>
@@ -497,11 +554,11 @@ export function CertifiedQuestionGuide({
         )}
       </div>
       {results.length > pageSize ? (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
           <div className="text-[12px] font-medium text-[#333333]">
             Showing {pageStart + 1}-{pageEnd}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <button
               type="button"
               onClick={() => setPage((current) => Math.max(0, current - 1))}

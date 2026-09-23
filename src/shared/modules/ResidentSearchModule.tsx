@@ -602,8 +602,8 @@ export default function ResidentSearchModule({
               setQuery(event.target.value);
               setSelectedId(null);
             }}
-            placeholder="Search client name, alias, resident number, unit, or diagnosis"
-            className={`${compact ? "h-11" : "h-[52px]"} w-full border border-[#bdbdbd] bg-white pl-11 pr-4 text-[15px] font-medium text-[#111111] outline-none transition-colors placeholder:text-[#8a8a8a] focus:border-[#0f8b73]`}
+            placeholder="Search clients"
+            className={`${compact ? "h-11" : "h-[52px]"} w-full min-w-0 border border-[#bdbdbd] bg-white pl-11 pr-4 text-[16px] font-medium text-[#111111] outline-none transition-colors placeholder:text-[#8a8a8a] focus:border-[#0f8b73] sm:text-[15px]`}
             aria-label="Search residents"
           />
         </div>
@@ -632,7 +632,7 @@ export default function ResidentSearchModule({
 
       <div className={`${compact ? "mt-2 gap-2 xl:grid-cols-[minmax(250px,0.62fr)_minmax(430px,1.38fr)]" : "mt-3 gap-3 xl:grid-cols-[minmax(270px,0.68fr)_minmax(460px,1.32fr)]"} grid`}>
         <div className="overflow-hidden border-y border-[#d9d9d9] bg-white">
-          <div className={`${compact ? "max-h-[300px] p-1.5 sm:max-h-[360px] xl:max-h-[480px]" : "max-h-[560px] p-2"} overflow-y-auto [scrollbar-width:thin]`}>
+          <div className={`${compact ? "max-h-[300px] p-1.5 sm:max-h-[360px] xl:max-h-[480px]" : "max-h-[340px] p-2 sm:max-h-[560px]"} overflow-y-auto [scrollbar-width:thin]`}>
             {loading ? (
               <div className="px-4 py-8 text-center text-[13px] font-medium text-[#736657]">Loading residents...</div>
             ) : error ? (
