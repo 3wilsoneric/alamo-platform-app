@@ -68,10 +68,19 @@ async function inspectControl(page, testCase) {
   await control.waitFor({ state: "visible", timeout: 10_000 });
 
   return control.evaluate((element) => {
+    const visible = (candidate) => {
+      const style = window.getComputedStyle(candidate);
+      const candidateRect = candidate.getBoundingClientRect();
+      return style.display !== "none" && style.visibility !== "hidden" && candidateRect.width > 0 && candidateRect.height > 0;
+    };
     const rect = element.getBoundingClientRect();
     const promptText = element.querySelector('[data-certified-question-prompt-text="true"]');
     const submit = element.querySelector('[data-certified-question-submit="true"]');
     const triggers = Array.from(element.querySelectorAll('[data-question-variable-trigger="true"]'));
+    const mobileSelects = Array.from(element.querySelectorAll('[data-question-variable-select]'));
+    const visibleInteractive = Array.from(
+      element.querySelectorAll("button, a, input, select, textarea, [role=button]")
+    ).filter(visible);
     const promptStyle = promptText ? window.getComputedStyle(promptText) : null;
     const documentElement = document.documentElement;
 
@@ -81,9 +90,14 @@ async function inspectControl(page, testCase) {
       label: String(submit?.getAttribute("aria-label") || ""),
       prompt: String(element.getAttribute("data-certified-question-prompt") || ""),
       itemId: String(element.getAttribute("data-certified-question-id") || ""),
-      nestedInteractive: element.querySelectorAll("button, a, input, select, textarea, [role=button]").length,
+      nestedInteractive: visibleInteractive.length,
       triggerCount: triggers.length,
+      visibleTriggerCount: triggers.filter(visible).length,
       triggerLabels: triggers.map((trigger) => String(trigger.getAttribute("aria-label") || "")),
+      mobileSelectCount: mobileSelects.filter(visible).length,
+      mobileSelectLabels: mobileSelects.filter(visible).map((select) => (
+        String(select.closest("label")?.textContent || "").replace(/\s+/g, " ").trim()
+      )),
       triggerStyles: triggers.map((trigger) => {
         const style = window.getComputedStyle(trigger);
         return {
@@ -114,6 +128,7 @@ async function inspectControl(page, testCase) {
 
 function validateControl(testCase, state) {
   const failures = [];
+  const mobile = state.viewportWidth < 640;
   const letterSpacing = state.letterSpacing === "normal" ? 0 : Number.parseFloat(state.letterSpacing);
   const expectedVariableCount = new Set(
     Array.from(testCase.promptTemplate.matchAll(/\{([a-zA-Z0-9_-]+)\}/g)).map((match) => match[1])
@@ -121,8 +136,9 @@ function validateControl(testCase, state) {
 
   if (state.tagName !== "DIV") failures.push(`question row uses ${state.tagName || "no element"} instead of a neutral group`);
   if (state.role) failures.push(`question row unexpectedly declares role=${state.role}`);
-  if (state.triggerCount !== expectedVariableCount) {
-    failures.push(`question row rendered ${state.triggerCount} custom selectors instead of ${expectedVariableCount}`);
+  const activeSelectorCount = mobile ? state.mobileSelectCount : state.visibleTriggerCount;
+  if (activeSelectorCount !== expectedVariableCount) {
+    failures.push(`question row rendered ${activeSelectorCount} visible selectors instead of ${expectedVariableCount}`);
   }
   if (state.submitCount !== 1) failures.push(`question row rendered ${state.submitCount} submit controls`);
   if (state.submitTagName !== "BUTTON") failures.push(`submit control uses ${state.submitTagName || "no element"} instead of a native button`);
@@ -130,18 +146,22 @@ function validateControl(testCase, state) {
   if (state.nestedInteractive !== expectedVariableCount + 1) {
     failures.push(`question row contains ${state.nestedInteractive} controls instead of ${expectedVariableCount + 1}`);
   }
-  if (state.triggerLabels.some((label) => !normalize(label))) failures.push("a custom inline selector has no accessible label");
-  state.triggerStyles.forEach((style) => {
-    if (style.backgroundColor !== "rgba(0, 0, 0, 0)") failures.push(`inline selector has a filled background: ${style.backgroundColor}`);
-    if (style.fontSize !== state.promptFontSize) {
-      failures.push(`inline selector uses ${style.fontSize} instead of the ${state.promptFontSize} sentence typography`);
-    }
-    if (Number.parseInt(style.fontWeight, 10) < 600) failures.push(`inline selector uses font weight ${style.fontWeight}`);
-    if (style.borderTopWidth !== "0px" || style.borderRightWidth !== "0px" || style.borderLeftWidth !== "0px") {
-      failures.push("inline selector renders as a boxed control instead of sentence text");
-    }
-    if (style.borderBottomWidth !== "1px") failures.push(`inline selector underline is ${style.borderBottomWidth}`);
-  });
+  if (mobile) {
+    if (state.mobileSelectLabels.some((label) => !normalize(label))) failures.push("a mobile selector has no accessible label");
+  } else {
+    if (state.triggerLabels.some((label) => !normalize(label))) failures.push("a custom inline selector has no accessible label");
+    state.triggerStyles.forEach((style) => {
+      if (style.backgroundColor !== "rgba(0, 0, 0, 0)") failures.push(`inline selector has a filled background: ${style.backgroundColor}`);
+      if (style.fontSize !== state.promptFontSize) {
+        failures.push(`inline selector uses ${style.fontSize} instead of the ${state.promptFontSize} sentence typography`);
+      }
+      if (Number.parseInt(style.fontWeight, 10) < 600) failures.push(`inline selector uses font weight ${style.fontWeight}`);
+      if (style.borderTopWidth !== "0px" || style.borderRightWidth !== "0px" || style.borderLeftWidth !== "0px") {
+        failures.push("inline selector renders as a boxed control instead of sentence text");
+      }
+      if (style.borderBottomWidth !== "1px") failures.push(`inline selector underline is ${style.borderBottomWidth}`);
+    });
+  }
   if (state.itemId !== testCase.questionItemId) failures.push(`control id changed to ${state.itemId}`);
   if (normalize(state.prompt) !== normalize(testCase.promptTemplate)) failures.push("visible prompt contract changed");
   if (!normalize(state.label).includes(normalize(testCase.promptTemplate))) failures.push("accessible name omits the full visible question");
@@ -173,10 +193,13 @@ async function exerciseKeyboardJourney(page, testCase) {
   const submit = control.locator('[data-certified-question-submit="true"]');
 
   if (testCase.hasVariables) {
+    const mobile = (page.viewportSize()?.width ?? 1280) < 640;
     const expectedSelectCount = new Set(
       Array.from(testCase.promptTemplate.matchAll(/\{([a-zA-Z0-9_-]+)\}/g)).map((match) => match[1])
     ).size;
-    const triggers = control.locator('[data-question-variable-trigger="true"]');
+    const triggers = control.locator(mobile
+      ? '[data-question-variable-select]'
+      : '[data-question-variable-trigger="true"]');
     const triggerCount = await triggers.count();
     const submitCount = await submit.count();
     const initiallyEnabled = submitCount === 1 ? await submit.isEnabled() : null;
@@ -188,6 +211,14 @@ async function exerciseKeyboardJourney(page, testCase) {
     const menuStates = [];
     for (let index = 0; index < triggerCount; index += 1) {
       const trigger = triggers.nth(index);
+      if (mobile) {
+        await trigger.focus();
+        const optionCount = await trigger.locator("option").count();
+        if (optionCount < 2) failures.push("mobile selector has no selectable options");
+        await trigger.selectOption({ index: 1 });
+        menuStates.push({ native: true, optionCount });
+        continue;
+      }
       await trigger.focus();
       await trigger.press("ArrowDown");
       const menu = page.locator('[data-question-variable-menu="true"]');
@@ -355,13 +386,19 @@ async function runViewport(browser, viewport, cases, screenshotDir, diagnostics)
     `[data-certified-question-button="true"][data-certified-question-id="${variableCase.questionItemId}"]`
   ).waitFor({ state: "visible", timeout: 10_000 });
   const selectorScreenshotPath = path.join(screenshotDir, `${viewport.name}-inline-selector.png`);
-  const firstTrigger = guide.locator(
-    `[data-certified-question-button="true"][data-certified-question-id="${variableCase.questionItemId}"] [data-question-variable-trigger="true"]`
-  ).first();
-  await firstTrigger.click();
-  await page.locator('[data-question-variable-menu="true"]').waitFor({ state: "visible", timeout: 5_000 });
-  await page.screenshot({ path: selectorScreenshotPath, fullPage: false }).catch(() => {});
-  await page.keyboard.press("Escape");
+  const variableRow = guide.locator(
+    `[data-certified-question-button="true"][data-certified-question-id="${variableCase.questionItemId}"]`
+  );
+  if (viewport.width < 640) {
+    await variableRow.locator('[data-question-variable-select]').first().focus();
+    await page.screenshot({ path: selectorScreenshotPath, fullPage: false }).catch(() => {});
+  } else {
+    const firstTrigger = variableRow.locator('[data-question-variable-trigger="true"]').first();
+    await firstTrigger.click();
+    await page.locator('[data-question-variable-menu="true"]').waitFor({ state: "visible", timeout: 5_000 });
+    await page.screenshot({ path: selectorScreenshotPath, fullPage: false }).catch(() => {});
+    await page.keyboard.press("Escape");
+  }
 
   const keyboardJourneys = [];
   for (const testCase of [variableCase, directCase]) {

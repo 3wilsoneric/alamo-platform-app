@@ -94,16 +94,51 @@
     return button.querySelector("span")?.textContent?.trim() || button.textContent?.trim() || "All";
   }
 
+  function tagQuestionStructure(guide) {
+    const directChildren = [...guide.children];
+    const search = guide.querySelector('[data-certified-question-search="true"]');
+    const toolbar = search?.closest("div.space-y-2, div.space-y-3") || directChildren[1];
+    const firstRow = guide.querySelector('[data-certified-question-button="true"]');
+    const results = firstRow?.parentElement;
+
+    directChildren[0]?.setAttribute("data-certified-question-header", "true");
+    toolbar?.setAttribute("data-certified-question-toolbar", "true");
+    search?.parentElement?.setAttribute("data-certified-question-search-field", "true");
+    toolbar?.nextElementSibling?.setAttribute("data-certified-question-summary", "true");
+    results?.setAttribute("data-certified-question-results", "true");
+    results?.nextElementSibling?.setAttribute("data-certified-question-pagination", "true");
+
+    for (const row of guide.querySelectorAll('[data-certified-question-button="true"]')) {
+      if (row.dataset.alamoMobileTapGuard === "true") continue;
+      row.dataset.alamoMobileTapGuard = "true";
+      row.addEventListener("click", (event) => {
+        if (!mobile.matches || event.target.closest("select, button, a, input")) return;
+        event.stopPropagation();
+      }, true);
+    }
+  }
+
   function enhanceQuestions() {
     const guide = document.querySelector("[data-certified-question-guide]");
+    if (!guide) return;
+    tagQuestionStructure(guide);
     const categories = guide?.querySelector('[aria-label="Question categories"]');
-    if (!guide || !categories) return;
+    if (!categories) return;
     const buttons = categoryButtons(categories);
     if (!buttons.length) return;
+
+    const nativePicker = guide.querySelector('[data-mobile-question-category="true"]');
+    if (nativePicker) {
+      guide.querySelector(`#${categoryPickerId}`)?.remove();
+      nativePicker.closest("label")?.setAttribute("data-certified-question-category-field", "true");
+      guide.setAttribute("data-alamo-category-picker-ready", "true");
+      return;
+    }
 
     let picker = guide.querySelector(`#${categoryPickerId}`);
     if (!picker) {
       picker = makePicker(categoryPickerId, "Category");
+      picker.setAttribute("data-certified-question-category-field", "true");
       categories.parentElement?.insertBefore(picker, categories);
       picker.querySelector("select").addEventListener("change", (event) => {
         const choice = event.currentTarget.value;

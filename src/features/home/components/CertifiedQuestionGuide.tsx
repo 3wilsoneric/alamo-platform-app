@@ -392,14 +392,20 @@ export function CertifiedQuestionGuide({
       data-certified-question-guide="true"
       className={`border border-[#d9d9d9] bg-white ${compact ? "p-3" : "p-4 sm:p-5"}`}
     >
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-[#d9d9d9] pb-3">
-        <div>
+      <div
+        data-certified-question-header="true"
+        className="mb-3 flex items-start justify-between gap-3 border-b border-[#d9d9d9] pb-3"
+      >
+        <div className="min-w-0">
           <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">
-            Question menu
+            Question library
           </div>
-          <div className="mt-1 text-[18px] font-semibold tracking-[-0.035em] text-[#111111]">
-            Pick a question.
+          <div className="mt-1 text-[20px] font-semibold tracking-[-0.035em] text-[#111111] sm:text-[18px]">
+            Choose a question
           </div>
+          <p className="mt-1 text-[13px] leading-5 text-[#595959] sm:hidden">
+            Select a ready-to-run analysis.
+          </p>
         </div>
         <button
           type="button"
@@ -410,12 +416,15 @@ export function CertifiedQuestionGuide({
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="space-y-2">
+      <div data-certified-question-toolbar="true" className="space-y-3 sm:space-y-2">
         <label className="sr-only" htmlFor={compact ? "certified-question-search-compact" : "certified-question-search"}>
           Search questions
         </label>
-        <div className="flex h-11 items-center gap-2 border border-[#bdbdbd] bg-white px-3 transition-colors focus-within:border-[#0f8b73]">
-          <Search className="h-3.5 w-3.5 shrink-0 text-[#595959]" />
+        <div
+          data-certified-question-search-field="true"
+          className="flex h-12 items-center gap-2.5 border border-[#bdbdbd] bg-white px-3 transition-colors focus-within:border-[#0f8b73] sm:h-11"
+        >
+          <Search className="h-4 w-4 shrink-0 text-[#595959]" />
           <input
             data-certified-question-search="true"
             id={compact ? "certified-question-search-compact" : "certified-question-search"}
@@ -425,14 +434,20 @@ export function CertifiedQuestionGuide({
             className="min-w-0 flex-1 bg-transparent text-[14px] text-[#111111] outline-none placeholder:text-[#8a8a8a]"
           />
         </div>
-        <label className="block sm:hidden" htmlFor="mobile-question-category">
-          <span className="sr-only">Question category</span>
+        <label
+          data-certified-question-category-field="true"
+          className="grid gap-1.5 sm:hidden"
+          htmlFor="mobile-question-category"
+        >
+          <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#737373]">
+            Category
+          </span>
           <select
             id="mobile-question-category"
             data-mobile-question-category="true"
             value={category}
             onChange={(event) => onCategoryChange(event.currentTarget.value)}
-            className="min-h-11 w-full border border-[#d9d9d9] bg-white px-3 text-[14px] font-semibold text-[#333333] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+            className="min-h-12 w-full border border-[#bdbdbd] bg-white px-3 text-[16px] font-semibold text-[#333333] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
           >
             {categoryOptions.map((option) => (
               <option key={option} value={option}>
@@ -466,7 +481,10 @@ export function CertifiedQuestionGuide({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#595959]">
+      <div
+        data-certified-question-summary="true"
+        className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#595959]"
+      >
         <span>
           {results.length
             ? `${results.length} ${query.trim() ? "matching " : ""}${results.length === 1 ? "question" : "questions"}`
@@ -477,7 +495,10 @@ export function CertifiedQuestionGuide({
         ) : null}
       </div>
 
-      <div className={`mt-2 grid gap-0 border-y border-[#d9d9d9] ${compact ? "max-h-[280px] overflow-y-auto pr-1" : ""}`}>
+      <div
+        data-certified-question-results="true"
+        className={`mt-2 grid gap-2 border-y-0 border-[#d9d9d9] sm:gap-0 sm:border-y ${compact ? "max-h-[280px] overflow-y-auto sm:pr-1" : ""}`}
+      >
         {visibleResults.length ? visibleResults.map((item) => {
           const missingVariables = getMissingVariables(item, selections);
           const canRun = missingVariables.length === 0;
@@ -492,9 +513,10 @@ export function CertifiedQuestionGuide({
                 data-certified-question-run-prompt={compiledPrompt}
                 onClick={(event: MouseEvent<HTMLDivElement>) => {
                   if ((event.target as HTMLElement).closest("select, button")) return;
+                  if (window.matchMedia("(max-width: 639px)").matches) return;
                   runItem(item);
                 }}
-                className="group grid w-full gap-3 border-x-0 border-b border-t-0 border-[#d9d9d9] bg-white px-1 py-4 text-left transition-colors first:border-t-0 last:border-b-0 hover:bg-[#f7fbf9] sm:flex sm:items-center sm:justify-between sm:px-2 sm:py-3.5"
+                className="group grid w-full gap-3 border border-[#d9d9d9] bg-white px-3 py-4 text-left transition-colors hover:bg-[#f7fbf9] sm:flex sm:items-center sm:justify-between sm:border-x-0 sm:border-b sm:border-t-0 sm:px-2 sm:py-3.5 sm:last:border-b-0"
               >
                 <div className="min-w-0 flex-1">
                   <div className="grid gap-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-baseline">
@@ -554,7 +576,10 @@ export function CertifiedQuestionGuide({
         )}
       </div>
       {results.length > pageSize ? (
-        <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+        <div
+          data-certified-question-pagination="true"
+          className="mt-3 grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between"
+        >
           <div className="text-[12px] font-medium text-[#333333]">
             Showing {pageStart + 1}-{pageEnd}
           </div>
@@ -566,7 +591,8 @@ export function CertifiedQuestionGuide({
               className="inline-flex min-h-11 items-center gap-2 border border-[#d9d9d9] bg-white px-3 text-[13px] font-semibold text-[#111111] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              Previous page
+              <span className="sm:hidden">Previous</span>
+              <span className="hidden sm:inline">Previous page</span>
             </button>
             <button
               type="button"
@@ -575,7 +601,8 @@ export function CertifiedQuestionGuide({
               data-dark-action="true"
               className="inline-flex min-h-11 items-center gap-2 border border-[#111111] bg-[#111111] px-3 text-[13px] font-semibold text-white transition-colors hover:border-[#0f8b73] hover:bg-[#0f8b73] disabled:cursor-not-allowed disabled:border-[#d9d9d9] disabled:bg-white disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
             >
-              Next page
+              <span className="sm:hidden">Next</span>
+              <span className="hidden sm:inline">Next page</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>

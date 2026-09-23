@@ -487,6 +487,141 @@ textarea:focus-visible,
     min-height: 44px !important;
   }
 
+  /* The question library is a primary phone workflow, not a compressed
+     desktop panel. Let its controls use the full content column, separate
+     questions into tappable cards, and keep execution on the explicit CTA. */
+  [data-certified-question-guide="true"] {
+    width: calc(100% + 32px) !important;
+    margin-right: -16px !important;
+    margin-left: -16px !important;
+    padding: 0 !important;
+    border-right: 0 !important;
+    border-left: 0 !important;
+  }
+
+  [data-certified-question-header="true"] {
+    margin-bottom: 14px !important;
+    padding: 14px 0 13px !important;
+  }
+
+  [data-certified-question-header="true"] button {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  [data-certified-question-toolbar="true"] {
+    display: grid !important;
+    gap: 12px !important;
+  }
+
+  [data-certified-question-search-field="true"],
+  [data-certified-question-category-field="true"] select {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 48px !important;
+  }
+
+  [data-certified-question-search="true"] {
+    font-size: 16px !important;
+  }
+
+  [data-certified-question-category-field="true"] {
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  [data-certified-question-summary="true"] {
+    min-height: 30px;
+    margin-top: 10px !important;
+    padding-bottom: 9px;
+    border-bottom: 1px solid #d9d9d9;
+  }
+
+  [data-certified-question-results="true"] {
+    display: grid !important;
+    gap: 10px !important;
+    max-height: none !important;
+    margin-top: 10px !important;
+    padding-right: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  [data-certified-question-results="true"] [data-certified-question-button="true"] {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 13px;
+    padding: 15px 14px !important;
+    border: 1px solid #d9d9d9 !important;
+    border-left: 3px solid #d9d9d9 !important;
+  }
+
+  [data-certified-question-results="true"] [data-certified-question-button="true"]:focus-within {
+    border-left-color: #0f8b73 !important;
+  }
+
+  [data-certified-question-button="true"] > div:first-child {
+    min-width: 0;
+    flex: 1;
+  }
+
+  [data-certified-question-prompt-text="true"] {
+    font-size: 16px !important;
+    line-height: 1.45 !important;
+  }
+
+  [data-question-mobile-fields="true"] {
+    gap: 11px !important;
+    margin-top: 13px !important;
+  }
+
+  [data-question-mobile-fields="true"] label {
+    gap: 6px !important;
+  }
+
+  [data-certified-question-button="true"] select,
+  [data-question-variable-trigger="true"] {
+    width: 100% !important;
+    max-width: 100%;
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
+
+  [data-certified-question-submit="true"] {
+    width: 100% !important;
+    min-height: 48px !important;
+    height: 48px !important;
+    flex: none;
+    justify-content: space-between !important;
+    padding: 0 14px !important;
+    border-color: #0f8b73 !important;
+    background: #0f8b73 !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 650 !important;
+  }
+
+  [data-certified-question-submit="true"]:disabled {
+    border-color: #d9d9d9 !important;
+    background: #f7f7f7 !important;
+    color: #777777 !important;
+  }
+
+  [data-certified-question-pagination="true"] {
+    gap: 10px !important;
+    margin-top: 14px !important;
+  }
+
+  [data-certified-question-pagination="true"] > div:last-child {
+    gap: 10px !important;
+  }
+
+  [data-certified-question-pagination="true"] button {
+    min-height: 48px !important;
+    justify-content: center !important;
+  }
+
   [data-module-chart="census-trend"] [data-chart-point="census"] {
     display: none !important;
   }

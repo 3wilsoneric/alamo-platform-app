@@ -130,16 +130,37 @@ async function main() {
 
     await page.getByRole("button", { name: "Choose another question" }).click();
     const search = page.locator('[data-certified-question-search="true"]').last();
+    const questionLibraryScreenshotPath = path.join(screenshotDir, "question-library.png");
+    await page.screenshot({ path: questionLibraryScreenshotPath, fullPage: false });
     await search.fill("show santa clartia censsus trend");
     await page.waitForTimeout(180);
     const searchResults = await page.locator('[data-certified-question-button="true"]').evaluateAll((nodes) => (
       nodes.map((node) => node.getAttribute("data-certified-question-id"))
     ));
-    const catalogLayout = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      viewportWidth: window.innerWidth,
-      horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
-    }));
+    const catalogLayout = await page.evaluate(() => {
+      const visible = (element) => {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      };
+      const guide = document.querySelector('[data-certified-question-guide="true"]');
+      const guideRect = guide?.getBoundingClientRect();
+      const controls = [...document.querySelectorAll(
+        '[data-certified-question-search-field="true"], [data-certified-question-guide="true"] select, [data-certified-question-guide="true"] button'
+      )].filter(visible);
+      return {
+        width: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+        horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        guideWidth: guideRect ? Math.round(guideRect.width) : 0,
+        visibleCategoryPickers: [...document.querySelectorAll(
+          '[data-mobile-question-category="true"], #alamo-mobile-category-picker'
+        )].filter(visible).length,
+        undersizedControls: controls
+          .filter((element) => element.getBoundingClientRect().height < 44)
+          .map((element) => element.getAttribute("aria-label") || element.textContent?.trim().slice(0, 60) || element.tagName)
+      };
+    });
 
     const failures = [];
     if (expected.missing.length) failures.push(`missing answer content: ${expected.missing.join(", ")}`);
@@ -170,6 +191,15 @@ async function main() {
       }
     }
     if (catalogLayout.horizontalOverflow > 1) failures.push(`catalog horizontal overflow: ${catalogLayout.horizontalOverflow}px`);
+    if (catalogLayout.guideWidth < catalogLayout.viewportWidth - 32) {
+      failures.push(`question library was cramped to ${catalogLayout.guideWidth}px at ${catalogLayout.viewportWidth}px`);
+    }
+    if (catalogLayout.visibleCategoryPickers !== 1) {
+      failures.push(`question library exposed ${catalogLayout.visibleCategoryPickers} visible category pickers`);
+    }
+    if (catalogLayout.undersizedControls.length) {
+      failures.push(`question library exposed undersized controls: ${JSON.stringify(catalogLayout.undersizedControls)}`);
+    }
     if (!searchResults[0]?.startsWith("census-trend:")) {
       failures.push(`typo search did not rank the census-trend rail first: ${JSON.stringify(searchResults)}`);
     }
@@ -195,7 +225,8 @@ async function main() {
       requestFailures,
       failures,
       screenshotPath,
-      collapsedScreenshotPath
+      collapsedScreenshotPath,
+      questionLibraryScreenshotPath
     };
     await writeFile(path.join(artifactDir, "latest.json"), JSON.stringify(report, null, 2));
 
