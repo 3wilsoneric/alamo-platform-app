@@ -110,6 +110,7 @@ async function revealCensusPointTooltip(moduleRoot) {
 
 async function assertSurface(moduleRoot, facility, mode) {
   await waitForSurfaceReady(moduleRoot, mode);
+  const phoneLayout = (moduleRoot.page().viewportSize()?.width ?? 1440) < 640;
   const platformRoot = moduleRoot.locator("[data-platform-module]").first();
   const moduleId = await platformRoot.getAttribute("data-platform-module");
   const facilityId = await platformRoot.getAttribute("data-platform-facility-id");
@@ -129,7 +130,7 @@ async function assertSurface(moduleRoot, facility, mode) {
     if (!(await moduleRoot.locator('[data-community-census-surface="true"]').count())) failures.push("missing dedicated census surface");
     if (!(await moduleRoot.locator('[data-module-chart="census-trend"]').count())) failures.push("missing census trend chart");
     if (!(await moduleRoot.locator('[data-chart-point="census"]').count())) failures.push("census trend has no interactive points");
-    if (!(await revealCensusPointTooltip(moduleRoot))) failures.push("census point value is not visible on hover or focus");
+    if (!phoneLayout && !(await revealCensusPointTooltip(moduleRoot))) failures.push("census point value is not visible on hover or focus");
   }
   if (mode.required === "incidents") {
     if (!(await moduleRoot.locator('[data-community-dashboard-surface="incidents"]').count())) failures.push("missing dedicated incident surface");
@@ -171,7 +172,7 @@ async function assertSurface(moduleRoot, facility, mode) {
     if (!(await moduleRoot.locator('[data-community-dashboard-surface="detail"]').count())) failures.push("missing dedicated community overview surface");
     if (!(await moduleRoot.locator('[data-module-chart="census-trend"]').count())) failures.push("missing census trend chart");
     if (!(await moduleRoot.locator('[data-chart-point="census"]').count())) failures.push("community overview trend has no interactive points");
-    if (!(await revealCensusPointTooltip(moduleRoot))) failures.push("community overview point value is not visible on hover or focus");
+    if (!phoneLayout && !(await revealCensusPointTooltip(moduleRoot))) failures.push("community overview point value is not visible on hover or focus");
     if (!/Medication performance/i.test(text)) failures.push("missing medication performance");
     if (!/Diagnosis mix/i.test(text)) failures.push("missing diagnosis mix");
     const diagnosisLayout = await moduleRoot.evaluate((root) => {

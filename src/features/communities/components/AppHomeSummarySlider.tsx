@@ -112,7 +112,7 @@ export function DashboardSummarySlider({
               type="button"
               data-community-overview-tab={slide.navLabel}
               onClick={() => setActiveIndex(index)}
-              className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+              className={`min-h-11 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
                 index === activeIndex
                   ? "border-[#0f8b73] bg-[#eef8f5] text-[#0f6f5d]"
                   : "border-[#d8d0c3] bg-white/70 text-[#736657] hover:bg-[#fffdfa]"

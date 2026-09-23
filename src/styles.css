@@ -467,3 +467,224 @@ textarea:focus-visible,
     filter: blur(0);
   }
 }
+
+/* Phone ergonomics shared by every route. Keep form controls at 16px so iOS
+   does not zoom the viewport, preserve useful touch targets, and turn the
+   dense governed-data tables into a bounded record-card list. */
+@media (max-width: 639px) {
+  .app-theme-root input,
+  .app-theme-root select,
+  .app-theme-root textarea {
+    max-width: 100%;
+    font-size: 16px !important;
+  }
+
+  [data-community-overview-tab],
+  [data-state-navigation],
+  [data-incident-resident-link],
+  [data-incident-details-toggle],
+  [data-incident-priority-toggle] {
+    min-height: 44px !important;
+  }
+
+  [data-module-chart="census-trend"] [data-chart-point="census"] {
+    display: none !important;
+  }
+
+  [data-explorer-kind] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  [data-explorer-kind] [data-explorer-toolbar="true"] {
+    border-right: 0 !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+    padding: 13px 16px 14px !important;
+    box-shadow: none !important;
+  }
+
+  [data-explorer-kind] [data-explorer-toolbar="true"] h1,
+  [data-explorer-kind] [data-explorer-toolbar="true"] h1 + div {
+    overflow: visible !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+  }
+
+  [data-explorer-kind] [data-explorer-toolbar="true"] h1 {
+    font-size: 24px !important;
+    line-height: 1.08 !important;
+  }
+
+  [data-explorer-kind] [data-explorer-export-actions="true"] {
+    display: none !important;
+  }
+
+  [data-explorer-kind] [data-explorer-filter-grid="true"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 13px !important;
+  }
+
+  [data-explorer-kind] [data-explorer-filter="search"],
+  [data-explorer-kind] [data-explorer-filter="community"] {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+  }
+
+  [data-explorer-kind] [data-explorer-filter="search"] input,
+  [data-explorer-kind] [data-explorer-filter-grid="true"] select,
+  [data-explorer-kind] [data-explorer-unit-filter="true"] select {
+    height: 48px !important;
+    border-radius: 0 !important;
+  }
+
+  [data-explorer-kind] [data-explorer-summary-grid="true"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+  }
+
+  [data-explorer-kind] [data-explorer-summary-grid="true"] > div {
+    min-width: 0 !important;
+    border-radius: 0 !important;
+    padding: 10px 11px !important;
+  }
+
+  [data-explorer-kind] [data-explorer-summary-grid="true"] > div > div:nth-child(2) {
+    font-size: 19px !important;
+  }
+
+  [data-explorer-kind] [data-explorer-results="true"] {
+    overflow: hidden !important;
+    border-right: 0 !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [data-explorer-kind] [data-explorer-results-header="true"] {
+    gap: 10px !important;
+    padding: 12px 16px !important;
+  }
+
+  [data-explorer-kind] [data-explorer-results-header="true"] > div:last-child {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    width: 100%;
+  }
+
+  [data-explorer-kind] [data-explorer-results-header="true"] button {
+    min-height: 44px;
+  }
+
+  [data-explorer-kind] [data-explorer-facet="true"],
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index] button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  [data-explorer-kind] [data-explorer-table-scroll="true"] {
+    max-height: min(68vh, 720px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
+  [data-explorer-kind] table,
+  [data-explorer-kind] tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  [data-explorer-kind] thead {
+    display: none !important;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="record"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 2px 8px;
+    margin: 0;
+    padding: 13px 16px;
+    border-bottom: 1px solid #e5ded4;
+    background: #ffffff !important;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="record"] > td:first-child {
+    position: static !important;
+    z-index: auto !important;
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+    padding: 10px !important;
+    background: transparent !important;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index] {
+    position: static !important;
+    z-index: auto !important;
+    display: none !important;
+    grid-column: 1;
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: transparent !important;
+    white-space: normal !important;
+    text-align: left !important;
+    text-overflow: clip !important;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="0"],
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="1"],
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="2"] {
+    display: block !important;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="0"] {
+    color: #111111;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="1"],
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="2"] {
+    margin-top: 3px;
+    color: #595959;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="1"]::before,
+  [data-explorer-kind] tr[data-explorer-row="record"] > td[data-explorer-column-index="2"]::before {
+    content: attr(data-explorer-column-label) ": ";
+    color: #737373;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="detail"] {
+    display: block !important;
+    background: #f7fbf9 !important;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="detail"] > td:first-child {
+    display: none !important;
+  }
+
+  [data-explorer-kind] tr[data-explorer-row="detail"] > td[colspan] {
+    display: block !important;
+    width: 100% !important;
+    padding: 14px 16px 18px !important;
+  }
+}

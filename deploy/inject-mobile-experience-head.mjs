@@ -21,8 +21,8 @@ html = html
 
 const additions = [
   marker,
-  '<link rel="stylesheet" href="/mobile-app-experience.css?v=11" />',
-  '<script defer src="/mobile-app-experience.js?v=11"></script>'
+  '<link rel="stylesheet" href="/mobile-app-experience.css?v=12" />',
+  '<script defer src="/mobile-app-experience.js?v=12"></script>'
 ].join("\n    ");
 html = html.replace("</head>", `    ${additions}\n  </head>`);
 

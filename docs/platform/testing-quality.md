@@ -284,6 +284,16 @@ screen and default active filter, validates SUN's published 579-bed total and
 source link, confirms the facility workflows remain hidden, and rejects browser
 errors, API failures, or viewport overflow.
 
+Responsive release acceptance also covers every direct product route at compact
+320px, standard iPhone widths, tablet widths, desktop, and wide desktop. Check
+Home, Reports, Questions, Communities, direct community detail, Incident Center,
+Admissions, Glossary, all three Data Explorer modes, Command Center, Fifty States,
+and Data Architecture in Chromium; repeat phone routes and modal states in WebKit.
+The pass fails for document-level horizontal overflow, clipped form controls,
+sub-16px phone inputs that trigger iOS zoom, or browser runtime errors. Intentional
+off-canvas carousel panels and the bounded Fifty States SVG do not count as
+document overflow.
+
 `npm run acquisition:refresh` is a networked data refresh rather than a default
 CI gate. It downloads the configured official N-SUMHSS PUF and codebook, reads
 all 50 state partitions from the FindTreatment API, preserves raw source

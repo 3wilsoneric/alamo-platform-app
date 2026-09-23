@@ -752,7 +752,10 @@ function selectorTargetForPrompt(prompt) {
 async function completeGuidedQuestionIfNeeded(page, prompt, questionControl) {
   const guideTriggers = questionControl.locator('[data-question-variable-trigger="true"]');
   const triggerCount = await guideTriggers.count();
-  if (!triggerCount) return;
+  const guideSelects = questionControl.locator('[data-question-variable-select]');
+  const selectCount = await guideSelects.count();
+  const useNativeSelects = selectCount > 0 && await guideSelects.first().isVisible().catch(() => false);
+  if (!triggerCount && !useNativeSelects) return;
 
   const target = selectorTargetForPrompt(prompt);
   const priorFrame = await page.evaluate(() => {
@@ -821,6 +824,38 @@ async function completeGuidedQuestionIfNeeded(page, prompt, questionControl) {
   };
 
   let selectionCount = 0;
+  if (useNativeSelects) {
+    for (let index = 0; index < selectCount; index += 1) {
+      const select = guideSelects.nth(index);
+      const label = await select.locator("xpath=ancestor::label[1]").textContent().catch(() => "") ??
+        await select.getAttribute("data-question-variable-select") ?? "";
+      const options = (await select.locator("option").evaluateAll((nodes) => nodes.map((node, optionIndex) => ({
+        index: optionIndex,
+        value: node.value,
+        text: node.textContent ?? ""
+      })))).filter((option) => option.value);
+      const latestMonthRequested = /month|period|date/.test(normalize(label)) &&
+        /\b(this|current|latest)\s+month\b/.test(target.text);
+      const ranked = options
+        .map((option) => ({ ...option, score: scoreOption(label, option.text, option.value) }))
+        .sort((left, right) => right.score - left.score);
+      const selected = latestMonthRequested ? options.at(-1) : ranked[0];
+      if (selected && (latestMonthRequested || selected.score > 0 || options.length === 1)) {
+        await select.selectOption(selected.value);
+        selectionCount += 1;
+      }
+    }
+  }
+
+  if (useNativeSelects) {
+    if (selectionCount) await delay(120);
+    const runButton = questionControl.locator('[data-certified-question-submit="true"]');
+    if (await runButton.isVisible().catch(() => false) && await runButton.isEnabled({ timeout: 2_000 }).catch(() => false)) {
+      await runButton.click({ timeout: 10_000 });
+    }
+    return;
+  }
+
   for (let index = 0; index < triggerCount; index += 1) {
     const trigger = guideTriggers.nth(index);
     const label = await trigger.getAttribute("aria-label") ?? "";

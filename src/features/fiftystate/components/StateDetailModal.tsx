@@ -463,16 +463,18 @@ export default function StateDetailModal({
         <footer className="sticky bottom-0 flex items-center justify-between border-t border-[#d9d9d9] bg-white px-5 py-3.5 sm:px-8">
           <button
             type="button"
+            data-state-navigation="previous"
             onClick={onPrevious}
-            className="inline-flex items-center gap-2 text-[12px] font-semibold text-[#333333] hover:text-[#0f8b73]"
+            className="inline-flex min-h-11 items-center gap-2 px-1 text-[12px] font-semibold text-[#333333] hover:text-[#0f8b73]"
           >
             <ArrowLeft className="h-4 w-4" />
             Previous state
           </button>
           <button
             type="button"
+            data-state-navigation="next"
             onClick={onNext}
-            className="inline-flex items-center gap-2 text-[12px] font-semibold text-[#333333] hover:text-[#0f8b73]"
+            className="inline-flex min-h-11 items-center gap-2 px-1 text-[12px] font-semibold text-[#333333] hover:text-[#0f8b73]"
           >
             Next state
             <ArrowRight className="h-4 w-4" />

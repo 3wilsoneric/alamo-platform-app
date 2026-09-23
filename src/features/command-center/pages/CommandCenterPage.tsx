@@ -972,7 +972,7 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
               if (event.key === "Enter") compileIntent();
             }}
             className="min-h-[46px] flex-1 rounded-full border border-[#ddd4c8] bg-[#fffdfa] px-5 text-[14px] font-semibold text-[#201a14] outline-none transition focus:border-[#8ea2ff]"
-            placeholder="Ask a platform question to inspect the compiled intent"
+            placeholder="Ask a question"
           />
           <button
             type="button"

@@ -271,6 +271,7 @@ function IncidentCard({
 
   return (
     <div
+      data-incident-card="true"
       style={{
         background: "#fffdfa",
         border: `1px solid ${acknowledged ? "#e4dbcf" : cfg.border}`,
@@ -292,8 +293,9 @@ function IncidentCard({
       >
         <button
           type="button"
+          data-incident-resident-link="true"
           onClick={() => onOpenResident(incident)}
-          className="text-left text-[12.5px] font-semibold text-[#2d261d] transition-colors hover:text-[#293866]"
+          className="inline-flex min-h-11 items-center text-left text-[12.5px] font-semibold text-[#2d261d] transition-colors hover:text-[#293866]"
         >
           {incident.client_name || "Unknown Client"}
         </button>
@@ -331,8 +333,10 @@ function IncidentCard({
 
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <button
+          type="button"
+          data-incident-details-toggle="true"
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 rounded-full border border-[#ddd4c8] bg-[#fffdfa] px-2.5 py-1 text-xs font-medium text-[#736657] transition-colors hover:border-[#c7bcae] hover:bg-[#f5efe6] hover:text-[#2d261d]"
+          className="flex min-h-11 items-center gap-1 rounded-full border border-[#ddd4c8] bg-[#fffdfa] px-3 py-1 text-xs font-medium text-[#736657] transition-colors hover:border-[#c7bcae] hover:bg-[#f5efe6] hover:text-[#2d261d]"
         >
           {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
           {expanded ? "Less" : "Details"}
@@ -460,9 +464,13 @@ function MobilePrioritySection({
   light?: boolean;
 }) {
   const { active, acknowledged } = partitionIncidentsByReviewStage(incidents);
+  const [showAll, setShowAll] = useState(false);
+  const orderedIncidents = [...active, ...acknowledged];
+  const visibleIncidents = showAll ? orderedIncidents : orderedIncidents.slice(0, 4);
 
   return (
     <section
+      data-incident-priority-section={priority}
       className={
         light
           ? "border border-[#d9d9d9] bg-white p-3"
@@ -471,7 +479,7 @@ function MobilePrioritySection({
     >
       <PriorityHeader priority={priority} activeCount={active.length} compact light={light} />
 
-      <div className="space-y-2">
+      <div data-incident-priority-list="true" className="space-y-2">
         {active.length === 0 && acknowledged.length === 0 ? (
           <div className={light
             ? "border border-dashed border-[#d9d9d9] bg-[#fafafa] px-4 py-5 text-center text-[12px] text-[#737373]"
@@ -480,7 +488,7 @@ function MobilePrioritySection({
             No incidents in this priority.
           </div>
         ) : (
-          [...active, ...acknowledged].map((incident) => (
+          visibleIncidents.map((incident) => (
             <IncidentCard
               key={incident.id}
               incident={incident}
@@ -489,6 +497,20 @@ function MobilePrioritySection({
           ))
         )}
       </div>
+      {orderedIncidents.length > 4 ? (
+        <button
+          type="button"
+          data-incident-priority-toggle="true"
+          aria-expanded={showAll}
+          onClick={() => setShowAll((current) => !current)}
+          className={light
+            ? "mt-3 inline-flex min-h-11 w-full items-center justify-center border border-[#b3b3b3] bg-white px-4 text-[13px] font-semibold text-[#333333] hover:border-[#0f8b73] hover:text-[#0f6f5d]"
+            : "mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.04] px-4 text-[13px] font-semibold text-white/72 hover:bg-white/[0.08]"
+          }
+        >
+          {showAll ? "Show fewer" : `Show all ${orderedIncidents.length}`}
+        </button>
+      ) : null}
     </section>
   );
 }

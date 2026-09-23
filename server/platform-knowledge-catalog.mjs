@@ -60,7 +60,7 @@ function parseStateTargetingRows() {
   try {
     source = readFileSync(stateTargetingUrl, "utf8");
   } catch (error) {
-    if (error?.code !== "ENOENT") throw error;
+    if (!error || typeof error !== "object" || !("code" in error) || error.code !== "ENOENT") throw error;
     source = readFileSync(builtStateTargetingUrl, "utf8");
     endMarker = "];";
   }

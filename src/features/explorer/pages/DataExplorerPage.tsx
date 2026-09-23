@@ -188,8 +188,9 @@ function FacetChip({
   return (
     <button
       type="button"
+      data-explorer-facet="true"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
+      className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
         active
           ? "border-[#0f8b73] bg-[#eef8f5] text-[#0f6f5d]"
           : "border-[#ddd4c8] bg-white/76 text-[#6f6253] hover:bg-[#f7efe3]"
@@ -620,9 +621,24 @@ export default function DataExplorerPage() {
                   const globalRowIndex = safePage * PAGE_SIZE + rowIndex;
                   const key = rowKey(row, globalRowIndex);
                   const expanded = expandedRowId === key;
+                  const primaryValue = payload?.columns[0] ? rowValue(row, payload.columns[0].key) : "record";
                   return (
                     <Fragment key={key}>
-                      <tr key={key} data-explorer-row="record" className={`${rowIndex % 2 ? "bg-[#fffaf3]" : "bg-white"} cursor-pointer transition-colors hover:bg-[#f7efe3]`} onClick={() => toggleRow(row, globalRowIndex)}>
+                      <tr
+                        key={key}
+                        data-explorer-row="record"
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={expanded}
+                        aria-label={`Open ${primaryValue} details`}
+                        className={`${rowIndex % 2 ? "bg-[#fffaf3]" : "bg-white"} cursor-pointer transition-colors hover:bg-[#f7efe3]`}
+                        onClick={() => toggleRow(row, globalRowIndex)}
+                        onKeyDown={(event) => {
+                          if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
+                          event.preventDefault();
+                          toggleRow(row, globalRowIndex);
+                        }}
+                      >
                         <td className="px-3 py-3 align-top">
                           <ChevronDown className={`h-4 w-4 text-[#8b7b68] transition-transform ${expanded ? "rotate-180" : ""}`} />
                         </td>

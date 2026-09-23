@@ -128,17 +128,15 @@
     return current?.parentElement === section ? current : null;
   }
 
-  function enhanceExplorer() {
-    const section = document.querySelector('[data-explorer-kind="residents"]');
-    if (!section) return;
-
+  function enhanceExplorerSection(section) {
+    const isResident = section.getAttribute("data-explorer-kind") === "residents";
     const toolbar = section.querySelector(':scope > div:first-child');
     const search = section.querySelector('input[aria-label="Search records"]');
     const table = section.querySelector("table");
     if (!toolbar || !search) return;
 
     toolbar.setAttribute("data-explorer-toolbar", "true");
-    search.placeholder = "Search clients";
+    if (isResident) search.placeholder = "Search clients";
     search.closest("label")?.setAttribute("data-explorer-filter", "search");
 
     const filterGrid = search.closest("div.grid");
@@ -159,7 +157,7 @@
 
     const directToolbarChildren = [...toolbar.children];
     const summaryGrid = directToolbarChildren.find((child) => (
-      child.children.length === 4 && /Avg LOS/i.test(child.textContent ?? "")
+      child !== filterGrid && child.children.length === 4
     ));
     summaryGrid?.setAttribute("data-explorer-summary-grid", "true");
 
@@ -168,10 +166,10 @@
     exportButton?.parentElement?.setAttribute("data-explorer-export-actions", "true");
 
     const title = toolbar.querySelector("h1");
-    if (title && title.textContent?.trim() === "Data Explorer") title.textContent = "Client Search";
+    if (isResident && title && title.textContent?.trim() === "Data Explorer") title.textContent = "Client Search";
 
-    let toggle = toolbar.querySelector(`#${explorerFilterToggleId}`);
-    if (!toggle && filterGrid) {
+    let toggle = isResident ? toolbar.querySelector('[data-explorer-mobile-filter-toggle="true"]') : null;
+    if (isResident && !toggle && filterGrid) {
       toggle = document.createElement("button");
       toggle.id = explorerFilterToggleId;
       toggle.type = "button";
@@ -185,17 +183,19 @@
       });
       filterGrid.insertAdjacentElement("afterend", toggle);
     }
-    if (toggle) {
+    if (isResident && toggle) {
       section.setAttribute(
         "data-alamo-mobile-filters-open",
         String(toggle.getAttribute("aria-expanded") === "true")
       );
     }
 
-    const preview = [...section.children].find((child) => (
-      child !== toolbar && /Resident preview|Select a resident to preview/i.test(child.textContent ?? "")
-    ));
-    preview?.setAttribute("data-explorer-preview", "true");
+    if (isResident) {
+      const preview = [...section.children].find((child) => (
+        child !== toolbar && /Resident preview|Select a resident to preview/i.test(child.textContent ?? "")
+      ));
+      preview?.setAttribute("data-explorer-preview", "true");
+    }
 
     if (!table) return;
     const results = directChildOf(section, table);
@@ -213,10 +213,106 @@
       const cells = [...row.querySelectorAll(":scope > td")].slice(1);
       if (!cells.length) continue;
       row.setAttribute("data-explorer-row", "record");
+      row.setAttribute("role", "button");
+      row.setAttribute("tabindex", "0");
+      row.setAttribute("aria-label", `Open ${cells[0]?.textContent?.trim() || "record"} details`);
+      if (row.getAttribute("data-alamo-keyboard-ready") !== "true") {
+        row.setAttribute("data-alamo-keyboard-ready", "true");
+        row.addEventListener("keydown", (event) => {
+          if (event.target !== row || (event.key !== "Enter" && event.key !== " ")) return;
+          event.preventDefault();
+          row.click();
+        });
+      }
       cells.forEach((cell, index) => {
         cell.setAttribute("data-explorer-column-index", String(index));
         cell.setAttribute("data-explorer-column-label", labels[index] || `Field ${index + 1}`);
       });
+    }
+  }
+
+  function enhanceExplorer() {
+    for (const section of document.querySelectorAll("[data-explorer-kind]")) {
+      enhanceExplorerSection(section);
+    }
+  }
+
+  function tagIncidentCard(card) {
+    card.setAttribute("data-incident-card", "true");
+    const residentLink = card.querySelector(":scope > div:first-child button");
+    residentLink?.setAttribute("data-incident-resident-link", "true");
+    const details = [...card.querySelectorAll("button")]
+      .find((button) => /^(Details|Less)$/i.test(button.textContent?.trim() ?? ""));
+    details?.setAttribute("data-incident-details-toggle", "true");
+  }
+
+  function updateIncidentSection(section) {
+    const list = section.querySelector('[data-alamo-incident-list="true"]');
+    if (!list) return;
+    const cards = [...list.children];
+    const expanded = section.getAttribute("data-alamo-incidents-expanded") === "true";
+    cards.forEach((card, index) => {
+      tagIncidentCard(card);
+      card.hidden = !expanded && index >= 4;
+    });
+    const toggle = section.querySelector('[data-incident-priority-toggle="true"]');
+    if (!toggle) return;
+    toggle.setAttribute("aria-expanded", String(expanded));
+    const label = expanded ? "Show fewer" : `Show all ${cards.length}`;
+    if (toggle.textContent !== label) toggle.textContent = label;
+  }
+
+  function enhanceIncidents() {
+    for (const header of document.querySelectorAll("[data-incident-priority]")) {
+      const section = header.closest("section");
+      if (!section) continue;
+
+      if (section.hasAttribute("data-incident-priority-section")) {
+        for (const card of section.querySelectorAll('[data-incident-card="true"]')) tagIncidentCard(card);
+        continue;
+      }
+
+      const list = header.nextElementSibling;
+      if (!(list instanceof HTMLElement)) continue;
+      list.setAttribute("data-alamo-incident-list", "true");
+      section.setAttribute("data-alamo-incident-section", header.getAttribute("data-incident-priority") ?? "true");
+      const cards = [...list.children];
+      if (cards.length <= 4) {
+        cards.forEach((card) => {
+          tagIncidentCard(card);
+          card.hidden = false;
+        });
+        section.querySelector('[data-incident-priority-toggle="true"]')?.remove();
+        continue;
+      }
+
+      let toggle = section.querySelector('[data-incident-priority-toggle="true"]');
+      if (!toggle) {
+        toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.setAttribute("data-incident-priority-toggle", "true");
+        toggle.addEventListener("click", () => {
+          const expanded = section.getAttribute("data-alamo-incidents-expanded") === "true";
+          section.setAttribute("data-alamo-incidents-expanded", String(!expanded));
+          updateIncidentSection(section);
+        });
+        section.append(toggle);
+      }
+      updateIncidentSection(section);
+    }
+  }
+
+  function enhanceStateNavigation() {
+    const dialog = document.querySelector('[role="dialog"][data-state-research-coverage]');
+    const buttons = dialog ? [...dialog.querySelectorAll("footer button")] : [];
+    buttons[0]?.setAttribute("data-state-navigation", "previous");
+    buttons[1]?.setAttribute("data-state-navigation", "next");
+  }
+
+  function enhanceCommandCenter() {
+    const prompt = document.querySelector('[data-command-center="true"] input[placeholder*="platform question"]');
+    if (prompt && prompt.getAttribute("placeholder") !== "Ask a question") {
+      prompt.setAttribute("placeholder", "Ask a question");
     }
   }
 
@@ -356,6 +452,9 @@
       enhanceReports();
       enhanceQuestions();
       enhanceExplorer();
+      enhanceIncidents();
+      enhanceStateNavigation();
+      enhanceCommandCenter();
       enhanceCommunities();
       enhanceCommunityModal();
     } else {

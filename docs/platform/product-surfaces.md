@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-09-16
+- updated: 2026-09-23
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -68,13 +68,18 @@ is not part of the active icon set. Analytics back navigation uses a compact
 horizontal mark so zoomed and tablet-width layouts retain clear header spacing.
 
 The mobile report library and question-category chip grid become compact native
-pickers, preserving the report reader and question list width. Client Search is
-search-first on phones: exports and the automatic profile preview stay out of the
-primary flow, secondary filters are disclosed on demand, summary measures use a
-compact two-column grid, and records become tappable cards instead of a squeezed
-desktop table. Certified questions reserve the full phone width for prompt text;
+pickers, preserving the report reader and question list width. Client, Incident,
+and Census Search use phone-native record cards inside a bounded results viewport
+instead of squeezed desktop tables or page-length record dumps. Client Search is
+search-first: exports and the automatic profile preview stay out of the primary
+flow, secondary filters are disclosed on demand, and summary measures use a
+compact two-column grid. Incident Center previews up to four records in each
+priority lane and exposes an explicit Show all/Show fewer control so triage remains
+scannable. Certified questions reserve the full phone width for prompt text;
 required variables use labeled native selectors below the prompt and the run
-action spans the card width. The source branch
+action spans the card width. All phone form controls render at a non-zooming iOS
+font size, and persistent navigation and disclosure actions retain touch-sized
+targets. The source branch
 also contains a separate `MobileCommunityHome` portfolio-pulse design, but that
 is not included in the current public Azure image; do not roll it into a mobile
 release without a separate product decision.
