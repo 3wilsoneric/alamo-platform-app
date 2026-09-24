@@ -1,0 +1,11 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:69d31e0567f4424ce9fbcf45f0fa5a637bd25e1163b57fe7db850572228a917b
+FROM ${BASE_IMAGE}
+
+# Preserve the proven Azure server, API, configuration, and runtime from the
+# selected production digest. Replace only the validated Vite browser bundle.
+USER root
+WORKDIR /app
+RUN rm -rf /app/dist
+COPY dist ./dist
+RUN chown -R node:node /app/dist
+USER node

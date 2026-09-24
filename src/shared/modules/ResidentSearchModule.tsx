@@ -1,11 +1,12 @@
 import { Search, UserRound } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDisplayDate } from "../../../shared/display-date.mjs";
 import { fetchDataExplorer, fetchResidentClientProfile } from "../api/platformData";
 import type { DataExplorerResponse } from "../types/platformSnapshot";
 import { surfaceInPlatformCanvas } from "../canvas/canvasEvents";
 
 type ResidentRow = DataExplorerResponse["rows"][number];
+type ResidentStatusFilter = "current" | "past" | "all";
 
 interface ResidentSearchModuleProps {
   facilityId?: string | null;
@@ -51,6 +52,14 @@ function residentKey(row: ResidentRow, index = 0) {
 
 function residentName(row?: ResidentRow | null) {
   return displayValue(row?.resident_name);
+}
+
+function isCurrentResident(row: ResidentRow) {
+  return row.current_resident !== false;
+}
+
+function residentStatusLabel(row: ResidentRow) {
+  return isCurrentResident(row) ? "Current resident" : "Past resident";
 }
 
 function normalize(value: unknown) {
@@ -162,10 +171,12 @@ const CLIENT_PROFILE_GROUPS = [
 
 function ClientProfileFields({
   profile,
-  columns
+  columns,
+  expandFirst = true
 }: {
   profile: Record<string, unknown>;
   columns: string[];
+  expandFirst?: boolean;
 }) {
   const sourceColumns = columns.length ? columns : Object.keys(profile);
   const groupedFields = CLIENT_PROFILE_GROUPS.map((group) => ({
@@ -192,7 +203,7 @@ function ClientProfileFields({
 
       <div className="mt-3 divide-y divide-[#d9d9d9] border-y border-[#d9d9d9]">
         {groupedFields.map((group, index) => (
-          <details key={group.key} open={index === 0} className="group bg-white">
+          <details key={group.key} open={expandFirst && index === 0} className="group bg-white">
             <summary className="cursor-pointer list-none px-1 py-3.5 marker:hidden">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -287,6 +298,8 @@ function ProfileFact({
         type="button"
         data-module-content-control="true"
         data-resident-incident-drilldown={label}
+        data-resident-profile-fact="true"
+        data-resident-profile-fact-wide={wide ? "true" : "false"}
         onClick={onClick}
         className={`${className} group hover:bg-[#f7fbf9]`}
       >
@@ -299,7 +312,13 @@ function ProfileFact({
   }
 
   return (
-    <div className={className}>{content}</div>
+    <div
+      data-resident-profile-fact="true"
+      data-resident-profile-fact-wide={wide ? "true" : "false"}
+      className={className}
+    >
+      {content}
+    </div>
   );
 }
 
@@ -391,8 +410,12 @@ function ResidentProfileCard({
   const incidentResidentId = String(resident.resident_id ?? resident.res_number ?? "");
 
   return (
-    <div data-module-row="resident-profile-card" className={`border-y border-[#111111] bg-white ${compact ? "p-3.5" : "p-5"}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div
+      data-module-row="resident-profile-card"
+      data-resident-profile-card="true"
+      className={`border-y border-[#111111] bg-white ${compact ? "p-3.5" : "p-5"}`}
+    >
+      <div data-resident-profile-header="true" className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className={`grid shrink-0 place-items-center border border-[#d9d9d9] bg-[#f7fbf9] text-[#0f8b73] ${compact ? "h-9 w-9" : "h-11 w-11"}`}>
             <UserRound className="h-5 w-5 stroke-[2]" />
@@ -406,12 +429,15 @@ function ResidentProfileCard({
             </div>
           </div>
         </div>
-        <div className="border border-[#d9d9d9] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#595959]">
-          {resident.current_resident ? "Current resident" : "Historical client"}
+        <div
+          data-resident-profile-status="true"
+          className="border border-[#d9d9d9] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#595959]"
+        >
+          {residentStatusLabel(resident)}
         </div>
       </div>
 
-      <div className={`${compact ? "mt-3 gap-x-3 gap-y-0" : "mt-4 gap-2"} grid sm:grid-cols-2 xl:grid-cols-3`}>
+      <div data-resident-profile-facts="true" className={`${compact ? "mt-3 gap-x-3 gap-y-0" : "mt-4 gap-2"} grid sm:grid-cols-2 xl:grid-cols-3`}>
         {selectedResidentFacts(resident).map(([label, value, wide]) => (
           <ProfileFact
             key={label}
@@ -447,10 +473,10 @@ function ResidentProfileCard({
         </div>
       ) : !clientProfile ? (
         <div className="mt-4 border-l-4 border-[#ba7a20] bg-[#fff8ea] px-4 py-3 text-[13px] font-medium leading-5 text-[#6d4a16]">
-          This current resident profile has no canonical client-database match. The governed resident profile remains available without an inferred identity link.
+          This {isCurrentResident(resident) ? "current resident" : "past resident"} profile has no canonical client-database match. The governed resident profile remains available without an inferred identity link.
         </div>
       ) : (
-        <ClientProfileFields profile={clientProfile} columns={profileColumns} />
+        <ClientProfileFields profile={clientProfile} columns={profileColumns} expandFirst={!compact} />
       )}
       {enhancedProfileAvailable ? <EpisodeHistory episodes={episodeHistory} /> : null}
     </div>
@@ -465,9 +491,13 @@ export default function ResidentSearchModule({
   initialQuery,
   onOpenIncidentHistory
 }: ResidentSearchModuleProps) {
+  const moduleRef = useRef<HTMLElement | null>(null);
   const [payload, setPayload] = useState<DataExplorerResponse | null>(null);
   const [query, setQuery] = useState(initialQuery ?? "");
   const [community, setCommunity] = useState<string>("all");
+  const [residentStatus, setResidentStatus] = useState<ResidentStatusFilter>(
+    initialResidentId || initialQuery ? "all" : "current"
+  );
   const [selectedId, setSelectedId] = useState<string | null>(initialResidentId ?? null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -478,6 +508,7 @@ export default function ResidentSearchModule({
   useEffect(() => {
     setQuery(initialQuery ?? "");
     setSelectedId(initialResidentId ?? null);
+    setResidentStatus(initialResidentId || initialQuery ? "all" : "current");
   }, [initialQuery, initialResidentId]);
 
   useEffect(() => {
@@ -521,8 +552,12 @@ export default function ResidentSearchModule({
         row.facility_id === community ||
         (Array.isArray(row.community_names) && row.community_names.includes(community))
       )
+      .filter((row) => (
+        residentStatus === "all" ||
+        (residentStatus === "current" ? isCurrentResident(row) : !isCurrentResident(row))
+      ))
       .filter((row) => rowMatchesQuery(row, query));
-  }, [community, payload?.rows, query]);
+  }, [community, payload?.rows, query, residentStatus]);
 
   const selectedResident = useMemo(() => {
     if (!filteredRows.length) return null;
@@ -568,7 +603,13 @@ export default function ResidentSearchModule({
 
   const selectResident = (row: ResidentRow, index = 0) => {
     setSelectedId(residentKey(row, index));
-    setQuery(String(row.resident_name ?? ""));
+    if (window.matchMedia("(max-width: 639px)").matches) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          moduleRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+        });
+      });
+    }
   };
   const openIncidentHistory = (nextResidentId: string, name: string) => {
     if (onOpenIncidentHistory) {
@@ -586,15 +627,20 @@ export default function ResidentSearchModule({
 
   return (
     <section
+      ref={moduleRef}
       data-resident-search-module="true"
+      data-resident-profile-open={selectedId ? "true" : "false"}
       className={`w-full bg-white ${
         embedded
           ? "p-0 sm:p-0"
           : "border border-[#d9d9d9] p-4 sm:p-5"
       }`}
     >
-      <div className={`grid ${compact ? "gap-2 lg:grid-cols-[minmax(260px,1fr)_230px_auto]" : "gap-3 lg:pr-24 lg:grid-cols-[minmax(280px,1fr)_300px_auto]"}`}>
-        <div className="relative">
+      <div
+        data-resident-search-controls="true"
+        className={`grid ${compact ? "gap-2 lg:grid-cols-[minmax(260px,1fr)_230px_190px_auto]" : "gap-3 lg:pr-24 lg:grid-cols-[minmax(280px,1fr)_300px_210px_auto]"}`}
+      >
+        <div data-resident-search-field="true" className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
           <input
             value={query}
@@ -609,6 +655,7 @@ export default function ResidentSearchModule({
         </div>
 
         <select
+          data-resident-community-filter="true"
           value={community}
           onChange={(event) => {
             setCommunity(event.target.value);
@@ -623,15 +670,30 @@ export default function ResidentSearchModule({
           ))}
         </select>
 
-        <div className={`flex items-center justify-center border border-[#d9d9d9] bg-[#fafafa] px-4 text-[13px] font-semibold text-[#595959] lg:min-w-[140px] ${compact ? "h-11" : "h-[52px]"}`}>
+        <select
+          data-resident-status-filter="true"
+          value={residentStatus}
+          onChange={(event) => {
+            setResidentStatus(event.target.value as ResidentStatusFilter);
+            setSelectedId(null);
+          }}
+          className={`${compact ? "h-11" : "h-[52px]"} border border-[#bdbdbd] bg-white px-4 text-[14px] font-semibold text-[#111111] outline-none focus:border-[#0f8b73]`}
+          aria-label="Filter residents by current or past status"
+        >
+          <option value="current">Current residents</option>
+          <option value="past">Past residents</option>
+          <option value="all">Current and past</option>
+        </select>
+
+        <div data-resident-result-count="true" className={`flex items-center justify-center border border-[#d9d9d9] bg-[#fafafa] px-4 text-[13px] font-semibold text-[#595959] lg:min-w-[140px] ${compact ? "h-11" : "h-[52px]"}`}>
           {loading
             ? "Loading..."
-            : `${filteredRows.length.toLocaleString()} ${payload?.client_database ? (filteredRows.length === 1 ? "client" : "clients") : (filteredRows.length === 1 ? "resident" : "residents")}`}
+            : `${filteredRows.length.toLocaleString()} ${residentStatus === "current" ? (filteredRows.length === 1 ? "current resident" : "current residents") : residentStatus === "past" ? (filteredRows.length === 1 ? "past resident" : "past residents") : (filteredRows.length === 1 ? "resident" : "current + past")}`}
         </div>
       </div>
 
-      <div className={`${compact ? "mt-2 gap-2 xl:grid-cols-[minmax(250px,0.62fr)_minmax(430px,1.38fr)]" : "mt-3 gap-3 xl:grid-cols-[minmax(270px,0.68fr)_minmax(460px,1.32fr)]"} grid`}>
-        <div className="overflow-hidden border-y border-[#d9d9d9] bg-white">
+      <div data-resident-search-body="true" className={`${compact ? "mt-2 gap-2 xl:grid-cols-[minmax(250px,0.62fr)_minmax(430px,1.38fr)]" : "mt-3 gap-3 xl:grid-cols-[minmax(270px,0.68fr)_minmax(460px,1.32fr)]"} grid`}>
+        <div data-resident-results-panel="true" className="overflow-hidden border-y border-[#d9d9d9] bg-white">
           <div className={`${compact ? "max-h-[300px] p-1.5 sm:max-h-[360px] xl:max-h-[480px]" : "max-h-[340px] p-2 sm:max-h-[560px]"} overflow-y-auto [scrollbar-width:thin]`}>
             {loading ? (
               <div className="px-4 py-8 text-center text-[13px] font-medium text-[#736657]">Loading residents...</div>
@@ -643,20 +705,34 @@ export default function ResidentSearchModule({
 
             {visibleRows.map((row, index) => {
               const key = residentKey(row, index);
-              const isSelected = selectedKey === key || (!selectedId && index === 0);
+              const isSelected = Boolean(selectedId) && selectedKey === key;
               return (
                 <button
                   key={key}
                   type="button"
                   data-module-content-control="true"
+                  data-resident-result="true"
+                  data-resident-result-status={isCurrentResident(row) ? "current" : "past"}
                   onClick={() => selectResident(row, index)}
-                className={`block w-full border-b border-[#eeeeee] px-3 text-left transition-colors last:border-b-0 ${compact ? "py-2" : "py-3"} ${
+                  className={`block w-full border-b border-[#eeeeee] px-3 text-left transition-colors last:border-b-0 ${compact ? "py-2" : "py-3"} ${
                     isSelected
                       ? "bg-[#f7fbf9]"
                       : "bg-white hover:bg-[#fafafa]"
                   }`}
                 >
-                  <div className="truncate text-[15px] font-semibold text-[#111111]">{residentName(row)}</div>
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <div className="min-w-0 truncate text-[15px] font-semibold text-[#111111]">{residentName(row)}</div>
+                    <div
+                      data-resident-result-status-label="true"
+                      className={`shrink-0 border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.09em] ${
+                        isCurrentResident(row)
+                          ? "border-[#b9d8cf] bg-[#f1f8f5] text-[#0f6f5d]"
+                          : "border-[#d9d9d9] bg-[#fafafa] text-[#595959]"
+                      }`}
+                    >
+                      {isCurrentResident(row) ? "Current" : "Past"}
+                    </div>
+                  </div>
                   <div className="mt-0.5 truncate text-[13px] leading-5 text-[#595959]">
                     {displayValue(row.community_name)}{row.unit ? ` · Unit ${displayValue(row.unit)}` : ""}
                   </div>
@@ -669,25 +745,49 @@ export default function ResidentSearchModule({
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex min-h-[320px] items-center justify-center border border-[#d9d9d9] bg-white px-5 text-[14px] font-medium text-[#595959]">
-            Loading profile...
-          </div>
-        ) : error ? (
-          <div className="flex min-h-[320px] items-center justify-center border border-[#d9d9d9] bg-white px-5 text-center text-[14px] font-medium text-[#a04436]">
-            {error}
-          </div>
-        ) : (
-          <ResidentProfileCard
-            resident={profileResident ?? null}
-            profileColumns={payload?.client_database?.columns ?? []}
-            enhancedProfileAvailable={Boolean(payload?.client_database)}
-            profileLoading={profileLoading}
-            profileError={profileError}
-            compact={compact}
-            onOpenIncidentHistory={openIncidentHistory}
-          />
-        )}
+        <div data-resident-profile-panel="true">
+          {selectedId ? (
+            <div data-resident-mobile-profile-toolbar="true" className="hidden">
+              <button
+                type="button"
+                data-resident-back-to-results="true"
+                onClick={() => {
+                  setSelectedId(null);
+                  window.requestAnimationFrame(() => {
+                    moduleRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+                  });
+                }}
+              >
+                <span aria-hidden="true">←</span>
+                Back to results
+              </button>
+              {profileResident ? (
+                <span data-resident-mobile-profile-status="true">
+                  {residentStatusLabel(profileResident)}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          {loading ? (
+            <div className="flex min-h-[320px] items-center justify-center border border-[#d9d9d9] bg-white px-5 text-[14px] font-medium text-[#595959]">
+              Loading profile...
+            </div>
+          ) : error ? (
+            <div className="flex min-h-[320px] items-center justify-center border border-[#d9d9d9] bg-white px-5 text-center text-[14px] font-medium text-[#a04436]">
+              {error}
+            </div>
+          ) : (
+            <ResidentProfileCard
+              resident={profileResident ?? null}
+              profileColumns={payload?.client_database?.columns ?? []}
+              enhancedProfileAvailable={Boolean(payload?.client_database)}
+              profileLoading={profileLoading}
+              profileError={profileError}
+              compact={compact}
+              onOpenIncidentHistory={openIncidentHistory}
+            />
+          )}
+        </div>
       </div>
     </section>
   );

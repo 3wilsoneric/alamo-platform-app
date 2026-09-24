@@ -822,4 +822,150 @@ textarea:focus-visible,
     width: 100% !important;
     padding: 14px 16px 18px !important;
   }
+
+  [data-resident-search-module="true"] {
+    scroll-margin-top: 8px;
+  }
+
+  [data-resident-search-controls="true"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  [data-resident-search-field="true"],
+  [data-resident-result-count="true"] {
+    grid-column: 1 / -1;
+  }
+
+  [data-resident-search-module="true"] input[aria-label="Search residents"],
+  [data-resident-search-module="true"] select,
+  [data-resident-result-count="true"] {
+    width: 100%;
+    min-width: 0;
+    height: 48px !important;
+    font-size: 16px !important;
+  }
+
+  [data-resident-result-count="true"] {
+    justify-content: flex-start !important;
+    height: 42px !important;
+    padding: 0 12px !important;
+  }
+
+  [data-resident-search-body="true"] {
+    margin-top: 10px !important;
+  }
+
+  [data-resident-results-panel="true"] > div {
+    max-height: min(54dvh, 520px) !important;
+    padding: 0 !important;
+  }
+
+  [data-resident-result="true"] {
+    min-height: 84px;
+    padding: 12px !important;
+  }
+
+  [data-resident-search-module="true"][data-resident-profile-open="false"] [data-resident-profile-panel="true"] {
+    display: none !important;
+  }
+
+  [data-resident-search-module="true"][data-resident-profile-open="true"] [data-resident-search-controls="true"],
+  [data-resident-search-module="true"][data-resident-profile-open="true"] [data-resident-results-panel="true"] {
+    display: none !important;
+  }
+
+  [data-resident-search-module="true"][data-resident-profile-open="true"] [data-resident-search-body="true"] {
+    display: block !important;
+    margin-top: 0 !important;
+  }
+
+  [data-resident-search-module="true"][data-resident-profile-open="true"] [data-resident-profile-panel="true"] {
+    display: block !important;
+    width: 100%;
+  }
+
+  [data-resident-mobile-profile-toolbar="true"] {
+    display: flex !important;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid #d9d9d9;
+    background: #f7fbf9;
+    padding: 6px 10px;
+  }
+
+  [data-resident-back-to-results="true"] {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 7px;
+    padding: 0 5px;
+    color: #0f6f5d;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  [data-resident-mobile-profile-status="true"] {
+    color: #595959;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-align: right;
+    text-transform: uppercase;
+  }
+
+  [data-resident-profile-card="true"] {
+    width: 100%;
+    min-width: 0;
+    padding: 14px !important;
+    border-top: 0 !important;
+  }
+
+  [data-resident-profile-header="true"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px !important;
+  }
+
+  [data-resident-profile-header="true"] > div:first-child {
+    min-width: 0;
+  }
+
+  [data-resident-profile-header="true"] > div:first-child > div:last-child > div:first-child {
+    overflow: visible !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+    font-size: 22px !important;
+    line-height: 1.08 !important;
+  }
+
+  [data-resident-profile-status="true"] {
+    display: none !important;
+  }
+
+  [data-resident-profile-facts="true"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0 12px !important;
+  }
+
+  [data-resident-profile-fact="true"] {
+    min-width: 0;
+  }
+
+  [data-resident-profile-fact="true"] > div:last-of-type {
+    overflow-wrap: anywhere;
+  }
+
+  [data-resident-profile-fact-wide="true"] {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 359px) {
+  [data-resident-community-filter="true"],
+  [data-resident-status-filter="true"] {
+    grid-column: 1 / -1;
+  }
 }

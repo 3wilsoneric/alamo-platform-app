@@ -34,6 +34,13 @@ Neither overlay rebuilds the browser bundle or server. Rollback is an Azure
 Container App image update to the recorded preceding digest, not a Vercel
 promotion.
 
+Source-level browser changes use `Dockerfile.frontend-release`. Build the Vite
+bundle locally, pass the exact current production image digest as `BASE_IMAGE`,
+and replace only `/app/dist`. This preserves the already-proven Azure server,
+API, environment, and data adapters while shipping the reviewed React bundle.
+Record the preceding image digest before promotion so rollback remains an Azure
+Container App image update.
+
 ## Local Development
 
 Install and run:

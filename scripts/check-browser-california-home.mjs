@@ -888,9 +888,21 @@ async function main() {
     await mobilePage
       .locator('[data-california-community-profile="345"][data-california-modal-view="resident-search"]')
       .waitFor({ state: "visible", timeout: 5_000 });
-    await mobilePage
-      .locator('[data-california-community-profile="345"] [data-module-row="resident-profile-card"]')
-      .waitFor({ state: "visible", timeout: 10_000 });
+    const mobileResidentModule = mobilePage
+      .locator('[data-california-community-profile="345"] [data-resident-search-module="true"]');
+    await mobileResidentModule.waitFor({ state: "visible", timeout: 10_000 });
+    const residentStatusFilter = mobileResidentModule.locator('[data-resident-status-filter="true"]');
+    if (await residentStatusFilter.inputValue() !== "current") {
+      throw new Error("Mobile resident search did not start with current residents clearly selected.");
+    }
+    const currentResult = mobileResidentModule.locator('[data-resident-result-status="current"]').first();
+    await currentResult.waitFor({ state: "visible", timeout: 10_000 });
+    if (!/Current/i.test(await currentResult.locator('[data-resident-result-status-label="true"]').innerText())) {
+      throw new Error("Mobile resident result does not identify the resident as current.");
+    }
+    if (await mobileResidentModule.locator('[data-resident-profile-panel="true"]').isVisible()) {
+      throw new Error("Mobile resident profile rendered beneath the result list before a resident was selected.");
+    }
     const mobileResidentSearchOverflow = await mobilePage
       .locator('[data-california-community-profile="345"]')
       .evaluate((element) => element.scrollWidth - element.clientWidth);
@@ -899,6 +911,64 @@ async function main() {
     }
     await mobilePage.screenshot({
       path: `${screenshotDir}/mobile-resident-search.png`,
+      fullPage: false
+    });
+    await currentResult.click();
+    const mobileResidentProfile = mobileResidentModule.locator('[data-resident-profile-panel="true"]');
+    await mobileResidentProfile.waitFor({ state: "visible", timeout: 10_000 });
+    await mobileResidentModule
+      .getByRole("button", { name: "Back to results" })
+      .waitFor({ state: "visible", timeout: 5_000 });
+    if (await mobileResidentModule.locator('[data-resident-results-panel="true"]').isVisible()) {
+      throw new Error("Mobile resident results remained above the selected resident profile.");
+    }
+    if (!/Current resident|Past resident/i.test(await mobileResidentModule.locator('[data-resident-mobile-profile-status="true"]').innerText())) {
+      throw new Error("Mobile resident profile does not state whether the resident is current or past.");
+    }
+    const mobileProfileOverflow = await mobileResidentProfile.evaluate(
+      (element) => element.scrollWidth - element.clientWidth
+    );
+    if (mobileProfileOverflow > 2) {
+      throw new Error(`Mobile resident profile has ${mobileProfileOverflow}px of horizontal overflow.`);
+    }
+    await mobilePage.screenshot({
+      path: `${screenshotDir}/mobile-resident-profile.png`,
+      fullPage: false
+    });
+    await mobileResidentModule.getByRole("button", { name: "Back to results" }).click();
+    await currentResult.waitFor({ state: "visible", timeout: 5_000 });
+    if (await mobileResidentProfile.isVisible()) {
+      throw new Error("Back to results did not return to the mobile resident list.");
+    }
+    await residentStatusFilter.selectOption("past");
+    const pastResult = mobileResidentModule.locator('[data-resident-result-status="past"]').first();
+    await pastResult.waitFor({ state: "visible", timeout: 10_000 });
+    if (!/Past/i.test(await pastResult.locator('[data-resident-result-status-label="true"]').innerText())) {
+      throw new Error("Mobile resident result does not identify the resident as past.");
+    }
+    await residentStatusFilter.selectOption("current");
+    await currentResult.waitFor({ state: "visible", timeout: 10_000 });
+    await mobilePage.setViewportSize({ width: 320, height: 693 });
+    const narrowResidentSearchOverflow = await mobileResidentModule.evaluate(
+      (element) => element.scrollWidth - element.clientWidth
+    );
+    if (narrowResidentSearchOverflow > 2) {
+      throw new Error(`320px resident search has ${narrowResidentSearchOverflow}px of horizontal overflow.`);
+    }
+    await mobilePage.screenshot({
+      path: `${screenshotDir}/mobile-resident-search-320.png`,
+      fullPage: false
+    });
+    await currentResult.click();
+    await mobileResidentProfile.waitFor({ state: "visible", timeout: 5_000 });
+    const narrowResidentProfileOverflow = await mobileResidentProfile.evaluate(
+      (element) => element.scrollWidth - element.clientWidth
+    );
+    if (narrowResidentProfileOverflow > 2) {
+      throw new Error(`320px resident profile has ${narrowResidentProfileOverflow}px of horizontal overflow.`);
+    }
+    await mobilePage.screenshot({
+      path: `${screenshotDir}/mobile-resident-profile-320.png`,
       fullPage: false
     });
     await mobileContext.close();
