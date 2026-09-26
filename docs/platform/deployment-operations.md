@@ -165,6 +165,25 @@ healthy revision at 100% traffic, the desktop/mobile formatting regression, a
 connected payload with 21 of 21 named cards, five communities, portfolio census
 541, and 4/4 public smoke probes.
 
+### Admissions community pills release — 2026-09-26
+
+Community is now the Board's only filter. The former community and status
+dropdowns, attention filter, and Clear control are replaced by responsive
+community pills. Multiple communities can remain selected together, and All
+communities resets the full board.
+
+- source commit: `41dc177`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/7`
+- image tag: `alamo-platform:admissions-community-pills-41dc177`
+- image digest: `sha256:512ae688013f991080215dedfae1a738e1b15081b5137695edde3418c5195f59`
+- active revision: `alamo-platform-prod-web--admissions-pills-0926`
+- rollback digest: `sha256:8e6b3b5d7af56d3b9fe932947804630fb7409184602f00c4409afaf54c875808`
+
+This is a frontend-only overlay. Post-promotion verification confirmed a
+healthy revision at 100% traffic, additive multi-community selection and reset
+behavior in desktop/mobile browser QA, a connected payload with 21 of 21 named
+cards, five communities, portfolio census 541, and 4/4 public smoke probes.
+
 ## Local Development
 
 Install and run:
