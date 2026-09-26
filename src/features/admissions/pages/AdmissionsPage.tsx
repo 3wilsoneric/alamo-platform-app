@@ -93,12 +93,7 @@ export default function AdmissionsPage() {
         ) : null}
 
         {surface === "board" && pipeline ? (
-          <p
-            data-admissions-executive-update="true"
-            className="mb-5 max-w-[1120px] border-l-2 border-[#0f8b73] py-0.5 pl-4 text-[13px] font-medium leading-6 text-[#3f4944] sm:text-[14px] sm:leading-7"
-          >
-            {buildAdmissionsExecutiveUpdate(pipeline)}
-          </p>
+          <AdmissionsExecutiveUpdate pipeline={pipeline} />
         ) : null}
 
         <div id={`admissions-${surface}-panel`} role="tabpanel" className="pt-1">
@@ -143,10 +138,49 @@ export default function AdmissionsPage() {
   );
 }
 
+function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissionsPipeline }) {
+  const update = buildAdmissionsExecutiveUpdate(pipeline);
+
+  if (!update) {
+    return (
+      <p
+        data-admissions-executive-update="true"
+        className="mb-6 max-w-[1120px] border-l-2 border-[#0f8b73] py-1 pl-4 text-[13px] leading-6 text-[#46504b] sm:text-[14px] sm:leading-7"
+      >
+        There are no active referrals in the current admissions update.
+      </p>
+    );
+  }
+
+  return (
+    <p
+      data-admissions-executive-update="true"
+      className="mb-6 max-w-[1120px] border-l-2 border-[#0f8b73] py-1 pl-4 text-[13px] leading-6 text-[#46504b] sm:text-[14px] sm:leading-7"
+    >
+      <span data-admissions-executive-line="workload" className="block">
+        Admissions is managing <strong className="font-semibold text-[#183f34]">{update.total} active {pluralize("referral", update.total)}</strong>: <strong className="font-semibold text-[#183f34]">{update.received} newly received</strong>, <strong className="font-semibold text-[#183f34]">{update.inProgress} in assessment and review</strong>, and <strong className="font-semibold text-[#183f34]">{update.decision} at decision</strong>.
+      </span>
+      {update.busiest.length ? (
+        <span data-admissions-executive-line="locations" className="mt-1.5 block">
+          <strong className="font-semibold text-[#183f34]">Where the work is:</strong> {formatCommunityLoad(update.busiest)}.
+        </span>
+      ) : null}
+      <span data-admissions-executive-line="follow-up" className="mt-1.5 block">
+        <strong className="font-semibold text-[#183f34]">Immediate follow-up:</strong>{" "}
+        {update.attention ? (
+          <><strong className="font-semibold text-[#183f34]">{update.attention} {pluralize("referral", update.attention)}</strong> {update.attention === 1 ? "requires" : "require"} attention across overdue updates, owner assignments, and overdue move-ins.</>
+        ) : (
+          "No referrals currently carry a workflow exception."
+        )}
+      </span>
+    </p>
+  );
+}
+
 function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
   const columns = new Map(pipeline.board.columns.map((column) => [column.key, column.count]));
   const total = pipeline.board.total;
-  if (!total) return "There are no active referrals in the current admissions update.";
+  if (!total) return null;
 
   const received = columns.get("received") ?? 0;
   const inProgress = columns.get("in_progress") ?? 0;
@@ -162,17 +196,15 @@ function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
   const busiest = [...communityCounts.entries()]
     .sort(([leftName, leftCount], [rightName, rightCount]) => rightCount - leftCount || leftName.localeCompare(rightName))
     .slice(0, 3)
-    .map(([name, count]) => `${name} (${count})`);
+    .map(([name, count]) => ({ name, count }));
 
-  const workload = `Admissions is managing ${total} active ${pluralize("referral", total)}: ${received} newly received, ${inProgress} in assessment and review, and ${decision} at decision.`;
-  const location = busiest.length ? ` Activity is concentrated at ${formatExecutiveList(busiest)}.` : "";
-  const followUp = attention
-    ? ` The immediate follow-up need is ${attention} ${pluralize("referral", attention)} flagged for an overdue update, missing owner, or overdue move-in.`
-    : " No referrals currently carry a workflow exception.";
-  return `${workload}${location}${followUp}`;
+  return { total, received, inProgress, decision, attention, busiest };
 }
 
-function formatExecutiveList(values: string[]) {
+function formatCommunityLoad(communities: Array<{ name: string; count: number }>) {
+  const values = communities.map(({ name, count }) =>
+    name === "No community assigned" ? `${count} unassigned` : `${count} at ${name}`
+  );
   if (values.length <= 1) return values[0] ?? "";
   if (values.length === 2) return `${values[0]} and ${values[1]}`;
   return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
