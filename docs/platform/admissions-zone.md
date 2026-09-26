@@ -17,13 +17,14 @@ opens directly on a compact workflow board. A single segmented control switches
 between Board, Census, and Trends without stacking three dashboards on one page.
 There is no repeated page title, explanatory subtitle, or KPI strip.
 
-- **Board** — the live referral board, laid out like Pipeline's own
-  board: Referral received, In progress, and Decision columns holding one card
-  per referral. The columns use the same calm green, blue, and warm decision
-  surfaces as the transactional board. Cards show client name, destination
-  community, referral number, owner, next step, days open, and attention flags,
-  and open the referral in Pipeline. Filters: community, "needs attention", and status.
-  A List toggle shows the same slice as a sortable-by-age table.
+- **Board** — the current governed referral update: Referral received, In
+  progress, and Decision columns holding one card per referral. The columns use
+  calm green, blue, and warm decision surfaces. Cards show client name,
+  destination community, referral number, owner, next step, days open, and
+  attention flags. Selecting a client opens an Alamo-native progress update
+  with workflow stage, current status, next required action, assignment,
+  timing, planned admission, priority, and review flags. Filters: community,
+  "needs attention", and status. A List toggle shows the same governed slice.
 - **Census** — one compact portfolio row followed by the five communities,
   combining census, occupancy, month-to-date admissions, discharges, net
   movement, and each community's board count.
@@ -35,8 +36,8 @@ Census and flow come from the governed snapshot tables
 `community_operating_summary`, `resident_flow_weekly_by_community`, and
 `resident_flow_monthly_by_community`. Census data is counts only: the flow tables also carry resident names, and
 the builder never copies them. The referral board receives the client name from
-Pipeline; referral documents, extracted fields, and assessment details remain
-behind the Pipeline drill-down.
+Pipeline; referral documents, extracted fields, and assessment details are not
+copied into this overview.
 
 ## Referral summary contract
 
@@ -57,8 +58,8 @@ server, never from the browser and never through Pipeline's internal APIs.
   `pipeline_path`), `metrics`, `upcoming_admissions`, and `history`
   (`month_outcomes`, six `monthly[]` rows, `decision_timing`). Client name is
   included as part of the authenticated Platform's existing PHI workflow. DOB,
-  contact details, referral sources, notes, and documents remain behind the
-  Pipeline drill-down, where Pipeline enforces its own sign-in and roles.
+  contact details, referral sources, notes, and documents are not copied into
+  the Platform summary.
 - `pipeline_path` must be a query-only relative path; Alamo joins it to the
   configured Pipeline origin and drops the whole summary if any row fails the
   contract.
@@ -82,9 +83,9 @@ established Azure production environment:
 - assessments and placement decisions
 - client-profile workflow and collaboration
 
-The Alamo overview links to these surfaces as a separate first-party
-application. It does not iframe Pipeline or make the Alamo frontend depend on
-Pipeline's internal APIs.
+The Alamo overview does not link or iframe these transactional surfaces. Its
+analyst review remains self-contained and depends only on the bounded summary
+contract, not Pipeline's internal browser APIs.
 
 ## Routing
 
