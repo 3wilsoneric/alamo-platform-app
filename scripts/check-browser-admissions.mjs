@@ -23,7 +23,11 @@ await withBrowserQa(async (browser) => {
   await page.goto(`${BASE_URL}/admissions`, { waitUntil: "networkidle" });
 
   await page.locator('[data-admissions-overview="true"]').waitFor();
-  await page.getByRole("heading", { name: "Community census" }).waitFor();
+  for (const name of ["Board", "Census", "Trends"]) {
+    if (await page.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
+      throw new Error(`Admissions overview is missing its compact ${name} tab.`);
+    }
+  }
   const fullPipelineLink = page.locator('[data-open-full-pipeline="true"]');
   if (
     await fullPipelineLink.count() !== 1 ||
@@ -42,7 +46,13 @@ await withBrowserQa(async (browser) => {
     throw new Error(`Full Pipeline action lost its dark-button contrast: ${JSON.stringify(fullPipelineContrast)}`);
   }
   await page.screenshot({
-    path: `${screenshotDir}/desktop-admissions-overview.png`,
+    path: `${screenshotDir}/desktop-admissions-board.png`,
+    fullPage: true
+  });
+  await page.getByRole("tab", { name: /^Census/ }).click();
+  await page.getByRole("heading", { name: "Community census" }).waitFor();
+  await page.screenshot({
+    path: `${screenshotDir}/desktop-admissions-census.png`,
     fullPage: true
   });
   if (consoleErrors.length || requestFailures.length) {
@@ -55,6 +65,11 @@ await withBrowserQa(async (browser) => {
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "networkidle" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
+  await mobilePage.screenshot({
+    path: `${screenshotDir}/mobile-admissions-board.png`,
+    fullPage: true
+  });
+  await mobilePage.getByRole("tab", { name: /^Census/ }).click();
   if (await mobilePage.locator('[data-admissions-community-census-card]').count() !== 5) {
     throw new Error("Admissions overview does not render all five mobile community census cards.");
   }

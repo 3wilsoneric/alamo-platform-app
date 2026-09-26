@@ -11,23 +11,25 @@ Admissions and Pipeline are deliberately separate product surfaces.
 
 ## Alamo Admissions overview
 
-`/admissions` is an Alamo-native leadership dashboard. It reads
-`GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and shows,
-top to bottom:
+`/admissions` is an Alamo-native working overview. It reads
+`GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and
+opens directly on a compact workflow board. A single segmented control switches
+between Board, Census, and Trends without stacking three dashboards on one page.
+There is no repeated page title, explanatory subtitle, or KPI strip.
 
-- **Pipeline now** — the live referral board, laid out like Pipeline's own
+- **Board** — the live referral board, laid out like Pipeline's own
   board: Referral received, In progress, and Decision columns holding one card
-  per referral, grouped by status (Preparation, Assessment scheduled, Under
-  review, Awaiting admit, and so on). Cards show destination community,
+  per referral. The columns use the same calm green, blue, and warm decision
+  surfaces as the transactional board. Cards show destination community,
   referral number, owner, next step, days open, and attention flags, and open
   the referral in Pipeline. Filters: community, "needs attention", and status.
   A List toggle shows the same slice as a sortable-by-age table.
-- **Census** — portfolio census, occupancy, month-to-date admissions,
-  discharges, and net movement, plus the same by community with each
-  community's board counts.
-- **History** — referrals to move-ins by month (Pipeline referrals and
+- **Census** — one compact portfolio row followed by the five communities,
+  combining census, occupancy, month-to-date admissions, discharges, net
+  movement, and each community's board count.
+- **Trends** — referrals to move-ins by month (Pipeline referrals and
   acceptances beside census admissions), weekly admissions and discharges,
-  and median days from referral to decision.
+  without a separate headline-stat section.
 
 Census and flow come from the governed snapshot tables
 `community_operating_summary`, `resident_flow_weekly_by_community`, and

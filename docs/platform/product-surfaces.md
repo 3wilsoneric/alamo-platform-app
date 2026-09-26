@@ -98,12 +98,14 @@ execution, current data depth, and the evidence still required for deeper
 outcome reporting. It is intentionally absent from primary navigation while it
 is reviewed.
 
-`/admissions` is the aggregate Admissions overview inside Alamo. It uses
-governed portfolio and community census context from the home-dashboard
-contract. Its primary navigation item is temporarily disabled while the surface
-is finished, but the direct route and access boundary remain intact. The
-separate Pipeline application owns referral intake, uploads, OCR, packet
-evidence, assessments, decisions, and other transactional workflow. The
+`/admissions` is the aggregate Admissions overview inside Alamo. It opens on a
+compact three-column referral board and uses one segmented Board, Census, and
+Trends control instead of a page title, subtitles, KPI strip, and three stacked
+sections. Census and trends use governed portfolio and community context from
+the home-dashboard contract. Its primary navigation item is temporarily disabled
+while the surface is finished, but the direct route and access boundary remain
+intact. The separate Pipeline application owns referral intake, uploads, OCR,
+packet evidence, assessments, decisions, and other transactional workflow. The
 `/pipeline` path redirects to that full application.
 
 The analyst remains a vertical chat/module workspace:

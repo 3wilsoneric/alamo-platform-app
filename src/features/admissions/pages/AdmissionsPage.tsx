@@ -20,12 +20,14 @@ const DISCHARGES_COLOR = "#b8493a";
 // Referral series, validated as a set with ADMISSIONS_COLOR (all pairs, CVD).
 const REFERRALS_COLOR = "#4a67c4";
 const ACCEPTED_COLOR = "#c7851a";
+type AdmissionsSurface = "board" | "census" | "trends";
 
 export default function AdmissionsPage() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<AdmissionsDashboardResponse | null>(readCachedAdmissionsDashboard);
   const [loading, setLoading] = useState(!dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [surface, setSurface] = useState<AdmissionsSurface>("board");
 
   // Every signed-in Platform user sees this leadership view. Rows carry
   // process facts only; client identity stays behind Pipeline's own sign-in.
@@ -43,9 +45,6 @@ export default function AdmissionsPage() {
     return () => controller.abort();
   }, []);
 
-  const portfolio = dashboard?.portfolio ?? null;
-  const monthLabel = dashboard ? formatMonth(dashboard.month) : "This month";
-  const priorMonthLabel = dashboard ? formatMonth(dashboard.prior_month) : "last month";
   const freshnessWarning = dashboard?.snapshot_status?.warning ?? null;
   const referralPipeline = dashboard?.referral_pipeline ?? null;
   const pipeline = referralPipeline?.status === "connected" ? referralPipeline : null;
@@ -57,7 +56,7 @@ export default function AdmissionsPage() {
   return (
     <div
       data-admissions-overview="true"
-      className="relative left-1/2 min-h-dvh w-screen -translate-x-1/2 bg-white px-4 pb-14 pt-16 text-[#111111] sm:px-8 lg:px-12"
+      className="relative left-1/2 min-h-dvh w-screen -translate-x-1/2 bg-[#f5f6f7] px-3 pb-14 pt-16 text-[#171918] sm:px-6 lg:px-10"
     >
       <PlatformPageNavigation
         active="admissions"
@@ -65,201 +64,223 @@ export default function AdmissionsPage() {
         onNavigate={openPlatformPage}
       />
 
-      <div className="mx-auto w-full max-w-[1432px]">
-        <header className="flex flex-wrap items-end justify-between gap-4 pb-4">
-          <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em]">Admissions</h1>
-            <p className="mt-1 text-[11px] text-[#737373]">
-              {dashboard ? `Census data through ${formatDate(dashboard.as_of_date)}` : "Loading governed data"}
-            </p>
+      <div className="mx-auto w-full max-w-[1540px]">
+        <h1 className="sr-only">Admissions</h1>
+        <div className="flex items-center justify-between gap-3 py-4 sm:py-6">
+          <div
+            role="tablist"
+            aria-label="Admissions views"
+            className="flex min-w-0 max-w-full overflow-x-auto rounded-xl bg-[#e9ecef] p-1"
+          >
+            <SurfaceTab active={surface === "board"} label="Board" count={pipeline?.board.total ?? null} panel="admissions-board-panel" onClick={() => setSurface("board")} />
+            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} />
+            <SurfaceTab active={surface === "trends"} label="Trends" count={dashboard?.referral_trend.length ? `${dashboard.referral_trend.length} mo` : null} panel="admissions-trends-panel" onClick={() => setSurface("trends")} />
           </div>
           <a
             href={FULL_PIPELINE_URL}
             data-open-full-pipeline="true"
             data-dark-action="true"
-            className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#111111] px-5 text-[12px] font-bold text-white transition-colors hover:bg-[#0f8b73] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73]"
+            aria-label="Open Pipeline"
+            className="inline-flex min-h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#111111] px-0 text-[12px] font-semibold text-white transition-colors hover:bg-[#0f8b73] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:w-auto sm:px-4"
           >
-            Open Pipeline
+            <span className="hidden sm:inline">Open Pipeline</span>
             <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </a>
-        </header>
+        </div>
 
         {freshnessWarning ? (
-          <div className="mb-6 border-l-4 border-[#b8493a] bg-[#fff7f5] px-4 py-3 text-[12px] leading-5 text-[#6e352d]">
+          <div className="mb-4 rounded-lg border border-[#efc8bd] bg-[#fff7f5] px-4 py-3 text-[12px] leading-5 text-[#6e352d]">
             <strong>Data update delayed.</strong> {freshnessWarning}
           </div>
         ) : null}
 
         {loadFailed && !dashboard ? (
-          <div role="alert" className="mb-6 border-y border-[#d9d9d9] px-4 py-8">
+          <div role="alert" className="mb-6 rounded-xl border border-[#e4d1ca] bg-white px-4 py-8">
             <p className="text-[14px] font-bold text-[#a04436]">Admissions data is temporarily unavailable.</p>
             <p className="mt-2 text-[12px] leading-5 text-[#737373]">Pipeline remains available while Alamo retries its governed feed.</p>
           </div>
         ) : null}
 
-        {pipeline ? (
-          <PipelineBoard pipeline={pipeline} communities={dashboard?.communities ?? []} />
-        ) : (
-          <section
-            aria-labelledby="admissions-board-title"
-            data-admissions-referral-pipeline={referralPipeline?.status ?? "loading"}
-            className="border-y-2 border-[#111111] py-6"
-          >
-            <h2 id="admissions-board-title" className="text-[22px] font-semibold tracking-[-0.03em]">Pipeline now</h2>
-            <p className="mt-2 text-[12px] leading-5 text-[#595959]">
-              {referralPipeline?.status === "unavailable"
-                ? "The live referral board is temporarily unavailable. Census below is current."
-                : referralPipeline
-                  ? "The live referral board appears here once the Pipeline summary feed is connected."
-                  : "Loading the referral board…"}
-            </p>
-          </section>
-        )}
-
-        <section aria-labelledby="admissions-census-title" className="mt-12">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-[#111111] pb-3">
-            <h2 id="admissions-census-title" className="text-[22px] font-semibold tracking-[-0.03em]">Census</h2>
-            {loadFailed && dashboard ? (
-              <p className="flex items-center gap-2 text-[10px] text-[#8a6118]">
-                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                Showing the last available Alamo snapshot.
-              </p>
-            ) : null}
-          </div>
-          <div aria-label="Census headline" className="grid border-b border-[#d9d9d9] sm:grid-cols-2 xl:grid-cols-4">
-            <Metric
-              label="Current census"
-              value={formatNumber(portfolio?.census ?? null)}
-              detail={portfolio?.occupancyPct != null
-                ? `${portfolio.occupancyPct}% of ${formatNumber(portfolio.operatingLimit)} operating beds · ${formatDelta(portfolio.censusChange)} vs prior`
-                : "Occupancy unavailable"}
-            />
-            <Metric
-              label={`Admissions · ${monthLabel}`}
-              value={formatNumber(portfolio?.monthToDate.admissions ?? null)}
-              detail={portfolio ? `${formatNumber(portfolio.lastMonth.admissions)} in all of ${priorMonthLabel}` : "Not loaded"}
-            />
-            <Metric
-              label={`Discharges · ${monthLabel}`}
-              value={formatNumber(portfolio?.monthToDate.discharges ?? null)}
-              detail={portfolio ? `${formatNumber(portfolio.lastMonth.discharges)} in all of ${priorMonthLabel}` : "Not loaded"}
-            />
-            <Metric
-              label={`Net movement · ${monthLabel}`}
-              value={formatDelta(portfolio?.monthToDate.net ?? null)}
-              detail={portfolio ? `${formatDelta(portfolio.recentWeeks.net)} over the last 4 weeks` : "Not loaded"}
-            />
-          </div>
-
-          <div className="mt-8" aria-labelledby="admissions-community-census-title">
-            <div className="flex items-end justify-between gap-4 border-b border-[#111111] pb-3">
-              <h3 id="admissions-community-census-title" className="text-[16px] font-semibold tracking-[-0.02em]">
-                Community census
-              </h3>
-              <p className="text-right text-[10px] leading-4 text-[#737373]">
-                {monthLabel} to date{pipeline ? " · board counts from Pipeline" : ""}
-              </p>
-            </div>
-
-            {loading && !dashboard ? (
-              <div aria-label="Loading Admissions census" aria-busy="true" className="space-y-px bg-[#d9d9d9]">
-                {Array.from({ length: 5 }, (_, index) => (
-                  <div key={index} className="h-16 animate-pulse bg-[#f7f8f7]" />
-                ))}
-              </div>
+        <div id={`admissions-${surface}-panel`} role="tabpanel" className="pt-1">
+          {surface === "board" ? (
+            pipeline ? (
+              <PipelineBoard pipeline={pipeline} communities={dashboard?.communities ?? []} />
             ) : (
-              <>
-                <div className="divide-y divide-[#d9d9d9] sm:hidden">
-                  {(dashboard?.communities ?? []).map((community) => (
-                    <article
-                      key={community.facilityId}
-                      data-admissions-community-census-card={community.facilityId}
-                      className="py-5"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <h4 className="text-[13px] font-bold leading-5">{community.shortName}</h4>
-                          <p className="mt-1 text-[10px] text-[#737373]">
-                            {community.occupancyPct != null ? `${community.occupancyPct}% occupied` : "Occupancy unavailable"}
-                          </p>
-                        </div>
-                        <p className="shrink-0 text-[26px] font-semibold leading-none">{formatNumber(community.census)}</p>
-                      </div>
-                      <div className="mt-4 grid grid-cols-3 border-t border-[#e5e5e5] pt-3 text-[10px]">
-                        <span><span className="text-[#737373]">In </span><strong>{community.monthToDate.admissions}</strong></span>
-                        <span><span className="text-[#737373]">Out </span><strong>{community.monthToDate.discharges}</strong></span>
-                        <span className="text-right font-semibold text-[#315b54]">{formatDelta(community.monthToDate.net)}</span>
-                      </div>
-                      {community.referrals ? (
-                        <p className="mt-2 text-[10px] text-[#595959]">
-                          {community.referrals.onBoard} on the board · {community.referrals.inDecision} at decision
-                        </p>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-                <div className="hidden overflow-x-auto sm:block">
-                  <table className="w-full min-w-[680px] border-collapse text-left">
-                    <thead>
-                      <tr className="border-b border-[#d9d9d9] text-[9px] font-bold uppercase tracking-[0.12em] text-[#737373]">
-                        <th className="px-3 py-3">Community</th>
-                        <th className="px-3 py-3 text-right">Census</th>
-                        <th className="px-3 py-3 text-right">Occupancy</th>
-                        <th className="px-3 py-3 text-right">Admissions</th>
-                        <th className="px-3 py-3 text-right">Discharges</th>
-                        <th className="px-3 py-3 text-right">Net</th>
-                        {pipeline ? (
-                          <>
-                            <th className="px-3 py-3 text-right">On board</th>
-                            <th className="px-3 py-3 text-right">At decision</th>
-                          </>
-                        ) : null}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(dashboard?.communities ?? []).map((community) => (
-                        <tr key={community.facilityId} className="border-b border-[#e5e5e5] text-[12px]">
-                          <td className="px-3 py-3.5 font-bold text-[#111111]">{community.communityName}</td>
-                          <td className="px-3 py-3.5 text-right text-[16px] font-semibold">{formatNumber(community.census)}</td>
-                          <td className="px-3 py-3.5 text-right text-[#595959]">
-                            {community.occupancyPct != null ? `${community.occupancyPct}%` : "—"}
-                          </td>
-                          <td className="px-3 py-3.5 text-right">{community.monthToDate.admissions}</td>
-                          <td className="px-3 py-3.5 text-right">{community.monthToDate.discharges}</td>
-                          <td className="px-3 py-3.5 text-right font-semibold text-[#315b54]">{formatDelta(community.monthToDate.net)}</td>
-                          {pipeline ? (
-                            <>
-                              <td className="px-3 py-3.5 text-right">{community.referrals?.onBoard ?? 0}</td>
-                              <td className="px-3 py-3.5 text-right">{community.referrals?.inDecision ?? 0}</td>
-                            </>
-                          ) : null}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </div>
-        </section>
+              <section
+                aria-label="Referral board"
+                data-admissions-referral-pipeline={referralPipeline?.status ?? "loading"}
+                className="rounded-xl border border-[#dfe3e1] bg-white px-5 py-12 text-center"
+              >
+                <p className="text-[13px] text-[#5f6762]">
+                  {referralPipeline?.status === "unavailable"
+                    ? "The live referral board is temporarily unavailable."
+                    : referralPipeline
+                      ? "The referral feed has not been connected yet."
+                      : "Loading the referral board…"}
+                </p>
+              </section>
+            )
+          ) : null}
 
-        <section aria-labelledby="admissions-history-title" className="mt-12">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-[#111111] pb-3">
-            <h2 id="admissions-history-title" className="text-[22px] font-semibold tracking-[-0.03em]">History</h2>
-            {pipeline?.history.decisionTiming.medianDaysToDecision != null ? (
-              <p className="text-[11px] text-[#595959]">
-                Median <strong className="text-[#111111]">{pipeline.history.decisionTiming.medianDaysToDecision} days</strong> from
-                referral to decision · last {pipeline.history.decisionTiming.windowDays} days
-              </p>
-            ) : null}
-          </div>
-          <div className="mt-6 grid gap-10 xl:grid-cols-2">
-            {dashboard?.referral_trend.length ? <ReferralTrendChart points={dashboard.referral_trend} /> : null}
-            <WeeklyFlowChart points={dashboard?.weekly ?? []} loading={loading && !dashboard} />
-          </div>
-        </section>
+          {surface === "census" ? (
+            <CensusPanel
+              dashboard={dashboard}
+              loading={loading && !dashboard}
+              stale={loadFailed && Boolean(dashboard)}
+              pipelineConnected={Boolean(pipeline)}
+            />
+          ) : null}
+
+          {surface === "trends" ? (
+            <section aria-label="Admissions trends" className="grid gap-5 xl:grid-cols-2">
+              {dashboard?.referral_trend.length ? <ReferralTrendChart points={dashboard.referral_trend} /> : null}
+              <WeeklyFlowChart points={dashboard?.weekly ?? []} loading={loading && !dashboard} />
+            </section>
+          ) : null}
+        </div>
       </div>
     </div>
+  );
+}
+
+function SurfaceTab({
+  active,
+  label,
+  count,
+  panel,
+  onClick
+}: {
+  active: boolean;
+  label: string;
+  count: string | number | null;
+  panel: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      aria-controls={panel}
+      onClick={onClick}
+      className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-4 text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73] ${active ? "bg-white text-[#171918] shadow-sm" : "text-[#49504c] hover:bg-white/60"}`}
+    >
+      {label}
+      {count != null ? <span className="rounded-md bg-[#edf0f2] px-2 py-1 text-[11px] font-semibold text-[#303532]">{count}</span> : null}
+    </button>
+  );
+}
+
+function CensusPanel({
+  dashboard,
+  loading,
+  stale,
+  pipelineConnected
+}: {
+  dashboard: AdmissionsDashboardResponse | null;
+  loading: boolean;
+  stale: boolean;
+  pipelineConnected: boolean;
+}) {
+  const portfolio = dashboard?.portfolio ?? null;
+  const monthLabel = dashboard ? formatMonth(dashboard.month) : "This month";
+
+  return (
+    <section aria-labelledby="admissions-community-census-title" className="overflow-hidden rounded-xl border border-[#dfe3e1] bg-white">
+      <h2 id="admissions-community-census-title" className="sr-only">Community census</h2>
+      {stale ? (
+        <p className="flex items-center gap-2 border-b border-[#ead8a9] bg-[#fffaf0] px-4 py-2 text-[11px] text-[#7a5a18]">
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+          Showing the last available Alamo snapshot.
+        </p>
+      ) : null}
+
+      {loading ? (
+        <div aria-label="Loading Admissions census" aria-busy="true" className="space-y-px bg-[#d9d9d9]">
+          {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-20 animate-pulse bg-[#f7f8f7]" />)}
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3 p-3 sm:hidden">
+            <article className="rounded-xl bg-[#edf3f0] p-4">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[13px] font-semibold">Portfolio</span>
+                <strong className="text-[24px] font-semibold tracking-[-0.03em]">{formatNumber(portfolio?.census ?? null)}</strong>
+              </div>
+              <div className="mt-3 grid grid-cols-4 gap-2 text-[10px] text-[#5f6762]">
+                <span>{portfolio?.occupancyPct != null ? `${portfolio.occupancyPct}% full` : "—"}</span>
+                <span>In <strong className="text-[#171918]">{portfolio?.monthToDate.admissions ?? "—"}</strong></span>
+                <span>Out <strong className="text-[#171918]">{portfolio?.monthToDate.discharges ?? "—"}</strong></span>
+                <span className="text-right font-semibold text-[#315b54]">{formatDelta(portfolio?.monthToDate.net ?? null)}</span>
+              </div>
+            </article>
+            {(dashboard?.communities ?? []).map((community) => (
+              <article
+                key={community.facilityId}
+                data-admissions-community-census-card={community.facilityId}
+                className="rounded-xl border border-[#e2e6e3] p-4"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="min-w-0 truncate text-[13px] font-medium">{community.shortName}</span>
+                  <strong className="text-[22px] font-semibold tracking-[-0.03em]">{formatNumber(community.census)}</strong>
+                </div>
+                <div className="mt-3 grid grid-cols-4 gap-2 text-[10px] text-[#69716c]">
+                  <span>{community.occupancyPct != null ? `${community.occupancyPct}% full` : "—"}</span>
+                  <span>In <strong className="text-[#171918]">{community.monthToDate.admissions}</strong></span>
+                  <span>Out <strong className="text-[#171918]">{community.monthToDate.discharges}</strong></span>
+                  <span className="text-right font-semibold text-[#315b54]">{formatDelta(community.monthToDate.net)}</span>
+                </div>
+                {community.referrals ? (
+                  <div className="mt-3 flex gap-2 border-t border-[#edf0ee] pt-3 text-[10px] text-[#69716c]">
+                    <span>{community.referrals.onBoard} on board</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{community.referrals.inDecision} at decision</span>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full min-w-[760px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-[#e2e6e3] text-[10px] font-medium text-[#69716c]">
+                  <th className="px-5 py-4">Community</th>
+                  <th className="px-4 py-4 text-right">Census</th>
+                  <th className="px-4 py-4 text-right">Occupancy</th>
+                  <th className="px-4 py-4 text-right">In · {monthLabel}</th>
+                  <th className="px-4 py-4 text-right">Out · {monthLabel}</th>
+                  <th className="px-4 py-4 text-right">Net</th>
+                  {pipelineConnected ? <th className="px-5 py-4 text-right">Board</th> : null}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-[#dbe5df] bg-[#edf3f0] text-[12px]">
+                  <td className="px-5 py-4 font-semibold">Portfolio</td>
+                  <td className="px-4 py-4 text-right text-[17px] font-semibold">{formatNumber(portfolio?.census ?? null)}</td>
+                  <td className="px-4 py-4 text-right">{portfolio?.occupancyPct != null ? `${portfolio.occupancyPct}%` : "—"}</td>
+                  <td className="px-4 py-4 text-right">{portfolio?.monthToDate.admissions ?? "—"}</td>
+                  <td className="px-4 py-4 text-right">{portfolio?.monthToDate.discharges ?? "—"}</td>
+                  <td className="px-4 py-4 text-right font-semibold text-[#315b54]">{formatDelta(portfolio?.monthToDate.net ?? null)}</td>
+                  {pipelineConnected ? <td className="px-5 py-4 text-right">{dashboard?.referral_pipeline.status === "connected" ? dashboard.referral_pipeline.board.total : "—"}</td> : null}
+                </tr>
+                {(dashboard?.communities ?? []).map((community) => (
+                  <tr key={community.facilityId} className="border-b border-[#edf0ee] text-[12px] last:border-b-0 hover:bg-[#fafbfa]">
+                    <td className="px-5 py-4 font-medium">{community.communityName}</td>
+                    <td className="px-4 py-4 text-right text-[16px] font-semibold">{formatNumber(community.census)}</td>
+                    <td className="px-4 py-4 text-right text-[#5f6762]">{community.occupancyPct != null ? `${community.occupancyPct}%` : "—"}</td>
+                    <td className="px-4 py-4 text-right">{community.monthToDate.admissions}</td>
+                    <td className="px-4 py-4 text-right">{community.monthToDate.discharges}</td>
+                    <td className="px-4 py-4 text-right font-semibold text-[#315b54]">{formatDelta(community.monthToDate.net)}</td>
+                    {pipelineConnected ? <td className="px-5 py-4 text-right">{community.referrals?.onBoard ?? 0}</td> : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -269,9 +290,9 @@ function ReferralTrendChart({ points }: { points: AdmissionsDashboardResponse["r
   const focused = active != null ? points[active] : points.at(-1) ?? null;
 
   return (
-    <section aria-labelledby="admissions-referral-trend-title" data-admissions-referral-trend="true">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#111111] pb-3">
-        <h2 id="admissions-referral-trend-title" className="text-[20px] font-semibold tracking-[-0.03em]">
+    <section aria-labelledby="admissions-referral-trend-title" data-admissions-referral-trend="true" className="rounded-xl border border-[#dfe3e1] bg-white p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ee] pb-4">
+        <h2 id="admissions-referral-trend-title" className="text-[15px] font-semibold tracking-[-0.02em]">
           Referrals to move-ins
         </h2>
         <div className="flex flex-wrap items-center gap-4 text-[10px] text-[#595959]">
@@ -311,9 +332,6 @@ function ReferralTrendChart({ points }: { points: AdmissionsDashboardResponse["r
           <span key={point.month} className="min-w-0 flex-1 truncate text-center">{formatMonth(point.month).slice(0, 3)}</span>
         ))}
       </div>
-      <p className="mt-2 text-[10px] text-[#737373]">
-        Referrals and acceptances come from Pipeline; admissions come from the census record, so a month can admit clients accepted earlier.
-      </p>
     </section>
   );
 }
@@ -324,9 +342,9 @@ function WeeklyFlowChart({ points, loading }: { points: AdmissionsFlowPoint[]; l
   const focused = active != null ? points[active] : points.at(-1) ?? null;
 
   return (
-    <section aria-labelledby="admissions-weekly-title" data-admissions-weekly-chart="true">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#111111] pb-3">
-        <h2 id="admissions-weekly-title" className="text-[20px] font-semibold tracking-[-0.03em]">
+    <section aria-labelledby="admissions-weekly-title" data-admissions-weekly-chart="true" className="rounded-xl border border-[#dfe3e1] bg-white p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ee] pb-4">
+        <h2 id="admissions-weekly-title" className="text-[15px] font-semibold tracking-[-0.02em]">
           Weekly admissions and discharges
         </h2>
         <div className="flex items-center gap-4 text-[10px] text-[#595959]">
@@ -375,7 +393,6 @@ function WeeklyFlowChart({ points, loading }: { points: AdmissionsFlowPoint[]; l
               </span>
             ))}
           </div>
-          <p className="mt-2 text-[10px] text-[#737373]">Weeks start Monday. The latest week is still in progress and shown lighter.</p>
         </>
       ) : (
         <p className="py-8 text-[12px] text-[#737373]">Weekly resident flow is not available in the current snapshot.</p>
@@ -407,16 +424,6 @@ function LegendSwatch({ color, label }: { color: string; label: string }) {
   );
 }
 
-function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <article className="min-h-32 border-b border-[#d9d9d9] px-4 py-5 sm:even:border-l xl:border-b-0 xl:border-l xl:first:border-l-0">
-      <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#737373]">{label}</p>
-      <p className="mt-3 text-[34px] font-semibold leading-none tracking-[-0.04em]">{value}</p>
-      <p className="mt-3 text-[10px] leading-4 text-[#737373]">{detail}</p>
-    </article>
-  );
-}
-
 function formatNumber(value: number | null) {
   return value == null || !Number.isFinite(value) ? "Not loaded" : value.toLocaleString("en-US");
 }
@@ -444,4 +451,3 @@ function formatShortDate(value: string) {
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" }).format(date);
 }
-
