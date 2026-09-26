@@ -1,7 +1,8 @@
-// Reads the PHI-free referral summary that the Pipeline application publishes
-// for Alamo leadership. Contract: docs/platform/admissions-zone.md
-// ("Referral summary contract"). Pipeline owns the referral data; Alamo only
-// displays these aggregate counts and never calls Pipeline's internal APIs.
+// Reads the protected referral summary that the Pipeline application publishes
+// for the authenticated Alamo Platform. Contract: docs/platform/admissions-zone.md
+// ("Referral summary contract"). Pipeline owns the referral data; Alamo
+// displays the client and workflow fields needed for this board and never
+// calls Pipeline's internal APIs.
 
 const REQUEST_TIMEOUT_MS = 5_000;
 const CACHE_TTL_MS = 5 * 60_000;
@@ -49,6 +50,7 @@ function flag(value) {
 
 function normalizeCard(card, pipelineOrigin) {
   const referralId = count(card?.referral_id);
+  const clientName = text(card?.client_name, 160);
   const column = BOARD_COLUMNS.has(card?.column) ? card.column : null;
   const status = text(card?.status, 80);
   const nextAction = text(card?.next_action, 160) ?? "";
@@ -65,7 +67,7 @@ function normalizeCard(card, pipelineOrigin) {
   };
   const path = typeof card?.pipeline_path === "string" && PIPELINE_PATH.test(card.pipeline_path) ? card.pipeline_path : null;
   if (
-    referralId == null || !column || !status || !community || daysSinceUpdate == null ||
+    referralId == null || !clientName || !column || !status || !community || daysSinceUpdate == null ||
     (card?.days_open !== null && daysOpen == null) ||
     (card?.planned_admission_date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(planned ?? "")) ||
     Object.values(flags).some((value) => value == null) || !path
@@ -74,6 +76,7 @@ function normalizeCard(card, pipelineOrigin) {
   }
   return {
     referralId,
+    clientName,
     column,
     status,
     nextAction,
@@ -89,8 +92,8 @@ function normalizeCard(card, pipelineOrigin) {
 }
 
 /**
- * Accept only the documented fields so an upstream change can never pass
- * client identity or other referral detail through to the browser.
+ * Accept only the documented fields so an upstream change cannot pass
+ * unrelated referral detail through to the browser.
  * @param {any} payload
  * @param {string} [pipelineOrigin]
  */

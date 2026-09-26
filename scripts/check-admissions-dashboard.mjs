@@ -82,6 +82,7 @@ assert.equal(buildAdmissionsDashboard({ snapshot: { as_of_date: "2027-01-03" } }
 const month = (key, received, accepted) => ({ month: key, received, accepted, declined: 1, admitted: 0 });
 const card = (overrides) => ({
   referral_id: 11,
+  client_name: "Jordan Lee",
   column: "in_progress",
   status: "Assessment scheduled",
   next_action: "Prepare assessment",
@@ -112,7 +113,7 @@ const pipelinePayload = {
       column("decision", "Decision", [["Awaiting admit", 1]])
     ],
     cards: [
-      card({ client_name: "Leaked", dob: "1970-01-01" }),
+      card({ client_name: "Jordan Lee", dob: "1970-01-01" }),
       card({ referral_id: 12, column: "received", status: "Referral received", community: "Unassigned", owner: "Unassigned", flags: { stale: true, unassigned: true, move_in_overdue: false } }),
       card({ referral_id: 13, column: "decision", status: "Awaiting admit", community: "Victoria's House", planned_admission_date: "2026-09-20", flags: { stale: false, unassigned: false, move_in_overdue: true } })
     ],
@@ -129,14 +130,16 @@ const pipelinePayload = {
 const summary = normalizePipelineAdmissionsSummary(pipelinePayload, "https://pipeline.example");
 assert.equal(summary?.status, "connected");
 assert.deepEqual(summary?.metrics, { onBoard: 3, stale: 1, unassigned: 1, awaitingAdmission: 1 });
+assert.equal(summary?.board.cards[0].clientName, "Jordan Lee");
 assert.equal(summary?.board.cards[0].pipelineUrl, "https://pipeline.example/?view=referrals&screen=packet&referralId=11&workspaceStage=assessment");
-assert.ok(!JSON.stringify(summary).includes("Leaked") && !JSON.stringify(summary).includes("1970"), "only documented fields pass through");
+assert.ok(!JSON.stringify(summary).includes("1970"), "undocumented fields do not pass through");
 const reject = (cardOverrides) => normalizePipelineAdmissionsSummary({
   ...pipelinePayload,
   board: { ...pipelinePayload.board, cards: [card(cardOverrides)] }
 });
 assert.equal(reject({ pipeline_path: "https://evil.example/?x=1" }), null, "links must stay relative to Pipeline");
 assert.equal(reject({ pipeline_path: "//evil.example/?x=1" }), null);
+assert.equal(reject({ client_name: "" }), null);
 assert.equal(reject({ column: "archive" }), null);
 assert.equal(reject({ flags: { stale: "yes", unassigned: false, move_in_overdue: false } }), null);
 assert.equal(normalizePipelineAdmissionsSummary({ ...pipelinePayload, metrics: { ...pipelinePayload.metrics, on_board: -1 } }), null);

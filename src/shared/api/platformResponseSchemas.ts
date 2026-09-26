@@ -322,7 +322,7 @@ function validateAdmissionsDashboardPayload(value: unknown) {
     validateRows<AdmissionsBoardCard>(cards, endpoint, "referral_pipeline.board.cards", (card, path) => {
       ["referralId", "daysSinceUpdate"].forEach((field) => assertNumber(card[field], endpoint, `${path}.${field}`));
       assertNumber(card.daysOpen, endpoint, `${path}.daysOpen`, { nullable: true });
-      ["column", "status", "nextAction", "community", "owner", "priority", "pipelineUrl"].forEach((field) => assertString(card[field], endpoint, `${path}.${field}`));
+      ["clientName", "column", "status", "nextAction", "community", "owner", "priority", "pipelineUrl"].forEach((field) => assertString(card[field], endpoint, `${path}.${field}`));
       ["facilityId", "plannedAdmissionDate"].forEach((field) => assertString(card[field], endpoint, `${path}.${field}`, { nullable: true }));
       const flags = assertRecord(card.flags, endpoint, `${path}.flags`);
       ["stale", "unassigned", "moveInOverdue"].forEach((field) => assertBoolean(flags[field], endpoint, `${path}.flags.${field}`));

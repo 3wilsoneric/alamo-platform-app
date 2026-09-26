@@ -29,8 +29,8 @@ export default function AdmissionsPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [surface, setSurface] = useState<AdmissionsSurface>("board");
 
-  // Every signed-in Platform user sees this leadership view. Rows carry
-  // process facts only; client identity stays behind Pipeline's own sign-in.
+  // Every signed-in Platform user sees this working view, including the client
+  // identity already available throughout the authenticated Platform.
   useEffect(() => {
     const controller = new AbortController();
     setLoadFailed(false);

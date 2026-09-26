@@ -180,6 +180,7 @@ export type AdmissionsBoardColumnKey = "received" | "in_progress" | "decision";
 
 export interface AdmissionsBoardCard {
   referralId: number;
+  clientName: string;
   column: AdmissionsBoardColumnKey;
   status: string;
   nextAction: string;

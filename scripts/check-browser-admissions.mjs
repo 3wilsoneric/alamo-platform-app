@@ -28,6 +28,10 @@ await withBrowserQa(async (browser) => {
       throw new Error(`Admissions overview is missing its compact ${name} tab.`);
     }
   }
+  const clientNames = page.locator('[data-admissions-client-name="true"]');
+  if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
+    throw new Error("Admissions board cards must show the client name.");
+  }
   const fullPipelineLink = page.locator('[data-open-full-pipeline="true"]');
   if (
     await fullPipelineLink.count() !== 1 ||

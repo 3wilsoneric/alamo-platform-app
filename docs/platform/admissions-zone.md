@@ -20,9 +20,9 @@ There is no repeated page title, explanatory subtitle, or KPI strip.
 - **Board** — the live referral board, laid out like Pipeline's own
   board: Referral received, In progress, and Decision columns holding one card
   per referral. The columns use the same calm green, blue, and warm decision
-  surfaces as the transactional board. Cards show destination community,
-  referral number, owner, next step, days open, and attention flags, and open
-  the referral in Pipeline. Filters: community, "needs attention", and status.
+  surfaces as the transactional board. Cards show client name, destination
+  community, referral number, owner, next step, days open, and attention flags,
+  and open the referral in Pipeline. Filters: community, "needs attention", and status.
   A List toggle shows the same slice as a sortable-by-age table.
 - **Census** — one compact portfolio row followed by the five communities,
   combining census, occupancy, month-to-date admissions, discharges, net
@@ -34,9 +34,9 @@ There is no repeated page title, explanatory subtitle, or KPI strip.
 Census and flow come from the governed snapshot tables
 `community_operating_summary`, `resident_flow_weekly_by_community`, and
 `resident_flow_monthly_by_community`. Census data is counts only: the flow tables also carry resident names, and
-the builder never copies them. The
-overview does not copy referral documents, extracted fields, assessment
-details, or other unnecessary PHI into Alamo.
+the builder never copies them. The referral board receives the client name from
+Pipeline; referral documents, extracted fields, and assessment details remain
+behind the Pipeline drill-down.
 
 ## Referral summary contract
 
@@ -51,14 +51,14 @@ server, never from the browser and never through Pipeline's internal APIs.
   (separate from its worker secret). Pipeline documents the producer side in
   `docs/operations/PLATFORM_ADMISSIONS_SUMMARY.md`.
 - response: `board` (`total`, `cards_truncated`, `columns[]` with per-status
-  counts, and up to 300 `cards[]`: `referral_id`, `column`, `status`,
+  counts, and up to 300 `cards[]`: `referral_id`, `client_name`, `column`, `status`,
   `next_action`, `community`, `owner`, `priority`, `days_open`,
   `days_since_update`, `planned_admission_date`, `flags`, and a relative
   `pipeline_path`), `metrics`, `upcoming_admissions`, and `history`
-  (`month_outcomes`, six `monthly[]` rows, `decision_timing`). Never client
-  names, DOB, contact details, referral sources, notes, or documents; the
-  referral number and Pipeline link are the drill-down, and Pipeline enforces
-  its own sign-in and roles when they are opened.
+  (`month_outcomes`, six `monthly[]` rows, `decision_timing`). Client name is
+  included as part of the authenticated Platform's existing PHI workflow. DOB,
+  contact details, referral sources, notes, and documents remain behind the
+  Pipeline drill-down, where Pipeline enforces its own sign-in and roles.
 - `pipeline_path` must be a query-only relative path; Alamo joins it to the
   configured Pipeline origin and drops the whole summary if any row fails the
   contract.
@@ -98,10 +98,11 @@ application owns its authentication redirects and browser origin.
 ## Authentication
 
 Both applications use the same Entra tenant and browser application pattern.
-Every signed-in Alamo Platform user can open the Admissions overview because
-it carries aggregate counts only. The Admissions roles still control the
-assessor-only workspace boundary. Pipeline independently validates its own session and roles
-before exposing referral or document data.
+Every signed-in Alamo Platform user can open the Admissions overview, including
+the client name on each referral card, under the same authenticated PHI boundary
+as resident and incident views. The Admissions roles still control the
+assessor-only workspace boundary. Pipeline independently validates its own
+session and roles before exposing referral or document data.
 
 ## Verification
 

@@ -190,13 +190,13 @@ function BoardCard({ card, column }: { card: AdmissionsBoardCard; column: Admiss
     <a
       href={card.pipelineUrl}
       data-admissions-board-card={card.referralId}
-      aria-label={`Referral ${card.referralId}, ${communityName(card)}, ${card.status}. Open in Pipeline`}
+      aria-label={`${card.clientName}, referral ${card.referralId}, ${communityName(card)}, ${card.status}. Open in Pipeline`}
       className="group block rounded-xl border border-[#dfe3e1] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition hover:-translate-y-px hover:border-[#bfc9c3] hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="block text-[15px] font-semibold tracking-[-0.02em] text-[#171918]">Referral #{card.referralId}</span>
-          <span className="mt-1 block truncate text-[11px] text-[#69716c]">{communityName(card)}</span>
+          <span data-admissions-client-name="true" className="block truncate text-[15px] font-semibold tracking-[-0.02em] text-[#171918]">{card.clientName}</span>
+          <span className="mt-1 block truncate text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</span>
         </div>
         <span className="shrink-0 rounded-md bg-[#f2f4f3] px-2 py-1 text-[10px] font-semibold text-[#59615c]">{formatShortDays(card.daysOpen)}</span>
       </div>
@@ -255,7 +255,10 @@ function ReferralList({ cards, expanded, onToggle }: { cards: AdmissionsBoardCar
           <tbody>
             {shown.map((card) => (
               <tr key={card.referralId} className="border-b border-[#edf0ee] text-[12px] last:border-b-0 hover:bg-[#fafbfa]">
-                <td className="px-4 py-4 font-semibold">#{card.referralId}</td>
+                <td className="px-4 py-4">
+                  <span className="block font-semibold">{card.clientName}</span>
+                  <span className="mt-0.5 block text-[11px] text-[#69716c]">Referral #{card.referralId}</span>
+                </td>
                 <td className="px-4 py-4"><span className="font-medium">{card.status}</span><span className="block text-[11px] text-[#69716c]">{card.nextAction}</span></td>
                 <td className="px-4 py-4">{communityName(card)}</td>
                 <td className="px-4 py-4">{card.owner}</td>
