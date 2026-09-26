@@ -129,6 +129,23 @@ executive update and progress modal in the deployed bundle, no visible Pipeline
 control, a connected payload with 21 of 21 named cards, and 4/4 public smoke
 probes.
 
+### Admissions canvas alignment release — 2026-09-26
+
+The Admissions page canvas now uses the same white background as the main Home
+surface while preserving workflow-column and card colors.
+
+- source commit: `0faa171`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/5`
+- image tag: `alamo-platform:admissions-canvas-0faa171`
+- image digest: `sha256:02d025953096a7b0c7fdfb5f351b3cb9a0d6cb92d123288e301800a58d50d6e6`
+- active revision: `alamo-platform-prod-web--admissions-canvas-0926`
+- rollback digest: `sha256:507e93f00abb513e72e48810a2f687b2445c4077ce9fac548bca61104ba46ac8`
+
+This is a frontend-only overlay. Post-promotion verification confirmed a
+healthy revision at 100% traffic, matching computed Home and Admissions canvas
+colors in desktop/mobile browser QA, a connected payload with 21 of 21 named
+cards, and 4/4 public smoke probes.
+
 ## Local Development
 
 Install and run:

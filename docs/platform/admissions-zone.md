@@ -15,7 +15,8 @@ Admissions and Pipeline are deliberately separate product surfaces.
 `GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and
 opens directly on a compact workflow board. A single segmented control switches
 between Board, Census, and Trends without stacking three dashboards on one page.
-There is no repeated page title, explanatory subtitle, or KPI strip.
+The page uses the same white canvas as the main Home surface. There is no
+repeated page title, explanatory subtitle, or KPI strip.
 
 - **Board** — the current governed referral update: Referral received, In
   progress, and Decision columns holding one card per referral. The columns use
