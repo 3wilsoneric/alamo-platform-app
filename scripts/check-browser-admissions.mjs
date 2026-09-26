@@ -48,10 +48,19 @@ await withBrowserQa(async (browser) => {
   if (
     !/active referrals?/.test(executiveText) ||
     !executiveText.includes("at decision") ||
-    !executiveText.includes("Activity is concentrated at") ||
-    !executiveText.includes("immediate follow-up")
+    !executiveText.includes("Where the work is:") ||
+    !executiveText.includes("Immediate follow-up:")
   ) {
     throw new Error(`Admissions executive update is incomplete: ${executiveText}`);
+  }
+  if (/[()]/.test(executiveText)) {
+    throw new Error(`Admissions executive update must use natural counts without parentheses: ${executiveText}`);
+  }
+  if (await executiveUpdate.locator('[data-admissions-executive-line]').count() !== 3) {
+    throw new Error("Admissions executive update must keep its workload, location, and follow-up lines distinct.");
+  }
+  if (await executiveUpdate.locator("strong").count() < 6) {
+    throw new Error("Admissions executive update has lost its reading hierarchy.");
   }
   const surfaceTabs = page.locator('[data-admissions-surface-tabs="true"]');
   const tabTreatment = await surfaceTabs.getByRole("tab", { name: /^Board/ }).evaluate((element) => {
