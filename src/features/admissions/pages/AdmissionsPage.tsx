@@ -56,7 +56,7 @@ export default function AdmissionsPage() {
   return (
     <div
       data-admissions-overview="true"
-      className="relative left-1/2 min-h-dvh w-screen -translate-x-1/2 bg-[#f5f6f7] px-3 pb-14 pt-16 text-[#171918] sm:px-6 lg:px-10"
+      className="relative left-1/2 min-h-dvh w-screen -translate-x-1/2 bg-white px-3 pb-14 pt-16 text-[#171918] sm:px-6 lg:px-10"
     >
       <PlatformPageNavigation
         active="admissions"

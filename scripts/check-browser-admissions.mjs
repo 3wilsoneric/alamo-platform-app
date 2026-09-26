@@ -16,6 +16,9 @@ await withBrowserQa(async (browser) => {
   attachPageDiagnostics(page, { consoleErrors, requestFailures });
 
   await page.goto(`${BASE_URL}/home`, { waitUntil: "domcontentloaded" });
+  const homeBackground = await page.locator('[data-california-workspace-carousel="true"]').evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor
+  );
   const admissionsLink = page.locator('[data-california-hero-action="admissions"]');
   if (await admissionsLink.count()) {
     throw new Error("Admissions navigation must remain hidden until the overview is finished.");
@@ -23,6 +26,12 @@ await withBrowserQa(async (browser) => {
   await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
 
   await page.locator('[data-admissions-overview="true"]').waitFor();
+  const admissionsBackground = await page.locator('[data-admissions-overview="true"]').evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor
+  );
+  if (admissionsBackground !== homeBackground) {
+    throw new Error(`Admissions canvas ${admissionsBackground} does not match Home ${homeBackground}.`);
+  }
   for (const name of ["Board", "Census", "Trends"]) {
     if (await page.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
       throw new Error(`Admissions overview is missing its compact ${name} tab.`);
