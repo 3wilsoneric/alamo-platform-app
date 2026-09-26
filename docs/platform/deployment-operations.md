@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-09-15
+- updated: 2026-09-26
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -40,6 +40,22 @@ and replace only `/app/dist`. This preserves the already-proven Azure server,
 API, environment, and data adapters while shipping the reviewed React bundle.
 Record the preceding image digest before promotion so rollback remains an Azure
 Container App image update.
+
+### Admissions board release — 2026-09-26
+
+The compact Admissions workflow board is deployed as a frontend-only release:
+
+- source commit: `348e96e`
+- image tag: `alamo-platform:admissions-board-348e96e`
+- image digest: `sha256:5f69353518b7c653062b80c6575a4cb2a0f80052e4ce6bfc2925ef90ec729132`
+- active revision: `alamo-platform-prod-web--admissions-board-0926`
+- rollback digest: `sha256:abd325d6a2dcb05837932ce77eedabd1d90fcaddbfe8539827cfd933a8553e15`
+
+The release overlays `/app/dist` on the preceding production digest. It does
+not replace the server, API, environment, or Pipeline feed configuration.
+Post-promotion verification confirmed a healthy revision at 100% traffic,
+4/4 public smoke probes, and a connected live Admissions payload with 21 of 21
+board cards, five communities, and portfolio census 541.
 
 ## Local Development
 
