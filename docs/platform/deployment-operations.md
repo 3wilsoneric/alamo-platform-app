@@ -146,6 +146,25 @@ healthy revision at 100% traffic, matching computed Home and Admissions canvas
 colors in desktop/mobile browser QA, a connected payload with 21 of 21 named
 cards, and 4/4 public smoke probes.
 
+### Admissions executive briefing format release — 2026-09-26
+
+The live executive paragraph now separates workload, community concentration,
+and immediate follow-up into three scannable lines. Selective semibold emphasis
+creates reading hierarchy, and community loads use natural language instead of
+parenthetical counts.
+
+- source commit: `5c6927a`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/6`
+- image tag: `alamo-platform:admissions-executive-format-5c6927a`
+- image digest: `sha256:8e6b3b5d7af56d3b9fe932947804630fb7409184602f00c4409afaf54c875808`
+- active revision: `alamo-platform-prod-web--admissions-format-0926`
+- rollback digest: `sha256:02d025953096a7b0c7fdfb5f351b3cb9a0d6cb92d123288e301800a58d50d6e6`
+
+This is a frontend-only overlay. Post-promotion verification confirmed a
+healthy revision at 100% traffic, the desktop/mobile formatting regression, a
+connected payload with 21 of 21 named cards, five communities, portfolio census
+541, and 4/4 public smoke probes.
+
 ## Local Development
 
 Install and run:
