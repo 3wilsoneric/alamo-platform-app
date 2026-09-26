@@ -1,4 +1,5 @@
 import type {
+  AdmissionsDashboardResponse,
   CommunitySnapshotResponse,
   DataExplorerKind,
   DataExplorerResponse,
@@ -22,6 +23,7 @@ import {
 } from "./authenticatedFetch";
 
 export type {
+  AdmissionsDashboardResponse,
   CommunitySnapshotResponse,
   CommunityIncidentDetailRecord,
   DataExplorerKind,
@@ -418,6 +420,21 @@ export function readCachedCommunitiesDashboard() {
 
 export function fetchHomeDashboard(signal?: AbortSignal) {
   return fetchJson<HomeDashboardResponse>("/api/home-dashboard", signal, platformResponseValidators.homeDashboard);
+}
+
+export function fetchAdmissionsDashboard(signal?: AbortSignal) {
+  return fetchJson<AdmissionsDashboardResponse>(
+    "/api/platform/admissions-dashboard",
+    signal,
+    platformResponseValidators.admissionsDashboard
+  );
+}
+
+export function readCachedAdmissionsDashboard() {
+  return readCachedJson(
+    "/api/platform/admissions-dashboard",
+    platformResponseValidators.admissionsDashboard
+  );
 }
 
 export function readCachedHomeDashboard() {

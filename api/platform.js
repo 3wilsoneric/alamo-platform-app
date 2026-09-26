@@ -1,4 +1,5 @@
 import {
+  getAdmissionsDashboardData,
   getAnalystQaStatus,
   getPlatformBootstrap,
   getPlatformHealth,
@@ -51,6 +52,7 @@ import {
 } from "../server/pipeline-clinical-api.mjs";
 
 const PLATFORM_GET_ROUTES = Object.freeze({
+  "/api/platform/admissions-dashboard": () => getAdmissionsDashboardData(),
   "/api/platform/bootstrap": () => getPlatformBootstrap(),
   "/api/platform/health": () => getPlatformHealth(),
   "/api/platform/analyst-qa": () => getAnalystQaStatus(),

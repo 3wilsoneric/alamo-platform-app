@@ -1,6 +1,8 @@
 import { getDatabricksAuthMode, getDatabricksConfig, queryDatabricks } from "./databricks.mjs";
 import { buildDataExplorerPayload, normalizeExplorerKind } from "./data-explorer.mjs";
+import { buildAdmissionsDashboard } from "./admissions-dashboard.mjs";
 import { buildHomeDashboard } from "./home-dashboard.mjs";
+import { getPipelineAdmissionsSummary } from "./pipeline-admissions-summary.mjs";
 import { getAnalystQaStatus, getQaArtifactStatuses } from "./qa-artifacts.mjs";
 import {
   getAzureSnapshotStorageSummary,
@@ -39,6 +41,16 @@ const GOVERNED_AS_OF_CTE = `report_context AS (
 
 export { getAnalystQaStatus, normalizeAnalystQaArtifact } from "./qa-artifacts.mjs";
 export { getSnapshotFreshness, isSnapshotUnavailableError } from "./snapshot-status.mjs";
+
+// Census and flow come from the governed snapshot; the referral funnel is
+// fetched from Pipeline separately so either source can be missing.
+export async function getAdmissionsDashboardData() {
+  const [snapshot, referralPipeline] = await Promise.all([
+    getRequiredPlatformSnapshot(),
+    getPipelineAdmissionsSummary()
+  ]);
+  return decorateSnapshotPayload(buildAdmissionsDashboard(snapshot, { referralPipeline }), snapshot);
+}
 
 function stripAnalystHistoryForClient(reportsSummary) {
   if (!reportsSummary?.toolContext) return reportsSummary;

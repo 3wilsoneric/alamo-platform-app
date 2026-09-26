@@ -1,4 +1,6 @@
 import type {
+  AdmissionsBoardCard,
+  AdmissionsDashboardResponse,
   AnalystQaStatus,
   AnalystTraceTelemetryResponse,
   CommunityIncidentDetailRecord,
@@ -252,6 +254,94 @@ function validateAnalyticsSummaryPayload(value: unknown, endpoint: string) {
   return payload as unknown as ReportsSummaryResponse;
 }
 
+function validateAdmissionsDashboardPayload(value: unknown) {
+  const endpoint = "admissions dashboard";
+  const payload = assertRecord(value, endpoint);
+  assertString(payload.generated_at, endpoint, "generated_at");
+  assertIsoCalendarDate(payload.as_of_date, endpoint, "as_of_date");
+  assertString(payload.month, endpoint, "month");
+  assertString(payload.prior_month, endpoint, "prior_month");
+  const assertCounts = (value: unknown, path: string, fields: string[]) => {
+    const record = assertRecord(value, endpoint, path);
+    fields.forEach((field) => assertNumber(record[field], endpoint, `${path}.${field}`));
+    return record;
+  };
+  const assertCommunityReferrals = (value: unknown, path: string) =>
+    assertCounts(value, path, ["onBoard", "inDecision", "needsAttention"]);
+  const assertTotals = (totalsValue: unknown, path: string) => {
+    const totals = assertRecord(totalsValue, endpoint, path);
+    ["admissions", "discharges", "net"].forEach((field) => assertNumber(totals[field], endpoint, `${path}.${field}`));
+  };
+  const portfolio = assertRecord(payload.portfolio, endpoint, "portfolio");
+  ["census", "censusChange", "operatingLimit", "occupancyPct"].forEach((field) => assertNumber(portfolio[field], endpoint, `portfolio.${field}`, { nullable: true }));
+  ["monthToDate", "lastMonth", "recentWeeks"].forEach((field) => assertTotals(portfolio[field], `portfolio.${field}`));
+  for (const seriesKey of ["weekly", "monthly"]) {
+    const series = assertArray(payload[seriesKey], endpoint, seriesKey);
+    if (series.length > 12) fail(endpoint, `${seriesKey} exceeds the 12-item limit`);
+    series.forEach((point, index) => {
+      assertTotals(point, `${seriesKey}[${index}]`);
+      assertString((point as Record<string, unknown>).period, endpoint, `${seriesKey}[${index}].period`);
+    });
+  }
+  const communities = assertArray(payload.communities, endpoint, "communities");
+  if (communities.length > 10) fail(endpoint, "communities exceeds the 10-item limit");
+  validateRows<AdmissionsDashboardResponse["communities"][number]>(communities, endpoint, "communities", (row, path) => {
+    ["facilityId", "communityName", "shortName"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
+    ["census", "censusChange", "operatingLimit", "occupancyPct"].forEach((field) => assertNumber(row[field], endpoint, `${path}.${field}`, { nullable: true }));
+    ["monthToDate", "lastMonth", "recentWeeks"].forEach((field) => assertTotals(row[field], `${path}.${field}`));
+    if (row.referrals !== null) assertCommunityReferrals(row.referrals, `${path}.referrals`);
+  });
+  const trend = assertArray(payload.referral_trend, endpoint, "referral_trend");
+  if (trend.length > 12) fail(endpoint, "referral_trend exceeds the 12-item limit");
+  trend.forEach((pointValue, index) => {
+    const point = assertRecord(pointValue, endpoint, `referral_trend[${index}]`);
+    assertString(point.month, endpoint, `referral_trend[${index}].month`);
+    ["received", "accepted", "censusAdmissions"].forEach((field) => assertNumber(point[field], endpoint, `referral_trend[${index}].${field}`));
+  });
+  const referralPipeline = assertRecord(payload.referral_pipeline, endpoint, "referral_pipeline");
+  if (!["connected", "not_connected", "unavailable"].includes(String(referralPipeline.status))) {
+    fail(endpoint, "referral_pipeline.status is not a known state");
+  }
+  if (referralPipeline.status === "connected") {
+    assertString(referralPipeline.generatedAt, endpoint, "referral_pipeline.generatedAt");
+    const board = assertRecord(referralPipeline.board, endpoint, "referral_pipeline.board");
+    assertNumber(board.total, endpoint, "referral_pipeline.board.total");
+    assertBoolean(board.truncated, endpoint, "referral_pipeline.board.truncated");
+    const columns = assertArray(board.columns, endpoint, "referral_pipeline.board.columns");
+    if (columns.length !== 3) fail(endpoint, "referral_pipeline.board.columns must contain the three board columns");
+    columns.forEach((columnValue, index) => {
+      const path = `referral_pipeline.board.columns[${index}]`;
+      const column = assertCounts(columnValue, path, ["count"]);
+      ["key", "label"].forEach((field) => assertString(column[field], endpoint, `${path}.${field}`));
+      assertArray(column.statuses, endpoint, `${path}.statuses`).forEach((row, statusIndex) => {
+        assertString(assertCounts(row, `${path}.statuses[${statusIndex}]`, ["count"]).status, endpoint, `${path}.statuses[${statusIndex}].status`);
+      });
+    });
+    const cards = assertArray(board.cards, endpoint, "referral_pipeline.board.cards");
+    if (cards.length > 300) fail(endpoint, "referral_pipeline.board.cards exceeds the 300-item limit");
+    validateRows<AdmissionsBoardCard>(cards, endpoint, "referral_pipeline.board.cards", (card, path) => {
+      ["referralId", "daysSinceUpdate"].forEach((field) => assertNumber(card[field], endpoint, `${path}.${field}`));
+      assertNumber(card.daysOpen, endpoint, `${path}.daysOpen`, { nullable: true });
+      ["column", "status", "nextAction", "community", "owner", "priority", "pipelineUrl"].forEach((field) => assertString(card[field], endpoint, `${path}.${field}`));
+      ["facilityId", "plannedAdmissionDate"].forEach((field) => assertString(card[field], endpoint, `${path}.${field}`, { nullable: true }));
+      const flags = assertRecord(card.flags, endpoint, `${path}.flags`);
+      ["stale", "unassigned", "moveInOverdue"].forEach((field) => assertBoolean(flags[field], endpoint, `${path}.flags.${field}`));
+      if (!/^https?:\/\//.test(String(card.pipelineUrl))) fail(endpoint, `${path}.pipelineUrl must be a web link`);
+    });
+    assertCounts(referralPipeline.metrics, "referral_pipeline.metrics", ["onBoard", "stale", "unassigned", "awaitingAdmission"]);
+    assertCounts(referralPipeline.upcomingAdmissions, "referral_pipeline.upcomingAdmissions", ["next7Days", "next30Days", "pastPlannedDate", "noPlannedDate"]);
+    const history = assertRecord(referralPipeline.history, endpoint, "referral_pipeline.history");
+    const monthFields = ["received", "accepted", "declined", "admitted"];
+    assertString(assertCounts(history.monthOutcomes, "referral_pipeline.history.monthOutcomes", monthFields).month, endpoint, "referral_pipeline.history.monthOutcomes.month");
+    assertArray(history.monthly, endpoint, "referral_pipeline.history.monthly").forEach((row, index) => {
+      assertString(assertCounts(row, `referral_pipeline.history.monthly[${index}]`, monthFields).month, endpoint, `referral_pipeline.history.monthly[${index}].month`);
+    });
+    const timing = assertCounts(history.decisionTiming, "referral_pipeline.history.decisionTiming", ["windowDays", "decisionsCounted"]);
+    assertNumber(timing.medianDaysToDecision, endpoint, "referral_pipeline.history.decisionTiming.medianDaysToDecision", { nullable: true });
+  }
+  return payload as unknown as AdmissionsDashboardResponse;
+}
+
 function validateDataExplorerPayload(value: unknown, endpoint: string) {
   const payload = assertRecord(value, endpoint);
   assertString(payload.kind, endpoint, "kind");
@@ -356,6 +446,7 @@ function validateDataExplorerPayload(value: unknown, endpoint: string) {
 }
 
 export const platformResponseValidators = {
+  admissionsDashboard: validateAdmissionsDashboardPayload,
   communitiesDashboard(value: unknown) {
     const payload = assertRecord(value, "communities dashboard");
     assertString(payload.generated_at, "communities dashboard", "generated_at");

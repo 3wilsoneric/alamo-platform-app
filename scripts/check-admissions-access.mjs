@@ -76,8 +76,8 @@ if (
   throw new Error("Admissions identities must enter the overview without unrelated workspace preloading.");
 }
 if (
-  !admissionsPage.includes("fetchHomeDashboard") ||
-  !admissionsPage.includes("currentWeeklyCensus") ||
+  !admissionsPage.includes("fetchAdmissionsDashboard") ||
+  !admissionsPage.includes("referral_pipeline") ||
   !admissionsPage.includes('data-admissions-overview="true"') ||
   !admissionsPage.includes('data-open-full-pipeline="true"') ||
   !admissionsPage.includes("https://alamo-pipeline.com") ||

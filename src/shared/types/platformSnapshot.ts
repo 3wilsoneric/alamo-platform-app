@@ -137,6 +137,105 @@ export interface ReportsSummaryResponse {
   }>;
 }
 
+export interface AdmissionsFlowTotals {
+  admissions: number;
+  discharges: number;
+  net: number;
+}
+
+export interface AdmissionsFlowPoint extends AdmissionsFlowTotals {
+  period: string;
+  partial?: boolean;
+}
+
+export interface AdmissionsCommunityRow {
+  facilityId: string;
+  communityName: string;
+  shortName: string;
+  census: number | null;
+  censusChange: number | null;
+  operatingLimit: number | null;
+  occupancyPct: number | null;
+  monthToDate: AdmissionsFlowTotals;
+  lastMonth: AdmissionsFlowTotals;
+  recentWeeks: AdmissionsFlowTotals;
+  referrals: AdmissionsCommunityReferrals | null;
+}
+
+export interface AdmissionsCommunityReferrals {
+  onBoard: number;
+  inDecision: number;
+  needsAttention: number;
+}
+
+export interface AdmissionsReferralMonth {
+  month: string;
+  received: number;
+  accepted: number;
+  declined: number;
+  admitted: number;
+}
+
+export type AdmissionsBoardColumnKey = "received" | "in_progress" | "decision";
+
+export interface AdmissionsBoardCard {
+  referralId: number;
+  column: AdmissionsBoardColumnKey;
+  status: string;
+  nextAction: string;
+  community: string;
+  facilityId: string | null;
+  owner: string;
+  priority: string;
+  daysOpen: number | null;
+  daysSinceUpdate: number;
+  plannedAdmissionDate: string | null;
+  flags: { stale: boolean; unassigned: boolean; moveInOverdue: boolean };
+  pipelineUrl: string;
+}
+
+export type AdmissionsReferralPipeline =
+  | { status: "not_connected" | "unavailable" }
+  | {
+      status: "connected";
+      generatedAt: string;
+      board: {
+        total: number;
+        truncated: boolean;
+        columns: Array<{ key: AdmissionsBoardColumnKey; label: string; count: number; statuses: Array<{ status: string; count: number }> }>;
+        cards: AdmissionsBoardCard[];
+      };
+      metrics: { onBoard: number; stale: number; unassigned: number; awaitingAdmission: number };
+      upcomingAdmissions: { next7Days: number; next30Days: number; pastPlannedDate: number; noPlannedDate: number };
+      history: {
+        monthOutcomes: AdmissionsReferralMonth;
+        monthly: AdmissionsReferralMonth[];
+        decisionTiming: { windowDays: number; medianDaysToDecision: number | null; decisionsCounted: number };
+      };
+    };
+
+export interface AdmissionsDashboardResponse {
+  generated_at: string;
+  as_of_date: string;
+  month: string;
+  prior_month: string;
+  portfolio: {
+    census: number | null;
+    censusChange: number | null;
+    operatingLimit: number | null;
+    occupancyPct: number | null;
+    monthToDate: AdmissionsFlowTotals;
+    lastMonth: AdmissionsFlowTotals;
+    recentWeeks: AdmissionsFlowTotals;
+  };
+  weekly: AdmissionsFlowPoint[];
+  monthly: AdmissionsFlowPoint[];
+  communities: AdmissionsCommunityRow[];
+  referral_trend: Array<{ month: string; received: number; accepted: number; censusAdmissions: number }>;
+  referral_pipeline: AdmissionsReferralPipeline;
+  snapshot_status?: { warning: string | null; stale: boolean } | null;
+}
+
 export interface PlatformHealthResponse {
   ok: boolean;
   backend: string;

@@ -3,7 +3,7 @@
 - purpose: define the Alamo Admissions overview and the full Pipeline referral-workflow boundary
 - status: current implementation and deployment contract
 - owners: product, engineering, admissions platform
-- updated: 2026-08-14
+- updated: 2026-09-26
 - tags: admissions, pipeline, routing, authentication, integration
 - labels: application-boundary, current-state, deployment
 
@@ -11,17 +11,62 @@ Admissions and Pipeline are deliberately separate product surfaces.
 
 ## Alamo Admissions overview
 
-`/admissions` is an Alamo-native aggregate overview. It uses the same governed
-home-dashboard contract as the rest of Alamo and shows:
+`/admissions` is an Alamo-native leadership dashboard. It reads
+`GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and shows,
+top to bottom:
 
-- portfolio census
-- census movement
-- community count and resident-profile coverage
-- community census, location, change, and data-through period
-- snapshot freshness or last-known-good warnings
+- **Pipeline now** — the live referral board, laid out like Pipeline's own
+  board: Referral received, In progress, and Decision columns holding one card
+  per referral, grouped by status (Preparation, Assessment scheduled, Under
+  review, Awaiting admit, and so on). Cards show destination community,
+  referral number, owner, next step, days open, and attention flags, and open
+  the referral in Pipeline. Filters: community, "needs attention", and status.
+  A List toggle shows the same slice as a sortable-by-age table.
+- **Census** — portfolio census, occupancy, month-to-date admissions,
+  discharges, and net movement, plus the same by community with each
+  community's board counts.
+- **History** — referrals to move-ins by month (Pipeline referrals and
+  acceptances beside census admissions), weekly admissions and discharges,
+  and median days from referral to decision.
 
-The overview does not copy referral documents, extracted fields, assessment
+Census and flow come from the governed snapshot tables
+`community_operating_summary`, `resident_flow_weekly_by_community`, and
+`resident_flow_monthly_by_community`. Census data is counts only: the flow tables also carry resident names, and
+the builder never copies them. The
+overview does not copy referral documents, extracted fields, assessment
 details, or other unnecessary PHI into Alamo.
+
+## Referral summary contract
+
+Pipeline owns referral data. Alamo reads one aggregate summary from it on the
+server, never from the browser and never through Pipeline's internal APIs.
+
+- configuration: `PIPELINE_ADMISSIONS_SUMMARY_URL` and
+  `PIPELINE_ADMISSIONS_SUMMARY_TOKEN` (a Bearer shared secret). When either is
+  unset the dashboard shows the panel as not connected.
+- Pipeline endpoint: `GET /api/integrations/platform/admissions-summary`,
+  gated in Pipeline's proxy and route by `PIPELINE_PLATFORM_SUMMARY_SECRET`
+  (separate from its worker secret). Pipeline documents the producer side in
+  `docs/operations/PLATFORM_ADMISSIONS_SUMMARY.md`.
+- response: `board` (`total`, `cards_truncated`, `columns[]` with per-status
+  counts, and up to 300 `cards[]`: `referral_id`, `column`, `status`,
+  `next_action`, `community`, `owner`, `priority`, `days_open`,
+  `days_since_update`, `planned_admission_date`, `flags`, and a relative
+  `pipeline_path`), `metrics`, `upcoming_admissions`, and `history`
+  (`month_outcomes`, six `monthly[]` rows, `decision_timing`). Never client
+  names, DOB, contact details, referral sources, notes, or documents; the
+  referral number and Pipeline link are the drill-down, and Pipeline enforces
+  its own sign-in and roles when they are opened.
+- `pipeline_path` must be a query-only relative path; Alamo joins it to the
+  configured Pipeline origin and drops the whole summary if any row fails the
+  contract.
+- Pipeline community labels are matched to facilities through
+  `shared/community-names.mjs` aliases; unmatched labels (such as
+  "Unassigned") show as "No community" on the board and in its filter.
+
+`server/pipeline-admissions-summary.mjs` keeps only these fields, caches a good
+response for five minutes, and falls back to an "unavailable" state after a
+five-second timeout or a contract mismatch, so census and flow still render.
 
 ## Full Pipeline application
 
@@ -51,8 +96,9 @@ application owns its authentication redirects and browser origin.
 ## Authentication
 
 Both applications use the same Entra tenant and browser application pattern.
-Alamo controls visibility of its Admissions overview through the maintained
-Admissions roles. Pipeline independently validates its own session and roles
+Every signed-in Alamo Platform user can open the Admissions overview because
+it carries aggregate counts only. The Admissions roles still control the
+assessor-only workspace boundary. Pipeline independently validates its own session and roles
 before exposing referral or document data.
 
 ## Verification
@@ -61,5 +107,6 @@ Run:
 
 ```bash
 npm run check:admissions-access
+npm run check:admissions-dashboard
 npm run check:browser-admissions
 ```

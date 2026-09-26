@@ -3,6 +3,7 @@ import {
   getCommunitySnapshotData,
   getAnalystQaStatus,
   getCommunitiesDashboardData,
+  getAdmissionsDashboardData,
   getDataExplorerData,
   getHomeDashboardData,
   getPlatformBootstrap,
@@ -362,6 +363,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    if (requestUrl.pathname === "/api/platform/admissions-dashboard") {
+      sendJson(res, 200, await getAdmissionsDashboardData());
+      return;
+    }
+
     if (requestUrl.pathname === "/api/platform/health") {
       sendJson(res, 200, await getPlatformHealth());
       return;
