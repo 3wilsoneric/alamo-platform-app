@@ -88,6 +88,27 @@ Pipeline and Platform revisions at 100% traffic, contract version 2.1, 21 of
 541, the desktop/mobile Admissions browser regression, and 4/4 public smoke
 probes.
 
+### Admissions progress review release — 2026-09-26
+
+The Admissions board is now a self-contained analyst update. Its section tabs
+use a quiet underline treatment, visible Pipeline links are removed, and every
+client card opens a responsive progress modal with workflow stage, next action,
+assignment, timing, planned admission, priority, and current review flags.
+
+- source commit: `e5849bb`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/3`
+- image tag: `alamo-platform:admissions-progress-e5849bb`
+- image digest: `sha256:1fb96dc2fbc4de25e503b8f47248153b107ac979a94476e7dfcb34b25944b05e`
+- active revision: `alamo-platform-prod-web--admissions-progress-0926`
+- rollback digest: `sha256:9e58125439ee4e070bc17fab2cf5719081cea97186f23e6d70214da35742ffb3`
+
+This is a frontend-only overlay on the preceding production digest.
+Post-promotion verification confirmed a healthy revision at 100% traffic, a
+connected payload with 21 of 21 named cards, five communities, portfolio census
+541, the responsive desktop/mobile progress-modal regression, the absence of
+the former Pipeline control in the deployed bundle, and 4/4 public smoke
+probes.
+
 ## Local Development
 
 Install and run:

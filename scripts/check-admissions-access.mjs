@@ -51,10 +51,11 @@ assert.doesNotThrow(() =>
 );
 
 const root = path.resolve(import.meta.dirname, "..");
-const [app, shell, admissionsPage, californiaHome, platformNavigation, apiAuth, vercelSource] = await Promise.all([
+const [app, shell, admissionsPage, admissionsBoard, californiaHome, platformNavigation, apiAuth, vercelSource] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
   readFile(path.join(root, "src/shared/layout/ProtectedAppShell.tsx"), "utf8"),
   readFile(path.join(root, "src/features/admissions/pages/AdmissionsPage.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/admissions/components/PipelineBoard.tsx"), "utf8"),
   readFile(path.join(root, "src/features/california/pages/CaliforniaHomePage.tsx"), "utf8"),
   readFile(path.join(root, "src/features/california/components/PlatformPageNavigation.tsx"), "utf8"),
   readFile(path.join(root, "server/api-auth.mjs"), "utf8"),
@@ -79,11 +80,14 @@ if (
   !admissionsPage.includes("fetchAdmissionsDashboard") ||
   !admissionsPage.includes("referral_pipeline") ||
   !admissionsPage.includes('data-admissions-overview="true"') ||
-  !admissionsPage.includes('data-open-full-pipeline="true"') ||
-  !admissionsPage.includes("https://alamo-pipeline.com") ||
-  admissionsPage.includes("iframe")
+  admissionsPage.includes('data-open-full-pipeline="true"') ||
+  admissionsPage.includes("https://alamo-pipeline.com") ||
+  admissionsPage.includes("iframe") ||
+  !admissionsBoard.includes('data-admissions-progress-modal="true"') ||
+  admissionsBoard.includes("href={card.pipelineUrl}") ||
+  admissionsBoard.includes("https://alamo-pipeline.com")
 ) {
-  throw new Error("Admissions overview must use governed Alamo census data and hand PHI-heavy workflow to the external Pipeline app without an iframe.");
+  throw new Error("Admissions overview must use governed Alamo data and keep client progress review inside its analyst modal without Pipeline links or embeds.");
 }
 if (
   !platformNavigation.includes('data-california-hero-action="admissions"') ||

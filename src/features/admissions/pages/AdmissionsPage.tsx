@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowUpRight, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -13,7 +13,6 @@ import PlatformPageNavigation, {
   type PlatformPage
 } from "../../california/components/PlatformPageNavigation";
 
-const FULL_PIPELINE_URL = "https://alamo-pipeline.com";
 // Validated as a pair (light surface, CVD-safe with the direct legend labels).
 const ADMISSIONS_COLOR = "#0f8b73";
 const DISCHARGES_COLOR = "#b8493a";
@@ -66,26 +65,17 @@ export default function AdmissionsPage() {
 
       <div className="mx-auto w-full max-w-[1540px]">
         <h1 className="sr-only">Admissions</h1>
-        <div className="flex items-center justify-between gap-3 py-4 sm:py-6">
+        <div className="py-3 sm:py-5">
           <div
             role="tablist"
             aria-label="Admissions views"
-            className="flex min-w-0 max-w-full overflow-x-auto rounded-xl bg-[#e9ecef] p-1"
+            data-admissions-surface-tabs="true"
+            className="flex min-w-0 max-w-full gap-6 overflow-x-auto border-b border-[#d9dfdb] sm:gap-8"
           >
             <SurfaceTab active={surface === "board"} label="Board" count={pipeline?.board.total ?? null} panel="admissions-board-panel" onClick={() => setSurface("board")} />
             <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} />
             <SurfaceTab active={surface === "trends"} label="Trends" count={dashboard?.referral_trend.length ? `${dashboard.referral_trend.length} mo` : null} panel="admissions-trends-panel" onClick={() => setSurface("trends")} />
           </div>
-          <a
-            href={FULL_PIPELINE_URL}
-            data-open-full-pipeline="true"
-            data-dark-action="true"
-            aria-label="Open Pipeline"
-            className="inline-flex min-h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#111111] px-0 text-[12px] font-semibold text-white transition-colors hover:bg-[#0f8b73] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:w-auto sm:px-4"
-          >
-            <span className="hidden sm:inline">Open Pipeline</span>
-            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-          </a>
         </div>
 
         {freshnessWarning ? (
@@ -163,10 +153,10 @@ function SurfaceTab({
       aria-selected={active}
       aria-controls={panel}
       onClick={onClick}
-      className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-4 text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73] ${active ? "bg-white text-[#171918] shadow-sm" : "text-[#49504c] hover:bg-white/60"}`}
+      className={`relative -mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-0.5 text-[13px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
     >
       {label}
-      {count != null ? <span className="rounded-md bg-[#edf0f2] px-2 py-1 text-[11px] font-semibold text-[#303532]">{count}</span> : null}
+      {count != null ? <span className={`text-[11px] font-medium tabular-nums ${active ? "text-[#0f795f]" : "text-[#929995]"}`}>{count}</span> : null}
     </button>
   );
 }

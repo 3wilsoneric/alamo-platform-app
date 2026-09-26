@@ -29,31 +29,38 @@ await withBrowserQa(async (browser) => {
     }
   }
   const clientNames = page.locator('[data-admissions-client-name="true"]');
-  await clientNames.first().waitFor({ state: "visible" });
+  await clientNames.first().waitFor({ state: "visible", timeout: 60_000 });
   if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
     throw new Error("Admissions board cards must show the client name.");
   }
-  const fullPipelineLink = page.locator('[data-open-full-pipeline="true"]');
-  if (
-    await fullPipelineLink.count() !== 1 ||
-    await fullPipelineLink.getAttribute("href") !== "https://alamo-pipeline.com"
-  ) {
-    throw new Error("Admissions overview does not hand OCR and referral workflow to the full Pipeline app.");
-  }
-  const fullPipelineContrast = await fullPipelineLink.evaluate((element) => {
-    const style = window.getComputedStyle(element);
-    return { color: style.color, backgroundColor: style.backgroundColor };
+  const surfaceTabs = page.locator('[data-admissions-surface-tabs="true"]');
+  const tabTreatment = await surfaceTabs.getByRole("tab", { name: /^Board/ }).evaluate((element) => {
+    const tab = window.getComputedStyle(element);
+    const list = window.getComputedStyle(element.parentElement);
+    return { borderBottomColor: tab.borderBottomColor, borderRadius: tab.borderRadius, listBackground: list.backgroundColor };
   });
-  if (
-    fullPipelineContrast.color !== "rgb(255, 255, 255)" ||
-    fullPipelineContrast.backgroundColor !== "rgb(17, 17, 17)"
-  ) {
-    throw new Error(`Full Pipeline action lost its dark-button contrast: ${JSON.stringify(fullPipelineContrast)}`);
+  if (tabTreatment.borderBottomColor !== "rgb(15, 139, 115)" || tabTreatment.borderRadius !== "0px" || tabTreatment.listBackground !== "rgba(0, 0, 0, 0)") {
+    throw new Error(`Admissions tabs lost their quiet analyst treatment: ${JSON.stringify(tabTreatment)}`);
+  }
+  if (await page.locator('[data-open-full-pipeline="true"], a[href*="alamo-pipeline.com"]').count()) {
+    throw new Error("Admissions overview must remain a self-contained analyst update without Pipeline links.");
   }
   await page.screenshot({
     path: `${screenshotDir}/desktop-admissions-board.png`,
     fullPage: true
   });
+  await page.locator('[data-admissions-board-card]').first().click();
+  const progressModal = page.locator('[data-admissions-progress-modal="true"]');
+  await progressModal.waitFor({ state: "visible" });
+  if (await progressModal.locator('[data-admissions-progress-step]').count() !== 3) {
+    throw new Error("Client progress review must show the three referral stages.");
+  }
+  await page.screenshot({
+    path: `${screenshotDir}/desktop-admissions-progress.png`,
+    fullPage: false
+  });
+  await page.keyboard.press("Escape");
+  await progressModal.waitFor({ state: "hidden" });
   await page.getByRole("tab", { name: /^Census/ }).click();
   await page.getByRole("heading", { name: "Community census" }).waitFor();
   await page.screenshot({
@@ -74,6 +81,31 @@ await withBrowserQa(async (browser) => {
     path: `${screenshotDir}/mobile-admissions-board.png`,
     fullPage: true
   });
+  await mobilePage.locator('[data-admissions-board-card]').first().click();
+  const mobileProgress = mobilePage.locator('[data-admissions-progress-modal="true"]');
+  await mobileProgress.waitFor({ state: "visible" });
+  const modalOverflow = await mobileProgress.evaluate(
+    (element) => element.scrollWidth - element.clientWidth
+  );
+  if (modalOverflow > 2) {
+    throw new Error(`Admissions progress modal has ${modalOverflow}px of horizontal overflow on mobile.`);
+  }
+  const mobileDialog = mobileProgress.getByRole("dialog");
+  const dialogBox = await mobileDialog.boundingBox();
+  if (!dialogBox || dialogBox.y < 0 || dialogBox.y + dialogBox.height > 846) {
+    throw new Error(`Admissions progress modal is not anchored to the mobile viewport: ${JSON.stringify(dialogBox)}`);
+  }
+  const doneColor = await mobileProgress.getByRole("button", { name: "Done" }).evaluate(
+    (element) => window.getComputedStyle(element).color
+  );
+  if (doneColor !== "rgb(255, 255, 255)") {
+    throw new Error(`Admissions progress modal action lost its white label: ${doneColor}`);
+  }
+  await mobilePage.screenshot({
+    path: `${screenshotDir}/mobile-admissions-progress.png`,
+    fullPage: false
+  });
+  await mobileProgress.getByRole("button", { name: "Done" }).click();
   await mobilePage.getByRole("tab", { name: /^Census/ }).click();
   if (await mobilePage.locator('[data-admissions-community-census-card]').count() !== 5) {
     throw new Error("Admissions overview does not render all five mobile community census cards.");
