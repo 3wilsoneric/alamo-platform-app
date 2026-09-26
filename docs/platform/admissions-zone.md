@@ -29,8 +29,9 @@ repeated page title, explanatory subtitle, or KPI strip.
   Community workload is stated in natural language without parenthetical
   counts. Selecting a client opens an Alamo-native progress update with
   workflow stage, current status, next required action, assignment, timing,
-  planned admission, priority, and review flags. Filters: community, "needs
-  attention", and status. A List toggle shows the same governed slice.
+  planned admission, priority, and review flags. Community is the only filter:
+  pill controls support selecting multiple communities, while All communities
+  resets the complete board. A List toggle shows the same governed slice.
 - **Census** — one compact portfolio row followed by the five communities,
   combining census, occupancy, month-to-date admissions, discharges, net
   movement, and each community's board count.

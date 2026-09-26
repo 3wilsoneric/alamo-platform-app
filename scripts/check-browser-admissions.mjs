@@ -62,6 +62,44 @@ await withBrowserQa(async (browser) => {
   if (await executiveUpdate.locator("strong").count() < 6) {
     throw new Error("Admissions executive update has lost its reading hierarchy.");
   }
+  const communityFilters = page.locator('[data-admissions-community-filters="true"]');
+  await communityFilters.waitFor({ state: "visible" });
+  const communityPills = communityFilters.getByRole("button");
+  if (await communityPills.count() < 6) {
+    throw new Error("Admissions board must expose All communities and each community as pressable pills.");
+  }
+  if (
+    await page.locator('[data-admissions-board="true"] select').count() ||
+    await page.getByRole("button", { name: /^Attention/ }).count() ||
+    await page.getByRole("button", { name: "Clear" }).count()
+  ) {
+    throw new Error("Community pills must be the Admissions board's only filters.");
+  }
+  const allCardsCount = await page.locator('[data-admissions-board-card]').count();
+  const allCommunitiesPill = communityFilters.getByRole("button", { name: "All communities" });
+  const firstCommunityPill = communityPills.nth(1);
+  const secondCommunityPill = communityPills.nth(2);
+  await firstCommunityPill.click();
+  const firstCommunityCount = await page.locator('[data-admissions-board-card]').count();
+  await secondCommunityPill.click();
+  const twoCommunityCount = await page.locator('[data-admissions-board-card]').count();
+  if (
+    await firstCommunityPill.getAttribute("aria-pressed") !== "true" ||
+    await secondCommunityPill.getAttribute("aria-pressed") !== "true" ||
+    await allCommunitiesPill.getAttribute("aria-pressed") !== "false" ||
+    firstCommunityCount < 1 ||
+    twoCommunityCount <= firstCommunityCount ||
+    twoCommunityCount >= allCardsCount
+  ) {
+    throw new Error("Admissions community pills must support additive multi-selection.");
+  }
+  await allCommunitiesPill.click();
+  if (
+    await allCommunitiesPill.getAttribute("aria-pressed") !== "true" ||
+    await page.locator('[data-admissions-board-card]').count() !== allCardsCount
+  ) {
+    throw new Error("All communities must reset the Admissions board to its complete referral set.");
+  }
   const surfaceTabs = page.locator('[data-admissions-surface-tabs="true"]');
   const tabTreatment = await surfaceTabs.getByRole("tab", { name: /^Board/ }).evaluate((element) => {
     const tab = window.getComputedStyle(element);

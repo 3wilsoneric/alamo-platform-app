@@ -10,15 +10,8 @@ import type {
 
 type ConnectedPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 
-type BoardFilter = {
-  status: string | null;
-  facilityId: string | null;
-  attentionOnly: boolean;
-};
-
 const NO_COMMUNITY = "none";
 const LIST_PREVIEW = 15;
-const EMPTY_FILTER: BoardFilter = { status: null, facilityId: null, attentionOnly: false };
 
 const COLUMN_STYLE: Record<AdmissionsBoardColumnKey, { surface: string; border: string; accent: string; action: string }> = {
   received: {
@@ -45,13 +38,6 @@ function needsAttention(card: AdmissionsBoardCard) {
   return card.flags.stale || card.flags.unassigned || card.flags.moveInOverdue;
 }
 
-function matches(card: AdmissionsBoardCard, filter: BoardFilter) {
-  if (filter.status && card.status !== filter.status) return false;
-  if (filter.facilityId && (card.facilityId ?? NO_COMMUNITY) !== filter.facilityId) return false;
-  if (filter.attentionOnly && !needsAttention(card)) return false;
-  return true;
-}
-
 export default function PipelineBoard({
   pipeline,
   communities
@@ -59,71 +45,70 @@ export default function PipelineBoard({
   pipeline: ConnectedPipeline;
   communities: Array<{ facilityId: string; shortName: string }>;
 }) {
-  const [filter, setFilter] = useState<BoardFilter>(EMPTY_FILTER);
+  const [selectedFacilityIds, setSelectedFacilityIds] = useState<Set<string>>(new Set());
   const [view, setView] = useState<"board" | "list">("board");
   const [listExpanded, setListExpanded] = useState(false);
   const [selectedCard, setSelectedCard] = useState<AdmissionsBoardCard | null>(null);
   const { board } = pipeline;
 
-  const cards = useMemo(() => board.cards.filter((card) => matches(card, filter)), [board.cards, filter]);
-  const statuses = useMemo(() => [...new Set(board.cards.map((card) => card.status))].sort(), [board.cards]);
-  const attentionCount = board.cards.filter((card) =>
-    needsAttention(card) && matches(card, { ...filter, attentionOnly: false })).length;
+  const cards = useMemo(
+    () => selectedFacilityIds.size
+      ? board.cards.filter((card) => selectedFacilityIds.has(card.facilityId ?? NO_COMMUNITY))
+      : board.cards,
+    [board.cards, selectedFacilityIds]
+  );
   const hasNoCommunity = board.cards.some((card) => !card.facilityId);
-  const filtered = Boolean(filter.status || filter.facilityId || filter.attentionOnly);
 
-  function update(next: Partial<BoardFilter>) {
-    setFilter((current) => ({ ...current, ...next }));
+  function toggleCommunity(facilityId: string) {
+    setSelectedFacilityIds((current) => {
+      const next = new Set(current);
+      if (next.has(facilityId)) next.delete(facilityId);
+      else next.add(facilityId);
+      return next;
+    });
+    setListExpanded(false);
+  }
+
+  function showAllCommunities() {
+    setSelectedFacilityIds(new Set());
     setListExpanded(false);
   }
 
   return (
     <section aria-label="Referral board" data-admissions-board="true">
       <div className="mb-4">
-        <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap" role="toolbar" aria-label="Filter the board">
-          <label className="min-w-0 sm:min-w-[150px] sm:max-w-[220px] sm:flex-1">
-            <span className="sr-only">Community</span>
-            <select
-              value={filter.facilityId ?? ""}
-              onChange={(event) => update({ facilityId: event.target.value || null })}
-              className="min-h-11 w-full rounded-lg border border-[#d9dfdb] bg-white px-3 text-[12px] font-medium text-[#303532] outline-none focus:border-[#0f8b73]"
-            >
-              <option value="">All communities</option>
-              {communities.map((community) => <option key={community.facilityId} value={community.facilityId}>{community.shortName}</option>)}
-              {hasNoCommunity ? <option value={NO_COMMUNITY}>No community</option> : null}
-            </select>
-          </label>
-          <label className="min-w-0 sm:min-w-[150px] sm:max-w-[220px] sm:flex-1">
-            <span className="sr-only">Status</span>
-            <select
-              value={filter.status ?? ""}
-              onChange={(event) => update({ status: event.target.value || null })}
-              className="min-h-11 w-full rounded-lg border border-[#d9dfdb] bg-white px-3 text-[12px] font-medium text-[#303532] outline-none focus:border-[#0f8b73]"
-            >
-              <option value="">All statuses</option>
-              {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
-            </select>
-          </label>
-          <button
-            type="button"
-            aria-pressed={filter.attentionOnly}
-            onClick={() => update({ attentionOnly: !filter.attentionOnly })}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-[12px] font-medium transition-colors ${filter.attentionOnly ? "border-[#8a6118] bg-[#fff4d9] text-[#6f4e12]" : "border-[#d9dfdb] bg-white text-[#4e5752] hover:bg-[#fafbfa]"}`}
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div
+            data-admissions-community-filters="true"
+            className="flex min-w-0 flex-wrap gap-2"
+            role="group"
+            aria-label="Filter by community"
           >
-            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-            Attention
-            <span className="rounded bg-[#f0ede5] px-1.5 py-0.5 text-[10px] font-semibold">{attentionCount}</span>
-          </button>
-          <div className="flex justify-self-end rounded-lg bg-[#e9ecef] p-1 sm:ml-auto" role="group" aria-label="Board layout">
+            <CommunityPill active={selectedFacilityIds.size === 0} onClick={showAllCommunities}>
+              All communities
+            </CommunityPill>
+            {communities.map((community) => (
+              <CommunityPill
+                key={community.facilityId}
+                active={selectedFacilityIds.has(community.facilityId)}
+                onClick={() => toggleCommunity(community.facilityId)}
+              >
+                {community.shortName}
+              </CommunityPill>
+            ))}
+            {hasNoCommunity ? (
+              <CommunityPill
+                active={selectedFacilityIds.has(NO_COMMUNITY)}
+                onClick={() => toggleCommunity(NO_COMMUNITY)}
+              >
+                No community
+              </CommunityPill>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 self-end rounded-lg bg-[#e9ecef] p-1 sm:self-start" role="group" aria-label="Board layout">
             <ViewButton active={view === "board"} onClick={() => setView("board")} icon={<Columns3 className="h-3.5 w-3.5" aria-hidden="true" />}>Board</ViewButton>
             <ViewButton active={view === "list"} onClick={() => setView("list")} icon={<List className="h-3.5 w-3.5" aria-hidden="true" />}>List</ViewButton>
           </div>
-          {filtered ? (
-            <button type="button" onClick={() => update(EMPTY_FILTER)} className="col-span-2 inline-flex min-h-11 items-center gap-1.5 px-2 text-[11px] font-semibold text-[#0f8b73] hover:text-[#0c705f] sm:col-span-1">
-              <X className="h-3.5 w-3.5" aria-hidden="true" />
-              Clear
-            </button>
-          ) : null}
         </div>
       </div>
 
@@ -432,6 +417,19 @@ function ViewButton({ active, onClick, icon, children }: { active: boolean; onCl
     >
       {icon}
       <span className="hidden sm:inline">{children}</span>
+    </button>
+  );
+}
+
+function CommunityPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`inline-flex min-h-9 items-center rounded-full border px-3.5 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f795f] bg-[#e5f2ec] text-[#145e48]" : "border-[#d9dfdb] bg-white text-[#59615c] hover:border-[#9eb9ac] hover:bg-[#f7faf8]"}`}
+    >
+      {children}
     </button>
   );
 }
