@@ -33,6 +33,17 @@ await withBrowserQa(async (browser) => {
   if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
     throw new Error("Admissions board cards must show the client name.");
   }
+  const executiveUpdate = page.locator('[data-admissions-executive-update="true"]');
+  await executiveUpdate.waitFor({ state: "visible" });
+  const executiveText = (await executiveUpdate.innerText()).trim();
+  if (
+    !/active referrals?/.test(executiveText) ||
+    !executiveText.includes("at decision") ||
+    !executiveText.includes("Activity is concentrated at") ||
+    !executiveText.includes("immediate follow-up")
+  ) {
+    throw new Error(`Admissions executive update is incomplete: ${executiveText}`);
+  }
   const surfaceTabs = page.locator('[data-admissions-surface-tabs="true"]');
   const tabTreatment = await surfaceTabs.getByRole("tab", { name: /^Board/ }).evaluate((element) => {
     const tab = window.getComputedStyle(element);
@@ -63,6 +74,9 @@ await withBrowserQa(async (browser) => {
   await progressModal.waitFor({ state: "hidden" });
   await page.getByRole("tab", { name: /^Census/ }).click();
   await page.getByRole("heading", { name: "Community census" }).waitFor();
+  if (await executiveUpdate.count()) {
+    throw new Error("Admissions executive referral update must stay with the Board view.");
+  }
   await page.screenshot({
     path: `${screenshotDir}/desktop-admissions-census.png`,
     fullPage: true
@@ -77,6 +91,7 @@ await withBrowserQa(async (browser) => {
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
+  await mobilePage.locator('[data-admissions-executive-update="true"]').waitFor({ state: "visible", timeout: 60_000 });
   await mobilePage.screenshot({
     path: `${screenshotDir}/mobile-admissions-board.png`,
     fullPage: true

@@ -7,7 +7,7 @@ import {
   readCachedAdmissionsDashboard,
   type AdmissionsDashboardResponse
 } from "../../../shared/api/platformData";
-import type { AdmissionsFlowPoint } from "../../../shared/types/platformSnapshot";
+import type { AdmissionsFlowPoint, AdmissionsReferralPipeline } from "../../../shared/types/platformSnapshot";
 import PipelineBoard from "../components/PipelineBoard";
 import PlatformPageNavigation, {
   type PlatformPage
@@ -20,6 +20,7 @@ const DISCHARGES_COLOR = "#b8493a";
 const REFERRALS_COLOR = "#4a67c4";
 const ACCEPTED_COLOR = "#c7851a";
 type AdmissionsSurface = "board" | "census" | "trends";
+type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 
 export default function AdmissionsPage() {
   const navigate = useNavigate();
@@ -91,6 +92,15 @@ export default function AdmissionsPage() {
           </div>
         ) : null}
 
+        {surface === "board" && pipeline ? (
+          <p
+            data-admissions-executive-update="true"
+            className="mb-5 max-w-[1120px] border-l-2 border-[#0f8b73] py-0.5 pl-4 text-[13px] font-medium leading-6 text-[#3f4944] sm:text-[14px] sm:leading-7"
+          >
+            {buildAdmissionsExecutiveUpdate(pipeline)}
+          </p>
+        ) : null}
+
         <div id={`admissions-${surface}-panel`} role="tabpanel" className="pt-1">
           {surface === "board" ? (
             pipeline ? (
@@ -131,6 +141,45 @@ export default function AdmissionsPage() {
       </div>
     </div>
   );
+}
+
+function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
+  const columns = new Map(pipeline.board.columns.map((column) => [column.key, column.count]));
+  const total = pipeline.board.total;
+  if (!total) return "There are no active referrals in the current admissions update.";
+
+  const received = columns.get("received") ?? 0;
+  const inProgress = columns.get("in_progress") ?? 0;
+  const decision = columns.get("decision") ?? 0;
+  const attention = pipeline.board.cards.filter((card) =>
+    card.flags.stale || card.flags.unassigned || card.flags.moveInOverdue
+  ).length;
+  const communityCounts = new Map<string, number>();
+  for (const card of pipeline.board.cards) {
+    const community = card.facilityId ? card.community : "No community assigned";
+    communityCounts.set(community, (communityCounts.get(community) ?? 0) + 1);
+  }
+  const busiest = [...communityCounts.entries()]
+    .sort(([leftName, leftCount], [rightName, rightCount]) => rightCount - leftCount || leftName.localeCompare(rightName))
+    .slice(0, 3)
+    .map(([name, count]) => `${name} (${count})`);
+
+  const workload = `Admissions is managing ${total} active ${pluralize("referral", total)}: ${received} newly received, ${inProgress} in assessment and review, and ${decision} at decision.`;
+  const location = busiest.length ? ` Activity is concentrated at ${formatExecutiveList(busiest)}.` : "";
+  const followUp = attention
+    ? ` The immediate follow-up need is ${attention} ${pluralize("referral", attention)} flagged for an overdue update, missing owner, or overdue move-in.`
+    : " No referrals currently carry a workflow exception.";
+  return `${workload}${location}${followUp}`;
+}
+
+function formatExecutiveList(values: string[]) {
+  if (values.length <= 1) return values[0] ?? "";
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
+}
+
+function pluralize(noun: string, count: number) {
+  return count === 1 ? noun : `${noun}s`;
 }
 
 function SurfaceTab({

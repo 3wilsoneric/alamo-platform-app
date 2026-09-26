@@ -109,6 +109,26 @@ connected payload with 21 of 21 named cards, five communities, portfolio census
 the former Pipeline control in the deployed bundle, and 4/4 public smoke
 probes.
 
+### Admissions executive update release — 2026-09-26
+
+The Board view now opens with one live executive paragraph derived from the
+governed referral summary. It reports active workload, stage distribution,
+the three busiest communities, and the current exception load in the voice of
+an admissions coordinator briefing leadership.
+
+- source commit: `7aa2ac7`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/4`
+- image tag: `alamo-platform:admissions-executive-7aa2ac7`
+- image digest: `sha256:507e93f00abb513e72e48810a2f687b2445c4077ce9fac548bca61104ba46ac8`
+- active revision: `alamo-platform-prod-web--admissions-executive-0926`
+- rollback digest: `sha256:1fb96dc2fbc4de25e503b8f47248153b107ac979a94476e7dfcb34b25944b05e`
+
+This is a frontend-only overlay on the preceding production digest.
+Post-promotion verification confirmed a healthy revision at 100% traffic, the
+executive update and progress modal in the deployed bundle, no visible Pipeline
+control, a connected payload with 21 of 21 named cards, and 4/4 public smoke
+probes.
+
 ## Local Development
 
 Install and run:

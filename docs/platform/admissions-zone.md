@@ -21,10 +21,13 @@ There is no repeated page title, explanatory subtitle, or KPI strip.
   progress, and Decision columns holding one card per referral. The columns use
   calm green, blue, and warm decision surfaces. Cards show client name,
   destination community, referral number, owner, next step, days open, and
-  attention flags. Selecting a client opens an Alamo-native progress update
-  with workflow stage, current status, next required action, assignment,
-  timing, planned admission, priority, and review flags. Filters: community,
-  "needs attention", and status. A List toggle shows the same governed slice.
+  attention flags. A single live executive paragraph above the board answers
+  the CEO-level question: how many referrals are active, where they sit in the
+  process, which communities carry the most activity, and what needs immediate
+  follow-up. Selecting a client opens an Alamo-native progress update with
+  workflow stage, current status, next required action, assignment, timing,
+  planned admission, priority, and review flags. Filters: community, "needs
+  attention", and status. A List toggle shows the same governed slice.
 - **Census** — one compact portfolio row followed by the five communities,
   combining census, occupancy, month-to-date admissions, discharges, net
   movement, and each community's board count.
