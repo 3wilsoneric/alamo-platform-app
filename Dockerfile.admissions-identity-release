@@ -1,0 +1,12 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:5f69353518b7c653062b80c6575a4cb2a0f80052e4ce6bfc2925ef90ec729132
+FROM ${BASE_IMAGE}
+
+# Preserve the proven Azure runtime and replace only the reviewed Admissions
+# browser bundle plus the server-side Pipeline summary contract normalizer.
+USER root
+WORKDIR /app
+RUN rm -rf /app/dist
+COPY dist ./dist
+COPY server/pipeline-admissions-summary.mjs ./server/pipeline-admissions-summary.mjs
+RUN chown -R node:node /app/dist /app/server/pipeline-admissions-summary.mjs
+USER node

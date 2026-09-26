@@ -1,0 +1,1044 @@
+{
+  "version": "user-journey-qa-v1",
+  "minimumOverallScore": 88,
+  "minimumTurnScore": 82,
+  "description": "Operator-style journey checks that score intent, data scope, answer quality, surfaced modules, display hygiene, recovery behavior, and trust.",
+  "journeys": [
+    {
+      "name": "Quick Resident Lookup",
+      "intent": "Find one resident, confirm identity, and open the profile card without forcing page navigation.",
+      "modes": ["quick_lookup", "surface"],
+      "surfaces": ["Resident Search", "Resident Profile"],
+      "scenarioIds": ["resident-search-surface", "resident-profile-card", "resident-no-match-recovery", "resident-to-community-thread"]
+    },
+    {
+      "name": "Community Pulse Check",
+      "intent": "Ask how a community is doing and get a compact census, incident, resident, and operating snapshot.",
+      "modes": ["summary", "drilldown"],
+      "surfaces": ["Community Profile", "Census Trend", "Incident Breakdown", "Diagnosis Mix", "Length Of Stay Mix"],
+      "scenarioIds": ["community-profile-plain-language", "community-census-typo", "community-mover-scan", "diagnosis-mix-lookup", "los-mix-lookup", "long-community-operator-review", "resident-to-community-thread"]
+    },
+    {
+      "name": "Incident Triage",
+      "intent": "Understand incident volume, categories, residents involved, freshness, and exact event rows.",
+      "modes": ["quick_lookup", "detail_list", "freshness"],
+      "surfaces": ["Incident Center", "Incident Breakdown", "Incident Detail List", "Incident Freshness"],
+      "scenarioIds": ["incident-freshness", "awol-people-count", "incident-category-review", "large-awol-detail-preview", "long-incident-detail-session", "resident-to-community-thread"]
+    },
+    {
+      "name": "Trend And Movement Review",
+      "intent": "Compare periods, identify movers, and explain what changed without inventing commentary.",
+      "modes": ["comparison", "trend"],
+      "surfaces": ["Census Movement", "Census Trend", "Incident Category Comparison", "Incident Rate Change"],
+      "scenarioIds": ["detail-list-followups", "incident-rate-change-review", "multi-domain-compare"]
+    },
+    {
+      "name": "Exact Rows And Export",
+      "intent": "Get the underlying rows safely, preview only enough in chat, and preserve the complete CSV row set.",
+      "modes": ["detail_list", "export"],
+      "surfaces": ["Detail List", "CSV Artifact", "Preview Table"],
+      "scenarioIds": ["large-awol-detail-preview", "detail-list-followups", "long-incident-detail-session"]
+    },
+    {
+      "name": "Data Trust And Recovery",
+      "intent": "Explain unavailable, stale, unsupported, or ambiguous data and offer the closest valid path.",
+      "modes": ["recovery", "freshness", "clarification"],
+      "surfaces": ["Data Availability", "Clarification", "Closest Valid Slice"],
+      "scenarioIds": ["unsupported-period-recovery", "data-availability-window", "ambiguous-resident-guardrail", "resident-no-match-recovery", "recovery-period-pivot-session"]
+    },
+    {
+      "name": "Medication Signal Review",
+      "intent": "Check medication compliance, refusals, and follow-up slices when MAR-derived context is loaded.",
+      "modes": ["summary", "followup"],
+      "surfaces": ["Medication Profile", "Medication Compliance", "Medication Refusals"],
+      "scenarioIds": ["medication-profile-followups"]
+    },
+    {
+      "name": "Surface-Only Use",
+      "intent": "Use the platform like a vertical website by opening prepared surfaces directly from chat.",
+      "modes": ["surface"],
+      "surfaces": ["Resident Search", "Incident Center", "Community Detail"],
+      "scenarioIds": ["resident-search-surface", "surface-incident-center", "surface-community-resident-search"]
+    },
+    {
+      "name": "Operating Snapshot",
+      "intent": "Get a fast portfolio-level operating read without opening several modules or pages.",
+      "modes": ["summary"],
+      "surfaces": ["Operating Snapshot", "Communities Overview", "Incident Center"],
+      "scenarioIds": ["operating-snapshot-scan"]
+    },
+    {
+      "name": "Inevitable Analyst Layer",
+      "intent": "Handle loose operator language by finding the closest valid slice, answering from deterministic tools, and keeping surfaces scoped.",
+      "modes": ["summary", "trend", "slice", "recovery"],
+      "surfaces": ["Community History", "Slice Discovery", "Module Coverage", "Data Availability"],
+      "scenarioIds": ["community-history-loose-language", "slice-discovery-freeform", "trace-coverage-command-center", "fresh-thread-context-reset"]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "resident-search-surface",
+      "persona": "operator",
+      "category": "surface",
+      "description": "A user asks for resident search as a module, not as a failed resident lookup.",
+      "turns": [
+        {
+          "prompt": "resident search",
+          "promptVariants": [
+            "find a resident",
+            "show me the resident search module",
+            "can i just get the search census module"
+          ],
+          "expect": {
+            "tools": ["surface_module"],
+            "textIncludes": ["Opened Resident Search"],
+            "textExcludes": ["No resident matched", "Matched 12 rows", "Victoria's Place"],
+            "actionsIncludeRoute": "/resident-search",
+            "maxActions": 2,
+            "direct": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "awol-people-count",
+      "persona": "operator",
+      "category": "incidents",
+      "description": "A people-count question should count unique residents, not incident rows.",
+      "turns": [
+        {
+          "prompt": "how many people went AWOL in May 2026",
+          "promptVariants": [
+            "total AWOL residents last month, May 2026",
+            "how many clients went awol in may 2026"
+          ],
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "period": "2026-05",
+            "categoryIncludes": "AWOL/Elopement",
+            "valueLabel": "Residents",
+            "textIncludes": ["unique resident", "May 2026"],
+            "textExcludes": ["Victoria's Place", "facility 337"],
+            "visual": {
+              "minRows": 1,
+              "valueLabel": "Residents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "community-census-typo",
+      "persona": "operator",
+      "category": "census",
+      "description": "Typos should be interpreted safely and still route to the specific community trend.",
+      "turns": [
+        {
+          "prompt": "show santa clartia censsus trend",
+          "expect": {
+            "tools": ["census_trend"],
+            "facilityId": "345",
+            "period": "2026-06",
+            "textIncludes": ["Santa Clarita", "June 2026"],
+            "textExcludes": ["Portfolio census trend", "Victoria's Place"],
+            "interpretationChanged": true,
+            "visual": {
+              "titleIncludes": "Santa Clarita",
+              "minRows": 6
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "resident-profile-card",
+      "persona": "operator",
+      "category": "residents",
+      "description": "Resident profile lookup should produce a clear profile answer and profile module.",
+      "turns": [
+        {
+          "prompt": "show Shannon Romero resident profile",
+          "expect": {
+            "tools": ["resident_lookup"],
+            "textIncludes": ["Shannon Romero", "Santa Clarita", "Resident #"],
+            "textExcludes": ["What is missing", "Victoria's Place", "undefined"],
+            "moduleId": "resident-profile",
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "incident-freshness",
+      "persona": "operator",
+      "category": "freshness",
+      "description": "Current incident confusion should explain loaded data freshness instead of opening an empty page.",
+      "turns": [
+        {
+          "prompt": "why are today's incidents not showing up",
+          "promptVariants": [
+            "why does Incident Center show zero today",
+            "is the incident feed behind"
+          ],
+          "expect": {
+            "tools": ["data_availability"],
+            "textIncludes": ["most recent incident detail"],
+            "textExcludes": ["Open Incident Center", "I cannot answer"],
+            "visual": {
+              "type": "table",
+              "titleIncludes": "Incident Freshness",
+              "minRows": 5
+            },
+            "truthStates": ["valid_rows", "stale"],
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "large-awol-detail-preview",
+      "persona": "operator",
+      "category": "detail-list",
+      "description": "Broad exact-row requests should preview in chat and preserve the full CSV artifact.",
+      "turns": [
+        {
+          "prompt": "List every AWOL incident from May through June by community, including resident name, date, incident type, and description",
+          "expect": {
+            "tools": ["incident_detail_list"],
+            "periodIncludes": ["2026-05", "2026-06"],
+            "categoryIncludes": "AWOL/Elopement",
+            "artifact": true,
+            "visual": {
+              "type": "table",
+              "minRows": 1,
+              "maxRows": 50,
+              "requiresOriginalRowCount": true
+            },
+            "textIncludes": ["The CSV includes all 375 exact matches"],
+            "textExcludes": ["No rows matched", "Victoria's Place"],
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-list-followups",
+      "persona": "operator",
+      "category": "session-state",
+      "description": "Follow-ups should patch the prior analysis frame instead of forgetting what 'it' means.",
+      "turns": [
+        {
+          "prompt": "List every AWOL incident from May through June by community, including resident name, date, incident type, and description",
+          "expect": {
+            "tools": ["incident_detail_list"],
+            "periodIncludes": ["2026-05", "2026-06"],
+            "categoryIncludes": "AWOL/Elopement",
+            "artifact": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "do that for April now",
+          "expect": {
+            "tools": ["incident_detail_list"],
+            "period": "2026-04",
+            "categoryIncludes": "AWOL/Elopement",
+            "artifact": true,
+            "textExcludes": ["not enough context", "What would you like"],
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "now San Pablo",
+          "expect": {
+            "tools": ["incident_detail_list"],
+            "facilityId": "337",
+            "categoryIncludes": "AWOL/Elopement",
+            "textIncludes": ["A & A Health Services San Pablo"],
+            "textExcludes": ["not enough context", "Portfolio AWOL"],
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "just totals",
+          "expect": {
+            "tools": ["incident_breakdown", "slice_metric"],
+            "facilityId": "337",
+            "categoryIncludes": "AWOL/Elopement",
+            "textExcludes": ["not enough context", "every loaded matching incident"],
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "unsupported-period-recovery",
+      "persona": "operator",
+      "category": "recovery",
+      "description": "Unsupported historical asks should fail closed, name the available range, and offer the closest valid rerun.",
+      "turns": [
+        {
+          "prompt": "give me the top category of each community in incidents November of last year",
+          "expect": {
+            "tools": ["top_incident_category_by_community", "data_availability"],
+            "truthStates": ["not_loaded", "stale"],
+            "safeRefusal": true,
+            "textIncludes": ["Available range", "not available", "did not substitute a different period"],
+            "textExcludes": ["June 2026 incidents", "Victoria's Place"],
+            "recovery": true,
+            "visual": {
+              "minRows": 1
+            },
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "community-operating-plain-language",
+      "persona": "operator",
+      "category": "summary",
+      "description": "Broad community asks should sound like an analyst, not a raw data dump.",
+      "turns": [
+        {
+          "prompt": "How is San Pablo?",
+          "expect": {
+            "tools": ["community_history"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo"],
+            "textExcludes": ["Source:", "Answer The", "the loaded data topline", "Victoria's Place"],
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "medication-profile-followups",
+      "persona": "operator",
+      "category": "medications",
+      "description": "Medication follow-ups should preserve community context and switch slices cleanly.",
+      "turns": [
+        {
+          "prompt": "How is San Pablo doing with medications?",
+          "expect": {
+            "tools": ["medication_profile"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo", "Compliance"],
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "Show me its compliance for the latest month.",
+          "expect": {
+            "tools": ["medication_compliance"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo"],
+            "textExcludes": ["Portfolio medication compliance"],
+            "visual": {
+              "minRows": 1
+            },
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "What medications had the most refusals?",
+          "expect": {
+            "tools": ["medication_refusals_by_community", "ad_hoc_medication_chart"],
+            "facilityId": "337",
+            "textIncludes": ["refus"],
+            "visual": {
+              "minRows": 1
+            },
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "ambiguous-resident-guardrail",
+      "persona": "operator",
+      "category": "clarification",
+      "description": "Ambiguous or misspelled resident search should ask a precise clarification instead of fabricating.",
+      "turns": [
+        {
+          "prompt": "show jon smth resident profile",
+          "expect": {
+            "tools": ["clarification"],
+            "textIncludes": ["Did you mean"],
+            "textExcludes": ["John Smith", "Audrey West"],
+            "truthStates": ["plan_rejected", "needs_clarification"],
+            "recovery": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-domain-compare",
+      "persona": "operator",
+      "category": "analysis",
+      "description": "Cross-domain requests should surface a concise comparison without overcomposing modules.",
+      "turns": [
+        {
+          "prompt": "compare San Pablo census and incidents",
+          "expect": {
+            "tools": ["community_history"],
+            "facilityId": "337",
+            "moduleIdsInclude": ["census-trend", "incident-breakdown"],
+            "softTextIncludes": ["incident"],
+            "textExcludes": ["Victoria's Place", "facility 337"],
+            "moduleCountMax": 3,
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "community-mover-scan",
+      "persona": "operator",
+      "category": "census",
+      "description": "A movement question should land on census movement with a direct community-level answer.",
+      "turns": [
+        {
+          "prompt": "which community added the most residents in May 2026",
+          "expect": {
+            "tools": ["census_movement"],
+            "period": "2026-05",
+            "textIncludes": ["Santa Clarita", "May 2026", "largest move"],
+            "textExcludes": ["facility 337", "Victoria's Place", "I could not answer"],
+            "visual": {
+              "type": "bar_chart",
+              "titleIncludes": "Census Movement",
+              "minRows": 5,
+              "valueLabel": "Delta"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "incident-category-review",
+      "persona": "operator",
+      "category": "incidents",
+      "description": "A community incident category ask should produce the right community, latest period, answer text, and chart.",
+      "turns": [
+        {
+          "prompt": "JC Wallace House current incident category breakdown",
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "facilityId": "343",
+            "period": "2026-06",
+            "textIncludes": ["JC Wallace House", "June 2026", "Medical Emergency"],
+            "textExcludes": ["facility 343", "Victoria's Place", "Portfolio incident breakdown"],
+            "visual": {
+              "type": "bar_chart",
+              "titleIncludes": "JC Wallace House",
+              "minRows": 5,
+              "valueLabel": "Incidents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "incident-rate-change-review",
+      "persona": "operator",
+      "category": "comparison",
+      "description": "Rate-change questions should use incident rate per census denominator, not raw incident count only.",
+      "turns": [
+        {
+          "prompt": "Between April and May 2026, which community had the largest increase in incidents per 100 residents?",
+          "expect": {
+            "tools": ["incident_rate_change"],
+            "periodIncludes": ["2026-04", "2026-05"],
+            "textIncludes": ["Victoria's House", "per 100", "rising by 19.0"],
+            "textExcludes": ["Victoria's Place", "facility 342"],
+            "visual": {
+              "type": "table",
+              "titleIncludes": "Incident-Rate Change",
+              "minRows": 5,
+              "valueLabel": "Rate / 100"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "diagnosis-mix-lookup",
+      "persona": "operator",
+      "category": "residents",
+      "description": "Population composition questions should use resident roster slices rather than generic community profile text.",
+      "turns": [
+        {
+          "prompt": "show San Pablo diagnosis mix",
+          "expect": {
+            "tools": ["diagnosis_mix"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo", "most common diagnosis", "149 current residents"],
+            "textExcludes": ["facility 337", "Victoria's Place", "I could not answer"],
+            "moduleId": "diagnosis-mix",
+            "visual": {
+              "type": "bar_chart",
+              "titleIncludes": "Diagnosis Mix",
+              "minRows": 5,
+              "valueLabel": "Residents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "los-mix-lookup",
+      "persona": "operator",
+      "category": "residents",
+      "description": "Length-of-stay asks should return a focused LOS surface with readable resident context.",
+      "turns": [
+        {
+          "prompt": "show San Pablo length of stay mix",
+          "expect": {
+            "tools": ["length_of_stay_mix"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo", "Average LOS", "Longest stays"],
+            "textExcludes": ["facility 337", "Victoria's Place", "Invalid Date"],
+            "moduleId": "length-of-stay",
+            "visual": {
+              "type": "donut_chart",
+              "titleIncludes": "Length of Stay",
+              "minRows": 5,
+              "valueLabel": "Residents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "resident-no-match-recovery",
+      "persona": "operator",
+      "category": "recovery",
+      "description": "No-match resident lookup should explain that the resident was not verified and route to resident search.",
+      "turns": [
+        {
+          "prompt": "show john smith resident profile",
+          "expect": {
+            "tools": ["data_recovery", "resident_lookup"],
+            "truthStates": ["verified_zero", "not_loaded"],
+            "textIncludes": ["no verified exact match", "current roster"],
+            "textExcludes": ["Audrey West", "Portfolio Longest Stay", "John Smith Resident Profile"],
+            "actionsIncludePrompt": "search residents named john smith",
+            "recovery": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-availability-window",
+      "persona": "operator",
+      "category": "freshness",
+      "description": "Availability questions should answer coverage windows directly before offering follow-up surfaces.",
+      "turns": [
+        {
+          "prompt": "what data periods are available for incident detail?",
+          "expect": {
+            "tools": ["data_availability"],
+            "textIncludes": ["most recent incident detail", "incident events", "monthly periods"],
+            "textExcludes": ["I cannot answer", "facility 337", "Victoria's Place"],
+            "visual": {
+              "type": "table",
+              "titleIncludes": "Incident Detail Availability",
+              "minRows": 1
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "surface-incident-center",
+      "persona": "operator",
+      "category": "surface",
+      "description": "Surface-only requests should open the prepared Incident Center module without doing unnecessary analysis.",
+      "turns": [
+        {
+          "prompt": "open the incident center module",
+          "expect": {
+            "tools": ["surface_module"],
+            "textIncludes": ["Opened Incident Center"],
+            "textExcludes": ["June 2026 incidents", "I could not answer", "Victoria's Place"],
+            "actionsIncludeRoute": "/incidents",
+            "direct": true,
+            "maxActions": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "surface-community-resident-search",
+      "persona": "operator",
+      "category": "surface",
+      "description": "Community-scoped resident-search requests should open the resident search surface scoped to that community.",
+      "turns": [
+        {
+          "prompt": "show San Pablo resident search",
+          "expect": {
+            "tools": ["surface_module"],
+            "facilityId": "337",
+            "textIncludes": ["Opened Resident Search for A & A Health Services San Pablo"],
+            "textExcludes": ["No resident matched", "Victoria's Place"],
+            "actionsIncludeRoute": "/communities/337?focus=search",
+            "direct": true,
+            "maxActions": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "long-community-operator-review",
+      "persona": "operator",
+      "category": "long-session",
+      "description": "A real operator starts broad on one community, then checks census, incidents, length of stay, and incident freshness without losing scope or rendering clutter.",
+      "turns": [
+        {
+          "prompt": "How is San Pablo?",
+          "expect": {
+            "tools": ["community_history"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo"],
+            "textExcludes": ["Source:", "Answer The", "Victoria's Place"],
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "show San Pablo census trend",
+          "expect": {
+            "tools": ["census_trend"],
+            "facilityId": "337",
+            "period": "2026-06",
+            "textIncludes": ["A & A Health Services San Pablo", "June 2026"],
+            "textExcludes": ["Portfolio census trend", "facility 337", "Victoria's Place"],
+            "visual": {
+              "type": "line_chart",
+              "titleIncludes": "A & A Health Services San Pablo",
+              "minRows": 6,
+              "valueLabel": "Census"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "show San Pablo incidents by category",
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "facilityId": "337",
+            "period": "2026-06",
+            "textIncludes": ["A & A Health Services San Pablo", "June 2026"],
+            "textExcludes": ["Portfolio incident breakdown", "facility 337", "Victoria's Place"],
+            "visual": {
+              "type": "bar_chart",
+              "titleIncludes": "A & A Health Services San Pablo",
+              "minRows": 5,
+              "valueLabel": "Incidents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "show San Pablo length of stay mix",
+          "expect": {
+            "tools": ["length_of_stay_mix"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo", "Average LOS"],
+            "textExcludes": ["facility 337", "Victoria's Place", "Invalid Date"],
+            "visual": {
+              "type": "donut_chart",
+              "titleIncludes": "Length of Stay",
+              "minRows": 5,
+              "valueLabel": "Residents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "why are today's incidents not showing up",
+          "expect": {
+            "tools": ["data_availability"],
+            "textIncludes": ["most recent incident detail"],
+            "textExcludes": ["I cannot answer", "Victoria's Place"],
+            "visual": {
+              "type": "table",
+              "titleIncludes": "Incident Freshness",
+              "minRows": 5
+            },
+            "truthStates": ["valid_rows", "stale"],
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "long-incident-detail-session",
+      "persona": "operator",
+      "category": "long-session",
+      "description": "A user asks a people-count question, pivots the period, narrows the community, opens exact rows, switches back to totals, and exports the same explicit slice.",
+      "turns": [
+        {
+          "prompt": "how many people went AWOL in May 2026",
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "period": "2026-05",
+            "categoryIncludes": "AWOL/Elopement",
+            "valueLabel": "Residents",
+            "textIncludes": ["unique resident", "May 2026"],
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "do that for April now",
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "period": "2026-04",
+            "categoryIncludes": "AWOL/Elopement",
+            "textIncludes": ["unique resident", "April 2026"],
+            "textExcludes": ["not enough context", "missing requested category"],
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "now just San Pablo",
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "period": "2026-04",
+            "facilityId": "337",
+            "categoryIncludes": "AWOL/Elopement",
+            "textIncludes": ["A & A Health Services San Pablo"],
+            "textExcludes": ["not enough context", "Portfolio AWOL", "Victoria's Place"],
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "list every AWOL incident for San Pablo in April 2026 including resident name date incident type and description",
+          "expect": {
+            "tools": ["incident_detail_list"],
+            "period": "2026-04",
+            "facilityId": "337",
+            "categoryIncludes": "AWOL/Elopement",
+            "artifact": true,
+            "textIncludes": ["A & A Health Services San Pablo", "matching incidents"],
+            "textExcludes": ["No rows matched", "Victoria's Place"],
+            "visual": {
+              "type": "table",
+              "minRows": 1,
+              "maxRows": 50,
+              "requiresOriginalRowCount": true
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "now just totals",
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "period": "2026-04",
+            "facilityId": "337",
+            "categoryIncludes": "AWOL/Elopement",
+            "textIncludes": ["A & A Health Services San Pablo"],
+            "textExcludes": ["not enough context", "every loaded matching incident", "Victoria's Place"],
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "export San Pablo April AWOL incident rows to csv",
+          "expect": {
+            "tools": ["export_csv"],
+            "period": "2026-04",
+            "facilityId": "337",
+            "categoryIncludes": "AWOL/Elopement",
+            "artifact": true,
+            "textIncludes": ["The CSV is ready with all 101", "A & A Health Services San Pablo"],
+            "textExcludes": ["Prepared 5 summary rows", "Victoria's Place"],
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "resident-to-community-thread",
+      "persona": "operator",
+      "category": "long-session",
+      "description": "A user starts with a resident, checks that resident's incident history, then pivots to the resident's community trend and category context.",
+      "turns": [
+        {
+          "prompt": "show Shannon Romero resident profile",
+          "expect": {
+            "tools": ["resident_lookup"],
+            "facilityId": "345",
+            "textIncludes": ["Shannon Romero", "Santa Clarita", "Resident #"],
+            "textExcludes": ["What is missing", "Victoria's Place", "undefined"],
+            "moduleId": "resident-profile",
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "show Shannon Romero incident history",
+          "expect": {
+            "tools": ["resident_incident_history"],
+            "facilityId": "345",
+            "textIncludes": ["Shannon Romero", "incident history"],
+            "textExcludes": ["Portfolio Longest Stay", "Victoria's Place", "undefined"],
+            "moduleId": "resident-incident-history",
+            "visual": {
+              "minRows": 1
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "show Santa Clarita census trend",
+          "expect": {
+            "tools": ["census_trend"],
+            "facilityId": "345",
+            "period": "2026-06",
+            "textIncludes": ["Santa Clarita", "June 2026"],
+            "textExcludes": ["Portfolio census trend", "Victoria's Place"],
+            "visual": {
+              "type": "line_chart",
+              "titleIncludes": "Santa Clarita",
+              "minRows": 6,
+              "valueLabel": "Census"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "show Santa Clarita incidents by category",
+          "expect": {
+            "tools": ["incident_breakdown"],
+            "facilityId": "345",
+            "period": "2026-06",
+            "textIncludes": ["Santa Clarita", "June 2026"],
+            "textExcludes": ["Portfolio incident breakdown", "Victoria's Place"],
+            "visual": {
+              "type": "bar_chart",
+              "titleIncludes": "Santa Clarita",
+              "minRows": 5,
+              "valueLabel": "Incidents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "recovery-period-pivot-session",
+      "persona": "operator",
+      "category": "long-session",
+      "description": "Unsupported historical data should fail closed, then a valid period rerun should answer without carrying the invalid month forward.",
+      "turns": [
+        {
+          "prompt": "give me the top category of each community in incidents November of last year",
+          "expect": {
+            "tools": ["top_incident_category_by_community", "data_availability"],
+            "truthStates": ["not_loaded", "stale"],
+            "safeRefusal": true,
+            "textIncludes": ["Available range", "not available", "did not substitute a different period"],
+            "textExcludes": ["June 2026 incidents", "Victoria's Place"],
+            "recovery": true,
+            "visual": {
+              "minRows": 1
+            },
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "do May 2026 instead",
+          "expect": {
+            "tools": ["top_incident_category_by_community"],
+            "period": "2026-05",
+            "textIncludes": ["May 2026", "communities"],
+            "textExcludes": ["November 2025", "not available", "Victoria's Place"],
+            "visual": {
+              "minRows": 5
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "community-history-loose-language",
+      "persona": "operator",
+      "category": "inevitable-analyst",
+      "description": "Loose community language with ranges should route to monthly community history instead of current-state profile fallback.",
+      "turns": [
+        {
+          "prompt": "san pablo, how has been the last three months",
+          "promptVariants": [
+            "how has san pablo been over the last few months",
+            "what is the San Pablo read last 3 months",
+            "San Pablo trend since April"
+          ],
+          "expect": {
+            "tools": ["community_history"],
+            "textIncludes": ["A & A Health Services San Pablo"],
+            "periodIncludes": ["2026-04", "2026-06"],
+            "textExcludes": ["I don't have that exact slice loaded", "community profile is current-state data", "Victoria's Place"],
+            "visual": {
+              "type": "table",
+              "minRows": 3,
+              "valueLabel": "Months"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        },
+        {
+          "prompt": "now show the same read for Turlock",
+          "expect": {
+            "tools": ["community_history"],
+            "facilityId": "344",
+            "periodIncludes": ["2026-04", "2026-06"],
+            "textIncludes": ["AHS Turlock OP LLC"],
+            "textExcludes": ["A & A Health Services San Pablo", "not enough context"],
+            "visual": {
+              "type": "table",
+              "minRows": 3
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "slice-discovery-freeform",
+      "persona": "operator",
+      "category": "inevitable-analyst",
+      "description": "Free-form slice requests should find the governed table and produce a scoped visual without exact regex coverage.",
+      "turns": [
+        {
+          "prompt": "give me February breakdown of AWOL incidents by community",
+          "promptVariants": [
+            "awol by community in february",
+            "for feb 2026 show elopement count split by each community"
+          ],
+          "expect": {
+            "tools": ["slice_metric"],
+            "period": "2026-02",
+            "categoryIncludes": "AWOL/Elopement",
+            "textIncludes": ["February 2026"],
+            "textExcludes": ["June 2026", "A & A Health Services San Pablo is the top row in this slice at 231", "Victoria's Place"],
+            "visual": {
+              "minRows": 3,
+              "valueLabel": "Incidents"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "trace-coverage-command-center",
+      "persona": "admin",
+      "category": "self-audit",
+      "description": "The Command Center should be reachable as the self-audit surface for quality, traces, and module coverage.",
+      "turns": [
+        {
+          "prompt": "open command center",
+          "expect": {
+            "tools": ["surface_module"],
+            "textIncludes": ["Opened Command Center"],
+            "actionsIncludeRoute": "/command-center",
+            "textExcludes": ["No rows matched", "Victoria's Place"],
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "fresh-thread-context-reset",
+      "persona": "operator",
+      "category": "context",
+      "description": "A new session should answer the explicit prompt without inheriting stale community or resident context.",
+      "turns": [
+        {
+          "prompt": "show San Pablo census trend",
+          "expect": {
+            "tools": ["census_trend"],
+            "facilityId": "337",
+            "textIncludes": ["A & A Health Services San Pablo", "June 2026"],
+            "textExcludes": ["Santa Clarita", "Shannon Romero", "Victoria's Place"],
+            "visual": {
+              "type": "line_chart",
+              "minRows": 6,
+              "valueLabel": "Census"
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "operating-snapshot-scan",
+      "persona": "operator",
+      "category": "summary",
+      "description": "Portfolio operating snapshot should give a compact operating read and attach the community table.",
+      "turns": [
+        {
+          "prompt": "portfolio operating snapshot",
+          "expect": {
+            "tools": ["operating_snapshot"],
+            "textIncludes": ["Portfolio census increased", "incidents totaled", "highest incident rate"],
+            "textExcludes": ["facility 337", "Victoria's Place", "the loaded data topline"],
+            "visual": {
+              "type": "table",
+              "titleIncludes": "Operating Snapshot",
+              "minRows": 5
+            },
+            "direct": true,
+            "maxActions": 2
+          }
+        }
+      ]
+    }
+  ]
+}

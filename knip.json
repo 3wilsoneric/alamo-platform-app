@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "api/**/*.js",
+    "scripts/**/*.mjs"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "api/**/*.js",
+    "server/**/*.mjs",
+    "shared/**/*.mjs",
+    "scripts/**/*.mjs"
+  ],
+  "ignore": [
+    "shared/**/*.d.mts"
+  ],
+  "ignoreExportsUsedInFile": true
+}

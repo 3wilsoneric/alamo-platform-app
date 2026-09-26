@@ -1,0 +1,613 @@
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
+import type { CertifiedQuestionCatalogItem, CertifiedQuestionVariable } from "../workspaceHomeUtils";
+
+type QuestionVariableSelections = Record<string, Record<string, string>>;
+
+export type CertifiedQuestionRunRequest = {
+  prompt: string;
+  routeId: string;
+};
+
+function getVariableOptions(variable: CertifiedQuestionVariable) {
+  return variable.options.map((option) => (
+    typeof option === "string" ? { label: option, value: option } : option
+  ));
+}
+
+function compilePrompt(item: CertifiedQuestionCatalogItem, selections: QuestionVariableSelections) {
+  const questionSelections = selections[item.id] ?? {};
+  return item.runPrompt.replace(/\{([a-zA-Z0-9_-]+)\}/g, (_match, variableId: string) => {
+    const selectedValue = questionSelections[variableId];
+    return selectedValue || `{${variableId}}`;
+  });
+}
+
+function getReferencedVariableIds(item: CertifiedQuestionCatalogItem) {
+  return new Set(
+    Array.from(item.runPrompt.matchAll(/\{([a-zA-Z0-9_-]+)\}/g)).map((match) => match[1])
+  );
+}
+
+function getMissingVariables(item: CertifiedQuestionCatalogItem, selections: QuestionVariableSelections) {
+  const questionSelections = selections[item.id] ?? {};
+  const referencedVariableIds = getReferencedVariableIds(item);
+  return (item.variables ?? []).filter((variable) => (
+    referencedVariableIds.has(variable.id) && !questionSelections[variable.id]
+  ));
+}
+
+function getRequiredVariables(item: CertifiedQuestionCatalogItem) {
+  const referencedVariableIds = getReferencedVariableIds(item);
+  return (item.variables ?? []).filter((variable) => referencedVariableIds.has(variable.id));
+}
+
+function getPlaceholderText(variable: CertifiedQuestionVariable) {
+  return String(variable.placeholder ?? variable.label)
+    .replace(/^choose\s+/i, "")
+    .toLowerCase();
+}
+
+function getMobilePrompt(item: CertifiedQuestionCatalogItem) {
+  const variableById = new Map((item.variables ?? []).map((variable) => [variable.id, variable]));
+  return item.prompt.replace(/\{([a-zA-Z0-9_-]+)\}/g, (_match, variableId: string) => {
+    const variable = variableById.get(variableId);
+    return variable ? getPlaceholderText(variable) : variableId;
+  });
+}
+
+function MobileQuestionVariables({
+  item,
+  selections,
+  onSelectionChange
+}: {
+  item: CertifiedQuestionCatalogItem;
+  selections: QuestionVariableSelections;
+  onSelectionChange: (questionId: string, variableId: string, value: string) => void;
+}) {
+  const variables = getRequiredVariables(item);
+  if (!variables.length) return null;
+
+  return (
+    <div data-question-mobile-fields="true" className="mt-3 grid gap-2 sm:hidden">
+      {variables.map((variable) => (
+        <label key={variable.id} className="grid gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#737373]">
+            {variable.label}
+          </span>
+          <select
+            data-question-variable-select={variable.id}
+            value={selections[item.id]?.[variable.id] ?? ""}
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => onSelectionChange(item.id, variable.id, event.currentTarget.value)}
+            className="min-h-11 w-full min-w-0 border border-[#bdbdbd] bg-white px-3 text-[16px] font-medium text-[#111111] outline-none focus:border-[#0f8b73]"
+          >
+            <option value="">Choose {getPlaceholderText(variable)}</option>
+            {getVariableOptions(variable).map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function InlineQuestionVariable({
+  itemId,
+  variable,
+  value,
+  onSelectionChange
+}: {
+  itemId: string;
+  variable: CertifiedQuestionVariable;
+  value: string;
+  onSelectionChange: (questionId: string, variableId: string, value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuId = useId();
+  const options = useMemo(() => getVariableOptions(variable), [variable]);
+  const selectedIndex = options.findIndex((option) => option.value === value);
+  const selectedLabel = options[selectedIndex]?.label;
+  const displayLabel = selectedLabel || getPlaceholderText(variable);
+  const width = Math.min(34, Math.max(8, displayLabel.length + 2));
+
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) return;
+
+    const positionMenu = () => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const viewportPadding = 12;
+      const menuGap = 6;
+      const availableWidth = Math.max(180, window.innerWidth - viewportPadding * 2);
+      const desiredWidth = Math.min(
+        360,
+        availableWidth,
+        Math.max(rect.width, ...options.map((option) => option.label.length * 8 + 44))
+      );
+      const desiredHeight = Math.min(320, options.length * 42 + 8);
+      const maxLeft = Math.max(viewportPadding, window.innerWidth - desiredWidth - viewportPadding);
+      const left = Math.min(Math.max(viewportPadding, rect.left), maxLeft);
+      const spaceBelow = Math.max(0, window.innerHeight - rect.bottom - viewportPadding);
+      const spaceAbove = Math.max(0, rect.top - viewportPadding);
+      const openAbove = spaceBelow < Math.min(180, desiredHeight) && spaceAbove > spaceBelow;
+      const availableHeight = openAbove
+        ? Math.max(0, spaceAbove - menuGap)
+        : Math.max(0, spaceBelow - menuGap);
+      const maxHeight = Math.max(96, Math.min(desiredHeight, availableHeight));
+      const top = openAbove
+        ? Math.max(viewportPadding, rect.top - maxHeight - menuGap)
+        : Math.min(
+            rect.bottom + menuGap,
+            window.innerHeight - viewportPadding - maxHeight
+          );
+
+      setMenuStyle({
+        left,
+        top,
+        width: desiredWidth,
+        maxHeight,
+        overscrollBehavior: "contain"
+      });
+    };
+
+    positionMenu();
+    const menu = menuRef.current;
+    const menuOptions = menu?.querySelectorAll<HTMLButtonElement>('[role="option"]');
+    const targetOption = menuOptions?.[Math.max(0, selectedIndex)];
+    targetOption?.focus({ preventScroll: true });
+    if (menu && targetOption) {
+      if (targetOption.offsetTop < menu.scrollTop) {
+        menu.scrollTop = targetOption.offsetTop;
+      } else if (targetOption.offsetTop + targetOption.offsetHeight > menu.scrollTop + menu.clientHeight) {
+        menu.scrollTop = targetOption.offsetTop + targetOption.offsetHeight - menu.clientHeight;
+      }
+    }
+    window.addEventListener("resize", positionMenu);
+    window.addEventListener("scroll", positionMenu, true);
+    return () => {
+      window.removeEventListener("resize", positionMenu);
+      window.removeEventListener("scroll", positionMenu, true);
+    };
+  }, [open, options, selectedIndex]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!buttonRef.current?.contains(target) && !menuRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const moveOptionFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const menuOptions = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]');
+    if (!menuOptions?.length) return;
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? menuOptions.length - 1
+        : event.key === "ArrowDown"
+          ? (index + 1) % menuOptions.length
+          : (index - 1 + menuOptions.length) % menuOptions.length;
+    menuOptions[nextIndex]?.focus();
+  };
+
+  return (
+    <span className="relative mx-[0.15em] inline-flex align-baseline" onClick={(event) => event.stopPropagation()}>
+      <button
+        ref={buttonRef}
+        type="button"
+        data-question-variable-trigger="true"
+        data-question-variable-id={variable.id}
+        aria-label={`${variable.label}: ${displayLabel}`}
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
+        className={`inline-flex min-h-9 items-center justify-between gap-1 border-x-0 border-t-0 border-b bg-transparent px-0 py-0 text-[1em] font-[inherit] leading-[inherit] outline-none transition-colors sm:min-h-[28px] ${
+          value
+            ? "border-[#0f8b73] text-[#0f6f5d]"
+            : "border-[#8a8a8a] text-[#595959]"
+        } hover:border-[#0f8b73] hover:text-[#0f6f5d] focus-visible:border-[#0f8b73] focus-visible:text-[#0f6f5d]`}
+        style={{ width: `${width}ch` }}
+      >
+        <span className="min-w-0 truncate">{displayLabel}</span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && typeof document !== "undefined" ? createPortal(
+        <div
+          ref={menuRef}
+          id={menuId}
+          role="listbox"
+          aria-label={variable.label}
+          data-question-variable-menu="true"
+          className="fixed z-[120] overflow-y-auto border border-[#111111] bg-white p-1 text-[#111111]"
+          style={menuStyle}
+        >
+          {options.map((option, index) => {
+            const selected = option.value === value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                data-question-variable-option={option.value}
+                onKeyDown={(event) => moveOptionFocus(event, index)}
+                onClick={() => {
+                  onSelectionChange(itemId, variable.id, option.value);
+                  setOpen(false);
+                  buttonRef.current?.focus();
+                }}
+                className={`flex w-full items-center gap-2 border-l-2 px-3 py-2 text-left text-[14px] font-medium leading-5 transition-colors ${
+                  selected
+                    ? "border-[#0f8b73] bg-[#effaf5] text-[#0f6f5d]"
+                    : "border-transparent bg-white text-[#333333] hover:border-[#0f8b73] hover:bg-[#f7fbf9] hover:text-[#111111]"
+                }`}
+              >
+                <Check className={`h-3.5 w-3.5 shrink-0 ${selected ? "opacity-100" : "opacity-0"}`} />
+                <span>{option.label}</span>
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      ) : null}
+    </span>
+  );
+}
+
+function TemplatePrompt({
+  item,
+  selections,
+  onSelectionChange
+}: {
+  item: CertifiedQuestionCatalogItem;
+  selections: QuestionVariableSelections;
+  onSelectionChange: (questionId: string, variableId: string, value: string) => void;
+}) {
+  if (!item.variables?.length) return <>{item.prompt}</>;
+
+  const variableById = new Map(item.variables.map((variable) => [variable.id, variable]));
+  const parts = item.prompt.split(/(\{[a-zA-Z0-9_-]+\})/g).filter(Boolean);
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        const match = part.match(/^\{([a-zA-Z0-9_-]+)\}$/);
+        if (!match) return <span key={`${part}-${index}`}>{part}</span>;
+
+        const variableId = match[1];
+        if (!variableId) return <span key={`${part}-${index}`}>{part}</span>;
+
+        const variable = variableById.get(variableId);
+        if (!variable) return <span key={`${part}-${index}`}>{part}</span>;
+
+        const value = selections[item.id]?.[variable.id] ?? "";
+        return (
+          <InlineQuestionVariable
+            key={`${variable.id}-${index}`}
+            itemId={item.id}
+            variable={variable}
+            value={value}
+            onSelectionChange={onSelectionChange}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+export function CertifiedQuestionGuide({
+  categories,
+  categoryCounts,
+  category,
+  query,
+  results,
+  onCategoryChange,
+  onQueryChange,
+  onClose,
+  onRun,
+  compact = false
+}: {
+  categories: string[];
+  categoryCounts: Record<string, number>;
+  category: string;
+  query: string;
+  results: CertifiedQuestionCatalogItem[];
+  onCategoryChange: (value: string) => void;
+  onQueryChange: (value: string) => void;
+  onClose: () => void;
+  onRun: (request: CertifiedQuestionRunRequest) => void;
+  compact?: boolean;
+}) {
+  const [selections, setSelections] = useState<QuestionVariableSelections>({});
+  const [page, setPage] = useState(0);
+  const totalCount = Object.values(categoryCounts).reduce((sum, count) => sum + count, 0);
+  const selectedCount = category === "All" ? totalCount : categoryCounts[category] ?? 0;
+  const pageSize = compact ? 6 : 10;
+  const totalPages = Math.max(1, Math.ceil(results.length / pageSize));
+  const activePage = Math.min(page, totalPages - 1);
+  const pageStart = activePage * pageSize;
+  const visibleResults = results.slice(pageStart, pageStart + pageSize);
+  const pageEnd = Math.min(results.length, pageStart + visibleResults.length);
+  const categoryOptions = ["All", ...categories];
+  const emptyCopy = query.trim()
+    ? `No questions match “${query.trim()}” in ${category === "All" ? "the menu" : category}.`
+    : `No ready questions are listed for ${category}.`;
+
+  useEffect(() => {
+    setPage(0);
+  }, [category, pageSize, query, results.length]);
+
+  const updateSelection = (questionId: string, variableId: string, value: string) => {
+    setSelections((current) => ({
+      ...current,
+      [questionId]: {
+        ...(current[questionId] ?? {}),
+        [variableId]: value
+      }
+    }));
+  };
+
+  const runItem = (item: CertifiedQuestionCatalogItem) => {
+    if (getMissingVariables(item, selections).length) return;
+    onRun({
+      prompt: compilePrompt(item, selections),
+      routeId: item.id
+    });
+  };
+
+  return (
+    <div
+      data-certified-question-guide="true"
+      className={`border border-[#d9d9d9] bg-white ${compact ? "p-3" : "p-4 sm:p-5"}`}
+    >
+      <div
+        data-certified-question-header="true"
+        className="mb-3 flex items-start justify-between gap-3 border-b border-[#d9d9d9] pb-3"
+      >
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">
+            Question library
+          </div>
+          <div className="mt-1 text-[20px] font-semibold tracking-[-0.035em] text-[#111111] sm:text-[18px]">
+            Choose a question
+          </div>
+          <p className="mt-1 text-[13px] leading-5 text-[#595959] sm:hidden">
+            Select a ready-to-run analysis.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-11 w-11 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#0f8b73] hover:text-[#111111] sm:h-8 sm:w-8"
+          aria-label="Close questions"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div data-certified-question-toolbar="true" className="space-y-3 sm:space-y-2">
+        <label className="sr-only" htmlFor={compact ? "certified-question-search-compact" : "certified-question-search"}>
+          Search questions
+        </label>
+        <div
+          data-certified-question-search-field="true"
+          className="flex h-12 items-center gap-2.5 border border-[#bdbdbd] bg-white px-3 transition-colors focus-within:border-[#0f8b73] sm:h-11"
+        >
+          <Search className="h-4 w-4 shrink-0 text-[#595959]" />
+          <input
+            data-certified-question-search="true"
+            id={compact ? "certified-question-search-compact" : "certified-question-search"}
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Search questions"
+            className="min-w-0 flex-1 bg-transparent text-[14px] text-[#111111] outline-none placeholder:text-[#8a8a8a]"
+          />
+        </div>
+        <label
+          data-certified-question-category-field="true"
+          className="grid gap-1.5 sm:hidden"
+          htmlFor="mobile-question-category"
+        >
+          <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#737373]">
+            Category
+          </span>
+          <select
+            id="mobile-question-category"
+            data-mobile-question-category="true"
+            value={category}
+            onChange={(event) => onCategoryChange(event.currentTarget.value)}
+            className="min-h-12 w-full border border-[#bdbdbd] bg-white px-3 text-[16px] font-semibold text-[#333333] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+          >
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>
+                {option} · {option === "All" ? totalCount : categoryCounts[option] ?? 0}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="hidden flex-wrap gap-1.5 sm:flex" aria-label="Question categories">
+          {categoryOptions.map((option) => {
+            const isActive = category === option;
+            const optionCount = option === "All" ? totalCount : categoryCounts[option] ?? 0;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onCategoryChange(option)}
+                data-dark-action={isActive ? "true" : undefined}
+                className={`inline-flex h-8 items-center gap-1.5 border px-2.5 text-[11px] font-semibold transition-colors ${
+                  isActive
+                    ? "border-[#111111] bg-[#111111] text-white"
+                    : "border-[#d9d9d9] bg-white text-[#333333] hover:border-[#0f8b73] hover:text-[#0f8b73]"
+                }`}
+                aria-pressed={isActive}
+              >
+                <span>{option}</span>
+                <span className={isActive ? "text-white/75" : "text-[#777777]"}>{optionCount}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div
+        data-certified-question-summary="true"
+        className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#595959]"
+      >
+        <span>
+          {results.length
+            ? `${results.length} ${query.trim() ? "matching " : ""}${results.length === 1 ? "question" : "questions"}`
+            : `${selectedCount} ${selectedCount === 1 ? "question" : "questions"} in ${category === "All" ? "all categories" : category}`}
+        </span>
+        {results.length > pageSize ? (
+          <span className="font-medium text-[#333333]">Page {activePage + 1} of {totalPages}</span>
+        ) : null}
+      </div>
+
+      <div
+        data-certified-question-results="true"
+        className={`mt-2 grid gap-2 border-y-0 border-[#d9d9d9] sm:gap-0 sm:border-y ${compact ? "max-h-[280px] overflow-y-auto sm:pr-1" : ""}`}
+      >
+        {visibleResults.length ? visibleResults.map((item) => {
+          const missingVariables = getMissingVariables(item, selections);
+          const canRun = missingVariables.length === 0;
+          const compiledPrompt = compilePrompt(item, selections);
+          const hasRequiredVariables = getRequiredVariables(item).length > 0;
+          return (
+            <div
+                key={item.id}
+                data-certified-question-button="true"
+                data-certified-question-id={item.id}
+                data-certified-question-prompt={item.prompt}
+                data-certified-question-run-prompt={compiledPrompt}
+                onClick={(event: MouseEvent<HTMLDivElement>) => {
+                  if ((event.target as HTMLElement).closest("select, button")) return;
+                  if (window.matchMedia("(max-width: 639px)").matches) return;
+                  runItem(item);
+                }}
+                className="group grid w-full gap-3 border border-[#d9d9d9] bg-white px-3 py-4 text-left transition-colors hover:bg-[#f7fbf9] sm:flex sm:items-center sm:justify-between sm:border-x-0 sm:border-b sm:border-t-0 sm:px-2 sm:py-3.5 sm:last:border-b-0"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="grid gap-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-baseline">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#737373]">
+                      {item.category}
+                    </span>
+                    <span data-certified-question-prompt-text="true" className="text-[16px] font-semibold leading-6 tracking-normal text-[#111111] sm:text-[15px]">
+                      <span className="sm:hidden">{getMobilePrompt(item)}</span>
+                      <span className="hidden sm:inline">
+                        <TemplatePrompt
+                          item={item}
+                          selections={selections}
+                          onSelectionChange={updateSelection}
+                        />
+                      </span>
+                    </span>
+                  </div>
+                  <MobileQuestionVariables
+                    item={item}
+                    selections={selections}
+                    onSelectionChange={updateSelection}
+                  />
+                </div>
+                <button
+                  type="button"
+                  data-certified-question-submit="true"
+                  onClick={() => runItem(item)}
+                  disabled={!canRun}
+                  aria-label={canRun
+                    ? `Run: ${hasRequiredVariables ? compiledPrompt : item.prompt}`
+                    : `Choose ${missingVariables.map((variable) => variable.label).join(", ")} for ${item.prompt}`}
+                  className={`inline-flex min-h-11 w-full shrink-0 items-center justify-between border px-3 text-[13px] font-semibold transition-colors sm:h-8 sm:min-h-0 sm:w-8 sm:justify-center sm:px-0 ${canRun
+                    ? "border-[#0f8b73] bg-[#0f8b73] text-white hover:bg-[#0b745f] sm:bg-white sm:text-[#0f8b73]"
+                    : "border-[#d9d9d9] bg-[#f7f7f7] text-[#8a8a8a] disabled:cursor-not-allowed sm:bg-white sm:text-[#bdbdbd]"
+                  }`}
+                >
+                  <span className="sm:hidden">{canRun ? "Run question" : "Choose options to run"}</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+            </div>
+          );
+        }) : (
+          <div className="border border-dashed border-[#d9d9d9] bg-white px-4 py-6 text-center text-[13px] leading-5 text-[#595959]">
+            <div>{emptyCopy}</div>
+            <button
+              type="button"
+              onClick={() => {
+                onQueryChange("");
+                onCategoryChange("All");
+              }}
+              data-dark-action="true"
+              className="mt-3 bg-[#111111] px-3 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#0f8b73]"
+            >
+              Show all questions
+            </button>
+          </div>
+        )}
+      </div>
+      {results.length > pageSize ? (
+        <div
+          data-certified-question-pagination="true"
+          className="mt-3 grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between"
+        >
+          <div className="text-[12px] font-medium text-[#333333]">
+            Showing {pageStart + 1}-{pageEnd}
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(0, current - 1))}
+              disabled={activePage === 0}
+              className="inline-flex min-h-11 items-center gap-2 border border-[#d9d9d9] bg-white px-3 text-[13px] font-semibold text-[#111111] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span className="sm:hidden">Previous</span>
+              <span className="hidden sm:inline">Previous page</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
+              disabled={activePage >= totalPages - 1}
+              data-dark-action="true"
+              className="inline-flex min-h-11 items-center gap-2 border border-[#111111] bg-[#111111] px-3 text-[13px] font-semibold text-white transition-colors hover:border-[#0f8b73] hover:bg-[#0f8b73] disabled:cursor-not-allowed disabled:border-[#d9d9d9] disabled:bg-white disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
+            >
+              <span className="sm:hidden">Next</span>
+              <span className="hidden sm:inline">Next page</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

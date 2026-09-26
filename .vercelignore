@@ -1,0 +1,15 @@
+.DS_Store
+.auth/
+.env
+.env.*
+!.env.example
+.git/
+.vercel/
+dist/
+generated/
+node_modules/
+output/
+tmp/
+__pycache__/
+*.pyc
+vercel-production-snapshot.env

@@ -1,0 +1,719 @@
+{
+  "dataset": "Alamo Five-State County-and-Buyer Research Sprint",
+  "prepared_for": "Alamo",
+  "verified_as_of": "2026-08-02",
+  "parent_dataset": "bh_atlas_verified_top15.json",
+  "scope": [
+    "California",
+    "Washington",
+    "Oregon",
+    "Texas",
+    "New York"
+  ],
+  "purpose": "Convert the verified state-level demand screen into an actionable county, buyer, procurement, economics, and outreach layer. This file does not alter the parent atlas.",
+  "research_rules": {
+    "current_status": "Procurement status, leadership, and deadlines are stated only when verified through an official source.",
+    "numbers": "No estimates or inferred bed counts. Non-comparable or unavailable capacity remains null.",
+    "buyer_definition": "An organization is called a buyer only where public evidence shows purchasing, contracting, funding, authorization, or referral authority.",
+    "status_labels": [
+      "active",
+      "scheduled_status_to_verify",
+      "closed_or_pending",
+      "recent_precedent",
+      "not_publicly_located"
+    ]
+  },
+  "executive_conclusion": {
+    "strategic_outreach_rank": [
+      {
+        "rank": 1,
+        "target": "Los Angeles County Department of Mental Health",
+        "reason": "Best combination of direct fit, buyer scale, and an open 24-hour residential/acute inpatient qualification path through 2031."
+      },
+      {
+        "rank": 2,
+        "target": "King County Behavioral Health and Recovery Division",
+        "reason": "Strongest documented county capital pipeline for residential treatment and a quantified boarding problem; operating procurement must be tracked."
+      },
+      {
+        "rank": 3,
+        "target": "Alameda County Behavioral Health Department",
+        "reason": "Clearest published SMI residential rate card and an established ARF/RCFE purchasing mechanism; the 2026 cycle is closed/pending."
+      },
+      {
+        "rank": 4,
+        "target": "New York State Office of Mental Health / NYC Department of Health and Mental Hygiene",
+        "reason": "Imminent state forensic and step-down procurements plus an open-ended NYC justice-involved supportive-housing RFP."
+      },
+      {
+        "rank": 5,
+        "target": "Pierce County Human Services",
+        "reason": "A residential behavioral-health facility procurement was scheduled for 2026, but the live portal status still requires confirmation."
+      },
+      {
+        "rank": 6,
+        "target": "Oregon Health Authority and priority county CMHPs",
+        "reason": "Strong demand and concrete county contract models, but no open adult high-acuity residential solicitation was verified in this sprint."
+      },
+      {
+        "rank": 7,
+        "target": "Texas HHSC Behavioral Health Services / Health and Specialty Care System",
+        "reason": "The largest forensic-pressure signal in the batch, but current residential procurement and rate economics are comparatively opaque."
+      }
+    ],
+    "live_opportunity_watch": [
+      {
+        "target": "Los Angeles County",
+        "opportunity": "24-Hour Residential Treatment Contract and Acute Psychiatric Inpatient Contract, RFA #DMH091521B1",
+        "status": "active",
+        "deadline": "2031-06-30",
+        "fit": "direct"
+      },
+      {
+        "target": "San Bernardino County",
+        "opportunity": "SUDRS Withdrawal Management and Residential Treatment Services, DBHE26-ADMN-6449 / RFP 25-134",
+        "status": "active",
+        "deadline": "2026-08-20 16:00 local",
+        "fit": "conditional_on_SUD_ASAM_capability"
+      },
+      {
+        "target": "Clark County, Washington",
+        "opportunity": "2027 Mental Health Sales Tax funding RFP",
+        "status": "active",
+        "deadline": "2026-08-11",
+        "fit": "conditional; general behavioral-health funding, residential scope not established"
+      },
+      {
+        "target": "New York City",
+        "opportunity": "Open-Ended Justice-Involved Supportive Housing (JISH), EPIN 81622P0004",
+        "status": "active",
+        "deadline": "2039-12-30 23:59",
+        "fit": "conditional; permanent supportive housing rather than high-acuity 24-hour treatment"
+      },
+      {
+        "target": "New York State",
+        "opportunity": "Short-Term Transition Residence Units \u2014 Forensic and Step-Down",
+        "status": "scheduled_status_to_verify",
+        "window": "2026-07-01 through 2026-09-30",
+        "fit": "direct"
+      }
+    ]
+  },
+  "states": {
+    "California": {
+      "state_demand": {
+        "fact": "As of May 12, 2026, California DSH reported 458 patients pending placement, including 256 incompetent-to-stand-trial patients.",
+        "confidence": "confirmed"
+      },
+      "priority_targets": [
+        {
+          "rank": 1,
+          "county_or_region": "Los Angeles County",
+          "population_2025": 9694934,
+          "buyer": "Los Angeles County Department of Mental Health (LACDMH)",
+          "buyer_role": "County mental-health authority and direct contractor for 24-hour residential and acute psychiatric services.",
+          "leadership": [
+            {
+              "name": "Lisa H. Wong, Psy.D.",
+              "title": "Director"
+            },
+            {
+              "name": "Maria Funk, Ph.D.",
+              "title": "Deputy Director, Housing and Job Development"
+            },
+            {
+              "name": "Karen Streich, Ph.D.",
+              "title": "Deputy Director, Forensic Services Programs"
+            },
+            {
+              "name": "Martin Jones Jr.",
+              "title": "Countywide Chief, AOT & CARE"
+            }
+          ],
+          "procurement": {
+            "name": "24-Hour Residential Treatment Contract and Acute Psychiatric Inpatient Contract",
+            "identifier": "RFA #DMH091521B1",
+            "status": "active",
+            "open_date": "2021-09-15",
+            "close_date": "2031-06-30"
+          },
+          "alamo_pitch": "Qualify for the 24-hour residential contracting pathway and lead with difficult-to-place, forensic/AOT/CARE-linked step-down capacity and measurable avoided-hospital-day outcomes.",
+          "barriers": [
+            "California facility licensure/category fit",
+            "Medi-Cal certification and county contracting requirements",
+            "Need to confirm exact service categories accepted under the RFA"
+          ]
+        },
+        {
+          "rank": 2,
+          "county_or_region": "Alameda County",
+          "population_2025": 1636630,
+          "buyer": "Alameda County Behavioral Health Department",
+          "buyer_role": "County purchaser and referral authority for SMI housing-support placements in licensed ARF/RCFE settings.",
+          "leadership": [
+            {
+              "name": "Karyn Tribble, PsyD, LCSW",
+              "title": "Behavioral Health Director"
+            },
+            {
+              "name": "Vanessa Baker, LMFT",
+              "title": "Deputy Director / Plan Administrator"
+            },
+            {
+              "name": "Aneeka G. Chaudhry",
+              "title": "Director, Alameda County Health"
+            }
+          ],
+          "procurement": {
+            "name": "Housing Support Program",
+            "identifier": "RFPQ #26-02",
+            "status": "closed_or_pending",
+            "proposal_due": "2026-06-02",
+            "anticipated_contract_start": "2026-10-01",
+            "annual_allocation": 7194413,
+            "minimum_volume_guaranteed": false
+          },
+          "published_monthly_rates": [
+            {
+              "level": "1",
+              "monthly_per_client": 1141
+            },
+            {
+              "level": "2",
+              "monthly_per_client": 2277
+            },
+            {
+              "level": "3",
+              "monthly_per_client": 3416
+            },
+            {
+              "level": "4A",
+              "monthly_per_client": 4500
+            },
+            {
+              "level": "4B",
+              "monthly_per_client": 6510
+            },
+            {
+              "level": "4C",
+              "monthly_per_client": 8494
+            }
+          ],
+          "alamo_pitch": "High-acuity SMI ARF/RCFE placement with the ability to accept complex clients at the upper care levels and report placement stability, hospital diversion, and discharge outcomes.",
+          "barriers": [
+            "Current procurement cycle is closed/pending",
+            "No guaranteed referral volume",
+            "ARF/RCFE licensure and local operating requirements"
+          ]
+        },
+        {
+          "rank": 3,
+          "county_or_region": "San Bernardino County",
+          "population_2025": 2224091,
+          "buyer": "San Bernardino County Department of Behavioral Health",
+          "buyer_role": "County contractor for behavioral-health and SUD residential services.",
+          "leadership": [
+            {
+              "name": "Joshua Dugas, MBA, REHS",
+              "title": "Acting Director"
+            },
+            {
+              "name": "Jessica Fong",
+              "title": "Public procurement contact for the active solicitation"
+            }
+          ],
+          "procurement": {
+            "name": "SUDRS Withdrawal Management and Residential Treatment Services",
+            "identifier": "DBHE26-ADMN-6449 / RFP 25-134",
+            "status": "active",
+            "released": "2026-07-21",
+            "questions_due": "2026-08-06 12:00 local",
+            "proposal_due": "2026-08-20 16:00 local",
+            "estimated_incremental_cost": 19087102,
+            "service_period": "2027-02-01 through 2028-12-31"
+          },
+          "alamo_pitch": "Pursue only if Alamo can deliver compliant withdrawal-management and residential SUD services; otherwise retain as evidence of a county actively buying campus-based residential care.",
+          "barriers": [
+            "SUD/ASAM scope may not match Alamo's current model",
+            "Immediate deadline",
+            "Need to confirm licensing and campus requirements"
+          ]
+        }
+      ],
+      "first_outreach": {
+        "organization": "Los Angeles County Department of Mental Health",
+        "entry_point": "Contract opportunities / 24-Hour Residential RFA, with Housing and Job Development and Forensic Services as operational stakeholders",
+        "lead_problem": "The county needs qualified 24-hour residential providers for high-acuity people who otherwise remain in hospitals, forensic pathways, or unstable placements.",
+        "offer": "A defined placement model plus an Alamo-style cost, flow, and outcomes analysis tied to avoided higher-acuity days."
+      }
+    },
+    "Washington": {
+      "priority_targets": [
+        {
+          "rank": 1,
+          "county_or_region": "King County",
+          "population_2025": 2344939,
+          "buyer": "King County Department of Community and Human Services, Behavioral Health and Recovery Division",
+          "buyer_role": "County behavioral-health authority, contractor, and Crisis Care Centers levy administrator.",
+          "leadership": [
+            {
+              "name": "Dr. Susan McLaughlin",
+              "title": "DCHS Director"
+            },
+            {
+              "name": "Isabel Jones",
+              "title": "Acting Director, Behavioral Health and Recovery Division"
+            }
+          ],
+          "demand": [
+            "In 2024, 854 people were held in hospitals or emergency departments for at least two days because no behavioral-health treatment bed was available.",
+            "The county's levy goal is to restore mental-health residential capacity to 355 beds."
+          ],
+          "procurement_and_funding": {
+            "recent_rfp_status": "closed",
+            "recent_rfp_deadline": "2025-10-17",
+            "capital_available_2025": 59200000,
+            "preservation_awards": 15000000,
+            "desired_programs": [
+              "Two to three South King County programs, up to 48 beds",
+              "Up to two intensive step-down programs, up to 16 beds each",
+              "One youth program, up to 16 beds"
+            ],
+            "note": "The cited capital RFP did not itself provide operating funding; Medicaid and other operating payors were to be contracted separately."
+          },
+          "alamo_pitch": "A high-intensity adult step-down facility with a capital-development and operating-readiness plan, including referral acceptance, staffing, Medicaid readiness, and avoided boarding-day reporting.",
+          "barriers": [
+            "Most recent capital RFP is closed",
+            "Operating payer pathway must be separately confirmed",
+            "Siting and development timeline"
+          ]
+        },
+        {
+          "rank": 2,
+          "county_or_region": "Pierce County",
+          "population_2025": 946288,
+          "buyer": "Pierce County Human Services",
+          "buyer_role": "County human-services purchaser overseeing behavioral-health procurements and contracts.",
+          "leadership": [
+            {
+              "name": "Gary Gant",
+              "title": "Human Services Director / department lead"
+            }
+          ],
+          "procurement": {
+            "name": "Residential Behavioral Health Facility",
+            "status": "scheduled_status_to_verify",
+            "planned_release": "Q2 2026",
+            "planned_award": "Q3 2026",
+            "portal": "OpenGov"
+          },
+          "alamo_pitch": "Request the current procurement status and present a turnkey residential operating model with county-specific capacity, referral-flow, and cost-offset analysis.",
+          "barriers": [
+            "The public schedule was verified, but current portal status was not",
+            "Scope and licensure details still need the solicitation package"
+          ]
+        },
+        {
+          "rank": 3,
+          "county_or_region": "Clark County",
+          "population_2025": 532119,
+          "buyer": "Clark County Mental Health Sales Tax Program",
+          "buyer_role": "County grant funder for behavioral-health programs.",
+          "procurement": {
+            "name": "2027 Mental Health Sales Tax Funding RFP",
+            "status": "active",
+            "released": "2026-07-01",
+            "proposal_due": "2026-08-11"
+          },
+          "alamo_pitch": "Treat as a grant-funding entry point only after confirming that residential or step-down operations are eligible.",
+          "barriers": [
+            "General behavioral-health grant; residential eligibility not established",
+            "Near-term deadline"
+          ]
+        }
+      ],
+      "first_outreach": {
+        "organization": "King County Behavioral Health and Recovery Division",
+        "entry_point": "Crisis Care Centers levy mental-health residential team",
+        "lead_problem": "Quantified ED/hospital boarding and a stated need to rebuild residential capacity.",
+        "offer": "Intensive step-down capacity, facility development/operations partnership, and a boarding-day/cost-offset measurement package."
+      }
+    },
+    "Oregon": {
+      "state_buyer": {
+        "organization": "Oregon Health Authority, Behavioral Health Division",
+        "leader": {
+          "name": "Ebony Clarke",
+          "title": "Behavioral Health Division Director"
+        },
+        "role": "State behavioral-health policy, funding, and oversight; key partner for competency-restoration and residential-system work."
+      },
+      "state_demand": [
+        "The NorthWest Regional Restoration Center was operating largely at or above a census of 35, with 20 additional beds under construction.",
+        "Lane, Multnomah, and Washington County enhanced care management units increased community-restoration discharges from 35% before the units to 70% after implementation.",
+        "Average ready-to-place days fell from 57.3 to 52.9; median days fell from 56 to 50."
+      ],
+      "priority_targets": [
+        {
+          "rank": 1,
+          "county_or_region": "Multnomah County",
+          "population_2025": 795391,
+          "buyers": [
+            "Multnomah County Health Department",
+            "Oregon Health Authority"
+          ],
+          "procurement": {
+            "name": "24/7 Sobering and Crisis Stabilization Center operator",
+            "status": "scheduled_status_to_verify",
+            "estimated_capital_and_equipment": 18605400,
+            "plan_statement": "County plan calls for development of an operator RFP; the RFP process was expected to take about six months."
+          },
+          "alamo_pitch": "A 24/7 stabilization and transition operator model tied to jail/ED diversion and rapid linkage to longer-term residential care.",
+          "barriers": [
+            "May be more crisis/SUD-focused than Alamo's core model",
+            "Operator RFP not verified as active"
+          ]
+        },
+        {
+          "rank": 2,
+          "county_or_region": "Marion County",
+          "population_2025": 355777,
+          "buyer": "Marion County Health and Human Services",
+          "recent_precedent": {
+            "provider": "Carroll Group Care Home",
+            "service": "24-hour staffed residential treatment for adults with serious mental illness at two facilities",
+            "contract_end": "2027-06-30",
+            "contract_total_after_amendment": 525000,
+            "added_amount": 300000,
+            "active_clients": 13,
+            "typical_placement": "6 to 18 months",
+            "referral_examples": [
+              "Oregon State Hospital 370-assist",
+              "civil commitments",
+              "voluntary psychiatric units"
+            ]
+          },
+          "alamo_pitch": "A difficult-to-place SMI step-down contract with county gap funding for clients whose Medicaid or other benefits do not cover room, board, or the full service package.",
+          "barriers": [
+            "Existing provider relationship",
+            "Current evidence is a contract precedent, not an open solicitation"
+          ]
+        },
+        {
+          "rank": 3,
+          "county_or_region": "Lane / Washington County ECMU corridor",
+          "population_2025": {
+            "Lane": 381584,
+            "Washington": 611708
+          },
+          "buyers": [
+            "County community mental-health programs",
+            "Oregon Health Authority"
+          ],
+          "demand": "Enhanced care management units have demonstrated materially higher community-restoration discharge rates and fewer ready-to-place days.",
+          "procurement": {
+            "status": "not_publicly_located"
+          },
+          "alamo_pitch": "Offer capacity and outcome analysis first, then a residential expansion model designed to reproduce the ECMU improvement in discharge flow.",
+          "barriers": [
+            "No open procurement verified",
+            "Need county-specific contract and rate pulls"
+          ]
+        }
+      ],
+      "first_outreach": {
+        "organization": "Oregon Health Authority Behavioral Health Division, coordinated with Multnomah County",
+        "entry_point": "Competency/restoration and 24/7 stabilization-residential transition planning",
+        "lead_problem": "Court-driven pressure to move people through restoration and into community settings faster.",
+        "offer": "Residential step-down operations plus an analysis of ready-to-place days, restoration discharges, and avoided state-hospital/jail utilization."
+      }
+    },
+    "Texas": {
+      "state_demand": [
+        "The forensic share of Texas state-hospital average daily census increased from 28% to 71%.",
+        "Individuals added to the forensic competency-restoration waitlist rose from 2,791 in FY2019 to 3,732 in FY2025.",
+        "For FY2026, the reported average daily census mix was 51% incompetent to stand trial, 19% not guilty by reason of insanity, and 30% civil/voluntary."
+      ],
+      "state_buyers": [
+        {
+          "organization": "Texas Health and Human Services Commission, Behavioral Health Services",
+          "leader": {
+            "name": "Trina Ita",
+            "title": "Deputy Executive Commissioner"
+          },
+          "role": "Oversees behavioral-health programs including outpatient and jail-based competency-restoration contracts."
+        },
+        {
+          "organization": "Texas HHSC, Health and Specialty Care System",
+          "leader": {
+            "name": "Scott Schalchlin",
+            "title": "Deputy Executive Commissioner"
+          },
+          "role": "Operates the state-hospital and specialty-care system."
+        },
+        {
+          "organization": "Texas HHSC",
+          "leader": {
+            "name": "Stephanie Muth",
+            "title": "Executive Commissioner"
+          },
+          "role": "Executive sponsor."
+        }
+      ],
+      "priority_targets": [
+        {
+          "rank": 1,
+          "county_or_region": "Dallas / North Texas",
+          "population_2025": {
+            "Dallas County": 2661397
+          },
+          "buyers": [
+            "North Texas Behavioral Health Authority",
+            "Dallas-area LMHAs",
+            "Texas HHSC"
+          ],
+          "buyer_logic": "The region participates in the contracted competency-restoration ecosystem and has a large catchment.",
+          "procurement": {
+            "status": "not_publicly_located"
+          },
+          "alamo_pitch": "Secure community competency-restoration and forensic step-down capacity linked to reduced waitlist recurrence and repeat restoration.",
+          "barriers": [
+            "No active direct RFP verified",
+            "Rate and contract terms require a contract/PIR pull",
+            "Texas licensure and forensic security requirements"
+          ]
+        },
+        {
+          "rank": 2,
+          "county_or_region": "Tarrant County",
+          "population_2025": 2248466,
+          "buyers": [
+            "MHMR of Tarrant County",
+            "Texas HHSC"
+          ],
+          "buyer_logic": "MHMR Tarrant is an established public behavioral-health authority with a public purchasing/provider-contracting pathway.",
+          "procurement": {
+            "status": "not_publicly_located",
+            "portal": "Public Purchase / provider contracting"
+          },
+          "alamo_pitch": "Start with a competency and repeat-utilization research brief, then seek provider-network or contracted-bed discussions.",
+          "barriers": [
+            "No open residential procurement verified",
+            "Need current provider contract documents and rates"
+          ]
+        },
+        {
+          "rank": 3,
+          "county_or_region": "Travis County",
+          "population_2025": 1389670,
+          "buyers": [
+            "Integral Care",
+            "Texas HHSC"
+          ],
+          "buyer_logic": "Integral Care is a major LMHA and participates in competency-restoration infrastructure.",
+          "procurement": {
+            "status": "not_publicly_located"
+          },
+          "alamo_pitch": "Community restoration and high-acuity transition services paired with outcomes analysis for jail-to-treatment flow.",
+          "barriers": [
+            "No active direct solicitation verified",
+            "Need local contract and capacity pull"
+          ]
+        }
+      ],
+      "first_outreach": {
+        "organization": "Texas HHSC Behavioral Health Services and Health and Specialty Care System",
+        "entry_point": "Competency-restoration contracting and state-hospital transition planning",
+        "lead_problem": "Rapidly increasing forensic dominance and continuing competency-restoration demand.",
+        "offer": "A forensic residential continuum model plus analysis of waitlist inflow, repeat restoration, length of stay, and avoidable state-hospital utilization."
+      },
+      "economics": {
+        "public_per_diem_or_rate": null,
+        "reason": "No reliable current residential rate schedule was located in this sprint; obtain awarded contracts or use a Texas Public Information Act request before modeling economics."
+      }
+    },
+    "New York": {
+      "state_buyers": [
+        {
+          "organization": "New York State Office of Mental Health",
+          "leadership": [
+            {
+              "name": "Ann Marie T. Sullivan, M.D.",
+              "title": "Commissioner"
+            },
+            {
+              "name": "Robert Moon",
+              "title": "Deputy Commissioner, Community Program Policy and Management"
+            },
+            {
+              "name": "Christopher Smith, Ph.D.",
+              "title": "Associate Commissioner, Adult Community Care"
+            },
+            {
+              "name": "Li-Wen Lee, M.D.",
+              "title": "Associate Commissioner, Forensic Services"
+            }
+          ]
+        },
+        {
+          "organization": "New York City Department of Health and Mental Hygiene",
+          "role": "City purchaser of supportive housing and behavioral-health services."
+        }
+      ],
+      "priority_targets": [
+        {
+          "rank": 1,
+          "county_or_region": "Bronx / New York City",
+          "population_2025": {
+            "Bronx County": 1406332
+          },
+          "buyers": [
+            "New York State OMH",
+            "NYC Department of Health and Mental Hygiene"
+          ],
+          "procurement": [
+            {
+              "name": "Justice-Involved Supportive Housing (JISH)",
+              "identifier": "EPIN 81622P0004",
+              "status": "active",
+              "proposal_model": "open-ended, rolling",
+              "due": "2039-12-30 23:59",
+              "new_funding": 4800000,
+              "planned_new_homes": "up to 190",
+              "eligibility_note": "Requires PASSPort account and approved HHS Accelerator PQL status."
+            },
+            {
+              "name": "Bronx Forensic Assertive Community Treatment team",
+              "status": "closed_or_pending",
+              "issued": "2026-05-19",
+              "proposal_due": "2026-07-28",
+              "capacity": 68,
+              "award_count": 1,
+              "contract_term": "five years"
+            }
+          ],
+          "fact_economics_benchmark": {
+            "start_up": 100000,
+            "ramp_up": 350000,
+            "annual_gross": 1893039,
+            "assumed_medicaid": 1091656,
+            "net_deficit": 747509,
+            "services": 40828,
+            "note": "FACT is a community-team benchmark, not a residential per-diem."
+          },
+          "alamo_pitch": "For JISH, use a housing-first justice-involved model only if Alamo can operate permanent supportive housing. For high-acuity treatment, partner around the upcoming OMH forensic/step-down residence procurements instead.",
+          "barriers": [
+            "JISH is not equivalent to 24-hour treatment",
+            "PASSPort/PQL requirements",
+            "FACT deadline has passed"
+          ]
+        },
+        {
+          "rank": 2,
+          "county_or_region": "Kings County / Brooklyn",
+          "population_2025": 2653963,
+          "buyer": "New York State Office of Mental Health",
+          "procurement": [
+            {
+              "name": "Short-Term Transitional Residence \u2014 Kings County",
+              "status": "recent_precedent",
+              "closed": "2026-01-29"
+            },
+            {
+              "name": "Short-Term Transition Residence Units \u2014 Forensic",
+              "status": "scheduled_status_to_verify",
+              "window": "2026-07-01 through 2026-09-30"
+            },
+            {
+              "name": "Short-Term Transition Residence Units \u2014 Step-Down",
+              "status": "scheduled_status_to_verify",
+              "window": "2026-07-01 through 2026-09-30"
+            }
+          ],
+          "alamo_pitch": "Prepare a bid-ready forensic and hospital step-down residence concept before the Q2 solicitations post, with staffing, referral acceptance, transition milestones, and payer assumptions.",
+          "barriers": [
+            "Exact new solicitation documents not yet posted/located",
+            "OMH operating-certificate requirements",
+            "Need site and local-government collaboration"
+          ]
+        }
+      ],
+      "first_outreach": {
+        "organization": "New York State OMH, Community Program Policy and Management / Adult Community Care / Forensic Services",
+        "entry_point": "Planned Short-Term Transition Residence procurements",
+        "lead_problem": "Need for time-limited forensic and hospital step-down placements that prevent avoidable institutional occupancy.",
+        "offer": "A bid-ready residence model and county-level flow/economic analysis; separately evaluate JISH only as a supportive-housing product."
+      }
+    }
+  },
+  "cross_cutting_gaps": [
+    "Comparable residential bed counts by level of care were not located for all five states and remain intentionally blank.",
+    "Texas per-diem economics require awarded-contract retrieval or public-information requests.",
+    "Pierce County's exact 2026 live solicitation status requires an immediate OpenGov check.",
+    "New York's planned Q2 forensic and step-down residence solicitations should be monitored for posting.",
+    "Oregon's planned Multnomah operator procurement requires status verification.",
+    "For every target, facility licensure, Medicaid enrollment, zoning/siting, and referral eligibility must be checked before treating the opportunity as executable."
+  ],
+  "recommended_next_actions": [
+    {
+      "priority": 1,
+      "action": "Download and review the full Los Angeles County RFA package; build an eligibility and submission checklist."
+    },
+    {
+      "priority": 2,
+      "action": "Contact King County BHRD regarding the next residential operating/capital cycle and obtain the post-2025 award list."
+    },
+    {
+      "priority": 3,
+      "action": "Use Alameda's published rate card to build a unit-economics model at Levels 3, 4A, 4B, and 4C."
+    },
+    {
+      "priority": 4,
+      "action": "Track NY OMH's Q2 procurement page weekly for the forensic and step-down residence solicitations."
+    },
+    {
+      "priority": 5,
+      "action": "Request Texas competency-restoration awarded contracts and rate exhibits before building a Texas pro forma."
+    }
+  ],
+  "sources": {
+    "base_atlas": "/mnt/data/bh_atlas_verified_top15.json",
+    "California": [
+      "https://www.dsh.ca.gov/About_Us/docs/DSH_2026-27_May_Revision_Highlights.pdf",
+      "https://dmh.lacounty.gov/contract-opportunities/open-solicitations/",
+      "https://dmh.lacounty.gov/about/leadership/",
+      "https://bhcsproviders.acgov.org/docs/RFP/2026/rfpq-26-02-housing-support-program-ada.pdf",
+      "https://health.alamedacountyca.gov/executive-leadership-team/",
+      "https://epro.sbcounty.gov/bso/external/bidDetail.sdo?docId=DBHE26-ADMN-6449",
+      "https://wp.sbcounty.gov/dbh/about/"
+    ],
+    "Washington": [
+      "https://kingcounty.gov/en/dept/dchs/human-social-services/community-funded-initiatives/crisis-care-centers-levy/annual-report",
+      "https://dchsblog.com/2025/09/16/new-funding-opportunity-for-mental-health-residential-treatment-facilities-apply-by-october-17/",
+      "https://kingcounty.gov/en/dept/dchs/about-king-county/about-dchs/about",
+      "https://www.piercecountywa.gov/2779/Solicitations-and-Competitive-Bids",
+      "https://clark.wa.gov/councilors/mental-health-sales-tax-funding-advisory-board"
+    ],
+    "Oregon": [
+      "https://www.oregon.gov/oha/pages/oha-bios.aspx",
+      "https://www.oregon.gov/oha/OSH/reports/Oregon_Mink-Bowman_3rd_Court_Monitor_Pinals_Report_2026.03.16.pdf",
+      "https://multco.us/file/sobering_%26_crisis_stabilization_plan/download",
+      "https://www.co.marion.or.us/BOC/Meetings/Documents/Work%20Sessions/2025/2025-03MAR25-MgtUpMinutes%20MV%20GW.pdf"
+    ],
+    "Texas": [
+      "https://apps.hhs.texas.gov/documents/HSCS/StateHospitalLRP.pdf",
+      "https://www.hhs.texas.gov/about/leadership",
+      "https://www.hhs.texas.gov/services/mental-health-substance-use/adult-mental-health/outpatient-competency-restoration",
+      "https://www.mhmrtarrant.org/"
+    ],
+    "New York": [
+      "https://omh.ny.gov/omhweb/rfp/",
+      "https://omh.ny.gov/omhweb/rfp/upcoming-procurement-opportunities.html",
+      "https://omh.ny.gov/omhweb/rfp/2026/fact/adult_forensic_act_rfp_bronx_final.pdf",
+      "https://a856-cityrecord.nyc.gov/RequestDetail/20260128026",
+      "https://www.nyc.gov/site/doh/about/press/pr2026/request-for-proposals-to-expand-supportive-housing.page",
+      "https://omh.ny.gov/omhweb/about/omh-orgchart.pdf"
+    ],
+    "population": "U.S. Census Bureau QuickFacts, Vintage 2025 estimates"
+  }
+}

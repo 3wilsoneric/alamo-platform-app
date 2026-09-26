@@ -1,0 +1,1466 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-08",
+  "scope": {
+    "description": "Curated state-license and licensed-capacity evidence for non-California acquisition research.",
+    "excludedStateCodes": ["CA"]
+  },
+  "sources": [
+    {
+      "id": "ma-bsas-licensed-program-bed-report-2026-09",
+      "authorityName": "Massachusetts Bureau of Substance Addiction Services",
+      "authorityType": "state_regulator",
+      "title": "September 2026 Licensed Program and Bed Report",
+      "landingPageUrl": "https://www.mass.gov/info-details/information-for-licensed-substance-use-disorder-treatment-programs",
+      "reportUrl": "https://www.mass.gov/doc/september-2026-licensed-program-and-bed-report/download",
+      "extractionUrl": "https://r.jina.ai/http://www.mass.gov/doc/september-2026-licensed-program-and-bed-report/download",
+      "publishedAt": "2026-09-03",
+      "retrievedAt": "2026-09-08",
+      "notes": "The regulator describes this monthly workbook as its current list of licensed substance-use programs, including organization, license number, service, location, and licensed beds."
+    },
+    {
+      "id": "fl-ahca-lifeskills-orlando-2026-09",
+      "authorityName": "Florida Agency for Health Care Administration",
+      "authorityType": "state_regulator",
+      "title": "Lifeskills Orlando Residential Treatment Facility Profile",
+      "landingPageUrl": "https://ahca.myflorida.com/health-quality-assurance/bureau-of-health-facility-regulation/hospital-outpatient-services-unit/residential-treatment-facilities.html",
+      "reportUrl": "https://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=28121",
+      "extractionUrl": "https://r.jina.ai/http://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=28121",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Florida defines this license class as adult community-based residential mental-health care. The profile reports the current license, legal operator, for-profit status, level of care, and licensed beds."
+    },
+    {
+      "id": "fl-ahca-lifeskills-deerfield-2026-09",
+      "authorityName": "Florida Agency for Health Care Administration",
+      "authorityType": "state_regulator",
+      "title": "Lifeskills South Florida Deerfield Beach Residential Treatment Facility Profile",
+      "landingPageUrl": "https://ahca.myflorida.com/health-quality-assurance/bureau-of-health-facility-regulation/hospital-outpatient-services-unit/residential-treatment-facilities.html",
+      "reportUrl": "https://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=352118",
+      "extractionUrl": "https://r.jina.ai/http://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=352118",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "The profile reports Pharos Group, LLC as licensee and Odyssey Behavioral Healthcare, LLC as its 100% controlling interest, together with current license and bed data."
+    },
+    {
+      "id": "fl-ahca-lifeskills-fort-lauderdale-2026-09",
+      "authorityName": "Florida Agency for Health Care Administration",
+      "authorityType": "state_regulator",
+      "title": "Lifeskills South Florida Fort Lauderdale Residential Treatment Facility Profile",
+      "landingPageUrl": "https://ahca.myflorida.com/health-quality-assurance/bureau-of-health-facility-regulation/hospital-outpatient-services-unit/residential-treatment-facilities.html",
+      "reportUrl": "https://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=530614",
+      "extractionUrl": "https://r.jina.ai/http://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=530614",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "The profile reports Pharos Group, LLC as licensee and Odyssey Behavioral Healthcare, LLC as its 100% controlling interest, together with current license and bed data."
+    },
+    {
+      "id": "mn-dhs-newport-institute-monticello-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Newport Institute Monticello License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1108798",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1108798",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active Residential Facility for Adults with Mental Illness license, the legal license holder, adult age range, and capacity."
+    },
+    {
+      "id": "mn-dhs-newport-institute-buffalo-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Newport Institute Buffalo License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1108804",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1108804",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active Residential Facility for Adults with Mental Illness license, the legal license holder, adult age range, and capacity."
+    },
+    {
+      "id": "mn-dhs-amfm-arcola-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "A Mission for Michael Arcola License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1126886",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1126886",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active Residential Facility for Adults with Mental Illness license, the legal license holder, adult age range, and capacity."
+    },
+    {
+      "id": "mn-dhs-amfm-dellwood-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "A Mission for Michael Dellwood License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1126863",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1126863",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active Residential Facility for Adults with Mental Illness license, the legal license holder, adult age range, and capacity."
+    },
+    {
+      "id": "mn-dhs-amfm-homestead-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "A Mission for Michael Homestead License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1129771",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1129771",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active Residential Facility for Adults with Mental Illness license, the legal license holder, adult age range, and capacity."
+    },
+    {
+      "id": "mn-dhs-amfm-otchipwe-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "A Mission for Michael Otchipwe License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1129768",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1129768",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active Residential Facility for Adults with Mental Illness license, the legal license holder, adult age range, and capacity."
+    },
+    {
+      "id": "tn-tdmhsas-brightquest-residential-2026-09",
+      "authorityName": "Tennessee Department of Mental Health and Substance Abuse Services",
+      "authorityType": "state_regulator",
+      "title": "TDMHSAS Licensed Mental Health and Substance Abuse Sites",
+      "landingPageUrl": "https://www.tn.gov/behavioral-health/research/fast-facts/licensure.html",
+      "reportUrl": "https://data.tn.gov/t/Public/views/MHSASLocationMapv1/MHSASMap.csv?:showVizHome=no",
+      "extractionUrl": "https://data.tn.gov/t/Public/views/MHSASLocationMapv1/MHSASMap.csv?:showVizHome=no",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "The regulator states that this licensed-site dataset is updated daily. It currently lists two BrightQuest Nashville Adult Supportive Residential Facilities; the public view does not publish license numbers or licensed bed counts."
+    },
+    {
+      "id": "mn-dhs-thrive-austin-manor-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Austin Manor License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=804119",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=804119",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult Intensive Residential Treatment Services license, legal license holder, renewal dates, and licensed capacity."
+    },
+    {
+      "id": "mn-dhs-thrive-gull-harbour-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Gull Harbour Apartments License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=810338",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=810338",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult Intensive Residential Treatment Services license, legal license holder, renewal dates, licensed capacity, and current public licensing-action links."
+    },
+    {
+      "id": "mn-dhs-thrive-nova-house-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Nova House License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=807679",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=807679",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult Intensive Residential Treatment Services license, legal license holder, renewal dates, and licensed capacity."
+    },
+    {
+      "id": "mn-dhs-thrive-willow-haven-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Willow Haven License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=810111",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=810111",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult IRTS and residential-crisis license, legal license holder, renewal dates, licensed capacity, and a current public correction-order link."
+    },
+    {
+      "id": "mn-dhs-thrive-birch-tree-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Birch Tree Center License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1076775",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1076775",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult Residential Crisis Stabilization license, legal license holder, renewal dates, and licensed capacity."
+    },
+    {
+      "id": "mn-dhs-thrive-milestones-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Milestones of Alexandria License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1116686",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1116686",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult IRTS and residential-crisis license, legal license holder, renewal dates, licensed capacity, and current public licensing-action links."
+    },
+    {
+      "id": "vt-dlp-spruce-tcr-directory-2025-03",
+      "authorityName": "Vermont Division of Licensing and Protection",
+      "authorityType": "state_regulator",
+      "title": "Therapeutic Care Homes by County",
+      "landingPageUrl": "https://dlp.vermont.gov/therapeutic-community-residence-directory",
+      "reportUrl": "https://dlp.vermont.gov/sites/dlp/files/documents/tcr_list_by_county.pdf",
+      "extractionUrl": "https://r.jina.ai/http://dlp.vermont.gov/sites/dlp/files/documents/tcr_list_by_county.pdf",
+      "publishedAt": "2025-03-11",
+      "retrievedAt": "2026-09-08",
+      "notes": "Vermont's facility-type directory lists Spruce Mountain Inn, Inc. as a therapeutic care home at 155 Towne Avenue. The directory does not publish a license number, explicit status, or licensed capacity, so those fields remain unknown."
+    },
+    {
+      "id": "mn-dhs-kelly-norton-oasis-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Oasis License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=801798",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=801798",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult Intensive Residential Treatment Services license, legal license holder, renewal dates, and licensed capacity."
+    },
+    {
+      "id": "mn-dhs-kelly-norton-bill-kelly-house-2026-09",
+      "authorityName": "Minnesota Department of Human Services",
+      "authorityType": "state_regulator",
+      "title": "Bill Kelly House License Details",
+      "landingPageUrl": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+      "reportUrl": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=800200",
+      "extractionUrl": "https://r.jina.ai/https://licensinglookup.dhs.state.mn.us/Details.aspx?l=800200",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Minnesota DHS reports an active adult Intensive Residential Treatment Services license, legal license holder, renewal dates, and licensed capacity."
+    },
+    {
+      "id": "ga-hfrd-sbmhc-georgia-2026-09",
+      "authorityName": "Georgia Healthcare Facility Regulation Division",
+      "authorityType": "state_regulator",
+      "title": "GaMap2Care Georgia Mental Health Center facility record",
+      "landingPageUrl": "https://dch.georgia.gov/gamap2carer-find-facility",
+      "reportUrl": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+      "extractionUrl": "https://forms.dch.georgia.gov/HFRD/GetFacilitiesData.svc/GetData?NAME=Georgia%20Mental%20Health%20Center",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Georgia's live state facility endpoint reports active status, adult residential mental-health facility type, effective date, exact address, and licensed capacity."
+    },
+    {
+      "id": "ga-hfrd-slow-dunwoody-2026-09",
+      "authorityName": "Georgia Healthcare Facility Regulation Division",
+      "authorityType": "state_regulator",
+      "title": "GaMap2Care Dunwoody Behavioral Health Center facility record",
+      "landingPageUrl": "https://dch.georgia.gov/gamap2carer-find-facility",
+      "reportUrl": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+      "extractionUrl": "https://forms.dch.georgia.gov/HFRD/GetFacilitiesData.svc/GetData?NAME=Dunwoody%20Behavorial%20Health%20Center%20LLC",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Georgia's live state facility endpoint reports active status, adult residential mental-health facility type, effective date, exact address, and licensed capacity."
+    },
+    {
+      "id": "ga-hfrd-slow-academy-2026-09",
+      "authorityName": "Georgia Healthcare Facility Regulation Division",
+      "authorityType": "state_regulator",
+      "title": "GaMap2Care Southern Live Oak Wellness Academy facility record",
+      "landingPageUrl": "https://dch.georgia.gov/gamap2carer-find-facility",
+      "reportUrl": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+      "extractionUrl": "https://forms.dch.georgia.gov/HFRD/GetFacilitiesData.svc/GetData?NAME=Southern%20Live%20Oak%20Wellness%20Academy",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Georgia's live state facility endpoint reports active status, adult residential mental-health facility type, effective date, exact address, and licensed capacity."
+    },
+    {
+      "id": "ga-hfrd-ars-south-atlanta-2026-09",
+      "authorityName": "Georgia Healthcare Facility Regulation Division",
+      "authorityType": "state_regulator",
+      "title": "GaMap2Care The Recovery Village South Atlanta facility record",
+      "landingPageUrl": "https://dch.georgia.gov/gamap2carer-find-facility",
+      "reportUrl": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+      "extractionUrl": "https://forms.dch.georgia.gov/HFRD/GetFacilitiesData.svc/GetData?FACTYPE=Adult%20Residential%20Mental%20Health%20Facility&NAME=The%20Recovery%20Village%20South%20Atlanta",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Georgia's live state facility endpoint reports active status, adult residential mental-health facility type, effective date, exact address, and 22 licensed beds."
+    },
+    {
+      "id": "ga-hfrd-promises-atlanta-2026-09",
+      "authorityName": "Georgia Healthcare Facility Regulation Division",
+      "authorityType": "state_regulator",
+      "title": "GaMap2Care Promises Atlanta facility record",
+      "landingPageUrl": "https://dch.georgia.gov/gamap2carer-find-facility",
+      "reportUrl": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+      "extractionUrl": "https://forms.dch.georgia.gov/HFRD/GetFacilitiesData.svc/GetData?FACTYPE=Adult%20Residential%20Mental%20Health%20Facility&NAME=Promises%20Atlanta",
+      "publishedAt": null,
+      "retrievedAt": "2026-09-08",
+      "notes": "Georgia's live state facility endpoint reports active status, adult residential mental-health facility type, effective date, exact address, and 40 licensed beds."
+    }
+  ],
+  "assertions": [
+    {
+      "id": "ma-bsas-1124-clearbrook-templeton",
+      "parentAssertionId": "banyan-treatment-centers",
+      "brandName": "Clearbrook Massachusetts",
+      "programName": "Clearbrook Treatment Center Massachusetts LLC (ATS)",
+      "legalOperatorName": "Clearbrook Treatment Center Massachusetts LLC",
+      "address": {
+        "street1": "83 Hospital Road",
+        "city": "Templeton",
+        "stateCode": "MA",
+        "zip": "01436"
+      },
+      "license": {
+        "authorityName": "Massachusetts Bureau of Substance Addiction Services",
+        "authorityType": "state_regulator",
+        "number": "1124",
+        "serviceType": "css_flex_ats",
+        "status": "active",
+        "issuedAt": "2025-11-10",
+        "expiresAt": "2027-11-10"
+      },
+      "capacity": {
+        "licensedBeds": 34,
+        "scopeClassification": "adjacent_high_acuity_sud",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adolescents": false,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ma-bsas-licensed-program-bed-report-2026-09",
+        "workbookSheet": "CSS_Flex",
+        "asOf": "2026-09-03",
+        "rowFingerprint": "Clearbrook Treatment Center Massachusetts LLC (ATS)No 1124 11/10/2025 11/10/2027 Y 34"
+      }
+    },
+    {
+      "id": "ma-bsas-1262-haven-detox-worcester",
+      "parentAssertionId": "haven-health-management",
+      "brandName": "Haven Detox",
+      "programName": "Haven Detox MA",
+      "legalOperatorName": "Haven Detox MA",
+      "address": {
+        "street1": "1369 Grafton Street",
+        "city": "Worcester",
+        "stateCode": "MA",
+        "zip": "01604"
+      },
+      "license": {
+        "authorityName": "Massachusetts Bureau of Substance Addiction Services",
+        "authorityType": "state_regulator",
+        "number": "1262",
+        "serviceType": "css_flex",
+        "status": "active",
+        "issuedAt": "2026-08-10",
+        "expiresAt": "2027-02-10"
+      },
+      "capacity": {
+        "licensedBeds": 32,
+        "scopeClassification": "adjacent_high_acuity_sud",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adolescents": false,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ma-bsas-licensed-program-bed-report-2026-09",
+        "workbookSheet": "CSS_Flex",
+        "asOf": "2026-09-03",
+        "rowFingerprint": "Haven Detox MA No 1262 8/10/2026 2/10/2027 Y 32"
+      }
+    },
+    {
+      "id": "ma-bsas-2197-boca-recovery-springfield",
+      "parentAssertionId": "boca-recovery-center",
+      "brandName": "Boca Recovery Center",
+      "programName": "Boca Recovery Center",
+      "legalOperatorName": "Massachusetts Detox, LLC",
+      "address": {
+        "street1": "200 Kendall Street",
+        "city": "Springfield",
+        "stateCode": "MA",
+        "zip": "01104"
+      },
+      "license": {
+        "authorityName": "Massachusetts Bureau of Substance Addiction Services",
+        "authorityType": "state_regulator",
+        "number": "2197",
+        "serviceType": "css_flex",
+        "status": "active",
+        "issuedAt": "2026-01-08",
+        "expiresAt": "2028-01-08"
+      },
+      "capacity": {
+        "licensedBeds": 64,
+        "scopeClassification": "adjacent_high_acuity_sud",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adolescents": false,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ma-bsas-licensed-program-bed-report-2026-09",
+        "workbookSheet": "CSS_Flex",
+        "asOf": "2026-09-03",
+        "rowFingerprint": "Boca Recovery Center No 2197 1/8/2026 1/8/2028 Y 64"
+      }
+    },
+    {
+      "id": "ma-bsas-0310-rca-danvers",
+      "parentAssertionId": "recovery-centers-of-america",
+      "brandName": "Recovery Centers of America",
+      "programName": "Recovery Centers of America at Danvers",
+      "legalOperatorName": "75 Lindall Street OPCO, LLC",
+      "address": {
+        "street1": "75 Lindall Street",
+        "city": "Danvers",
+        "stateCode": "MA",
+        "zip": "01923"
+      },
+      "license": {
+        "authorityName": "Massachusetts Bureau of Substance Addiction Services",
+        "authorityType": "state_regulator",
+        "number": "0310",
+        "serviceType": "css_flex",
+        "status": "active",
+        "issuedAt": "2026-05-21",
+        "expiresAt": "2028-05-21"
+      },
+      "capacity": {
+        "licensedBeds": 239,
+        "scopeClassification": "adjacent_high_acuity_sud",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adolescents": false,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ma-bsas-licensed-program-bed-report-2026-09",
+        "workbookSheet": "CSS_Flex",
+        "asOf": "2026-09-03",
+        "rowFingerprint": "Recovery Centers of America at Danvers No 0310 5/21/2026 5/21/2028 Y 239"
+      }
+    },
+    {
+      "id": "ma-bsas-0399-rca-westminster",
+      "parentAssertionId": "recovery-centers-of-america",
+      "brandName": "Recovery Centers of America",
+      "programName": "Recovery Centers of America at Westminster",
+      "legalOperatorName": "9 Village Inn Road OPCO, LLC",
+      "address": {
+        "street1": "9 Village Inn Road",
+        "city": "Westminster",
+        "stateCode": "MA",
+        "zip": "01473"
+      },
+      "license": {
+        "authorityName": "Massachusetts Bureau of Substance Addiction Services",
+        "authorityType": "state_regulator",
+        "number": "0399",
+        "serviceType": "css_flex",
+        "status": "active",
+        "issuedAt": "2025-10-20",
+        "expiresAt": "2027-10-20"
+      },
+      "capacity": {
+        "licensedBeds": 105,
+        "scopeClassification": "adjacent_high_acuity_sud",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adolescents": false,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ma-bsas-licensed-program-bed-report-2026-09",
+        "workbookSheet": "CSS_Flex",
+        "asOf": "2026-09-03",
+        "rowFingerprint": "Recovery Centers of America at Westminster No 0399 10/20/2025 10/20/2027 Y 105"
+      }
+    },
+    {
+      "id": "fl-ahca-8591-lifeskills-orlando",
+      "parentAssertionId": "odyssey-behavioral-healthcare",
+      "brandName": "Lifeskills Behavioral Health",
+      "programName": "Lifeskills Orlando",
+      "legalOperatorName": "Renaissance Healthcare Group LLC",
+      "address": {
+        "street1": "119 Pasadena Place",
+        "city": "Orlando",
+        "stateCode": "FL",
+        "zip": "32803"
+      },
+      "license": {
+        "authorityName": "Florida Agency for Health Care Administration",
+        "authorityType": "state_regulator",
+        "number": "8591",
+        "serviceType": "adult_residential_treatment_facility_level_ii",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2027-10-18"
+      },
+      "capacity": {
+        "licensedBeds": 16,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "fl-ahca-lifeskills-orlando-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "| LIFESKILLS SOUTH FLORIDA OUTPATIENT, LLC | | 100% | Profit Status:For-Profit Licensed Beds:16 Bed Types:Total Capacity: 16 AHCA Number (File Number):32960301"
+      }
+    },
+    {
+      "id": "fl-ahca-8655-lifeskills-deerfield",
+      "parentAssertionId": "odyssey-behavioral-healthcare",
+      "brandName": "Lifeskills Behavioral Health",
+      "programName": "Lifeskills South Florida",
+      "legalOperatorName": "Pharos Group, LLC",
+      "address": {
+        "street1": "1431 SW 9th Avenue",
+        "city": "Deerfield Beach",
+        "stateCode": "FL",
+        "zip": "33441"
+      },
+      "license": {
+        "authorityName": "Florida Agency for Health Care Administration",
+        "authorityType": "state_regulator",
+        "number": "8655",
+        "serviceType": "adult_residential_treatment_facility_level_ii",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2027-10-19"
+      },
+      "capacity": {
+        "licensedBeds": 50,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "fl-ahca-lifeskills-deerfield-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "| ODYSSEY BEHAVIORAL HEALTHCARE, LLC | | 100% | Profit Status:For-Profit Licensed Beds:50 Bed Types:Total Capacity: 50 AHCA Number (File Number):32960389"
+      }
+    },
+    {
+      "id": "fl-ahca-8765-lifeskills-fort-lauderdale",
+      "parentAssertionId": "odyssey-behavioral-healthcare",
+      "brandName": "Lifeskills Behavioral Health",
+      "programName": "Lifeskills South Florida",
+      "legalOperatorName": "Pharos Group, LLC",
+      "address": {
+        "street1": "4841 NE 20th Avenue",
+        "city": "Fort Lauderdale",
+        "stateCode": "FL",
+        "zip": "33308"
+      },
+      "license": {
+        "authorityName": "Florida Agency for Health Care Administration",
+        "authorityType": "state_regulator",
+        "number": "8765",
+        "serviceType": "adult_residential_treatment_facility_level_ib",
+        "status": "active",
+        "issuedAt": "2025-08-23",
+        "expiresAt": "2027-08-22"
+      },
+      "capacity": {
+        "licensedBeds": 34,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "nursingSupervision": true
+      },
+      "source": {
+        "sourceId": "fl-ahca-lifeskills-fort-lauderdale-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "| ODYSSEY BEHAVIORAL HEALTHCARE, LLC | | 100% | Profit Status:For-Profit Licensed Beds:34 Bed Types:Total Capacity: 34 AHCA Number (File Number):32960558"
+      }
+    },
+    {
+      "id": "mn-dhs-1108798-newport-institute-monticello",
+      "parentAssertionId": "newport-healthcare",
+      "brandName": "Newport Institute",
+      "programName": "Newport Institute Monticello",
+      "legalOperatorName": "Minnesota YA Services LLC",
+      "address": {
+        "street1": "123 90th Street NE",
+        "city": "Monticello",
+        "stateCode": "MN",
+        "zip": "55362"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1108798",
+        "serviceType": "residential_facility_for_adults_with_mental_illness",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 6,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "coOccurringDisorders": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-newport-institute-monticello-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Wright County **License number:** 1108798 **License holder(s):** Minnesota YA Services LLC **License Holder Entity Identification Number(s):** 6589250 **License status:**Active **Type of service:** Residential Facilities for Adults with Mental Illness"
+      }
+    },
+    {
+      "id": "mn-dhs-1108804-newport-institute-buffalo",
+      "parentAssertionId": "newport-healthcare",
+      "brandName": "Newport Institute",
+      "programName": "Newport Institute Buffalo",
+      "legalOperatorName": "Minnesota YA Services LLC",
+      "address": {
+        "street1": "2642 56th Street NE",
+        "city": "Buffalo",
+        "stateCode": "MN",
+        "zip": "55313"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1108804",
+        "serviceType": "residential_facility_for_adults_with_mental_illness",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 6,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "coOccurringDisorders": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-newport-institute-buffalo-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Wright County **License number:** 1108804 **License holder(s):** Minnesota YA Services LLC **License Holder Entity Identification Number(s):** 6589250 **License status:**Active **Type of service:** Residential Facilities for Adults with Mental Illness"
+      }
+    },
+    {
+      "id": "mn-dhs-1126886-amfm-arcola",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "A Mission for Michael Arcola",
+      "legalOperatorName": "Lakeside Health Solutions LLC",
+      "address": {
+        "street1": "12178 Arcola Trail North",
+        "city": "Stillwater",
+        "stateCode": "MN",
+        "zip": "55082"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1126886",
+        "serviceType": "residential_facility_for_adults_with_mental_illness",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 6,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "coOccurringDisorders": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-amfm-arcola-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Washington County **License number:** 1126886 **License holder(s):** Lakeside Health Solutions LLC **License Holder Entity Identification Number(s):** 6676541 **License status:**Active **Type of service:** Residential Facilities for Adults with Mental Illness"
+      }
+    },
+    {
+      "id": "mn-dhs-1126863-amfm-dellwood",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "A Mission for Michael Dellwood",
+      "legalOperatorName": "Lakeside Health Solutions LLC",
+      "address": {
+        "street1": "13199 Dellwood Road North",
+        "city": "Stillwater",
+        "stateCode": "MN",
+        "zip": "55082"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1126863",
+        "serviceType": "residential_facility_for_adults_with_mental_illness",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 6,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "coOccurringDisorders": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-amfm-dellwood-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Washington County **License number:** 1126863 **License holder(s):** Lakeside Health Solutions LLC **License Holder Entity Identification Number(s):** 6676541 **License status:**Active **Type of service:** Residential Facilities for Adults with Mental Illness"
+      }
+    },
+    {
+      "id": "mn-dhs-1129771-amfm-homestead",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "A Mission for Michael Homestead",
+      "legalOperatorName": "Lakeside Health Solutions LLC",
+      "address": {
+        "street1": "13441 Homestead Avenue North",
+        "city": "Hugo",
+        "stateCode": "MN",
+        "zip": "55038"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1129771",
+        "serviceType": "residential_facility_for_adults_with_mental_illness",
+        "status": "active",
+        "issuedAt": "2026-05-06",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 6,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "coOccurringDisorders": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-amfm-homestead-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Washington County **License number:** 1129771 **License holder(s):** Lakeside Health Solutions LLC **License Holder Entity Identification Number(s):** 6676541 **License status:**Active **Type of service:** Residential Facilities for Adults with Mental Illness"
+      }
+    },
+    {
+      "id": "mn-dhs-1129768-amfm-otchipwe",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "A Mission for Michael Otchipwe",
+      "legalOperatorName": "Lakeside Health Solutions LLC",
+      "address": {
+        "street1": "9533 Otchipwe Avenue North",
+        "city": "Stillwater",
+        "stateCode": "MN",
+        "zip": "55082"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1129768",
+        "serviceType": "residential_facility_for_adults_with_mental_illness",
+        "status": "active",
+        "issuedAt": "2026-05-06",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 6,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "coOccurringDisorders": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-amfm-otchipwe-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Washington County **License number:** 1129768 **License holder(s):** Lakeside Health Solutions LLC **License Holder Entity Identification Number(s):** 6676541 **License status:**Active **Type of service:** Residential Facilities for Adults with Mental Illness"
+      }
+    },
+    {
+      "id": "tn-tdmhsas-brightquest-805-horner",
+      "parentAssertionId": "constellation-behavioral-health",
+      "brandName": "BrightQuest Treatment Centers Nashville",
+      "programName": "BrightQuest Nashville — 805 Horner Avenue",
+      "legalOperatorName": "Hanbleceya Nashville, LLC",
+      "address": {
+        "street1": "805 Horner Ave",
+        "city": "Nashville",
+        "stateCode": "TN",
+        "zip": "37204"
+      },
+      "license": {
+        "authorityName": "Tennessee Department of Mental Health and Substance Abuse Services",
+        "authorityType": "state_regulator",
+        "number": null,
+        "serviceType": "adult_supportive_residential_facility",
+        "status": "active",
+        "issuedAt": null,
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": null,
+        "scopeClassification": "core_target",
+        "confidence": "unverified"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "tn-tdmhsas-brightquest-residential-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "805 Horner Ave,BrightQuest Treatment Centers Nashville,Licensure Category,Nashville,Adult Supportive Residential Facilities,(615) - 499-0720,Nashville,Davidson"
+      }
+    },
+    {
+      "id": "tn-tdmhsas-brightquest-807-horner",
+      "parentAssertionId": "constellation-behavioral-health",
+      "brandName": "BrightQuest Treatment Centers Nashville",
+      "programName": "BrightQuest Nashville — 807 Horner Avenue",
+      "legalOperatorName": "Hanbleceya Nashville, LLC",
+      "address": {
+        "street1": "807 Horner Ave",
+        "city": "Nashville",
+        "stateCode": "TN",
+        "zip": "37204"
+      },
+      "license": {
+        "authorityName": "Tennessee Department of Mental Health and Substance Abuse Services",
+        "authorityType": "state_regulator",
+        "number": null,
+        "serviceType": "adult_supportive_residential_facility",
+        "status": "active",
+        "issuedAt": null,
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": null,
+        "scopeClassification": "core_target",
+        "confidence": "unverified"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "tn-tdmhsas-brightquest-residential-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "807 Horner Ave,BrightQuest Treatment Centers Nashville,Licensure Category,Nashville,Adult Supportive Residential Facilities,(615) - 499-0720,Nashville,Davidson"
+      }
+    },
+    {
+      "id": "mn-dhs-804119-thrive-austin-manor",
+      "parentAssertionId": "thrive-behavioral-network",
+      "brandName": "Thrive Behavioral Network",
+      "programName": "Austin Manor",
+      "legalOperatorName": "Thrive Behavioral Network II LLC",
+      "address": {
+        "street1": "510 23rd Avenue NW",
+        "city": "Austin",
+        "stateCode": "MN",
+        "zip": "55912"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "804119",
+        "serviceType": "intensive_residential_treatment_services",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 12,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-thrive-austin-manor-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Mower County **License number:** 804119 **License holder(s):** Thrive Behavioral Network II LLC **License Holder Entity Identification Number(s):** 3938758 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "mn-dhs-810338-thrive-gull-harbour",
+      "parentAssertionId": "thrive-behavioral-network",
+      "brandName": "Thrive Behavioral Network",
+      "programName": "Gull Harbour Apartments",
+      "legalOperatorName": "Thrive Behavioral Network III LLC",
+      "address": {
+        "street1": "1704 Belsly Boulevard",
+        "city": "Moorhead",
+        "stateCode": "MN",
+        "zip": "56560"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "810338",
+        "serviceType": "intensive_residential_treatment_services",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 15,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-thrive-gull-harbour-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Clay County **License number:** 810338 **License holder(s):** Thrive Behavioral Network III LLC **License Holder Entity Identification Number(s):** 3926576 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "mn-dhs-807679-thrive-nova-house",
+      "parentAssertionId": "thrive-behavioral-network",
+      "brandName": "Thrive Behavioral Network",
+      "programName": "Nova House",
+      "legalOperatorName": "Thrive Behavioral Network II LLC",
+      "address": {
+        "street1": "1310 South German Street",
+        "city": "New Ulm",
+        "stateCode": "MN",
+        "zip": "56073"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "807679",
+        "serviceType": "intensive_residential_treatment_services",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 12,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-thrive-nova-house-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Brown County **License number:** 807679 **License holder(s):** Thrive Behavioral Network II LLC **License Holder Entity Identification Number(s):** 3938758 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "mn-dhs-810111-thrive-willow-haven",
+      "parentAssertionId": "thrive-behavioral-network",
+      "brandName": "Thrive Behavioral Network",
+      "programName": "Willow Haven",
+      "legalOperatorName": "Thrive Behavioral Network III LLC",
+      "address": {
+        "street1": "3819 Laverne Avenue",
+        "city": "Lake Elmo",
+        "stateCode": "MN",
+        "zip": "55042"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "810111",
+        "serviceType": "irts_and_residential_crisis_stabilization",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 12,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "crisisOrSubacute": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-thrive-willow-haven-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Washington County **License number:** 810111 **License holder(s):** Thrive Behavioral Network III LLC **License Holder Entity Identification Number(s):** 3926576 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "mn-dhs-1076775-thrive-birch-tree",
+      "parentAssertionId": "thrive-behavioral-network",
+      "brandName": "Thrive Behavioral Network",
+      "programName": "Birch Tree Center",
+      "legalOperatorName": "Thrive Behavioral Network II LLC",
+      "address": {
+        "street1": "4730 Matterhorn Circle",
+        "city": "Duluth",
+        "stateCode": "MN",
+        "zip": "55811"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1076775",
+        "serviceType": "residential_crisis_stabilization",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 12,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "crisisOrSubacute": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-thrive-birch-tree-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "St. Louis County **License number:** 1076775 **License holder(s):** Thrive Behavioral Network II LLC **License Holder Entity Identification Number(s):** 3938758 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "mn-dhs-1116686-thrive-milestones",
+      "parentAssertionId": "thrive-behavioral-network",
+      "brandName": "Thrive Behavioral Network",
+      "programName": "Milestones of Alexandria",
+      "legalOperatorName": "Thrive Behavioral Network III LLC",
+      "address": {
+        "street1": "620 9th Avenue West",
+        "city": "Alexandria",
+        "stateCode": "MN",
+        "zip": "56308"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "1116686",
+        "serviceType": "irts_and_residential_crisis_stabilization",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 9,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "crisisOrSubacute": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-thrive-milestones-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Douglas County **License number:** 1116686 **License holder(s):** Thrive Behavioral Network III LLC **License Holder Entity Identification Number(s):** 3926576 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "vt-dlp-spruce-mountain-inn",
+      "parentAssertionId": "spruce-mountain-inn",
+      "brandName": "Spruce Mountain Inn",
+      "programName": "Spruce Mountain Inn",
+      "legalOperatorName": "Spruce Mountain Inn, Inc.",
+      "address": {
+        "street1": "155 Towne Avenue",
+        "city": "Plainfield",
+        "stateCode": "VT",
+        "zip": "05667"
+      },
+      "license": {
+        "authorityName": "Vermont Division of Licensing and Protection",
+        "authorityType": "state_regulator",
+        "number": null,
+        "serviceType": "therapeutic_care_home",
+        "status": "unknown",
+        "issuedAt": null,
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": null,
+        "scopeClassification": "core_target",
+        "confidence": "unverified"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "vt-dlp-spruce-tcr-directory-2025-03",
+        "asOf": "2025-03-11",
+        "rowFingerprint": "Blank  Spruce Mountain Inn, Inc.  155 Towne Avenue  Plainfield  05667  802-454-8353  802-454-1008"
+      }
+    },
+    {
+      "id": "mn-dhs-801798-kelly-norton-oasis",
+      "parentAssertionId": "kelly-norton-programs",
+      "brandName": "Oasis",
+      "programName": "Oasis",
+      "legalOperatorName": "Kelly-Norton Programs, Inc.",
+      "address": {
+        "street1": "6739 Golden Valley Rd",
+        "city": "Golden Valley",
+        "stateCode": "MN",
+        "zip": "55427"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "801798",
+        "serviceType": "intensive_residential_treatment_services",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 16,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-kelly-norton-oasis-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Hennepin County **License number:** 801798 **License holder(s):** Kelly-Norton Programs, Inc. **License Holder Entity Identification Number(s):** 79792 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "mn-dhs-800200-kelly-norton-bill-kelly-house",
+      "parentAssertionId": "kelly-norton-programs",
+      "brandName": "Bill Kelly House",
+      "programName": "Bill Kelly House",
+      "legalOperatorName": "Kelly-Norton Programs, Inc.",
+      "address": {
+        "street1": "3104 E 58th St",
+        "city": "Minneapolis",
+        "stateCode": "MN",
+        "zip": "55417"
+      },
+      "license": {
+        "authorityName": "Minnesota Department of Human Services",
+        "authorityType": "state_regulator",
+        "number": "800200",
+        "serviceType": "intensive_residential_treatment_services",
+        "status": "active",
+        "issuedAt": "2026-01-01",
+        "expiresAt": "2026-12-31"
+      },
+      "capacity": {
+        "licensedBeds": 16,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "mn-dhs-kelly-norton-bill-kelly-house-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Hennepin County **License number:** 800200 **License holder(s):** Kelly-Norton Programs, Inc. **License Holder Entity Identification Number(s):** 79792 **License status:**Active **Type of service:** Intensive Residential Treatment Services and Residential Crisis Stabilization"
+      }
+    },
+    {
+      "id": "ga-hfrd-armh043001-sbmhc-georgia",
+      "parentAssertionId": "sb-holdings",
+      "brandName": "The Sylvia Brafman Mental Health Center",
+      "programName": "Georgia Mental Health Center",
+      "legalOperatorName": "The Sylvia Brafman Mental Health Treatment Center, LLC",
+      "address": {
+        "street1": "8025 Majors Road",
+        "city": "Cumming",
+        "stateCode": "GA",
+        "zip": "30041"
+      },
+      "license": {
+        "authorityName": "Georgia Healthcare Facility Regulation Division",
+        "authorityType": "state_regulator",
+        "number": "ARMH043001",
+        "serviceType": "adult_residential_mental_health_facility",
+        "status": "active",
+        "issuedAt": "2025-07-09",
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": 50,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ga-hfrd-sbmhc-georgia-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "FACID\\\":\\\"ARMH043001\\\",\\\"NAME\\\":\\\"Georgia Mental Health Center\\\",\\\"ADDRESS\\\":\\\"8025 Majors Road"
+      }
+    },
+    {
+      "id": "ga-hfrd-armh042918-slow-dunwoody",
+      "parentAssertionId": "southern-live-oak-wellness",
+      "brandName": "Dunwoody Behavioral Health Center",
+      "programName": "Dunwoody Behavioral Health Center",
+      "legalOperatorName": "Dunwoody Behavioral Health Center, LLC",
+      "address": {
+        "street1": "4594 Barclay Drive",
+        "city": "Atlanta",
+        "stateCode": "GA",
+        "zip": "30338"
+      },
+      "license": {
+        "authorityName": "Georgia Healthcare Facility Regulation Division",
+        "authorityType": "state_regulator",
+        "number": "ARMH042918",
+        "serviceType": "adult_residential_mental_health_facility",
+        "status": "active",
+        "issuedAt": "2025-07-10",
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": 54,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "crisisOrSubacute": true,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ga-hfrd-slow-dunwoody-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "FACID\\\":\\\"ARMH042918\\\",\\\"NAME\\\":\\\"Dunwoody Behavorial Health Center LLC"
+      }
+    },
+    {
+      "id": "ga-hfrd-armh044819-slow-academy",
+      "parentAssertionId": "southern-live-oak-wellness",
+      "brandName": "Southern Live Oak Wellness",
+      "programName": "Southern Live Oak Wellness Academy",
+      "legalOperatorName": "Southern Live Oak Wellness, LLC",
+      "address": {
+        "street1": "1742 Mount Vernon Road, Suite 305",
+        "city": "Dunwoody",
+        "stateCode": "GA",
+        "zip": "30338"
+      },
+      "license": {
+        "authorityName": "Georgia Healthcare Facility Regulation Division",
+        "authorityType": "state_regulator",
+        "number": "ARMH044819",
+        "serviceType": "adult_residential_mental_health_facility",
+        "status": "active",
+        "issuedAt": "2026-07-01",
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": 8,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true
+      },
+      "source": {
+        "sourceId": "ga-hfrd-slow-academy-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "FACID\\\":\\\"ARMH044819\\\",\\\"NAME\\\":\\\"Southern Live Oak Wellness Academy"
+      }
+    },
+    {
+      "id": "ga-hfrd-armh043492-ars-south-atlanta",
+      "parentAssertionId": "advanced-recovery-systems",
+      "brandName": "The Recovery Village",
+      "programName": "The Recovery Village South Atlanta",
+      "legalOperatorName": "Advanced Recovery Systems, LLC",
+      "address": {
+        "street1": "1000 Eagles Landing Parkway",
+        "city": "Stockbridge",
+        "stateCode": "GA",
+        "zip": "30281"
+      },
+      "license": {
+        "authorityName": "Georgia Healthcare Facility Regulation Division",
+        "authorityType": "state_regulator",
+        "number": "ARMH043492",
+        "serviceType": "adult_residential_mental_health_facility",
+        "status": "active",
+        "issuedAt": "2025-08-26",
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": 22,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "crisisOrSubacute": true,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ga-hfrd-ars-south-atlanta-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "FACID\\\":\\\"ARMH043492\\\",\\\"NAME\\\":\\\"The Recovery Village South Atlanta"
+      }
+    },
+    {
+      "id": "ga-hfrd-armh043585-promises-atlanta",
+      "parentAssertionId": "advanced-recovery-systems",
+      "brandName": "Promises",
+      "programName": "Promises Atlanta",
+      "legalOperatorName": "Unresolved legal operator — Promises Atlanta facility record",
+      "address": {
+        "street1": "1200 Winder Highway",
+        "city": "Dacula",
+        "stateCode": "GA",
+        "zip": "30019"
+      },
+      "license": {
+        "authorityName": "Georgia Healthcare Facility Regulation Division",
+        "authorityType": "state_regulator",
+        "number": "ARMH043585",
+        "serviceType": "adult_residential_mental_health_facility",
+        "status": "active",
+        "issuedAt": "2025-09-26",
+        "expiresAt": null
+      },
+      "capacity": {
+        "licensedBeds": 40,
+        "scopeClassification": "core_target",
+        "confidence": "high"
+      },
+      "populationSignals": {
+        "adults": true,
+        "adolescents": false,
+        "primaryMentalHealth": true,
+        "twentyFourHourSupervision": true,
+        "coOccurringDisorders": true
+      },
+      "source": {
+        "sourceId": "ga-hfrd-promises-atlanta-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "FACID\\\":\\\"ARMH043585\\\",\\\"NAME\\\":\\\"Promises Atlanta"
+      }
+    }
+  ]
+}
