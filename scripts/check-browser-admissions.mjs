@@ -15,12 +15,12 @@ await withBrowserQa(async (browser) => {
   const requestFailures = [];
   attachPageDiagnostics(page, { consoleErrors, requestFailures });
 
-  await page.goto(`${BASE_URL}/home`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE_URL}/home`, { waitUntil: "domcontentloaded" });
   const admissionsLink = page.locator('[data-california-hero-action="admissions"]');
   if (await admissionsLink.count()) {
     throw new Error("Admissions navigation must remain hidden until the overview is finished.");
   }
-  await page.goto(`${BASE_URL}/admissions`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
 
   await page.locator('[data-admissions-overview="true"]').waitFor();
   for (const name of ["Board", "Census", "Trends"]) {
@@ -29,6 +29,7 @@ await withBrowserQa(async (browser) => {
     }
   }
   const clientNames = page.locator('[data-admissions-client-name="true"]');
+  await clientNames.first().waitFor({ state: "visible" });
   if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
     throw new Error("Admissions board cards must show the client name.");
   }
@@ -67,7 +68,7 @@ await withBrowserQa(async (browser) => {
 
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const mobilePage = await mobileContext.newPage();
-  await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "networkidle" });
+  await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
   await mobilePage.screenshot({
     path: `${screenshotDir}/mobile-admissions-board.png`,
