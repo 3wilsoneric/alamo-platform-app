@@ -12,6 +12,7 @@ const rootFiles = new Set([
   ".vercelignore",
   "AGENTS.md",
   "Dockerfile.acquisition-overlay",
+  "Dockerfile.admissions-identity-release",
   "Dockerfile.frontend-release",
   "Dockerfile.iphone-overlay",
   "Dockerfile.mobile-experience-overlay",

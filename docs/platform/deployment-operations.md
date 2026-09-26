@@ -57,6 +57,37 @@ Post-promotion verification confirmed a healthy revision at 100% traffic,
 4/4 public smoke probes, and a connected live Admissions payload with 21 of 21
 board cards, five communities, and portfolio census 541.
 
+### Admissions client identity release — 2026-09-26
+
+The authenticated Admissions board now carries and displays the actual client
+name from Pipeline. This is an intentional PHI-bearing server-to-server
+contract inside the existing protected Platform boundary; deployment checks
+must report name coverage by count and must not print names.
+
+Pipeline producer:
+
+- source commit: `58ddaf0874e966673156042df262656255ac7c7e`
+- source PR: `https://github.com/3wilsoneric/pipeline-app/pull/209`
+- image digest: `sha256:fdbdaad81a9babcab2e3477fe1274f72d45a3d4f4dd6ae36798bcbb03d8e2a3e`
+- active revision: `pipeline-prod-web--58ddaf0874e96667`
+
+Platform consumer:
+
+- source commit: `8b3cce2`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/2`
+- image tag: `alamo-platform:admissions-identity-8b3cce2`
+- image digest: `sha256:9e58125439ee4e070bc17fab2cf5719081cea97186f23e6d70214da35742ffb3`
+- active revision: `alamo-platform-prod-web--admissions-identity-0926`
+- rollback digest: `sha256:5f69353518b7c653062b80c6575a4cb2a0f80052e4ce6bfc2925ef90ec729132`
+
+The Platform release uses `Dockerfile.admissions-identity-release` to replace
+the reviewed browser bundle and the Pipeline summary normalizer on the exact
+preceding production digest. Post-promotion verification confirmed healthy
+Pipeline and Platform revisions at 100% traffic, contract version 2.1, 21 of
+21 board cards with non-empty client names, five communities, portfolio census
+541, the desktop/mobile Admissions browser regression, and 4/4 public smoke
+probes.
+
 ## Local Development
 
 Install and run:
