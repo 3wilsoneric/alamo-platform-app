@@ -21,18 +21,18 @@ repeated page title, explanatory subtitle, or KPI strip.
 - **Board** — the current governed referral update: Referral received, In
   progress, and Decision columns holding one card per referral. The columns use
   calm green, blue, and warm decision surfaces. Cards show client name,
-  destination community, referral number, owner, next step, days open, and
-  attention flags. A single live executive paragraph above the board uses
-  three distinct lines and selective emphasis to answer the CEO-level question:
+  destination community, referral number, owner, next step, and days open. A
+  single live analyst response above the board uses two distinct lines and
+  selective emphasis to answer the CEO-level question:
   how many referrals are active, where they sit in the process, which
-  communities carry the most activity, and what needs immediate follow-up.
+  communities carry the most activity.
   Community workload is stated in natural language without parenthetical
   counts. Selecting a client opens an Alamo-native referral chart in a
   Pipeline-inspired manila folder frame, with the client name on the folder
   tab. Its larger white chart sheet is a management-facing Meet the Client:
   client and placement facts, a signed-assessment management brief, care and
   support context, medication handoff, admission readiness, workflow progress,
-  and review focus. Community is the only filter:
+  and workflow details. Community is the only filter:
   pill controls support selecting multiple communities, while All communities
   resets the complete board. A List toggle shows the same governed slice.
 - **Census** — one compact portfolio row followed by the five communities,

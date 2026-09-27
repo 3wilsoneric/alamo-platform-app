@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, ArrowRight, CalendarDays, Check, Clock3, Columns3, List, UserRound, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Clock3, Columns3, List, UserRound, X } from "lucide-react";
 
 import type {
   AdmissionsBoardCard,
@@ -33,10 +33,6 @@ const COLUMN_STYLE: Record<AdmissionsBoardColumnKey, { surface: string; border: 
     action: "#fbefe5"
   }
 };
-
-function needsAttention(card: AdmissionsBoardCard) {
-  return card.flags.stale || card.flags.unassigned || card.flags.moveInOverdue;
-}
 
 export default function PipelineBoard({
   pipeline,
@@ -212,7 +208,6 @@ function ProgressModal({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const currentStage = PROGRESS_STAGES.findIndex((stage) => stage.key === card.column);
-  const attentionLabels = getFlagLabels(card);
   const profile = card.managementProfile;
   const decisionTab = decisionTabFor(card);
   const assessmentLabel = profile.assessmentSigned
@@ -406,20 +401,6 @@ function ProgressModal({
                     </dl>
                   </section>
 
-                  <section data-admissions-chart-section="review" aria-labelledby="admissions-chart-review">
-                    <ChartBand id="admissions-chart-review" title="Review focus" />
-                    <div className={`flex items-start gap-3 px-5 py-4 sm:px-6 ${attentionLabels.length ? "bg-[#fffaf0]" : "bg-[#f7faf8]"}`}>
-                      <span className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${attentionLabels.length ? "bg-[#fff0ca] text-[#805d16]" : "bg-[#e5f2ec] text-[#176d51]"}`}>
-                        {attentionLabels.length ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
-                      </span>
-                      <div>
-                        <p className="text-[11px] font-semibold text-[#303532]">{attentionLabels.length ? "Needs follow-up" : "Current review"}</p>
-                        <p className="mt-1 text-[12px] leading-5 text-[#5f6762]">
-                          {attentionLabels.length ? attentionLabels.join(" · ") : "No workflow exceptions are flagged in the current update."}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
                 </aside>
               </div>
 
@@ -474,7 +455,6 @@ function ChartBand({ id, title, detail }: { id: string; title: string; detail?: 
 
 function BoardCard({ card, column, onOpen }: { card: AdmissionsBoardCard; column: AdmissionsBoardColumnKey; onOpen: () => void }) {
   const style = COLUMN_STYLE[column];
-  const attention = needsAttention(card);
   return (
     <button
       type="button"
@@ -495,7 +475,6 @@ function BoardCard({ card, column, onOpen }: { card: AdmissionsBoardCard; column
         <span className="rounded-md px-2 py-1 text-[10px] font-semibold" style={{ backgroundColor: style.action, color: style.accent }}>
           {card.status}
         </span>
-        {attention ? <Flags card={card} /> : null}
       </div>
 
       {card.nextAction ? (
@@ -538,7 +517,6 @@ function ReferralList({ cards, expanded, onToggle, onOpen }: { cards: Admissions
               <th className="px-4 py-4">Owner</th>
               <th className="px-4 py-4 text-right">Open</th>
               <th className="px-4 py-4 text-right">Updated</th>
-              <th className="px-4 py-4">Flags</th>
               <th className="px-4 py-4"><span className="sr-only">Open progress update</span></th>
             </tr>
           </thead>
@@ -554,7 +532,6 @@ function ReferralList({ cards, expanded, onToggle, onOpen }: { cards: Admissions
                 <td className="px-4 py-4">{card.owner}</td>
                 <td className="px-4 py-4 text-right">{formatShortDays(card.daysOpen)}</td>
                 <td className="px-4 py-4 text-right text-[#59615c]">{card.daysSinceUpdate ? `${card.daysSinceUpdate}d` : "Today"}</td>
-                <td className="px-4 py-4">{needsAttention(card) ? <Flags card={card} /> : <span className="text-[#b3b8b5]">—</span>}</td>
                 <td className="px-4 py-4 text-right">
                   <button type="button" onClick={() => onOpen(card)} aria-label={`Open progress update for ${card.clientName}, referral ${card.referralId}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0f795f] hover:underline">
                     Open <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -599,28 +576,6 @@ function CommunityPill({ active, onClick, children }: { active: boolean; onClick
       {children}
     </button>
   );
-}
-
-function Flags({ card }: { card: AdmissionsBoardCard }) {
-  const flags = getFlagLabels(card);
-  return (
-    <span className="inline-flex flex-wrap gap-1">
-      {flags.map((label) => (
-        <span key={label} className="inline-flex items-center gap-1 rounded-md bg-[#fff4d9] px-2 py-1 text-[10px] font-semibold text-[#775715]">
-          <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-          {label}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function getFlagLabels(card: AdmissionsBoardCard) {
-  return [
-    card.flags.moveInOverdue ? "Move-in overdue" : null,
-    card.flags.unassigned ? "No owner" : null,
-    card.flags.stale ? "Update overdue" : null
-  ].filter((value): value is string => Boolean(value));
 }
 
 function communityName(card: AdmissionsBoardCard) {

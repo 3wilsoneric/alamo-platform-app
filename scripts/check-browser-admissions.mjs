@@ -48,18 +48,17 @@ await withBrowserQa(async (browser) => {
   if (
     !/active referrals?/.test(executiveText) ||
     !executiveText.includes("at decision") ||
-    !executiveText.includes("Where the work is:") ||
-    !executiveText.includes("Immediate follow-up:")
+    !executiveText.includes("Where the work is:")
   ) {
     throw new Error(`Admissions executive update is incomplete: ${executiveText}`);
   }
   if (/[()]/.test(executiveText)) {
     throw new Error(`Admissions executive update must use natural counts without parentheses: ${executiveText}`);
   }
-  if (await executiveUpdate.locator('[data-admissions-executive-line]').count() !== 3) {
-    throw new Error("Admissions executive update must keep its workload, location, and follow-up lines distinct.");
+  if (await executiveUpdate.locator('[data-admissions-executive-line]').count() !== 2) {
+    throw new Error("Admissions executive update must keep its workload and location lines distinct.");
   }
-  if (await executiveUpdate.locator("strong").count() < 6) {
+  if (await executiveUpdate.locator("strong").count() < 5) {
     throw new Error("Admissions executive update has lost its reading hierarchy.");
   }
   const chatTreatment = await executiveUpdate.evaluate((element) => {
@@ -81,6 +80,9 @@ await withBrowserQa(async (browser) => {
   }
   if (await executiveUpdate.locator('[data-admissions-executive-line]').first().evaluate((element) => window.getComputedStyle(element).transitionDuration) === "0s") {
     throw new Error("Admissions analyst response must retain its streaming reveal transition.");
+  }
+  if (/Immediate follow-up:|Update overdue|Move-in overdue|Needs follow-up/.test(await page.locator("body").innerText())) {
+    throw new Error("Admissions must not present automated attention judgments.");
   }
   const communityFilters = page.locator('[data-admissions-community-filters="true"]');
   await communityFilters.waitFor({ state: "visible" });
@@ -151,7 +153,8 @@ await withBrowserQa(async (browser) => {
     chartTabName !== firstClientName ||
     await progressModal.locator('[data-admissions-chart-section]').count() < 8 ||
     await progressModal.getByRole("heading", { name: "Client and placement" }).count() !== 1 ||
-    await progressModal.getByRole("heading", { name: "Admission readiness" }).count() !== 1
+    await progressModal.getByRole("heading", { name: "Admission readiness" }).count() !== 1 ||
+    await progressModal.getByRole("heading", { name: "Review focus" }).count() !== 0
   ) {
     throw new Error("Client review must use the client name as its folder tab and present the complete management chart.");
   }
