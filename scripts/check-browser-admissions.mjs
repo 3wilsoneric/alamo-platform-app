@@ -124,6 +124,7 @@ await withBrowserQa(async (browser) => {
     throw new Error("Client progress review must show the three referral stages.");
   }
   const chartTabName = (await progressModal.locator('[data-admissions-chart-tab-name="true"]').innerText()).trim();
+  const chartNameTab = progressModal.locator('[data-admissions-chart-name-tab="true"]');
   const chartNameLabel = progressModal.locator('[data-admissions-chart-name-label="true"]');
   const decisionTab = progressModal.locator('[data-admissions-decision-tab]');
   if (
@@ -136,15 +137,22 @@ await withBrowserQa(async (browser) => {
   }
   const folderTabTreatment = await chartNameLabel.evaluate((element) => ({
     background: window.getComputedStyle(element).backgroundColor,
-    height: element.getBoundingClientRect().height
+    labelHeight: element.getBoundingClientRect().height
   }));
+  folderTabTreatment.tabHeight = await chartNameTab.evaluate((element) => element.getBoundingClientRect().height);
   if (
-    folderTabTreatment.background !== "rgb(255, 255, 255)" ||
-    folderTabTreatment.height < 56 ||
+    folderTabTreatment.background !== "rgb(255, 253, 250)" ||
+    folderTabTreatment.tabHeight < 64 ||
     (await decisionTab.innerText()).trim() !== "Under review" ||
     (await decisionTab.getAttribute("data-admissions-decision-tab")) !== "under-review"
   ) {
     throw new Error(`Admissions chart must pair a large white client label with its decision tab: ${JSON.stringify(folderTabTreatment)}`);
+  }
+  if (
+    await progressModal.getByText("Admissions management chart", { exact: true }).count() ||
+    await progressModal.getByRole("heading", { name: "Management review" }).count()
+  ) {
+    throw new Error("Management chart must open directly on the operational content without a redundant title block.");
   }
   const chartWidth = await progressModal.getByRole("dialog").evaluate((element) => element.getBoundingClientRect().width);
   if (chartWidth < 1100) {
@@ -159,7 +167,7 @@ await withBrowserQa(async (browser) => {
       paper: window.getComputedStyle(paper).backgroundColor
     };
   });
-  if (chartPalette?.folder !== "rgb(229, 207, 158)" || chartPalette.paper !== "rgb(255, 254, 251)") {
+  if (chartPalette?.folder !== "rgb(242, 229, 201)" || chartPalette.paper !== "rgb(255, 254, 251)") {
     throw new Error(`Admissions chart lost its manila-folder and paper treatment: ${JSON.stringify(chartPalette)}`);
   }
   await page.screenshot({
@@ -196,6 +204,7 @@ await withBrowserQa(async (browser) => {
   const mobileProgress = mobilePage.locator('[data-admissions-progress-modal="true"]');
   await mobileProgress.waitFor({ state: "visible" });
   if (
+    await mobileProgress.locator('[data-admissions-chart-name-tab="true"]').count() !== 1 ||
     await mobileProgress.locator('[data-admissions-chart-name-label="true"]').count() !== 1 ||
     await mobileProgress.locator('[data-admissions-decision-tab="under-review"]').count() !== 1
   ) {

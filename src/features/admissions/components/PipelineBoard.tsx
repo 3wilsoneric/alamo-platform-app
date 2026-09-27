@@ -264,10 +264,15 @@ function ProgressModal({
       >
         <div data-admissions-chart-folder-tab="true" className="ml-3 flex max-w-[calc(100%-1.5rem)] shrink-0 items-end gap-1.5 sm:ml-8 sm:max-w-[720px] sm:gap-2">
           <div
-            data-admissions-chart-name-label="true"
-            className="flex h-14 min-w-0 items-center rounded-t-xl border border-b-0 border-[#c4ad76] bg-white px-4 shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:h-16 sm:px-6"
+            data-admissions-chart-name-tab="true"
+            className="flex h-16 min-w-0 items-center rounded-t-xl border border-b-0 border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_-3px_12px_rgba(49,40,18,0.07)] sm:h-[72px] sm:p-2.5"
           >
-            <span data-admissions-chart-tab-name="true" className="truncate text-[16px] font-semibold tracking-[-0.02em] text-[#202321] sm:text-[19px]">{card.clientName}</span>
+            <div
+              data-admissions-chart-name-label="true"
+              className="flex h-full min-w-0 items-center rounded-[4px] border border-[#d7d0c1] bg-[#fffdfa] px-3.5 shadow-[0_1px_2px_rgba(58,47,24,0.08)] sm:px-5"
+            >
+              <span id="admissions-progress-title" data-admissions-chart-tab-name="true" className="truncate text-[15px] font-semibold tracking-[-0.02em] text-[#202321] sm:text-[17px]">{card.clientName}</span>
+            </div>
           </div>
           <div
             data-admissions-decision-tab={decisionTab.state}
@@ -278,35 +283,24 @@ function ProgressModal({
         </div>
         <div
           data-admissions-chart-folder="true"
-          className="flex min-h-0 flex-1 overflow-hidden rounded-tr-[22px] border border-[#c4ad76] bg-[#e5cf9e] p-2 shadow-[0_24px_80px_rgba(15,35,29,0.24)] sm:rounded-b-[22px] sm:p-3"
+          className="flex min-h-0 flex-1 overflow-hidden rounded-tr-[22px] border border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_24px_80px_rgba(15,35,29,0.24)] sm:rounded-b-[22px] sm:p-3"
         >
           <article
             data-admissions-chart-paper="true"
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-[#d2d5cf] bg-[#fffefb] shadow-[0_2px_8px_rgba(58,47,24,0.12)] sm:rounded-xl"
+            className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-[#d2d5cf] bg-[#fffefb] shadow-[0_2px_8px_rgba(58,47,24,0.12)] sm:rounded-xl"
           >
-            <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[#aebbb5] bg-[#f6f8f5] px-5 py-4 sm:px-8 sm:py-5">
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#607069]">Admissions management chart</p>
-                <h2 id="admissions-progress-title" className="mt-1 text-[23px] font-semibold tracking-[-0.035em] text-[#171918] sm:text-[28px]">
-                  Management review
-                </h2>
-                <p className="mt-1 text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</p>
-              </div>
-              <div className="flex shrink-0 items-start gap-2">
-                <button
-                  ref={closeButtonRef}
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Close management chart"
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d3dad6] bg-white text-[#4e5752] transition hover:bg-[#eef3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
-            </header>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onClose}
+              aria-label="Close management chart"
+              className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d3dad6] bg-white text-[#4e5752] shadow-sm transition hover:bg-[#eef3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:right-5 sm:top-4"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] px-5 py-4 sm:px-8">
+              <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] py-5 pl-5 pr-16 sm:px-8 sm:pr-20">
                 <h3 id="admissions-chart-next-action" className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Next required action</h3>
                 <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>
               </section>
