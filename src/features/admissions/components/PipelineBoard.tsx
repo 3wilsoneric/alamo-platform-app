@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, ArrowRight, CalendarDays, Check, Clock3, Columns3, List, UserRound, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, Check, Clock3, Columns3, FolderOpen, List, UserRound, X } from "lucide-react";
 
 import type {
   AdmissionsBoardCard,
@@ -208,88 +208,112 @@ function ProgressModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="admissions-progress-title"
-        className="max-h-[94dvh] w-full overflow-y-auto rounded-t-[24px] bg-white shadow-[0_24px_80px_rgba(15,35,29,0.24)] sm:max-w-[660px] sm:rounded-[20px]"
+        className="flex max-h-[94dvh] w-full flex-col overflow-hidden sm:max-w-[760px]"
       >
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-5 border-b border-[#e3e7e5] bg-white/95 px-5 py-5 backdrop-blur sm:px-7 sm:py-6">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0f795f]">Referral progress</p>
-            <h2 id="admissions-progress-title" className="mt-1 truncate text-[24px] font-semibold tracking-[-0.035em] text-[#171918] sm:text-[28px]">
-              {card.clientName}
-            </h2>
-            <p className="mt-1 text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</p>
-          </div>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            onClick={onClose}
-            aria-label="Close progress update"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dfe4e1] text-[#4e5752] transition hover:bg-[#f3f5f4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </header>
-
-        <div className="space-y-5 px-5 py-5 sm:px-7 sm:py-6">
-          <section aria-label="Current referral stage" className="rounded-2xl border border-[#dfe5e2] bg-[#fafbfa] px-4 py-5 sm:px-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[11px] font-medium text-[#69716c]">Current stage</span>
-              <span className="rounded-md bg-[#e8f4ee] px-2.5 py-1 text-[11px] font-semibold text-[#176d51]">{card.status}</span>
-            </div>
-            <div className="relative mt-6">
-              <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#cfd8d3]" />
-              <ol className="relative grid grid-cols-3 gap-2" aria-label="Referral progress">
-                {PROGRESS_STAGES.map((stage, index) => {
-                  const complete = index < currentStage;
-                  const current = index === currentStage;
-                  return (
-                    <li key={stage.key} className="relative z-[1] flex min-w-0 flex-col items-center text-center" data-admissions-progress-step={stage.key}>
-                      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold ${complete ? "border-[#0f795f] bg-[#0f795f] text-white" : current ? "border-[#0f795f] bg-white text-[#0f795f] ring-4 ring-[#dff0e9]" : "border-[#cfd8d3] bg-white text-[#8b938f]"}`}>
-                        {complete ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
-                      </span>
-                      <span className={`mt-2 max-w-[110px] text-[10px] leading-4 ${current ? "font-semibold text-[#25463d]" : "font-medium text-[#747c78]"}`}>{stage.label}</span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </section>
-
-          <section aria-label="Next required action" className="rounded-2xl bg-[#edf5f1] px-4 py-4 sm:px-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Next required action</p>
-            <p className="mt-2 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>
-          </section>
-
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[#e1e5e3] bg-[#e1e5e3] sm:grid-cols-3">
-            <ProgressFact icon={<UserRound className="h-3.5 w-3.5" aria-hidden="true" />} label="Assigned to" value={card.owner || "Unassigned"} />
-            <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Time open" value={formatLongDays(card.daysOpen)} />
-            <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Last update" value={formatLastUpdate(card.daysSinceUpdate)} />
-            <ProgressFact label="Priority" value={formatPriority(card.priority)} />
-            <ProgressFact icon={<CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />} label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} />
-            <ProgressFact label="Community" value={communityName(card)} />
-          </dl>
-
-          <section aria-label="Analyst review" className={`rounded-2xl border px-4 py-4 sm:px-5 ${attentionLabels.length ? "border-[#ead3a5] bg-[#fffaf0]" : "border-[#dce7e2] bg-[#f7faf8]"}`}>
-            <div className="flex items-start gap-3">
-              <span className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${attentionLabels.length ? "bg-[#fff0ca] text-[#805d16]" : "bg-[#e5f2ec] text-[#176d51]"}`}>
-                {attentionLabels.length ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
-              </span>
-              <div>
-                <p className="text-[11px] font-semibold text-[#303532]">{attentionLabels.length ? "Review focus" : "Current review"}</p>
-                <p className="mt-1 text-[12px] leading-5 text-[#5f6762]">
-                  {attentionLabels.length ? attentionLabels.join(" · ") : "No workflow exceptions are flagged in the current update."}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <p className="text-center text-[10px] text-[#8a918d]">Updated {formatUpdatedAt(generatedAt)}</p>
+        <div
+          data-admissions-chart-folder-tab="true"
+          className="ml-5 inline-flex h-10 w-fit shrink-0 items-center gap-2 rounded-t-xl border border-b-0 border-[#c4ad76] bg-[#ddc58f] px-4 text-[11px] font-semibold text-[#4f411f] shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:ml-7"
+        >
+          <FolderOpen className="h-4 w-4" aria-hidden="true" />
+          Referral chart
+          <span className="font-medium text-[#78673f]">#{card.referralId}</span>
         </div>
+        <div
+          data-admissions-chart-folder="true"
+          className="flex min-h-0 flex-1 overflow-hidden rounded-tr-[22px] border border-[#c4ad76] bg-[#e5cf9e] p-2 shadow-[0_24px_80px_rgba(15,35,29,0.24)] sm:rounded-b-[22px] sm:p-3"
+        >
+          <article
+            data-admissions-chart-paper="true"
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-[#d2d5cf] bg-[#fffefb] shadow-[0_2px_8px_rgba(58,47,24,0.12)] sm:rounded-xl"
+          >
+            <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[#aebbb5] bg-[#f6f8f5] px-5 py-4 sm:px-7 sm:py-5">
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#607069]">Admissions review</p>
+                <h2 id="admissions-progress-title" className="mt-1 truncate text-[24px] font-semibold tracking-[-0.035em] text-[#171918] sm:text-[29px]">
+                  {card.clientName}
+                </h2>
+                <p className="mt-1 text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</p>
+              </div>
+              <div className="flex shrink-0 items-start gap-2">
+                <span className="mt-1 hidden rounded-md bg-[#e6f2ec] px-2.5 py-1 text-[10px] font-semibold text-[#176d51] sm:inline-flex">{card.status}</span>
+                <button
+                  ref={closeButtonRef}
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close referral chart"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d3dad6] bg-white text-[#4e5752] transition hover:bg-[#eef3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            </header>
 
-        <footer className="sticky bottom-0 border-t border-[#e3e7e5] bg-white/95 px-5 py-4 backdrop-blur sm:px-7">
-          <button type="button" onClick={onClose} style={{ color: "#ffffff" }} className="min-h-11 w-full rounded-xl bg-[#163f36] px-4 text-[12px] font-semibold transition hover:bg-[#0f795f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]">
-            Done
-          </button>
-        </footer>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] px-5 py-4 sm:px-7">
+                <h3 id="admissions-chart-next-action" className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Next required action</h3>
+                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>
+              </section>
+
+              <section data-admissions-chart-section="overview" aria-labelledby="admissions-chart-overview">
+                <ChartBand id="admissions-chart-overview" title="Referral overview" detail={card.status} />
+                <dl className="grid grid-cols-2 gap-px bg-[#bfcac5] sm:grid-cols-3">
+                  <ProgressFact icon={<UserRound className="h-3.5 w-3.5" aria-hidden="true" />} label="Assigned to" value={card.owner || "Unassigned"} />
+                  <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Time open" value={formatLongDays(card.daysOpen)} />
+                  <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Last update" value={formatLastUpdate(card.daysSinceUpdate)} />
+                  <ProgressFact label="Priority" value={formatPriority(card.priority)} />
+                  <ProgressFact icon={<CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />} label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} />
+                  <ProgressFact label="Community" value={communityName(card)} />
+                </dl>
+              </section>
+
+              <section data-admissions-chart-section="progress" aria-labelledby="admissions-chart-progress">
+                <ChartBand id="admissions-chart-progress" title="Workflow progress" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
+                <div className="bg-[#fffefb] px-4 py-5 sm:px-7 sm:py-6">
+                  <div className="relative">
+                    <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#c8d2cd]" />
+                    <ol className="relative grid grid-cols-3 gap-2" aria-label="Referral progress">
+                      {PROGRESS_STAGES.map((stage, index) => {
+                        const complete = index < currentStage;
+                        const current = index === currentStage;
+                        return (
+                          <li key={stage.key} className="relative z-[1] flex min-w-0 flex-col items-center text-center" data-admissions-progress-step={stage.key}>
+                            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold ${complete ? "border-[#0f795f] bg-[#0f795f] text-white" : current ? "border-[#0f795f] bg-white text-[#0f795f] ring-4 ring-[#dff0e9]" : "border-[#cfd8d3] bg-white text-[#8b938f]"}`}>
+                              {complete ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
+                            </span>
+                            <span className={`mt-2 max-w-[110px] text-[10px] leading-4 ${current ? "font-semibold text-[#25463d]" : "font-medium text-[#747c78]"}`}>{stage.label}</span>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                </div>
+              </section>
+
+              <section data-admissions-chart-section="review" aria-labelledby="admissions-chart-review">
+                <ChartBand id="admissions-chart-review" title="Review focus" />
+                <div className={`flex items-start gap-3 px-5 py-4 sm:px-7 ${attentionLabels.length ? "bg-[#fffaf0]" : "bg-[#f7faf8]"}`}>
+                  <span className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${attentionLabels.length ? "bg-[#fff0ca] text-[#805d16]" : "bg-[#e5f2ec] text-[#176d51]"}`}>
+                    {attentionLabels.length ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                  </span>
+                  <div>
+                    <p className="text-[11px] font-semibold text-[#303532]">{attentionLabels.length ? "Needs follow-up" : "Current review"}</p>
+                    <p className="mt-1 text-[12px] leading-5 text-[#5f6762]">
+                      {attentionLabels.length ? attentionLabels.join(" · ") : "No workflow exceptions are flagged in the current update."}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <p className="border-t border-[#cfd6d2] bg-[#f7f9f7] px-5 py-3 text-center text-[10px] text-[#7f8783] sm:px-7">Updated {formatUpdatedAt(generatedAt)}</p>
+            </div>
+
+            <footer className="shrink-0 border-t border-[#c7cfcb] bg-[#f8faf8] px-5 py-3 sm:px-7 sm:py-4">
+              <button type="button" onClick={onClose} style={{ color: "#ffffff" }} className="min-h-11 w-full rounded-lg bg-[#163f36] px-4 text-[12px] font-semibold transition hover:bg-[#0f795f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]">
+                Done
+              </button>
+            </footer>
+          </article>
+        </div>
       </section>
     </div>,
     document.body
@@ -302,6 +326,15 @@ function ProgressFact({ icon, label, value }: { icon?: ReactNode; label: string;
       <dt className="flex items-center gap-1.5 text-[10px] font-medium text-[#7b837f]">{icon}{label}</dt>
       <dd className="mt-1.5 truncate text-[12px] font-semibold text-[#303532]" title={value}>{value}</dd>
     </div>
+  );
+}
+
+function ChartBand({ id, title, detail }: { id: string; title: string; detail?: string }) {
+  return (
+    <h3 id={id} className="flex items-center justify-between gap-4 border-y border-[#aebbb5] bg-[#eaf1ee] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#244b41] sm:px-7 sm:text-[11px]">
+      {title}
+      {detail ? <span className="text-right text-[10px] font-medium normal-case tracking-normal text-[#62706a]">{detail}</span> : null}
+    </h3>
   );
 }
 
