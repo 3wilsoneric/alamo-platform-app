@@ -168,12 +168,14 @@ await withBrowserQa(async (browser) => {
   const decisionTab = progressModal.locator('[data-admissions-decision-tab]');
   if (
     chartTabName !== firstClientName ||
-    await progressModal.locator('[data-admissions-chart-section]').count() < 8 ||
-    await progressModal.getByRole("heading", { name: "Client and placement" }).count() !== 1 ||
-    await progressModal.getByRole("heading", { name: "Admission readiness" }).count() !== 1 ||
+    await progressModal.locator('[data-admissions-chart-section]').count() !== 4 ||
+    await progressModal.locator('[data-admissions-chart-stream="true"]').count() !== 1 ||
+    await progressModal.getByRole("heading", { name: "Admission brief" }).count() !== 1 ||
+    await progressModal.getByRole("heading", { name: "Workflow and readiness" }).count() !== 1 ||
+    await progressModal.getByRole("heading", { name: "Client context" }).count() !== 1 ||
     await progressModal.getByRole("heading", { name: "Review focus" }).count() !== 0
   ) {
-    throw new Error("Client review must use the client name as its folder tab and present the complete management chart.");
+    throw new Error("Client review must use one streamlined management-chart reading path.");
   }
   const folderTabTreatment = await chartNameLabel.evaluate((element) => ({
     background: window.getComputedStyle(element).backgroundColor,
