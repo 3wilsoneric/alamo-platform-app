@@ -439,6 +439,28 @@ healthy single revision at 100% traffic, and all four public production smoke
 probes. Deterministic desktop and 390-pixel renders placed Admissions below
 Analytics, opened `/admissions`, and had no horizontal overflow.
 
+### Admissions navigation access correction — 2026-09-26
+
+The Admissions destination is now shown below Analytics for every authenticated
+Platform identity. Admissions-specific roles continue to constrain assessor-only
+identities but no longer act as a second navigation entitlement for normal
+Platform users. The release bundle was rebuilt with the required browser-safe
+Entra client and tenant values after an unconfigured intermediate bundle was
+detected and rolled back.
+
+- source commit: `3ac46d5`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/33`
+- image tag: `alamo-platform:admissions-nav-auth-3ac46d5`
+- image digest: `sha256:1e8c4d9295e091f118e7d079fa6919a92eaab7027a6ffc07052e30aa5919a737`
+- active revision: `alamo-platform-prod-web--admissions-nav-auth-0927`
+- rollback digest: `sha256:d0359b87e5ef9bba5dfa286a8923cd86e68c162873752f9c449b6dedcf4dea20`
+
+Post-promotion verification confirmed the exact configured production asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. A fresh load in the owner's signed-in Chrome session showed no
+authentication setup error, placed Admissions below Analytics, and opened the
+native `/admissions` overview from that menu item.
+
 ## Local Development
 
 Install and run:
