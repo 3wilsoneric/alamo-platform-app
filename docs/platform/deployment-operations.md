@@ -419,6 +419,26 @@ healthy single revision at 100% traffic, and all four public production smoke
 probes. Deterministic desktop and phone renders showed the executive fields,
 excluded raw workflow-action copy, and had no horizontal overflow.
 
+### Admissions navigation release — 2026-09-26
+
+Admissions now appears directly below Analytics in the shared desktop and
+phone navigation for identities that pass the existing Admissions access
+decision. The destination remains absent for identities without an Admissions
+role, and opens the native `/admissions` overview without changing API, data,
+or authentication configuration.
+
+- source commit: `255f742`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/31`
+- image tag: `alamo-platform:admissions-nav-255f742`
+- image digest: `sha256:e933cfde2251be9582d47303a9b35b3d1e0d90df6f58b84adc323c3911933bfe`
+- active revision: `alamo-platform-prod-web--admissions-nav-0927`
+- rollback digest: `sha256:d0359b87e5ef9bba5dfa286a8923cd86e68c162873752f9c449b6dedcf4dea20`
+
+Post-promotion verification confirmed the exact production browser asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. Deterministic desktop and 390-pixel renders placed Admissions below
+Analytics, opened `/admissions`, and had no horizontal overflow.
+
 ## Local Development
 
 Install and run:
