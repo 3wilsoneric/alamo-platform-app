@@ -260,6 +260,25 @@ live cards, correct live mapping for six accepted and 15 under-review cards,
 synthetic coverage for the deny state, and no horizontal overflow at a
 390-pixel viewport.
 
+### Admissions folder refinement release — 2026-09-26
+
+The chart now opens directly on the operational content without the redundant
+management-review title block. The folder and name tab use pale manila stock,
+and the client name sits on an inset off-white paper label inside the tab. The
+separate decision tab and all management-chart content remain unchanged.
+
+- source commit: `337e615`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/13`
+- image tag: `alamo-platform:admissions-folder-d1ebbdb`
+- image digest: `sha256:d6dc6d4518bdeb40c29c04be02c59fd95adc4f766a56ae642dc6329732850f09`
+- active revision: `alamo-platform-prod-web--admissions-folder-0927`
+- rollback digest: `sha256:08521d6ce65ea83c0d92506cbaa5fd9fb9f46aa9e75e96fe749f67ce78f2ca9b`
+
+Post-promotion verification confirmed a healthy single active revision at 100%
+traffic, 4/4 public smoke probes, the intended production folder and label
+colors, removal of the old title block, and no horizontal overflow at a
+390-pixel viewport.
+
 ## Local Development
 
 Install and run:
