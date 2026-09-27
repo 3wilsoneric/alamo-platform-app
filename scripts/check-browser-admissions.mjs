@@ -124,6 +124,8 @@ await withBrowserQa(async (browser) => {
     throw new Error("Client progress review must show the three referral stages.");
   }
   const chartTabName = (await progressModal.locator('[data-admissions-chart-tab-name="true"]').innerText()).trim();
+  const chartNameLabel = progressModal.locator('[data-admissions-chart-name-label="true"]');
+  const decisionTab = progressModal.locator('[data-admissions-decision-tab]');
   if (
     chartTabName !== firstClientName ||
     await progressModal.locator('[data-admissions-chart-section]').count() < 8 ||
@@ -132,8 +134,20 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Client review must use the client name as its folder tab and present the complete management chart.");
   }
+  const folderTabTreatment = await chartNameLabel.evaluate((element) => ({
+    background: window.getComputedStyle(element).backgroundColor,
+    height: element.getBoundingClientRect().height
+  }));
+  if (
+    folderTabTreatment.background !== "rgb(255, 255, 255)" ||
+    folderTabTreatment.height < 56 ||
+    (await decisionTab.innerText()).trim() !== "Under review" ||
+    (await decisionTab.getAttribute("data-admissions-decision-tab")) !== "under-review"
+  ) {
+    throw new Error(`Admissions chart must pair a large white client label with its decision tab: ${JSON.stringify(folderTabTreatment)}`);
+  }
   const chartWidth = await progressModal.getByRole("dialog").evaluate((element) => element.getBoundingClientRect().width);
-  if (chartWidth < 900) {
+  if (chartWidth < 1100) {
     throw new Error(`Desktop management chart is too narrow at ${chartWidth}px.`);
   }
   const chartPalette = await progressModal.evaluate((element) => {
@@ -181,6 +195,12 @@ await withBrowserQa(async (browser) => {
   await mobilePage.locator('[data-admissions-board-card]').first().click();
   const mobileProgress = mobilePage.locator('[data-admissions-progress-modal="true"]');
   await mobileProgress.waitFor({ state: "visible" });
+  if (
+    await mobileProgress.locator('[data-admissions-chart-name-label="true"]').count() !== 1 ||
+    await mobileProgress.locator('[data-admissions-decision-tab="under-review"]').count() !== 1
+  ) {
+    throw new Error("Mobile management chart must retain the separate client and decision tabs.");
+  }
   const modalOverflow = await mobileProgress.evaluate(
     (element) => element.scrollWidth - element.clientWidth
   );

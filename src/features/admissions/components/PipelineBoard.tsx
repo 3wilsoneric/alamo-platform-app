@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, ArrowRight, CalendarDays, Check, Clock3, Columns3, FolderOpen, List, UserRound, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, Check, Clock3, Columns3, List, UserRound, X } from "lucide-react";
 
 import type {
   AdmissionsBoardCard,
@@ -169,6 +169,37 @@ const PROGRESS_STAGES: Array<{ key: AdmissionsBoardColumnKey; label: string }> =
   { key: "decision", label: "Decision" }
 ];
 
+const DECISION_TAB = {
+  accept: {
+    state: "accept",
+    label: "Accept",
+    className: "border-[#176344] bg-[#257653] text-white"
+  },
+  deny: {
+    state: "deny",
+    label: "Deny",
+    className: "border-[#8f3932] bg-[#b64c43] text-white"
+  },
+  underReview: {
+    state: "under-review",
+    label: "Under review",
+    className: "border-[#c5952d] bg-[#e7be58] text-[#493707]"
+  }
+} as const;
+
+function decisionTabFor(card: AdmissionsBoardCard) {
+  const status = card.status.trim().toLowerCase();
+  if (status.includes("declin") || status.includes("deni")) return DECISION_TAB.deny;
+  if (
+    status.startsWith("accept") ||
+    status === "awaiting admit" ||
+    status === "meet the client not sent"
+  ) {
+    return DECISION_TAB.accept;
+  }
+  return DECISION_TAB.underReview;
+}
+
 function ProgressModal({
   card,
   generatedAt,
@@ -183,6 +214,7 @@ function ProgressModal({
   const currentStage = PROGRESS_STAGES.findIndex((stage) => stage.key === card.column);
   const attentionLabels = getFlagLabels(card);
   const profile = card.managementProfile;
+  const decisionTab = decisionTabFor(card);
   const assessmentLabel = profile.assessmentSigned
     ? `Signed${profile.assessmentDate ? ` ${formatProfileDate(profile.assessmentDate)}` : ""}`
     : formatProfileValue(profile.assessmentStatus);
@@ -228,14 +260,21 @@ function ProgressModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="admissions-progress-title"
-        className="flex max-h-[100dvh] w-full flex-col overflow-hidden sm:max-h-[94dvh] sm:max-w-[1120px]"
+        className="flex max-h-[100dvh] w-full flex-col overflow-hidden sm:max-h-[96dvh] sm:max-w-[1240px]"
       >
-        <div
-          data-admissions-chart-folder-tab="true"
-          className="ml-5 inline-flex h-11 w-fit max-w-[calc(100%-2.5rem)] shrink-0 items-center gap-2 rounded-t-xl border border-b-0 border-[#c4ad76] bg-[#ddc58f] px-4 text-[12px] font-semibold text-[#4f411f] shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:ml-7 sm:max-w-[460px] sm:px-5"
-        >
-          <FolderOpen className="h-4 w-4" aria-hidden="true" />
-          <span data-admissions-chart-tab-name="true" className="truncate">{card.clientName}</span>
+        <div data-admissions-chart-folder-tab="true" className="ml-3 flex max-w-[calc(100%-1.5rem)] shrink-0 items-end gap-1.5 sm:ml-8 sm:max-w-[720px] sm:gap-2">
+          <div
+            data-admissions-chart-name-label="true"
+            className="flex h-14 min-w-0 items-center rounded-t-xl border border-b-0 border-[#c4ad76] bg-white px-4 shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:h-16 sm:px-6"
+          >
+            <span data-admissions-chart-tab-name="true" className="truncate text-[16px] font-semibold tracking-[-0.02em] text-[#202321] sm:text-[19px]">{card.clientName}</span>
+          </div>
+          <div
+            data-admissions-decision-tab={decisionTab.state}
+            className={`flex h-12 shrink-0 items-center rounded-t-xl border border-b-0 px-3 text-[10px] font-bold uppercase tracking-[0.08em] shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:h-14 sm:px-5 sm:text-[11px] ${decisionTab.className}`}
+          >
+            {decisionTab.label}
+          </div>
         </div>
         <div
           data-admissions-chart-folder="true"
@@ -251,10 +290,9 @@ function ProgressModal({
                 <h2 id="admissions-progress-title" className="mt-1 text-[23px] font-semibold tracking-[-0.035em] text-[#171918] sm:text-[28px]">
                   Management review
                 </h2>
-                <p className="mt-1 text-[11px] text-[#69716c]">{card.clientName} · Referral #{card.referralId} · {communityName(card)}</p>
+                <p className="mt-1 text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</p>
               </div>
               <div className="flex shrink-0 items-start gap-2">
-                <span className="mt-1 hidden rounded-md bg-[#e6f2ec] px-2.5 py-1 text-[10px] font-semibold text-[#176d51] md:inline-flex">{card.status}</span>
                 <button
                   ref={closeButtonRef}
                   type="button"
