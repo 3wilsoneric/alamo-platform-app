@@ -77,6 +77,10 @@ server, never from the browser and never through Pipeline's internal APIs.
 - `pipeline_path` must be a query-only relative path; Alamo joins it to the
   configured Pipeline origin and drops the whole summary if any row fails the
   contract.
+- Admissions status badges preserve explicit Pipeline decisions: accepted and
+  denied statuses map to their corresponding categories, and `Under review`
+  appears only when Pipeline reports that exact status. Every other undecided
+  workflow status is shown as `In progress`.
 - Pipeline community labels are matched to facilities through
   `shared/community-names.mjs` aliases; unmatched labels (such as
   "Unassigned") show as "No community" on the board and in its filter.

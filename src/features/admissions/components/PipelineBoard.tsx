@@ -176,6 +176,11 @@ const DECISION_TAB = {
     label: "Deny",
     className: "border-[#8f3932] bg-[#b64c43] text-white"
   },
+  inProgress: {
+    state: "in-progress",
+    label: "In progress",
+    className: "border-[#3159b8] bg-[#365fc7] text-white"
+  },
   underReview: {
     state: "under-review",
     label: "Under review",
@@ -184,7 +189,11 @@ const DECISION_TAB = {
 } as const;
 
 function decisionTabFor(card: AdmissionsBoardCard) {
-  const status = card.status.trim().toLowerCase();
+  const status = card.status
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
   if (status.includes("declin") || status.includes("deni")) return DECISION_TAB.deny;
   if (
     status.startsWith("accept") ||
@@ -193,7 +202,8 @@ function decisionTabFor(card: AdmissionsBoardCard) {
   ) {
     return DECISION_TAB.accept;
   }
-  return DECISION_TAB.underReview;
+  if (status === "under review") return DECISION_TAB.underReview;
+  return DECISION_TAB.inProgress;
 }
 
 function ProgressModal({
