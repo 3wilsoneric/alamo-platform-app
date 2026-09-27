@@ -133,7 +133,7 @@ export default function PipelineBoard({
                   <ul className="max-h-[690px] space-y-3 overflow-y-auto px-4 pb-4">
                     {columnCards.map((card) => (
                       <li key={card.referralId}>
-                        <BoardCard card={card} column={column.key} onOpen={() => setSelectedCard(card)} />
+                        <BoardCard card={card} onOpen={() => setSelectedCard(card)} />
                       </li>
                     ))}
                   </ul>
@@ -296,7 +296,7 @@ function ProgressModal({
 
             <div className="min-h-0 flex-1 overflow-y-auto">
               <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] py-5 pl-5 pr-16 sm:px-8 sm:pr-20">
-                <h3 id="admissions-chart-next-action" className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Next required action</h3>
+                <h3 id="admissions-chart-next-action" className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Current management focus</h3>
                 <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>
               </section>
 
@@ -464,14 +464,15 @@ function ChartBand({ id, title, detail }: { id: string; title: string; detail?: 
   );
 }
 
-function BoardCard({ card, column, onOpen }: { card: AdmissionsBoardCard; column: AdmissionsBoardColumnKey; onOpen: () => void }) {
-  const style = COLUMN_STYLE[column];
+function BoardCard({ card, onOpen }: { card: AdmissionsBoardCard; onOpen: () => void }) {
+  const decision = decisionTabFor(card);
+  const readiness = cardReadiness(card);
   return (
     <button
       type="button"
       onClick={onOpen}
       data-admissions-board-card={card.referralId}
-      aria-label={`${card.clientName}, referral ${card.referralId}, ${communityName(card)}, ${card.status}. Open progress update`}
+      aria-label={`${card.clientName}, referral ${card.referralId}, ${communityName(card)}, ${card.status}. View management briefing`}
       className="group block w-full rounded-xl border border-[#dfe3e1] bg-white p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition hover:-translate-y-px hover:border-[#bfc9c3] hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
     >
       <div className="flex items-start justify-between gap-3">
@@ -479,30 +480,22 @@ function BoardCard({ card, column, onOpen }: { card: AdmissionsBoardCard; column
           <span data-admissions-client-name="true" className="block truncate text-[15px] font-semibold tracking-[-0.02em] text-[#171918]">{card.clientName}</span>
           <span className="mt-1 block truncate text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</span>
         </div>
-        <span className="shrink-0 rounded-md bg-[#f2f4f3] px-2 py-1 text-[10px] font-semibold text-[#59615c]">{formatShortDays(card.daysOpen)}</span>
+        <span data-admissions-card-decision={decision.state} className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.06em] ${decision.className}`}>{decision.label}</span>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className="rounded-md px-2 py-1 text-[10px] font-semibold" style={{ backgroundColor: style.action, color: style.accent }}>
-          {card.status}
-        </span>
-      </div>
+      <dl className="mt-4 divide-y divide-[#edf0ee] border-y border-[#edf0ee]" data-admissions-card-facts="true">
+        <BoardCardFact label="Stage" value={card.status} />
+        <BoardCardFact label="Owner" value={card.owner || "Unassigned"} />
+        <BoardCardFact label="Timing" value={`${formatLongDays(card.daysOpen)} open · updated ${formatLastUpdate(card.daysSinceUpdate).toLowerCase()}`} />
+        <BoardCardFact label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} />
+      </dl>
 
-      {card.nextAction ? (
-        <div className="mt-3 rounded-lg bg-[#f7f8f7] px-3 py-2.5 text-[11px] leading-4 text-[#4e5752]">
-          {card.nextAction}
-        </div>
-      ) : null}
-
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#edf0ee] pt-3">
-        <span className="flex min-w-0 items-center gap-2 text-[11px] text-[#59615c]">
-          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef1f4] text-[10px] font-semibold" style={{ color: style.accent }}>
-            {ownerInitials(card.owner)}
-          </span>
-          <span className="truncate">{card.owner}</span>
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <span data-admissions-card-readiness={readiness.tone} className={`min-w-0 text-[10px] font-semibold leading-4 ${readiness.className}`}>
+          {readiness.label}
         </span>
         <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[#0f795f]">
-          Open
+          Briefing
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </span>
       </div>
@@ -516,40 +509,48 @@ function ReferralList({ cards, expanded, onToggle, onOpen }: { cards: Admissions
   return (
     <div className="overflow-hidden rounded-xl border border-[#dfe3e1] bg-white" data-admissions-board-list="true">
       <ul className="space-y-3 p-3 md:hidden">
-        {shown.map((card) => <li key={card.referralId}><BoardCard card={card} column={card.column} onOpen={() => onOpen(card)} /></li>)}
+        {shown.map((card) => <li key={card.referralId}><BoardCard card={card} onOpen={() => onOpen(card)} /></li>)}
       </ul>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[860px] border-collapse text-left">
+        <table className="w-full min-w-[1040px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#e2e6e3] text-[10px] font-medium text-[#69716c]">
               <th className="px-4 py-4">Referral</th>
-              <th className="px-4 py-4">Status and next step</th>
+              <th className="px-4 py-4">Decision</th>
+              <th className="px-4 py-4">Stage</th>
               <th className="px-4 py-4">Community</th>
               <th className="px-4 py-4">Owner</th>
-              <th className="px-4 py-4 text-right">Open</th>
-              <th className="px-4 py-4 text-right">Updated</th>
-              <th className="px-4 py-4"><span className="sr-only">Open progress update</span></th>
+              <th className="px-4 py-4">Timing</th>
+              <th className="px-4 py-4">Planned admission</th>
+              <th className="px-4 py-4">Readiness</th>
+              <th className="px-4 py-4"><span className="sr-only">View management briefing</span></th>
             </tr>
           </thead>
           <tbody>
-            {shown.map((card) => (
+            {shown.map((card) => {
+              const decision = decisionTabFor(card);
+              const readiness = cardReadiness(card);
+              return (
               <tr key={card.referralId} className="border-b border-[#edf0ee] text-[12px] last:border-b-0 hover:bg-[#fafbfa]">
                 <td className="px-4 py-4">
                   <span className="block font-semibold">{card.clientName}</span>
                   <span className="mt-0.5 block text-[11px] text-[#69716c]">Referral #{card.referralId}</span>
                 </td>
-                <td className="px-4 py-4"><span className="font-medium">{card.status}</span><span className="block text-[11px] text-[#69716c]">{card.nextAction}</span></td>
+                <td className="px-4 py-4"><span className={`inline-flex rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.06em] ${decision.className}`}>{decision.label}</span></td>
+                <td className="px-4 py-4 font-medium">{card.status}</td>
                 <td className="px-4 py-4">{communityName(card)}</td>
                 <td className="px-4 py-4">{card.owner}</td>
-                <td className="px-4 py-4 text-right">{formatShortDays(card.daysOpen)}</td>
-                <td className="px-4 py-4 text-right text-[#59615c]">{card.daysSinceUpdate ? `${card.daysSinceUpdate}d` : "Today"}</td>
+                <td className="px-4 py-4"><span className="block">{formatLongDays(card.daysOpen)} open</span><span className="mt-0.5 block text-[11px] text-[#69716c]">Updated {formatLastUpdate(card.daysSinceUpdate).toLowerCase()}</span></td>
+                <td className="px-4 py-4">{formatPlannedDate(card.plannedAdmissionDate)}</td>
+                <td className={`px-4 py-4 text-[11px] font-semibold ${readiness.className}`}>{readiness.label}</td>
                 <td className="px-4 py-4 text-right">
-                  <button type="button" onClick={() => onOpen(card)} aria-label={`Open progress update for ${card.clientName}, referral ${card.referralId}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0f795f] hover:underline">
-                    Open <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <button type="button" onClick={() => onOpen(card)} aria-label={`View management briefing for ${card.clientName}, referral ${card.referralId}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0f795f] hover:underline">
+                    Briefing <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -594,13 +595,38 @@ function communityName(card: AdmissionsBoardCard) {
   return card.facilityId ? card.community : "No community";
 }
 
-function ownerInitials(owner: string) {
-  if (!owner || owner === "Unassigned") return "—";
-  return owner.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+function BoardCardFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 py-2" data-admissions-card-fact={label.toLowerCase().replaceAll(" ", "-")}>
+      <dt className="text-[9px] font-medium uppercase tracking-[0.07em] text-[#7b837f]">{label}</dt>
+      <dd className="truncate text-[11px] font-semibold text-[#303532]" title={value}>{value}</dd>
+    </div>
+  );
 }
 
-function formatShortDays(value: number | null) {
-  return value == null ? "—" : `${value}d`;
+function cardReadiness(card: AdmissionsBoardCard) {
+  const profile = card.managementProfile;
+  if (profile.blockingRequirements > 0) {
+    return {
+      tone: "blocked",
+      label: `${profile.blockingRequirements} blocking ${profile.blockingRequirements === 1 ? "requirement" : "requirements"}`,
+      className: "text-[#9a3f36]"
+    } as const;
+  }
+  if (!profile.assessmentSigned) {
+    return { tone: "assessment-pending", label: "Assessment not signed", className: "text-[#75591d]" } as const;
+  }
+  if (profile.documentStatus !== "Reviewed") {
+    return { tone: "documents-pending", label: "Documents not reviewed", className: "text-[#75591d]" } as const;
+  }
+  if (profile.openRequirements > 0) {
+    return {
+      tone: "open-requirements",
+      label: `${profile.openRequirements} open ${profile.openRequirements === 1 ? "requirement" : "requirements"}`,
+      className: "text-[#75591d]"
+    } as const;
+  }
+  return { tone: "ready", label: "No open requirements", className: "text-[#176d51]" } as const;
 }
 
 function formatLongDays(value: number | null) {

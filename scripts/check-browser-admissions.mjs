@@ -155,8 +155,18 @@ await withBrowserQa(async (browser) => {
     path: `${screenshotDir}/desktop-admissions-board.png`,
     fullPage: true
   });
-  const firstClientName = (await page.locator('[data-admissions-board-card]').first().locator('[data-admissions-client-name="true"]').innerText()).trim();
-  await page.locator('[data-admissions-board-card]').first().click();
+  const firstBoardCard = page.locator('[data-admissions-board-card]').first();
+  const firstClientName = (await firstBoardCard.locator('[data-admissions-client-name="true"]').innerText()).trim();
+  if (
+    await firstBoardCard.locator('[data-admissions-card-fact]').count() !== 4 ||
+    await firstBoardCard.locator('[data-admissions-card-decision]').count() !== 1 ||
+    await firstBoardCard.locator('[data-admissions-card-readiness]').count() !== 1 ||
+    !/Briefing/.test(await firstBoardCard.innerText()) ||
+    /Continue|Complete the assessment|Preparation/.test(await firstBoardCard.innerText())
+  ) {
+    throw new Error("Admissions cards must read as CEO briefings, not workflow task controls.");
+  }
+  await firstBoardCard.click();
   const progressModal = page.locator('[data-admissions-progress-modal="true"]');
   await progressModal.waitFor({ state: "visible" });
   if (await progressModal.locator('[data-admissions-progress-step]').count() !== 3) {
