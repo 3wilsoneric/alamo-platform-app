@@ -169,7 +169,7 @@ const DECISION_TAB = {
   accept: {
     state: "accept",
     label: "Accept",
-    className: "border-[#176344] bg-[#257653] text-white"
+    className: "border-[#145b43] bg-[#197453] !text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]"
   },
   deny: {
     state: "deny",
@@ -179,7 +179,7 @@ const DECISION_TAB = {
   underReview: {
     state: "under-review",
     label: "Under review",
-    className: "border-[#c5952d] bg-[#e7be58] text-[#493707]"
+    className: "border-[#d2a126] bg-[#f3c64f] text-[#403000] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]"
   }
 } as const;
 

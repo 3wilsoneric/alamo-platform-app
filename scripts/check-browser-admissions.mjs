@@ -174,6 +174,19 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Admissions cards must read as CEO briefings, not workflow task controls.");
   }
+  const acceptDecision = page.locator('[data-admissions-card-decision="accept"]').first();
+  if (await acceptDecision.count()) {
+    const acceptTreatment = await acceptDecision.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return { background: style.backgroundColor, color: style.color };
+    });
+    if (
+      acceptTreatment.background !== "rgb(25, 116, 83)" ||
+      acceptTreatment.color !== "rgb(255, 255, 255)"
+    ) {
+      throw new Error(`Accept decisions must use the strong green treatment with white text: ${JSON.stringify(acceptTreatment)}`);
+    }
+  }
   await firstBoardCard.click();
   const progressModal = page.locator('[data-admissions-progress-modal="true"]');
   await progressModal.waitFor({ state: "visible" });
@@ -200,13 +213,19 @@ await withBrowserQa(async (browser) => {
     labelHeight: element.getBoundingClientRect().height
   }));
   folderTabTreatment.tabHeight = await chartNameTab.evaluate((element) => element.getBoundingClientRect().height);
+  const reviewTreatment = await decisionTab.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return { background: style.backgroundColor, color: style.color };
+  });
   if (
     folderTabTreatment.background !== "rgb(255, 253, 250)" ||
     folderTabTreatment.tabHeight < 64 ||
     (await decisionTab.innerText()).trim() !== "Under review" ||
-    (await decisionTab.getAttribute("data-admissions-decision-tab")) !== "under-review"
+    (await decisionTab.getAttribute("data-admissions-decision-tab")) !== "under-review" ||
+    reviewTreatment.background !== "rgb(243, 198, 79)" ||
+    reviewTreatment.color !== "rgb(64, 48, 0)"
   ) {
-    throw new Error(`Admissions chart must pair a large white client label with its decision tab: ${JSON.stringify(folderTabTreatment)}`);
+    throw new Error(`Admissions chart must pair a large white client label with its refined decision tab: ${JSON.stringify({ folderTabTreatment, reviewTreatment })}`);
   }
   if (
     await progressModal.getByText("Admissions management chart", { exact: true }).count() ||
