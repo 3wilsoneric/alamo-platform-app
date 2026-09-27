@@ -341,6 +341,23 @@ deployed browser bundle, the retained analyst response content is present, the
 single active revision is healthy at 100% traffic, and all four public
 production smoke probes pass.
 
+### Admissions view-selection release — 2026-09-26
+
+The Board/List control no longer sits inside a gray segmented tray. Only the
+current view receives an Alamo-green surface and text treatment; the inactive
+view remains transparent. Both labels remain visible at phone width.
+
+- source commit: `bd374bf`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/23`
+- image tag: `alamo-platform:admissions-view-bd374bf`
+- image digest: `sha256:121a0ff2216a9298e4fa7a99fcfc76b67924d35e9389be4e7afac1f13498cbe0`
+- active revision: `alamo-platform-prod-web--admissions-view-0927`
+- rollback digest: `sha256:0a2184a1b74f856e82c1ba53ebfd9ef0370122e504dff70b11988f7cd0793a5a`
+
+Post-promotion verification confirmed the active-view treatment in the
+deployed browser bundle, a healthy single revision at 100% traffic, and all
+four public production smoke probes.
+
 ## Local Development
 
 Install and run:
