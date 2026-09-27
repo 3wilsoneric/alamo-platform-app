@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, CalendarDays, Check, Clock3, Columns3, List, UserRound, X } from "lucide-react";
+import { ArrowRight, Check, Columns3, List, X } from "lucide-react";
 
 import type {
   AdmissionsBoardCard,
@@ -300,108 +300,98 @@ function ProgressModal({
                 <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>
               </section>
 
-              <div className="grid min-w-0 lg:grid-cols-[minmax(0,1.55fr)_minmax(310px,0.85fr)]">
-                <div className="min-w-0 lg:border-r lg:border-[#bfcac5]">
-                  <section data-admissions-chart-section="client-profile" aria-labelledby="admissions-chart-client-profile">
-                    <ChartBand id="admissions-chart-client-profile" title="Client and placement" detail={profile.assessmentSigned ? "Verified from signed assessment" : "Current intake record"} />
-                    <dl className="grid grid-cols-2 gap-px bg-[#bfcac5] sm:grid-cols-3">
-                      <ProgressFact icon={<CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />} label="Date of birth" value={formatProfileDate(profile.dateOfBirth)} />
-                      <ProgressFact label="Referral source" value={formatProfileValue(profile.referralSource)} />
-                      <ProgressFact label="Referring county" value={formatProfileValue(profile.referringCounty)} />
-                      <ProgressFact label="Coverage / payer" value={formatProfileValue(profile.payer)} />
-                      <ProgressFact label="Responsible person" value={formatProfileValue(profile.responsiblePerson)} />
-                      <ProgressFact label="Conserved status" value={formatConservedStatus(profile.conservedStatus)} />
-                    </dl>
-                  </section>
+              <div className="mx-auto w-full max-w-[980px]" data-admissions-chart-stream="true">
+                <section data-admissions-chart-section="admission-brief" aria-labelledby="admissions-chart-admission-brief">
+                  <ChartBand id="admissions-chart-admission-brief" title="Admission brief" detail={card.status} />
+                  <dl className="divide-y divide-[#e1e5e2] border-b border-[#bfcac5] bg-[#fffefb]">
+                    <ChartRow label="Placement" value={`${communityName(card)} · Planned admission ${formatPlannedDate(card.plannedAdmissionDate)}`} />
+                    <ChartRow label="Referral" value={`${formatProfileValue(profile.referralSource)} · ${formatProfileValue(profile.referringCounty)}`} />
+                    <ChartRow label="Coverage" value={`${formatProfileValue(profile.payer)} · Responsible person ${formatProfileValue(profile.responsiblePerson)}`} />
+                    <ChartRow label="Client" value={`Born ${formatProfileDate(profile.dateOfBirth)} · Conserved ${formatConservedStatus(profile.conservedStatus).toLowerCase()}`} />
+                  </dl>
+                </section>
 
-                  <section data-admissions-chart-section="about" aria-labelledby="admissions-chart-about">
-                    <ChartBand id="admissions-chart-about" title="About the client" />
-                    {profile.overview.length ? (
-                      <ul className="grid gap-3 bg-[#fffefb] px-5 py-5 sm:grid-cols-2 sm:px-8" data-admissions-management-overview="true">
-                        {profile.overview.map((item) => (
-                          <li key={item} className="border-l-2 border-[#9fb8ad] pl-3 text-[12px] leading-5 text-[#4d5752]">{item}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <ChartEmpty>{profile.assessmentSigned ? "No management narrative is recorded in the signed assessment." : "The intake record is available. This brief fills in when the assessment is signed."}</ChartEmpty>
-                    )}
-                  </section>
-
-                  <section data-admissions-chart-section="support" aria-labelledby="admissions-chart-support">
-                    <ChartBand id="admissions-chart-support" title="Care and support snapshot" />
-                    {profile.supportSnapshot.length ? (
-                      <dl className="grid gap-px bg-[#bfcac5] sm:grid-cols-2" data-admissions-management-support="true">
-                        {profile.supportSnapshot.map((item) => <ProgressFact key={item.label} label={item.label} value={item.value} />)}
-                      </dl>
-                    ) : (
-                      <ChartEmpty>{profile.assessmentSigned ? "No structured support details are recorded." : "Verified support details become available after the assessment is signed."}</ChartEmpty>
-                    )}
-                  </section>
-
-                  <section data-admissions-chart-section="medications" aria-labelledby="admissions-chart-medications">
-                    <ChartBand id="admissions-chart-medications" title="Medication handoff" detail={medicationSourceLabel(profile.medicationSource)} />
-                    {profile.medications.length ? (
-                      <ul className="grid gap-x-6 gap-y-2 bg-[#fffefb] px-5 py-5 sm:grid-cols-2 sm:px-8" data-admissions-management-medications="true">
-                        {profile.medications.map((medication, index) => (
-                          <li key={`${medication}-${index}`} className="flex items-start gap-2 border-b border-[#e3e7e4] pb-2 text-[12px] leading-5 text-[#424b47]">
-                            <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#4b7c6b]" aria-hidden="true" />
-                            <span>{medication}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <ChartEmpty>No medication list is recorded in the current referral or signed assessment.</ChartEmpty>
-                    )}
-                  </section>
-                </div>
-
-                <aside className="min-w-0 bg-[#f8faf8]">
-                  <section data-admissions-chart-section="readiness" aria-labelledby="admissions-chart-readiness">
-                    <ChartBand id="admissions-chart-readiness" title="Admission readiness" />
-                    <dl className="grid grid-cols-2 gap-px bg-[#bfcac5]">
-                      <ReadinessFact label="Assessment" value={assessmentLabel} good={profile.assessmentSigned} />
-                      <ReadinessFact label="Referral documents" value={formatProfileValue(profile.documentStatus)} good={profile.documentStatus === "Reviewed"} />
-                      <ReadinessFact label="Open requirements" value={String(profile.openRequirements)} good={profile.openRequirements === 0} />
-                      <ReadinessFact label="Blocking" value={String(profile.blockingRequirements)} good={profile.blockingRequirements === 0} />
-                    </dl>
-                  </section>
-
-                  <section data-admissions-chart-section="progress" aria-labelledby="admissions-chart-progress">
-                    <ChartBand id="admissions-chart-progress" title="Workflow progress" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
-                    <div className="bg-[#fffefb] px-4 py-5 sm:px-6">
-                      <div className="relative">
-                        <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#c8d2cd]" />
-                        <ol className="relative grid grid-cols-3 gap-2" aria-label="Referral progress">
-                          {PROGRESS_STAGES.map((stage, index) => {
-                            const complete = index < currentStage;
-                            const current = index === currentStage;
-                            return (
-                              <li key={stage.key} className="relative z-[1] flex min-w-0 flex-col items-center text-center" data-admissions-progress-step={stage.key}>
-                                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold ${complete ? "border-[#0f795f] bg-[#0f795f] text-white" : current ? "border-[#0f795f] bg-white text-[#0f795f] ring-4 ring-[#dff0e9]" : "border-[#cfd8d3] bg-white text-[#8b938f]"}`}>
-                                  {complete ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
-                                </span>
-                                <span className={`mt-2 max-w-[100px] text-[9px] leading-4 ${current ? "font-semibold text-[#25463d]" : "font-medium text-[#747c78]"}`}>{stage.label}</span>
-                              </li>
-                            );
-                          })}
-                        </ol>
-                      </div>
+                <section data-admissions-chart-section="workflow" aria-labelledby="admissions-chart-workflow">
+                  <ChartBand id="admissions-chart-workflow" title="Workflow and readiness" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
+                  <div className="border-b border-[#d8dfdb] bg-[#f8faf8] px-5 py-5 sm:px-8 sm:py-6">
+                    <div className="relative mx-auto max-w-[640px]">
+                      <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#c8d2cd]" />
+                      <ol className="relative grid grid-cols-3 gap-2" aria-label="Referral progress">
+                        {PROGRESS_STAGES.map((stage, index) => {
+                          const complete = index < currentStage;
+                          const current = index === currentStage;
+                          return (
+                            <li key={stage.key} className="relative z-[1] flex min-w-0 flex-col items-center text-center" data-admissions-progress-step={stage.key}>
+                              <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold ${complete ? "border-[#0f795f] bg-[#0f795f] text-white" : current ? "border-[#0f795f] bg-white text-[#0f795f] ring-4 ring-[#dff0e9]" : "border-[#cfd8d3] bg-white text-[#8b938f]"}`}>
+                                {complete ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
+                              </span>
+                              <span className={`mt-2 max-w-[120px] text-[10px] leading-4 ${current ? "font-semibold text-[#25463d]" : "font-medium text-[#747c78]"}`}>{stage.label}</span>
+                            </li>
+                          );
+                        })}
+                      </ol>
                     </div>
-                  </section>
+                  </div>
+                  <dl className="divide-y divide-[#e1e5e2] border-b border-[#bfcac5] bg-[#fffefb]">
+                    <ChartRow label="Owner and timing" value={`${card.owner || "Unassigned"} · ${formatPriority(card.priority)} priority · ${formatLongDays(card.daysOpen)} · ${formatLastUpdate(card.daysSinceUpdate)}`} />
+                    <ChartRow label="Assessment" value={assessmentLabel} tone={profile.assessmentSigned ? "positive" : "attention"} />
+                    <ChartRow label="Referral documents" value={formatProfileValue(profile.documentStatus)} tone={profile.documentStatus === "Reviewed" ? "positive" : "attention"} />
+                    <ChartRow
+                      label="Requirements"
+                      value={`${profile.openRequirements} open · ${profile.blockingRequirements} blocking`}
+                      tone={profile.openRequirements === 0 && profile.blockingRequirements === 0 ? "positive" : "attention"}
+                    />
+                  </dl>
+                </section>
 
-                  <section data-admissions-chart-section="workflow" aria-labelledby="admissions-chart-workflow">
-                    <ChartBand id="admissions-chart-workflow" title="Workflow details" detail={card.status} />
-                    <dl className="grid grid-cols-2 gap-px bg-[#bfcac5]">
-                      <ProgressFact icon={<UserRound className="h-3.5 w-3.5" aria-hidden="true" />} label="Assigned to" value={card.owner || "Unassigned"} />
-                      <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Time open" value={formatLongDays(card.daysOpen)} />
-                      <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Last update" value={formatLastUpdate(card.daysSinceUpdate)} />
-                      <ProgressFact label="Priority" value={formatPriority(card.priority)} />
-                      <ProgressFact icon={<CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />} label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} />
-                      <ProgressFact label="Community" value={communityName(card)} />
-                    </dl>
-                  </section>
+                <section data-admissions-chart-section="client-context" aria-labelledby="admissions-chart-client-context">
+                  <ChartBand
+                    id="admissions-chart-client-context"
+                    title="Client context"
+                    detail={profile.assessmentSigned ? "Verified from signed assessment" : "Current intake record"}
+                  />
+                  <div className="divide-y divide-[#e1e5e2] border-b border-[#bfcac5] bg-[#fffefb]">
+                    <ChartContextBlock title="At a glance">
+                      {profile.overview.length ? (
+                        <ul className="space-y-2.5" data-admissions-management-overview="true">
+                          {profile.overview.map((item) => (
+                            <li key={item} className="flex items-start gap-2.5 text-[12px] leading-5 text-[#424b47]">
+                              <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#4b7c6b]" aria-hidden="true" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <ChartEmpty>{profile.assessmentSigned ? "No management narrative is recorded in the signed assessment." : "This brief fills in when the assessment is signed."}</ChartEmpty>
+                      )}
+                    </ChartContextBlock>
 
-                </aside>
+                    <ChartContextBlock title="Care and support">
+                      {profile.supportSnapshot.length ? (
+                        <dl className="divide-y divide-[#e7eae8]" data-admissions-management-support="true">
+                          {profile.supportSnapshot.map((item) => <ChartRow key={item.label} label={item.label} value={item.value} compact />)}
+                        </dl>
+                      ) : (
+                        <ChartEmpty>{profile.assessmentSigned ? "No structured support details are recorded." : "Verified support details become available after the assessment is signed."}</ChartEmpty>
+                      )}
+                    </ChartContextBlock>
+
+                    <ChartContextBlock title="Medication handoff" detail={medicationSourceLabel(profile.medicationSource)}>
+                      {profile.medications.length ? (
+                        <ul className="space-y-2" data-admissions-management-medications="true">
+                          {profile.medications.map((medication, index) => (
+                            <li key={`${medication}-${index}`} className="flex items-start gap-2.5 text-[12px] leading-5 text-[#424b47]">
+                              <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#4b7c6b]" aria-hidden="true" />
+                              <span>{medication}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <ChartEmpty>No medication list is recorded in the current referral or signed assessment.</ChartEmpty>
+                      )}
+                    </ChartContextBlock>
+                  </div>
+                </section>
               </div>
 
               <div className="border-t border-[#cfd6d2] bg-[#f7f9f7] px-5 py-3 text-center text-[10px] leading-4 text-[#7f8783] sm:px-8">
@@ -417,26 +407,52 @@ function ProgressModal({
   );
 }
 
-function ProgressFact({ icon, label, value }: { icon?: ReactNode; label: string; value: string }) {
+function ChartRow({
+  label,
+  value,
+  tone = "default",
+  compact = false
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "positive" | "attention";
+  compact?: boolean;
+}) {
   return (
-    <div className="min-w-0 bg-white px-4 py-3.5">
-      <dt className="flex items-center gap-1.5 text-[10px] font-medium text-[#7b837f]">{icon}{label}</dt>
-      <dd className="mt-1.5 break-words text-[12px] font-semibold leading-5 text-[#303532]" title={value}>{value}</dd>
+    <div className={`grid min-w-0 gap-1 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-6 ${compact ? "py-2.5" : "px-5 py-3.5 sm:px-8"}`}>
+      <dt className="text-[10px] font-medium uppercase tracking-[0.07em] text-[#7b837f]">{label}</dt>
+      <dd
+        className={`break-words text-[12px] font-semibold leading-5 ${tone === "positive" ? "text-[#176d51]" : tone === "attention" ? "text-[#75591d]" : "text-[#303532]"}`}
+        title={value}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
 
-function ReadinessFact({ label, value, good }: { label: string; value: string; good: boolean }) {
+function ChartContextBlock({
+  title,
+  detail,
+  children
+}: {
+  title: string;
+  detail?: string | undefined;
+  children: ReactNode;
+}) {
   return (
-    <div className="min-w-0 bg-white px-4 py-4">
-      <dt className="text-[9px] font-medium uppercase tracking-[0.08em] text-[#7b837f]">{label}</dt>
-      <dd className={`mt-1.5 break-words text-[12px] font-semibold leading-5 ${good ? "text-[#176d51]" : "text-[#574f38]"}`}>{value}</dd>
+    <div className="px-5 py-5 sm:px-8 sm:py-6">
+      <div className="mb-3 flex items-baseline justify-between gap-4">
+        <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#4f5e58]">{title}</h4>
+        {detail ? <span className="text-right text-[10px] text-[#7a837e]">{detail}</span> : null}
+      </div>
+      {children}
     </div>
   );
 }
 
 function ChartEmpty({ children }: { children: ReactNode }) {
-  return <p className="bg-[#fffefb] px-5 py-5 text-[12px] leading-5 text-[#727a76] sm:px-8">{children}</p>;
+  return <p className="text-[12px] leading-5 text-[#727a76]">{children}</p>;
 }
 
 function ChartBand({ id, title, detail }: { id: string; title: string; detail?: string | undefined }) {
