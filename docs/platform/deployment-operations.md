@@ -377,6 +377,27 @@ a healthy single revision at 100% traffic, and all four public production
 smoke probes. TypeScript, the deterministic Admissions dashboard check, and
 the production browser build also pass.
 
+### Admissions chart streamlining release — 2026-09-26
+
+The client management chart now follows one vertical reading path instead of
+splitting facts across two competing dashboard columns. Four deliberate
+sections cover the next action, admission brief, workflow and readiness, and
+signed client context. Flat chart rows replace the former fact-card grids while
+preserving placement, referral, payer, owner, timing, assessment, requirement,
+support, and medication information.
+
+- source commit: `579203f`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/27`
+- image tag: `alamo-platform:admissions-chart-streamline-579203f`
+- image digest: `sha256:8519eb08dc81c02eb18a0dba174fe9c70c2d4e59f733ac732ac26022227fafe8`
+- active revision: `alamo-platform-prod-web--admissions-streamline-0927`
+- rollback digest: `sha256:01b1d9fa953fb72797b1292808378b10bb534bb8fd2670be139a13c7a65c532c`
+
+Post-promotion verification confirmed the exact production browser asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. Deterministic desktop and phone renders contained one chart stream,
+four sections, and no horizontal overflow.
+
 ## Local Development
 
 Install and run:
