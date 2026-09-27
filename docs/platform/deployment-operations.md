@@ -279,6 +279,25 @@ traffic, 4/4 public smoke probes, the intended production folder and label
 colors, removal of the old title block, and no horizontal overflow at a
 390-pixel viewport.
 
+### Admissions folder viewport cap — 2026-09-26
+
+The entire management folder, including its tabs, now remains inside the
+visible browser viewport. The outer folder keeps an 8-pixel mobile margin and a
+24-pixel desktop margin; long chart content scrolls inside the paper instead of
+extending the folder beyond the page.
+
+- source commit: `905abca`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/15`
+- image tag: `alamo-platform:admissions-folder-cap-e01f159`
+- image digest: `sha256:7ceabdf89a2e947f53b50a85d96bd0f481a88ce844aa2b2ed4e71988839d79c1`
+- active revision: `alamo-platform-prod-web--admissions-folder-cap-0927`
+- rollback digest: `sha256:d6dc6d4518bdeb40c29c04be02c59fd95adc4f766a56ae642dc6329732850f09`
+
+Production browser verification measured the desktop folder from 24 to 675 in
+a 699-pixel viewport and the mobile folder from 8 to 836 in an 844-pixel
+viewport. The mobile chart scrolls internally with zero horizontal overflow.
+The release also passed all four public production smoke probes.
+
 ## Local Development
 
 Install and run:
