@@ -461,6 +461,28 @@ probes. A fresh load in the owner's signed-in Chrome session showed no
 authentication setup error, placed Admissions below Analytics, and opened the
 native `/admissions` overview from that menu item.
 
+### Admissions decision-color refinement — 2026-09-27
+
+Admissions decision labels now use a more legible executive palette across
+Board cards, List rows, and management-chart folder tabs. `Accept` uses a
+deeper Alamo green with white text, while `Under review` uses a warmer gold
+with dark text and a defined gold border. No decision logic, source data, or
+workflow behavior changed.
+
+- source commit: `37c0f94`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/35`
+- image tag: `alamo-platform:admissions-decision-colors-37c0f94`
+- image digest: `sha256:28b7f08d72a68da6a1e47997eaf689ea3937e20429239a7a78e3c28279acd755`
+- active revision: `alamo-platform-prod-web--admissions-colors-0927`
+- rollback digest: `sha256:1e8c4d9295e091f118e7d079fa6919a92eaab7027a6ffc07052e30aa5919a737`
+
+Post-promotion verification confirmed the exact configured production asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. Deterministic desktop and 390-pixel checks verified the label and folder
+tab colors without horizontal overflow. A fresh load in the owner's signed-in
+Chrome session confirmed six visible `Accept` labels with white text and fifteen
+visible `Under review` labels with the new gold treatment.
+
 ## Local Development
 
 Install and run:
