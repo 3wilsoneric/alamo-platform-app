@@ -70,8 +70,8 @@ requireText(
 );
 requireText(
   platformNavigation,
-  /id: "home"[\s\S]*?id: "admissions"[\s\S]*?id: "analytics"/,
-  "platform pages are not registered in the required Home, Admissions, Analytics order"
+  /id: "home"[\s\S]*?id: "analytics"[\s\S]*?id: "admissions"/,
+  "platform pages are not registered in the required Home, Analytics, Admissions order"
 );
 if (/id: "questions"/.test(platformNavigation)) {
   failures.push("Ask a question is still registered as a top-level platform page");
@@ -88,8 +88,8 @@ requireText(
 );
 requireText(
   platformNavigation,
-  /const ADMISSIONS_NAVIGATION_ENABLED = false;[\s\S]*?ADMISSIONS_NAVIGATION_ENABLED && admissionsAllowed/,
-  "unfinished Admissions navigation is not explicitly disabled behind its temporary flag"
+  /visiblePages = PLATFORM_PAGES\.filter\([\s\S]*?page\.id !== "admissions" \|\| admissionsAllowed/,
+  "Admissions navigation is not gated by the existing account access decision"
 );
 requireText(
   page,

@@ -20,8 +20,16 @@ await withBrowserQa(async (browser) => {
     (element) => window.getComputedStyle(element).backgroundColor
   );
   const admissionsLink = page.locator('[data-california-hero-action="admissions"]');
-  if (await admissionsLink.count()) {
-    throw new Error("Admissions navigation must remain hidden until the overview is finished.");
+  const analyticsLink = page.locator('[data-california-hero-action="analytics"]');
+  if (await admissionsLink.count() !== 1 || await admissionsLink.getAttribute("href") !== "/admissions") {
+    throw new Error("Admissions navigation must be visible to an identity with Admissions access.");
+  }
+  const [analyticsBox, admissionsBox] = await Promise.all([
+    analyticsLink.boundingBox(),
+    admissionsLink.boundingBox()
+  ]);
+  if (!analyticsBox || !admissionsBox || admissionsBox.y <= analyticsBox.y + analyticsBox.height) {
+    throw new Error("Admissions navigation must sit below Analytics.");
   }
   await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
 

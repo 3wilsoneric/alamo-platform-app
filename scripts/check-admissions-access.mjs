@@ -92,12 +92,11 @@ if (
 if (
   !platformNavigation.includes('data-california-hero-action="admissions"') ||
   !platformNavigation.includes('href: "/admissions"') ||
-  !platformNavigation.includes("const ADMISSIONS_NAVIGATION_ENABLED = false") ||
-  !platformNavigation.includes("ADMISSIONS_NAVIGATION_ENABLED && admissionsAllowed") ||
-  !platformNavigation.includes('active !== "analytics"') ||
+  !platformNavigation.includes('page.id !== "admissions" || admissionsAllowed') ||
+  !platformNavigation.match(/id: "home"[\s\S]*id: "analytics"[\s\S]*id: "admissions"/) ||
   !californiaHome.includes("admissionsAllowed={admissionsAccess.allowed}")
 ) {
-  throw new Error("Admissions must retain its route and access boundary while primary navigation remains temporarily disabled.");
+  throw new Error("Admissions navigation must appear below Analytics only for identities with Admissions access.");
 }
 if (!apiAuth.includes("assertApiClaimsWorkspaceAccess(payload)")) {
   throw new Error("The Alamo API must enforce the assessor-only workspace boundary.");
