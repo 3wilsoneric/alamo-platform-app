@@ -321,6 +321,26 @@ absent, the response retains its intended background and radius, and the page
 has zero horizontal overflow at a 390-pixel viewport. The release is healthy at
 100% traffic and passed all four public production smoke probes.
 
+### Admissions attention-label removal — 2026-09-26
+
+The Admissions overview no longer turns Pipeline timing flags into management
+judgments. Automated `Update overdue`, `Move-in overdue`, `No owner`, `Needs
+follow-up`, and `Immediate follow-up` labels are absent from the board, list,
+client chart, and analyst response. Factual workflow status, owner, next action,
+days open, last update, and planned admission remain available.
+
+- source commit: `6d06456`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/21`
+- image tag: `alamo-platform:admissions-no-attention-6d06456`
+- image digest: `sha256:0a2184a1b74f856e82c1ba53ebfd9ef0370122e504dff70b11988f7cd0793a5a`
+- active revision: `alamo-platform-prod-web--admissions-no-attention-0927`
+- rollback digest: `sha256:eb55e1cb950de372a2215653a4f6dd5473e7509b50d1e68ff378d5460141403d`
+
+Post-promotion verification confirmed the removed labels are absent from the
+deployed browser bundle, the retained analyst response content is present, the
+single active revision is healthy at 100% traffic, and all four public
+production smoke probes pass.
+
 ## Local Development
 
 Install and run:
