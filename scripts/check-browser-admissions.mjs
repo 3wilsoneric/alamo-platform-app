@@ -158,6 +158,10 @@ await withBrowserQa(async (browser) => {
   if (chartWidth < 1100) {
     throw new Error(`Desktop management chart is too narrow at ${chartWidth}px.`);
   }
+  const desktopDialogBox = await progressModal.getByRole("dialog").boundingBox();
+  if (!desktopDialogBox || desktopDialogBox.y < 23 || desktopDialogBox.y + desktopDialogBox.height > 877) {
+    throw new Error(`Desktop management chart must remain inside the viewport margin: ${JSON.stringify(desktopDialogBox)}`);
+  }
   const chartPalette = await progressModal.evaluate((element) => {
     const folder = element.querySelector('[data-admissions-chart-folder="true"]');
     const paper = element.querySelector('[data-admissions-chart-paper="true"]');
@@ -218,8 +222,8 @@ await withBrowserQa(async (browser) => {
   }
   const mobileDialog = mobileProgress.getByRole("dialog");
   const dialogBox = await mobileDialog.boundingBox();
-  if (!dialogBox || dialogBox.y < 0 || dialogBox.y + dialogBox.height > 846) {
-    throw new Error(`Admissions progress modal is not anchored to the mobile viewport: ${JSON.stringify(dialogBox)}`);
+  if (!dialogBox || dialogBox.y < 7 || dialogBox.y + dialogBox.height > 837) {
+    throw new Error(`Admissions progress modal must remain inside the mobile viewport margin: ${JSON.stringify(dialogBox)}`);
   }
   const doneColor = await mobileProgress.getByRole("button", { name: "Done" }).evaluate(
     (element) => window.getComputedStyle(element).color
