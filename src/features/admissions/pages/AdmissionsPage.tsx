@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -140,40 +140,77 @@ export default function AdmissionsPage() {
 
 function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissionsPipeline }) {
   const update = buildAdmissionsExecutiveUpdate(pipeline);
+  const lineCount = update ? (update.busiest.length ? 3 : 2) : 1;
+  const responseKey = `${pipeline.generatedAt}:${update?.total ?? 0}:${update?.attention ?? 0}`;
+  const [revealedLines, setRevealedLines] = useState(0);
+  const [typing, setTyping] = useState(true);
 
-  if (!update) {
-    return (
-      <p
-        data-admissions-executive-update="true"
-        className="mb-6 max-w-[1120px] border-l-2 border-[#0f8b73] py-1 pl-4 text-[13px] leading-6 text-[#46504b] sm:text-[14px] sm:leading-7"
-      >
-        There are no active referrals in the current admissions update.
-      </p>
-    );
-  }
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setRevealedLines(lineCount);
+      setTyping(false);
+      return;
+    }
+
+    setRevealedLines(0);
+    setTyping(true);
+    const timers = Array.from({ length: lineCount }, (_, index) => window.setTimeout(
+      () => setRevealedLines(index + 1),
+      120 + index * 260
+    ));
+    timers.push(window.setTimeout(() => setTyping(false), 180 + lineCount * 260));
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [lineCount, responseKey]);
+
+  const lines = update ? [
+    <>
+      Admissions is managing <strong className="font-semibold text-[#183f34]">{update.total} active {pluralize("referral", update.total)}</strong>: <strong className="font-semibold text-[#183f34]">{update.received} newly received</strong>, <strong className="font-semibold text-[#183f34]">{update.inProgress} in assessment and review</strong>, and <strong className="font-semibold text-[#183f34]">{update.decision} at decision</strong>.
+    </>,
+    ...(update.busiest.length ? [
+      <><strong className="font-semibold text-[#183f34]">Where the work is:</strong> {formatCommunityLoad(update.busiest)}.</>
+    ] : []),
+    <>
+      <strong className="font-semibold text-[#183f34]">Immediate follow-up:</strong>{" "}
+      {update.attention ? (
+        <><strong className="font-semibold text-[#183f34]">{update.attention} {pluralize("referral", update.attention)}</strong> {update.attention === 1 ? "requires" : "require"} attention across overdue updates, owner assignments, and overdue move-ins.</>
+      ) : (
+        "No referrals currently carry a workflow exception."
+      )}
+    </>
+  ] : [<>There are no active referrals in the current admissions update.</>];
 
   return (
-    <p
+    <section
       data-admissions-executive-update="true"
-      className="mb-6 max-w-[1120px] border-l-2 border-[#0f8b73] py-1 pl-4 text-[13px] leading-6 text-[#46504b] sm:text-[14px] sm:leading-7"
+      data-admissions-chat-response="true"
+      data-admissions-chat-typing={typing ? "true" : "false"}
+      aria-label="Admissions analyst update"
+      className="mb-6 max-w-[1120px] rounded-2xl bg-[#f4f7f5] px-4 py-4 text-[#46504b] sm:px-5 sm:py-5"
     >
-      <span data-admissions-executive-line="workload" className="block">
-        Admissions is managing <strong className="font-semibold text-[#183f34]">{update.total} active {pluralize("referral", update.total)}</strong>: <strong className="font-semibold text-[#183f34]">{update.received} newly received</strong>, <strong className="font-semibold text-[#183f34]">{update.inProgress} in assessment and review</strong>, and <strong className="font-semibold text-[#183f34]">{update.decision} at decision</strong>.
-      </span>
-      {update.busiest.length ? (
-        <span data-admissions-executive-line="locations" className="mt-1.5 block">
-          <strong className="font-semibold text-[#183f34]">Where the work is:</strong> {formatCommunityLoad(update.busiest)}.
+      <div className="flex items-start gap-3.5">
+        <span data-admissions-chat-avatar="true" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#dcebe5] text-[#176d51] sm:h-9 sm:w-9">
+          <Sparkles className="h-4 w-4" aria-hidden="true" />
         </span>
-      ) : null}
-      <span data-admissions-executive-line="follow-up" className="mt-1.5 block">
-        <strong className="font-semibold text-[#183f34]">Immediate follow-up:</strong>{" "}
-        {update.attention ? (
-          <><strong className="font-semibold text-[#183f34]">{update.attention} {pluralize("referral", update.attention)}</strong> {update.attention === 1 ? "requires" : "require"} attention across overdue updates, owner assignments, and overdue move-ins.</>
-        ) : (
-          "No referrals currently carry a workflow exception."
-        )}
-      </span>
-    </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-h-8 items-center gap-2">
+            <span className="text-[12px] font-semibold text-[#263c35] sm:text-[13px]">Admissions analyst</span>
+            <span className="text-[10px] text-[#7a847f]" aria-hidden="true">{typing ? "Composing…" : "Live update"}</span>
+          </div>
+          <div className="mt-2.5 space-y-2 text-[13px] leading-6 sm:text-[14px] sm:leading-7">
+            {lines.map((line, index) => (
+              <p
+                key={index}
+                data-admissions-executive-line={index === 0 ? "workload" : index === lines.length - 1 ? "follow-up" : "locations"}
+                className={`transition-all duration-300 motion-reduce:translate-y-0 motion-reduce:opacity-100 ${revealedLines > index ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
+              >
+                {line}
+                {typing && revealedLines === index + 1 ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 

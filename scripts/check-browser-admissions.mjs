@@ -62,6 +62,26 @@ await withBrowserQa(async (browser) => {
   if (await executiveUpdate.locator("strong").count() < 6) {
     throw new Error("Admissions executive update has lost its reading hierarchy.");
   }
+  const chatTreatment = await executiveUpdate.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      borderLeftWidth: style.borderLeftWidth,
+      borderRadius: style.borderRadius
+    };
+  });
+  if (
+    await executiveUpdate.getAttribute("data-admissions-chat-response") !== "true" ||
+    await executiveUpdate.locator('[data-admissions-chat-avatar="true"]').count() !== 1 ||
+    chatTreatment.background !== "rgb(244, 247, 245)" ||
+    chatTreatment.borderLeftWidth !== "0px" ||
+    chatTreatment.borderRadius !== "16px"
+  ) {
+    throw new Error(`Admissions executive update lost its assistant-response treatment: ${JSON.stringify(chatTreatment)}`);
+  }
+  if (await executiveUpdate.locator('[data-admissions-executive-line]').first().evaluate((element) => window.getComputedStyle(element).transitionDuration) === "0s") {
+    throw new Error("Admissions analyst response must retain its streaming reveal transition.");
+  }
   const communityFilters = page.locator('[data-admissions-community-filters="true"]');
   await communityFilters.waitFor({ state: "visible" });
   const communityPills = communityFilters.getByRole("button");
