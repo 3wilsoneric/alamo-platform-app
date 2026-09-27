@@ -178,6 +178,25 @@ export interface AdmissionsReferralMonth {
 
 export type AdmissionsBoardColumnKey = "received" | "in_progress" | "decision";
 
+export interface AdmissionsManagementProfile {
+  dateOfBirth: string | null;
+  referralSource: string | null;
+  referringCounty: string | null;
+  payer: string | null;
+  responsiblePerson: string | null;
+  conservedStatus: string | null;
+  documentStatus: string | null;
+  assessmentStatus: string | null;
+  assessmentSigned: boolean;
+  assessmentDate: string | null;
+  openRequirements: number;
+  blockingRequirements: number;
+  overview: string[];
+  supportSnapshot: Array<{ label: string; value: string }>;
+  medications: string[];
+  medicationSource: "signed_assessment" | "referral" | null;
+}
+
 export interface AdmissionsBoardCard {
   referralId: number;
   clientName: string;
@@ -192,6 +211,7 @@ export interface AdmissionsBoardCard {
   daysSinceUpdate: number;
   plannedAdmissionDate: string | null;
   flags: { stale: boolean; unassigned: boolean; moveInOverdue: boolean };
+  managementProfile: AdmissionsManagementProfile;
   pipelineUrl: string;
 }
 

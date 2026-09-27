@@ -116,17 +116,25 @@ await withBrowserQa(async (browser) => {
     path: `${screenshotDir}/desktop-admissions-board.png`,
     fullPage: true
   });
+  const firstClientName = (await page.locator('[data-admissions-board-card]').first().locator('[data-admissions-client-name="true"]').innerText()).trim();
   await page.locator('[data-admissions-board-card]').first().click();
   const progressModal = page.locator('[data-admissions-progress-modal="true"]');
   await progressModal.waitFor({ state: "visible" });
   if (await progressModal.locator('[data-admissions-progress-step]').count() !== 3) {
     throw new Error("Client progress review must show the three referral stages.");
   }
+  const chartTabName = (await progressModal.locator('[data-admissions-chart-tab-name="true"]').innerText()).trim();
   if (
-    await progressModal.locator('[data-admissions-chart-folder-tab="true"]', { hasText: "Referral chart" }).count() !== 1 ||
-    await progressModal.locator('[data-admissions-chart-section]').count() !== 4
+    chartTabName !== firstClientName ||
+    await progressModal.locator('[data-admissions-chart-section]').count() < 8 ||
+    await progressModal.getByRole("heading", { name: "Client and placement" }).count() !== 1 ||
+    await progressModal.getByRole("heading", { name: "Admission readiness" }).count() !== 1
   ) {
-    throw new Error("Client progress review must present the governed referral summary as a four-part chart in its folder.");
+    throw new Error("Client review must use the client name as its folder tab and present the complete management chart.");
+  }
+  const chartWidth = await progressModal.getByRole("dialog").evaluate((element) => element.getBoundingClientRect().width);
+  if (chartWidth < 900) {
+    throw new Error(`Desktop management chart is too narrow at ${chartWidth}px.`);
   }
   const chartPalette = await progressModal.evaluate((element) => {
     const folder = element.querySelector('[data-admissions-chart-folder="true"]');

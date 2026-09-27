@@ -93,6 +93,24 @@ const card = (overrides) => ({
   days_since_update: 1,
   planned_admission_date: null,
   flags: { stale: false, unassigned: false, move_in_overdue: false },
+  management_profile: {
+    date_of_birth: "1981-04-03",
+    referral_source: "County behavioral health",
+    referring_county: "Contra Costa",
+    payer: "Private pay",
+    responsible_person: "Morgan Lee",
+    conserved_status: "no",
+    document_status: "Reviewed",
+    assessment_status: "complete",
+    assessment_signed: true,
+    assessment_date: "2026-09-18",
+    open_requirements: 2,
+    blocking_requirements: 1,
+    overview: ["Current setting: acute psychiatric hospital"],
+    support_snapshot: [{ label: "Mobility", value: "Independent" }],
+    medications: ["Medication A", "Medication B"],
+    medication_source: "signed_assessment"
+  },
   pipeline_path: "/?view=referrals&screen=packet&referralId=11&workspaceStage=assessment",
   ...overrides
 });
@@ -103,7 +121,7 @@ const column = (key, label, statuses) => ({
   statuses: statuses.map(([status, count]) => ({ status, count }))
 });
 const pipelinePayload = {
-  contract_version: "2.0",
+  contract_version: "3.0",
   generated_at: "2026-09-26T13:00:00.000Z",
   board: {
     total: 3,
@@ -113,7 +131,7 @@ const pipelinePayload = {
       column("decision", "Decision", [["Awaiting admit", 1]])
     ],
     cards: [
-      card({ client_name: "Jordan Lee", dob: "1970-01-01" }),
+      card({ client_name: "Jordan Lee", undocumented_note: "must not pass through" }),
       card({ referral_id: 12, column: "received", status: "Referral received", community: "Unassigned", owner: "Unassigned", flags: { stale: true, unassigned: true, move_in_overdue: false } }),
       card({ referral_id: 13, column: "decision", status: "Awaiting admit", community: "Victoria's House", planned_admission_date: "2026-09-20", flags: { stale: false, unassigned: false, move_in_overdue: true } })
     ],
@@ -131,8 +149,10 @@ const summary = normalizePipelineAdmissionsSummary(pipelinePayload, "https://pip
 assert.equal(summary?.status, "connected");
 assert.deepEqual(summary?.metrics, { onBoard: 3, stale: 1, unassigned: 1, awaitingAdmission: 1 });
 assert.equal(summary?.board.cards[0].clientName, "Jordan Lee");
+assert.equal(summary?.board.cards[0].managementProfile.dateOfBirth, "1981-04-03");
+assert.deepEqual(summary?.board.cards[0].managementProfile.supportSnapshot, [{ label: "Mobility", value: "Independent" }]);
 assert.equal(summary?.board.cards[0].pipelineUrl, "https://pipeline.example/?view=referrals&screen=packet&referralId=11&workspaceStage=assessment");
-assert.ok(!JSON.stringify(summary).includes("1970"), "undocumented fields do not pass through");
+assert.ok(!JSON.stringify(summary).includes("must not pass through"), "undocumented fields do not pass through");
 const reject = (cardOverrides) => normalizePipelineAdmissionsSummary({
   ...pipelinePayload,
   board: { ...pipelinePayload.board, cards: [card(cardOverrides)] }

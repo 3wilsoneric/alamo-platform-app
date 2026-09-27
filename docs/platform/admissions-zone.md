@@ -28,11 +28,11 @@ repeated page title, explanatory subtitle, or KPI strip.
   communities carry the most activity, and what needs immediate follow-up.
   Community workload is stated in natural language without parenthetical
   counts. Selecting a client opens an Alamo-native referral chart in a
-  Pipeline-inspired manila folder frame. Its white chart sheet puts identity,
-  next required action, referral facts, workflow progress, and review focus in
-  the same scan order used during an operational chart review. It includes
-  current status, assignment, timing, planned admission, priority, and review
-  flags without expanding the bounded summary contract. Community is the only filter:
+  Pipeline-inspired manila folder frame, with the client name on the folder
+  tab. Its larger white chart sheet is a management-facing Meet the Client:
+  client and placement facts, a signed-assessment management brief, care and
+  support context, medication handoff, admission readiness, workflow progress,
+  and review focus. Community is the only filter:
   pill controls support selecting multiple communities, while All communities
   resets the complete board. A List toggle shows the same governed slice.
 - **Census** — one compact portfolio row followed by the five communities,
@@ -45,9 +45,10 @@ repeated page title, explanatory subtitle, or KPI strip.
 Census and flow come from the governed snapshot tables
 `community_operating_summary`, `resident_flow_weekly_by_community`, and
 `resident_flow_monthly_by_community`. Census data is counts only: the flow tables also carry resident names, and
-the builder never copies them. The referral board receives the client name from
-Pipeline; referral documents, extracted fields, and assessment details are not
-copied into this overview.
+the builder never copies them. The referral board receives a deliberately
+bounded PHI profile from Pipeline for management review. Raw referral notes,
+contacts, documents, extraction evidence, and unsigned assessment narrative
+are not copied into this overview.
 
 ## Referral summary contract
 
@@ -64,12 +65,15 @@ server, never from the browser and never through Pipeline's internal APIs.
 - response: `board` (`total`, `cards_truncated`, `columns[]` with per-status
   counts, and up to 300 `cards[]`: `referral_id`, `client_name`, `column`, `status`,
   `next_action`, `community`, `owner`, `priority`, `days_open`,
-  `days_since_update`, `planned_admission_date`, `flags`, and a relative
-  `pipeline_path`), `metrics`, `upcoming_admissions`, and `history`
-  (`month_outcomes`, six `monthly[]` rows, `decision_timing`). Client name is
-  included as part of the authenticated Platform's existing PHI workflow. DOB,
-  contact details, referral sources, notes, and documents are not copied into
-  the Platform summary.
+  `days_since_update`, `planned_admission_date`, `flags`, a bounded
+  `management_profile`, and a relative `pipeline_path`), `metrics`,
+  `upcoming_admissions`, and `history` (`month_outcomes`, six `monthly[]` rows,
+  `decision_timing`). The management profile includes client name, DOB,
+  referral source, county, payer, responsible person, conservatorship,
+  assessment/readiness state, and capped medication data. Its narrative and
+  support snapshot are populated only from a signed assessment. Raw notes,
+  contact details, documents, extraction evidence, and unsigned assessment
+  narrative do not cross this contract.
 - `pipeline_path` must be a query-only relative path; Alamo joins it to the
   configured Pipeline origin and drops the whole summary if any row fails the
   contract.
@@ -77,8 +81,9 @@ server, never from the browser and never through Pipeline's internal APIs.
   `shared/community-names.mjs` aliases; unmatched labels (such as
   "Unassigned") show as "No community" on the board and in its filter.
 
-`server/pipeline-admissions-summary.mjs` keeps only these fields, caches a good
-response for five minutes, and falls back to an "unavailable" state after a
+`server/pipeline-admissions-summary.mjs` keeps only these fields with explicit
+text and array limits, caches a good response for five minutes, and falls back
+to an "unavailable" state after a
 five-second timeout or a contract mismatch, so census and flow still render.
 
 ## Full Pipeline application
@@ -110,8 +115,8 @@ application owns its authentication redirects and browser origin.
 
 Both applications use the same Entra tenant and browser application pattern.
 Every signed-in Alamo Platform user can open the Admissions overview, including
-the client name on each referral card, under the same authenticated PHI boundary
-as resident and incident views. The Admissions roles still control the
+the client name and management chart for each referral, under the same
+authenticated PHI boundary as resident and incident views. The Admissions roles still control the
 assessor-only workspace boundary. Pipeline independently validates its own
 session and roles before exposing referral or document data.
 
