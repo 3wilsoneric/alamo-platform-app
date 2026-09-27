@@ -239,6 +239,27 @@ public smoke probes, 21 named admissions with management profiles, six signed
 assessment profiles, client-name tab identity, nine chart sections, and no
 horizontal overflow at a 390-pixel viewport.
 
+### Admissions decision tabs release — 2026-09-26
+
+The management chart is expanded to 1240 pixels on desktop. Its client name is
+now isolated on a larger white folder label beside a decision tab: green
+`Accept`, red `Deny`, or yellow `Under review`. Accepted, awaiting-admit, and
+Meet-the-Client-pending statuses map to `Accept`; declined or denied statuses
+map to `Deny`; all earlier workflow states map to `Under review`.
+
+- source commit: `0accb73`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/11`
+- image tag: `alamo-platform:admissions-decision-tabs-44e0ecb`
+- image digest: `sha256:08521d6ce65ea83c0d92506cbaa5fd9fb9f46aa9e75e96fe749f67ce78f2ca9b`
+- active revision: `alamo-platform-prod-web--admissions-tabs-0927`
+- rollback digest: `sha256:c25f70d4c2dfba2158e51960c2e99ee3ac7d6207ce789e9ee0ff1cff0fadc29d`
+
+Post-promotion verification confirmed a healthy single active revision at 100%
+traffic, 4/4 public smoke probes, correct client-name identity across all 21
+live cards, correct live mapping for six accepted and 15 under-review cards,
+synthetic coverage for the deny state, and no horizontal overflow at a
+390-pixel viewport.
+
 ## Local Development
 
 Install and run:
