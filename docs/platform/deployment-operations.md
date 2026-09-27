@@ -298,6 +298,29 @@ a 699-pixel viewport and the mobile folder from 8 to 836 in an 844-pixel
 viewport. The mobile chart scrolls internally with zero horizontal overflow.
 The release also passed all four public production smoke probes.
 
+### Admissions analyst response release — 2026-09-26
+
+The Board's governed executive update now reads as an Admissions analyst
+response instead of a bordered report paragraph. A compact analyst identity,
+soft response surface, selective emphasis, and a short staged reveal preserve
+the same workload, community, and follow-up facts while making the update feel
+generated and conversational. Reduced-motion users receive the complete answer
+immediately. A scoped theme rule preserves the 16-pixel response radius without
+changing the Platform's sharper treatment elsewhere.
+
+- source commits: `1d12635`, `f5c87e6`, `2e1afd3`
+- source PRs: `https://github.com/3wilsoneric/alamo-platform-app/pull/17`, `https://github.com/3wilsoneric/alamo-platform-app/pull/18`, `https://github.com/3wilsoneric/alamo-platform-app/pull/19`
+- image tag: `alamo-platform:admissions-chat-theme-2e1afd3`
+- image digest: `sha256:eb55e1cb950de372a2215653a4f6dd5473e7509b50d1e68ff378d5460141403d`
+- active revision: `alamo-platform-prod-web--admissions-chat-theme-0927`
+- rollback digest: `sha256:e71b3bd4a2b441aafb1bab898ff6bd2c1ab81faea443fa9cd127ad20e9a1ef6c`
+
+Production browser verification confirmed the staged reveal completes, the
+three formatted lines and analyst mark remain visible, the old left border is
+absent, the response retains its intended background and radius, and the page
+has zero horizontal overflow at a 390-pixel viewport. The release is healthy at
+100% traffic and passed all four public production smoke probes.
+
 ## Local Development
 
 Install and run:
