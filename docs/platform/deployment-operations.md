@@ -358,6 +358,25 @@ Post-promotion verification confirmed the active-view treatment in the
 deployed browser bundle, a healthy single revision at 100% traffic, and all
 four public production smoke probes.
 
+### Admissions modal dismissal release — 2026-09-26
+
+The Admissions management chart no longer includes a redundant full-width
+`Done` action. Users dismiss the chart with the corner close control, by
+clicking the surrounding backdrop, or with Escape. The chart content and
+Pipeline data contract are unchanged.
+
+- source commit: `e14f666`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/25`
+- image tag: `alamo-platform:admissions-modal-dismiss-e14f666`
+- image digest: `sha256:01b1d9fa953fb72797b1292808378b10bb534bb8fd2670be139a13c7a65c532c`
+- active revision: `alamo-platform-prod-web--admissions-dismiss-0927`
+- rollback digest: `sha256:121a0ff2216a9298e4fa7a99fcfc76b67924d35e9389be4e7afac1f13498cbe0`
+
+Post-promotion verification confirmed the exact production browser asset,
+a healthy single revision at 100% traffic, and all four public production
+smoke probes. TypeScript, the deterministic Admissions dashboard check, and
+the production browser build also pass.
+
 ## Local Development
 
 Install and run:
