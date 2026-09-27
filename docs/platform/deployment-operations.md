@@ -205,6 +205,40 @@ overflow checks, the expected folder treatment in the production bundle, a
 connected payload with 21 of 21 named cards, five communities, portfolio census
 541, and 4/4 public smoke probes.
 
+### Admissions management chart release — 2026-09-26
+
+The client folder now opens as a larger management chart. Its folder tab is the
+client name, and the chart adds client and placement facts, signed-assessment
+overview and support items, medication handoff, admission readiness, workflow
+progress, workflow details, and review focus. Narrative assessment data is
+included only from a signed assessment; unsigned narrative, contacts,
+documents, raw notes, and extraction evidence remain outside the Platform
+summary contract.
+
+Pipeline producer:
+
+- source commit: `71896caf`
+- source PR: `https://github.com/3wilsoneric/pipeline-app/pull/210`
+- active revision: `pipeline-prod-web--b39c377c21d11ae9`
+- contract version: `3.0`
+
+Platform consumer:
+
+- source commit: `33a14c1`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/9`
+- image tag: `alamo-platform:admissions-management-auth-a0a9e14`
+- image digest: `sha256:c25f70d4c2dfba2158e51960c2e99ee3ac7d6207ce789e9ee0ff1cff0fadc29d`
+- active revision: `alamo-platform-prod-web--admissions-mgmt-auth-0927`
+- rollback digest: `sha256:69bf936c2cf79f398b3b1fb931a5aaaef1418dead54c40833e4718d4cb4e1a7f`
+
+The release replaces the browser bundle and Pipeline summary normalizer on the
+preceding known-good runtime. The browser bundle was built with the production
+`VITE_ENTRA_*` public configuration before image promotion. Post-promotion
+verification confirmed a healthy single active revision at 100% traffic, 4/4
+public smoke probes, 21 named admissions with management profiles, six signed
+assessment profiles, client-name tab identity, nine chart sections, and no
+horizontal overflow at a 390-pixel viewport.
+
 ## Local Development
 
 Install and run:
