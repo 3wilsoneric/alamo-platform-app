@@ -398,6 +398,27 @@ healthy single revision at 100% traffic, and all four public production smoke
 probes. Deterministic desktop and phone renders contained one chart stream,
 four sections, and no horizontal overflow.
 
+### Admissions executive card release — 2026-09-26
+
+The Admissions Board and List now present each referral as an executive
+briefing rather than an operator task card. Raw workflow instructions such as
+`Continue preparation` are no longer shown. Each referral surfaces its
+decision, stage, accountable owner, time open and update freshness, planned
+admission, and an evidence-based readiness summary. The detailed chart also
+reframes its former next-action callout as `Current management focus`.
+
+- source commit: `6ca694c`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/29`
+- image tag: `alamo-platform:admissions-ceo-cards-6ca694c`
+- image digest: `sha256:d0359b87e5ef9bba5dfa286a8923cd86e68c162873752f9c449b6dedcf4dea20`
+- active revision: `alamo-platform-prod-web--admissions-ceo-cards-0927`
+- rollback digest: `sha256:8519eb08dc81c02eb18a0dba174fe9c70c2d4e59f733ac732ac26022227fafe8`
+
+Post-promotion verification confirmed the exact production browser asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. Deterministic desktop and phone renders showed the executive fields,
+excluded raw workflow-action copy, and had no horizontal overflow.
+
 ## Local Development
 
 Install and run:
