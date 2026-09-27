@@ -532,6 +532,28 @@ and 390-pixel Admissions checks verified right-side placement without overflow.
 A fresh load in the owner's signed-in Chrome session confirmed Analytics on the
 right side of `/admissions` with no authentication setup error.
 
+### Admissions explicit review-status correction — 2026-09-27
+
+Admissions now displays `Under review` only when Pipeline explicitly reports
+that status. Accepted and denied status mappings are unchanged; every other
+undecided workflow status now displays as `In progress` with a blue treatment
+instead of being inferred as a yellow review decision.
+
+- source commit: `cf5ac4d`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/41`
+- image tag: `alamo-platform:admissions-explicit-review-cf5ac4d`
+- image digest: `sha256:27078ece1f18465312cc3ef725e25b536b75062c737f055507509cd88b6edc6e`
+- active revision: `alamo-platform-prod-web--admissions-review-status-0927`
+- rollback digest: `sha256:1a441d5e6f166e1b38ffddbdeb00ff9443901d79717c2de9607024d04b6c5430`
+
+Post-promotion verification confirmed the exact configured production asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. Deterministic desktop and 390-pixel browser checks covered both an
+ordinary in-progress record and an explicit Pipeline `Under Review` record. A
+fresh load in the owner's signed-in Chrome session confirmed all 21 live cards
+matched their source statuses: six accepted, 15 in progress, zero incorrectly
+inferred as under review, and no authentication setup error.
+
 ## Local Development
 
 Install and run:
