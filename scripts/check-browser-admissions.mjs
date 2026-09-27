@@ -238,6 +238,13 @@ await withBrowserQa(async (browser) => {
       throw new Error(`Accept decisions must use the strong green treatment with white text: ${JSON.stringify(acceptTreatment)}`);
     }
   }
+  const explicitReviewCard = page.locator('[data-admissions-board-card][aria-label*="Under Review"]');
+  if (
+    await explicitReviewCard.count() !== 1 ||
+    await explicitReviewCard.locator('[data-admissions-card-decision="under-review"]').count() !== 1
+  ) {
+    throw new Error("Only an explicit Pipeline Under Review status may use the Under review category.");
+  }
   await firstBoardCard.click();
   const progressModal = page.locator('[data-admissions-progress-modal="true"]');
   await progressModal.waitFor({ state: "visible" });
@@ -264,19 +271,19 @@ await withBrowserQa(async (browser) => {
     labelHeight: element.getBoundingClientRect().height
   }));
   folderTabTreatment.tabHeight = await chartNameTab.evaluate((element) => element.getBoundingClientRect().height);
-  const reviewTreatment = await decisionTab.evaluate((element) => {
+  const progressTreatment = await decisionTab.evaluate((element) => {
     const style = window.getComputedStyle(element);
     return { background: style.backgroundColor, color: style.color };
   });
   if (
     folderTabTreatment.background !== "rgb(255, 253, 250)" ||
     folderTabTreatment.tabHeight < 64 ||
-    (await decisionTab.textContent())?.trim() !== "Under review" ||
-    (await decisionTab.getAttribute("data-admissions-decision-tab")) !== "under-review" ||
-    reviewTreatment.background !== "rgb(243, 198, 79)" ||
-    reviewTreatment.color !== "rgb(64, 48, 0)"
+    (await decisionTab.textContent())?.trim() !== "In progress" ||
+    (await decisionTab.getAttribute("data-admissions-decision-tab")) !== "in-progress" ||
+    progressTreatment.background !== "rgb(54, 95, 199)" ||
+    progressTreatment.color !== "rgb(255, 255, 255)"
   ) {
-    throw new Error(`Admissions chart must pair a large white client label with its refined decision tab: ${JSON.stringify({ folderTabTreatment, reviewTreatment })}`);
+    throw new Error(`Admissions chart must pair a large white client label with its explicit Pipeline status category: ${JSON.stringify({ folderTabTreatment, progressTreatment })}`);
   }
   if (
     await progressModal.getByText("Admissions management chart", { exact: true }).count() ||
@@ -351,9 +358,9 @@ await withBrowserQa(async (browser) => {
   if (
     await mobileProgress.locator('[data-admissions-chart-name-tab="true"]').count() !== 1 ||
     await mobileProgress.locator('[data-admissions-chart-name-label="true"]').count() !== 1 ||
-    await mobileProgress.locator('[data-admissions-decision-tab="under-review"]').count() !== 1
+    await mobileProgress.locator('[data-admissions-decision-tab="in-progress"]').count() !== 1
   ) {
-    throw new Error("Mobile management chart must retain the separate client and decision tabs.");
+    throw new Error("Mobile management chart must retain the separate client and Pipeline status tabs.");
   }
   const modalOverflow = await mobileProgress.evaluate(
     (element) => element.scrollWidth - element.clientWidth
