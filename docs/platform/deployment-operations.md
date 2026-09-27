@@ -508,6 +508,30 @@ the response remained in the composing state while its visible text grew, then
 finished with all six live accepted clients in the leading paragraph, no
 authentication setup error, and no horizontal overflow.
 
+### Admissions Analytics-navigation placement — 2026-09-27
+
+The Admissions page-level navigation now keeps Home on the left and places
+Analytics at the far right of the header. The same alignment is preserved at
+desktop and mobile widths; navigation destinations and access rules are
+unchanged.
+
+- source commit: `a573838`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/39`
+- image tag: `alamo-platform:admissions-analytics-right-a573838`
+- image digest: `sha256:1a441d5e6f166e1b38ffddbdeb00ff9443901d79717c2de9607024d04b6c5430`
+- active revision: `alamo-platform-prod-web--admissions-nav-right-0927`
+- rollback digest: `sha256:16c8de1f4be9fa83403eaf0c5bf14368a33d4fad49a8012a44e69e80cf2736f1`
+
+The frontend-only release was rebuilt over the stable runtime image
+`sha256:1e8c4d9295e091f118e7d079fa6919a92eaab7027a6ffc07052e30aa5919a737`
+to collapse accumulated frontend layers after the registry reached its maximum
+image depth; backend behavior was unchanged. Post-promotion verification
+confirmed the exact tested production JavaScript asset, one active revision at
+100% traffic, and all four public production smoke probes. Deterministic desktop
+and 390-pixel Admissions checks verified right-side placement without overflow.
+A fresh load in the owner's signed-in Chrome session confirmed Analytics on the
+right side of `/admissions` with no authentication setup error.
+
 ## Local Development
 
 Install and run:
