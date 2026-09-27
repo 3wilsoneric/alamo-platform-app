@@ -3,16 +3,14 @@ import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 
 export type PlatformPage = "home" | "admissions" | "analytics";
 
-const ADMISSIONS_NAVIGATION_ENABLED = false;
-
 const PLATFORM_PAGES: Array<{
   id: PlatformPage;
   label: string;
   href: string;
 }> = [
   { id: "home", label: "Home", href: "/home" },
-  { id: "admissions", label: "Admissions", href: "/admissions" },
-  { id: "analytics", label: "Analytics", href: "/analytics" }
+  { id: "analytics", label: "Analytics", href: "/analytics" },
+  { id: "admissions", label: "Admissions", href: "/admissions" }
 ];
 
 export default function PlatformPageNavigation({
@@ -25,9 +23,7 @@ export default function PlatformPageNavigation({
   onNavigate: (page: Exclude<PlatformPage, "admissions">) => void;
 }) {
   const visiblePages = PLATFORM_PAGES.filter(
-    (page) =>
-      page.id !== "admissions" ||
-      (ADMISSIONS_NAVIGATION_ENABLED && admissionsAllowed && active !== "analytics")
+    (page) => page.id !== "admissions" || admissionsAllowed
   );
   const activeIndex = PLATFORM_PAGES.findIndex((page) => page.id === active);
   const previousPages = visiblePages.filter(
