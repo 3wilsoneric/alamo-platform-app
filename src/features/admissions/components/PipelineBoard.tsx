@@ -409,11 +409,6 @@ function ProgressModal({
               </div>
             </div>
 
-            <footer className="shrink-0 border-t border-[#c7cfcb] bg-[#f8faf8] px-5 py-3 sm:px-7 sm:py-4">
-              <button type="button" onClick={onClose} style={{ color: "#ffffff" }} className="min-h-11 w-full rounded-lg bg-[#163f36] px-4 text-[12px] font-semibold transition hover:bg-[#0f795f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]">
-                Done
-              </button>
-            </footer>
           </article>
         </div>
       </section>

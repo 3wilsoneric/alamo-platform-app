@@ -265,17 +265,19 @@ await withBrowserQa(async (browser) => {
   if (!dialogBox || dialogBox.y < 7 || dialogBox.y + dialogBox.height > 837) {
     throw new Error(`Admissions progress modal must remain inside the mobile viewport margin: ${JSON.stringify(dialogBox)}`);
   }
-  const doneColor = await mobileProgress.getByRole("button", { name: "Done" }).evaluate(
-    (element) => window.getComputedStyle(element).color
-  );
-  if (doneColor !== "rgb(255, 255, 255)") {
-    throw new Error(`Admissions progress modal action lost its white label: ${doneColor}`);
+  if (await mobileProgress.getByRole("button", { name: "Done" }).count()) {
+    throw new Error("Admissions progress modal must rely on the corner close control and backdrop, not a redundant Done action.");
   }
   await mobilePage.screenshot({
     path: `${screenshotDir}/mobile-admissions-progress.png`,
     fullPage: false
   });
-  await mobileProgress.getByRole("button", { name: "Done" }).click();
+  await mobileProgress.getByRole("button", { name: "Close management chart" }).click();
+  await mobileProgress.waitFor({ state: "hidden" });
+  await mobilePage.locator('[data-admissions-board-card]').first().click();
+  await mobileProgress.waitFor({ state: "visible" });
+  await mobileProgress.click({ position: { x: 1, y: 1 } });
+  await mobileProgress.waitFor({ state: "hidden" });
   await mobilePage.getByRole("tab", { name: /^Census/ }).click();
   if (await mobilePage.locator('[data-admissions-community-census-card]').count() !== 5) {
     throw new Error("Admissions overview does not render all five mobile community census cards.");
