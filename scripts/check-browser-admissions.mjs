@@ -97,6 +97,23 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Community pills must be the Admissions board's only filters.");
   }
+  const layoutToggle = page.locator('[data-admissions-layout-toggle="true"]');
+  const boardViewButton = layoutToggle.getByRole("button", { name: "Board" });
+  const listViewButton = layoutToggle.getByRole("button", { name: "List" });
+  const initialViewTreatment = {
+    group: await layoutToggle.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    board: await boardViewButton.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    list: await listViewButton.evaluate((element) => window.getComputedStyle(element).backgroundColor)
+  };
+  if (
+    initialViewTreatment.group !== "rgba(0, 0, 0, 0)" ||
+    initialViewTreatment.board !== "rgb(229, 242, 236)" ||
+    initialViewTreatment.list !== "rgba(0, 0, 0, 0)" ||
+    await boardViewButton.getAttribute("aria-pressed") !== "true" ||
+    await listViewButton.getAttribute("aria-pressed") !== "false"
+  ) {
+    throw new Error(`Admissions view control must highlight only the active page without a gray tray: ${JSON.stringify(initialViewTreatment)}`);
+  }
   const allCardsCount = await page.locator('[data-admissions-board-card]').count();
   const allCommunitiesPill = communityFilters.getByRole("button", { name: "All communities" });
   const firstCommunityPill = communityPills.nth(1);

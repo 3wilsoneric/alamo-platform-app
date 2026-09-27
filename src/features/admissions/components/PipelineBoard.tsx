@@ -101,7 +101,7 @@ export default function PipelineBoard({
               </CommunityPill>
             ) : null}
           </div>
-          <div className="flex shrink-0 self-end rounded-lg bg-[#e9ecef] p-1 sm:self-start" role="group" aria-label="Board layout">
+          <div data-admissions-layout-toggle="true" className="flex shrink-0 self-end gap-1 sm:self-start" role="group" aria-label="Board layout">
             <ViewButton active={view === "board"} onClick={() => setView("board")} icon={<Columns3 className="h-3.5 w-3.5" aria-hidden="true" />}>Board</ViewButton>
             <ViewButton active={view === "list"} onClick={() => setView("list")} icon={<List className="h-3.5 w-3.5" aria-hidden="true" />}>List</ViewButton>
           </div>
@@ -556,11 +556,12 @@ function ViewButton({ active, onClick, icon, children }: { active: boolean; onCl
     <button
       type="button"
       aria-pressed={active}
+      data-admissions-view-active={active ? "true" : "false"}
       onClick={onClick}
-      className={`inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 text-[11px] font-medium transition-colors ${active ? "bg-white text-[#171918] shadow-sm" : "text-[#59615c] hover:bg-white/60"}`}
+      className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3.5 text-[12px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "bg-[#e5f2ec] text-[#145e48]" : "bg-transparent text-[#59615c] hover:bg-[#f3f6f4] hover:text-[#2f4c43]"}`}
     >
       {icon}
-      <span className="hidden sm:inline">{children}</span>
+      <span>{children}</span>
     </button>
   );
 }
