@@ -140,8 +140,8 @@ export default function AdmissionsPage() {
 
 function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissionsPipeline }) {
   const update = buildAdmissionsExecutiveUpdate(pipeline);
-  const lineCount = update ? (update.busiest.length ? 3 : 2) : 1;
-  const responseKey = `${pipeline.generatedAt}:${update?.total ?? 0}:${update?.attention ?? 0}`;
+  const lineCount = update ? (update.busiest.length ? 2 : 1) : 1;
+  const responseKey = `${pipeline.generatedAt}:${update?.total ?? 0}`;
   const [revealedLines, setRevealedLines] = useState(0);
   const [typing, setTyping] = useState(true);
 
@@ -168,15 +168,7 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
     </>,
     ...(update.busiest.length ? [
       <><strong className="font-semibold text-[#183f34]">Where the work is:</strong> {formatCommunityLoad(update.busiest)}.</>
-    ] : []),
-    <>
-      <strong className="font-semibold text-[#183f34]">Immediate follow-up:</strong>{" "}
-      {update.attention ? (
-        <><strong className="font-semibold text-[#183f34]">{update.attention} {pluralize("referral", update.attention)}</strong> {update.attention === 1 ? "requires" : "require"} attention across overdue updates, owner assignments, and overdue move-ins.</>
-      ) : (
-        "No referrals currently carry a workflow exception."
-      )}
-    </>
+    ] : [])
   ] : [<>There are no active referrals in the current admissions update.</>];
 
   return (
@@ -200,7 +192,7 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
             {lines.map((line, index) => (
               <p
                 key={index}
-                data-admissions-executive-line={index === 0 ? "workload" : index === lines.length - 1 ? "follow-up" : "locations"}
+                data-admissions-executive-line={index === 0 ? "workload" : "locations"}
                 className={`transition-all duration-300 motion-reduce:translate-y-0 motion-reduce:opacity-100 ${revealedLines > index ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
               >
                 {line}
@@ -222,9 +214,6 @@ function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
   const received = columns.get("received") ?? 0;
   const inProgress = columns.get("in_progress") ?? 0;
   const decision = columns.get("decision") ?? 0;
-  const attention = pipeline.board.cards.filter((card) =>
-    card.flags.stale || card.flags.unassigned || card.flags.moveInOverdue
-  ).length;
   const communityCounts = new Map<string, number>();
   for (const card of pipeline.board.cards) {
     const community = card.facilityId ? card.community : "No community assigned";
@@ -235,7 +224,7 @@ function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
     .slice(0, 3)
     .map(([name, count]) => ({ name, count }));
 
-  return { total, received, inProgress, decision, attention, busiest };
+  return { total, received, inProgress, decision, busiest };
 }
 
 function formatCommunityLoad(communities: Array<{ name: string; count: number }>) {
