@@ -326,6 +326,17 @@ function validateAdmissionsDashboardPayload(value: unknown) {
       ["facilityId", "plannedAdmissionDate"].forEach((field) => assertString(card[field], endpoint, `${path}.${field}`, { nullable: true }));
       const flags = assertRecord(card.flags, endpoint, `${path}.flags`);
       ["stale", "unassigned", "moveInOverdue"].forEach((field) => assertBoolean(flags[field], endpoint, `${path}.flags.${field}`));
+      const profile = assertRecord(card.managementProfile, endpoint, `${path}.managementProfile`);
+      ["dateOfBirth", "referralSource", "referringCounty", "payer", "responsiblePerson", "conservedStatus", "documentStatus", "assessmentStatus", "assessmentDate", "medicationSource"].forEach((field) => assertString(profile[field], endpoint, `${path}.managementProfile.${field}`, { nullable: true }));
+      assertBoolean(profile.assessmentSigned, endpoint, `${path}.managementProfile.assessmentSigned`);
+      ["openRequirements", "blockingRequirements"].forEach((field) => assertNumber(profile[field], endpoint, `${path}.managementProfile.${field}`));
+      assertArray(profile.overview, endpoint, `${path}.managementProfile.overview`).forEach((value, index) => assertString(value, endpoint, `${path}.managementProfile.overview[${index}]`));
+      assertArray(profile.medications, endpoint, `${path}.managementProfile.medications`).forEach((value, index) => assertString(value, endpoint, `${path}.managementProfile.medications[${index}]`));
+      assertArray(profile.supportSnapshot, endpoint, `${path}.managementProfile.supportSnapshot`).forEach((itemValue, index) => {
+        const item = assertRecord(itemValue, endpoint, `${path}.managementProfile.supportSnapshot[${index}]`);
+        assertString(item.label, endpoint, `${path}.managementProfile.supportSnapshot[${index}].label`);
+        assertString(item.value, endpoint, `${path}.managementProfile.supportSnapshot[${index}].value`);
+      });
       if (!/^https?:\/\//.test(String(card.pipelineUrl))) fail(endpoint, `${path}.pipelineUrl must be a web link`);
     });
     assertCounts(referralPipeline.metrics, "referral_pipeline.metrics", ["onBoard", "stale", "unassigned", "awaitingAdmission"]);

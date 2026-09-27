@@ -48,6 +48,77 @@ function flag(value) {
   return typeof value === "boolean" ? value : null;
 }
 
+function nullableText(value, maximumLength) {
+  return value == null || value === "" ? null : text(value, maximumLength);
+}
+
+function textArray(value, maximumItems, maximumLength) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > maximumItems) return null;
+  const normalized = value.map((item) => text(item, maximumLength));
+  return normalized.some((item) => !item) ? null : normalized;
+}
+
+function normalizeManagementProfile(profile) {
+  if (profile === undefined) {
+    return {
+      dateOfBirth: null,
+      referralSource: null,
+      referringCounty: null,
+      payer: null,
+      responsiblePerson: null,
+      conservedStatus: null,
+      documentStatus: null,
+      assessmentStatus: null,
+      assessmentSigned: false,
+      assessmentDate: null,
+      openRequirements: 0,
+      blockingRequirements: 0,
+      overview: [],
+      supportSnapshot: [],
+      medications: [],
+      medicationSource: null
+    };
+  }
+  if (!profile || typeof profile !== "object") return null;
+  const overview = textArray(profile.overview, 4, 320);
+  const medications = textArray(profile.medications, 16, 160);
+  const support = Array.isArray(profile.support_snapshot) && profile.support_snapshot.length <= 8
+    ? profile.support_snapshot.map((item) => ({ label: text(item?.label, 80), value: text(item?.value, 320) }))
+    : null;
+  const signed = flag(profile.assessment_signed);
+  const openRequirements = count(profile.open_requirements);
+  const blockingRequirements = count(profile.blocking_requirements);
+  const medicationSource = profile.medication_source == null
+    ? null
+    : (["signed_assessment", "referral"].includes(profile.medication_source) ? profile.medication_source : undefined);
+  if (
+    !overview || !medications || !support || support.some((item) => !item.label || !item.value) ||
+    signed == null || openRequirements == null || blockingRequirements == null ||
+    medicationSource === undefined || blockingRequirements > openRequirements
+  ) {
+    return null;
+  }
+  return {
+    dateOfBirth: nullableText(profile.date_of_birth, 40),
+    referralSource: nullableText(profile.referral_source, 160),
+    referringCounty: nullableText(profile.referring_county, 120),
+    payer: nullableText(profile.payer, 160),
+    responsiblePerson: nullableText(profile.responsible_person, 160),
+    conservedStatus: nullableText(profile.conserved_status, 80),
+    documentStatus: nullableText(profile.document_status, 80),
+    assessmentStatus: nullableText(profile.assessment_status, 80),
+    assessmentSigned: signed,
+    assessmentDate: nullableText(profile.assessment_date, 40),
+    openRequirements,
+    blockingRequirements,
+    overview,
+    supportSnapshot: support,
+    medications,
+    medicationSource
+  };
+}
+
 function normalizeCard(card, pipelineOrigin) {
   const referralId = count(card?.referral_id);
   const clientName = text(card?.client_name, 160);
@@ -65,12 +136,13 @@ function normalizeCard(card, pipelineOrigin) {
     unassigned: flag(card?.flags?.unassigned),
     moveInOverdue: flag(card?.flags?.move_in_overdue)
   };
+  const managementProfile = normalizeManagementProfile(card?.management_profile);
   const path = typeof card?.pipeline_path === "string" && PIPELINE_PATH.test(card.pipeline_path) ? card.pipeline_path : null;
   if (
     referralId == null || !clientName || !column || !status || !community || daysSinceUpdate == null ||
     (card?.days_open !== null && daysOpen == null) ||
     (card?.planned_admission_date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(planned ?? "")) ||
-    Object.values(flags).some((value) => value == null) || !path
+    Object.values(flags).some((value) => value == null) || !managementProfile || !path
   ) {
     return null;
   }
@@ -87,6 +159,7 @@ function normalizeCard(card, pipelineOrigin) {
     daysSinceUpdate,
     plannedAdmissionDate: planned,
     flags,
+    managementProfile,
     pipelineUrl: `${pipelineOrigin}${path}`
   };
 }

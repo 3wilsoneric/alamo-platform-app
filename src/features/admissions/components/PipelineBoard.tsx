@@ -179,8 +179,13 @@ function ProgressModal({
   onClose: () => void;
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const currentStage = PROGRESS_STAGES.findIndex((stage) => stage.key === card.column);
   const attentionLabels = getFlagLabels(card);
+  const profile = card.managementProfile;
+  const assessmentLabel = profile.assessmentSigned
+    ? `Signed${profile.assessmentDate ? ` ${formatProfileDate(profile.assessmentDate)}` : ""}`
+    : formatProfileValue(profile.assessmentStatus);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -188,6 +193,20 @@ function ProgressModal({
     closeButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
+      if (event.key === "Tab") {
+        const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])") ?? [])]
+          .filter((element) => !element.hasAttribute("disabled"));
+        if (!focusable.length) return;
+        const first = focusable[0]!;
+        const last = focusable.at(-1)!;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -205,18 +224,18 @@ function ProgressModal({
       }}
     >
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="admissions-progress-title"
-        className="flex max-h-[94dvh] w-full flex-col overflow-hidden sm:max-w-[760px]"
+        className="flex max-h-[100dvh] w-full flex-col overflow-hidden sm:max-h-[94dvh] sm:max-w-[1120px]"
       >
         <div
           data-admissions-chart-folder-tab="true"
-          className="ml-5 inline-flex h-10 w-fit shrink-0 items-center gap-2 rounded-t-xl border border-b-0 border-[#c4ad76] bg-[#ddc58f] px-4 text-[11px] font-semibold text-[#4f411f] shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:ml-7"
+          className="ml-5 inline-flex h-11 w-fit max-w-[calc(100%-2.5rem)] shrink-0 items-center gap-2 rounded-t-xl border border-b-0 border-[#c4ad76] bg-[#ddc58f] px-4 text-[12px] font-semibold text-[#4f411f] shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:ml-7 sm:max-w-[460px] sm:px-5"
         >
           <FolderOpen className="h-4 w-4" aria-hidden="true" />
-          Referral chart
-          <span className="font-medium text-[#78673f]">#{card.referralId}</span>
+          <span data-admissions-chart-tab-name="true" className="truncate">{card.clientName}</span>
         </div>
         <div
           data-admissions-chart-folder="true"
@@ -226,21 +245,21 @@ function ProgressModal({
             data-admissions-chart-paper="true"
             className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-[#d2d5cf] bg-[#fffefb] shadow-[0_2px_8px_rgba(58,47,24,0.12)] sm:rounded-xl"
           >
-            <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[#aebbb5] bg-[#f6f8f5] px-5 py-4 sm:px-7 sm:py-5">
+            <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[#aebbb5] bg-[#f6f8f5] px-5 py-4 sm:px-8 sm:py-5">
               <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#607069]">Admissions review</p>
-                <h2 id="admissions-progress-title" className="mt-1 truncate text-[24px] font-semibold tracking-[-0.035em] text-[#171918] sm:text-[29px]">
-                  {card.clientName}
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#607069]">Admissions management chart</p>
+                <h2 id="admissions-progress-title" className="mt-1 text-[23px] font-semibold tracking-[-0.035em] text-[#171918] sm:text-[28px]">
+                  Management review
                 </h2>
-                <p className="mt-1 text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</p>
+                <p className="mt-1 text-[11px] text-[#69716c]">{card.clientName} · Referral #{card.referralId} · {communityName(card)}</p>
               </div>
               <div className="flex shrink-0 items-start gap-2">
-                <span className="mt-1 hidden rounded-md bg-[#e6f2ec] px-2.5 py-1 text-[10px] font-semibold text-[#176d51] sm:inline-flex">{card.status}</span>
+                <span className="mt-1 hidden rounded-md bg-[#e6f2ec] px-2.5 py-1 text-[10px] font-semibold text-[#176d51] md:inline-flex">{card.status}</span>
                 <button
                   ref={closeButtonRef}
                   type="button"
                   onClick={onClose}
-                  aria-label="Close referral chart"
+                  aria-label="Close management chart"
                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d3dad6] bg-white text-[#4e5752] transition hover:bg-[#eef3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
@@ -249,62 +268,132 @@ function ProgressModal({
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] px-5 py-4 sm:px-7">
+              <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] px-5 py-4 sm:px-8">
                 <h3 id="admissions-chart-next-action" className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Next required action</h3>
                 <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>
               </section>
 
-              <section data-admissions-chart-section="overview" aria-labelledby="admissions-chart-overview">
-                <ChartBand id="admissions-chart-overview" title="Referral overview" detail={card.status} />
-                <dl className="grid grid-cols-2 gap-px bg-[#bfcac5] sm:grid-cols-3">
-                  <ProgressFact icon={<UserRound className="h-3.5 w-3.5" aria-hidden="true" />} label="Assigned to" value={card.owner || "Unassigned"} />
-                  <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Time open" value={formatLongDays(card.daysOpen)} />
-                  <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Last update" value={formatLastUpdate(card.daysSinceUpdate)} />
-                  <ProgressFact label="Priority" value={formatPriority(card.priority)} />
-                  <ProgressFact icon={<CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />} label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} />
-                  <ProgressFact label="Community" value={communityName(card)} />
-                </dl>
-              </section>
+              <div className="grid min-w-0 lg:grid-cols-[minmax(0,1.55fr)_minmax(310px,0.85fr)]">
+                <div className="min-w-0 lg:border-r lg:border-[#bfcac5]">
+                  <section data-admissions-chart-section="client-profile" aria-labelledby="admissions-chart-client-profile">
+                    <ChartBand id="admissions-chart-client-profile" title="Client and placement" detail={profile.assessmentSigned ? "Verified from signed assessment" : "Current intake record"} />
+                    <dl className="grid grid-cols-2 gap-px bg-[#bfcac5] sm:grid-cols-3">
+                      <ProgressFact icon={<CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />} label="Date of birth" value={formatProfileDate(profile.dateOfBirth)} />
+                      <ProgressFact label="Referral source" value={formatProfileValue(profile.referralSource)} />
+                      <ProgressFact label="Referring county" value={formatProfileValue(profile.referringCounty)} />
+                      <ProgressFact label="Coverage / payer" value={formatProfileValue(profile.payer)} />
+                      <ProgressFact label="Responsible person" value={formatProfileValue(profile.responsiblePerson)} />
+                      <ProgressFact label="Conserved status" value={formatConservedStatus(profile.conservedStatus)} />
+                    </dl>
+                  </section>
 
-              <section data-admissions-chart-section="progress" aria-labelledby="admissions-chart-progress">
-                <ChartBand id="admissions-chart-progress" title="Workflow progress" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
-                <div className="bg-[#fffefb] px-4 py-5 sm:px-7 sm:py-6">
-                  <div className="relative">
-                    <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#c8d2cd]" />
-                    <ol className="relative grid grid-cols-3 gap-2" aria-label="Referral progress">
-                      {PROGRESS_STAGES.map((stage, index) => {
-                        const complete = index < currentStage;
-                        const current = index === currentStage;
-                        return (
-                          <li key={stage.key} className="relative z-[1] flex min-w-0 flex-col items-center text-center" data-admissions-progress-step={stage.key}>
-                            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold ${complete ? "border-[#0f795f] bg-[#0f795f] text-white" : current ? "border-[#0f795f] bg-white text-[#0f795f] ring-4 ring-[#dff0e9]" : "border-[#cfd8d3] bg-white text-[#8b938f]"}`}>
-                              {complete ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
-                            </span>
-                            <span className={`mt-2 max-w-[110px] text-[10px] leading-4 ${current ? "font-semibold text-[#25463d]" : "font-medium text-[#747c78]"}`}>{stage.label}</span>
+                  <section data-admissions-chart-section="about" aria-labelledby="admissions-chart-about">
+                    <ChartBand id="admissions-chart-about" title="About the client" />
+                    {profile.overview.length ? (
+                      <ul className="grid gap-3 bg-[#fffefb] px-5 py-5 sm:grid-cols-2 sm:px-8" data-admissions-management-overview="true">
+                        {profile.overview.map((item) => (
+                          <li key={item} className="border-l-2 border-[#9fb8ad] pl-3 text-[12px] leading-5 text-[#4d5752]">{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <ChartEmpty>{profile.assessmentSigned ? "No management narrative is recorded in the signed assessment." : "The intake record is available. This brief fills in when the assessment is signed."}</ChartEmpty>
+                    )}
+                  </section>
+
+                  <section data-admissions-chart-section="support" aria-labelledby="admissions-chart-support">
+                    <ChartBand id="admissions-chart-support" title="Care and support snapshot" />
+                    {profile.supportSnapshot.length ? (
+                      <dl className="grid gap-px bg-[#bfcac5] sm:grid-cols-2" data-admissions-management-support="true">
+                        {profile.supportSnapshot.map((item) => <ProgressFact key={item.label} label={item.label} value={item.value} />)}
+                      </dl>
+                    ) : (
+                      <ChartEmpty>{profile.assessmentSigned ? "No structured support details are recorded." : "Verified support details become available after the assessment is signed."}</ChartEmpty>
+                    )}
+                  </section>
+
+                  <section data-admissions-chart-section="medications" aria-labelledby="admissions-chart-medications">
+                    <ChartBand id="admissions-chart-medications" title="Medication handoff" detail={medicationSourceLabel(profile.medicationSource)} />
+                    {profile.medications.length ? (
+                      <ul className="grid gap-x-6 gap-y-2 bg-[#fffefb] px-5 py-5 sm:grid-cols-2 sm:px-8" data-admissions-management-medications="true">
+                        {profile.medications.map((medication, index) => (
+                          <li key={`${medication}-${index}`} className="flex items-start gap-2 border-b border-[#e3e7e4] pb-2 text-[12px] leading-5 text-[#424b47]">
+                            <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#4b7c6b]" aria-hidden="true" />
+                            <span>{medication}</span>
                           </li>
-                        );
-                      })}
-                    </ol>
-                  </div>
+                        ))}
+                      </ul>
+                    ) : (
+                      <ChartEmpty>No medication list is recorded in the current referral or signed assessment.</ChartEmpty>
+                    )}
+                  </section>
                 </div>
-              </section>
 
-              <section data-admissions-chart-section="review" aria-labelledby="admissions-chart-review">
-                <ChartBand id="admissions-chart-review" title="Review focus" />
-                <div className={`flex items-start gap-3 px-5 py-4 sm:px-7 ${attentionLabels.length ? "bg-[#fffaf0]" : "bg-[#f7faf8]"}`}>
-                  <span className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${attentionLabels.length ? "bg-[#fff0ca] text-[#805d16]" : "bg-[#e5f2ec] text-[#176d51]"}`}>
-                    {attentionLabels.length ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
-                  </span>
-                  <div>
-                    <p className="text-[11px] font-semibold text-[#303532]">{attentionLabels.length ? "Needs follow-up" : "Current review"}</p>
-                    <p className="mt-1 text-[12px] leading-5 text-[#5f6762]">
-                      {attentionLabels.length ? attentionLabels.join(" · ") : "No workflow exceptions are flagged in the current update."}
-                    </p>
-                  </div>
-                </div>
-              </section>
+                <aside className="min-w-0 bg-[#f8faf8]">
+                  <section data-admissions-chart-section="readiness" aria-labelledby="admissions-chart-readiness">
+                    <ChartBand id="admissions-chart-readiness" title="Admission readiness" />
+                    <dl className="grid grid-cols-2 gap-px bg-[#bfcac5]">
+                      <ReadinessFact label="Assessment" value={assessmentLabel} good={profile.assessmentSigned} />
+                      <ReadinessFact label="Referral documents" value={formatProfileValue(profile.documentStatus)} good={profile.documentStatus === "Reviewed"} />
+                      <ReadinessFact label="Open requirements" value={String(profile.openRequirements)} good={profile.openRequirements === 0} />
+                      <ReadinessFact label="Blocking" value={String(profile.blockingRequirements)} good={profile.blockingRequirements === 0} />
+                    </dl>
+                  </section>
 
-              <p className="border-t border-[#cfd6d2] bg-[#f7f9f7] px-5 py-3 text-center text-[10px] text-[#7f8783] sm:px-7">Updated {formatUpdatedAt(generatedAt)}</p>
+                  <section data-admissions-chart-section="progress" aria-labelledby="admissions-chart-progress">
+                    <ChartBand id="admissions-chart-progress" title="Workflow progress" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
+                    <div className="bg-[#fffefb] px-4 py-5 sm:px-6">
+                      <div className="relative">
+                        <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#c8d2cd]" />
+                        <ol className="relative grid grid-cols-3 gap-2" aria-label="Referral progress">
+                          {PROGRESS_STAGES.map((stage, index) => {
+                            const complete = index < currentStage;
+                            const current = index === currentStage;
+                            return (
+                              <li key={stage.key} className="relative z-[1] flex min-w-0 flex-col items-center text-center" data-admissions-progress-step={stage.key}>
+                                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-semibold ${complete ? "border-[#0f795f] bg-[#0f795f] text-white" : current ? "border-[#0f795f] bg-white text-[#0f795f] ring-4 ring-[#dff0e9]" : "border-[#cfd8d3] bg-white text-[#8b938f]"}`}>
+                                  {complete ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
+                                </span>
+                                <span className={`mt-2 max-w-[100px] text-[9px] leading-4 ${current ? "font-semibold text-[#25463d]" : "font-medium text-[#747c78]"}`}>{stage.label}</span>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section data-admissions-chart-section="workflow" aria-labelledby="admissions-chart-workflow">
+                    <ChartBand id="admissions-chart-workflow" title="Workflow details" detail={card.status} />
+                    <dl className="grid grid-cols-2 gap-px bg-[#bfcac5]">
+                      <ProgressFact icon={<UserRound className="h-3.5 w-3.5" aria-hidden="true" />} label="Assigned to" value={card.owner || "Unassigned"} />
+                      <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Time open" value={formatLongDays(card.daysOpen)} />
+                      <ProgressFact icon={<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />} label="Last update" value={formatLastUpdate(card.daysSinceUpdate)} />
+                      <ProgressFact label="Priority" value={formatPriority(card.priority)} />
+                      <ProgressFact icon={<CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />} label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} />
+                      <ProgressFact label="Community" value={communityName(card)} />
+                    </dl>
+                  </section>
+
+                  <section data-admissions-chart-section="review" aria-labelledby="admissions-chart-review">
+                    <ChartBand id="admissions-chart-review" title="Review focus" />
+                    <div className={`flex items-start gap-3 px-5 py-4 sm:px-6 ${attentionLabels.length ? "bg-[#fffaf0]" : "bg-[#f7faf8]"}`}>
+                      <span className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${attentionLabels.length ? "bg-[#fff0ca] text-[#805d16]" : "bg-[#e5f2ec] text-[#176d51]"}`}>
+                        {attentionLabels.length ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                      </span>
+                      <div>
+                        <p className="text-[11px] font-semibold text-[#303532]">{attentionLabels.length ? "Needs follow-up" : "Current review"}</p>
+                        <p className="mt-1 text-[12px] leading-5 text-[#5f6762]">
+                          {attentionLabels.length ? attentionLabels.join(" · ") : "No workflow exceptions are flagged in the current update."}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                </aside>
+              </div>
+
+              <div className="border-t border-[#cfd6d2] bg-[#f7f9f7] px-5 py-3 text-center text-[10px] leading-4 text-[#7f8783] sm:px-8">
+                Updated {formatUpdatedAt(generatedAt)} · Assessment detail appears only from the signed chart; intake fields retain their source status.
+              </div>
             </div>
 
             <footer className="shrink-0 border-t border-[#c7cfcb] bg-[#f8faf8] px-5 py-3 sm:px-7 sm:py-4">
@@ -324,14 +413,27 @@ function ProgressFact({ icon, label, value }: { icon?: ReactNode; label: string;
   return (
     <div className="min-w-0 bg-white px-4 py-3.5">
       <dt className="flex items-center gap-1.5 text-[10px] font-medium text-[#7b837f]">{icon}{label}</dt>
-      <dd className="mt-1.5 truncate text-[12px] font-semibold text-[#303532]" title={value}>{value}</dd>
+      <dd className="mt-1.5 break-words text-[12px] font-semibold leading-5 text-[#303532]" title={value}>{value}</dd>
     </div>
   );
 }
 
-function ChartBand({ id, title, detail }: { id: string; title: string; detail?: string }) {
+function ReadinessFact({ label, value, good }: { label: string; value: string; good: boolean }) {
   return (
-    <h3 id={id} className="flex items-center justify-between gap-4 border-y border-[#aebbb5] bg-[#eaf1ee] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#244b41] sm:px-7 sm:text-[11px]">
+    <div className="min-w-0 bg-white px-4 py-4">
+      <dt className="text-[9px] font-medium uppercase tracking-[0.08em] text-[#7b837f]">{label}</dt>
+      <dd className={`mt-1.5 break-words text-[12px] font-semibold leading-5 ${good ? "text-[#176d51]" : "text-[#574f38]"}`}>{value}</dd>
+    </div>
+  );
+}
+
+function ChartEmpty({ children }: { children: ReactNode }) {
+  return <p className="bg-[#fffefb] px-5 py-5 text-[12px] leading-5 text-[#727a76] sm:px-8">{children}</p>;
+}
+
+function ChartBand({ id, title, detail }: { id: string; title: string; detail?: string | undefined }) {
+  return (
+    <h3 id={id} className="flex items-center justify-between gap-4 border-y border-[#aebbb5] bg-[#eaf1ee] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#244b41] sm:px-6 sm:text-[11px]">
       {title}
       {detail ? <span className="text-right text-[10px] font-medium normal-case tracking-normal text-[#62706a]">{detail}</span> : null}
     </h3>
@@ -522,6 +624,32 @@ function formatPlannedDate(value: string | null) {
   const date = new Date(`${value}T12:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
+}
+
+function formatProfileValue(value: string | null) {
+  if (!value) return "Not recorded";
+  return value.replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase());
+}
+
+function formatProfileDate(value: string | null) {
+  if (!value) return "Not recorded";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
+}
+
+function formatConservedStatus(value: string | null) {
+  if (!value) return "Not recorded";
+  if (value.toLowerCase() === "yes") return "Yes";
+  if (value.toLowerCase() === "no") return "No";
+  return formatProfileValue(value);
+}
+
+function medicationSourceLabel(value: "signed_assessment" | "referral" | null) {
+  if (value === "signed_assessment") return "Signed assessment";
+  if (value === "referral") return "Referral-reported";
+  return undefined;
 }
 
 function formatUpdatedAt(value: string) {

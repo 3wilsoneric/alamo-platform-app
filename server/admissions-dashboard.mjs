@@ -1,8 +1,9 @@
 import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../shared/community-names.mjs";
 
-// Leadership view of admissions. Everything here is an aggregate count: the
-// flow tables also carry admitted/discharged resident names, which are never
-// copied into this payload.
+// Leadership view of admissions. Census and resident-flow data stay aggregate:
+// the flow tables also carry admitted/discharged resident names, which are
+// never copied into this payload. The separately authenticated Pipeline feed
+// supplies the bounded PHI shown in the referral board and management chart.
 
 const WEEKLY_POINTS = 12;
 const MONTHLY_POINTS = 6;
