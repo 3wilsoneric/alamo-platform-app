@@ -249,7 +249,7 @@ function ProgressModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-[#10221d]/40 backdrop-blur-[2px] sm:items-center sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#10221d]/40 p-2 backdrop-blur-[2px] sm:p-6"
       data-admissions-progress-modal="true"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -260,7 +260,7 @@ function ProgressModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="admissions-progress-title"
-        className="flex max-h-[100dvh] w-full flex-col overflow-hidden sm:max-h-[96dvh] sm:max-w-[1240px]"
+        className="flex max-h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden sm:max-h-[calc(100dvh-3rem)] sm:max-w-[1240px]"
       >
         <div data-admissions-chart-folder-tab="true" className="ml-3 flex max-w-[calc(100%-1.5rem)] shrink-0 items-end gap-1.5 sm:ml-8 sm:max-w-[720px] sm:gap-2">
           <div
@@ -283,7 +283,7 @@ function ProgressModal({
         </div>
         <div
           data-admissions-chart-folder="true"
-          className="flex min-h-0 flex-1 overflow-hidden rounded-tr-[22px] border border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_24px_80px_rgba(15,35,29,0.24)] sm:rounded-b-[22px] sm:p-3"
+          className="flex min-h-0 flex-1 overflow-hidden rounded-b-[18px] rounded-tr-[22px] border border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_24px_80px_rgba(15,35,29,0.24)] sm:rounded-b-[22px] sm:p-3"
         >
           <article
             data-admissions-chart-paper="true"
