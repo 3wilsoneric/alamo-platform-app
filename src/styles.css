@@ -168,6 +168,11 @@ textarea:focus-visible,
   border-radius: 2px !important;
 }
 
+.app-theme-root [data-admissions-chat-response="true"] {
+  border-left: 0 !important;
+  border-radius: 16px !important;
+}
+
 .app-theme-root [data-certified-question-guide="true"],
 .app-theme-root [data-chat-module-content-id],
 .app-theme-root [data-chat-item-id] > div[class*="border"] {
