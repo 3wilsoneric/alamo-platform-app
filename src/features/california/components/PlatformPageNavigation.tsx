@@ -27,6 +27,13 @@ export default function PlatformPageNavigation({
   const nextPages = PLATFORM_PAGES.filter(
     (page) => PLATFORM_PAGES.findIndex((candidate) => candidate.id === page.id) > activeIndex
   );
+  const leftPages = previousPages.filter(
+    (page) => !(active === "admissions" && page.id === "analytics")
+  );
+  const rightPages = [
+    ...(active === "admissions" ? previousPages.filter((page) => page.id === "analytics") : []),
+    ...nextPages
+  ];
 
   return (
     <nav
@@ -41,7 +48,7 @@ export default function PlatformPageNavigation({
             <PlatformWordmark />
           </div>
         ) : null}
-        {previousPages.map((page) => (
+        {leftPages.map((page) => (
           <PageLink
             key={page.id}
             page={page}
@@ -52,7 +59,7 @@ export default function PlatformPageNavigation({
       </div>
 
       <div className="flex flex-col items-end gap-2 sm:gap-2.5">
-        {nextPages.map((page) => (
+        {rightPages.map((page) => (
           <PageLink
             key={page.id}
             page={page}

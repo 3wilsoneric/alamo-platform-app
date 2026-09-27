@@ -40,6 +40,20 @@ await withBrowserQa(async (browser) => {
   if (admissionsBackground !== homeBackground) {
     throw new Error(`Admissions canvas ${admissionsBackground} does not match Home ${homeBackground}.`);
   }
+  const admissionsNavigation = page.locator('[data-platform-page-navigation="true"]');
+  const admissionsAnalyticsLink = admissionsNavigation.locator('[data-platform-page-target="analytics"]');
+  const [admissionsNavigationBox, admissionsAnalyticsBox] = await Promise.all([
+    admissionsNavigation.boundingBox(),
+    admissionsAnalyticsLink.boundingBox()
+  ]);
+  if (
+    await admissionsAnalyticsLink.getAttribute("data-platform-page-side") !== "right" ||
+    !admissionsNavigationBox ||
+    !admissionsAnalyticsBox ||
+    admissionsAnalyticsBox.x < admissionsNavigationBox.x + admissionsNavigationBox.width / 2
+  ) {
+    throw new Error("Admissions must place its Analytics navigation on the right.");
+  }
   for (const name of ["Board", "Census", "Trends"]) {
     if (await page.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
       throw new Error(`Admissions overview is missing its compact ${name} tab.`);
@@ -315,6 +329,11 @@ await withBrowserQa(async (browser) => {
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
+  if (
+    await mobilePage.locator('[data-platform-page-target="analytics"]').getAttribute("data-platform-page-side") !== "right"
+  ) {
+    throw new Error("Mobile Admissions must keep Analytics navigation on the right.");
+  }
   const mobileExecutiveUpdate = mobilePage.locator('[data-admissions-executive-update="true"]');
   await mobileExecutiveUpdate.waitFor({ state: "visible", timeout: 60_000 });
   await mobilePage.waitForFunction(
