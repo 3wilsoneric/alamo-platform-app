@@ -483,6 +483,31 @@ tab colors without horizontal overflow. A fresh load in the owner's signed-in
 Chrome session confirmed six visible `Accept` labels with white text and fifteen
 visible `Under review` labels with the new gold treatment.
 
+### Admissions streamed executive briefing — 2026-09-27
+
+The Admissions analyst briefing now renders as a progressive character stream
+at a conversational response pace instead of revealing complete lines at once.
+Accepted clients lead the response, with clients carrying planned admission
+dates ordered first and their destination communities and dates shown inline.
+The workload and community summaries follow after that client rollup. Reduced-
+motion preferences continue to reveal the complete response immediately.
+
+- source commit: `df983ed`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/37`
+- image tag: `alamo-platform:admissions-streamed-briefing-df983ed`
+- image digest: `sha256:16c8de1f4be9fa83403eaf0c5bf14368a33d4fad49a8012a44e69e80cf2736f1`
+- active revision: `alamo-platform-prod-web--admissions-stream-0927`
+- rollback digest: `sha256:28b7f08d72a68da6a1e47997eaf689ea3937e20429239a7a78e3c28279acd755`
+
+Post-promotion verification confirmed the exact configured production asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. Deterministic desktop and 390-pixel checks verified progressive text,
+accepted-client ordering, stream completion, zero horizontal overflow, and final
+caret removal. A fresh load in the owner's signed-in Chrome session confirmed
+the response remained in the composing state while its visible text grew, then
+finished with all six live accepted clients in the leading paragraph, no
+authentication setup error, and no horizontal overflow.
+
 ## Local Development
 
 Install and run:
