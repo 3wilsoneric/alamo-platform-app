@@ -122,6 +122,24 @@ await withBrowserQa(async (browser) => {
   if (await progressModal.locator('[data-admissions-progress-step]').count() !== 3) {
     throw new Error("Client progress review must show the three referral stages.");
   }
+  if (
+    await progressModal.locator('[data-admissions-chart-folder-tab="true"]', { hasText: "Referral chart" }).count() !== 1 ||
+    await progressModal.locator('[data-admissions-chart-section]').count() !== 4
+  ) {
+    throw new Error("Client progress review must present the governed referral summary as a four-part chart in its folder.");
+  }
+  const chartPalette = await progressModal.evaluate((element) => {
+    const folder = element.querySelector('[data-admissions-chart-folder="true"]');
+    const paper = element.querySelector('[data-admissions-chart-paper="true"]');
+    if (!(folder instanceof HTMLElement) || !(paper instanceof HTMLElement)) return null;
+    return {
+      folder: window.getComputedStyle(folder).backgroundColor,
+      paper: window.getComputedStyle(paper).backgroundColor
+    };
+  });
+  if (chartPalette?.folder !== "rgb(229, 207, 158)" || chartPalette.paper !== "rgb(255, 254, 251)") {
+    throw new Error(`Admissions chart lost its manila-folder and paper treatment: ${JSON.stringify(chartPalette)}`);
+  }
   await page.screenshot({
     path: `${screenshotDir}/desktop-admissions-progress.png`,
     fullPage: false

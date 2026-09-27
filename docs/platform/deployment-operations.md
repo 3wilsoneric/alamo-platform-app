@@ -184,6 +184,27 @@ healthy revision at 100% traffic, additive multi-community selection and reset
 behavior in desktop/mobile browser QA, a connected payload with 21 of 21 named
 cards, five communities, portfolio census 541, and 4/4 public smoke probes.
 
+### Admissions referral chart release — 2026-09-26
+
+Opening an Admissions client now presents the governed referral summary as a
+Pipeline-inspired chart in a manila folder frame. The white chart sheet orders
+identity, next action, referral facts, workflow progress, and review focus for
+fast operational review on desktop and mobile. No clinical fields or additional
+Pipeline data were added to the bounded Platform summary.
+
+- source commit: `814c68e`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/8`
+- image tag: `alamo-platform:admissions-chart-folder-814c68e`
+- image digest: `sha256:69bf936c2cf79f398b3b1fb931a5aaaef1418dead54c40833e4718d4cb4e1a7f`
+- active revision: `alamo-platform-prod-web--admissions-chart-0927`
+- rollback digest: `sha256:512ae688013f991080215dedfae1a738e1b15081b5137695edde3418c5195f59`
+
+This is a frontend-only overlay. Post-promotion verification confirmed a
+healthy revision at 100% traffic, the desktop/mobile chart-folder visual and
+overflow checks, the expected folder treatment in the production bundle, a
+connected payload with 21 of 21 named cards, five communities, portfolio census
+541, and 4/4 public smoke probes.
+
 ## Local Development
 
 Install and run:
