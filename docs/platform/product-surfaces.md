@@ -84,12 +84,13 @@ also contains a separate `MobileCommunityHome` portfolio-pulse design, but that
 is not included in the current public Azure image; do not roll it into a mobile
 release without a separate product decision.
 
-Admissions appears directly below Analytics in primary navigation for signed-in
-identities with Admissions access. Identities without that entitlement do not
-see the destination. Fifty States acquisition research, Command Center, Data
-Explorer, and other deep tools stay available through governed routes or
-analyst drilldowns, but do not occupy the primary phone header. Phone layouts
-must still render any direct route safely.
+Admissions appears directly below Analytics in primary navigation for every
+signed-in Platform identity. Admissions-specific roles may restrict an identity
+to that workspace, but they are not an extra entitlement required by a normal
+Platform user to see the aggregate overview. Fifty States acquisition research,
+Command Center, Data Explorer, and other deep tools stay available through
+governed routes or analyst drilldowns, but do not occupy the primary phone
+header. Phone layouts must still render any direct route safely.
 
 The URL-only `/data-architecture` route is a print-ready platform explainer. It
 maps live operational inputs, integrating referral and enhanced-profile lanes,
@@ -103,10 +104,10 @@ compact three-column referral board and uses one segmented Board, Census, and
 Trends control instead of a page title, subtitles, KPI strip, and three stacked
 sections. Census and trends use governed portfolio and community context from
 the home-dashboard contract. Its primary navigation item appears directly below
-Analytics when the signed-in identity passes the existing Admissions access
-decision. The separate Pipeline application owns referral intake, uploads, OCR,
-packet evidence, assessments, decisions, and other transactional workflow. The
-`/pipeline` path redirects to that full application.
+Analytics for every authenticated Platform identity. The separate Pipeline
+application owns referral intake, uploads, OCR, packet evidence, assessments,
+decisions, and other transactional workflow. The `/pipeline` path redirects to
+that full application.
 
 The analyst remains a vertical chat/module workspace:
 

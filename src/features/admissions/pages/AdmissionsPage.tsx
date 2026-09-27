@@ -60,7 +60,6 @@ export default function AdmissionsPage() {
     >
       <PlatformPageNavigation
         active="admissions"
-        admissionsAllowed
         onNavigate={openPlatformPage}
       />
 

@@ -88,12 +88,12 @@ requireText(
 );
 requireText(
   platformNavigation,
-  /visiblePages = PLATFORM_PAGES\.filter\([\s\S]*?page\.id !== "admissions" \|\| admissionsAllowed/,
-  "Admissions navigation is not gated by the existing account access decision"
+  /const previousPages = PLATFORM_PAGES\.filter\([\s\S]*?const nextPages = PLATFORM_PAGES\.filter/,
+  "authenticated Platform navigation does not include every registered destination"
 );
 requireText(
   page,
-  /<PlatformPageNavigation[\s\S]*?admissionsAllowed=\{admissionsAccess\.allowed\}[\s\S]*?onNavigate=\{openPlatformPage\}/,
+  /<PlatformPageNavigation[\s\S]*?active=\{activePanel === "map" \? "home" : "analytics"\}[\s\S]*?onNavigate=\{openPlatformPage\}/,
   "California workspace does not use the ordered platform page navigation"
 );
 requireText(

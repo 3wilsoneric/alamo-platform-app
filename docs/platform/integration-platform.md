@@ -206,7 +206,9 @@ does not forward record identifiers in a URL or read referral documents into
 the Alamo browser. Pipeline continues to obtain census and resident context
 through the existing server-only clinical API.
 
-Entra app roles define the browser boundary:
+Admissions-specific Entra app roles define restricted workspace identities;
+they do not add a second entitlement requirement for a normal authenticated
+Platform identity to view the aggregate Admissions overview:
 
 - `Alamo.Admissions.Assessor` can enter Admissions only and cannot preload or
   call broader Alamo analytics APIs.
