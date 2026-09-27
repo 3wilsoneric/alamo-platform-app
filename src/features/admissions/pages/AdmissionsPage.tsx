@@ -21,6 +21,15 @@ const REFERRALS_COLOR = "#4a67c4";
 const ACCEPTED_COLOR = "#c7851a";
 type AdmissionsSurface = "board" | "census" | "trends";
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
+type ExecutiveUpdateSegment = { text: string; strong?: boolean };
+type ExecutiveUpdateLine = {
+  key: "accepted" | "workload" | "locations";
+  segments: ExecutiveUpdateSegment[];
+};
+
+const CHAT_STREAM_START_DELAY_MS = 240;
+const CHAT_STREAM_TICK_MS = 45;
+const CHAT_STREAM_CHARS_PER_TICK = 3;
 
 export default function AdmissionsPage() {
   const navigate = useNavigate();
@@ -139,36 +148,43 @@ export default function AdmissionsPage() {
 
 function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissionsPipeline }) {
   const update = buildAdmissionsExecutiveUpdate(pipeline);
-  const lineCount = update ? (update.busiest.length ? 2 : 1) : 1;
+  const lines = buildExecutiveUpdateLines(update);
+  const totalCharacters = lines.reduce(
+    (total, line) => total + line.segments.reduce((lineTotal, segment) => lineTotal + segment.text.length, 0),
+    0
+  );
   const responseKey = `${pipeline.generatedAt}:${update?.total ?? 0}`;
-  const [revealedLines, setRevealedLines] = useState(0);
+  const [revealedCharacters, setRevealedCharacters] = useState(0);
   const [typing, setTyping] = useState(true);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setRevealedLines(lineCount);
+      setRevealedCharacters(totalCharacters);
       setTyping(false);
       return;
     }
 
-    setRevealedLines(0);
+    setRevealedCharacters(0);
     setTyping(true);
-    const timers = Array.from({ length: lineCount }, (_, index) => window.setTimeout(
-      () => setRevealedLines(index + 1),
-      120 + index * 260
-    ));
-    timers.push(window.setTimeout(() => setTyping(false), 180 + lineCount * 260));
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [lineCount, responseKey]);
+    let revealed = 0;
+    let interval: number | undefined;
+    const start = window.setTimeout(() => {
+      interval = window.setInterval(() => {
+        revealed = Math.min(totalCharacters, revealed + CHAT_STREAM_CHARS_PER_TICK);
+        setRevealedCharacters(revealed);
+        if (revealed >= totalCharacters) {
+          if (interval != null) window.clearInterval(interval);
+          setTyping(false);
+        }
+      }, CHAT_STREAM_TICK_MS);
+    }, CHAT_STREAM_START_DELAY_MS);
+    return () => {
+      window.clearTimeout(start);
+      if (interval != null) window.clearInterval(interval);
+    };
+  }, [responseKey, totalCharacters]);
 
-  const lines = update ? [
-    <>
-      Admissions is managing <strong className="font-semibold text-[#183f34]">{update.total} active {pluralize("referral", update.total)}</strong>: <strong className="font-semibold text-[#183f34]">{update.received} newly received</strong>, <strong className="font-semibold text-[#183f34]">{update.inProgress} in assessment and review</strong>, and <strong className="font-semibold text-[#183f34]">{update.decision} at decision</strong>.
-    </>,
-    ...(update.busiest.length ? [
-      <><strong className="font-semibold text-[#183f34]">Where the work is:</strong> {formatCommunityLoad(update.busiest)}.</>
-    ] : [])
-  ] : [<>There are no active referrals in the current admissions update.</>];
+  let characterOffset = 0;
 
   return (
     <section
@@ -176,6 +192,7 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       data-admissions-chat-response="true"
       data-admissions-chat-typing={typing ? "true" : "false"}
       aria-label="Admissions analyst update"
+      aria-busy={typing}
       className="mb-6 max-w-[1120px] rounded-[16px] bg-[#f4f7f5] px-4 py-4 text-[#46504b] sm:px-5 sm:py-5"
     >
       <div className="flex items-start gap-3.5">
@@ -188,21 +205,98 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
             <span className="text-[10px] text-[#7a847f]" aria-hidden="true">{typing ? "Composing…" : "Live update"}</span>
           </div>
           <div className="mt-2.5 space-y-2 text-[13px] leading-6 sm:text-[14px] sm:leading-7">
-            {lines.map((line, index) => (
-              <p
-                key={index}
-                data-admissions-executive-line={index === 0 ? "workload" : "locations"}
-                className={`transition-all duration-300 motion-reduce:translate-y-0 motion-reduce:opacity-100 ${revealedLines > index ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
-              >
-                {line}
-                {typing && revealedLines === index + 1 ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-              </p>
-            ))}
+            {lines.map((line) => {
+              const lineLength = line.segments.reduce((total, segment) => total + segment.text.length, 0);
+              const visibleCharacters = Math.max(0, Math.min(lineLength, revealedCharacters - characterOffset));
+              const lineStarted = visibleCharacters > 0 || (typing && characterOffset === 0);
+              const lineIsStreaming = typing && visibleCharacters > 0 && visibleCharacters < lineLength;
+              characterOffset += lineLength;
+              if (!lineStarted) return null;
+              return (
+                <p
+                  key={line.key}
+                  data-admissions-executive-line={line.key}
+                >
+                  <StreamingSegments segments={line.segments} visibleCharacters={visibleCharacters} />
+                  {lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+                </p>
+              );
+            })}
           </div>
         </div>
       </div>
     </section>
   );
+}
+
+function StreamingSegments({ segments, visibleCharacters }: { segments: ExecutiveUpdateSegment[]; visibleCharacters: number }) {
+  let remaining = visibleCharacters;
+  return segments.map((segment, index) => {
+    if (remaining <= 0) return null;
+    const text = segment.text.slice(0, remaining);
+    remaining -= segment.text.length;
+    return segment.strong
+      ? <strong key={index} className="font-semibold text-[#183f34]">{text}</strong>
+      : <span key={index}>{text}</span>;
+  });
+}
+
+function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExecutiveUpdate>): ExecutiveUpdateLine[] {
+  if (!update) {
+    return [{ key: "workload", segments: [{ text: "There are no active referrals in the current admissions update." }] }];
+  }
+
+  const lines: ExecutiveUpdateLine[] = [];
+  if (update.acceptedClients.length) {
+    lines.push({
+      key: "accepted",
+      segments: buildAcceptedClientSegments(update.acceptedClients)
+    });
+  }
+  lines.push({
+    key: "workload",
+    segments: [
+      { text: "Admissions is managing " },
+      { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
+      { text: ": " },
+      { text: `${update.received} newly received`, strong: true },
+      { text: ", " },
+      { text: `${update.inProgress} in assessment and review`, strong: true },
+      { text: ", and " },
+      { text: `${update.decision} at decision`, strong: true },
+      { text: "." }
+    ]
+  });
+  if (update.busiest.length) {
+    lines.push({
+      key: "locations",
+      segments: [
+        { text: "Where the work is:", strong: true },
+        { text: ` ${formatCommunityLoad(update.busiest)}.` }
+      ]
+    });
+  }
+  return lines;
+}
+
+function buildAcceptedClientSegments(
+  clients: Array<{ name: string; community: string; plannedAdmissionDate: string | null }>
+): ExecutiveUpdateSegment[] {
+  const segments: ExecutiveUpdateSegment[] = [
+    { text: "Accepted clients moving toward admission:", strong: true },
+    { text: " " }
+  ];
+  clients.forEach((client, index) => {
+    segments.push({ text: client.name, strong: true });
+    segments.push({ text: ` to ${client.community}` });
+    segments.push({
+      text: client.plannedAdmissionDate
+        ? `, planned ${formatDate(client.plannedAdmissionDate)}`
+        : ", admission date not scheduled"
+    });
+    segments.push({ text: index === clients.length - 1 ? "." : "; " });
+  });
+  return segments;
 }
 
 function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
@@ -213,6 +307,24 @@ function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
   const received = columns.get("received") ?? 0;
   const inProgress = columns.get("in_progress") ?? 0;
   const decision = columns.get("decision") ?? 0;
+  const acceptedClients = pipeline.board.cards
+    .filter((card) => isAcceptedReferral(card.status))
+    .map((card) => ({
+      name: card.clientName,
+      community: card.facilityId ? card.community : "No community assigned",
+      plannedAdmissionDate: card.plannedAdmissionDate
+    }))
+    .sort((left, right) => {
+      if (left.plannedAdmissionDate && right.plannedAdmissionDate) {
+        const dateOrder = left.plannedAdmissionDate.localeCompare(right.plannedAdmissionDate);
+        if (dateOrder) return dateOrder;
+      } else if (left.plannedAdmissionDate) {
+        return -1;
+      } else if (right.plannedAdmissionDate) {
+        return 1;
+      }
+      return left.name.localeCompare(right.name);
+    });
   const communityCounts = new Map<string, number>();
   for (const card of pipeline.board.cards) {
     const community = card.facilityId ? card.community : "No community assigned";
@@ -223,7 +335,12 @@ function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
     .slice(0, 3)
     .map(([name, count]) => ({ name, count }));
 
-  return { total, received, inProgress, decision, busiest };
+  return { total, received, inProgress, decision, acceptedClients, busiest };
+}
+
+function isAcceptedReferral(status: string) {
+  const normalized = status.trim().toLowerCase();
+  return normalized.startsWith("accept") || normalized === "awaiting admit" || normalized === "meet the client not sent";
 }
 
 function formatCommunityLoad(communities: Array<{ name: string; count: number }>) {

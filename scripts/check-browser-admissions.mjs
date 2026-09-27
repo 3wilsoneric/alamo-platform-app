@@ -52,6 +52,23 @@ await withBrowserQa(async (browser) => {
   }
   const executiveUpdate = page.locator('[data-admissions-executive-update="true"]');
   await executiveUpdate.waitFor({ state: "visible" });
+  const streamStartLength = (await executiveUpdate.innerText()).trim().length;
+  if (await executiveUpdate.getAttribute("data-admissions-chat-typing") !== "true") {
+    throw new Error("Admissions analyst response must begin in a composing state.");
+  }
+  await page.waitForTimeout(500);
+  const streamProgressLength = (await executiveUpdate.innerText()).trim().length;
+  if (
+    await executiveUpdate.getAttribute("data-admissions-chat-typing") !== "true" ||
+    streamProgressLength <= streamStartLength
+  ) {
+    throw new Error(`Admissions analyst response must stream progressively: ${JSON.stringify({ streamStartLength, streamProgressLength })}`);
+  }
+  await page.waitForFunction(
+    () => document.querySelector('[data-admissions-executive-update="true"]')?.getAttribute("data-admissions-chat-typing") === "false",
+    undefined,
+    { timeout: 20_000 }
+  );
   const executiveText = (await executiveUpdate.innerText()).trim();
   if (
     !/active referrals?/.test(executiveText) ||
@@ -63,8 +80,25 @@ await withBrowserQa(async (browser) => {
   if (/[()]/.test(executiveText)) {
     throw new Error(`Admissions executive update must use natural counts without parentheses: ${executiveText}`);
   }
-  if (await executiveUpdate.locator('[data-admissions-executive-line]').count() !== 2) {
-    throw new Error("Admissions executive update must keep its workload and location lines distinct.");
+  const acceptedClientNames = await page.locator('[data-admissions-card-decision="accept"]')
+    .locator('xpath=ancestor::*[@data-admissions-board-card][1]')
+    .locator('[data-admissions-client-name="true"]')
+    .allTextContents();
+  const acceptedLine = executiveUpdate.locator('[data-admissions-executive-line="accepted"]');
+  if (
+    acceptedClientNames.length < 1 ||
+    await acceptedLine.count() !== 1 ||
+    !acceptedClientNames.every((name) => executiveText.includes(name.trim())) ||
+    !/^Accepted clients moving toward admission:/.test((await acceptedLine.innerText()).trim())
+  ) {
+    throw new Error("Admissions executive update must lead with every accepted client moving toward admission.");
+  }
+  if (
+    await executiveUpdate.locator('[data-admissions-executive-line]').count() !== 3 ||
+    await executiveUpdate.locator('[data-admissions-executive-line="workload"]').count() !== 1 ||
+    await executiveUpdate.locator('[data-admissions-executive-line="locations"]').count() !== 1
+  ) {
+    throw new Error("Admissions executive update must keep accepted clients, workload, and locations distinct.");
   }
   if (await executiveUpdate.locator("strong").count() < 5) {
     throw new Error("Admissions executive update has lost its reading hierarchy.");
@@ -86,8 +120,11 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error(`Admissions executive update lost its assistant-response treatment: ${JSON.stringify(chatTreatment)}`);
   }
-  if (await executiveUpdate.locator('[data-admissions-executive-line]').first().evaluate((element) => window.getComputedStyle(element).transitionDuration) === "0s") {
-    throw new Error("Admissions analyst response must retain its streaming reveal transition.");
+  if (
+    await executiveUpdate.getAttribute("data-admissions-chat-typing") !== "false" ||
+    await executiveUpdate.locator('[data-admissions-typing-caret="true"]').count()
+  ) {
+    throw new Error("Admissions analyst response must finish its stream and remove the typing caret.");
   }
   if (/Immediate follow-up:|Update overdue|Move-in overdue|Needs follow-up/.test(await page.locator("body").innerText())) {
     throw new Error("Admissions must not present automated attention judgments.");
@@ -220,7 +257,7 @@ await withBrowserQa(async (browser) => {
   if (
     folderTabTreatment.background !== "rgb(255, 253, 250)" ||
     folderTabTreatment.tabHeight < 64 ||
-    (await decisionTab.innerText()).trim() !== "Under review" ||
+    (await decisionTab.textContent())?.trim() !== "Under review" ||
     (await decisionTab.getAttribute("data-admissions-decision-tab")) !== "under-review" ||
     reviewTreatment.background !== "rgb(243, 198, 79)" ||
     reviewTreatment.color !== "rgb(64, 48, 0)"
@@ -278,7 +315,13 @@ await withBrowserQa(async (browser) => {
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
-  await mobilePage.locator('[data-admissions-executive-update="true"]').waitFor({ state: "visible", timeout: 60_000 });
+  const mobileExecutiveUpdate = mobilePage.locator('[data-admissions-executive-update="true"]');
+  await mobileExecutiveUpdate.waitFor({ state: "visible", timeout: 60_000 });
+  await mobilePage.waitForFunction(
+    () => document.querySelector('[data-admissions-executive-update="true"]')?.getAttribute("data-admissions-chat-typing") === "false",
+    undefined,
+    { timeout: 20_000 }
+  );
   await mobilePage.screenshot({
     path: `${screenshotDir}/mobile-admissions-board.png`,
     fullPage: true

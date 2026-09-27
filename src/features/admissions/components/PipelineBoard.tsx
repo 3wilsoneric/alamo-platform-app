@@ -260,7 +260,7 @@ function ProgressModal({
         <div data-admissions-chart-folder-tab="true" className="ml-3 flex max-w-[calc(100%-1.5rem)] shrink-0 items-end gap-1.5 sm:ml-8 sm:max-w-[720px] sm:gap-2">
           <div
             data-admissions-chart-name-tab="true"
-            className="flex h-16 min-w-0 items-center rounded-t-xl border border-b-0 border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_-3px_12px_rgba(49,40,18,0.07)] sm:h-[72px] sm:p-2.5"
+            className="flex h-16 min-w-0 items-center rounded-t-xl border border-b-0 border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_-3px_12px_rgba(49,40,18,0.07)] sm:h-[72px] sm:p-[3px]"
           >
             <div
               data-admissions-chart-name-label="true"
