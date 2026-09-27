@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useMsal } from "@azure/msal-react";
 import WorkspaceHomePage from "../../home/pages/WorkspaceHomePage";
 import ReportsPage from "../../reports/pages/ReportsPage";
 import {
@@ -21,8 +20,6 @@ import {
   CALIFORNIA_COMMUNITIES,
   CALIFORNIA_COMMUNITY_BY_ID
 } from "../data/californiaCommunities";
-import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
-import { getAccountAdmissionsAccess } from "../../../shared/auth/admissionsAccess";
 
 type CaliforniaWorkspacePanel = "map" | "questions" | "reports";
 
@@ -42,11 +39,6 @@ function panelForPath(pathname: string): CaliforniaWorkspacePanel {
 export default function CaliforniaHomePage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { accounts } = useMsal();
-  const admissionsAccess = getAccountAdmissionsAccess(
-    accounts[0],
-    isE2EAuthBypassEnabled
-  );
   const [activePanel, setActivePanel] = useState<CaliforniaWorkspacePanel>(() =>
     panelForPath(location.pathname)
   );
@@ -154,7 +146,6 @@ export default function CaliforniaHomePage() {
 
       <PlatformPageNavigation
         active={activePanel === "map" ? "home" : "analytics"}
-        admissionsAllowed={admissionsAccess.allowed}
         onNavigate={openPlatformPage}
       />
       {activePanel !== "map" ? (

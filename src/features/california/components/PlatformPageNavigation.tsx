@@ -15,21 +15,16 @@ const PLATFORM_PAGES: Array<{
 
 export default function PlatformPageNavigation({
   active,
-  admissionsAllowed,
   onNavigate
 }: {
   active: PlatformPage;
-  admissionsAllowed: boolean;
   onNavigate: (page: Exclude<PlatformPage, "admissions">) => void;
 }) {
-  const visiblePages = PLATFORM_PAGES.filter(
-    (page) => page.id !== "admissions" || admissionsAllowed
-  );
   const activeIndex = PLATFORM_PAGES.findIndex((page) => page.id === active);
-  const previousPages = visiblePages.filter(
+  const previousPages = PLATFORM_PAGES.filter(
     (page) => PLATFORM_PAGES.findIndex((candidate) => candidate.id === page.id) < activeIndex
   );
-  const nextPages = visiblePages.filter(
+  const nextPages = PLATFORM_PAGES.filter(
     (page) => PLATFORM_PAGES.findIndex((candidate) => candidate.id === page.id) > activeIndex
   );
 
