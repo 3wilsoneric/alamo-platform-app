@@ -15,7 +15,6 @@ function assert(condition, message) {
 const appSource = read("src/app/App.tsx");
 const shellSource = read("src/shared/layout/ProtectedAppShell.tsx");
 const reportsSource = read("src/features/reports/pages/ReportsPage.tsx");
-const mondayBriefingSource = read("src/features/reports/components/MondayCensusBriefing.tsx");
 const reportCatalogSource = read("shared/full-report.mjs");
 const workspaceSource = read("src/features/home/pages/WorkspaceHomePage.tsx");
 const californiaSource = read("src/features/california/pages/CaliforniaHomePage.tsx");
@@ -71,14 +70,10 @@ assert(
   "the report library must use the server-owned visibility contract and open on Portfolio overview"
 );
 assert(
-  reportsSource.includes('data-monday-census-briefing-option="true"') &&
-    reportsSource.includes("<MondayCensusBriefing") &&
-    mondayBriefingSource.includes('data-monday-census-briefing="true"') &&
-    mondayBriefingSource.includes("dashboard.operational.currentCensus") &&
-    mondayBriefingSource.includes("ALAMO_FACILITIES") &&
-    !mondayBriefingSource.includes("monday-census-email.sanitized.json") &&
-    !mondayBriefingSource.includes("acceptedPending"),
-  "Analytics must expose the live governed Monday census briefing without fixture or ungoverned Pipeline data"
+  !reportsSource.includes("Monday census briefing") &&
+    !reportsSource.includes("monday-census-briefing") &&
+    !reportsSource.includes("MondayCensusBriefing"),
+  "Analytics must not expose the Monday census briefing as a report"
 );
 assert(
   /id:\s*"effectiveness"[\s\S]*?showInAnalyticsNav:\s*false/.test(reportCatalogSource),

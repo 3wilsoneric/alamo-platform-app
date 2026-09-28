@@ -36,10 +36,6 @@ on phones:
 - **Analytics** opens the mounted governed workspace without replacing the
   California map; its internal **Reports** and **Ask a question** controls switch
   between governed documents and the vertical analyst
-- the Analytics report rail also includes a live **Monday census briefing** built
-  from the reconciled current/prior census contract; it mirrors the email's
-  metric-row, community-change chart, and factual context without using the
-  sanitized prototype fixture or ungoverned Pipeline counts
 - legacy `/questions` links redirect to the analyst at `/analytics/questions`
 
 ## Small-Screen Product Decision

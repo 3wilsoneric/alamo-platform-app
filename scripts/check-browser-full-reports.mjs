@@ -301,31 +301,12 @@ async function runDesktop(browser, screenshotDir) {
   );
   assert(
     (await page.locator('[data-analytics-report-option]').count()) === 5 &&
-      (await page.locator('[data-monday-census-briefing-option="true"]').count()) === 1 &&
+      !(await page.getByText(/^Monday census briefing$/i).count()) &&
       !(await page.getByRole("button", { name: /^Community performance report/ }).count()) &&
       !(await page.getByRole("button", { name: /^Effectiveness evidence report/ }).count()) &&
       !(await page.getByRole("button", { name: /^50-state targeting atlas/ }).count()),
-    "Analytics navigation must contain the five finished report families and the governed Monday briefing"
+    "Analytics navigation must contain only the five finished report families"
   );
-  await page.locator('[data-monday-census-briefing-option="true"]').click();
-  const mondayBriefing = page.locator('[data-monday-census-briefing="true"]');
-  await mondayBriefing.waitFor({ state: "visible", timeout: 20_000 });
-  assert(
-    (await mondayBriefing.locator('[data-monday-census-community-row="true"]').count()) === 5,
-    "Monday census briefing must render all five governed community comparisons"
-  );
-  assert(
-    !(await mondayBriefing.getByText(/Pipeline|pending admission/i).count()),
-    "Monday census briefing must not expose Pipeline data before that feed is governed"
-  );
-  await page.screenshot({
-    path: path.join(screenshotDir, "monday-census-briefing-desktop.png"),
-    fullPage: true
-  });
-  await page.getByRole("button", { name: /^Portfolio overview/ }).click();
-  await waitForReport(page, "overview");
-  await assertDocumentFits(page, "portfolio overview");
-  await assertContainedReader(page, "portfolio overview");
 
   const results = [];
   for (const [reportId, title] of reportFamilies) {
@@ -496,8 +477,9 @@ async function runMobile(browser, screenshotDir) {
     path: path.join(screenshotDir, "full-reports-mobile-overview.png"),
     fullPage: true
   });
-  for (const [reportId, title] of reportFamilies) {
-    await page.getByRole("button", { name: new RegExp(`^${title}`) }).click();
+  const reportChoice = page.getByLabel("Choose a report");
+  for (const [reportId] of reportFamilies) {
+    await reportChoice.selectOption(reportId);
     const report = await waitForReport(page, reportId);
     await assertReportSemantics(report, reportId);
     await assertDocumentFits(page, `mobile ${reportId} report`);
@@ -509,7 +491,7 @@ async function runMobile(browser, screenshotDir) {
     await assertScrollableTableEnds(report, reportId);
     await assertReportEndReachable(page, report, reportId, screenshotDir, "mobile");
   }
-  await page.getByRole("button", { name: /^Medication performance report/ }).click();
+  await reportChoice.selectOption("medications");
   await waitForReport(page, "medications");
   await page.getByLabel("Report community").selectOption({ index: 1 });
   await waitForReport(page, "medications");
