@@ -7,7 +7,6 @@
   const modalControlsId = "alamo-mobile-modal-controls";
   const explorerFilterToggleId = "alamo-mobile-explorer-filters";
   const brandLogoPath = "/brand/alamo-health-management-logo.png";
-  const mondayId = "monday-census-briefing";
   let scheduled = false;
 
   function schedule() {
@@ -46,13 +45,11 @@
   }
 
   function reportButtons(library) {
-    return [...library.querySelectorAll("button[data-monday-census-briefing-option], button[data-analytics-report-option]")];
+    return [...library.querySelectorAll("button[data-analytics-report-option]")];
   }
 
   function reportValue(button) {
-    return button.hasAttribute("data-monday-census-briefing-option")
-      ? mondayId
-      : button.getAttribute("data-analytics-report-option") ?? "";
+    return button.getAttribute("data-analytics-report-option") ?? "";
   }
 
   function reportTitle(button) {

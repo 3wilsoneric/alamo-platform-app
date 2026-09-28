@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import FullReportReader from "../components/FullReportReader";
-import MondayCensusBriefing from "../components/MondayCensusBriefing";
 import {
   fetchHomeDashboard,
   type HomeDashboardResponse
@@ -26,7 +25,6 @@ export default function ReportsPage({
   active = true
 }: ReportsPageProps) {
   const [selectedReportId, setSelectedReportId] = useState<FullReportId>("overview");
-  const [showMondayBriefing, setShowMondayBriefing] = useState(false);
   const [reportDefinitions, setReportDefinitions] = useState<FullReportDefinition[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
@@ -88,7 +86,7 @@ export default function ReportsPage({
   }, [reportDefinitions, selectedReportId]);
 
   useEffect(() => {
-    if (!active || showMondayBriefing || loadingData || !dashboard || !selectedReport) return;
+    if (!active || loadingData || !dashboard || !selectedReport) return;
     if (requiresCommunityScope && !selectedFacilityId) return;
     const controller = new AbortController();
     setLoadingReport(true);
@@ -127,14 +125,12 @@ export default function ReportsPage({
     selectedReportId,
     selectedReport,
     selectedAudience,
-    showMondayBriefing,
     supportsCommunityScope,
     reportRequestVersion
   ]);
 
   function selectReport(reportId: FullReportId) {
-    if (reportId === selectedReportId && !showMondayBriefing) return;
-    setShowMondayBriefing(false);
+    if (reportId === selectedReportId) return;
     setSelectedReportId(reportId);
     setSelectedPeriod("");
     setPeriodOptions([]);
@@ -145,18 +141,6 @@ export default function ReportsPage({
       return;
     }
     setSelectedFacilityId("");
-  }
-
-  function selectMondayBriefing() {
-    if (showMondayBriefing) return;
-    setShowMondayBriefing(true);
-    setLoadingReport(false);
-    setError("");
-    setReportPackage(null);
-    setSelectedFacilityId("");
-    setSelectedPeriod("");
-    setSelectedAudience("");
-    setPeriodOptions([]);
   }
 
   function retryReport() {
@@ -186,17 +170,10 @@ export default function ReportsPage({
             <select
               id="mobile-report-choice"
               data-mobile-report-choice="true"
-              value={showMondayBriefing ? "monday-census-briefing" : selectedReportId}
-              onChange={(event) => {
-                if (event.currentTarget.value === "monday-census-briefing") {
-                  selectMondayBriefing();
-                  return;
-                }
-                selectReport(event.currentTarget.value as FullReportId);
-              }}
+              value={selectedReportId}
+              onChange={(event) => selectReport(event.currentTarget.value as FullReportId)}
               className="min-h-12 w-full rounded-none border border-[#bfd1cb] bg-[#eef4f1] px-3 font-sans text-[15px] font-bold text-[#315b54] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
             >
-              <option value="monday-census-briefing">Monday census briefing</option>
               {reportDefinitions.map((report) => (
                 <option key={report.id} value={report.id}>{report.title}</option>
               ))}
@@ -207,23 +184,6 @@ export default function ReportsPage({
             data-analytics-report-library="true"
             className="mt-3 hidden border-y border-[#111111] py-2 md:block md:overflow-visible md:border-b-0 md:py-0"
           >
-            <button
-              type="button"
-              onClick={selectMondayBriefing}
-              aria-pressed={showMondayBriefing}
-              data-monday-census-briefing-option="true"
-              className={`grid min-w-[210px] snap-start grid-cols-[3px_minmax(0,1fr)] gap-3 border border-[#d9d9d9] py-3 pr-2 text-left transition-colors md:w-full md:min-w-0 md:border-x-0 md:border-t-0 ${
-                showMondayBriefing ? "bg-[#f5f4ef]" : "hover:bg-[#fafafa]"
-              }`}
-            >
-              <span className={showMondayBriefing ? "bg-[#0f8b73]" : "bg-transparent"} aria-hidden="true" />
-              <span>
-                <span className="block font-sans text-[14px] font-bold leading-5 tracking-[-0.025em]">Monday census briefing</span>
-                <span className="mt-1 block text-[10px] leading-4 text-[#737373]">
-                  Weekly | Operations
-                </span>
-              </span>
-            </button>
             {reportDefinitions.map((report) => {
               const selected = report.id === selectedReportId;
               return (
@@ -231,13 +191,13 @@ export default function ReportsPage({
                   type="button"
                   key={report.id}
                   onClick={() => selectReport(report.id)}
-                  aria-pressed={selected && !showMondayBriefing}
+                  aria-pressed={selected}
                   data-analytics-report-option={report.id}
                   className={`grid min-w-[210px] snap-start grid-cols-[3px_minmax(0,1fr)] gap-3 border border-[#d9d9d9] py-3 pr-2 text-left transition-colors md:w-full md:min-w-0 md:border-x-0 md:border-t-0 ${
-                    selected && !showMondayBriefing ? "bg-[#f5f4ef]" : "hover:bg-[#fafafa]"
+                    selected ? "bg-[#f5f4ef]" : "hover:bg-[#fafafa]"
                   }`}
                 >
-                  <span className={selected && !showMondayBriefing ? "bg-[#0f8b73]" : "bg-transparent"} aria-hidden="true" />
+                  <span className={selected ? "bg-[#0f8b73]" : "bg-transparent"} aria-hidden="true" />
                   <span>
                     <span className="block font-sans text-[14px] font-bold leading-5 tracking-[-0.025em]">{report.title}</span>
                     <span className="mt-1 block text-[10px] leading-4 text-[#737373]">
@@ -256,11 +216,9 @@ export default function ReportsPage({
         >
           <div className="mb-5 border-b border-[#d9d9d9] pb-4">
             <p className="max-w-[780px] font-sans text-[13px] leading-5 text-[#3f3f3f]">
-              {showMondayBriefing
-                ? "A concise operating briefing focused on the latest governed census change by community."
-                : selectedReport?.description ?? "Loading the governed analytics catalog."}
+              {selectedReport?.description ?? "Loading the governed analytics catalog."}
             </p>
-            {!showMondayBriefing ? <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {supportsCommunityScope ? (
                 <select
                   aria-label="Report community"
@@ -309,7 +267,7 @@ export default function ReportsPage({
                   ))}
                 </select>
               ) : null}
-            </div> : null}
+            </div>
           </div>
 
           {loadingData || loadingReport ? (
@@ -320,7 +278,7 @@ export default function ReportsPage({
             >
               <span className="mx-auto block h-6 w-6 animate-spin rounded-full border-2 border-[#d9d9d9] border-t-[#0f8b73]" />
               <p className="mt-3 text-[12px] text-[#595959]">
-                {showMondayBriefing ? "Loading the governed census briefing." : "Compiling the governed report."}
+                Compiling the governed report.
               </p>
             </div>
           ) : error ? (
@@ -335,8 +293,6 @@ export default function ReportsPage({
                 Try again
               </button>
             </div>
-          ) : showMondayBriefing && dashboard ? (
-            <MondayCensusBriefing dashboard={dashboard} />
           ) : reportPackage ? (
             <FullReportReader report={reportPackage.report} />
           ) : null}
