@@ -1043,3 +1043,59 @@ It also schedules `/api/reports/weekly`. Changing the human-readable
 - Server owns model/API keys and Databricks credentials.
 - Frontend Entra variables are public configuration, not secrets.
 - Generated docs should name environment variable keys but never preserve secret values.
+
+### Licensing reports and update feed release — 2026-09-28
+
+- source commits: `3686069` and `4bdacc5`, branch `codex/licensing-production-20260928`
+- image tag: `alamo-platform:licensing-4bdacc5`
+- image digest: `sha256:2cfacc47f400a787b501875ced690f71e4c6a62f43f59feeecdb4d8ec4a9e0fb`
+- active revision: `alamo-platform-prod-web--licensing-4bdacc5`
+- rollback digest: `sha256:d93329474498a735d53c18214034eeca777b0d272fe65eba930bc312ff613763`
+- baseline: `20260928T211945Z-350926e2`, 93 reports across four communities
+
+The protected `/licensing` page has a compact breadcrumb and Updates row,
+one search box, and source-grounded report briefs. The page title and subtitle
+were removed so reports begin higher on the screen. Community profiles link to
+the corresponding Licensing collection. The final production browser asset is
+`/assets/index-BGafwIFT.js`.
+
+This release overlays the exact preceding production image with the browser
+bundle, only the new Licensing server/shared modules, and three protected GET
+routes patched into the production image's API handler. Existing Azure runtime,
+Admissions integrations, authentication, environment, and data adapters remain
+from that image. `scripts/prepare-licensing-release.mjs` builds the bounded
+context and refreshes compressed static representations along with the originals.
+Do not substitute the repository's whole API/server tree for the image runtime.
+
+The serving bundle is private Azure Blob data at
+`alamodatalake/alamo-platform-snapshots/licensing/library-v1.json`, read with the
+existing managed identity. Immutable bundle versions and original source/SQLite
+archives are kept under `licensing/versions/` and `licensing/evidence/`.
+The publisher validates source hashes and uses conditional writes. Production
+fails closed when cloud data cannot be read; it does not use local evidence as
+an outage fallback. No new credentials or public storage permissions were added.
+
+The existing Monday 9 a.m. Pacific Codex monitor runs
+`node scripts/check-licensing-updates.mjs --publish` from the primary app checkout.
+It publishes new reports and change notices to the live page. This is still a
+local trigger requiring the Mac and Codex; Azure hosts the website and durable
+published data, not the collector's schedule.
+
+Verification: the full nonbrowser `check:ship:predeploy` gate passed all eight
+stages, including `check:analyst`, dependency audit, regression replays, stress
+checks, and production-configured build. Browser checks were performed through
+CUA instead of the shell Playwright runner. The initial revision was rolled back
+when signed-in search changed its URL but not its displayed results. The issue
+was reproduced in the optimized build and corrected by making BrowserRouter
+navigation synchronous (`useTransitions={false}`). TypeScript, Licensing,
+Admissions access, California home contracts, and the resumed build gate passed
+after that change. Optimized-browser search, report selection, clearing search,
+and Back navigation passed before the final deployment.
+
+Post-deployment verification confirmed Healthy/Running at 100% traffic, exact
+browser asset identity, 4/4 public smoke probes, and 401/no-store for all three
+unauthenticated Licensing endpoints. Signed-in production showed all 93 reports,
+four results for the substantiated-medication/San Pablo query, source briefs,
+the successful no-change Updates feed, the map and community Licensing link
+(55 San Pablo reports), and the populated Admissions board. The compact layout
+was visually verified; the local phone layout had no horizontal overflow.
