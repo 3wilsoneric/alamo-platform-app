@@ -198,7 +198,7 @@ export default function CaliforniaHomePage() {
           data-california-carousel-panel="questions"
           aria-hidden={activePanel !== "questions"}
           inert={activePanel !== "questions"}
-          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-3 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-16 lg:px-12"
+          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-3 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-[126px] lg:px-12 lg:pt-16"
         >
           <div
             data-california-question-workspace="true"
@@ -218,7 +218,7 @@ export default function CaliforniaHomePage() {
           data-california-carousel-panel="reports"
           aria-hidden={activePanel !== "reports"}
           inert={activePanel !== "reports"}
-          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-[76px] lg:px-12"
+          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-[126px] lg:px-12 lg:pt-[76px]"
         >
           <div className="mx-auto w-full max-w-[1432px]">
             <ReportsPage embedded active={activePanel === "reports"} />

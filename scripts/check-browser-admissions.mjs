@@ -28,8 +28,13 @@ await withBrowserQa(async (browser) => {
     analyticsLink.boundingBox(),
     admissionsLink.boundingBox()
   ]);
-  if (!analyticsBox || !admissionsBox || admissionsBox.y <= analyticsBox.y + analyticsBox.height) {
-    throw new Error("Admissions navigation must sit below Analytics.");
+  if (
+    !analyticsBox ||
+    !admissionsBox ||
+    Math.abs(admissionsBox.y - analyticsBox.y) > 2 ||
+    admissionsBox.x <= analyticsBox.x + analyticsBox.width
+  ) {
+    throw new Error("Analytics and Admissions must sit beside one another at the upper right.");
   }
   await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
 
@@ -42,17 +47,24 @@ await withBrowserQa(async (browser) => {
   }
   const admissionsNavigation = page.locator('[data-platform-page-navigation="true"]');
   const admissionsAnalyticsLink = admissionsNavigation.locator('[data-platform-page-target="analytics"]');
-  const [admissionsNavigationBox, admissionsAnalyticsBox] = await Promise.all([
+  const admissionsActiveLink = admissionsNavigation.locator('[data-platform-page-target="admissions"]');
+  const [admissionsNavigationBox, admissionsAnalyticsBox, admissionsActiveBox] = await Promise.all([
     admissionsNavigation.boundingBox(),
-    admissionsAnalyticsLink.boundingBox()
+    admissionsAnalyticsLink.boundingBox(),
+    admissionsActiveLink.boundingBox()
   ]);
   if (
     await admissionsAnalyticsLink.getAttribute("data-platform-page-side") !== "right" ||
     !admissionsNavigationBox ||
     !admissionsAnalyticsBox ||
-    admissionsAnalyticsBox.x < admissionsNavigationBox.x + admissionsNavigationBox.width / 2
+    !admissionsActiveBox ||
+    admissionsAnalyticsBox.x < admissionsNavigationBox.x + admissionsNavigationBox.width / 2 ||
+    Math.abs(admissionsAnalyticsBox.y - admissionsActiveBox.y) > 2 ||
+    admissionsActiveBox.x <= admissionsAnalyticsBox.x + admissionsAnalyticsBox.width ||
+    await admissionsActiveLink.getAttribute("aria-current") !== "page" ||
+    await admissionsAnalyticsLink.getAttribute("aria-current") !== null
   ) {
-    throw new Error("Admissions must place its Analytics navigation on the right.");
+    throw new Error("Admissions must select its own item in the adjacent upper-right Platform navigation.");
   }
   for (const name of ["Board", "Census", "Trends"]) {
     if (await page.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
@@ -455,6 +467,22 @@ await withBrowserQa(async (browser) => {
     await mobilePage.locator('[data-platform-page-target="analytics"]').getAttribute("data-platform-page-side") !== "right"
   ) {
     throw new Error("Mobile Admissions must keep Analytics navigation on the right.");
+  }
+  const mobilePrimaryLinks = mobilePage.locator('[data-platform-primary-links="true"]');
+  const mobileAnalyticsLink = mobilePrimaryLinks.locator('[data-platform-page-target="analytics"]');
+  const mobileAdmissionsLink = mobilePrimaryLinks.locator('[data-platform-page-target="admissions"]');
+  const [mobileAnalyticsBox, mobileAdmissionsBox] = await Promise.all([
+    mobileAnalyticsLink.boundingBox(),
+    mobileAdmissionsLink.boundingBox()
+  ]);
+  if (
+    !mobileAnalyticsBox ||
+    !mobileAdmissionsBox ||
+    Math.abs(mobileAnalyticsBox.y - mobileAdmissionsBox.y) > 2 ||
+    mobileAdmissionsBox.x <= mobileAnalyticsBox.x + mobileAnalyticsBox.width ||
+    await mobileAdmissionsLink.getAttribute("aria-current") !== "page"
+  ) {
+    throw new Error("Mobile Admissions must keep its adjacent primary links visible with Admissions selected.");
   }
   const mobileExecutiveUpdate = mobilePage.locator('[data-admissions-executive-update="true"]');
   await mobileExecutiveUpdate.waitFor({ state: "visible", timeout: 60_000 });

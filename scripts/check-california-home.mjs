@@ -68,14 +68,6 @@ requireText(
   /aria-label="Analytics sections"[\s\S]*?label="Reports"[\s\S]*?label="Ask a question"/,
   "Ask a question is not contained within the Analytics workspace"
 );
-if (
-  analyticsNavigation.includes("BarChart3") ||
-  analyticsNavigation.includes("MessageSquareText") ||
-  !analyticsNavigation.includes('className="pointer-events-auto flex items-center gap-1.5"') ||
-  !analyticsNavigation.includes('aria-current={active ? "page" : undefined}')
-) {
-  failures.push("Analytics navigation is not a text-only top-right row with a boxed active page");
-}
 requireText(
   platformNavigation,
   /id: "home"[\s\S]*?id: "analytics"[\s\S]*?id: "admissions"/,
@@ -86,8 +78,8 @@ if (/id: "questions"/.test(platformNavigation)) {
 }
 requireText(
   platformNavigation,
-  /previousPages[\s\S]*?activeIndex[\s\S]*?nextPages[\s\S]*?activeIndex/,
-  "platform navigation does not partition destinations around the active page"
+  /const homePage = PLATFORM_PAGES\[0\]![\s\S]*?const workspacePages = PLATFORM_PAGES\.slice\(1\)/,
+  "platform navigation does not keep Home separate from its adjacent workspace links"
 );
 requireText(
   platformNavigation,
@@ -96,9 +88,17 @@ requireText(
 );
 requireText(
   platformNavigation,
-  /const previousPages = PLATFORM_PAGES\.filter\([\s\S]*?const nextPages = PLATFORM_PAGES\.filter/,
-  "authenticated Platform navigation does not include every registered destination"
+  /data-platform-primary-links="true"[\s\S]*?workspacePages\.map[\s\S]*?active=\{active === page\.id\}/,
+  "Analytics and Admissions are not rendered together in the primary navigation row"
 );
+requireText(
+  platformNavigation,
+  /aria-current=\{active \? "page" : undefined\}[\s\S]*?data-platform-page-active=\{active \? page\.id : undefined\}/,
+  "the current primary Platform page is not exposed as the selected navigation item"
+);
+if (/ArrowLeft|ArrowRight/.test(platformNavigation)) {
+  failures.push("primary Platform page navigation still renders directional arrows");
+}
 requireText(
   page,
   /<PlatformPageNavigation[\s\S]*?active=\{activePanel === "map" \? "home" : "analytics"\}[\s\S]*?onNavigate=\{openPlatformPage\}/,
@@ -131,7 +131,7 @@ requireText(
 );
 requireText(
   platformNavigation,
-  /aria-label=\{isHome \? "Back to California map" : page\.label\}[\s\S]*?data-california-carousel-back=\{isHome \? "true" : undefined\}/,
+  /aria-label="Back to California map"[\s\S]*?data-california-carousel-back="true"/,
   "left-side Home navigation does not preserve the clear carousel back action"
 );
 requireText(
@@ -351,7 +351,7 @@ requireText(
 );
 requireText(
   platformNavigation,
-  /active === "home"[\s\S]*?data-platform-page-active="home"[\s\S]*?<PlatformWordmark \/>/,
+  /active === "home"[\s\S]*?data-platform-page-active="home"[\s\S]*?<PlatformWordmark compact \/>/,
   "California workspace does not restore the quiet Alamo Health home anchor"
 );
 if (/PlatformUserIdentity|data-california-hero-identity/.test(page)) {

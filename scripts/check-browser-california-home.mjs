@@ -531,7 +531,7 @@ async function main() {
     if (
       questionNavigation.current !== "analytics" ||
       questionNavigation.left.join(",") !== "home" ||
-      questionNavigation.right.join(",") !== "admissions"
+      questionNavigation.right.join(",") !== "analytics,admissions"
     ) {
       throw new Error(`Analytics question navigation is out of order: ${JSON.stringify(questionNavigation)}`);
     }
@@ -617,9 +617,24 @@ async function main() {
     if (
       analyticsNavigation.current !== "analytics" ||
       analyticsNavigation.left.join(",") !== "home" ||
-      analyticsNavigation.right.join(",") !== "admissions"
+      analyticsNavigation.right.join(",") !== "analytics,admissions"
     ) {
       throw new Error(`Analytics platform navigation is out of order: ${JSON.stringify(analyticsNavigation)}`);
+    }
+    const selectedAnalytics = page.locator('[data-platform-page-target="analytics"]');
+    const analyticsSelectedStyle = await selectedAnalytics.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        borderColor: style.borderColor,
+        backgroundColor: style.backgroundColor
+      };
+    });
+    if (
+      await selectedAnalytics.getAttribute("aria-current") !== "page" ||
+      analyticsSelectedStyle.borderColor === "rgba(0, 0, 0, 0)" ||
+      analyticsSelectedStyle.backgroundColor === "rgba(0, 0, 0, 0)"
+    ) {
+      throw new Error(`Analytics is not visibly selected in the primary navigation: ${JSON.stringify(analyticsSelectedStyle)}`);
     }
     const [analyticsNavigationBox, reportsPageBox] = await Promise.all([
       page.locator('[data-platform-page-navigation="true"]').boundingBox(),

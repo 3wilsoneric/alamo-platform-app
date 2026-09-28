@@ -1,4 +1,3 @@
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 
 export type PlatformPage = "home" | "admissions" | "analytics";
@@ -20,50 +19,43 @@ export default function PlatformPageNavigation({
   active: PlatformPage;
   onNavigate: (page: Exclude<PlatformPage, "admissions">) => void;
 }) {
-  const activeIndex = PLATFORM_PAGES.findIndex((page) => page.id === active);
-  const previousPages = PLATFORM_PAGES.filter(
-    (page) => PLATFORM_PAGES.findIndex((candidate) => candidate.id === page.id) < activeIndex
-  );
-  const nextPages = PLATFORM_PAGES.filter(
-    (page) => PLATFORM_PAGES.findIndex((candidate) => candidate.id === page.id) > activeIndex
-  );
-  const leftPages = previousPages.filter(
-    (page) => !(active === "admissions" && page.id === "analytics")
-  );
-  const rightPages = [
-    ...(active === "admissions" ? previousPages.filter((page) => page.id === "analytics") : []),
-    ...nextPages
-  ];
+  const homePage = PLATFORM_PAGES[0]!;
+  const workspacePages = PLATFORM_PAGES.slice(1);
 
   return (
     <nav
       aria-label="Platform pages"
       data-platform-page-navigation="true"
       data-platform-page-current={active}
-      className="pointer-events-none absolute inset-x-4 top-2 z-40 flex items-start justify-between sm:inset-x-6 sm:top-5"
+      className="pointer-events-none absolute inset-x-3 top-2 z-40 flex items-start justify-between sm:inset-x-6 sm:top-4"
     >
-      <div className="flex flex-col items-start gap-2 sm:gap-2.5">
+      <div className="min-w-0 shrink">
         {active === "home" ? (
-          <div aria-current="page" data-platform-page-active="home" className="pointer-events-auto flex min-h-11 items-center sm:min-h-0">
-            <PlatformWordmark />
+          <div aria-current="page" data-platform-page-active="home" className="pointer-events-auto flex min-h-11 items-center sm:min-h-10">
+            <PlatformWordmark compact />
           </div>
-        ) : null}
-        {leftPages.map((page) => (
-          <PageLink
-            key={page.id}
-            page={page}
-            side="left"
-            onNavigate={onNavigate}
-          />
-        ))}
+        ) : (
+          <button
+            type="button"
+            aria-label="Back to California map"
+            data-platform-page-target={homePage.id}
+            data-platform-page-side="left"
+            data-california-hero-action={homePage.id}
+            data-california-carousel-back="true"
+            onClick={() => onNavigate("home")}
+            className="pointer-events-auto flex min-h-11 max-w-full items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:min-h-10"
+          >
+            <PlatformWordmark compact />
+          </button>
+        )}
       </div>
 
-      <div className="flex flex-col items-end gap-2 sm:gap-2.5">
-        {rightPages.map((page) => (
+      <div className="pointer-events-auto flex shrink-0 items-center gap-1.5" data-platform-primary-links="true">
+        {workspacePages.map((page) => (
           <PageLink
             key={page.id}
             page={page}
-            side="right"
+            active={active === page.id}
             onNavigate={onNavigate}
           />
         ))}
@@ -74,36 +66,32 @@ export default function PlatformPageNavigation({
 
 function PageLink({
   page,
-  side,
+  active,
   onNavigate
 }: {
   page: (typeof PLATFORM_PAGES)[number];
-  side: "left" | "right";
+  active: boolean;
   onNavigate: (page: Exclude<PlatformPage, "admissions">) => void;
 }) {
   const destination = page.id;
-  const isHome = destination === "home";
-  const className = "group pointer-events-auto inline-flex min-h-11 items-center gap-2 whitespace-nowrap bg-white/90 font-sans text-[14px] font-bold tracking-[-0.045em] text-[#315b54] backdrop-blur-sm transition-colors hover:text-[#0f8b73] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f8b73] sm:min-h-7 sm:text-[17px]";
-  const content = <>
-    {side === "left" ? (
-      <ArrowLeft className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-x-1" />
-    ) : null}
-    {isHome ? <PlatformWordmark compact /> : <span>{page.label}</span>}
-    {side === "right" ? (
-      <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-1" />
-    ) : null}
-  </>;
+  const className = `inline-flex min-h-11 items-center justify-center whitespace-nowrap border px-2.5 font-sans text-[12px] font-medium tracking-[-0.02em] backdrop-blur-sm transition-[background-color,border-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:min-h-10 sm:px-3.5 sm:text-[14px] ${
+    active
+      ? "border-[#9fbdb4] bg-[#edf4f1] text-[#174f42]"
+      : "border-transparent bg-white/90 text-[#315b54] hover:text-[#0f8b73]"
+  }`;
 
   if (destination === "admissions") {
     return (
       <a
         href={page.href}
+        aria-current={active ? "page" : undefined}
         data-platform-page-target={page.id}
-        data-platform-page-side={side}
+        data-platform-page-side="right"
+        data-platform-page-active={active ? page.id : undefined}
         data-california-hero-action="admissions"
         className={className}
       >
-        {content}
+        {page.label}
       </a>
     );
   }
@@ -111,15 +99,16 @@ function PageLink({
   return (
     <button
       type="button"
-      aria-label={isHome ? "Back to California map" : page.label}
+      aria-label={page.label}
+      aria-current={active ? "page" : undefined}
       data-platform-page-target={page.id}
-      data-platform-page-side={side}
+      data-platform-page-side="right"
+      data-platform-page-active={active ? page.id : undefined}
       data-california-hero-action={page.id}
-      data-california-carousel-back={isHome ? "true" : undefined}
       onClick={() => onNavigate(destination)}
       className={className}
     >
-      {content}
+      {page.label}
     </button>
   );
 }
