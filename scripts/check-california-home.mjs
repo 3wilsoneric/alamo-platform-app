@@ -68,6 +68,14 @@ requireText(
   /aria-label="Analytics sections"[\s\S]*?label="Reports"[\s\S]*?label="Ask a question"/,
   "Ask a question is not contained within the Analytics workspace"
 );
+if (
+  analyticsNavigation.includes("BarChart3") ||
+  analyticsNavigation.includes("MessageSquareText") ||
+  !analyticsNavigation.includes('className="pointer-events-auto flex items-center gap-1.5"') ||
+  !analyticsNavigation.includes('aria-current={active ? "page" : undefined}')
+) {
+  failures.push("Analytics navigation is not a text-only top-right row with a boxed active page");
+}
 requireText(
   platformNavigation,
   /id: "home"[\s\S]*?id: "analytics"[\s\S]*?id: "admissions"/,
