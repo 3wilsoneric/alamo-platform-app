@@ -32,7 +32,12 @@ repeated page title, explanatory subtitle, or KPI strip.
   tab. Its larger white chart sheet is a management-facing Meet the Client:
   client and placement facts, a signed-assessment management brief, care and
   support context, medication handoff, admission readiness, workflow progress,
-  and workflow details. Community is the only filter:
+  and workflow details. Each of the Admission brief, Workflow and readiness,
+  and Client context chart bands opens an in-chart drill-down sheet. The sheets
+  make source status and category logic explicit, expand placement and referral
+  facts, separate ownership and readiness fields, and expose the complete
+  bounded support and medication handoff without linking to raw Pipeline notes
+  or documents. Community is the only filter:
   pill controls support selecting multiple communities, while All communities
   resets the complete board. A List toggle shows the same governed slice.
 - **Census** — one compact portfolio row followed by the five communities,

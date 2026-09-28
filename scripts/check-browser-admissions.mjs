@@ -311,6 +311,48 @@ await withBrowserQa(async (browser) => {
   if (chartPalette?.folder !== "rgb(242, 229, 201)" || chartPalette.paper !== "rgb(255, 254, 251)") {
     throw new Error(`Admissions chart lost its manila-folder and paper treatment: ${JSON.stringify(chartPalette)}`);
   }
+  const drilldownTriggers = progressModal.locator('[data-admissions-drilldown-trigger]');
+  if (await drilldownTriggers.count() !== 3) {
+    throw new Error("The management chart must expose three focused drill-down entry points.");
+  }
+  await progressModal.locator('[data-admissions-drilldown-trigger="admission-brief"]').click();
+  const drilldown = progressModal.locator('[data-admissions-drilldown="true"]');
+  await drilldown.waitFor({ state: "visible" });
+  if (
+    await drilldown.locator('[data-admissions-drilldown-content="admission"]').count() !== 1 ||
+    await drilldown.locator('[data-admissions-drilldown-section]').count() !== 3 ||
+    await drilldown.locator('[data-admissions-drilldown-status-explanation="true"]').count() !== 1 ||
+    !/remains In progress/.test(await drilldown.innerText())
+  ) {
+    throw new Error("Admission drill-down must explain the source status and expand placement and referral context.");
+  }
+  await page.screenshot({
+    path: `${screenshotDir}/desktop-admissions-drilldown.png`,
+    fullPage: false
+  });
+  await drilldown.getByRole("button", { name: "Close chart detail" }).click();
+  await drilldown.waitFor({ state: "hidden" });
+  await progressModal.locator('[data-admissions-drilldown-trigger="workflow"]').click();
+  await drilldown.waitFor({ state: "visible" });
+  if (
+    await drilldown.locator('[data-admissions-drilldown-content="workflow"]').count() !== 1 ||
+    await drilldown.getByText("Blocking requirements", { exact: true }).count() !== 1
+  ) {
+    throw new Error("Workflow drill-down must expose ownership, timing, and readiness detail.");
+  }
+  await drilldown.getByRole("button", { name: "Close chart detail" }).click();
+  await drilldown.waitFor({ state: "hidden" });
+  await progressModal.locator('[data-admissions-drilldown-trigger="client-context"]').click();
+  await drilldown.waitFor({ state: "visible" });
+  if (
+    await drilldown.locator('[data-admissions-drilldown-content="context"]').count() !== 1 ||
+    await drilldown.locator('[data-admissions-drilldown-list="overview"]').count() !== 1 ||
+    await drilldown.locator('[data-admissions-drilldown-list="medications"]').count() !== 1
+  ) {
+    throw new Error("Client-context drill-down must expose the bounded assessment, support, and medication handoff.");
+  }
+  await drilldown.getByRole("button", { name: "Close chart detail" }).click();
+  await drilldown.waitFor({ state: "hidden" });
   await page.screenshot({
     path: `${screenshotDir}/desktop-admissions-progress.png`,
     fullPage: false
@@ -362,6 +404,24 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Mobile management chart must retain the separate client and Pipeline status tabs.");
   }
+  await mobileProgress.locator('[data-admissions-drilldown-trigger="client-context"]').click();
+  const mobileDrilldown = mobileProgress.locator('[data-admissions-drilldown="true"]');
+  await mobileDrilldown.waitFor({ state: "visible" });
+  const mobileDrilldownOverflow = await mobileDrilldown.evaluate(
+    (element) => element.scrollWidth - element.clientWidth
+  );
+  if (
+    await mobileDrilldown.locator('[data-admissions-drilldown-content="context"]').count() !== 1 ||
+    mobileDrilldownOverflow > 2
+  ) {
+    throw new Error(`Mobile client drill-down is incomplete or has ${mobileDrilldownOverflow}px of horizontal overflow.`);
+  }
+  await mobilePage.screenshot({
+    path: `${screenshotDir}/mobile-admissions-drilldown.png`,
+    fullPage: false
+  });
+  await mobileDrilldown.getByRole("button", { name: "Close chart detail" }).click();
+  await mobileDrilldown.waitFor({ state: "hidden" });
   const modalOverflow = await mobileProgress.evaluate(
     (element) => element.scrollWidth - element.clientWidth
   );

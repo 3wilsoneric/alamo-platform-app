@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, Columns3, List, X } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Columns3, List, X } from "lucide-react";
 
 import type {
   AdmissionsBoardCard,
@@ -9,6 +9,7 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 
 type ConnectedPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
+type ChartDrilldown = "admission" | "workflow" | "context";
 
 const NO_COMMUNITY = "none";
 const LIST_PREVIEW = 15;
@@ -217,6 +218,8 @@ function ProgressModal({
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const drilldownCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const [activeDrilldown, setActiveDrilldown] = useState<ChartDrilldown | null>(null);
   const currentStage = PROGRESS_STAGES.findIndex((stage) => stage.key === card.column);
   const profile = card.managementProfile;
   const decisionTab = decisionTabFor(card);
@@ -229,9 +232,15 @@ function ProgressModal({
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        if (activeDrilldown) setActiveDrilldown(null);
+        else onClose();
+      }
       if (event.key === "Tab") {
-        const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])") ?? [])]
+        const focusScope = activeDrilldown
+          ? dialogRef.current?.querySelector<HTMLElement>("[data-admissions-drilldown-panel='true']")
+          : dialogRef.current;
+        const focusable = [...(focusScope?.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])") ?? [])]
           .filter((element) => !element.hasAttribute("disabled"));
         if (!focusable.length) return;
         const first = focusable[0]!;
@@ -250,7 +259,11 @@ function ProgressModal({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [activeDrilldown, onClose]);
+
+  useEffect(() => {
+    if (activeDrilldown) drilldownCloseButtonRef.current?.focus();
+  }, [activeDrilldown]);
 
   return createPortal(
     <div
@@ -312,7 +325,7 @@ function ProgressModal({
 
               <div className="mx-auto w-full max-w-[980px]" data-admissions-chart-stream="true">
                 <section data-admissions-chart-section="admission-brief" aria-labelledby="admissions-chart-admission-brief">
-                  <ChartBand id="admissions-chart-admission-brief" title="Admission brief" detail={card.status} />
+                  <ChartBand id="admissions-chart-admission-brief" title="Admission brief" detail={card.status} onOpen={() => setActiveDrilldown("admission")} />
                   <dl className="divide-y divide-[#e1e5e2] border-b border-[#bfcac5] bg-[#fffefb]">
                     <ChartRow label="Placement" value={`${communityName(card)} · Planned admission ${formatPlannedDate(card.plannedAdmissionDate)}`} />
                     <ChartRow label="Referral" value={`${formatProfileValue(profile.referralSource)} · ${formatProfileValue(profile.referringCounty)}`} />
@@ -322,7 +335,7 @@ function ProgressModal({
                 </section>
 
                 <section data-admissions-chart-section="workflow" aria-labelledby="admissions-chart-workflow">
-                  <ChartBand id="admissions-chart-workflow" title="Workflow and readiness" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
+                  <ChartBand id="admissions-chart-workflow" title="Workflow and readiness" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} onOpen={() => setActiveDrilldown("workflow")} />
                   <div className="border-b border-[#d8dfdb] bg-[#f8faf8] px-5 py-5 sm:px-8 sm:py-6">
                     <div className="relative mx-auto max-w-[640px]">
                       <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#c8d2cd]" />
@@ -359,6 +372,7 @@ function ProgressModal({
                     id="admissions-chart-client-context"
                     title="Client context"
                     detail={profile.assessmentSigned ? "Verified from signed assessment" : "Current intake record"}
+                    onOpen={() => setActiveDrilldown("context")}
                   />
                   <div className="divide-y divide-[#e1e5e2] border-b border-[#bfcac5] bg-[#fffefb]">
                     <ChartContextBlock title="At a glance">
@@ -409,12 +423,221 @@ function ProgressModal({
               </div>
             </div>
 
+            {activeDrilldown ? (
+              <ChartDrilldownSheet
+                card={card}
+                generatedAt={generatedAt}
+                drilldown={activeDrilldown}
+                closeButtonRef={drilldownCloseButtonRef}
+                onClose={() => setActiveDrilldown(null)}
+              />
+            ) : null}
+
           </article>
         </div>
       </section>
     </div>,
     document.body
   );
+}
+
+const DRILLDOWN_TITLES: Record<ChartDrilldown, string> = {
+  admission: "Admission status and placement",
+  workflow: "Workflow and readiness",
+  context: "Client context and handoff"
+};
+
+function ChartDrilldownSheet({
+  card,
+  generatedAt,
+  drilldown,
+  closeButtonRef,
+  onClose
+}: {
+  card: AdmissionsBoardCard;
+  generatedAt: string;
+  drilldown: ChartDrilldown;
+  closeButtonRef: RefObject<HTMLButtonElement | null>;
+  onClose: () => void;
+}) {
+  const profile = card.managementProfile;
+  const decision = decisionTabFor(card);
+  const currentStage = PROGRESS_STAGES.find((stage) => stage.key === card.column)?.label ?? "In progress";
+  const assessmentLabel = profile.assessmentSigned
+    ? `Signed${profile.assessmentDate ? ` ${formatProfileDate(profile.assessmentDate)}` : ""}`
+    : formatProfileValue(profile.assessmentStatus);
+
+  return (
+    <div
+      className="absolute inset-0 z-30 flex justify-end bg-[#10221d]/20 backdrop-blur-[1px]"
+      data-admissions-drilldown="true"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <aside
+        data-admissions-drilldown-panel="true"
+        aria-labelledby="admissions-drilldown-title"
+        className="flex h-full w-full min-w-0 flex-col border-l border-[#c6d0cb] bg-[#fffefb] shadow-[-18px_0_50px_rgba(19,43,35,0.18)] sm:max-w-[680px]"
+      >
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[#bfcac5] bg-[#edf5f1] px-5 py-5 sm:px-7 sm:py-6">
+          <div className="min-w-0">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Client chart detail</p>
+            <h2 id="admissions-drilldown-title" className="mt-1.5 text-[21px] font-semibold leading-7 tracking-[-0.025em] text-[#183f34] sm:text-[25px]">
+              {DRILLDOWN_TITLES[drilldown]}
+            </h2>
+            <p className="mt-1 truncate text-[11px] text-[#66716c]">{card.clientName} · Referral #{card.referralId}</p>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close chart detail"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#cbd5d0] bg-white text-[#4e5752] shadow-sm transition hover:bg-[#f5f8f6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto" data-admissions-drilldown-content={drilldown}>
+          {drilldown === "admission" ? (
+            <>
+              <DrilldownSection title="Status transparency" detail="Direct from Pipeline">
+                <div className="rounded-xl border border-[#dbe2de] bg-[#f8faf8] p-4">
+                  <span className={`inline-flex rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.07em] ${decision.className}`}>{decision.label}</span>
+                  <p className="mt-3 text-[13px] leading-6 text-[#3e4944]" data-admissions-drilldown-status-explanation="true">
+                    {statusCategoryExplanation(decision.state)}
+                  </p>
+                </div>
+                <dl className="mt-4 divide-y divide-[#e1e5e2] border-y border-[#d8dfdb]">
+                  <ChartRow label="Pipeline status" value={card.status} compact />
+                  <ChartRow label="Board stage" value={currentStage} compact />
+                  <ChartRow label="Management focus" value={card.nextAction || "Confirm the next workflow step"} compact />
+                </dl>
+              </DrilldownSection>
+
+              <DrilldownSection title="Placement">
+                <dl className="divide-y divide-[#e1e5e2] border-y border-[#d8dfdb]">
+                  <ChartRow label="Destination" value={communityName(card)} compact />
+                  <ChartRow label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} compact />
+                  <ChartRow label="Coverage" value={formatProfileValue(profile.payer)} compact />
+                  <ChartRow label="Responsible person" value={formatProfileValue(profile.responsiblePerson)} compact />
+                </dl>
+              </DrilldownSection>
+
+              <DrilldownSection title="Referral origin">
+                <dl className="divide-y divide-[#e1e5e2] border-y border-[#d8dfdb]">
+                  <ChartRow label="Source" value={formatProfileValue(profile.referralSource)} compact />
+                  <ChartRow label="County" value={formatProfileValue(profile.referringCounty)} compact />
+                  <ChartRow label="Date of birth" value={formatProfileDate(profile.dateOfBirth)} compact />
+                  <ChartRow label="Conserved" value={formatConservedStatus(profile.conservedStatus)} compact />
+                </dl>
+              </DrilldownSection>
+            </>
+          ) : null}
+
+          {drilldown === "workflow" ? (
+            <>
+              <DrilldownSection title="Current position" detail={`Stage ${Math.max(1, PROGRESS_STAGES.findIndex((stage) => stage.key === card.column) + 1)} of ${PROGRESS_STAGES.length}`}>
+                <dl className="divide-y divide-[#e1e5e2] border-y border-[#d8dfdb]">
+                  <ChartRow label="Stage" value={currentStage} compact />
+                  <ChartRow label="Pipeline status" value={card.status} compact />
+                  <ChartRow label="Next step" value={card.nextAction || "Confirm the next workflow step"} compact />
+                </dl>
+              </DrilldownSection>
+
+              <DrilldownSection title="Ownership and timing">
+                <dl className="divide-y divide-[#e1e5e2] border-y border-[#d8dfdb]">
+                  <ChartRow label="Owner" value={card.owner || "Unassigned"} compact />
+                  <ChartRow label="Priority" value={formatPriority(card.priority)} compact />
+                  <ChartRow label="Time open" value={formatLongDays(card.daysOpen)} compact />
+                  <ChartRow label="Last Pipeline update" value={formatLastUpdate(card.daysSinceUpdate)} compact />
+                </dl>
+              </DrilldownSection>
+
+              <DrilldownSection title="Readiness">
+                <dl className="divide-y divide-[#e1e5e2] border-y border-[#d8dfdb]">
+                  <ChartRow label="Assessment" value={assessmentLabel} tone={profile.assessmentSigned ? "positive" : "attention"} compact />
+                  <ChartRow label="Referral documents" value={formatProfileValue(profile.documentStatus)} tone={profile.documentStatus === "Reviewed" ? "positive" : "attention"} compact />
+                  <ChartRow label="Open requirements" value={String(profile.openRequirements)} tone={profile.openRequirements ? "attention" : "positive"} compact />
+                  <ChartRow label="Blocking requirements" value={String(profile.blockingRequirements)} tone={profile.blockingRequirements ? "attention" : "positive"} compact />
+                </dl>
+              </DrilldownSection>
+            </>
+          ) : null}
+
+          {drilldown === "context" ? (
+            <>
+              <DrilldownSection
+                title="Assessment context"
+                detail={profile.assessmentSigned ? "Verified signed assessment" : "Current intake record"}
+              >
+                {profile.overview.length ? (
+                  <DrilldownList items={profile.overview} dataAttribute="overview" />
+                ) : (
+                  <ChartEmpty>{profile.assessmentSigned ? "No management narrative is recorded in the signed assessment." : "This context fills in when the assessment is signed."}</ChartEmpty>
+                )}
+              </DrilldownSection>
+
+              <DrilldownSection title="Care and support">
+                {profile.supportSnapshot.length ? (
+                  <dl className="divide-y divide-[#e1e5e2] border-y border-[#d8dfdb]">
+                    {profile.supportSnapshot.map((item) => <ChartRow key={item.label} label={item.label} value={item.value} compact />)}
+                  </dl>
+                ) : (
+                  <ChartEmpty>{profile.assessmentSigned ? "No structured support details are recorded." : "Verified support details become available after the assessment is signed."}</ChartEmpty>
+                )}
+              </DrilldownSection>
+
+              <DrilldownSection title="Medication handoff" detail={medicationSourceLabel(profile.medicationSource)}>
+                {profile.medications.length ? (
+                  <DrilldownList items={profile.medications} dataAttribute="medications" />
+                ) : (
+                  <ChartEmpty>No medication list is recorded in the current referral or signed assessment.</ChartEmpty>
+                )}
+              </DrilldownSection>
+            </>
+          ) : null}
+        </div>
+
+        <footer className="shrink-0 border-t border-[#d7ded9] bg-[#f7f9f7] px-5 py-3 text-[10px] leading-4 text-[#737d78] sm:px-7">
+          Updated {formatUpdatedAt(generatedAt)} · Protected Pipeline summary · No raw notes or documents are shown.
+        </footer>
+      </aside>
+    </div>
+  );
+}
+
+function DrilldownSection({ title, detail, children }: { title: string; detail?: string | undefined; children: ReactNode }) {
+  return (
+    <section className="border-b border-[#dce2df] px-5 py-5 last:border-b-0 sm:px-7 sm:py-6" data-admissions-drilldown-section={title.toLowerCase().replaceAll(" ", "-")}>
+      <div className="mb-4 flex items-baseline justify-between gap-4">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[#35584f]">{title}</h3>
+        {detail ? <span className="text-right text-[10px] text-[#74807a]">{detail}</span> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function DrilldownList({ items, dataAttribute }: { items: string[]; dataAttribute: string }) {
+  return (
+    <ul className="divide-y divide-[#e3e7e5] border-y border-[#d8dfdb]" data-admissions-drilldown-list={dataAttribute}>
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`} className="flex items-start gap-3 py-3 text-[12px] leading-5 text-[#3f4945]">
+          <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#4b7c6b]" aria-hidden="true" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function statusCategoryExplanation(state: string) {
+  if (state === "under-review") return "Pipeline explicitly marks this referral Under Review. The yellow category reflects that recorded decision state.";
+  if (state === "accept") return "Pipeline records an accepted referral moving toward admission. The green category reflects that source status.";
+  if (state === "deny") return "Pipeline records a declined or denied referral. The red category reflects that source status.";
+  return "Pipeline has not recorded Accept, Deny, or the explicit Under Review selection. This referral remains In progress.";
 }
 
 function ChartRow({
@@ -465,11 +688,32 @@ function ChartEmpty({ children }: { children: ReactNode }) {
   return <p className="text-[12px] leading-5 text-[#727a76]">{children}</p>;
 }
 
-function ChartBand({ id, title, detail }: { id: string; title: string; detail?: string | undefined }) {
+function ChartBand({
+  id,
+  title,
+  detail,
+  onOpen
+}: {
+  id: string;
+  title: string;
+  detail?: string | undefined;
+  onOpen: () => void;
+}) {
   return (
-    <h3 id={id} className="flex items-center justify-between gap-4 border-y border-[#aebbb5] bg-[#eaf1ee] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#244b41] sm:px-6 sm:text-[11px]">
-      {title}
-      {detail ? <span className="text-right text-[10px] font-medium normal-case tracking-normal text-[#62706a]">{detail}</span> : null}
+    <h3 id={id} className="border-y border-[#aebbb5] bg-[#eaf1ee] text-[#244b41]">
+      <button
+        type="button"
+        onClick={onOpen}
+        data-admissions-drilldown-trigger={id.replace("admissions-chart-", "")}
+        className="group flex w-full items-center justify-between gap-4 px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] transition-colors hover:bg-[#e1ece7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#0f8b73] sm:px-6 sm:text-[11px]"
+      >
+        <span>{title}</span>
+        <span className="flex min-w-0 items-center gap-2 text-right text-[10px] font-medium normal-case tracking-normal text-[#62706a]">
+          {detail ? <span className="truncate">{detail}</span> : null}
+          <span className="hidden text-[#3f6a5e] sm:inline">View details</span>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#4c7468] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </span>
+      </button>
     </h3>
   );
 }
