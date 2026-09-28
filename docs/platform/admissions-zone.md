@@ -40,7 +40,14 @@ repeated page title, explanatory subtitle, or KPI strip.
   in the chart, without linking to raw Pipeline notes or documents. Community
   is the only filter:
   pill controls support selecting multiple communities, while All communities
-  resets the complete board. A List toggle shows the same governed slice.
+  resets the complete board. A List toggle shows the same governed slice on
+  desktop. Below the desktop breakpoint, the three pipeline columns become a
+  horizontally scrollable category navigation. Selecting Referral received,
+  In progress, or Decision renders only that category's client list; selecting
+  a client opens the same management chart. The desktop board and its
+  Board/List control are not rendered into the mobile reading path. Community
+  pills also stay in one horizontally scrollable row instead of wrapping into
+  a tall control block.
 - **Census** — one compact portfolio row followed by the five communities,
   combining census, occupancy, month-to-date admissions, discharges, net
   movement, and each community's board count.
