@@ -554,6 +554,23 @@ fresh load in the owner's signed-in Chrome session confirmed all 21 live cards
 matched their source statuses: six accepted, 15 in progress, zero incorrectly
 inferred as under review, and no authentication setup error.
 
+### Admissions in-progress contrast correction — 2026-09-27
+
+The blue `In progress` category now forces white text in every Admissions
+surface so surrounding card, table, or modal styles cannot reduce its contrast.
+
+- source commit: `2908814`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/43`
+- image tag: `alamo-platform:admissions-in-progress-white-2908814`
+- image digest: `sha256:30beb8bcead8e7e817e0261faed877d0730bc709cb6453817e6b3497dcd21060`
+- active revision: `alamo-platform-prod-web--progress-white-0927`
+- rollback digest: `sha256:27078ece1f18465312cc3ef725e25b536b75062c737f055507509cd88b6edc6e`
+
+Post-promotion verification confirmed the exact configured production asset, a
+healthy single revision at 100% traffic, and all four public production smoke
+probes. A fresh load in the owner's signed-in Chrome session confirmed all 15
+visible `In progress` labels computed to pure white text.
+
 ## Local Development
 
 Install and run:
