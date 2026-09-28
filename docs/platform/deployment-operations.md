@@ -653,6 +653,32 @@ and no page or modal overflow at 390 and 768 pixels. Post-promotion verification
 confirmed the exact JavaScript and CSS assets, a healthy single revision at
 100% traffic, and all four public production smoke probes.
 
+### Analytics Monday-briefing removal — 2026-09-28
+
+The Monday census briefing is no longer presented as an Analytics report on
+desktop or mobile. Analytics now contains only the five finished governed
+report families. The separate scheduled Monday census email workflow remains
+available and was not changed.
+
+- source commit: `0828abf`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/51`
+- release-tooling commit: `850e3fd`
+- release-tooling PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/52`
+- image tag: `alamo-platform:reports-no-monday-0828abf`
+- image digest: `sha256:9ee73ecb35a542b4a52f717c59645fd197c7df5f1e685ee58c39f4c4edbe8382`
+- active revision: `alamo-platform-prod-web--reports-no-monday-0928`
+- rollback digest: `sha256:cf66502c8155f201b5b3776c18d9e17db8fed29f23544494846f8070c46dce30`
+
+The frontend release Dockerfile was reduced to one filesystem layer after the
+original overlay attempt reached the inherited image-depth limit. The successful
+release still uses the exact preceding production image as its runtime base and
+changes only the browser bundle. TypeScript, the report contract check,
+documentation, a production-configured build, and the complete desktop/mobile
+report browser regression passed before promotion. Post-promotion verification
+confirmed the exact JavaScript and CSS assets, absence of the removed report
+label in the live bundle, a healthy revision at 100% traffic, and all four
+public production smoke probes.
+
 ## Local Development
 
 Install and run:
