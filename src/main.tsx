@@ -18,7 +18,8 @@ async function bootstrap() {
     <React.StrictMode>
       <DesktopRuntime />
       <MsalProvider instance={msalInstance}>
-        <BrowserRouter>
+        {/* Keep the URL and visible report/search selection in the same render. */}
+        <BrowserRouter useTransitions={false}>
           <AppProviders>
             <App />
           </AppProviders>
