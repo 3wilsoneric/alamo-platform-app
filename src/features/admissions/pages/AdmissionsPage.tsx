@@ -7,7 +7,11 @@ import {
   readCachedAdmissionsDashboard,
   type AdmissionsDashboardResponse
 } from "../../../shared/api/platformData";
-import type { AdmissionsFlowPoint, AdmissionsReferralPipeline } from "../../../shared/types/platformSnapshot";
+import type {
+  AdmissionsBoardColumnKey,
+  AdmissionsFlowPoint,
+  AdmissionsReferralPipeline
+} from "../../../shared/types/platformSnapshot";
 import PipelineBoard from "../components/PipelineBoard";
 import PlatformPageNavigation, {
   type PlatformPage
@@ -37,6 +41,7 @@ export default function AdmissionsPage() {
   const [loading, setLoading] = useState(!dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
   const [surface, setSurface] = useState<AdmissionsSurface>("board");
+  const [mobilePipelineColumn, setMobilePipelineColumn] = useState<AdmissionsBoardColumnKey>("received");
 
   // Every signed-in Platform user sees this working view, including the client
   // identity already available throughout the authenticated Platform.
@@ -74,7 +79,36 @@ export default function AdmissionsPage() {
 
       <div className="mx-auto w-full max-w-[1540px]">
         <h1 className="sr-only">Admissions</h1>
-        <div className="py-3 sm:py-5">
+        <div className="-mx-3 py-2 lg:hidden">
+          <div
+            role="tablist"
+            aria-label="Admissions categories"
+            data-admissions-mobile-category-navigation="true"
+            className="flex min-w-0 max-w-full gap-1 overflow-x-auto overscroll-x-contain border-b border-[#d9dfdb] px-3"
+          >
+            {(["received", "in_progress", "decision"] as const).map((column) => {
+              const columnSummary = pipeline?.board.columns.find((candidate) => candidate.key === column);
+              return (
+                <SurfaceTab
+                  key={column}
+                  active={surface === "board" && mobilePipelineColumn === column}
+                  label={columnSummary?.label ?? mobilePipelineLabel(column)}
+                  count={columnSummary?.count ?? null}
+                  panel="admissions-board-panel"
+                  onClick={() => {
+                    setMobilePipelineColumn(column);
+                    setSurface("board");
+                  }}
+                  compact
+                />
+              );
+            })}
+            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} compact />
+            <SurfaceTab active={surface === "trends"} label="Trends" count={dashboard?.referral_trend.length ? `${dashboard.referral_trend.length} mo` : null} panel="admissions-trends-panel" onClick={() => setSurface("trends")} compact />
+          </div>
+        </div>
+
+        <div className="hidden py-5 lg:block">
           <div
             role="tablist"
             aria-label="Admissions views"
@@ -107,7 +141,11 @@ export default function AdmissionsPage() {
         <div id={`admissions-${surface}-panel`} role="tabpanel" className="pt-1">
           {surface === "board" ? (
             pipeline ? (
-              <PipelineBoard pipeline={pipeline} communities={dashboard?.communities ?? []} />
+              <PipelineBoard
+                pipeline={pipeline}
+                communities={dashboard?.communities ?? []}
+                mobileColumn={mobilePipelineColumn}
+              />
             ) : (
               <section
                 aria-label="Referral board"
@@ -361,13 +399,15 @@ function SurfaceTab({
   label,
   count,
   panel,
-  onClick
+  onClick,
+  compact = false
 }: {
   active: boolean;
   label: string;
   count: string | number | null;
   panel: string;
   onClick: () => void;
+  compact?: boolean;
 }) {
   return (
     <button
@@ -376,12 +416,18 @@ function SurfaceTab({
       aria-selected={active}
       aria-controls={panel}
       onClick={onClick}
-      className={`relative -mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-0.5 text-[13px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
+      className={`relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${compact ? "min-h-11 px-3 text-[12px]" : "min-h-12 px-0.5 text-[13px]"} ${active ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
     >
       {label}
       {count != null ? <span className={`text-[11px] font-medium tabular-nums ${active ? "text-[#0f795f]" : "text-[#929995]"}`}>{count}</span> : null}
     </button>
   );
+}
+
+function mobilePipelineLabel(column: AdmissionsBoardColumnKey) {
+  if (column === "received") return "Referral received";
+  if (column === "in_progress") return "In progress";
+  return "Decision";
 }
 
 function CensusPanel({

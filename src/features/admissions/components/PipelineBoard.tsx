@@ -46,10 +46,12 @@ const COLUMN_STYLE: Record<AdmissionsBoardColumnKey, { surface: string; border: 
 
 export default function PipelineBoard({
   pipeline,
-  communities
+  communities,
+  mobileColumn
 }: {
   pipeline: ConnectedPipeline;
   communities: Array<{ facilityId: string; shortName: string }>;
+  mobileColumn: AdmissionsBoardColumnKey;
 }) {
   const [selectedFacilityIds, setSelectedFacilityIds] = useState<Set<string>>(new Set());
   const [view, setView] = useState<"board" | "list">("board");
@@ -63,7 +65,12 @@ export default function PipelineBoard({
       : board.cards,
     [board.cards, selectedFacilityIds]
   );
+  const mobileCards = cards.filter((card) => card.column === mobileColumn);
   const hasNoCommunity = board.cards.some((card) => !card.facilityId);
+
+  useEffect(() => {
+    setListExpanded(false);
+  }, [mobileColumn]);
 
   function toggleCommunity(facilityId: string) {
     setSelectedFacilityIds((current) => {
@@ -83,10 +90,10 @@ export default function PipelineBoard({
   return (
     <section aria-label="Referral board" data-admissions-board="true">
       <div className="mb-4">
-        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div
             data-admissions-community-filters="true"
-            className="flex min-w-0 flex-wrap gap-2"
+            className="-mx-3 flex min-w-0 flex-nowrap gap-2 overflow-x-auto overscroll-x-contain px-3 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0"
             role="group"
             aria-label="Filter by community"
           >
@@ -111,54 +118,65 @@ export default function PipelineBoard({
               </CommunityPill>
             ) : null}
           </div>
-          <div data-admissions-layout-toggle="true" className="flex shrink-0 self-end gap-1 sm:self-start" role="group" aria-label="Board layout">
+          <div data-admissions-layout-toggle="true" className="hidden shrink-0 gap-1 lg:flex" role="group" aria-label="Board layout">
             <ViewButton active={view === "board"} onClick={() => setView("board")} icon={<Columns3 className="h-3.5 w-3.5" aria-hidden="true" />}>Board</ViewButton>
             <ViewButton active={view === "list"} onClick={() => setView("list")} icon={<List className="h-3.5 w-3.5" aria-hidden="true" />}>List</ViewButton>
           </div>
         </div>
       </div>
 
-      {view === "board" ? (
-        <div className="grid items-start gap-4 lg:grid-cols-3">
-          {board.columns.map((column) => {
-            const columnCards = cards.filter((card) => card.column === column.key);
-            const style = COLUMN_STYLE[column.key];
-            return (
-              <section
-                key={column.key}
-                data-admissions-board-column={column.key}
-                className="min-w-0 overflow-hidden rounded-2xl border"
-                style={{ backgroundColor: style.surface, borderColor: style.border }}
-              >
-                <header className="flex items-center justify-between gap-3 px-5 pb-4 pt-5">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <h2 className="truncate text-[16px] font-semibold tracking-[-0.02em]">{column.label}</h2>
-                    <span className="shrink-0 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-[#3f4642] shadow-sm">
-                      {columnCards.length}
-                    </span>
-                  </div>
-                </header>
+      <div className="lg:hidden">
+        <MobileCategoryList
+          cards={mobileCards}
+          expanded={listExpanded}
+          onToggle={() => setListExpanded((value) => !value)}
+          onOpen={setSelectedCard}
+        />
+      </div>
 
-                {columnCards.length ? (
-                  <ul className="max-h-[690px] space-y-3 overflow-y-auto px-4 pb-4">
-                    {columnCards.map((card) => (
-                      <li key={card.referralId}>
-                        <BoardCard card={card} onOpen={() => setSelectedCard(card)} />
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="mx-4 mb-4 rounded-xl border border-dashed bg-white/55 px-4 py-10 text-center text-[12px] text-[#69716c]" style={{ borderColor: style.border }}>
-                    No referrals here
-                  </div>
-                )}
-              </section>
-            );
-          })}
-        </div>
-      ) : (
-        <ReferralList cards={cards} expanded={listExpanded} onToggle={() => setListExpanded((value) => !value)} onOpen={setSelectedCard} />
-      )}
+      <div className="hidden lg:block">
+        {view === "board" ? (
+          <div className="grid items-start gap-4 lg:grid-cols-3">
+            {board.columns.map((column) => {
+              const columnCards = cards.filter((card) => card.column === column.key);
+              const style = COLUMN_STYLE[column.key];
+              return (
+                <section
+                  key={column.key}
+                  data-admissions-board-column={column.key}
+                  className="min-w-0 overflow-hidden rounded-2xl border"
+                  style={{ backgroundColor: style.surface, borderColor: style.border }}
+                >
+                  <header className="flex items-center justify-between gap-3 px-5 pb-4 pt-5">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <h2 className="truncate text-[16px] font-semibold tracking-[-0.02em]">{column.label}</h2>
+                      <span className="shrink-0 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-[#3f4642] shadow-sm">
+                        {columnCards.length}
+                      </span>
+                    </div>
+                  </header>
+
+                  {columnCards.length ? (
+                    <ul className="max-h-[690px] space-y-3 overflow-y-auto px-4 pb-4">
+                      {columnCards.map((card) => (
+                        <li key={card.referralId}>
+                          <BoardCard card={card} onOpen={() => setSelectedCard(card)} />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="mx-4 mb-4 rounded-xl border border-dashed bg-white/55 px-4 py-10 text-center text-[12px] text-[#69716c]" style={{ borderColor: style.border }}>
+                      No referrals here
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          <ReferralList cards={cards} expanded={listExpanded} onToggle={() => setListExpanded((value) => !value)} onOpen={setSelectedCard} />
+        )}
+      </div>
 
       {board.truncated ? (
         <p className="mt-3 text-[10px] text-[#69716c]">Showing the 300 oldest referrals in the current governed update.</p>
@@ -714,6 +732,44 @@ function BoardCard({ card, onOpen }: { card: AdmissionsBoardCard; onOpen: () => 
   );
 }
 
+function MobileCategoryList({
+  cards,
+  expanded,
+  onToggle,
+  onOpen
+}: {
+  cards: AdmissionsBoardCard[];
+  expanded: boolean;
+  onToggle: () => void;
+  onOpen: (card: AdmissionsBoardCard) => void;
+}) {
+  if (!cards.length) {
+    return (
+      <p data-admissions-mobile-category-list="true" className="rounded-xl border border-[#dfe3e1] bg-white px-4 py-10 text-center text-[12px] text-[#69716c]">
+        No referrals in this category for the selected communities.
+      </p>
+    );
+  }
+
+  const shown = expanded ? cards : cards.slice(0, LIST_PREVIEW);
+  return (
+    <div data-admissions-mobile-category-list="true">
+      <ul className="space-y-3">
+        {shown.map((card) => (
+          <li key={card.referralId}>
+            <BoardCard card={card} onOpen={() => onOpen(card)} />
+          </li>
+        ))}
+      </ul>
+      {cards.length > LIST_PREVIEW ? (
+        <button type="button" onClick={onToggle} className="mt-4 min-h-11 text-[12px] font-semibold text-[#0f795f] hover:underline">
+          {expanded ? "Show fewer" : `Show all ${cards.length}`}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function ReferralList({ cards, expanded, onToggle, onOpen }: { cards: AdmissionsBoardCard[]; expanded: boolean; onToggle: () => void; onOpen: (card: AdmissionsBoardCard) => void }) {
   if (!cards.length) return <p className="rounded-xl border border-[#dfe3e1] bg-white px-4 py-10 text-center text-[12px] text-[#69716c]">No referrals match these filters.</p>;
   const shown = expanded ? cards : cards.slice(0, LIST_PREVIEW);
@@ -795,7 +851,7 @@ function CommunityPill({ active, onClick, children }: { active: boolean; onClick
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex min-h-9 items-center rounded-full border px-3.5 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f795f] bg-[#e5f2ec] text-[#145e48]" : "border-[#d9dfdb] bg-white text-[#59615c] hover:border-[#9eb9ac] hover:bg-[#f7faf8]"}`}
+      className={`inline-flex min-h-9 shrink-0 items-center rounded-full border px-3.5 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f795f] bg-[#e5f2ec] text-[#145e48]" : "border-[#d9dfdb] bg-white text-[#59615c] hover:border-[#9eb9ac] hover:bg-[#f7faf8]"}`}
     >
       {children}
     </button>

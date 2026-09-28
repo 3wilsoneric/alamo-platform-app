@@ -415,22 +415,41 @@ await withBrowserQa(async (browser) => {
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
   const mobileSurfaceTabs = mobilePage.locator('[data-admissions-surface-tabs="true"]');
-  const mobileTabs = mobileSurfaceTabs.getByRole("tab");
-  const [mobileFirstTabBox, mobileLastTabBox] = await Promise.all([
-    mobileTabs.first().boundingBox(),
-    mobileTabs.last().boundingBox()
-  ]);
-  const mobileViewport = mobilePage.viewportSize();
+  const mobileCategoryNavigation = mobilePage.locator('[data-admissions-mobile-category-navigation="true"]');
+  await mobileCategoryNavigation.waitFor({ state: "visible" });
   if (
-    !mobileFirstTabBox ||
-    !mobileLastTabBox ||
-    !mobileViewport ||
-    Math.abs(
-      (mobileFirstTabBox.x + mobileLastTabBox.x + mobileLastTabBox.width) / 2 -
-      (mobileViewport.width / 2)
-    ) > 2
+    await mobileSurfaceTabs.isVisible() ||
+    await mobileCategoryNavigation.getByRole("tab").count() !== 5 ||
+    await mobilePage.locator('[data-admissions-layout-toggle="true"]').isVisible() ||
+    await mobilePage.locator('[data-admissions-board-column]').filter({ visible: true }).count()
   ) {
-    throw new Error(`Mobile Admissions surface navigation must stay centered at the top of the page: ${JSON.stringify({ mobileFirstTabBox, mobileLastTabBox, mobileViewport })}`);
+    throw new Error("Mobile Admissions must use category navigation and a client list instead of the desktop board controls.");
+  }
+  for (const name of ["Referral received", "In progress", "Decision", "Census", "Trends"]) {
+    if (await mobileCategoryNavigation.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
+      throw new Error(`Mobile Admissions is missing its ${name} category.`);
+    }
+  }
+  const mobileCommunityPills = mobilePage.locator('[data-admissions-community-filters="true"] button');
+  const [firstCommunityPillBox, lastCommunityPillBox] = await Promise.all([
+    mobileCommunityPills.first().boundingBox(),
+    mobileCommunityPills.last().boundingBox()
+  ]);
+  if (
+    !firstCommunityPillBox ||
+    !lastCommunityPillBox ||
+    Math.abs(firstCommunityPillBox.y - lastCommunityPillBox.y) > 2
+  ) {
+    throw new Error("Mobile Admissions community filters must stay in one horizontally scrollable row.");
+  }
+  await mobileCategoryNavigation.getByRole("tab", { name: /^In progress/ }).click();
+  await mobilePage.locator('[data-admissions-mobile-category-list="true"]').waitFor({ state: "visible" });
+  const visibleMobileCards = mobilePage.locator('[data-admissions-board-card]').filter({ visible: true });
+  if (
+    await visibleMobileCards.count() !== 1 ||
+    !/Jordan Lee/.test(await visibleMobileCards.first().innerText())
+  ) {
+    throw new Error("Selecting a mobile Admissions category must show only that category's client list.");
   }
   if (
     await mobilePage.locator('[data-platform-page-target="analytics"]').getAttribute("data-platform-page-side") !== "right"
@@ -448,7 +467,7 @@ await withBrowserQa(async (browser) => {
     path: `${screenshotDir}/mobile-admissions-board.png`,
     fullPage: true
   });
-  await mobilePage.locator('[data-admissions-board-card]').first().click();
+  await visibleMobileCards.first().click();
   const mobileProgress = mobilePage.locator('[data-admissions-progress-modal="true"]');
   await mobileProgress.waitFor({ state: "visible" });
   if (
@@ -497,7 +516,7 @@ await withBrowserQa(async (browser) => {
   });
   await mobileProgress.getByRole("button", { name: "Close management chart" }).click();
   await mobileProgress.waitFor({ state: "hidden" });
-  await mobilePage.locator('[data-admissions-board-card]').first().click();
+  await visibleMobileCards.first().click();
   await mobileProgress.waitFor({ state: "visible" });
   await mobileProgress.click({ position: { x: 1, y: 1 } });
   await mobileProgress.waitFor({ state: "hidden" });
