@@ -715,6 +715,33 @@ desktop, phone, tablet, and ultrawide visual checks passed before promotion.
 Post-promotion verification confirmed the exact JavaScript and CSS assets, a
 healthy revision at 100% traffic, and all four public production smoke probes.
 
+### Primary Platform text navigation correction — 2026-09-28
+
+The preceding text-only treatment was corrected to apply to the primary
+`Analytics` and `Admissions` destinations, not the Analytics workspace
+switcher. Those primary destinations now remain beside one another at the upper
+right without arrows, and the active page receives a light green outlined box.
+The Alamo home anchor remains at the upper left. `Reports` and `Ask a question`
+were restored to their bordered Analytics control and positioned independently
+so neither navigation overlaps from phone through ultrawide widths.
+
+- source commit: `c245bcf`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/57`
+- image tag: `alamo-platform:primary-text-nav-c245bcf`
+- image digest: `sha256:d93329474498a735d53c18214034eeca777b0d272fe65eba930bc312ff613763`
+- active revision: `alamo-platform-prod-web--primary-text-nav-0928`
+- rollback digest: `sha256:35916d7d19fac583b623defe7c17d717c319436e37e28ed7f88c98f9fb0212c2`
+
+This frontend-only release adds one browser-bundle layer to the flattened
+runtime and does not change the server, API, environment, or data adapters.
+TypeScript, the California Home contract, documentation, the
+production-configured build, full report coverage, Admissions dashboard
+contracts, and responsive browser coverage from phone through ultrawide passed
+before promotion. Desktop and mobile visual checks also confirmed the active
+Analytics and Admissions states. Post-promotion verification confirmed the
+exact JavaScript and CSS assets, a healthy revision at 100% traffic, and all
+four public production smoke probes.
+
 ## Local Development
 
 Install and run:
