@@ -3,9 +3,9 @@ FROM ${BASE_IMAGE}
 
 # Preserve the proven Azure server, API, configuration, and runtime from the
 # selected production digest. Replace only the validated Vite browser bundle.
-USER root
-WORKDIR /app
-RUN rm -rf /app/dist
-COPY dist ./dist
-RUN chown -R node:node /app/dist
-USER node
+# Keep this to one filesystem layer. Repeated frontend-only releases inherit
+# every preceding image layer, and extra RUN/USER/WORKDIR steps eventually hit
+# the registry's maximum image depth. Fingerprinted Vite assets can safely
+# coexist with older unreferenced files; index.html and the active assets are
+# overwritten by this copy.
+COPY --chown=node:node dist /app/dist
