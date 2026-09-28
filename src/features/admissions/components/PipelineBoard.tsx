@@ -179,7 +179,7 @@ const DECISION_TAB = {
   inProgress: {
     state: "in-progress",
     label: "In progress",
-    className: "border-[#3159b8] bg-[#365fc7] text-white"
+    className: "border-[#3159b8] bg-[#365fc7] !text-white"
   },
   underReview: {
     state: "under-review",
