@@ -14,6 +14,8 @@ import CaliforniaHomePage from "../features/california/pages/CaliforniaHomePage"
 import DataArchitecturePage from "../features/architecture/pages/DataArchitecturePage";
 import AdmissionsPage from "../features/admissions/pages/AdmissionsPage";
 
+import LicensingPage from "../features/licensing/pages/LicensingPage";
+
 function RouteBoundary({ children }: { children: ReactNode }) {
   const location = useLocation();
 
@@ -60,6 +62,7 @@ export default function App() {
         <Route path="/glossary" element={withRouteBoundary(<GlossaryPage />)} />
         <Route path="/explorer/:kind" element={withRouteBoundary(<DataExplorerPage />)} />
         <Route path="/command-center" element={withRouteBoundary(<CommandCenterPage />)} />
+        <Route path="/licensing" element={withRouteBoundary(<LicensingPage />)} />
         <Route path="/fiftystate" element={withRouteBoundary(<FiftyStatePage />)} />
         <Route
           path="/data-architecture"

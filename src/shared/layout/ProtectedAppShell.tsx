@@ -39,7 +39,7 @@ export default function ProtectedAppShell() {
     isE2EAuthBypassEnabled
   );
   const skipWorkspacePreparation =
-    isAdmissionsExperience || isPipelineHandoff || admissionsAccess.restrictedToAdmissions;
+    isAdmissionsExperience || isPipelineHandoff || location.pathname === "/licensing" || admissionsAccess.restrictedToAdmissions;
   const accountKey = isE2EAuthBypassEnabled
     ? "e2e-authenticated"
     : accounts[0]?.homeAccountId ?? "authenticated";
@@ -197,7 +197,9 @@ export default function ProtectedAppShell() {
               ? "px-3 pb-10 pt-3 sm:px-4 sm:pt-4 lg:px-8"
               : isCaliforniaExperience
                 ? "px-0 pb-0"
-                : "px-3 pb-10 pt-16 sm:px-4 sm:pt-20 lg:px-8 print:px-0 print:pb-0 print:pt-0"
+                : location.pathname === "/licensing"
+                  ? "px-3 pb-10 pt-14 sm:px-4 sm:pt-16 lg:px-8 print:px-0 print:pb-0 print:pt-0"
+                  : "px-3 pb-10 pt-16 sm:px-4 sm:pt-20 lg:px-8 print:px-0 print:pb-0 print:pt-0"
           }
         >
           <div className="mx-auto min-h-full w-full max-w-[1432px]">

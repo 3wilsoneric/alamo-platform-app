@@ -5,7 +5,7 @@
 .auth/
 .vercel
 .next/
-node_modules/
+node_modules
 generated/
 output/
 tmp/

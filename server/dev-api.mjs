@@ -1,3 +1,4 @@
+import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
 import http from "node:http";
 import {
   getCommunitySnapshotData,
@@ -363,6 +364,16 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    if (requestUrl.pathname === "/api/platform/licensing/updates") {
+      sendJson(res, 200, await getLicensingUpdates());
+      return;
+    }
+    if (requestUrl.pathname === "/api/platform/licensing" || requestUrl.pathname === "/api/platform/licensing/report") {
+      const loader = requestUrl.pathname.endsWith("/report") ? getLicensingReport : getLicensingLibrary;
+      sendJson(res, 200, await loader(requestUrl));
+      return;
+    }
+
     if (requestUrl.pathname === "/api/platform/admissions-dashboard") {
       sendJson(res, 200, await getAdmissionsDashboardData());
       return;
