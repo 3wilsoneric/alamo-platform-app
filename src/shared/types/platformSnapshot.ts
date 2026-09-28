@@ -215,6 +215,61 @@ export interface AdmissionsBoardCard {
   pipelineUrl: string;
 }
 
+export interface AdmissionsPipelineBriefingReferral {
+  referralId: number;
+  clientName: string;
+  receivedAt: string;
+  sourceName: string | null;
+  sourceCategory: string | null;
+  referringCounty: string | null;
+  community: string;
+  facilityId: string | null;
+  owner: string;
+  status: string;
+  pipelineUrl: string;
+}
+
+export interface AdmissionsPipelineBriefingAssessment {
+  referralId: number;
+  clientName: string;
+  scheduledAt: string;
+  community: string;
+  facilityId: string | null;
+  owner: string;
+  status: string;
+  pipelineUrl: string;
+}
+
+export interface AdmissionsPipelineBriefingMoveIn {
+  referralId: number;
+  clientName: string;
+  plannedAt: string;
+  community: string;
+  facilityId: string | null;
+  owner: string;
+  status: string;
+  readiness: "ready" | "watch" | "blocked" | "unknown";
+  pipelineUrl: string;
+}
+
+export type AdmissionsPipelineBriefing =
+  | { status: "not_supported" }
+  | {
+      status: "ready";
+      timezone: "America/Los_Angeles";
+      windowEnd: string;
+      coverage: {
+        recentReferrals: boolean;
+        assessments: boolean;
+        moveIns: boolean;
+        weeklyTrend: boolean;
+      };
+      recentReferrals: AdmissionsPipelineBriefingReferral[];
+      upcomingAssessments: AdmissionsPipelineBriefingAssessment[];
+      plannedMoveIns: AdmissionsPipelineBriefingMoveIn[];
+      weeklyTrend: Array<{ weekStart: string; received: number; accepted: number }>;
+    };
+
 export type AdmissionsReferralPipeline =
   | { status: "not_connected" | "unavailable" }
   | {
@@ -228,12 +283,67 @@ export type AdmissionsReferralPipeline =
       };
       metrics: { onBoard: number; stale: number; unassigned: number; awaitingAdmission: number };
       upcomingAdmissions: { next7Days: number; next30Days: number; pastPlannedDate: number; noPlannedDate: number };
+      briefing: AdmissionsPipelineBriefing;
       history: {
         monthOutcomes: AdmissionsReferralMonth;
         monthly: AdmissionsReferralMonth[];
         decisionTiming: { windowDays: number; medianDaysToDecision: number | null; decisionsCounted: number };
       };
     };
+
+export interface AdmissionsBriefingCommunityRow {
+  facilityId: string;
+  communityName: string;
+  shortName: string;
+  census: number | null;
+  operatingLimit: number | null;
+  occupancyPct: number | null;
+  newReferrals7d: number | null;
+  newReferrals14d: number | null;
+  assessmentsThisWeek: number | null;
+  plannedMoveInsThisWeek: number | null;
+  completedMoveInsThisWeek: number | null;
+}
+
+export interface AdmissionsBriefingOriginRow {
+  key: string;
+  sourceName: string;
+  sourceCategory: string | null;
+  referringCounty: string | null;
+  last7Days: number;
+  previous7Days: number;
+  total14Days: number;
+  communities: string[];
+}
+
+export interface AdmissionsWeeklyBriefing {
+  sourceStatus: "ready" | "source_upgrade_required" | "not_connected" | "unavailable";
+  asOfDate: string;
+  pipelineAsOfDate: string | null;
+  weekStart: string;
+  weekEnd: string;
+  coverage: {
+    recentReferrals: boolean;
+    assessments: boolean;
+    moveIns: boolean;
+    weeklyTrend: boolean;
+    completedMoveIns: boolean;
+  };
+  totals: {
+    census: number | null;
+    newReferrals7d: number | null;
+    newReferrals14d: number | null;
+    assessmentsThisWeek: number | null;
+    plannedMoveInsThisWeek: number | null;
+    completedMoveInsThisWeek: number | null;
+  };
+  communities: AdmissionsBriefingCommunityRow[];
+  origins: AdmissionsBriefingOriginRow[];
+  recentReferrals: AdmissionsPipelineBriefingReferral[];
+  upcomingAssessments: AdmissionsPipelineBriefingAssessment[];
+  plannedMoveIns: AdmissionsPipelineBriefingMoveIn[];
+  trend: Array<{ weekStart: string; received: number; accepted: number; completedMoveIns: number | null }>;
+}
 
 export interface AdmissionsDashboardResponse {
   generated_at: string;
@@ -254,6 +364,7 @@ export interface AdmissionsDashboardResponse {
   communities: AdmissionsCommunityRow[];
   referral_trend: Array<{ month: string; received: number; accepted: number; censusAdmissions: number }>;
   referral_pipeline: AdmissionsReferralPipeline;
+  briefing: AdmissionsWeeklyBriefing;
   snapshot_status?: { warning: string | null; stale: boolean } | null;
 }
 

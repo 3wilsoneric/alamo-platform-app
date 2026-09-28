@@ -70,6 +70,171 @@ function boardCountsFor(cards) {
   };
 }
 
+function shiftDate(value, days) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function mondayFor(value) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  const offset = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - offset);
+  return date.toISOString().slice(0, 10);
+}
+
+function inDateWindow(value, start, end) {
+  const date = isoDate(value);
+  return Boolean(date && date >= start && date <= end);
+}
+
+function pipelineBriefingStatus(pipeline) {
+  if (pipeline.status === "not_connected") return "not_connected";
+  if (pipeline.status === "unavailable") return "unavailable";
+  return pipeline.briefing.status === "ready" ? "ready" : "source_upgrade_required";
+}
+
+function buildWeeklyBriefing({ asOfDate, census, communities, weeklyRows, referralPipeline }) {
+  const sourceStatus = pipelineBriefingStatus(referralPipeline);
+  const source = referralPipeline.status === "connected" && referralPipeline.briefing.status === "ready"
+    ? referralPipeline.briefing
+    : null;
+  const reportingDate = source?.windowEnd ?? asOfDate;
+  const weekStart = mondayFor(reportingDate);
+  const weekEnd = shiftDate(weekStart, 6);
+  const last7Start = shiftDate(reportingDate, -6);
+  const last14Start = shiftDate(reportingDate, -13);
+  const previous7End = shiftDate(reportingDate, -7);
+  const currentWeekRows = weeklyRows.filter((row) => textValue(row.week_start) === weekStart);
+  const completedMoveInsCovered = currentWeekRows.length > 0;
+  const coverage = {
+    recentReferrals: source?.coverage.recentReferrals === true,
+    assessments: source?.coverage.assessments === true,
+    moveIns: source?.coverage.moveIns === true,
+    weeklyTrend: source?.coverage.weeklyTrend === true,
+    completedMoveIns: completedMoveInsCovered
+  };
+  const recentReferrals = coverage.recentReferrals
+    ? source.recentReferrals
+      .filter((row) => inDateWindow(row.receivedAt, last14Start, reportingDate))
+      .sort((left, right) => right.receivedAt.localeCompare(left.receivedAt) || left.clientName.localeCompare(right.clientName))
+    : [];
+  const last7Referrals = recentReferrals.filter((row) => inDateWindow(row.receivedAt, last7Start, reportingDate));
+  const upcomingAssessments = coverage.assessments
+    ? source.upcomingAssessments
+      .filter((row) => inDateWindow(row.scheduledAt, reportingDate, weekEnd) && !/cancel|complete/i.test(row.status))
+      .sort((left, right) => left.scheduledAt.localeCompare(right.scheduledAt) || left.clientName.localeCompare(right.clientName))
+    : [];
+  const plannedMoveIns = coverage.moveIns
+    ? source.plannedMoveIns
+      .filter((row) => inDateWindow(row.plannedAt, weekStart, weekEnd) && !/cancel|denied/i.test(row.status))
+      .sort((left, right) => left.plannedAt.localeCompare(right.plannedAt) || left.clientName.localeCompare(right.clientName))
+    : [];
+  const briefingCommunities = communities.map((community) => {
+    const facilityReferrals = recentReferrals.filter((row) => row.facilityId === community.facilityId);
+    return {
+      facilityId: community.facilityId,
+      communityName: community.communityName,
+      shortName: community.shortName,
+      census: community.census,
+      operatingLimit: community.operatingLimit,
+      occupancyPct: community.occupancyPct,
+      newReferrals7d: coverage.recentReferrals
+        ? facilityReferrals.filter((row) => inDateWindow(row.receivedAt, last7Start, reportingDate)).length
+        : null,
+      newReferrals14d: coverage.recentReferrals ? facilityReferrals.length : null,
+      assessmentsThisWeek: coverage.assessments
+        ? upcomingAssessments.filter((row) => row.facilityId === community.facilityId).length
+        : null,
+      plannedMoveInsThisWeek: coverage.moveIns
+        ? plannedMoveIns.filter((row) => row.facilityId === community.facilityId).length
+        : null,
+      completedMoveInsThisWeek: completedMoveInsCovered
+        ? flowTotals(currentWeekRows.filter((row) => facilityId(row) === community.facilityId)).admissions
+        : null
+    };
+  });
+  const originMap = new Map();
+  for (const referral of recentReferrals) {
+    const sourceName = referral.sourceName ?? referral.sourceCategory ?? "Origin not recorded";
+    const key = [sourceName, referral.sourceCategory ?? "", referral.referringCounty ?? ""].join("|").toLowerCase();
+    const current = originMap.get(key) ?? {
+      key,
+      sourceName,
+      sourceCategory: referral.sourceCategory,
+      referringCounty: referral.referringCounty,
+      last7Days: 0,
+      previous7Days: 0,
+      total14Days: 0,
+      communities: new Set()
+    };
+    current.total14Days += 1;
+    if (inDateWindow(referral.receivedAt, last7Start, reportingDate)) current.last7Days += 1;
+    if (inDateWindow(referral.receivedAt, last14Start, previous7End)) current.previous7Days += 1;
+    current.communities.add(referral.facilityId ? referral.community : "No community assigned");
+    originMap.set(key, current);
+  }
+  const origins = [...originMap.values()]
+    .map((row) => ({ ...row, communities: [...row.communities].sort() }))
+    .sort((left, right) => right.total14Days - left.total14Days || left.sourceName.localeCompare(right.sourceName));
+  const trend = coverage.weeklyTrend
+    ? source.weeklyTrend
+      .slice(-12)
+      .map((point) => {
+        const matchingFlow = weeklyRows.filter((row) => textValue(row.week_start) === point.weekStart);
+        return {
+          weekStart: point.weekStart,
+          received: point.received,
+          accepted: point.accepted,
+          completedMoveIns: matchingFlow.length ? flowTotals(matchingFlow).admissions : null
+        };
+      })
+    : [];
+  const communityRowsWithUnassigned = [...briefingCommunities];
+  const unassignedReferrals = recentReferrals.filter((row) => !row.facilityId);
+  const unassignedAssessments = upcomingAssessments.filter((row) => !row.facilityId);
+  const unassignedMoveIns = plannedMoveIns.filter((row) => !row.facilityId);
+  if (unassignedReferrals.length || unassignedAssessments.length || unassignedMoveIns.length) {
+    communityRowsWithUnassigned.push({
+      facilityId: "unassigned",
+      communityName: "No community assigned",
+      shortName: "Unassigned",
+      census: null,
+      operatingLimit: null,
+      occupancyPct: null,
+      newReferrals7d: coverage.recentReferrals
+        ? unassignedReferrals.filter((row) => inDateWindow(row.receivedAt, last7Start, reportingDate)).length
+        : null,
+      newReferrals14d: coverage.recentReferrals ? unassignedReferrals.length : null,
+      assessmentsThisWeek: coverage.assessments ? unassignedAssessments.length : null,
+      plannedMoveInsThisWeek: coverage.moveIns ? unassignedMoveIns.length : null,
+      completedMoveInsThisWeek: null
+    });
+  }
+  return {
+    sourceStatus,
+    asOfDate,
+    pipelineAsOfDate: source?.windowEnd ?? null,
+    weekStart,
+    weekEnd,
+    coverage,
+    totals: {
+      census,
+      newReferrals7d: coverage.recentReferrals ? last7Referrals.length : null,
+      newReferrals14d: coverage.recentReferrals ? recentReferrals.length : null,
+      assessmentsThisWeek: coverage.assessments ? upcomingAssessments.length : null,
+      plannedMoveInsThisWeek: coverage.moveIns ? plannedMoveIns.length : null,
+      completedMoveInsThisWeek: completedMoveInsCovered ? flowTotals(currentWeekRows).admissions : null
+    },
+    communities: communityRowsWithUnassigned,
+    origins,
+    recentReferrals,
+    upcomingAssessments,
+    plannedMoveIns,
+    trend
+  };
+}
+
 /**
  * @param {any} snapshot
  * @param {{ referralPipeline?: any }} [options]
@@ -102,7 +267,15 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
       board: {
         ...pipeline.board,
         cards: pipeline.board.cards.map((card) => ({ ...card, facilityId: facilityIdForPipelineCommunity(card.community) }))
-      }
+      },
+      briefing: pipeline.briefing.status === "ready"
+        ? {
+          ...pipeline.briefing,
+          recentReferrals: pipeline.briefing.recentReferrals.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
+          upcomingAssessments: pipeline.briefing.upcomingAssessments.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
+          plannedMoveIns: pipeline.briefing.plannedMoveIns.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) }))
+        }
+        : pipeline.briefing
     }
     : pipeline;
   const boardCards = connected ? referralPipeline.board.cards : [];
@@ -139,6 +312,14 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
   const census = censusValues.length ? censusValues.reduce((total, value) => total + value, 0) : null;
   const operatingLimit = communities.reduce((total, community) => total + (community.operatingLimit ?? 0), 0);
 
+  const briefing = buildWeeklyBriefing({
+    asOfDate,
+    census,
+    communities,
+    weeklyRows,
+    referralPipeline
+  });
+
   return {
     generated_at: generatedAt || new Date().toISOString(),
     as_of_date: asOfDate,
@@ -166,6 +347,7 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
         censusAdmissions: flowTotals(monthlyRows.filter((flow) => textValue(flow.month_bucket) === row.month)).admissions
       }))
       : [],
-    referral_pipeline: referralPipeline
+    referral_pipeline: referralPipeline,
+    briefing
   };
 }

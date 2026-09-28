@@ -9,7 +9,6 @@ import {
 } from "../../../shared/api/platformData";
 import type {
   AdmissionsBoardColumnKey,
-  AdmissionsFlowPoint,
   AdmissionsReferralPipeline
 } from "../../../shared/types/platformSnapshot";
 import PipelineBoard from "../components/PipelineBoard";
@@ -19,11 +18,10 @@ import PlatformPageNavigation, {
 
 // Validated as a pair (light surface, CVD-safe with the direct legend labels).
 const ADMISSIONS_COLOR = "#0f8b73";
-const DISCHARGES_COLOR = "#b8493a";
 // Referral series, validated as a set with ADMISSIONS_COLOR (all pairs, CVD).
 const REFERRALS_COLOR = "#4a67c4";
 const ACCEPTED_COLOR = "#c7851a";
-type AdmissionsSurface = "board" | "census" | "trends";
+type AdmissionsSurface = "briefing" | "board" | "census";
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 type ExecutiveUpdateSegment = { text: string; strong?: boolean };
 type ExecutiveUpdateLine = {
@@ -40,7 +38,7 @@ export default function AdmissionsPage() {
   const [dashboard, setDashboard] = useState<AdmissionsDashboardResponse | null>(readCachedAdmissionsDashboard);
   const [loading, setLoading] = useState(!dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [surface, setSurface] = useState<AdmissionsSurface>("board");
+  const [surface, setSurface] = useState<AdmissionsSurface>("briefing");
   const [mobilePipelineColumn, setMobilePipelineColumn] = useState<AdmissionsBoardColumnKey>("received");
 
   // Every signed-in Platform user sees this working view, including the client
@@ -104,7 +102,7 @@ export default function AdmissionsPage() {
               );
             })}
             <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} compact />
-            <SurfaceTab active={surface === "trends"} label="Trends" count={dashboard?.referral_trend.length ? `${dashboard.referral_trend.length} mo` : null} panel="admissions-trends-panel" onClick={() => setSurface("trends")} compact />
+            <SurfaceTab active={surface === "briefing"} label="Briefing" count={null} panel="admissions-briefing-panel" onClick={() => setSurface("briefing")} compact />
           </div>
         </div>
 
@@ -117,7 +115,7 @@ export default function AdmissionsPage() {
           >
             <SurfaceTab active={surface === "board"} label="Board" count={pipeline?.board.total ?? null} panel="admissions-board-panel" onClick={() => setSurface("board")} />
             <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} />
-            <SurfaceTab active={surface === "trends"} label="Trends" count={dashboard?.referral_trend.length ? `${dashboard.referral_trend.length} mo` : null} panel="admissions-trends-panel" onClick={() => setSurface("trends")} />
+            <SurfaceTab active={surface === "briefing"} label="Briefing" count={null} panel="admissions-briefing-panel" onClick={() => setSurface("briefing")} />
           </div>
         </div>
 
@@ -134,11 +132,15 @@ export default function AdmissionsPage() {
           </div>
         ) : null}
 
-        {surface === "board" && pipeline ? (
-          <AdmissionsExecutiveUpdate pipeline={pipeline} />
-        ) : null}
-
         <div id={`admissions-${surface}-panel`} role="tabpanel" className="pt-1">
+          {surface === "briefing" ? (
+            <AdmissionsBriefingPanel
+              dashboard={dashboard}
+              loading={loading && !dashboard}
+              pipeline={pipeline}
+            />
+          ) : null}
+
           {surface === "board" ? (
             pipeline ? (
               <PipelineBoard
@@ -172,12 +174,6 @@ export default function AdmissionsPage() {
             />
           ) : null}
 
-          {surface === "trends" ? (
-            <section aria-label="Admissions trends" className="grid gap-5 xl:grid-cols-2">
-              {dashboard?.referral_trend.length ? <ReferralTrendChart points={dashboard.referral_trend} /> : null}
-              <WeeklyFlowChart points={dashboard?.weekly ?? []} loading={loading && !dashboard} />
-            </section>
-          ) : null}
         </div>
       </div>
     </div>
@@ -430,6 +426,289 @@ function mobilePipelineLabel(column: AdmissionsBoardColumnKey) {
   return "Decision";
 }
 
+function AdmissionsBriefingPanel({
+  dashboard,
+  loading,
+  pipeline
+}: {
+  dashboard: AdmissionsDashboardResponse | null;
+  loading: boolean;
+  pipeline: ConnectedAdmissionsPipeline | null;
+}) {
+  const briefing = dashboard?.briefing ?? null;
+  if (loading) {
+    return (
+      <div aria-label="Loading Admissions briefing" aria-busy="true" className="space-y-4">
+        <div className="h-28 animate-pulse rounded-2xl bg-[#f1f4f2]" />
+        <div className="h-72 animate-pulse rounded-xl bg-[#f7f8f7]" />
+      </div>
+    );
+  }
+  if (!dashboard || !briefing) {
+    return <p className="rounded-xl border border-[#dfe3e1] bg-white px-5 py-10 text-center text-[13px] text-[#69716c]">The weekly briefing is not available in the current snapshot.</p>;
+  }
+
+  return (
+    <div data-admissions-weekly-briefing="true" className="space-y-5">
+      {pipeline ? <AdmissionsExecutiveUpdate pipeline={pipeline} /> : null}
+
+      <section className="overflow-hidden rounded-xl border border-[#dfe3e1] bg-white" aria-labelledby="admissions-briefing-community-title">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#dfe3e1] px-4 py-4 sm:px-5">
+          <div>
+            <h2 id="admissions-briefing-community-title" className="text-[15px] font-semibold tracking-[-0.02em]">Community briefing</h2>
+            <p className="mt-1 text-[10px] text-[#737b77]">
+              Week of {formatDate(briefing.weekStart)} through {formatDate(briefing.weekEnd)}
+            </p>
+          </div>
+          <p className="text-[10px] text-[#737b77]">
+            Census through {formatDate(briefing.asOfDate)}
+            {briefing.pipelineAsOfDate ? ` · Referrals through ${formatDate(briefing.pipelineAsOfDate)}` : ""}
+          </p>
+        </div>
+
+        {briefing.sourceStatus !== "ready" ? (
+          <p data-admissions-briefing-source-notice="true" className="border-b border-[#ead8a9] bg-[#fffaf0] px-4 py-3 text-[11px] leading-5 text-[#75591f] sm:px-5">
+            Census and completed move-ins remain governed. Exact 7- and 14-day referral origins, scheduled assessments, and planned move-ins will populate when Pipeline publishes the briefing event feed; unavailable fields are not treated as zero.
+          </p>
+        ) : null}
+
+        <div className="space-y-3 p-3 sm:hidden">
+          {briefing.communities.map((community) => (
+            <article key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="rounded-xl border border-[#e3e7e5] p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="text-[13px] font-semibold">{community.shortName}</h3>
+                  <p className="mt-1 text-[10px] text-[#737b77]">{community.occupancyPct != null ? `${community.occupancyPct}% occupied` : "No census assigned"}</p>
+                </div>
+                <strong className="text-[24px] font-semibold tracking-[-0.03em]">{formatBriefingCount(community.census)}</strong>
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[#edf0ee] pt-3 text-[10px]">
+                <BriefingFact label="New referrals · 7d" value={community.newReferrals7d} />
+                <BriefingFact label="New referrals · 14d" value={community.newReferrals14d} />
+                <BriefingFact label="Assessments this week" value={community.assessmentsThisWeek} />
+                <BriefingFact label="Planned move-ins" value={community.plannedMoveInsThisWeek} />
+                <BriefingFact label="Completed move-ins" value={community.completedMoveInsThisWeek} />
+              </dl>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto sm:block">
+          <table className="w-full min-w-[940px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-[#e2e6e3] text-[10px] font-medium text-[#69716c]">
+                <th className="px-5 py-4">Community</th>
+                <th className="px-3 py-4 text-right">Census</th>
+                <th className="px-3 py-4 text-right">Referrals · 7d</th>
+                <th className="px-3 py-4 text-right">Referrals · 14d</th>
+                <th className="px-3 py-4 text-right">Assessments</th>
+                <th className="px-3 py-4 text-right">Planned move-ins</th>
+                <th className="px-5 py-4 text-right">Completed move-ins</th>
+              </tr>
+            </thead>
+            <tbody>
+              {briefing.communities.map((community) => (
+                <tr key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="border-b border-[#edf0ee] text-[12px] last:border-b-0">
+                  <td className="px-5 py-4 font-medium">{community.communityName}</td>
+                  <td className="px-3 py-4 text-right text-[16px] font-semibold">{formatBriefingCount(community.census)}</td>
+                  <td className="px-3 py-4 text-right">{formatBriefingCount(community.newReferrals7d)}</td>
+                  <td className="px-3 py-4 text-right">{formatBriefingCount(community.newReferrals14d)}</td>
+                  <td className="px-3 py-4 text-right">{formatBriefingCount(community.assessmentsThisWeek)}</td>
+                  <td className="px-3 py-4 text-right">{formatBriefingCount(community.plannedMoveInsThisWeek)}</td>
+                  <td className="px-5 py-4 text-right">{formatBriefingCount(community.completedMoveInsThisWeek)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,.95fr)]">
+        <section className="rounded-xl border border-[#dfe3e1] bg-white p-4 sm:p-5" aria-labelledby="admissions-origin-title">
+          <div className="border-b border-[#edf0ee] pb-3">
+            <h2 id="admissions-origin-title" className="text-[15px] font-semibold tracking-[-0.02em]">Referral origin · last 14 days</h2>
+            <p className="mt-1 text-[10px] text-[#737b77]">Last seven days compared with the previous seven.</p>
+          </div>
+          {briefing.coverage.recentReferrals ? (
+            briefing.origins.length ? (
+              <>
+                <div className="space-y-2 py-3 sm:hidden">
+                  {briefing.origins.map((origin) => (
+                    <article key={origin.key} className="rounded-lg border border-[#e3e7e5] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="text-[11px] font-semibold leading-4 text-[#263c35]">{origin.sourceName}</h3>
+                          {origin.referringCounty ? <p className="mt-0.5 text-[9px] text-[#7a817d]">{origin.referringCounty} County</p> : null}
+                        </div>
+                        <strong className="text-[16px] font-semibold tabular-nums text-[#263c35]">{origin.total14Days}</strong>
+                      </div>
+                      <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-[#edf0ee] pt-2 text-[9px]">
+                        <div><dt className="text-[#7a817d]">Last 7</dt><dd className="mt-0.5 font-semibold">{origin.last7Days}</dd></div>
+                        <div><dt className="text-[#7a817d]">Prior 7</dt><dd className="mt-0.5 font-semibold">{origin.previous7Days}</dd></div>
+                        <div><dt className="text-[#7a817d]">14 days</dt><dd className="mt-0.5 font-semibold">{origin.total14Days}</dd></div>
+                      </dl>
+                      <p className="mt-2 text-[9px] leading-4 text-[#69716c]">{origin.communities.join(", ")}</p>
+                    </article>
+                  ))}
+                </div>
+                <div className="hidden overflow-x-auto sm:block">
+                  <table className="w-full min-w-[560px] border-collapse text-left text-[11px]">
+                    <thead>
+                      <tr className="border-b border-[#edf0ee] text-[9px] font-medium uppercase tracking-[0.08em] text-[#7a817d]">
+                        <th className="py-3 pr-3">Origin</th>
+                        <th className="px-2 py-3 text-right">Last 7</th>
+                        <th className="px-2 py-3 text-right">Prior 7</th>
+                        <th className="px-2 py-3 text-right">14 days</th>
+                        <th className="py-3 pl-3">Communities</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {briefing.origins.map((origin) => (
+                        <tr key={origin.key} className="border-b border-[#f0f2f1] last:border-b-0">
+                          <td className="py-3 pr-3"><strong className="font-medium">{origin.sourceName}</strong>{origin.referringCounty ? <span className="mt-0.5 block text-[9px] text-[#7a817d]">{origin.referringCounty} County</span> : null}</td>
+                          <td className="px-2 py-3 text-right">{origin.last7Days}</td>
+                          <td className="px-2 py-3 text-right">{origin.previous7Days}</td>
+                          <td className="px-2 py-3 text-right font-semibold">{origin.total14Days}</td>
+                          <td className="py-3 pl-3 text-[#5f6762]">{origin.communities.join(", ")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 max-h-64 divide-y divide-[#edf0ee] overflow-y-auto border-t border-[#dfe3e1]">
+                  {briefing.recentReferrals.map((referral) => (
+                    <article key={`${referral.referralId}:${referral.receivedAt}`} data-admissions-recent-referral={referral.referralId} className="grid gap-1 py-3 text-[10px] sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-4">
+                      <p><strong className="font-semibold text-[#263c35]">{referral.clientName}</strong><span className="text-[#69716c]"> · {referral.sourceName ?? referral.sourceCategory ?? "Origin not recorded"}{referral.referringCounty ? ` · ${referral.referringCounty} County` : ""}</span></p>
+                      <p className="text-[#69716c] sm:text-right">{formatEventDate(referral.receivedAt)} · {referral.facilityId ? referral.community : "No community assigned"}</p>
+                    </article>
+                  ))}
+                </div>
+              </>
+            ) : <p className="py-8 text-[12px] text-[#737b77]">No referrals were received during the governed 14-day window.</p>
+          ) : <IncompleteBriefingField label="Recent-referral dates and origin" />}
+        </section>
+
+        <BriefingTrendPanel dashboard={dashboard} />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <BriefingSchedule
+          title="Upcoming assessments"
+          covered={briefing.coverage.assessments}
+          emptyLabel="No remaining assessments are scheduled this week."
+          items={briefing.upcomingAssessments.map((item) => ({
+            key: `${item.referralId}:${item.scheduledAt}`,
+            clientName: item.clientName,
+            date: item.scheduledAt,
+            community: item.facilityId ? item.community : "No community assigned",
+            owner: item.owner,
+            status: item.status
+          }))}
+        />
+        <BriefingSchedule
+          title="Move-ins this week"
+          covered={briefing.coverage.moveIns}
+          emptyLabel="No move-ins are planned for this week."
+          items={briefing.plannedMoveIns.map((item) => ({
+            key: `${item.referralId}:${item.plannedAt}`,
+            clientName: item.clientName,
+            date: item.plannedAt,
+            community: item.facilityId ? item.community : "No community assigned",
+            owner: item.owner,
+            status: item.readiness === "unknown" ? item.status : `${item.status} · ${item.readiness}`
+          }))}
+        />
+      </div>
+    </div>
+  );
+}
+
+function BriefingFact({ label, value }: { label: string; value: number | null }) {
+  return (
+    <div>
+      <dt className="text-[#737b77]">{label}</dt>
+      <dd className="mt-0.5 font-semibold text-[#263c35]">{formatBriefingCount(value)}</dd>
+    </div>
+  );
+}
+
+function BriefingTrendPanel({ dashboard }: { dashboard: AdmissionsDashboardResponse }) {
+  const points = dashboard.briefing.trend;
+  const max = Math.max(1, ...points.flatMap((point) => [point.received, point.accepted, point.completedMoveIns ?? 0]));
+  return (
+    <section data-admissions-briefing-trend="true" className="rounded-xl border border-[#dfe3e1] bg-white p-4 sm:p-5" aria-labelledby="admissions-briefing-trend-title">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ee] pb-3">
+        <h2 id="admissions-briefing-trend-title" className="text-[15px] font-semibold tracking-[-0.02em]">Weekly trend</h2>
+        <div className="flex flex-wrap gap-3 text-[9px] text-[#69716c]">
+          <LegendSwatch color={REFERRALS_COLOR} label="Received" />
+          <LegendSwatch color={ACCEPTED_COLOR} label="Accepted" />
+          <LegendSwatch color={ADMISSIONS_COLOR} label="Moved in" />
+        </div>
+      </div>
+      {dashboard.briefing.coverage.weeklyTrend && points.length ? (
+        <>
+          <div className="mt-5 flex h-48 items-end gap-2 border-b border-[#d9d9d9]">
+            {points.map((point) => (
+              <div key={point.weekStart} className="flex h-full min-w-0 flex-1 items-end justify-center gap-[2px]" title={`Week of ${formatDate(point.weekStart)}: ${point.received} received, ${point.accepted} accepted, ${formatBriefingCount(point.completedMoveIns)} moved in`}>
+                <Bar value={point.received} max={max} color={REFERRALS_COLOR} />
+                <Bar value={point.accepted} max={max} color={ACCEPTED_COLOR} />
+                <Bar value={point.completedMoveIns ?? 0} max={max} color={ADMISSIONS_COLOR} partial={point.completedMoveIns == null} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-2 text-[9px] text-[#737373]">
+            {points.map((point) => <span key={point.weekStart} className="min-w-0 flex-1 truncate text-center">{formatShortDate(point.weekStart)}</span>)}
+          </div>
+        </>
+      ) : <IncompleteBriefingField label="Weekly referral and acceptance history" />}
+    </section>
+  );
+}
+
+function BriefingSchedule({
+  title,
+  covered,
+  emptyLabel,
+  items
+}: {
+  title: string;
+  covered: boolean;
+  emptyLabel: string;
+  items: Array<{ key: string; clientName: string; date: string; community: string; owner: string; status: string }>;
+}) {
+  return (
+    <section className="rounded-xl border border-[#dfe3e1] bg-white p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-4 border-b border-[#edf0ee] pb-3">
+        <h2 className="text-[15px] font-semibold tracking-[-0.02em]">{title}</h2>
+        <span className="text-[11px] font-semibold tabular-nums text-[#315b54]">{covered ? items.length : "—"}</span>
+      </div>
+      {covered ? (
+        items.length ? (
+          <div className="max-h-72 divide-y divide-[#edf0ee] overflow-y-auto">
+            {items.map((item) => (
+              <article key={item.key} className="grid gap-1 py-3 text-[10px] sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-4">
+                <time className="font-semibold text-[#315b54]">{formatEventDate(item.date)}</time>
+                <div className="min-w-0">
+                  <p className="truncate"><strong className="font-semibold text-[#263c35]">{item.clientName}</strong><span className="text-[#69716c]"> · {item.community}</span></p>
+                  <p className="mt-0.5 text-[#7a817d]">{item.owner} · {item.status}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : <p className="py-8 text-[12px] text-[#737b77]">{emptyLabel}</p>
+      ) : <IncompleteBriefingField label={title} />}
+    </section>
+  );
+}
+
+function IncompleteBriefingField({ label }: { label: string }) {
+  return (
+    <p className="py-8 text-[12px] leading-5 text-[#8a6118]">
+      {label} is incomplete in the current Pipeline contract. No estimate is shown.
+    </p>
+  );
+}
+
 function CensusPanel({
   dashboard,
   loading,
@@ -543,123 +822,6 @@ function CensusPanel({
   );
 }
 
-function ReferralTrendChart({ points }: { points: AdmissionsDashboardResponse["referral_trend"] }) {
-  const [active, setActive] = useState<number | null>(null);
-  const max = Math.max(1, ...points.flatMap((point) => [point.received, point.accepted, point.censusAdmissions]));
-  const focused = active != null ? points[active] : points.at(-1) ?? null;
-
-  return (
-    <section aria-labelledby="admissions-referral-trend-title" data-admissions-referral-trend="true" className="rounded-xl border border-[#dfe3e1] bg-white p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ee] pb-4">
-        <h2 id="admissions-referral-trend-title" className="text-[15px] font-semibold tracking-[-0.02em]">
-          Referrals to move-ins
-        </h2>
-        <div className="flex flex-wrap items-center gap-4 text-[10px] text-[#595959]">
-          <LegendSwatch color={REFERRALS_COLOR} label="Referrals received" />
-          <LegendSwatch color={ACCEPTED_COLOR} label="Accepted" />
-          <LegendSwatch color={ADMISSIONS_COLOR} label="Census admissions" />
-        </div>
-      </div>
-      <p className="mt-3 min-h-5 text-[11px] text-[#595959]" aria-live="polite">
-        {focused ? (
-          <>
-            {formatMonth(focused.month)}: <strong className="text-[#111111]">{focused.received}</strong> referrals,{" "}
-            <strong className="text-[#111111]">{focused.accepted}</strong> accepted,{" "}
-            <strong className="text-[#111111]">{focused.censusAdmissions}</strong> admitted to census
-          </>
-        ) : null}
-      </p>
-      <div className="mt-2 flex h-44 items-end gap-2 border-b border-[#d9d9d9] sm:gap-4" onMouseLeave={() => setActive(null)}>
-        {points.map((point, index) => (
-          <button
-            key={point.month}
-            type="button"
-            aria-label={`${formatMonth(point.month)}: ${point.received} referrals, ${point.accepted} accepted, ${point.censusAdmissions} census admissions`}
-            onMouseEnter={() => setActive(index)}
-            onFocus={() => setActive(index)}
-            onBlur={() => setActive(null)}
-            className={`flex h-full min-w-0 flex-1 items-end justify-center gap-[2px] rounded-t-sm pt-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73] ${active === index ? "bg-[#f1f4f2]" : ""}`}
-          >
-            <Bar value={point.received} max={max} color={REFERRALS_COLOR} />
-            <Bar value={point.accepted} max={max} color={ACCEPTED_COLOR} />
-            <Bar value={point.censusAdmissions} max={max} color={ADMISSIONS_COLOR} />
-          </button>
-        ))}
-      </div>
-      <div className="mt-2 flex gap-2 text-[9px] text-[#737373] sm:gap-4">
-        {points.map((point) => (
-          <span key={point.month} className="min-w-0 flex-1 truncate text-center">{formatMonth(point.month).slice(0, 3)}</span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function WeeklyFlowChart({ points, loading }: { points: AdmissionsFlowPoint[]; loading: boolean }) {
-  const [active, setActive] = useState<number | null>(null);
-  const max = Math.max(1, ...points.flatMap((point) => [point.admissions, point.discharges]));
-  const focused = active != null ? points[active] : points.at(-1) ?? null;
-
-  return (
-    <section aria-labelledby="admissions-weekly-title" data-admissions-weekly-chart="true" className="rounded-xl border border-[#dfe3e1] bg-white p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ee] pb-4">
-        <h2 id="admissions-weekly-title" className="text-[15px] font-semibold tracking-[-0.02em]">
-          Weekly admissions and discharges
-        </h2>
-        <div className="flex items-center gap-4 text-[10px] text-[#595959]">
-          <LegendSwatch color={ADMISSIONS_COLOR} label="Admissions" />
-          <LegendSwatch color={DISCHARGES_COLOR} label="Discharges" />
-        </div>
-      </div>
-
-      {loading ? (
-        <div aria-busy="true" className="mt-4 h-48 animate-pulse bg-[#f7f8f7]" />
-      ) : points.length ? (
-        <>
-          <p className="mt-3 min-h-5 text-[11px] text-[#595959]" aria-live="polite">
-            {focused ? (
-              <>
-                Week of {formatDate(focused.period)}{focused.partial ? " (in progress)" : ""}:{" "}
-                <strong className="text-[#111111]">{focused.admissions}</strong> admitted,{" "}
-                <strong className="text-[#111111]">{focused.discharges}</strong> discharged, net{" "}
-                <strong className="text-[#111111]">{formatDelta(focused.net)}</strong>
-              </>
-            ) : null}
-          </p>
-          <div
-            className="mt-2 flex h-44 items-end gap-1 border-b border-[#d9d9d9] sm:gap-2"
-            onMouseLeave={() => setActive(null)}
-          >
-            {points.map((point, index) => (
-              <button
-                key={point.period}
-                type="button"
-                aria-label={`Week of ${formatDate(point.period)}: ${point.admissions} admissions, ${point.discharges} discharges`}
-                onMouseEnter={() => setActive(index)}
-                onFocus={() => setActive(index)}
-                onBlur={() => setActive(null)}
-                className={`flex h-full min-w-0 flex-1 items-end justify-center gap-[2px] rounded-t-sm pt-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73] ${active === index ? "bg-[#f1f4f2]" : ""}`}
-              >
-                <Bar value={point.admissions} max={max} color={ADMISSIONS_COLOR} partial={point.partial === true} />
-                <Bar value={point.discharges} max={max} color={DISCHARGES_COLOR} partial={point.partial === true} />
-              </button>
-            ))}
-          </div>
-          <div className="mt-2 flex gap-1 text-[9px] text-[#737373] sm:gap-2">
-            {points.map((point, index) => (
-              <span key={point.period} className="min-w-0 flex-1 truncate text-center">
-                {index % 2 === points.length % 2 ? "" : formatShortDate(point.period)}
-              </span>
-            ))}
-          </div>
-        </>
-      ) : (
-        <p className="py-8 text-[12px] text-[#737373]">Weekly resident flow is not available in the current snapshot.</p>
-      )}
-    </section>
-  );
-}
-
 function Bar({ value, max, color, partial }: { value: number; max: number; color: string; partial?: boolean }) {
   return (
     <span
@@ -685,6 +847,19 @@ function LegendSwatch({ color, label }: { color: string; label: string }) {
 
 function formatNumber(value: number | null) {
   return value == null || !Number.isFinite(value) ? "Not loaded" : value.toLocaleString("en-US");
+}
+
+function formatBriefingCount(value: number | null) {
+  return value == null || !Number.isFinite(value) ? "—" : value.toLocaleString("en-US");
+}
+
+function formatEventDate(value: string) {
+  const includesTime = value.includes("T");
+  const date = new Date(includesTime ? value : `${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", includesTime
+    ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" }
+    : { month: "short", day: "numeric" }).format(date);
 }
 
 function formatDelta(value: number | null) {

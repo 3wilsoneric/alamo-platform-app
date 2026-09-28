@@ -66,7 +66,7 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Admissions must select its own item in the adjacent upper-right Platform navigation.");
   }
-  for (const name of ["Board", "Census", "Trends"]) {
+  for (const name of ["Board", "Census", "Briefing"]) {
     if (await page.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
       throw new Error(`Admissions overview is missing its compact ${name} tab.`);
     }
@@ -89,12 +89,50 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error(`Admissions surface navigation must stay centered at the top of the page: ${JSON.stringify({ desktopFirstTabBox, desktopLastTabBox, desktopViewport })}`);
   }
-  const clientNames = page.locator('[data-admissions-client-name="true"]');
-  await clientNames.first().waitFor({ state: "visible", timeout: 60_000 });
-  if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
-    throw new Error("Admissions board cards must show the client name.");
+  const briefingTab = surfaceTabs.getByRole("tab", { name: /^Briefing/ });
+  if (
+    await briefingTab.getAttribute("aria-selected") !== "true" ||
+    await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1 ||
+    await page.getByRole("heading", { name: "Community briefing" }).count() !== 1
+  ) {
+    throw new Error("Admissions must open on the weekly leadership briefing.");
   }
   const executiveUpdate = page.locator('[data-admissions-executive-update="true"]');
+  if (await executiveUpdate.count() === 0) {
+    const sourceNotice = page.locator('[data-admissions-briefing-source-notice="true"]');
+    if (
+      await sourceNotice.count() !== 1 ||
+      !/unavailable fields are not treated as zero/i.test(await sourceNotice.innerText())
+    ) {
+      throw new Error("An unconnected Pipeline feed must produce an explicit incomplete-data briefing state.");
+    }
+    await page.screenshot({
+      path: `${screenshotDir}/desktop-admissions-briefing-incomplete.png`,
+      fullPage: true
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const fallbackMobileNavigation = page.locator('[data-admissions-mobile-category-navigation="true"]');
+    await fallbackMobileNavigation.waitFor({ state: "visible" });
+    if (
+      await fallbackMobileNavigation.getByRole("tab").count() !== 5 ||
+      await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1
+    ) {
+      throw new Error("The incomplete weekly briefing must retain all five mobile Admissions destinations.");
+    }
+    const fallbackOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    if (fallbackOverflow > 2) {
+      throw new Error(`Incomplete Admissions briefing has ${fallbackOverflow}px of horizontal overflow on mobile.`);
+    }
+    await page.screenshot({
+      path: `${screenshotDir}/mobile-admissions-briefing-incomplete.png`,
+      fullPage: true
+    });
+    if (consoleErrors.length || requestFailures.length) {
+      throw new Error(JSON.stringify({ consoleErrors, requestFailures }));
+    }
+    await context.close();
+    return;
+  }
   await executiveUpdate.waitFor({ state: "visible" });
   const streamStartLength = (await executiveUpdate.innerText()).trim().length;
   if (await executiveUpdate.getAttribute("data-admissions-chat-typing") !== "true") {
@@ -124,18 +162,12 @@ await withBrowserQa(async (browser) => {
   if (/[()]/.test(executiveText)) {
     throw new Error(`Admissions executive update must use natural counts without parentheses: ${executiveText}`);
   }
-  const acceptedClientNames = await page.locator('[data-admissions-card-decision="accept"]')
-    .locator('xpath=ancestor::*[@data-admissions-board-card][1]')
-    .locator('[data-admissions-client-name="true"]')
-    .allTextContents();
   const acceptedLine = executiveUpdate.locator('[data-admissions-executive-line="accepted"]');
   if (
-    acceptedClientNames.length < 1 ||
     await acceptedLine.count() !== 1 ||
-    !acceptedClientNames.every((name) => executiveText.includes(name.trim())) ||
     !/^Accepted clients moving toward admission:/.test((await acceptedLine.innerText()).trim())
   ) {
-    throw new Error("Admissions executive update must lead with every accepted client moving toward admission.");
+    throw new Error("Admissions executive update must lead with accepted clients moving toward admission.");
   }
   if (
     await executiveUpdate.locator('[data-admissions-executive-line]').count() !== 3 ||
@@ -172,6 +204,19 @@ await withBrowserQa(async (browser) => {
   }
   if (/Immediate follow-up:|Update overdue|Move-in overdue|Needs follow-up/.test(await page.locator("body").innerText())) {
     throw new Error("Admissions must not present automated attention judgments.");
+  }
+  await surfaceTabs.getByRole("tab", { name: /^Board/ }).click();
+  const clientNames = page.locator('[data-admissions-client-name="true"]');
+  await clientNames.first().waitFor({ state: "visible", timeout: 60_000 });
+  if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
+    throw new Error("Admissions board cards must show the client name.");
+  }
+  const acceptedClientNames = await page.locator('[data-admissions-card-decision="accept"]')
+    .locator('xpath=ancestor::*[@data-admissions-board-card][1]')
+    .locator('[data-admissions-client-name="true"]')
+    .allTextContents();
+  if (acceptedClientNames.length < 1 || !acceptedClientNames.every((name) => executiveText.includes(name.trim()))) {
+    throw new Error("The briefing must name every accepted client moving toward admission.");
   }
   const communityFilters = page.locator('[data-admissions-community-filters="true"]');
   await communityFilters.waitFor({ state: "visible" });
@@ -410,7 +455,7 @@ await withBrowserQa(async (browser) => {
   await page.getByRole("tab", { name: /^Census/ }).click();
   await page.getByRole("heading", { name: "Community census" }).waitFor();
   if (await executiveUpdate.count()) {
-    throw new Error("Admissions executive referral update must stay with the Board view.");
+    throw new Error("Admissions executive referral update must stay with the Briefing view.");
   }
   await page.screenshot({
     path: `${screenshotDir}/desktop-admissions-census.png`,
@@ -437,11 +482,24 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Mobile Admissions must use category navigation and a client list instead of the desktop board controls.");
   }
-  for (const name of ["Referral received", "In progress", "Decision", "Census", "Trends"]) {
+  for (const name of ["Referral received", "In progress", "Decision", "Census", "Briefing"]) {
     if (await mobileCategoryNavigation.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
       throw new Error(`Mobile Admissions is missing its ${name} category.`);
     }
   }
+  const mobileExecutiveUpdate = mobilePage.locator('[data-admissions-executive-update="true"]');
+  await mobileExecutiveUpdate.waitFor({ state: "visible", timeout: 60_000 });
+  await mobilePage.waitForFunction(
+    () => document.querySelector('[data-admissions-executive-update="true"]')?.getAttribute("data-admissions-chat-typing") === "false",
+    undefined,
+    { timeout: 20_000 }
+  );
+  await mobilePage.screenshot({
+    path: `${screenshotDir}/mobile-admissions-briefing.png`,
+    fullPage: true
+  });
+  await mobileCategoryNavigation.getByRole("tab", { name: /^In progress/ }).click();
+  await mobilePage.locator('[data-admissions-mobile-category-list="true"]').waitFor({ state: "visible" });
   const mobileCommunityPills = mobilePage.locator('[data-admissions-community-filters="true"] button');
   const [firstCommunityPillBox, lastCommunityPillBox] = await Promise.all([
     mobileCommunityPills.first().boundingBox(),
@@ -454,8 +512,6 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Mobile Admissions community filters must stay in one horizontally scrollable row.");
   }
-  await mobileCategoryNavigation.getByRole("tab", { name: /^In progress/ }).click();
-  await mobilePage.locator('[data-admissions-mobile-category-list="true"]').waitFor({ state: "visible" });
   const visibleMobileCards = mobilePage.locator('[data-admissions-board-card]').filter({ visible: true });
   if (
     await visibleMobileCards.count() !== 1 ||
@@ -484,13 +540,6 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Mobile Admissions must keep its adjacent primary links visible with Admissions selected.");
   }
-  const mobileExecutiveUpdate = mobilePage.locator('[data-admissions-executive-update="true"]');
-  await mobileExecutiveUpdate.waitFor({ state: "visible", timeout: 60_000 });
-  await mobilePage.waitForFunction(
-    () => document.querySelector('[data-admissions-executive-update="true"]')?.getAttribute("data-admissions-chat-typing") === "false",
-    undefined,
-    { timeout: 20_000 }
-  );
   await mobilePage.screenshot({
     path: `${screenshotDir}/mobile-admissions-board.png`,
     fullPage: true

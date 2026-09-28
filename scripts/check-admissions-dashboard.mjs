@@ -121,7 +121,7 @@ const column = (key, label, statuses) => ({
   statuses: statuses.map(([status, count]) => ({ status, count }))
 });
 const pipelinePayload = {
-  contract_version: "3.0",
+  contract_version: "3.1",
   generated_at: "2026-09-26T13:00:00.000Z",
   board: {
     total: 3,
@@ -139,6 +139,100 @@ const pipelinePayload = {
   },
   metrics: { on_board: 3, stale: 1, unassigned: 1, awaiting_admission: 1 },
   upcoming_admissions: { next_7_days: 0, next_30_days: 0, past_planned_date: 1, no_planned_date: 0 },
+  briefing: {
+    timezone: "America/Los_Angeles",
+    window_end: "2026-09-26",
+    coverage: {
+      recent_referrals_complete: true,
+      assessments_complete: true,
+      move_ins_complete: true,
+      weekly_trend_complete: true
+    },
+    recent_referrals: [
+      {
+        referral_id: 21,
+        client_name: "Avery Clark",
+        received_at: "2026-09-25T17:10:00-07:00",
+        source_name: "Contra Costa County Behavioral Health",
+        source_category: "County behavioral health",
+        referring_county: "Contra Costa",
+        community: "San Pablo",
+        owner: "Jordan",
+        status: "Assessment scheduled",
+        pipeline_path: "/?view=referrals&referralId=21"
+      },
+      {
+        referral_id: 22,
+        client_name: "Morgan Ellis",
+        received_at: "2026-09-22T09:00:00-07:00",
+        source_name: "Bay Medical Center",
+        source_category: "Acute hospital",
+        referring_county: "San Francisco",
+        community: "Victoria's House",
+        owner: "Jordan",
+        status: "Under Review",
+        pipeline_path: "/?view=referrals&referralId=22"
+      },
+      {
+        referral_id: 23,
+        client_name: "Riley Brooks",
+        received_at: "2026-09-18T11:30:00-07:00",
+        source_name: null,
+        source_category: "Private provider",
+        referring_county: null,
+        community: "Unassigned",
+        owner: "Unassigned",
+        status: "Referral received",
+        pipeline_path: "/?view=referrals&referralId=23"
+      }
+    ],
+    upcoming_assessments: [
+      {
+        referral_id: 21,
+        client_name: "Avery Clark",
+        scheduled_at: "2026-09-26T16:00:00-07:00",
+        community: "San Pablo",
+        owner: "Jordan",
+        status: "Scheduled",
+        pipeline_path: "/?view=referrals&referralId=21"
+      },
+      {
+        referral_id: 22,
+        client_name: "Morgan Ellis",
+        scheduled_at: "2026-09-27T10:00:00-07:00",
+        community: "Victoria's House",
+        owner: "Jordan",
+        status: "Scheduled",
+        pipeline_path: "/?view=referrals&referralId=22"
+      }
+    ],
+    planned_move_ins: [
+      {
+        referral_id: 13,
+        client_name: "Taylor Reed",
+        planned_at: "2026-09-25",
+        community: "Victoria's House",
+        owner: "Andrew",
+        status: "Awaiting admit",
+        readiness: "watch",
+        pipeline_path: "/?view=referrals&referralId=13"
+      },
+      {
+        referral_id: 24,
+        client_name: "Cameron Diaz",
+        planned_at: "2026-09-27",
+        community: "San Pablo",
+        owner: "Andrew",
+        status: "Accepted",
+        readiness: "ready",
+        pipeline_path: "/?view=referrals&referralId=24"
+      }
+    ],
+    weekly_trend: [
+      { week_start: "2026-09-14", received: 7, accepted: 3 },
+      { week_start: "2026-09-21", received: 5, accepted: 2 }
+    ]
+  },
   history: {
     month_outcomes: { month: "2026-09", received: 12, accepted: 5, declined: 2, admitted: 1 },
     monthly: [month("2026-08", 15, 6), month("2026-09", 12, 5)],
@@ -153,6 +247,11 @@ assert.equal(summary?.board.cards[0].managementProfile.dateOfBirth, "1981-04-03"
 assert.deepEqual(summary?.board.cards[0].managementProfile.supportSnapshot, [{ label: "Mobility", value: "Independent" }]);
 assert.equal(summary?.board.cards[0].pipelineUrl, "https://pipeline.example/?view=referrals&screen=packet&referralId=11&workspaceStage=assessment");
 assert.ok(!JSON.stringify(summary).includes("must not pass through"), "undocumented fields do not pass through");
+assert.equal(summary?.briefing.status, "ready");
+assert.equal(summary?.briefing.status === "ready" ? summary.briefing.recentReferrals.length : 0, 3);
+assert.equal(summary?.briefing.status === "ready" ? summary.briefing.plannedMoveIns[1]?.readiness : null, "ready");
+const legacySummary = normalizePipelineAdmissionsSummary({ ...pipelinePayload, briefing: undefined });
+assert.deepEqual(legacySummary?.briefing, { status: "not_supported" });
 const reject = (cardOverrides) => normalizePipelineAdmissionsSummary({
   ...pipelinePayload,
   board: { ...pipelinePayload.board, cards: [card(cardOverrides)] }
@@ -176,8 +275,39 @@ assert.deepEqual(connected.referral_trend, [
   { month: "2026-08", received: 15, accepted: 6, censusAdmissions: 22 },
   { month: "2026-09", received: 12, accepted: 5, censusAdmissions: 9 }
 ]);
+assert.equal(connected.briefing.sourceStatus, "ready");
+assert.equal(connected.briefing.weekStart, "2026-09-21");
+assert.equal(connected.briefing.weekEnd, "2026-09-27");
+assert.deepEqual(connected.briefing.totals, {
+  census: 189,
+  newReferrals7d: 2,
+  newReferrals14d: 3,
+  assessmentsThisWeek: 2,
+  plannedMoveInsThisWeek: 2,
+  completedMoveInsThisWeek: 3
+});
+assert.deepEqual(
+  connected.briefing.communities.map((row) => [row.shortName, row.newReferrals7d, row.newReferrals14d, row.assessmentsThisWeek, row.plannedMoveInsThisWeek, row.completedMoveInsThisWeek]),
+  [
+    ["San Pablo", 1, 1, 1, 1, 3],
+    ["Victoria's House", 1, 1, 1, 1, 0],
+    ["Unassigned", 0, 1, 0, 0, null]
+  ]
+);
+assert.deepEqual(connected.briefing.origins.map((row) => [row.sourceName, row.last7Days, row.previous7Days, row.total14Days]), [
+  ["Bay Medical Center", 1, 0, 1],
+  ["Contra Costa County Behavioral Health", 1, 0, 1],
+  ["Private provider", 0, 1, 1]
+]);
+assert.deepEqual(connected.briefing.trend, [
+  { weekStart: "2026-09-14", received: 7, accepted: 3, completedMoveIns: 6 },
+  { weekStart: "2026-09-21", received: 5, accepted: 2, completedMoveIns: 3 }
+]);
 assert.equal(dashboard.communities[0].referrals, null);
 assert.deepEqual(dashboard.referral_trend, []);
+assert.equal(dashboard.briefing.sourceStatus, "not_connected");
+assert.equal(dashboard.briefing.totals.newReferrals7d, null);
+assert.equal(dashboard.briefing.totals.completedMoveInsThisWeek, 3);
 
 const validators = await loadClientValidators();
 validators.admissionsDashboard(dashboard);
