@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-09-26
+- updated: 2026-09-28
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -40,6 +40,15 @@ and replace only `/app/dist`. This preserves the already-proven Azure server,
 API, environment, and data adapters while shipping the reviewed React bundle.
 Record the preceding image digest before promotion so rollback remains an Azure
 Container App image update.
+
+Repeated frontend overlays eventually approach the registry's image-depth
+ceiling. When that happens, use `Dockerfile.frontend-rebase` once with the exact
+current production digest as `BASE_IMAGE`. It copies the proven runtime
+filesystem into one fresh layer, adds the validated `/app/dist`, and recreates
+the current image's user, environment, working directory, entrypoint, and
+command. Before promotion, compare the resulting image configuration with the
+source image and confirm the flattened layer count. Resume ordinary
+`Dockerfile.frontend-release` overlays after that rebase release.
 
 ### Admissions board release — 2026-09-26
 
