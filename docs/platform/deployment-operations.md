@@ -626,6 +626,33 @@ expanded placement and assessment in place, kept one detail open at a time,
 and reported no horizontal overflow, legacy drill-down overlays, or browser
 errors.
 
+### Admissions mobile category navigation — 2026-09-28
+
+The Admissions workspace now uses a category-first list on phone and tablet
+widths instead of compressing the desktop board. `Referral received`,
+`In progress`, `Decision`, `Census`, and `Trends` form the mobile navigation;
+the selected pipeline category renders its client list and each client opens
+the existing management chart. Community filters stay in one horizontally
+scrollable row. Desktop retains the board/list controls and centers the
+`Board`, `Census`, and `Trends` navigation.
+
+- source commit: `024409e`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/49`
+- image tag: `alamo-platform:admissions-mobile-lists-024409e`
+- image digest: `sha256:cf66502c8155f201b5b3776c18d9e17db8fed29f23544494846f8070c46dce30`
+- active revision: `alamo-platform-prod-web--mobile-lists-0928`
+- rollback digest: `sha256:049f7e365d29ded864c86f6ffbac9798964392e021f7cb4ac5e1d737e15cd99a`
+
+This frontend-only release used the exact preceding production image as its
+base, so the backend, Pipeline feed contract, environment, and secrets did not
+change. TypeScript, the Admissions dashboard check, a production-configured
+build, and deterministic responsive coverage at 320, 390, 768, and 1024 pixels
+passed before promotion. Connected-feed fixture coverage confirmed category
+selection, client lists, the management-chart modal, one-row community filters,
+and no page or modal overflow at 390 and 768 pixels. Post-promotion verification
+confirmed the exact JavaScript and CSS assets, a healthy single revision at
+100% traffic, and all four public production smoke probes.
+
 ## Local Development
 
 Install and run:
