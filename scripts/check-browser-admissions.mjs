@@ -59,6 +59,24 @@ await withBrowserQa(async (browser) => {
       throw new Error(`Admissions overview is missing its compact ${name} tab.`);
     }
   }
+  const surfaceTabs = page.locator('[data-admissions-surface-tabs="true"]');
+  const desktopTabs = surfaceTabs.getByRole("tab");
+  const [desktopFirstTabBox, desktopLastTabBox] = await Promise.all([
+    desktopTabs.first().boundingBox(),
+    desktopTabs.last().boundingBox()
+  ]);
+  const desktopViewport = page.viewportSize();
+  if (
+    !desktopFirstTabBox ||
+    !desktopLastTabBox ||
+    !desktopViewport ||
+    Math.abs(
+      (desktopFirstTabBox.x + desktopLastTabBox.x + desktopLastTabBox.width) / 2 -
+      (desktopViewport.width / 2)
+    ) > 2
+  ) {
+    throw new Error(`Admissions surface navigation must stay centered at the top of the page: ${JSON.stringify({ desktopFirstTabBox, desktopLastTabBox, desktopViewport })}`);
+  }
   const clientNames = page.locator('[data-admissions-client-name="true"]');
   await clientNames.first().waitFor({ state: "visible", timeout: 60_000 });
   if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
@@ -198,7 +216,6 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("All communities must reset the Admissions board to its complete referral set.");
   }
-  const surfaceTabs = page.locator('[data-admissions-surface-tabs="true"]');
   const tabTreatment = await surfaceTabs.getByRole("tab", { name: /^Board/ }).evaluate((element) => {
     const tab = window.getComputedStyle(element);
     const list = window.getComputedStyle(element.parentElement);
@@ -397,6 +414,24 @@ await withBrowserQa(async (browser) => {
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
+  const mobileSurfaceTabs = mobilePage.locator('[data-admissions-surface-tabs="true"]');
+  const mobileTabs = mobileSurfaceTabs.getByRole("tab");
+  const [mobileFirstTabBox, mobileLastTabBox] = await Promise.all([
+    mobileTabs.first().boundingBox(),
+    mobileTabs.last().boundingBox()
+  ]);
+  const mobileViewport = mobilePage.viewportSize();
+  if (
+    !mobileFirstTabBox ||
+    !mobileLastTabBox ||
+    !mobileViewport ||
+    Math.abs(
+      (mobileFirstTabBox.x + mobileLastTabBox.x + mobileLastTabBox.width) / 2 -
+      (mobileViewport.width / 2)
+    ) > 2
+  ) {
+    throw new Error(`Mobile Admissions surface navigation must stay centered at the top of the page: ${JSON.stringify({ mobileFirstTabBox, mobileLastTabBox, mobileViewport })}`);
+  }
   if (
     await mobilePage.locator('[data-platform-page-target="analytics"]').getAttribute("data-platform-page-side") !== "right"
   ) {

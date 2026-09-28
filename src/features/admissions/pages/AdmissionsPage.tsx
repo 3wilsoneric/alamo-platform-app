@@ -79,7 +79,7 @@ export default function AdmissionsPage() {
             role="tablist"
             aria-label="Admissions views"
             data-admissions-surface-tabs="true"
-            className="flex min-w-0 max-w-full gap-6 overflow-x-auto border-b border-[#d9dfdb] sm:gap-8"
+            className="flex min-w-0 max-w-full justify-center gap-6 overflow-x-auto border-b border-[#d9dfdb] sm:gap-8"
           >
             <SurfaceTab active={surface === "board"} label="Board" count={pipeline?.board.total ?? null} panel="admissions-board-panel" onClick={() => setSurface("board")} />
             <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} />
