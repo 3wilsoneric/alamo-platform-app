@@ -598,6 +598,34 @@ a healthy single revision at 100% traffic, and all four public smoke probes. A
 signed-in production check opened all three chart drill-downs against the live
 21-card feed with no horizontal overflow, raw-document links, or browser errors.
 
+### Admissions data-row drill-down correction — 2026-09-27
+
+The chart-level drill-down sheets were replaced with direct, in-place
+disclosure on the existing management-chart rows. Status, placement, referral
+origin, coverage, client details, ownership and timing, assessment, documents,
+and requirements now expand into their underlying source fields. Only one row
+opens at a time; client context stays directly readable in the chart. This also
+corrects the mobile reading order and keeps the disclosure control to the right
+of each left-aligned label and value.
+
+- source commit: `c395211`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/47`
+- image tag: `alamo-platform:admissions-inline-drilldowns-c395211`
+- image digest: `sha256:049f7e365d29ded864c86f6ffbac9798964392e021f7cb4ac5e1d737e15cd99a`
+- active revision: `alamo-platform-prod-web--inline-drill-0927`
+- rollback digest: `sha256:8bb15245c20ac250b5c25dc4fef4ff4d475d19665bc80545b054ec8baa50bf61`
+
+This frontend-only correction used the existing stable runtime and did not
+change the backend or Pipeline feed contract. TypeScript, JavaScript lint,
+documentation, the Admissions dashboard check, the production-configured
+build, and deterministic desktop and 390-pixel browser coverage passed before
+promotion. Post-promotion verification confirmed the exact JavaScript asset, a
+healthy single revision at 100% traffic, and all four public smoke probes. A
+signed-in production check found all nine row controls on the live 21-card feed,
+expanded placement and assessment in place, kept one detail open at a time,
+and reported no horizontal overflow, legacy drill-down overlays, or browser
+errors.
+
 ## Local Development
 
 Install and run:
