@@ -571,6 +571,33 @@ healthy single revision at 100% traffic, and all four public production smoke
 probes. A fresh load in the owner's signed-in Chrome session confirmed all 15
 visible `In progress` labels computed to pure white text.
 
+### Admissions client-chart drill-downs — 2026-09-27
+
+The three summary bands inside each Admissions management chart are now
+interactive. `Admission brief` opens status provenance, placement, and referral
+origin; `Workflow and readiness` opens ownership, timing, and requirement
+readiness; and `Client context` opens the bounded assessment overview, care and
+support snapshot, and medication handoff. The detail remains inside the existing
+folder chart, keeps the client name and decision tab visible, and does not expose
+raw Pipeline notes or documents.
+
+- source commit: `635e467`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/45`
+- image tag: `alamo-platform:admissions-chart-drilldowns-635e467`
+- image digest: `sha256:8bb15245c20ac250b5c25dc4fef4ff4d475d19665bc80545b054ec8baa50bf61`
+- active revision: `alamo-platform-prod-web--chart-drilldowns-0927`
+- rollback digest: `sha256:30beb8bcead8e7e817e0261faed877d0730bc709cb6453817e6b3497dcd21060`
+
+This frontend-only release was rebuilt over the stable runtime image
+`sha256:1e8c4d9295e091f118e7d079fa6919a92eaab7027a6ffc07052e30aa5919a737`;
+the backend and Pipeline feed contract did not change. TypeScript, JavaScript
+lint, docs, the Admissions dashboard check, the production-configured build,
+and deterministic desktop and 390-pixel browser coverage passed before
+promotion. Post-promotion verification confirmed the exact JavaScript asset,
+a healthy single revision at 100% traffic, and all four public smoke probes. A
+signed-in production check opened all three chart drill-downs against the live
+21-card feed with no horizontal overflow, raw-document links, or browser errors.
+
 ## Local Development
 
 Install and run:
