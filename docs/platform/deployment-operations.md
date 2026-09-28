@@ -688,6 +688,33 @@ confirmed the exact JavaScript and CSS assets, absence of the removed report
 label in the live bundle, a healthy revision at 100% traffic, and all four
 public production smoke probes.
 
+### Analytics text navigation release — 2026-09-28
+
+The Analytics workspace switcher is now a quiet text row at the upper right.
+`Reports` and `Ask a question` sit directly beside one another with no tray or
+icons; only the current destination receives a light green outlined box. The
+desktop placement reserves space for the separate Admissions destination, and
+the same selected-state treatment remains legible without horizontal overflow
+on phone widths.
+
+- source commit: `9145330`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/54`
+- release-tooling commit: `5da22a3`
+- release-tooling PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/55`
+- image tag: `alamo-platform:analytics-text-nav-9145330`
+- image digest: `sha256:35916d7d19fac583b623defe7c17d717c319436e37e28ed7f88c98f9fb0212c2`
+- active revision: `alamo-platform-prod-web--analytics-text-nav-0928`
+- rollback digest: `sha256:9ee73ecb35a542b4a52f717c59645fd197c7df5f1e685ee58c39f4c4edbe8382`
+
+The release rebased the exact proven production filesystem into a fresh image
+after inherited frontend overlays reached the registry depth ceiling. Runtime
+configuration was preserved exactly while filesystem layers were reduced from
+125 to two. TypeScript, the California Home contract check, documentation, a
+production-configured build, the full report browser regression, and responsive
+desktop, phone, tablet, and ultrawide visual checks passed before promotion.
+Post-promotion verification confirmed the exact JavaScript and CSS assets, a
+healthy revision at 100% traffic, and all four public production smoke probes.
+
 ## Local Development
 
 Install and run:
