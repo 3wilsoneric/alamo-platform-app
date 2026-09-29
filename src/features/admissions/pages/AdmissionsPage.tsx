@@ -174,7 +174,7 @@ function AdmissionsSurfaceNavigation({
   return (
     <nav aria-label="Admissions pages" data-admissions-surface-navigation="true" className="border-b border-[#d9dfdb]">
       <div role="tablist" className="flex items-end gap-7">
-        {(["pipeline", "briefing"] as const).map((item) => (
+        {(["briefing", "pipeline"] as const).map((item) => (
           <button
             key={item}
             type="button"
@@ -498,11 +498,10 @@ function AdmissionsBriefingDashboard({
 
       <div data-admissions-briefing-dashboard="true" className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12"><BriefingCommunityDashboard briefing={briefing} /></div>
-        <div className="lg:col-span-7"><BriefingOriginDashboard briefing={briefing} /></div>
-        <div className="lg:col-span-5"><BriefingTrendPanel dashboard={dashboard} /></div>
         <div className="lg:col-span-6">
           <BriefingSchedule
             title="Upcoming assessments"
+            tone="assessment"
             covered={briefing.coverage.assessments}
             emptyLabel="No remaining assessments are scheduled this week."
             items={briefing.upcomingAssessments.map((item) => ({
@@ -518,6 +517,7 @@ function AdmissionsBriefingDashboard({
         <div className="lg:col-span-6">
           <BriefingSchedule
             title="Move-ins this week"
+            tone="move-in"
             covered={briefing.coverage.moveIns}
             emptyLabel="No move-ins are planned for this week."
             items={briefing.plannedMoveIns.map((item) => ({
@@ -530,12 +530,21 @@ function AdmissionsBriefingDashboard({
             }))}
           />
         </div>
+        <div className="lg:col-span-7"><BriefingOriginDashboard briefing={briefing} /></div>
+        <div className="lg:col-span-5"><BriefingTrendPanel dashboard={dashboard} /></div>
       </div>
     </section>
   );
 }
 
 function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
+  const assignedCommunities = briefing.communities.filter((community) =>
+    community.census != null && !/unassigned|no community/i.test(`${community.shortName} ${community.communityName}`)
+  );
+  const unassignedActivity = briefing.communities
+    .filter((community) => !assignedCommunities.includes(community))
+    .reduce((total, community) => total + (community.newReferrals7d ?? 0), 0);
+
   return (
     <section className="rounded-2xl border border-[#dfe3e1] bg-[#f8faf9] p-4 sm:p-5" aria-labelledby="admissions-community-dashboard-title">
       <div className="mb-4 flex items-end justify-between gap-3">
@@ -546,7 +555,7 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
         <p className="text-[11px] font-semibold text-[#315b54]">{formatBriefingCount(briefing.totals.census)} residents</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {briefing.communities.map((community) => (
+        {assignedCommunities.map((community) => (
           <article key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="rounded-xl border border-[#e0e6e2] bg-white p-4 shadow-[0_1px_0_rgba(19,45,37,0.03)]">
             <div className="flex items-start justify-between gap-3">
               <h4 className="min-w-0 text-[12px] font-semibold leading-4 text-[#263c35]">{community.shortName}</h4>
@@ -562,6 +571,11 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
           </article>
         ))}
       </div>
+      {unassignedActivity > 0 ? (
+        <p data-admissions-unassigned-footnote="true" className="mt-3 text-[9px] leading-4 text-[#737b77]">
+          {unassignedActivity} recent {pluralize("referral", unassignedActivity)} {unassignedActivity === 1 ? "has" : "have"} not yet been assigned to a destination community and {unassignedActivity === 1 ? "is" : "are"} omitted from the census cards.
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -572,8 +586,6 @@ function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardRe
   const [page, setPage] = useState(0);
   const currentPage = Math.min(page, pageCount - 1);
   const origins = briefing.origins.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
-  const max = Math.max(1, ...briefing.origins.map((origin) => origin.total14Days));
-
   return (
     <section className="h-full rounded-2xl border border-[#dfe3e1] bg-white p-4 sm:p-5" aria-labelledby="admissions-origin-dashboard-title">
       <div className="flex items-center justify-between gap-4">
@@ -591,24 +603,34 @@ function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardRe
       </div>
       {briefing.coverage.recentReferrals ? (
         origins.length ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {origins.map((origin) => {
+          <ol className="mt-4 divide-y divide-[#e8ecea] border-y border-[#e8ecea]">
+            {origins.map((origin, index) => {
               const direction = origin.last7Days - origin.previous7Days;
               return (
-                <article key={origin.key} className="rounded-xl bg-[#f6f8f7] p-3.5">
-                  <div className="flex items-start justify-between gap-3">
+                <li key={origin.key}>
+                  <article className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 py-3.5">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#eef2f0] text-[10px] font-semibold tabular-nums text-[#61706a]" aria-label={`Rank ${currentPage * pageSize + index + 1}`}>{currentPage * pageSize + index + 1}</span>
                     <div className="min-w-0">
-                      <h4 className="truncate text-[11px] font-semibold text-[#263c35]">{origin.sourceName}</h4>
-                      <p className="mt-0.5 truncate text-[9px] text-[#7a817d]">{origin.referringCounty ? `${origin.referringCounty} County` : origin.communities.join(", ")}</p>
+                      <h4 className="truncate text-[12px] font-semibold text-[#263c35]">{origin.sourceName}</h4>
+                      <p className="mt-0.5 truncate text-[9px] text-[#7a817d]">
+                        {[origin.referringCounty ? `${origin.referringCounty} County` : null, origin.communities.length ? origin.communities.join(", ") : null].filter(Boolean).join(" · ") || "Source location not recorded"}
+                      </p>
+                      <p className="mt-1.5 text-[9px] font-medium text-[#5f6762]">
+                        {origin.last7Days} in the last 7 days
+                        <span className={`ml-2 inline-flex rounded-full px-2 py-0.5 ${direction > 0 ? "bg-[#e8f3ee] text-[#176d51]" : direction < 0 ? "bg-[#f8ece8] text-[#98503c]" : "bg-[#eef1ef] text-[#68716c]"}`}>
+                          {direction > 0 ? `+${direction} vs prior week` : direction < 0 ? `${direction} vs prior week` : "Steady vs prior week"}
+                        </span>
+                      </p>
                     </div>
-                    <strong className="text-[19px] font-semibold leading-none tabular-nums text-[#183f34]">{origin.total14Days}</strong>
-                  </div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e2e8e5]" aria-hidden="true"><span className="block h-full rounded-full bg-[#4a67c4]" style={{ width: `${(origin.total14Days / max) * 100}%` }} /></div>
-                  <p className="mt-2 text-[9px] leading-4 text-[#69716c]">{origin.last7Days} in the last 7 days · {direction > 0 ? `${direction} more` : direction < 0 ? `${Math.abs(direction)} fewer` : "unchanged"}</p>
-                </article>
+                    <div className="text-right">
+                      <strong className="block text-[20px] font-semibold leading-none tabular-nums text-[#183f34]">{origin.total14Days}</strong>
+                      <span className="mt-1 block text-[8px] uppercase tracking-[0.08em] text-[#8a918d]">14 days</span>
+                    </div>
+                  </article>
+                </li>
               );
             })}
-          </div>
+          </ol>
         ) : <p className="py-12 text-[12px] text-[#737b77]">No referrals were received during the governed 14-day window.</p>
       ) : <IncompleteBriefingField label="Recent-referral dates and origin" />}
     </section>
@@ -650,35 +672,43 @@ function BriefingTrendPanel({ dashboard }: { dashboard: AdmissionsDashboardRespo
 
 function BriefingSchedule({
   title,
+  tone,
   covered,
   emptyLabel,
   items
 }: {
   title: string;
+  tone: "assessment" | "move-in";
   covered: boolean;
   emptyLabel: string;
   items: Array<{ key: string; clientName: string; date: string; community: string; owner: string; status: string }>;
 }) {
+  const treatment = tone === "move-in"
+    ? { surface: "bg-[#edf7f2]", border: "border-[#c8dfd3]", count: "bg-[#197453] text-white", date: "bg-[#dcefe6] text-[#145b43]" }
+    : { surface: "bg-[#f0f3fc]", border: "border-[#d4dcf5]", count: "bg-[#365fc7] text-white", date: "bg-[#e2e8fa] text-[#3159b8]" };
   return (
-    <section className="rounded-xl border border-[#dfe3e1] bg-white p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-4 border-b border-[#edf0ee] pb-3">
-        <h2 className="text-[15px] font-semibold tracking-[-0.02em]">{title}</h2>
-        <span className="text-[11px] font-semibold tabular-nums text-[#315b54]">{covered ? items.length : "—"}</span>
+    <section data-admissions-priority-schedule={tone} className={`h-full min-h-[230px] overflow-hidden rounded-2xl border ${treatment.border} bg-white shadow-[0_2px_8px_rgba(24,63,52,0.04)]`}>
+      <div className={`flex items-center justify-between gap-4 px-4 py-4 sm:px-5 ${treatment.surface}`}>
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f7974]">This week</p>
+          <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.025em] text-[#263c35]">{title}</h2>
+        </div>
+        <span className={`inline-flex min-w-9 items-center justify-center rounded-full px-2.5 py-1.5 text-[12px] font-semibold tabular-nums ${treatment.count}`}>{covered ? items.length : "—"}</span>
       </div>
       {covered ? (
         items.length ? (
-          <div className="divide-y divide-[#edf0ee]">
+          <div className="space-y-2 p-3 sm:p-4">
             {items.map((item) => (
-              <article key={item.key} className="grid gap-1 py-3 text-[10px] sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-4">
-                <time className="font-semibold text-[#315b54]">{formatEventDate(item.date)}</time>
+              <article key={item.key} className="grid gap-2 rounded-xl border border-[#e6eae8] bg-white p-3 text-[10px] sm:grid-cols-[84px_minmax(0,1fr)] sm:items-center sm:gap-x-4">
+                <time className={`inline-flex w-fit rounded-lg px-2.5 py-1.5 font-semibold ${treatment.date}`}>{formatEventDate(item.date)}</time>
                 <div className="min-w-0">
-                  <p className="truncate"><strong className="font-semibold text-[#263c35]">{item.clientName}</strong><span className="text-[#69716c]"> · {item.community}</span></p>
-                  <p className="mt-0.5 text-[#7a817d]">{item.owner} · {item.status}</p>
+                  <p className="truncate text-[11px]"><strong className="font-semibold text-[#263c35]">{item.clientName}</strong><span className="text-[#69716c]"> · {item.community}</span></p>
+                  <p className="mt-1 text-[9px] leading-4 text-[#7a817d]">{item.owner} · {item.status}</p>
                 </div>
               </article>
             ))}
           </div>
-        ) : <p className="py-8 text-[12px] text-[#737b77]">{emptyLabel}</p>
+        ) : <p className="flex min-h-[150px] items-center justify-center px-5 text-center text-[12px] text-[#69716c]">{emptyLabel}</p>
       ) : <IncompleteBriefingField label={title} />}
     </section>
   );

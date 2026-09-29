@@ -13,8 +13,9 @@ Admissions and Pipeline are deliberately separate product surfaces.
 
 `/admissions` is an Alamo-native working overview. It reads
 `GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and
-opens on the live **Pipeline** page. A two-item Admissions navigation separates
-that operating workspace from the **Briefing** page; `?view=briefing` is
+opens on the live **Pipeline** page. A two-item Admissions navigation displays
+**Briefing** before **Pipeline** while keeping Pipeline as the default operating
+workspace; `?view=briefing` is
 addressable and survives reload. The page uses the same white canvas as the
 main Home surface. Neither destination uses a repeated product title or KPI
 strip.
@@ -24,12 +25,15 @@ strip.
   workload by stage, and the busiest communities. It types in only on its first
   appearance in a browser session; returning to the page or reloading it restores
   the complete response immediately. The responsive dashboard combines governed
-  census and occupancy cards by community, ranked referral-source cards for the
-  trailing 14 days, the weekly received/accepted/moved-in trend, remaining
-  assessments scheduled through Sunday, and planned move-ins for the
+  census and occupancy cards by community, a ranked referral-source activity
+  list for the trailing 14 days, the weekly received/accepted/moved-in trend,
+  remaining assessments scheduled through Sunday, and planned move-ins for the
   Monday-through-Sunday week. It has no report tables, stat-strip grids, slide
-  tabs, or duplicated client-referral pages. Referral-source overflow pages only
-  inside that module. Event lists retain client name, community, owner, and
+  tabs, decorative referral-source bars, or duplicated client-referral pages.
+  Assessments and move-ins sit immediately below census with the strongest panel
+  treatment. Referral-source overflow pages only inside that module. A missing
+  destination never renders as an `Unassigned` community card; governed activity
+  without a destination is reconciled in a short footnote. Event lists retain client name, community, owner, and
   workflow status inside the existing authenticated PHI boundary. Every dynamic
   section carries explicit source coverage and never converts missing data into
   a zero or estimate.
