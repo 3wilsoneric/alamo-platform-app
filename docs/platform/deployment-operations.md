@@ -1075,11 +1075,10 @@ The publisher validates source hashes and uses conditional writes. Production
 fails closed when cloud data cannot be read; it does not use local evidence as
 an outage fallback. No new credentials or public storage permissions were added.
 
-The existing Monday 9 a.m. Pacific Codex monitor runs
+At initial launch, a Monday 9 a.m. Pacific Codex monitor ran
 `node scripts/check-licensing-updates.mjs --publish` from the primary app checkout.
-It publishes new reports and change notices to the live page. This is still a
-local trigger requiring the Mac and Codex; Azure hosts the website and durable
-published data, not the collector's schedule.
+That initial trigger required the Mac and Codex. The later Licensing cloud job
+below replaces this local scheduling design.
 
 Verification: the full nonbrowser `check:ship:predeploy` gate passed all eight
 stages, including `check:analyst`, dependency audit, regression replays, stress
@@ -1158,3 +1157,49 @@ the `--scheduled` argument removed to run outside the weekly time window.
 Run `npm run check:licensing-job` for DST, overlap, failure, restore, and atomic
 history checks. The first cloud execution and a fresh-container repeat must
 succeed before retiring the former Codex automation.
+
+### Licensing cloud-job release — 2026-09-28
+
+- source commit: `3b3cee1`, branch `codex/licensing-production-20260928`
+- web revision: `alamo-platform-prod-web--licensing-cloud-3b3cee1`
+- web image: `sha256:68675f708e944a4df062abec537b6ef45475b266539516bdd119ee411fe524ed`
+- preceding web image: `sha256:6e266efc866b895fffbdf7f208850ff1bad1279f29ee0ea7b15b5e4d444b5476`
+- job: `alamo-platform-licensing-check`
+- job image: `alamo-licensing-job@sha256:e8561200eba9d127c02fe3992fc0a86c7957ffc38a1586c0ece71ef1095232f1`
+- first successful execution: `alamo-platform-licensing-check-cmak8uj`
+
+The web release overlays only the browser bundle and Licensing validation and
+library modules on the preceding runtime. The job image contains collector
+code and locked dependencies, no local records or Azure CLI credentials. Both
+use the platform's existing managed identity; no RBAC permissions changed.
+The first cloud run restored the original evidence archive, checked all four
+facilities, published 93 reports, and found zero changes.
+
+Verification: all eight nonbrowser predeployment stages passed, including the
+analyst suite and production build. Additional collector checks verify that
+partial source failures cannot advance history, unsafe archives are rejected,
+leases prevent overlap and release after failure, and Monday's 9 a.m. Pacific
+schedule follows daylight-saving time. Production is Healthy/Running at 100%
+traffic, matches `/assets/index-B75ElOs8.js`, passes 4/4 public smoke probes,
+and returns 401/no-store on anonymous Licensing APIs. Signed-in CUA verification
+confirmed 93 reports, four matches for the substantiated-medication/San Pablo
+query, and the automatic schedule in Updates.
+
+To suspend collection, change the job trigger to Manual and stop any active
+execution. Keep the current web reader when suspending the schedule. A rollback
+to a web version predating `platform_scheduled` requires restoring its compatible
+published library from `licensing/versions/` as well; otherwise its older
+validator rejects the newly scheduled baseline. Preserve immutable evidence
+archives when recovering or rolling back.
+
+The fresh-container repeat `alamo-platform-licensing-check-ihhsma7` also
+succeeded with 93 reports and zero changes. Its published run is
+`20260929T031120Z-db2eace4`, bundle hash
+`f1ad3de99e21936abb84c7cb66dbe95178887d1abd45fc37e21511f33d10613b`,
+and evidence hash
+`816ab93485375a377a6cf6a2244d3be5439704b82effc9b36a548095629fde62`.
+The final evidence blob was read back and its checksum verified. The job was
+then changed to Schedule with the Pacific-time guard enabled and provisioning
+Succeeded. The old `alamo-licensing-updates` Codex automation was deleted only
+after both successful cloud executions and schedule verification. No Mac,
+Codex session, or interactive Azure sign-in is required for subsequent checks.
