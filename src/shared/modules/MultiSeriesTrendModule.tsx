@@ -1,3 +1,4 @@
+import { useChartWidth } from "../charts/useChartWidth";
 import {
   prepareMultiSeriesData,
   type MultiSeriesDataRow
@@ -13,7 +14,6 @@ interface MultiSeriesTrendModuleProps {
 }
 
 const colors = ["#0f8b73", "#111111", "#d88946", "#bd5c54", "#595959", "#55a5b8"];
-const chartWidth = 700;
 const chartHeight = 290;
 const plot = { left: 54, right: 18, top: 18, bottom: 38 };
 
@@ -27,6 +27,7 @@ export function MultiSeriesTrendModule({
   valueLabel = "Value",
   emptyLabel = "Trend points are not available for this selection."
 }: MultiSeriesTrendModuleProps) {
+  const { ref: chartRef, width: chartWidth } = useChartWidth();
   const { populatedRows, populatedSeries } = prepareMultiSeriesData(series, rows);
 
   if (populatedSeries.length < 2 || populatedRows.length < 2) {
@@ -55,11 +56,11 @@ export function MultiSeriesTrendModule({
   return (
     <div
       data-module-chart="multi-series-trend"
-      className="overflow-x-auto [scrollbar-width:thin]"
+      className="min-w-0"
       role="img"
       aria-label={`${valueLabel} trend across ${populatedSeries.length} series`}
     >
-      <div className="min-w-[700px] border border-[#d9d9d9] bg-white p-4">
+      <div ref={chartRef} className="min-w-0 border border-[#d9d9d9] bg-white p-4">
         <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2">
           {populatedSeries.map((name, index) => (
             <div key={name} className="flex items-center gap-2 text-[12px] font-semibold text-[#333333]">

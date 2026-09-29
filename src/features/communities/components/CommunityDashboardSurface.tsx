@@ -429,7 +429,7 @@ export default function CommunityDashboardSurface({
             <CensusTrendModule points={model.censusPoints} height={compact ? 220 : 300} />
           </div>
           <div className="overflow-x-auto border-y border-[#111111]">
-            <table className="w-full min-w-[420px] border-collapse text-left text-[13px]">
+            <table className="w-full border-collapse text-left text-[13px]">
               <thead className="border-b border-[#111111] text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">
                 <tr><th className="px-0 py-2.5">Month</th><th className="px-4 py-2.5">Census</th></tr>
               </thead>
@@ -591,7 +591,7 @@ export default function CommunityDashboardSurface({
             </h3>
             {model.topRefusals.length ? (
               <div className="overflow-x-auto border-y border-[#111111]">
-                <table className="w-full min-w-[420px] border-collapse text-left text-[13px]">
+                <table className="w-full border-collapse text-left text-[13px]">
                   <thead className="border-b border-[#111111] text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">
                     <tr>
                       <th className="px-0 py-2.5">Medication</th>

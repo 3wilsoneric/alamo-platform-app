@@ -1,3 +1,4 @@
+import { useChartWidth } from "../../../shared/charts/useChartWidth";
 import type {
   FullReportBlock,
   FullReportDocument,
@@ -48,6 +49,7 @@ function LineChart({
   label?: string;
   items: Array<{ label: string; value: number; displayValue?: string }>;
 }) {
+  const { ref: chartRef, width } = useChartWidth<HTMLElement>(860);
   if (items.length === 0) {
     return (
       <p className="mt-4 border-y border-[#d9d9d9] py-4 font-sans text-[13px] leading-5 text-[#595959]">
@@ -56,10 +58,9 @@ function LineChart({
     );
   }
 
-  const width = 860;
   const height = 280;
   const left = 48;
-  const right = 20;
+  const right = 40;
   const top = 28;
   const bottom = 52;
   const chartWidth = width - left - right;
@@ -80,7 +81,7 @@ function LineChart({
     .join(" ");
 
   return (
-    <figure className="mt-5 overflow-x-auto border-y border-[#d9d9d9] py-3">
+    <figure ref={chartRef} className="mt-5 min-w-0 border-y border-[#d9d9d9] py-3">
       {label ? (
         <figcaption className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#595959]">
           {label}
@@ -90,7 +91,7 @@ function LineChart({
         viewBox={`0 0 ${width} ${height}`}
         role="img"
         aria-label={label ?? "Report trend"}
-        className="mt-2 block min-w-[650px] w-full overflow-visible"
+        className="mt-2 block w-full overflow-visible"
       >
         {[0, 0.5, 1].map((position) => {
           const y = top + position * chartHeight;
@@ -117,7 +118,7 @@ function LineChart({
               stroke="#0f8b73"
               strokeWidth="3"
             />
-            <text
+            {(index === 0 || index === points.length - 1 || index % Math.max(1, Math.ceil(items.length / Math.max(2, Math.floor(width / 100)))) === 0) && <text
               x={point.x}
               y={point.y - 13}
               textAnchor="middle"
@@ -125,8 +126,8 @@ function LineChart({
               className="text-[11px] font-bold"
             >
               {items[index]?.displayValue ?? items[index]?.value}
-            </text>
-            <text
+            </text>}
+            {(index === 0 || index === points.length - 1 || index % Math.max(1, Math.ceil(items.length / Math.max(2, Math.floor(width / 100)))) === 0) && <text
               x={point.x}
               y={height - 17}
               textAnchor="middle"
@@ -134,7 +135,7 @@ function LineChart({
               className="text-[10px]"
             >
               {items[index]?.label}
-            </text>
+            </text>}
           </g>
         ))}
       </svg>
@@ -222,7 +223,8 @@ function ReportBlock({ block }: { block: FullReportBlock }) {
         tabIndex={0}
         className="mt-4 overflow-x-auto overscroll-x-contain focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
       >
-        <table className="w-full min-w-[620px] border-collapse text-left text-[12px] leading-5">
+        {block.columns.length > 3 ? <p className="mb-2 text-xs text-[#66776e] sm:hidden">Swipe to see all columns</p> : null}
+        <table className={`w-full ${block.columns.length > 3 ? "min-w-[620px]" : ""} border-collapse text-left text-[12px] leading-5`}>
           <thead>
             <tr>
               {block.columns.map((column) => (

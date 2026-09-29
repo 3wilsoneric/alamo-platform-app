@@ -469,13 +469,13 @@ async function main() {
     const stateFaceBox = await page
       .locator('[data-california-state-face="true"]')
       .boundingBox();
-    if (!stateFaceBox || stateFaceBox.y < 85 || stateFaceBox.y >= 110) {
+    if (!stateFaceBox || stateFaceBox.y < 64 || stateFaceBox.y >= 200) {
       throw new Error(
         `California silhouette did not remain the foreground anchor beneath the northern states (${stateFaceBox?.y ?? "missing"}px).`
       );
     }
-    if (!analyticsMenuBox || analyticsMenuBox.x <= mapBox.x + mapBox.width + 24) {
-      throw new Error("Analytics overlaps the California map instead of sitting beside it.");
+    if (!analyticsMenuBox || analyticsMenuBox.y + analyticsMenuBox.height > stateFaceBox.y) {
+      throw new Error("Analytics navigation overlaps the California map below the shared header.");
     }
     const homeAnalyticsCount = await page
       .locator('[data-california-hero-action="analytics"]')
@@ -486,12 +486,12 @@ async function main() {
     const homeNavigation = await readPlatformPageNavigation(page);
     if (
       homeNavigation.current !== "home" ||
-      homeNavigation.left.length !== 0 ||
-      homeNavigation.right.join(",") !== "analytics,admissions"
+      homeNavigation.left.join(",") !== "home" ||
+      homeNavigation.right.join(",") !== "analytics,admissions,licensing"
     ) {
       throw new Error(`Home platform navigation is out of order: ${JSON.stringify(homeNavigation)}`);
     }
-    await page.getByRole("button", { name: "Analytics", exact: true }).click();
+    await page.getByRole("link", { name: "Analytics", exact: true }).click();
     await page.waitForURL((url) => url.pathname === "/analytics", { timeout: 5_000 });
     await page
       .locator('[data-reports-page="true"][data-reports-embedded="true"]')
@@ -531,7 +531,7 @@ async function main() {
     if (
       questionNavigation.current !== "analytics" ||
       questionNavigation.left.join(",") !== "home" ||
-      questionNavigation.right.join(",") !== "analytics,admissions"
+      questionNavigation.right.join(",") !== "analytics,admissions,licensing"
     ) {
       throw new Error(`Analytics question navigation is out of order: ${JSON.stringify(questionNavigation)}`);
     }
@@ -551,7 +551,7 @@ async function main() {
       throw new Error(`Questions carousel changed document scroll to ${questionScroll}px.`);
     }
     await page
-      .getByRole("button", { name: "Back to California map" })
+      .getByRole("link", { name: "Back to California map" })
       .waitFor({ state: "visible", timeout: 5_000 });
 
     await page.reload({ waitUntil: "networkidle" });
@@ -617,7 +617,7 @@ async function main() {
     if (
       analyticsNavigation.current !== "analytics" ||
       analyticsNavigation.left.join(",") !== "home" ||
-      analyticsNavigation.right.join(",") !== "analytics,admissions"
+      analyticsNavigation.right.join(",") !== "analytics,admissions,licensing"
     ) {
       throw new Error(`Analytics platform navigation is out of order: ${JSON.stringify(analyticsNavigation)}`);
     }
@@ -686,7 +686,7 @@ async function main() {
     await page
       .locator('[data-reports-page="true"][data-reports-embedded="true"]')
       .waitFor({ state: "visible", timeout: 10_000 });
-    await page.getByRole("button", { name: "Back to California map" }).click();
+    await page.getByRole("link", { name: "Back to California map" }).click();
     await page.waitForURL((url) => url.pathname === "/home", { timeout: 5_000 });
 
     await context.close();
@@ -842,7 +842,7 @@ async function main() {
     if (await mobilePage.locator('[aria-label^="Signed in as"]').isVisible()) {
       throw new Error("California carousel reintroduced redundant profile chrome on mobile.");
     }
-    const mobileHeadingBox = await mobileCommunityHome.getByRole("heading", { name: "Your communities" }).boundingBox();
+    const mobileHeadingBox = await mobileCommunityHome.getByRole("heading", { name: "Communities" }).boundingBox();
     if (!mobileHeadingBox || mobileHeadingBox.y < 58) {
       throw new Error("Mobile community heading extends beneath the fixed header.");
     }

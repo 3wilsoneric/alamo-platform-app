@@ -3,13 +3,28 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-09-23
+- updated: 2026-09-28
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
   - [alamo-platform-app/src/app/App.tsx](/Users/eric/CareEngineMain/alamo-platform-app/src/app/App.tsx)
   - [alamo-platform-app/src/features/home/pages/WorkspaceHomePage.tsx](/Users/eric/CareEngineMain/alamo-platform-app/src/features/home/pages/WorkspaceHomePage.tsx)
   - [alamo-platform-app/shared/platform-module-registry.mjs](/Users/eric/CareEngineMain/alamo-platform-app/shared/platform-module-registry.mjs)
+
+## Shared navigation and responsive layout
+
+Every authenticated route shares one header with the Alamo home anchor and
+Analytics, Admissions, and Licensing destinations. Below 768px, Menu exposes
+those links plus Communities; Escape, outside click, and navigation close it.
+Admissions-only identities retain their existing access boundary.
+
+Analytics keeps Reports and Ask a question in a separate row below the header.
+The report catalog becomes a selector below 1024px, preserving a full-width
+reader on portrait tablets. Phone home is a five-community list; census and
+analysis live in the profiles. Phone Admissions keeps all five section tabs
+visible. Chart geometry follows the available width, and two-column community
+tables no longer force horizontal scrolling. Larger comparison tables retain
+bounded horizontal scrolling.
 
 ## Product Model
 

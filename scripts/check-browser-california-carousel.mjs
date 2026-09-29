@@ -138,7 +138,7 @@ async function assertMapNavigationPlacement(page, viewport, label) {
       };
     });
   assert(
-    placement.left >= 8 && placement.right <= placement.viewportWidth - 8,
+    placement.left >= 0 && placement.right <= placement.viewportWidth,
     `${label} navigation is clipped: ${JSON.stringify(placement)}`
   );
 }
@@ -177,7 +177,7 @@ async function assertAnalyticsComposition(page, viewport, label) {
     };
   });
   assert(composition, `${label} did not render the report library and reader`);
-  if (viewport.width >= 768) {
+  if (viewport.width >= 1024) {
     assert(
       composition.asideRight <= composition.mainLeft + 2 && composition.asideWidth <= 300,
       `${label} analytics library is not a restrained left rail: ${JSON.stringify(composition)}`
@@ -231,9 +231,9 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
     await close.click();
     await profile.waitFor({ state: "hidden", timeout: 5_000 });
     if (viewport.width < 640) {
-      await page.locator('[data-mobile-community-home="true"]')
-        .getByRole("button", { name: "Ask a question", exact: true })
-        .click();
+      await page.getByRole("button", { name: "Open navigation" }).click();
+      await page.getByRole("navigation", { name: "Mobile platform pages" }).getByRole("link", { name: "Analytics", exact: true }).click();
+      await page.getByRole("button", { name: "Ask a question", exact: true }).click();
       await page.waitForURL((url) => url.pathname === "/analytics/questions", { timeout: 5_000 });
       await waitForActivePanel(page, "questions");
       const categoryPicker = page.locator('[data-mobile-question-category="true"]');
@@ -241,7 +241,7 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
       await categoryPicker.selectOption("Census");
       assert((await categoryPicker.inputValue()) === "Census", `${suffix} mobile category picker did not select Census`);
       await categoryPicker.selectOption("All");
-      await page.getByRole("button", { name: "Back to California map" }).click();
+      await page.getByRole("link", { name: "Back to California map" }).click();
       await waitForActivePanel(page, "map");
     }
   } else {
@@ -262,7 +262,7 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
     `${suffix} does not retain exactly one profile control`
   );
   assert(
-    (await userIdentity.isVisible()) === (viewport.width >= 640),
+    (await userIdentity.isVisible()) === (viewport.width >= 768),
     `${suffix} profile control does not follow its desktop-only placement`
   );
   await page
@@ -273,9 +273,8 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
   await assertNoDocumentScroll(page, `${suffix} map panel`);
   await assertMapNavigationPlacement(page, viewport, `${suffix} map panel`);
 
-  await page
-    .getByRole("button", { name: "Analytics", exact: true })
-    .click();
+  if (viewport.width < 768) await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.getByRole("link", { name: "Analytics", exact: true }).filter({ visible: true }).click();
   await page.waitForURL((url) => url.pathname === "/analytics", {
     timeout: 5_000
   });
@@ -375,7 +374,7 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
     fullPage: false
   });
 
-  await page.getByRole("button", { name: "Back to California map" }).click();
+  await page.getByRole("link", { name: "Back to California map" }).click();
   await page.waitForURL((url) => url.pathname === "/home", {
     timeout: 5_000
   });

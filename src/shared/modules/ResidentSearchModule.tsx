@@ -1,3 +1,4 @@
+import { ALAMO_FACILITIES } from "../../../shared/community-names.mjs";
 import { Search, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDisplayDate } from "../../../shared/display-date.mjs";
@@ -666,7 +667,7 @@ export default function ResidentSearchModule({
         >
           <option value="all">All communities</option>
           {communityOptions.map((name) => (
-            <option key={name} value={name}>{name}</option>
+            <option key={name} value={name}>{ALAMO_FACILITIES.find((facility) => facility.communityName === name)?.shortName ?? name}</option>
           ))}
         </select>
 

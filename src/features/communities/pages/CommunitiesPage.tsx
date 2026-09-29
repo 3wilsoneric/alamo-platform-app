@@ -582,7 +582,7 @@ export default function CommunitiesPage({
               >
                 {facilityNavItems.map((facility) => (
                   <option key={facility.facility_id} value={facility.facility_id}>
-                    {facility.community_name}
+                    {ALAMO_FACILITIES.find((item) => item.facilityId === facility.facility_id)?.shortName ?? facility.community_name}
                   </option>
                 ))}
               </select>

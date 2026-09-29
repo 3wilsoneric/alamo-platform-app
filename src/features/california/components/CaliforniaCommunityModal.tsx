@@ -167,11 +167,11 @@ export default function CaliforniaCommunityModal({
             ? "Medications"
           : currentView.focus === "residents"
             ? "Resident roster"
-            : community.communityName;
+            : community.shortName;
   const eyebrow =
     currentView.kind === "dashboard" && currentView.focus === "detail"
       ? `${community.city}, California`
-      : community.communityName;
+      : community.shortName;
 
   return createPortal(
     <div
@@ -216,7 +216,7 @@ export default function CaliforniaCommunityModal({
                   id="california-community-dialog-title"
                   role="heading"
                   aria-level={1}
-                  className="mt-0.5 truncate font-sans text-[18px] font-semibold leading-tight tracking-[-0.03em] sm:text-[20px]"
+                  className="mt-0.5 break-words font-sans text-[18px] font-semibold leading-tight tracking-[-0.03em] sm:text-[20px]"
                 >
                   {title}
                 </div>
