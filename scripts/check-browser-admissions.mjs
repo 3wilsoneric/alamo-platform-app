@@ -66,37 +66,13 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Admissions must select its own item in the adjacent upper-right Platform navigation.");
   }
-  for (const name of ["Briefing", "Census"]) {
-    if (await page.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
-      throw new Error(`Admissions overview is missing its compact ${name} tab.`);
-    }
-  }
-  const surfaceTabs = page.locator('[data-admissions-surface-tabs="true"]');
-  const desktopTabs = surfaceTabs.getByRole("tab");
-  const [desktopFirstTabBox, desktopLastTabBox] = await Promise.all([
-    desktopTabs.first().boundingBox(),
-    desktopTabs.last().boundingBox()
-  ]);
-  const desktopViewport = page.viewportSize();
   if (
-    !desktopFirstTabBox ||
-    !desktopLastTabBox ||
-    !desktopViewport ||
-    Math.abs(
-      (desktopFirstTabBox.x + desktopLastTabBox.x + desktopLastTabBox.width) / 2 -
-      (desktopViewport.width / 2)
-    ) > 2
-  ) {
-    throw new Error(`Admissions surface navigation must stay centered at the top of the page: ${JSON.stringify({ desktopFirstTabBox, desktopLastTabBox, desktopViewport })}`);
-  }
-  const briefingTab = surfaceTabs.getByRole("tab", { name: /^Briefing/ });
-  if (
-    await desktopTabs.count() !== 2 ||
-    await briefingTab.getAttribute("aria-selected") !== "true" ||
+    await page.locator('[data-admissions-surface-tabs="true"], [data-admissions-mobile-surface-navigation="true"]').count() !== 0 ||
+    await page.locator('[data-admissions-single-page="true"]').count() !== 1 ||
     await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly briefing" }).count() !== 1
   ) {
-    throw new Error("Admissions must open on the weekly leadership briefing.");
+    throw new Error("Admissions must render as one continuous page without Briefing or Census surface tabs.");
   }
   const briefingPager = page.locator('[data-admissions-briefing-pager="true"]');
   const briefingCollapsible = page.locator('[data-admissions-briefing-collapsible="true"]');
@@ -124,13 +100,11 @@ await withBrowserQa(async (browser) => {
       fullPage: true
     });
     await page.setViewportSize({ width: 390, height: 844 });
-    const fallbackMobileNavigation = page.locator('[data-admissions-mobile-surface-navigation="true"]');
-    await fallbackMobileNavigation.waitFor({ state: "visible" });
     if (
-      await fallbackMobileNavigation.getByRole("tab").count() !== 2 ||
+      await page.locator('[data-admissions-surface-tabs="true"], [data-admissions-mobile-surface-navigation="true"]').count() !== 0 ||
       await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1
     ) {
-      throw new Error("The incomplete weekly briefing must retain the two mobile Admissions views.");
+      throw new Error("The incomplete weekly briefing must retain the single-page mobile layout.");
     }
     const fallbackOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     if (fallbackOverflow > 2) {
@@ -215,9 +189,7 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Admissions analyst response must finish its stream and remove the typing caret.");
   }
-  await surfaceTabs.getByRole("tab", { name: /^Census/ }).click();
-  await page.getByRole("heading", { name: "Community census" }).waitFor();
-  await briefingTab.click();
+  await page.reload({ waitUntil: "domcontentloaded" });
   const resumedExecutiveUpdate = page.locator('[data-admissions-executive-update="true"]');
   await resumedExecutiveUpdate.waitFor({ state: "visible" });
   if (
@@ -329,14 +301,6 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-board-card]').count() !== allCardsCount
   ) {
     throw new Error("All communities must reset the Admissions board to its complete referral set.");
-  }
-  const tabTreatment = await briefingTab.evaluate((element) => {
-    const tab = window.getComputedStyle(element);
-    const list = window.getComputedStyle(element.parentElement);
-    return { borderBottomColor: tab.borderBottomColor, borderRadius: tab.borderRadius, listBackground: list.backgroundColor };
-  });
-  if (tabTreatment.borderBottomColor !== "rgb(15, 139, 115)" || tabTreatment.borderRadius !== "0px" || tabTreatment.listBackground !== "rgba(0, 0, 0, 0)") {
-    throw new Error(`Admissions tabs lost their quiet analyst treatment: ${JSON.stringify(tabTreatment)}`);
   }
   if (await page.locator('[data-open-full-pipeline="true"], a[href*="alamo-pipeline.com"]').count()) {
     throw new Error("Admissions overview must remain a self-contained analyst update without Pipeline links.");
@@ -509,15 +473,6 @@ await withBrowserQa(async (browser) => {
   });
   await page.keyboard.press("Escape");
   await progressModal.waitFor({ state: "hidden" });
-  await page.getByRole("tab", { name: /^Census/ }).click();
-  await page.getByRole("heading", { name: "Community census" }).waitFor();
-  if (await executiveUpdate.count()) {
-    throw new Error("Admissions executive referral update must stay with the Briefing view.");
-  }
-  await page.screenshot({
-    path: `${screenshotDir}/desktop-admissions-census.png`,
-    fullPage: true
-  });
   if (consoleErrors.length || requestFailures.length) {
     throw new Error(JSON.stringify({ consoleErrors, requestFailures }));
   }
@@ -528,24 +483,16 @@ await withBrowserQa(async (browser) => {
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
-  const mobileDesktopSurfaceTabs = mobilePage.locator('[data-admissions-surface-tabs="true"]');
-  const mobileSurfaceNavigation = mobilePage.locator('[data-admissions-mobile-surface-navigation="true"]');
   const mobileCategoryNavigation = mobilePage.locator('[data-admissions-mobile-category-navigation="true"]');
-  await mobileSurfaceNavigation.waitFor({ state: "visible" });
   await mobileCategoryNavigation.waitFor({ state: "visible" });
   if (
-    await mobileDesktopSurfaceTabs.isVisible() ||
-    await mobileSurfaceNavigation.getByRole("tab").count() !== 2 ||
+    await mobilePage.locator('[data-admissions-surface-tabs="true"], [data-admissions-mobile-surface-navigation="true"]').count() !== 0 ||
+    await mobilePage.locator('[data-admissions-single-page="true"]').count() !== 1 ||
     await mobileCategoryNavigation.getByRole("tab").count() !== 3 ||
     await mobilePage.locator('[data-admissions-layout-toggle="true"]').isVisible() ||
     await mobilePage.locator('[data-admissions-board-column]').filter({ visible: true }).count()
   ) {
-    throw new Error("Mobile Admissions must separate its two views from the embedded board categories.");
-  }
-  for (const name of ["Briefing", "Census"]) {
-    if (await mobileSurfaceNavigation.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
-      throw new Error(`Mobile Admissions is missing its ${name} view.`);
-    }
+    throw new Error("Mobile Admissions must keep one page with only the three embedded board categories.");
   }
   for (const name of ["Referral received", "In progress", "Decision"]) {
     if (await mobileCategoryNavigation.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
@@ -654,10 +601,6 @@ await withBrowserQa(async (browser) => {
   await mobileProgress.waitFor({ state: "visible" });
   await mobileProgress.click({ position: { x: 1, y: 1 } });
   await mobileProgress.waitFor({ state: "hidden" });
-  await mobilePage.getByRole("tab", { name: /^Census/ }).click();
-  if (await mobilePage.locator('[data-admissions-community-census-card]').count() !== 5) {
-    throw new Error("Admissions overview does not render all five mobile community census cards.");
-  }
   const mobileOverflow = await mobilePage.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth
   );
