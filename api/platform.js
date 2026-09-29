@@ -52,11 +52,21 @@ import {
 } from "../server/pipeline-clinical-api.mjs";
 
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
+import { assertLicensingAccess } from "../server/licensing-access.mjs";
 
 const PLATFORM_GET_ROUTES = Object.freeze({
-  "/api/platform/licensing": ({ requestUrl }) => getLicensingLibrary(requestUrl),
-  "/api/platform/licensing/report": ({ requestUrl }) => getLicensingReport(requestUrl),
-  "/api/platform/licensing/updates": () => getLicensingUpdates(),
+  "/api/platform/licensing": ({ requestUrl, authContext }) => {
+    assertLicensingAccess(authContext);
+    return getLicensingLibrary(requestUrl);
+  },
+  "/api/platform/licensing/report": ({ requestUrl, authContext }) => {
+    assertLicensingAccess(authContext);
+    return getLicensingReport(requestUrl);
+  },
+  "/api/platform/licensing/updates": ({ authContext }) => {
+    assertLicensingAccess(authContext);
+    return getLicensingUpdates();
+  },
   "/api/platform/admissions-dashboard": () => getAdmissionsDashboardData(),
   "/api/platform/bootstrap": () => getPlatformBootstrap(),
   "/api/platform/health": () => getPlatformHealth(),

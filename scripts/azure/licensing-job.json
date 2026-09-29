@@ -1,0 +1,42 @@
+{
+  "location": "westus2",
+  "identity": {
+    "type": "UserAssigned",
+    "userAssignedIdentities": {
+      "/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/resourceGroups/alamo-data-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/alamo-platform-prod-runtime": {}
+    }
+  },
+  "properties": {
+    "environmentId": "/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/resourceGroups/rg-pipeline-prod/providers/Microsoft.App/managedEnvironments/pipeline-prod-cae-a6qdvl6ebenac",
+    "configuration": {
+      "triggerType": "Schedule",
+      "replicaTimeout": 1200,
+      "replicaRetryLimit": 1,
+      "scheduleTriggerConfig": {
+        "cronExpression": "0 16,17 * * 1",
+        "parallelism": 1,
+        "replicaCompletionCount": 1
+      },
+      "registries": [{
+        "server": "pipelineprodacra6qdvl6ebenac.azurecr.io",
+        "identity": "/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/resourceGroups/alamo-data-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/alamo-platform-prod-runtime"
+      }]
+    },
+    "template": {
+      "containers": [{
+        "name": "licensing-check",
+        "image": "<licensing-job-image-digest>",
+        "resources": { "cpu": 0.25, "memory": "0.5Gi" },
+        "command": ["node", "scripts/licensing/run-cloud-job.mjs"],
+        "args": ["--scheduled"],
+        "env": [
+          { "name": "AZURE_CLIENT_ID", "value": "df4bc28d-bc2c-468e-ba9f-56bdd37e796c" },
+          { "name": "AZURE_STORAGE_ACCOUNT", "value": "alamodatalake" },
+          { "name": "AZURE_STORAGE_CONTAINER", "value": "alamo-platform-snapshots" },
+          { "name": "LICENSING_AUTH_MODE", "value": "managed_identity" },
+          { "name": "LICENSING_INITIAL_EVIDENCE_SHA256", "value": "58bd4f0f454b64dc4d2bd1f942915be41875744b4f1450e68738e36700b8793d" }
+        ]
+      }]
+    }
+  }
+}

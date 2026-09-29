@@ -241,7 +241,7 @@ textarea:focus-visible,
 
 /* Light-only product baseline. These overrides keep utility colors aligned
    while the remaining feature pages are being simplified onto the light design system. */
-.app-theme-root .text-white,
+.app-theme-root .text-white:not(button):not(a):not([role="button"]),
 .app-theme-root .text-white\/24,
 .app-theme-root .text-white\/26,
 .app-theme-root .text-white\/28,
@@ -970,7 +970,27 @@ textarea:focus-visible,
 
 @media (max-width: 359px) {
   [data-resident-community-filter="true"],
-  [data-resident-status-filter="true"] {
+  [data-resident-status-filter="true"],
+  [data-explorer-kind] [data-explorer-filter-grid="true"] > label,
+  [data-explorer-kind] [data-explorer-filter-grid="true"] > select {
     grid-column: 1 / -1;
   }
+}
+
+/* Action text retains its authored contrast; only legacy content is recolored above. */
+
+/* Shared chrome stays in document flow at every viewport width. */
+:root { --platform-header-height: 60px; }
+@media (min-width: 768px) { :root { --platform-header-height: 64px; } }
+@media (max-width: 767px) {
+  .app-theme-root input:not([type="checkbox"]):not([type="radio"]),
+  .app-theme-root select,
+  .app-theme-root textarea { font-size: 16px; }
+}
+@media print { :root { --platform-header-height: 0px; } }
+
+/* Keep notched landscape screens clear without changing each page's gutters. */
+.app-theme-root {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }

@@ -90,7 +90,7 @@ if (
   throw new Error("Admissions overview must use governed Alamo data and keep client progress review inside its analyst modal without Pipeline links or embeds.");
 }
 if (
-  !platformNavigation.includes('data-california-hero-action="admissions"') ||
+  !platformNavigation.includes('restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions")') ||
   !platformNavigation.includes('href: "/admissions"') ||
   !platformNavigation.match(/id: "home"[\s\S]*id: "analytics"[\s\S]*id: "admissions"/) ||
   platformNavigation.includes("admissionsAllowed") ||

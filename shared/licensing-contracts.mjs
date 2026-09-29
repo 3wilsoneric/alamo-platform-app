@@ -78,7 +78,7 @@ export function validateLicensingReport(input) {
 
 export function validateLicensingLibrary(input) {
   const value = object(input);
-  if (value.version !== "licensing-baseline-v1" || value.monitoring !== "not_scheduled") invalid();
+  if (value.version !== "licensing-baseline-v1" || !["not_scheduled", "platform_scheduled"].includes(value.monitoring)) invalid();
   if (!Array.isArray(value.communities) || value.communities.length !== LICENSING_COMMUNITIES.length) invalid();
   if (!Array.isArray(value.reports) || value.reports.length > 5000) invalid();
   const communities = value.communities.map((inputCommunity) => {
@@ -113,7 +113,10 @@ export function licensingTextForDisplay(text) {
 export function validateLicensingUpdates(input) {
   const value = object(input);
   if (value.version !== "licensing-updates-v1" || !["complete", "failed", "not_checked"].includes(value.status) || !Array.isArray(value.alerts) || value.alerts.length > 100) invalid();
-  return { version: value.version, status: value.status, lastChecked: value.lastChecked ? timestamp(value.lastChecked) : null,
+  if (value.schedule && (value.schedule.owner !== "platform" || value.schedule.timezone !== "America/Los_Angeles" ||
+    value.schedule.cadence !== "weekly" || value.schedule.weekday !== "Monday" || value.schedule.hour !== 9)) invalid();
+  return { version: value.version, status: value.status,
+    ...(value.schedule ? { schedule: { owner: "platform", timezone: "America/Los_Angeles", cadence: "weekly", weekday: "Monday", hour: 9 } } : {}), lastChecked: value.lastChecked ? timestamp(value.lastChecked) : null,
     lastSuccessful: value.lastSuccessful ? timestamp(value.lastSuccessful) : null,
     alerts: value.alerts.map((inputAlert) => {
       const a = object(inputAlert);

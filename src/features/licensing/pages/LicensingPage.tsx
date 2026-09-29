@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, X } from "lucide-react";
 import type { LicensingLibrary, LicensingReport } from "../../../../shared/licensing-contracts.mjs";
 import { fetchLicensingLibrary, fetchLicensingReport } from "../licensingApi";
 import LicensingReportReader, { licensingDate } from "../components/LicensingReportReader";
 import LicensingUpdates from "../components/LicensingUpdates";
+import AnalyticsSectionNavigation from "../../california/components/AnalyticsSectionNavigation";
+import { useLicensingAccess } from "../../../shared/auth/licensingAccess";
 
 export default function LicensingPage() {
+  const canViewLicensing = useLicensingAccess();
+  return canViewLicensing ? <LicensingWorkspace /> : <Navigate to="/analytics" replace />;
+}
+
+function LicensingWorkspace() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const community = params.get("community") ?? "";
   const q = params.get("q") ?? "";
@@ -55,7 +63,9 @@ export default function LicensingPage() {
     });
   }
 
-  return <section aria-label="Licensing reports" data-licensing-page="true" className="min-w-0 w-full pb-6 text-[#263e34]">
+  return <>
+    <AnalyticsSectionNavigation active="licensing" onNavigate={(section) => navigate(section === "reports" ? "/analytics" : `/analytics/${section}`)} />
+    <section aria-label="Licensing reports" data-licensing-page="true" className="min-w-0 w-full px-3 pb-6 pt-3 text-[#263e34] sm:px-6 lg:px-8">
     <header className="mb-2 flex items-center justify-between gap-4">
       <Link to={selectedCommunity ? `/home/community/${selectedCommunity.facilityId}` : "/home"} className="inline-flex min-h-11 items-center gap-2 text-sm text-[#527065] hover:underline"><ArrowLeft size={15} aria-hidden="true" /> {selectedCommunity ? selectedCommunity.name : "Communities"}</Link>
       <LicensingUpdates onSelect={(id) => setParams({ report: id })} />
@@ -63,8 +73,8 @@ export default function LicensingPage() {
     <form className="mb-4 flex items-center gap-3 rounded-lg border border-[#c9d8ca] bg-[#f7f9f5] px-4" onSubmit={(event) => {
       event.preventDefault(); const next = new URLSearchParams(); if (community) next.set("community", community);
       const question = String(new FormData(event.currentTarget).get("q") ?? "").trim(); if (question) next.set("q", question); setParams(next);
-    }}><Search size={18} className="shrink-0 text-[#6d8571]" aria-hidden="true" /><input key={q} name="q" aria-label="Search licensing reports" maxLength={200} defaultValue={q} placeholder="Search reports — e.g. medication at San Pablo" className="min-h-14 min-w-0 flex-1 bg-transparent text-base outline-none sm:text-sm" /><button type="submit" className="min-h-11 text-sm font-medium text-[#315d40]">Search</button>{q && <button type="button" aria-label="Clear search" onClick={() => setParams(community ? { community } : {})} className="min-h-11"><X size={16} /></button>}</form>
-    {error ? <div role="alert" className="py-8"><p>{error}</p><button type="button" onClick={() => setAttempt((n) => n + 1)} className="mt-4 min-h-11 underline">Try again</button><Link to="/licensing" className="ml-5 underline">All reports</Link></div>
+    }}><Search size={18} className="shrink-0 text-[#6d8571]" aria-hidden="true" /><input key={q} name="q" aria-label="Search licensing reports" maxLength={200} defaultValue={q} placeholder="Search reports" className="min-h-14 min-w-0 flex-1 bg-transparent text-base outline-none sm:text-sm" /><button type="submit" className="min-h-11 text-sm font-medium text-[#315d40]">Search</button>{q && <button type="button" aria-label="Clear search" onClick={() => setParams(community ? { community } : {})} className="grid min-h-11 min-w-11 place-items-center"><X size={16} /></button>}</form>
+    {error ? <div role="alert" className="py-8"><p>{error}</p><button type="button" onClick={() => setAttempt((n) => n + 1)} className="mt-4 min-h-11 underline">Try again</button><Link to="/analytics/licensing" className="ml-5 underline">All reports</Link></div>
       : !library ? <p role="status" className="py-12 text-sm">Loading reports…</p> : <>
         <div className="grid min-w-0 items-start overflow-hidden rounded-lg border border-[#d5e1d8] lg:grid-cols-[300px_minmax(0,1fr)]">
           <aside aria-label="Browse reports" className={`${selectedParam ? "hidden lg:block" : "block"} min-w-0 lg:max-h-[76vh] lg:overflow-y-auto lg:border-r lg:border-[#d5e1d8]`}>
@@ -84,5 +94,5 @@ export default function LicensingPage() {
         </div>
         <p className="mt-4 text-xs leading-6 text-[#758176]">State records archived {licensingDate(library.collectedAt)}. Open Updates for the latest check.</p>
       </>}
-  </section>;
+  </section></>;
 }

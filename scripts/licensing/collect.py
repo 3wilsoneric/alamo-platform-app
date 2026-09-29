@@ -7,6 +7,7 @@ import fcntl
 import hashlib
 from html.parser import HTMLParser
 import json
+import os
 from pathlib import Path
 import re
 import sqlite3
@@ -297,12 +298,11 @@ def run(root, delay):
         db.execute("INSERT INTO runs VALUES (?,?,NULL,'running',NULL)", (run_id, started))
         db.commit()
         fetch = Fetcher(root, delay)
-        summaries, exports = [], []
+        summaries, exports, collected = [], [], []
         for number, community, platform_id in FACILITIES:
             try:
                 rows, summary = collect_facility(fetch, number, community, platform_id)
-                with db:
-                    apply_records(db, run_id, number, rows, summary)
+                collected.append((number, rows, summary))
                 summary["status"] = "complete"
                 exports.extend({"facility_number": number, "community": community,
                                 "platform_facility_id": platform_id, "run_id": run_id, **r} for r in rows)
@@ -313,10 +313,20 @@ def run(root, delay):
                 print(f"{community}: FAILED: {error}", flush=True)
             summaries.append(summary)
         complete = all(s["status"] == "complete" for s in summaries)
+        if complete:
+            try:
+                # Only advance the comparison history after all four facilities
+                # succeed. A failed community must not consume another's changes.
+                with db:
+                    for number, rows, summary in collected:
+                        apply_records(db, run_id, number, rows, summary)
+            except Exception as error:
+                complete = False
+                print(f"Collection commit FAILED: {error}", flush=True)
         result = {"run_id": run_id, "started_at": started, "finished_at": now(),
                   "status": "complete" if complete else "partial", "facilities": summaries,
                   "scope": "Public records currently exposed under the four supplied licenses",
-                  "platform_published": False, "scheduled": False, "parser_version": "ccld-pilot-1"}
+                  "platform_published": False, "scheduled": os.environ.get("LICENSING_CLOUD_JOB") == "true", "parser_version": "ccld-pilot-1"}
         run_dir = root / "runs" / run_id
         run_dir.mkdir(parents=True)
         (run_dir / "summary.json").write_text(json.dumps(result, indent=2) + "\n")

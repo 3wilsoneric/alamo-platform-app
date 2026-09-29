@@ -84,10 +84,13 @@ export default function StateTargetingMap({
     );
   }
 
+  // The source view box crops Alaska's outer islands; leave room for them and focus strokes.
+  const [mapX = 0, mapY = 0, mapWidth = 1028, mapHeight = 746] = usaMap.viewBox.split(/\s+/).map(Number);
+
   return (
     <div className="relative">
       <svg
-        viewBox={usaMap.viewBox}
+        viewBox={`${mapX - 48} ${mapY - 12} ${mapWidth + 96} ${mapHeight + 24}`}
         role="img"
         aria-labelledby="fifty-state-map-title fifty-state-map-description"
         className="block h-auto w-full overflow-visible"

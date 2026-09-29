@@ -1075,11 +1075,10 @@ The publisher validates source hashes and uses conditional writes. Production
 fails closed when cloud data cannot be read; it does not use local evidence as
 an outage fallback. No new credentials or public storage permissions were added.
 
-The existing Monday 9 a.m. Pacific Codex monitor runs
+At initial launch, a Monday 9 a.m. Pacific Codex monitor ran
 `node scripts/check-licensing-updates.mjs --publish` from the primary app checkout.
-It publishes new reports and change notices to the live page. This is still a
-local trigger requiring the Mac and Codex; Azure hosts the website and durable
-published data, not the collector's schedule.
+That initial trigger required the Mac and Codex. The later Licensing cloud job
+below replaces this local scheduling design.
 
 Verification: the full nonbrowser `check:ship:predeploy` gate passed all eight
 stages, including `check:analyst`, dependency audit, regression replays, stress
@@ -1122,3 +1121,149 @@ measured 366 pixels in a 390-pixel viewport, both without horizontal overflow.
 Production is Healthy/Running at 100% traffic, serves matching JS and CSS,
 and passed 4/4 public smoke probes. Signed-in search returned four matching
 reports, and clearing it restored all 93 reports.
+
+### Licensing cloud job
+
+The platform-owned collector uses an Azure Container Apps Job named
+`alamo-platform-licensing-check`, in the platform's existing Container Apps
+environment. Its source definition is `scripts/azure/licensing-job.json` and
+its image is built with `Dockerfile.licensing-job`. The job uses the existing
+platform managed identity and private snapshot container; it has no user login
+or Codex dependency. It publishes into the existing Licensing Updates feed.
+
+The weekly schedule is Monday at 9 a.m. America/Los_Angeles. Azure evaluates
+cron in UTC, so the job is triggered at both candidate UTC hours and the worker
+checks Pacific local time before contacting the source. Exactly one slot runs
+in either standard time or daylight time. See Microsoft's
+[Container Apps jobs documentation](https://learn.microsoft.com/en-us/azure/container-apps/jobs).
+
+The published library atomically points to the complete collector evidence
+archive. Each fresh container verifies and restores that archive before
+checking the four facilities. The initial evidence hash in the deployment
+specification is used only to migrate the pre-job baseline; its run ID must
+match the published collection. Later executions use the published pointer.
+A renewable blob lease prevents overlapping writers. Failed/partial scans
+retain the last complete collection and mark Updates as failed; comparison
+history advances only after all four facilities pass. Job execution history
+also records failures, including storage outages that cannot update the feed.
+
+Use `npm run licensing:prepare-job` to create a bounded image context with only
+collector code and locked dependencies. Build that context in ACR, then deploy
+its immutable digest with
+`npm run licensing:deploy-job -- --image=<digest>`. Use `--manual` for initial
+verification before enabling the schedule. `az containerapp job start` runs a
+manual execution; for a scheduled definition, supply an execution template with
+the `--scheduled` argument removed to run outside the weekly time window.
+Run `npm run check:licensing-job` for DST, overlap, failure, restore, and atomic
+history checks. The first cloud execution and a fresh-container repeat must
+succeed before retiring the former Codex automation.
+
+### Licensing cloud-job release — 2026-09-28
+
+- source commit: `3b3cee1`, branch `codex/licensing-production-20260928`
+- web revision: `alamo-platform-prod-web--licensing-cloud-3b3cee1`
+- web image: `sha256:68675f708e944a4df062abec537b6ef45475b266539516bdd119ee411fe524ed`
+- preceding web image: `sha256:6e266efc866b895fffbdf7f208850ff1bad1279f29ee0ea7b15b5e4d444b5476`
+- job: `alamo-platform-licensing-check`
+- job image: `alamo-licensing-job@sha256:e8561200eba9d127c02fe3992fc0a86c7957ffc38a1586c0ece71ef1095232f1`
+- first successful execution: `alamo-platform-licensing-check-cmak8uj`
+
+The web release overlays only the browser bundle and Licensing validation and
+library modules on the preceding runtime. The job image contains collector
+code and locked dependencies, no local records or Azure CLI credentials. Both
+use the platform's existing managed identity; no RBAC permissions changed.
+The first cloud run restored the original evidence archive, checked all four
+facilities, published 93 reports, and found zero changes.
+
+Verification: all eight nonbrowser predeployment stages passed, including the
+analyst suite and production build. Additional collector checks verify that
+partial source failures cannot advance history, unsafe archives are rejected,
+leases prevent overlap and release after failure, and Monday's 9 a.m. Pacific
+schedule follows daylight-saving time. Production is Healthy/Running at 100%
+traffic, matches `/assets/index-B75ElOs8.js`, passes 4/4 public smoke probes,
+and returns 401/no-store on anonymous Licensing APIs. Signed-in CUA verification
+confirmed 93 reports, four matches for the substantiated-medication/San Pablo
+query, and the automatic schedule in Updates.
+
+To suspend collection, change the job trigger to Manual and stop any active
+execution. Keep the current web reader when suspending the schedule. A rollback
+to a web version predating `platform_scheduled` requires restoring its compatible
+published library from `licensing/versions/` as well; otherwise its older
+validator rejects the newly scheduled baseline. Preserve immutable evidence
+archives when recovering or rolling back.
+
+The fresh-container repeat `alamo-platform-licensing-check-ihhsma7` also
+succeeded with 93 reports and zero changes. Its published run is
+`20260929T031120Z-db2eace4`, bundle hash
+`f1ad3de99e21936abb84c7cb66dbe95178887d1abd45fc37e21511f33d10613b`,
+and evidence hash
+`816ab93485375a377a6cf6a2244d3be5439704b82effc9b36a548095629fde62`.
+The final evidence blob was read back and its checksum verified. The job was
+then changed to Schedule with the Pacific-time guard enabled and provisioning
+Succeeded. The old `alamo-licensing-updates` Codex automation was deleted only
+after both successful cloud executions and schedule verification. No Mac,
+Codex session, or interactive Azure sign-in is required for subsequent checks.
+
+### Navigation and responsive review release — 2026-09-28
+
+- source: `2a2f9db`, following `8b5461f` and `3610feb` on
+  `codex/licensing-production-20260928`
+- revision: `alamo-platform-prod-web--responsive-2a2f9db`
+- image: `alamo-platform@sha256:69bc343962ec7f02ce6d4e144f05d02c65b4336b9f9a431793b35b15a4cc3d14`
+- preceding image: `alamo-platform@sha256:1ac18b97d8616a6dd7477e2e4b100d6b4702c40c73a459175763906d474ab34c`
+- active browser asset: `/assets/index-B6wycf3A.js`
+- ACR build: `cc3x`
+
+The frontend-only overlay preserves the currently deployed API/runtime and
+Licensing cloud job. Both gzip and Brotli siblings were regenerated before the
+image build, so compressed index responses reference the new assets. The final
+revision is Healthy/Running with 100% traffic. All eight nonbrowser release
+stages passed, followed by focused checks for the last tooltip adjustment and a
+fresh production build. Public production smoke passes 4/4; anonymous Licensing
+library and Updates requests still return 401 with private/no-store caching.
+
+Signed-in CUA verification confirmed the exact asset above, the corrected
+320px search selectors and Admissions timing, the account hint beneath the
+header, and the shared Analytics/Admissions/Licensing navigation. The broader
+review covered ten viewport sizes and the product routes described in
+`testing-quality.md`. Licensing still reports its Monday 9 a.m. Pacific schedule.
+Physical iOS and Safari/WebKit were not available in this browser session.
+
+The release was made from the clean release checkout rather than the shared
+main checkout, which contains separate in-progress product work. Do not replace
+this immutable runtime with an older image or deploy the shared working tree
+without reconciling those changes first.
+
+### Licensing access and Analytics placement — 2026-09-28
+
+- source commit: `920db3f`, branch `codex/licensing-production-20260928`
+- revision: `alamo-platform-prod-web--licensing-access-920db3f`
+- image: `alamo-platform@sha256:a907d6af426d8e7b5a7e4306fb4ea50f6aadeae5e469e68d221a9786c54462b5`
+- base image: `alamo-platform@sha256:69bc343962ec7f02ce6d4e144f05d02c65b4336b9f9a431793b35b15a4cc3d14`
+- ACR build: `cc3y`; active asset: `/assets/index-CxQlospQ.js`
+
+Licensing now lives at `/analytics/licensing`, alongside Reports and Ask a
+question. Only Betty Dominici and Raj Thandi's tenant-local Entra object IDs
+qualify. The shared browser/server policy is `shared/licensing-access.mjs`.
+All three Licensing API routes require a verified delegated identity and the
+explicit allowlist; denied authenticated requests return generic 404 responses.
+The top-level and community-profile links were removed. Legacy `/licensing`
+links preserve their query string when redirecting to the protected new route.
+
+The approved IDs were verified against the existing Entra directory; no account,
+role, consent, or tenant permission was created or expanded. The scheduled
+collector and its managed identity remain unchanged. The bounded release
+overlay patches only the Licensing API handlers and modules plus the browser
+bundle, preserving the established runtime. Do not roll back to a pre-access
+API image: it would restore access for every authenticated Platform user.
+
+Verification: 8/8 nonbrowser release stages and 4/4 production smoke probes
+passed. Signed-token tests exercise the actual API authentication/handlers,
+reject nonmembers and misleading names/email claims, and let both approved IDs
+reach the report loader. These same tests passed against the overlaid production
+container with networking disabled. Local CUA fixtures verified both permitted
+identities, a denied identity with zero Licensing requests, and 320/390/768/1440px
+navigation. These fixtures did not sign in as Betty or Raj. Production CUA under
+Eric confirmed the exact asset, no Licensing navigation, and redirects from both
+old and new direct URLs to Analytics. The revision is Healthy/Running at 100%
+traffic; all anonymous Licensing APIs return 401/private-no-store.

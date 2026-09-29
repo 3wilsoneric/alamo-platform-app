@@ -78,36 +78,26 @@ if (/id: "questions"/.test(platformNavigation)) {
 }
 requireText(
   platformNavigation,
-  /const homePage = PLATFORM_PAGES\[0\]![\s\S]*?const workspacePages = PLATFORM_PAGES\.slice\(1\)/,
-  "platform navigation does not keep Home separate from its adjacent workspace links"
+  /<Link[\s\S]*?to=\{page\.href\}[\s\S]*?aria-current=\{active === page\.id \? "page" : undefined\}/,
+  "primary navigation must preserve client-side routes and expose the current page"
 );
 requireText(
   platformNavigation,
-  /destination === "admissions"[\s\S]*?<a[\s\S]*?href=\{page\.href\}/,
-  "the retained Admissions navigation definition is not a hard route link"
-);
-requireText(
-  platformNavigation,
-  /data-platform-primary-links="true"[\s\S]*?workspacePages\.map[\s\S]*?active=\{active === page\.id\}/,
-  "Analytics and Admissions are not rendered together in the primary navigation row"
-);
-requireText(
-  platformNavigation,
-  /aria-current=\{active \? "page" : undefined\}[\s\S]*?data-platform-page-active=\{active \? page\.id : undefined\}/,
-  "the current primary Platform page is not exposed as the selected navigation item"
+  /aria-expanded=\{menuOpen\}[\s\S]*?aria-controls="platform-mobile-menu"[\s\S]*?aria-label="Mobile platform pages"/,
+  "phone navigation must expose an accessible disclosure and its destinations"
 );
 if (/ArrowLeft|ArrowRight/.test(platformNavigation)) {
   failures.push("primary Platform page navigation still renders directional arrows");
 }
 requireText(
-  page,
-  /<PlatformPageNavigation[\s\S]*?active=\{activePanel === "map" \? "home" : "analytics"\}[\s\S]*?onNavigate=\{openPlatformPage\}/,
-  "California workspace does not use the ordered platform page navigation"
+  shell,
+  /<PlatformPageNavigation restricted=\{admissionsAccess\.restrictedToAdmissions\} \/>/,
+  "all protected pages must share navigation while respecting Admissions-only access"
 );
 requireText(
   page,
-  /function openPlatformPage[\s\S]*?page === "home" \? "map" : "reports"[\s\S]*?function openAnalyticsSection[\s\S]*?openPanel\(section\)/,
-  "platform page navigation is not connected to the mounted carousel panels"
+  /function openAnalyticsSection[\s\S]*?openPanel\(section\)/,
+  "Analytics section navigation must select the mounted panel"
 );
 requireText(
   page,
@@ -121,17 +111,17 @@ requireText(
 );
 requireText(
   page,
-  /data-california-workspace-carousel="true"[\s\S]*?className="relative left-1\/2 h-dvh w-screen -translate-x-1\/2 overflow-clip/,
+  /data-california-workspace-carousel="true"[\s\S]*?h-\[calc\(100dvh-var\(--platform-header-height\)\)\][\s\S]*?overflow-clip/,
   "the California carousel is not constrained to a non-scrolling viewport"
 );
 requireText(
   page,
-  /data-california-carousel-track="true"[\s\S]*?w-\[300vw\][\s\S]*?transition-transform[\s\S]*?motion-reduce:transition-none[\s\S]*?translate3d/,
+  /data-california-carousel-track="true"[\s\S]*?w-\[300%\][\s\S]*?transition-transform[\s\S]*?motion-reduce:transition-none[\s\S]*?translate3d/,
   "the workspace does not use a reduced-motion-safe horizontal slide track"
 );
 requireText(
   platformNavigation,
-  /aria-label="Back to California map"[\s\S]*?data-california-carousel-back="true"/,
+  /"Back to California map"[\s\S]*?data-california-carousel-back="true"/,
   "left-side Home navigation does not preserve the clear carousel back action"
 );
 requireText(
@@ -336,8 +326,8 @@ requireText(
 );
 requireText(
   shell,
-  /!isStandaloneEditorial && !isCaliforniaExperience[\s\S]*?<PlatformWordmark \/>/,
-  "the shared shell does not remove its fixed chrome from the California experience"
+  /<PlatformPageNavigation[\s\S]*?<main/,
+  "the shared header must precede content in normal flow"
 );
 requireText(
   shell,
@@ -351,7 +341,7 @@ requireText(
 );
 requireText(
   platformNavigation,
-  /active === "home"[\s\S]*?data-platform-page-active="home"[\s\S]*?<PlatformWordmark compact \/>/,
+  /data-platform-page-target="home"[\s\S]*?<PlatformWordmark compact \/>/,
   "California workspace does not restore the quiet Alamo Health home anchor"
 );
 if (/PlatformUserIdentity|data-california-hero-identity/.test(page)) {

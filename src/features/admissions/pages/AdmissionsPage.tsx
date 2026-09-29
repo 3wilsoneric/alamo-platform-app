@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 import {
   fetchAdmissionsDashboard,
@@ -12,9 +11,7 @@ import type {
   AdmissionsReferralPipeline
 } from "../../../shared/types/platformSnapshot";
 import PipelineBoard from "../components/PipelineBoard";
-import PlatformPageNavigation, {
-  type PlatformPage
-} from "../../california/components/PlatformPageNavigation";
+
 
 // Validated as a pair (light surface, CVD-safe with the direct legend labels).
 const ADMISSIONS_COLOR = "#0f8b73";
@@ -34,7 +31,6 @@ const CHAT_STREAM_TICK_MS = 45;
 const CHAT_STREAM_CHARS_PER_TICK = 3;
 
 export default function AdmissionsPage() {
-  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<AdmissionsDashboardResponse | null>(readCachedAdmissionsDashboard);
   const [loading, setLoading] = useState(!dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -61,20 +57,11 @@ export default function AdmissionsPage() {
   const referralPipeline = dashboard?.referral_pipeline ?? null;
   const pipeline = referralPipeline?.status === "connected" ? referralPipeline : null;
 
-  function openPlatformPage(page: Exclude<PlatformPage, "admissions">) {
-    navigate(page === "home" ? "/home" : "/analytics");
-  }
-
   return (
     <div
       data-admissions-overview="true"
-      className="relative left-1/2 min-h-dvh w-screen -translate-x-1/2 bg-white px-3 pb-14 pt-16 text-[#171918] sm:px-6 lg:px-10"
+      className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-white px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
     >
-      <PlatformPageNavigation
-        active="admissions"
-        onNavigate={openPlatformPage}
-      />
-
       <div className="mx-auto w-full max-w-[1540px]">
         <h1 className="sr-only">Admissions</h1>
         <div className="-mx-3 py-2 lg:hidden">
@@ -82,7 +69,7 @@ export default function AdmissionsPage() {
             role="tablist"
             aria-label="Admissions categories"
             data-admissions-mobile-category-navigation="true"
-            className="flex min-w-0 max-w-full gap-1 overflow-x-auto overscroll-x-contain border-b border-[#d9dfdb] px-3"
+            className="grid min-w-0 w-full grid-cols-5 border-b border-[#d9dfdb] px-3"
           >
             {(["received", "in_progress", "decision"] as const).map((column) => {
               const columnSummary = pipeline?.board.columns.find((candidate) => candidate.key === column);
@@ -90,7 +77,7 @@ export default function AdmissionsPage() {
                 <SurfaceTab
                   key={column}
                   active={surface === "board" && mobilePipelineColumn === column}
-                  label={columnSummary?.label ?? mobilePipelineLabel(column)}
+                  label={mobilePipelineLabel(column)}
                   count={columnSummary?.count ?? null}
                   panel="admissions-board-panel"
                   onClick={() => {
@@ -412,16 +399,16 @@ function SurfaceTab({
       aria-selected={active}
       aria-controls={panel}
       onClick={onClick}
-      className={`relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${compact ? "min-h-11 px-3 text-[12px]" : "min-h-12 px-0.5 text-[13px]"} ${active ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
+      className={`relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${compact ? "min-h-12 min-w-0 justify-center px-0.5 text-[11px] sm:text-[12px]" : "min-h-12 px-0.5 text-[13px]"} ${active ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
     >
       {label}
-      {count != null ? <span className={`text-[11px] font-medium tabular-nums ${active ? "text-[#0f795f]" : "text-[#929995]"}`}>{count}</span> : null}
+      {count != null ? <span className={`${compact ? "sr-only" : ""} text-[11px] font-medium tabular-nums ${active ? "text-[#0f795f]" : "text-[#929995]"}`}>{count}</span> : null}
     </button>
   );
 }
 
 function mobilePipelineLabel(column: AdmissionsBoardColumnKey) {
-  if (column === "received") return "Referral received";
+  if (column === "received") return "Received";
   if (column === "in_progress") return "In progress";
   return "Decision";
 }

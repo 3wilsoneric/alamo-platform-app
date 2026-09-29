@@ -10,9 +10,6 @@ import {
 import CaliforniaCommunityMap from "../components/CaliforniaCommunityMap";
 import MobileCommunityHome from "../components/MobileCommunityHome";
 import CaliforniaCommunityModal from "../components/CaliforniaCommunityModal";
-import PlatformPageNavigation, {
-  type PlatformPage
-} from "../components/PlatformPageNavigation";
 import AnalyticsSectionNavigation, {
   type AnalyticsSection
 } from "../components/AnalyticsSectionNavigation";
@@ -118,11 +115,11 @@ export default function CaliforniaHomePage() {
     );
   }
 
-  function openPlatformPage(page: Exclude<PlatformPage, "admissions">) {
-    openPanel(page === "home" ? "map" : "reports");
-  }
-
   function openAnalyticsSection(section: AnalyticsSection) {
+    if (section === "licensing") {
+      navigate("/analytics/licensing");
+      return;
+    }
     openPanel(section);
   }
 
@@ -130,24 +127,8 @@ export default function CaliforniaHomePage() {
     <div
       data-california-workspace-carousel="true"
       data-california-active-panel={activePanel}
-      className="relative left-1/2 h-dvh w-screen -translate-x-1/2 overflow-clip bg-white text-[#111111]"
+      className="relative flex h-[calc(100dvh-var(--platform-header-height))] w-full flex-col overflow-clip bg-white text-[#111111]"
     >
-      {activePanel !== "map" ? (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 z-30 h-[60px] border-b border-[#d9d9d9] bg-white/95 backdrop-blur-[8px] sm:h-16 sm:border-0"
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 z-30 h-[60px] border-b border-[#d9d9d9] bg-white/95 backdrop-blur-[8px] sm:h-16 lg:hidden"
-        />
-      )}
-
-      <PlatformPageNavigation
-        active={activePanel === "map" ? "home" : "analytics"}
-        onNavigate={openPlatformPage}
-      />
       {activePanel !== "map" ? (
         <AnalyticsSectionNavigation
           active={activePanel}
@@ -157,25 +138,21 @@ export default function CaliforniaHomePage() {
 
       <div
         data-california-carousel-track="true"
-        className="flex h-full w-[300vw] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+        className="flex min-h-0 flex-1 w-[300%] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
         style={{
-          transform: `translate3d(-${PANEL_INDEX[activePanel] * 100}vw, 0, 0)`
+          transform: `translate3d(-${PANEL_INDEX[activePanel] * (100 / 3)}%, 0, 0)`
         }}
       >
         <section
           data-california-carousel-panel="map"
           aria-hidden={activePanel !== "map"}
           inert={activePanel !== "map"}
-          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white lg:overflow-clip"
+          className="relative h-full w-1/3 shrink-0 overflow-y-auto overscroll-contain bg-white lg:overflow-clip"
         >
           <div className="lg:hidden">
             <MobileCommunityHome
               communities={CALIFORNIA_COMMUNITIES}
-              dashboard={mapDashboard}
-              dashboardUnavailable={mapDashboardUnavailable}
               onSelectCommunity={openCommunity}
-              onOpenReports={() => openPanel("reports")}
-              onOpenQuestions={() => openPanel("questions")}
             />
           </div>
           <div
@@ -198,7 +175,7 @@ export default function CaliforniaHomePage() {
           data-california-carousel-panel="questions"
           aria-hidden={activePanel !== "questions"}
           inert={activePanel !== "questions"}
-          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-3 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-[126px] lg:px-12 lg:pt-16"
+          className="relative h-full w-1/3 shrink-0 overflow-y-auto overscroll-contain bg-white px-3 pb-[calc(32px+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-8 lg:px-8"
         >
           <div
             data-california-question-workspace="true"
@@ -218,7 +195,7 @@ export default function CaliforniaHomePage() {
           data-california-carousel-panel="reports"
           aria-hidden={activePanel !== "reports"}
           inert={activePanel !== "reports"}
-          className="relative h-full w-screen shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[126px] sm:px-8 sm:pb-8 sm:pt-[126px] lg:px-12 lg:pt-[76px]"
+          className="relative h-full w-1/3 shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pb-8 lg:px-8"
         >
           <div className="mx-auto w-full max-w-[1432px]">
             <ReportsPage embedded active={activePanel === "reports"} />

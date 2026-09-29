@@ -1,3 +1,4 @@
+import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
 import { useEffect, useRef, useState } from "react";
 import FullReportReader from "../components/FullReportReader";
 import {
@@ -160,19 +161,19 @@ export default function ReportsPage({
         embedded ? "min-h-full" : ""
       }`}
     >
-      <div className="grid min-w-0 gap-6 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-8">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-8">
         <aside aria-label="Analytics" className="min-w-0">
           <p className="text-[11px] leading-4 text-[#595959]">
             Choose an analysis to review.
           </p>
-          <label className="mt-2 block md:hidden" htmlFor="mobile-report-choice">
+          <label className="mt-2 block lg:hidden" htmlFor="mobile-report-choice">
             <span className="sr-only">Choose a report</span>
             <select
               id="mobile-report-choice"
               data-mobile-report-choice="true"
               value={selectedReportId}
               onChange={(event) => selectReport(event.currentTarget.value as FullReportId)}
-              className="min-h-12 w-full rounded-none border border-[#bfd1cb] bg-[#eef4f1] px-3 font-sans text-[15px] font-bold text-[#315b54] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+              className="min-h-12 w-full rounded-none border border-[#bfd1cb] bg-[#eef4f1] px-3 font-sans text-base font-semibold text-[#315b54] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
             >
               {reportDefinitions.map((report) => (
                 <option key={report.id} value={report.id}>{report.title}</option>
@@ -182,7 +183,7 @@ export default function ReportsPage({
           <div
             ref={reportLibraryRef}
             data-analytics-report-library="true"
-            className="mt-3 hidden border-y border-[#111111] py-2 md:block md:overflow-visible md:border-b-0 md:py-0"
+            className="mt-3 hidden border-y border-[#111111] py-2 lg:block lg:overflow-visible lg:border-b-0 lg:py-0"
           >
             {reportDefinitions.map((report) => {
               const selected = report.id === selectedReportId;
@@ -228,12 +229,12 @@ export default function ReportsPage({
                     setSelectedPeriod("");
                     setPeriodOptions([]);
                   }}
-                  className="min-w-[230px] border border-[#b3b3b3] bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-[#0f8b73]"
+                  className="min-h-11 w-full min-w-0 sm:w-auto sm:min-w-[230px] border border-[#b3b3b3] bg-white px-3 py-2 text-base sm:text-sm font-medium outline-none focus:border-[#0f8b73]"
                 >
                   {!requiresCommunityScope ? <option value="">All communities</option> : null}
                   {(dashboard?.communities ?? []).map((community) => (
                     <option key={community.facility_id} value={community.facility_id}>
-                      {community.community_name}
+                      {ALAMO_FACILITIES.find((item) => item.facilityId === community.facility_id)?.shortName ?? community.community_name}
                     </option>
                   ))}
                 </select>
@@ -243,7 +244,7 @@ export default function ReportsPage({
                   aria-label="Report period"
                   value={selectedPeriod}
                   onChange={(event) => setSelectedPeriod(event.target.value)}
-                  className="min-w-[170px] border border-[#b3b3b3] bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-[#0f8b73]"
+                  className="min-h-11 w-full min-w-0 sm:w-auto sm:min-w-[170px] border border-[#b3b3b3] bg-white px-3 py-2 text-base sm:text-sm font-medium outline-none focus:border-[#0f8b73]"
                 >
                   <option value="">Latest governed period</option>
                   {periodOptions.map((period) => (
@@ -258,7 +259,7 @@ export default function ReportsPage({
                   aria-label="Report audience"
                   value={selectedAudience || audienceOptions[0]?.id || ""}
                   onChange={(event) => setSelectedAudience(event.target.value)}
-                  className="min-w-[230px] border border-[#b3b3b3] bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-[#0f8b73]"
+                  className="min-h-11 w-full min-w-0 sm:w-auto sm:min-w-[230px] border border-[#b3b3b3] bg-white px-3 py-2 text-base sm:text-sm font-medium outline-none focus:border-[#0f8b73]"
                 >
                   {audienceOptions.map((audience) => (
                     <option key={audience.id} value={audience.id}>

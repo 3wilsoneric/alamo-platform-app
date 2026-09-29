@@ -33,6 +33,11 @@ function withRouteBoundary(node: ReactNode) {
   return <RouteBoundary>{node}</RouteBoundary>;
 }
 
+function LegacyLicensingRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/analytics/licensing${location.search}${location.hash}`} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -62,7 +67,8 @@ export default function App() {
         <Route path="/glossary" element={withRouteBoundary(<GlossaryPage />)} />
         <Route path="/explorer/:kind" element={withRouteBoundary(<DataExplorerPage />)} />
         <Route path="/command-center" element={withRouteBoundary(<CommandCenterPage />)} />
-        <Route path="/licensing" element={withRouteBoundary(<LicensingPage />)} />
+        <Route path="/analytics/licensing" element={withRouteBoundary(<LicensingPage />)} />
+        <Route path="/licensing" element={<LegacyLicensingRedirect />} />
         <Route path="/fiftystate" element={withRouteBoundary(<FiftyStatePage />)} />
         <Route
           path="/data-architecture"
