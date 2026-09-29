@@ -75,7 +75,7 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-briefing-community]').filter({ hasText: "Unassigned" }).count() !== 0 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
     await page.getByRole("heading", { name: "Where referrals are coming from" }).count() !== 1 ||
-    await page.getByRole("heading", { name: "Weekly trend" }).count() !== 1 ||
+    await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 1
   ) {

@@ -14,12 +14,6 @@ import type {
 import { readStorageItem, writeStorageItem } from "../../../shared/storage/browserStorage";
 import PipelineBoard from "../components/PipelineBoard";
 
-
-// Validated as a pair (light surface, CVD-safe with the direct legend labels).
-const ADMISSIONS_COLOR = "#0f8b73";
-// Referral series, validated as a set with ADMISSIONS_COLOR (all pairs, CVD).
-const REFERRALS_COLOR = "#4a67c4";
-const ACCEPTED_COLOR = "#c7851a";
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 type ExecutiveUpdateSegment = { text: string; strong?: boolean };
 type ExecutiveUpdateLine = {
@@ -530,8 +524,7 @@ function AdmissionsBriefingDashboard({
             }))}
           />
         </div>
-        <div className="lg:col-span-7"><BriefingOriginDashboard briefing={briefing} /></div>
-        <div className="lg:col-span-5"><BriefingTrendPanel dashboard={dashboard} /></div>
+        <div className="lg:col-span-12"><BriefingOriginDashboard briefing={briefing} /></div>
       </div>
     </section>
   );
@@ -637,39 +630,6 @@ function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardRe
   );
 }
 
-function BriefingTrendPanel({ dashboard }: { dashboard: AdmissionsDashboardResponse }) {
-  const points = dashboard.briefing.trend;
-  const max = Math.max(1, ...points.flatMap((point) => [point.received, point.accepted, point.completedMoveIns ?? 0]));
-  return (
-    <section data-admissions-briefing-trend="true" className="rounded-xl border border-[#dfe3e1] bg-white p-4 sm:p-5" aria-labelledby="admissions-briefing-trend-title">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0ee] pb-3">
-        <h2 id="admissions-briefing-trend-title" className="text-[15px] font-semibold tracking-[-0.02em]">Weekly trend</h2>
-        <div className="flex flex-wrap gap-3 text-[9px] text-[#69716c]">
-          <LegendSwatch color={REFERRALS_COLOR} label="Received" />
-          <LegendSwatch color={ACCEPTED_COLOR} label="Accepted" />
-          <LegendSwatch color={ADMISSIONS_COLOR} label="Moved in" />
-        </div>
-      </div>
-      {dashboard.briefing.coverage.weeklyTrend && points.length ? (
-        <>
-          <div className="mt-5 flex h-48 items-end gap-2 border-b border-[#d9d9d9]">
-            {points.map((point) => (
-              <div key={point.weekStart} className="flex h-full min-w-0 flex-1 items-end justify-center gap-[2px]" title={`Week of ${formatDate(point.weekStart)}: ${point.received} received, ${point.accepted} accepted, ${formatBriefingCount(point.completedMoveIns)} moved in`}>
-                <Bar value={point.received} max={max} color={REFERRALS_COLOR} />
-                <Bar value={point.accepted} max={max} color={ACCEPTED_COLOR} />
-                <Bar value={point.completedMoveIns ?? 0} max={max} color={ADMISSIONS_COLOR} partial={point.completedMoveIns == null} />
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 flex gap-2 text-[9px] text-[#737373]">
-            {points.map((point) => <span key={point.weekStart} className="min-w-0 flex-1 truncate text-center">{formatShortDate(point.weekStart)}</span>)}
-          </div>
-        </>
-      ) : <IncompleteBriefingField label="Weekly referral and acceptance history" />}
-    </section>
-  );
-}
-
 function BriefingSchedule({
   title,
   tone,
@@ -722,29 +682,6 @@ function IncompleteBriefingField({ label }: { label: string }) {
   );
 }
 
-function Bar({ value, max, color, partial }: { value: number; max: number; color: string; partial?: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="block w-full max-w-3 rounded-t-[4px]"
-      style={{
-        height: `${Math.max(value ? 3 : 0, (value / max) * 100)}%`,
-        backgroundColor: color,
-        opacity: partial ? 0.45 : 1
-      }}
-    />
-  );
-}
-
-function LegendSwatch({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
-      {label}
-    </span>
-  );
-}
-
 function formatBriefingCount(value: number | null) {
   return value == null || !Number.isFinite(value) ? "—" : value.toLocaleString("en-US");
 }
@@ -762,10 +699,4 @@ function formatDate(value: string) {
   const date = new Date(`${value.slice(0, 10)}T00:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
-}
-
-function formatShortDate(value: string) {
-  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" }).format(date);
 }
