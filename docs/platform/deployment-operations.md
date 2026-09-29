@@ -1407,3 +1407,35 @@ and readiness, identity/gzip asset delivery, local desktop/mobile Admissions
 browser regression, and Eric Wilson's signed-in production page all passed.
 The signed-in page shows live 7-day and 14-day referral totals and the complete
 16-page briefing deck without the former source-upgrade notice.
+
+### Admissions assessment schedule correction — 2026-09-29
+
+The CEO briefing no longer displays the low-value Weekly trend panel. Referral
+origins use the full briefing width, while Upcoming assessments and Move-ins
+remain the two priority schedules. The Pipeline producer now reads appointment
+start time and duration from the canonical assessment schedule used by Pipeline
+Home; it no longer mistakes the clinical assessment date for the appointment.
+
+Platform consumer:
+
+- source PR: `#73`; merge commit: `f483fbe446bac30cb6089ebdf8822f8f769be014`
+- ACR build: `cc47`
+- image: `alamo-platform@sha256:41bca5d43cdc2d22ee700b201a176f7bf91ad9028a6ec0f9aecdcae74a2e4252`
+- active revision: `alamo-platform-prod-web--admissions-assessments-0929`
+- rollback image: `alamo-platform@sha256:0409a19a29e91b992672e4a975d44495586a3f6e54dc6b9a7bc4eb41b4e5e26f`
+- active browser asset: `/assets/index-Eh2hLDQT.js`
+
+Pipeline producer:
+
+- source PR: `#225`; merge commit: `fa3eb2db203a3f02be554c09793e843d0c05a8bb`
+- deployment workflow: `36625173723`
+- image: `pipeline-app:fa3eb2db203a3f02be554c09793e843d0c05a8bb`
+- active revision: `pipeline-prod-web--fa3eb2db20-r36625173723-1`
+- contract version: `3.1`
+
+Both revisions are Healthy/Running at 100% traffic. Non-PHI contract
+verification reports complete assessment coverage, two remaining appointments
+this week, and two planned move-ins. The live-feed desktop/mobile Admissions
+browser regression passed without horizontal overflow, the production bundle
+omits Weekly trend, identity and gzip HTML reference the same active asset, and
+the public production smoke suite passed 4/4.
