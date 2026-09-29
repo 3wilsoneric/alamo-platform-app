@@ -431,7 +431,7 @@ async function main() {
     const profile = await chooseCurrentResidentProfile(page);
     const residentScenario = scenarios.find((scenario) => scenario.id === "resident-miss-does-not-fall-back-to-random-roster");
     if (residentScenario) {
-      residentScenario.turns[0].expectText = [/All communities/i, /[1-9][0-9]* (?:clients|residents)/i];
+      residentScenario.turns[0].expectText = [/All communities/i, /[1-9][0-9]* (?:(?:current|past) )?(?:clients|residents)/i];
       residentScenario.turns[1].prompt = `show ${profile.name} resident profile`;
       residentScenario.turns[1].expectText = [exactTextPattern(profile.name)];
       residentScenario.turns[1].expectResidentCard = [exactTextPattern(profile.name), /Resident #/i];

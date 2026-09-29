@@ -28,7 +28,7 @@ const cases = [
     prompt: "List every AWOL incident from May through June by community, including resident name, date, incident type, and description",
     expectedTool: "incident_detail_list",
     minScore: 82,
-    textIncludes: ["The CSV includes all 375 exact matches"],
+    exactArtifactCountInText: true,
     moduleRequired: true,
     artifactRequired: true
   },
@@ -120,6 +120,13 @@ for (const scenario of cases) {
 
   if (scenario.artifactRequired) {
     assertCase(Boolean(result?.artifact?.content), `${scenario.id}: expected exact-row artifact`);
+  }
+
+  if (scenario.exactArtifactCountInText) {
+    assertCase(
+      text.includes(`The CSV includes all ${result?.artifact?.rowCount ?? "unknown"} exact matches`),
+      `${scenario.id}: answer did not match the exact artifact row count`
+    );
   }
 
   if (scenario.recoveryExpected) {

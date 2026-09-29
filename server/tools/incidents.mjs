@@ -104,7 +104,10 @@ export function createIncidentBreakdownTools(dependencies) {
       ...sourceIncidentRows.map((row) => row.month_bucket).filter(Boolean),
       ...sourceDetailRows.map((row) => row.month_bucket).filter(Boolean)
     ])].sort();
-    const requestedMonths = getRequestedMonthBuckets(content, allMonths);
+    // Resolve relative periods against the loaded scope, not only months where
+    // the requested category happened to have rows. Otherwise "last month"
+    // can silently drift backward when a category has a verified-zero month.
+    const requestedMonths = getRequestedMonthBuckets(content, baseMonths);
     const activeMonth = requestedMonths.find((month) => allMonths.includes(month)) ?? detailMonth ?? aggregateMonth;
     const missingRequestedMonths = requestedMonths.filter((month) => !allMonths.includes(month));
     const priorIncidentMonth = activeMonth ? allMonths.filter((month) => month < activeMonth).at(-1) ?? null : null;

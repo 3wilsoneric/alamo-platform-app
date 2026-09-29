@@ -41,11 +41,30 @@ const MONTH_FIELDS = { received: "received", accepted: "accepted", declined: "de
 const BOARD_COLUMNS = new Set(["received", "in_progress", "decision"]);
 const MAX_CARDS = 300;
 const MAX_STATUSES = 12;
+const MAX_RECENT_REFERRALS = 500;
+const MAX_WEEKLY_SCHEDULE = 100;
+const MAX_WEEKLY_TREND = 12;
 // A relative Pipeline location: query string only, no scheme, host, or path traversal.
 const PIPELINE_PATH = /^\/\?[A-Za-z0-9_\-.=&%]{1,400}$/;
 
 function flag(value) {
   return typeof value === "boolean" ? value : null;
+}
+
+function isoCalendarDate(value) {
+  const normalized = text(value, 10);
+  return normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized) && Number.isFinite(Date.parse(`${normalized}T00:00:00.000Z`))
+    ? normalized
+    : null;
+}
+
+function isoTimestamp(value) {
+  const normalized = text(value, 40);
+  return normalized && Number.isFinite(Date.parse(normalized)) ? normalized : null;
+}
+
+function pipelineUrl(value, pipelineOrigin) {
+  return typeof value === "string" && PIPELINE_PATH.test(value) ? `${pipelineOrigin}${value}` : null;
 }
 
 function nullableText(value, maximumLength) {
@@ -119,6 +138,126 @@ function normalizeManagementProfile(profile) {
   };
 }
 
+function normalizeBriefingReferral(row, pipelineOrigin) {
+  const referralId = count(row?.referral_id);
+  const clientName = text(row?.client_name, 160);
+  const receivedAt = isoTimestamp(row?.received_at);
+  const community = text(row?.community, 80);
+  const status = text(row?.status, 80);
+  const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
+  if (referralId == null || !clientName || !receivedAt || !community || !status || !path) return null;
+  return {
+    referralId,
+    clientName,
+    receivedAt,
+    sourceName: nullableText(row?.source_name, 160),
+    sourceCategory: nullableText(row?.source_category, 80),
+    referringCounty: nullableText(row?.referring_county, 120),
+    community,
+    facilityId: null,
+    owner: text(row?.owner, 80) ?? "Unassigned",
+    status,
+    pipelineUrl: path
+  };
+}
+
+function normalizeBriefingAssessment(row, pipelineOrigin) {
+  const referralId = count(row?.referral_id);
+  const clientName = text(row?.client_name, 160);
+  const scheduledAt = isoTimestamp(row?.scheduled_at);
+  const community = text(row?.community, 80);
+  const status = text(row?.status, 80);
+  const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
+  if (referralId == null || !clientName || !scheduledAt || !community || !status || !path) return null;
+  return {
+    referralId,
+    clientName,
+    scheduledAt,
+    community,
+    facilityId: null,
+    owner: text(row?.owner, 80) ?? "Unassigned",
+    status,
+    pipelineUrl: path
+  };
+}
+
+function normalizeBriefingMoveIn(row, pipelineOrigin) {
+  const referralId = count(row?.referral_id);
+  const clientName = text(row?.client_name, 160);
+  const plannedAt = isoTimestamp(row?.planned_at);
+  const community = text(row?.community, 80);
+  const status = text(row?.status, 80);
+  const readiness = ["ready", "watch", "blocked", "unknown"].includes(row?.readiness)
+    ? row.readiness
+    : null;
+  const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
+  if (referralId == null || !clientName || !plannedAt || !community || !status || !readiness || !path) return null;
+  return {
+    referralId,
+    clientName,
+    plannedAt,
+    community,
+    facilityId: null,
+    owner: text(row?.owner, 80) ?? "Unassigned",
+    status,
+    readiness,
+    pipelineUrl: path
+  };
+}
+
+function normalizeBriefing(value, pipelineOrigin) {
+  if (value === undefined) return { status: "not_supported" };
+  if (!value || typeof value !== "object") return null;
+  const recentReferrals = Array.isArray(value.recent_referrals) && value.recent_referrals.length <= MAX_RECENT_REFERRALS
+    ? value.recent_referrals.map((row) => normalizeBriefingReferral(row, pipelineOrigin))
+    : null;
+  const upcomingAssessments = Array.isArray(value.upcoming_assessments) && value.upcoming_assessments.length <= MAX_WEEKLY_SCHEDULE
+    ? value.upcoming_assessments.map((row) => normalizeBriefingAssessment(row, pipelineOrigin))
+    : null;
+  const plannedMoveIns = Array.isArray(value.planned_move_ins) && value.planned_move_ins.length <= MAX_WEEKLY_SCHEDULE
+    ? value.planned_move_ins.map((row) => normalizeBriefingMoveIn(row, pipelineOrigin))
+    : null;
+  const weeklyTrend = Array.isArray(value.weekly_trend) && value.weekly_trend.length <= MAX_WEEKLY_TREND
+    ? value.weekly_trend.map((row) => {
+      const weekStart = isoCalendarDate(row?.week_start);
+      const received = count(row?.received);
+      const accepted = count(row?.accepted);
+      return weekStart && received != null && accepted != null ? { weekStart, received, accepted } : null;
+    })
+    : null;
+  const coverage = value.coverage;
+  const normalizedCoverage = coverage && typeof coverage === "object"
+    ? {
+      recentReferrals: flag(coverage.recent_referrals_complete),
+      assessments: flag(coverage.assessments_complete),
+      moveIns: flag(coverage.move_ins_complete),
+      weeklyTrend: flag(coverage.weekly_trend_complete)
+    }
+    : null;
+  if (
+    value.timezone !== "America/Los_Angeles" ||
+    !isoCalendarDate(value.window_end) ||
+    !normalizedCoverage ||
+    Object.values(normalizedCoverage).some((item) => item == null) ||
+    !recentReferrals || recentReferrals.some((item) => !item) ||
+    !upcomingAssessments || upcomingAssessments.some((item) => !item) ||
+    !plannedMoveIns || plannedMoveIns.some((item) => !item) ||
+    !weeklyTrend || weeklyTrend.some((item) => !item)
+  ) {
+    return null;
+  }
+  return {
+    status: "ready",
+    timezone: value.timezone,
+    windowEnd: value.window_end,
+    coverage: normalizedCoverage,
+    recentReferrals,
+    upcomingAssessments,
+    plannedMoveIns,
+    weeklyTrend
+  };
+}
+
 function normalizeCard(card, pipelineOrigin) {
   const referralId = count(card?.referral_id);
   const clientName = text(card?.client_name, 160);
@@ -189,6 +328,7 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
     return { key, label, count: total, statuses: normalizedStatuses };
   });
   const normalizedCards = cards.map((card) => normalizeCard(card, pipelineOrigin));
+  const briefing = normalizeBriefing(payload.briefing, pipelineOrigin);
   const normalizedMonthly = monthly.map((row) => {
     const month = text(row?.month, 7);
     const values = counts(row, MONTH_FIELDS);
@@ -218,7 +358,7 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
     normalizedColumns.some((column) => !column) ||
     normalizedCards.some((card) => !card) ||
     normalizedMonthly.some((row) => !row) ||
-    !metrics || !monthOutcomes || !month || !upcoming || total == null ||
+    !metrics || !monthOutcomes || !month || !upcoming || !briefing || total == null ||
     decisionsCounted == null || windowDays == null ||
     !(medianDays === null || (typeof medianDays === "number" && Number.isFinite(medianDays) && medianDays >= 0))
   ) {
@@ -236,6 +376,7 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
     },
     metrics,
     upcomingAdmissions: upcoming,
+    briefing,
     history: {
       monthOutcomes: { month, ...monthOutcomes },
       monthly: normalizedMonthly,

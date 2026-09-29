@@ -51,7 +51,12 @@ import {
   PIPELINE_CLINICAL_API_PREFIX
 } from "../server/pipeline-clinical-api.mjs";
 
+import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
+
 const PLATFORM_GET_ROUTES = Object.freeze({
+  "/api/platform/licensing": ({ requestUrl }) => getLicensingLibrary(requestUrl),
+  "/api/platform/licensing/report": ({ requestUrl }) => getLicensingReport(requestUrl),
+  "/api/platform/licensing/updates": () => getLicensingUpdates(),
   "/api/platform/admissions-dashboard": () => getAdmissionsDashboardData(),
   "/api/platform/bootstrap": () => getPlatformBootstrap(),
   "/api/platform/health": () => getPlatformHealth(),

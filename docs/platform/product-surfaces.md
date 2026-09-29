@@ -346,3 +346,53 @@ a visible warning when the published data is stale. Evidence row counts remain
 available behind a disclosure so provenance does not crowd the reading surface.
 
 Unknown and retired paths resolve through the application catch-all to `/home`; no retired page aliases ship as product routes.
+
+## Licensing Reports
+
+`/licensing` is a read-only library of the four-community CCLD baseline. The
+California community profile links to it with a community filter for San Pablo,
+Santa Clarita, Turlock, and JC Wallace House. Victoria's House has no licensing
+link until its license number and source collection are established.
+
+The page presents readable briefs with allegations, state finding excerpts,
+cited deficiencies, correction plans, and other recorded follow-up. Each
+excerpt retains its source page. Repeated state-form headers, signatures, and
+numbered gutters are removed from the clean narrative; the original text stays
+available in a disclosure and download. Unclear citation fields are flagged for
+source review. Mixed findings remain explicit, and historical deadlines do not
+imply current overdue work.
+
+The interface has one search box and an Updates notice. Search understands a
+small explicit vocabulary of communities, findings, citation/correction terms,
+years, and remaining text terms. It retrieves reports; it is not an unrestricted
+AI question-answer service. There are no statistics panels or filter menus.
+Report selection and search remain addressable in the URL.
+
+The authenticated `/api/platform/licensing`, `/api/platform/licensing/report`,
+and `/api/platform/licensing/updates` endpoints read a validated, atomic library
+bundle in private Azure Blob storage in production, using the existing managed
+identity. Local development reads `generated/licensing`. Missing, oversized,
+or invalid evidence returns an unavailable response; production never falls
+back to a local collection. Reports and Updates are published together so an
+alert cannot reference an absent report.
+
+`node scripts/check-licensing-updates.mjs --publish` runs the versioned source
+collector in `scripts/licensing`, imports a complete four-community collection,
+projects the change ledger, archives the original source evidence, and publishes
+the library bundle to `alamo-platform-snapshots/licensing/library-v1.json` in
+`alamodatalake`. Immutable versions and source archives are retained under the
+same private `licensing/` prefix. Publishing uses the existing Azure CLI sign-in
+and conditional writes to reject stale/concurrent replacement. Collection
+failures retain the last complete reports and publish a failed-check notice.
+
+Baseline records do not generate alerts; new, revised, removed, and reappearing
+records do. The page refreshes Updates once per minute. `--refresh-feed-only`
+rebuilds the feed without fetching CCLD. Original ledger and evidence remain in
+`output/ccld-baseline/data`; restore those from the private evidence archive if
+moving the collector to a different machine.
+
+The scheduled Codex task runs Mondays at 9 a.m. Pacific and publishes updates to
+the live page. Its trigger still requires this Mac and Codex to be running; it
+is not a cloud scheduler. It stays quiet when nothing changed and alerts here
+on meaningful changes or failure. The page uses a compact breadcrumb/Updates
+row above search, without a visible page title or subtitle.

@@ -392,7 +392,13 @@ assert(/^certified-data-v1:[a-f0-9]{64}$/.test(liveDataSignature), "certified ca
 const currentSnapshotRoute = getCertifiedQuestionRouteById("incident-current-snapshot:0");
 assert(Boolean(currentSnapshotRoute), "current snapshot route could not be resolved");
 const currentSnapshotPrompt = currentSnapshotRoute.runPrompt;
-const currentSnapshotFrame = applyAnalysisPatch(null, deriveAnalysisPatch(currentSnapshotPrompt, frameOptions));
+const liveIncidentMonths = [...new Set(
+  (liveCommunities.incidents ?? []).map((row) => row.month_bucket).filter(Boolean)
+)].sort();
+const currentSnapshotFrame = applyAnalysisPatch(null, deriveAnalysisPatch(currentSnapshotPrompt, {
+  ...frameOptions,
+  availableMonths: liveIncidentMonths
+}));
 const currentSnapshotMeta = makeCertifiedQuestionMeta(currentSnapshotRoute.question, currentSnapshotFrame);
 const currentSnapshotCacheKey = currentSnapshotMeta
   ? `${currentSnapshotMeta.cacheKey}:route:${currentSnapshotRoute.id}`

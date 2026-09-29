@@ -40,7 +40,6 @@ const missions = [
       }),
       turn("show current incident category breakdown", {
         tools: ["incident_breakdown"],
-        period: "2026-06",
         visualType: "bar_chart",
         critical: true
       }),

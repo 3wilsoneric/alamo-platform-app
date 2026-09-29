@@ -64,7 +64,7 @@ const surfaceCases = [
     prompt: "Can you show me the Resident Search module?",
     expect: [
       /All communities/i,
-      /[1-9][0-9]* (?:clients|residents)/i,
+      /[1-9][0-9]* (?:(?:current|past) )?(?:clients|residents)/i,
       /Community|Unit|Diagnosis/i
     ]
   },

@@ -25,7 +25,7 @@ const cases = [
     metricGrain: "distinct_residents",
     category: "AWOL/Elopement",
     mode: "aggregate",
-    periods: ["2026-05"],
+    periodCount: 1,
     tool: "incident_breakdown"
   },
   {
@@ -34,7 +34,7 @@ const cases = [
     metricGrain: "incident_events",
     category: "AWOL/Elopement",
     mode: "aggregate",
-    periods: ["2026-05"],
+    periodCount: 1,
     tool: "incident_breakdown"
   },
   {
@@ -186,7 +186,8 @@ const cases = [
   },
   {
     prompt: "san pablo, how has been the last three months",
-    periods: ["2026-04", "2026-05", "2026-06"],
+    periodCount: 3,
+    consecutivePeriods: true,
     facilityId: "337",
     tool: "community_history"
   },
@@ -287,6 +288,19 @@ function assertArrayContains(actual = [], expected = [], message, failures) {
   }
 }
 
+function assertConsecutiveMonths(actual = [], message, failures) {
+  const absoluteMonths = actual.map((value) => {
+    const match = String(value).match(/^(\d{4})-(\d{2})$/);
+    return match ? Number(match[1]) * 12 + Number(match[2]) - 1 : null;
+  });
+  if (
+    absoluteMonths.some((value) => value == null) ||
+    absoluteMonths.some((value, index) => index > 0 && value !== absoluteMonths[index - 1] + 1)
+  ) {
+    failures.push(`${message}: received ${actual.join(", ") || "none"}`);
+  }
+}
+
 const failures = [];
 
 for (const testCase of cases) {
@@ -308,6 +322,10 @@ for (const testCase of cases) {
   assertEqual(compiler.fallbackTool, testCase.fallbackTool, `${prefix} fallback tool`, failures);
   assertEqual(compiler.frameFirst, testCase.frameFirst, `${prefix} frame-first flag`, failures);
   assertArrayContains(frame.periods, testCase.periods, `${prefix} periods`, failures);
+  assertEqual(frame.periods?.length, testCase.periodCount, `${prefix} period count`, failures);
+  if (testCase.consecutivePeriods) {
+    assertConsecutiveMonths(frame.periods, `${prefix} consecutive periods`, failures);
+  }
   assertArrayContains(frame.fields, testCase.fields, `${prefix} fields`, failures);
 }
 

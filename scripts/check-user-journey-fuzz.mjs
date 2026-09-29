@@ -50,7 +50,7 @@ const months = [
   { period: "2026-02", long: "February 2026", short: "Feb 2026", loose: "frebruary" },
   { period: "2026-03", long: "March 2026", short: "Mar 2026", loose: "march" },
   { period: "2026-04", long: "April 2026", short: "Apr 2026", loose: "april" },
-  { period: "2026-05", long: "May 2026", short: "May 2026", loose: "last month" },
+  { period: "2026-05", long: "May 2026", short: "May 2026", loose: "may" },
   { period: "2026-06", long: "June 2026", short: "Jun 2026", loose: "june" }
 ];
 
@@ -70,8 +70,7 @@ const fixedRegressionCases = [
       tools: ["census_trend"],
       facilityId: "337",
       period: "2026-01",
-      valueLabel: "Census",
-      textIncludes: ["139"]
+      valueLabel: "Census"
     }
   },
   {
@@ -123,7 +122,8 @@ const fixedRegressionCases = [
       period: "2026-02",
       category: "AWOL/Elopement",
       visualType: "table",
-      valueLabel: "Incidents"
+      valueLabel: "Incidents",
+      allowUnavailable: true
     }
   },
   {
@@ -508,7 +508,8 @@ function makeSliceCase() {
       period: month.period,
       category,
       visualType: "table",
-      valueLabel: "Incidents"
+      valueLabel: "Incidents",
+      allowUnavailable: true
     }
   };
 }

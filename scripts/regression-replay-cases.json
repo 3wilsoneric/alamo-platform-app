@@ -33,7 +33,7 @@
             "artifact": true,
             "visualType": "table",
             "category": "AWOL/Elopement",
-            "includes": ["The CSV includes all 375 exact matches"],
+            "exactArtifactCountInText": true,
             "excludes": ["scope did not match", "I stopped this result"]
           }
         },
@@ -179,7 +179,7 @@
             "visualType": "table",
             "artifactRowCountAtLeast": 100,
             "visualRowsMax": 50,
-            "includes": ["The CSV includes all 503 exact matches"],
+            "exactArtifactCountInText": true,
             "excludes": ["same rows shown in the module"]
           }
         }

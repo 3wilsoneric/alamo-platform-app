@@ -1,6 +1,8 @@
 import { ArrowLeft, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
+import { LICENSING_COMMUNITIES } from "../../../../shared/licensing-contracts.mjs";
 import CommunityDashboardSurface, {
   type CommunityDashboardFocus,
   type CommunitySurfaceDestination
@@ -274,6 +276,14 @@ export default function CaliforniaCommunityModal({
                   </button>
                 );
               })}
+              {LICENSING_COMMUNITIES.some((c) => c.facilityId === community.facilityId) ? (
+                <Link
+                  to={`/licensing?community=${community.facilityId}`}
+                  className="flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-3 py-2 text-[12px] font-semibold text-[#315b54] hover:border-[#0f8b73] lg:min-h-0 lg:px-4 lg:text-[11px]"
+                >
+                  Licensing
+                </Link>
+              ) : null}
             </nav>
           ) : null}
         </header>
