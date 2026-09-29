@@ -1,26 +1,18 @@
 import { readFile, stat } from "node:fs/promises";
-import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { createHttpError } from "./http-errors.mjs";
-import { validateLicensingLibrary, validateLicensingReport, validateLicensingUpdates } from "../shared/licensing-contracts.mjs";
+import { validateLicensingLibrary, validateLicensingUpdates } from "../shared/licensing-contracts.mjs";
 import { analyzeLicensingReport, LICENSING_OUTCOMES, LICENSING_TOPICS } from "../shared/licensing-analysis.mjs";
 import { licensingSearchPlan } from "../shared/licensing-search.mjs";
 import { readLicensingAzureBundle, usesLicensingAzureStorage } from "./licensing-storage.mjs";
 
 const baselinePath = fileURLToPath(new URL("../generated/licensing/baseline.json", import.meta.url));
+import { validateLicensingBaseline, validateLicensingBundle } from "./licensing-validation.mjs";
+export { validateLicensingBaseline, validateLicensingBundle } from "./licensing-validation.mjs";
+
 let cloudCache;
 let cloudPending;
 
-export function validateLicensingBundle(input) {
-  if (input?.version !== "licensing-bundle-v1") throw new Error("Invalid licensing bundle.");
-  const baseline = validateLicensingBaseline(input.baseline);
-  const updates = validateLicensingUpdates(input.updates);
-  if (updates.lastSuccessful !== baseline.collectedAt) throw new Error("Licensing update/archive mismatch.");
-  if (updates.alerts.some((alert) => alert.reportId && !baseline.reports.some((report) => report.id === alert.reportId))) {
-    throw new Error("Licensing alert references an absent report.");
-  }
-  return { version: "licensing-bundle-v1", baseline, updates };
-}
 
 async function loadCloudBundle() {
   if (cloudCache && Date.now() < cloudCache.expiresAt) return cloudCache.value;
@@ -31,22 +23,6 @@ async function loadCloudBundle() {
   return cloudPending;
 }
 
-export function validateLicensingBaseline(input) {
-  const library = validateLicensingLibrary(input);
-  const reports = input.reports.map(validateLicensingReport);
-  if (reports.length !== library.totalReports) throw new Error("Incomplete licensing baseline.");
-  for (const c of library.communities) {
-    if (reports.filter((r) => r.facilityId === c.facilityId).length !== c.reportCount) {
-      throw new Error("Licensing community report count mismatch.");
-    }
-  }
-  for (const r of reports) {
-    if (createHash("sha256").update(r.text).digest("hex") !== r.textSha256) {
-      throw new Error("Licensing report text hash mismatch.");
-    }
-  }
-  return { ...library, reports };
-}
 
 async function loadBaseline() {
   try {

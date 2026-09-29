@@ -1,6 +1,14 @@
 """Offline checks for the collection pilot's change detection and validation."""
 import sqlite3
 import unittest
+import tempfile
+import tarfile
+import io
+from pathlib import Path
+from unittest.mock import patch
+from contextlib import redirect_stdout
+from collect import run, FACILITIES
+from restore import restore
 from collect import SCHEMA, apply_records, complaint_rows, parse_report, record, validate_index
 
 
@@ -60,6 +68,51 @@ class CollectorChecks(unittest.TestCase):
         self.assertEqual(complaint_rows({"CMPCOUNT": 0, "COMPLAINTARRAY": [None]}), [])
         with self.assertRaisesRegex(ValueError, "count"):
             complaint_rows({"CMPCOUNT": 1, "COMPLAINTARRAY": None})
+
+
+class CloudRestoreChecks(unittest.TestCase):
+    def test_partial_run_never_advances_comparison_history(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            def collect(_fetch, number, _community, _platform):
+                if number == FACILITIES[-1][0]:
+                    raise ValueError("Source unavailable")
+                row = record("report", "a", {"text": "new"}, "raw.html", "https://example.test", "now")
+                return [row], {"report_count": 1}
+            with patch("collect.collect_facility", side_effect=collect), redirect_stdout(io.StringIO()):
+                self.assertEqual(run(root, 0.7), 1)
+            db = sqlite3.connect(root / "baseline.sqlite")
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM entities").fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM changes").fetchone()[0], 0)
+            self.assertFalse((root / "latest-complete.txt").exists())
+            db.close()
+
+    def test_restore_rejects_traversal_and_links(self):
+        for name, kind in [("../outside", tarfile.REGTYPE), ("data/link", tarfile.SYMTYPE)]:
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                archive = root / "archive.tar.gz"
+                with tarfile.open(archive, "w:gz") as output:
+                    entry = tarfile.TarInfo(name)
+                    entry.type = kind
+                    entry.linkname = "/etc/passwd" if kind == tarfile.SYMTYPE else ""
+                    output.addfile(entry)
+                with self.assertRaisesRegex(ValueError, "Unsafe"):
+                    restore(archive, root / "restored")
+
+    def test_valid_restart_archive_restores_and_refuses_overwrite(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = root / "archive.tar.gz"
+            with tarfile.open(archive, "w:gz") as output:
+                for name, content in [("data/baseline.sqlite", b"fixture"), ("data/latest-complete.txt", b"run-1")]:
+                    entry = tarfile.TarInfo(name)
+                    entry.size = len(content)
+                    output.addfile(entry, io.BytesIO(content))
+            restore(archive, root / "restored")
+            self.assertEqual((root / "restored/data/latest-complete.txt").read_text(), "run-1")
+            with self.assertRaisesRegex(ValueError, "empty"):
+                restore(archive, root / "restored")
 
 
 if __name__ == "__main__":

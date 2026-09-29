@@ -15,6 +15,7 @@ const rootFiles = new Set([
   "Dockerfile.admissions-identity-release",
   "Dockerfile.frontend-rebase",
   "Dockerfile.frontend-release",
+  "Dockerfile.licensing-job",
   "Dockerfile.iphone-overlay",
   "Dockerfile.mobile-experience-overlay",
   "README.md",
@@ -188,7 +189,7 @@ function ownershipClass(file) {
   if (/^api\/.+\.js$/.test(file)) return "Vercel API";
   if (/^server\/.+\.mjs$/.test(file)) return "server domain";
   if (/^shared\/.+\.(?:mjs|d\.mts)$/.test(file)) return "shared contract";
-  if (["scripts/licensing/collect.py", "scripts/licensing/check_collect.py"].includes(file)) return "verification and operations";
+  if (["scripts/licensing/collect.py", "scripts/licensing/check_collect.py", "scripts/licensing/restore.py"].includes(file)) return "verification and operations";
   if (/^scripts\/.+\.(?:mjs|json|ps1)$/.test(file)) return "verification and operations";
   if (/^databricks\/notebooks\/.+\.py$/.test(file)) return "data publishing notebook";
   if (/^databricks\/workflows\/.+\.json$/.test(file)) return "data publishing workflow";

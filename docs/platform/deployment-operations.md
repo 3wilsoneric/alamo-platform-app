@@ -1122,3 +1122,39 @@ measured 366 pixels in a 390-pixel viewport, both without horizontal overflow.
 Production is Healthy/Running at 100% traffic, serves matching JS and CSS,
 and passed 4/4 public smoke probes. Signed-in search returned four matching
 reports, and clearing it restored all 93 reports.
+
+### Licensing cloud job
+
+The platform-owned collector uses an Azure Container Apps Job named
+`alamo-platform-licensing-check`, in the platform's existing Container Apps
+environment. Its source definition is `scripts/azure/licensing-job.json` and
+its image is built with `Dockerfile.licensing-job`. The job uses the existing
+platform managed identity and private snapshot container; it has no user login
+or Codex dependency. It publishes into the existing Licensing Updates feed.
+
+The weekly schedule is Monday at 9 a.m. America/Los_Angeles. Azure evaluates
+cron in UTC, so the job is triggered at both candidate UTC hours and the worker
+checks Pacific local time before contacting the source. Exactly one slot runs
+in either standard time or daylight time. See Microsoft's
+[Container Apps jobs documentation](https://learn.microsoft.com/en-us/azure/container-apps/jobs).
+
+The published library atomically points to the complete collector evidence
+archive. Each fresh container verifies and restores that archive before
+checking the four facilities. The initial evidence hash in the deployment
+specification is used only to migrate the pre-job baseline; its run ID must
+match the published collection. Later executions use the published pointer.
+A renewable blob lease prevents overlapping writers. Failed/partial scans
+retain the last complete collection and mark Updates as failed; comparison
+history advances only after all four facilities pass. Job execution history
+also records failures, including storage outages that cannot update the feed.
+
+Use `npm run licensing:prepare-job` to create a bounded image context with only
+collector code and locked dependencies. Build that context in ACR, then deploy
+its immutable digest with
+`npm run licensing:deploy-job -- --image=<digest>`. Use `--manual` for initial
+verification before enabling the schedule. `az containerapp job start` runs a
+manual execution; for a scheduled definition, supply an execution template with
+the `--scheduled` argument removed to run outside the weekly time window.
+Run `npm run check:licensing-job` for DST, overlap, failure, restore, and atomic
+history checks. The first cloud execution and a fresh-container repeat must
+succeed before retiring the former Codex automation.

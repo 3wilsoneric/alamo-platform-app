@@ -1,0 +1,12 @@
+FROM node:22-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends python3 curl ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+COPY --chown=node:node server ./server
+COPY --chown=node:node shared ./shared
+COPY --chown=node:node scripts ./scripts
+RUN mkdir -p generated/licensing output/ccld-baseline && chown -R node:node generated output
+ENV NODE_ENV=production PYTHONDONTWRITEBYTECODE=1 LICENSING_AUTH_MODE=managed_identity
+USER node
+CMD ["node", "scripts/licensing/run-cloud-job.mjs", "--scheduled"]
