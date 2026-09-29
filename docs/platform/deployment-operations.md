@@ -1302,3 +1302,25 @@ production smoke and guided-question scripts were not executed because the
 release checkout has no saved production browser storage state; their local and
 predeployment equivalents passed. Roll back to the immutable base digest above
 if an authenticated production issue is found.
+
+#### Compressed-shell correction
+
+The first Admissions briefing overlay updated the uncompressed browser build
+but inherited older precompressed `index.html.gz` and `index.html.br` files from
+its base image. Production correctly advertised no-cache for HTML, but browsers
+that requested gzip or Brotli still received the older asset references and
+continued to show Trends. The command-line smoke probe requested the identity
+representation and therefore did not expose the mismatch.
+
+The corrected release regenerated every compressed HTML, JavaScript, CSS, JSON,
+and SVG sibling before building. Revision
+`alamo-platform-prod-web--admissions-cachefix-0928` runs image
+`alamo-platform@sha256:45991a8f5c3db93f8410694985b39e0e497d2a14e7d1cd39122db043d2a7adcf`
+from ACR build `cc41`; the preceding image
+`sha256:84e4fb881f354714f8fe1cc36d6a9db8c48fcdb2df9b31f849c047f196f9a5ef`
+is its rollback point. The correction is Healthy/Running at 100% traffic.
+Identity and gzip responses both reference `/assets/index-CfNa8vME.js` and
+`/assets/index-DbM4zKqw.css`. A signed-in Chrome verification on the clean
+`/admissions` URL confirmed that Briefing is selected and Trends is absent.
+Future overlay releases must regenerate and replace the precompressed browser
+representations, not only their source files.
