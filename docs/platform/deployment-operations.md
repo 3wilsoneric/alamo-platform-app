@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-09-28
+- updated: 2026-09-29
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -1368,3 +1368,42 @@ configuration and does not require a Container App image revision. Both guest
 objects remain `PendingAcceptance` until each user accepts Microsoft's emailed
 invitation. Production remained Healthy/Running at 100% traffic and
 `/healthz` returned 200 after the assignments.
+
+### Admissions single-page briefing and Pipeline 3.1 — 2026-09-29
+
+Admissions is now one continuous management page. The former Briefing/Census
+surface navigation and standalone Census panel are removed. The executive
+update leads into the collapsible **This week at a glance** deck, followed by
+the existing Board/List. Census remains a governed briefing input rather than a
+separate destination; the mobile board still uses its three pipeline-category
+tabs.
+
+Platform consumer:
+
+- source PR: `#68`; merge commit: `64ce8dd5d868f78c41b08af157c5a01f35fbbc8e`
+- ACR build: `cc43`
+- image: `alamo-platform@sha256:38f1d8b5e06ea9a28fa3aaa1ec47bfc0579f5b85320df7b162a88828668ecae3`
+- active revision: `alamo-platform-prod-web--admissions-single-0929`
+- rollback image: `alamo-platform@sha256:62e5da15dbd8c0321ecfa0385b856c8a1ca3ee23ffec103da65d45dffab40e30`
+- active browser asset: `/assets/index-EkLkOWwE.js`
+
+Pipeline producer:
+
+- source PR: `#221`; merge commit: `2ad828692b803f6418bf141ede772287b44453c`
+- deployment workflow: `36584921689`
+- image: `pipeline-app:2ad828692b803f6418bf141ede772287b44453c`
+- active revision: `pipeline-prod-web--2ad828692b-r36584921689-1`
+- rollback image: `pipeline-app:1024053bd132fae0373bf141ede772287b44453c`
+- contract version: `3.1`
+
+The producer's required CI rerun passed every browser, operational, Postgres,
+verification, and immutable-image job before the full Azure lane ran. Both
+Container App revisions are Healthy/Running at 100% traffic. The direct
+server-to-server contract reports complete coverage for recent referrals,
+assessments, move-ins, and weekly trend. A non-PHI verification counted 27
+recent-referral rows, zero remaining assessments this week, two planned
+move-ins, and 12 weekly trend points. Production `/healthz`, Pipeline liveness
+and readiness, identity/gzip asset delivery, local desktop/mobile Admissions
+browser regression, and Eric Wilson's signed-in production page all passed.
+The signed-in page shows live 7-day and 14-day referral totals and the complete
+16-page briefing deck without the former source-upgrade notice.
