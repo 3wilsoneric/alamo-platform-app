@@ -19,8 +19,11 @@ those links plus Communities; Escape, outside click, and navigation close it.
 Admissions-only identities retain their existing access boundary.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
-Betty Dominici and Raj Thandi also see Licensing in that row. No other account,
-including a platform administrator, receives Licensing access.
+Betty Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
+other account, including a platform administrator, receives Licensing access.
+Eric's verified owner identity also receives a Fifty States destination in the
+shared header; the acquisition workspace and its APIs remain hidden from every
+other account.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
 analysis live in the profiles. Phone Admissions keeps all five section tabs

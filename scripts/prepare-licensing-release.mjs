@@ -54,6 +54,8 @@ for (const directory of ["server", "shared"]) {
     if (file.startsWith("licensing-") && file.endsWith(".mjs")) await cp(path.join(root, directory, file), path.join(overlay, directory, file));
   }
 }
+await cp(path.join(root, "shared/platform-owner-access.mjs"), path.join(overlay, "shared/platform-owner-access.mjs"));
+await cp(path.join(root, "server/platform-knowledge-access.mjs"), path.join(overlay, "server/platform-knowledge-access.mjs"));
 await cp(path.join(root, "dist"), path.join(overlay, "dist"), { recursive: true });
 // Override every compressed representation too; the production server prefers them.
 async function compress(directory) {
