@@ -94,13 +94,13 @@ await withBrowserQa(async (browser) => {
     await desktopTabs.count() !== 2 ||
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1 ||
-    await page.getByRole("heading", { name: "This week at a glance" }).count() !== 1
+    await page.getByRole("heading", { name: "Weekly briefing" }).count() !== 1
   ) {
     throw new Error("Admissions must open on the weekly leadership briefing.");
   }
   const briefingPager = page.locator('[data-admissions-briefing-pager="true"]');
   const briefingCollapsible = page.locator('[data-admissions-briefing-collapsible="true"]');
-  const briefingToggle = briefingCollapsible.getByRole("button", { name: /^Weekly briefing/ });
+  const briefingToggle = briefingCollapsible.getByRole("button", { name: /^This week at a glance/ });
   if (
     await briefingCollapsible.count() !== 1 ||
     await briefingToggle.getAttribute("aria-expanded") !== "true" ||
@@ -252,6 +252,12 @@ await withBrowserQa(async (browser) => {
     throw new Error("The briefing must name every accepted client moving toward admission.");
   }
   const embeddedBoard = page.locator('[data-admissions-embedded-board="true"]');
+  if (
+    !/^This week at a glance/.test((await briefingToggle.innerText()).trim()) ||
+    await page.getByRole("heading", { name: "Weekly briefing", exact: true }).count() !== 1
+  ) {
+    throw new Error("This week at a glance must be the collapsible briefing directly above the referral board.");
+  }
   const [briefingBox, embeddedBoardBox] = await Promise.all([
     briefingCollapsible.boundingBox(),
     embeddedBoard.boundingBox()

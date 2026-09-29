@@ -26,7 +26,8 @@ repeated page title, explanatory subtitle, or KPI strip.
   the current workload by stage, and the busiest communities. It types in only
   on its first appearance in a browser session; returning to the page or
   switching views restores the complete response immediately. Beneath it, a
-  collapsible weekly briefing deck shows governed
+  collapsible **This week at a glance** control sits immediately above the
+  referral Board/List and opens the weekly briefing deck. The deck shows governed
   census by community; referral origin for the trailing seven days, the prior
   seven days, and the combined 14-day window; a weekly received/accepted/moved-in
   trend; remaining assessments scheduled through Sunday; and planned and

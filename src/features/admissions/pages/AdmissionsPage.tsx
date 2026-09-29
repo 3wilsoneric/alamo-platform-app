@@ -564,7 +564,7 @@ function AdmissionsBriefingPanel({
         className="flex min-h-14 w-full items-center justify-between gap-4 rounded-xl bg-[#f4f7f5] px-4 py-3 text-left transition-colors hover:bg-[#edf3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:px-5"
       >
         <span className="min-w-0">
-          <span id="admissions-weekly-briefing-title" className="block text-[13px] font-semibold text-[#263c35]">Weekly briefing</span>
+          <span id="admissions-weekly-briefing-title" className="block text-[13px] font-semibold text-[#263c35]">This week at a glance</span>
           <span className="mt-0.5 block text-[10px] text-[#737b77]">{formatDate(briefing.weekStart)} through {formatDate(briefing.weekEnd)}</span>
         </span>
         <span className="inline-flex shrink-0 items-center gap-2 text-[10px] font-semibold text-[#315b54]">
@@ -664,7 +664,7 @@ function BriefingSummaryPage({ briefing }: { briefing: AdmissionsDashboardRespon
       <section className="overflow-hidden rounded-xl border border-[#dfe3e1] bg-white" aria-labelledby="admissions-briefing-summary-title">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#dfe3e1] px-4 py-4 sm:px-5">
           <div>
-            <h2 id="admissions-briefing-summary-title" className="text-[15px] font-semibold tracking-[-0.02em]">This week at a glance</h2>
+            <h2 id="admissions-briefing-summary-title" className="text-[15px] font-semibold tracking-[-0.02em]">Weekly briefing</h2>
             <p className="mt-1 text-[10px] text-[#737b77]">{formatDate(briefing.weekStart)} through {formatDate(briefing.weekEnd)}</p>
           </div>
           <p className="text-[10px] text-[#737b77]">Census through {formatDate(briefing.asOfDate)}</p>
