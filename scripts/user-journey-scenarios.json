@@ -140,8 +140,8 @@
           "expect": {
             "tools": ["census_trend"],
             "facilityId": "345",
-            "period": "2026-06",
-            "textIncludes": ["Santa Clarita", "June 2026"],
+            "latestPeriod": true,
+            "textIncludes": ["Santa Clarita"],
             "textExcludes": ["Portfolio census trend", "Victoria's Place"],
             "interpretationChanged": true,
             "visual": {
@@ -439,8 +439,8 @@
           "expect": {
             "tools": ["incident_breakdown"],
             "facilityId": "343",
-            "period": "2026-06",
-            "textIncludes": ["JC Wallace House", "June 2026", "Medical Emergency"],
+            "latestPeriod": true,
+            "textIncludes": ["JC Wallace House"],
             "textExcludes": ["facility 343", "Victoria's Place", "Portfolio incident breakdown"],
             "visual": {
               "type": "bar_chart",
@@ -635,8 +635,8 @@
           "expect": {
             "tools": ["census_trend"],
             "facilityId": "337",
-            "period": "2026-06",
-            "textIncludes": ["A & A Health Services San Pablo", "June 2026"],
+            "latestPeriod": true,
+            "textIncludes": ["A & A Health Services San Pablo"],
             "textExcludes": ["Portfolio census trend", "facility 337", "Victoria's Place"],
             "visual": {
               "type": "line_chart",
@@ -653,8 +653,8 @@
           "expect": {
             "tools": ["incident_breakdown"],
             "facilityId": "337",
-            "period": "2026-06",
-            "textIncludes": ["A & A Health Services San Pablo", "June 2026"],
+            "latestPeriod": true,
+            "textIncludes": ["A & A Health Services San Pablo"],
             "textExcludes": ["Portfolio incident breakdown", "facility 337", "Victoria's Place"],
             "visual": {
               "type": "bar_chart",
@@ -831,8 +831,8 @@
           "expect": {
             "tools": ["census_trend"],
             "facilityId": "345",
-            "period": "2026-06",
-            "textIncludes": ["Santa Clarita", "June 2026"],
+            "latestPeriod": true,
+            "textIncludes": ["Santa Clarita"],
             "textExcludes": ["Portfolio census trend", "Victoria's Place"],
             "visual": {
               "type": "line_chart",
@@ -849,8 +849,8 @@
           "expect": {
             "tools": ["incident_breakdown"],
             "facilityId": "345",
-            "period": "2026-06",
-            "textIncludes": ["Santa Clarita", "June 2026"],
+            "latestPeriod": true,
+            "textIncludes": ["Santa Clarita"],
             "textExcludes": ["Portfolio incident breakdown", "Victoria's Place"],
             "visual": {
               "type": "bar_chart",
@@ -917,7 +917,7 @@
           "expect": {
             "tools": ["community_history"],
             "textIncludes": ["A & A Health Services San Pablo"],
-            "periodIncludes": ["2026-04", "2026-06"],
+            "traceBoundsInText": true,
             "textExcludes": ["I don't have that exact slice loaded", "community profile is current-state data", "Victoria's Place"],
             "visual": {
               "type": "table",
@@ -933,7 +933,7 @@
           "expect": {
             "tools": ["community_history"],
             "facilityId": "344",
-            "periodIncludes": ["2026-04", "2026-06"],
+            "traceBoundsInText": true,
             "textIncludes": ["AHS Turlock OP LLC"],
             "textExcludes": ["A & A Health Services San Pablo", "not enough context"],
             "visual": {

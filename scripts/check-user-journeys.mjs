@@ -46,6 +46,14 @@ function includesText(haystack, needle) {
   return lower(haystack).includes(lower(needle));
 }
 
+function monthLabel(period) {
+  return new Date(`${period}-01T00:00:00.000Z`).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC"
+  });
+}
+
 function asArray(value) {
   if (value == null) return [];
   return Array.isArray(value) ? value : [value];
@@ -180,6 +188,26 @@ function scoreTurn({ scenario, turn, turnIndex, result }) {
 
   for (const period of asArray(expect.periodIncludes)) {
     if (!includesText(haystack, period)) addFailure(categories.data, `missing expected period ${period}`);
+  }
+
+  if (expect.latestPeriod) {
+    const tracePeriod = String(result?.trace?.period ?? "");
+    if (!/^\d{4}-\d{2}$/.test(tracePeriod)) {
+      addFailure(categories.data, `latest-period answer did not expose one normalized month (${tracePeriod || "none"})`);
+    } else if (!includesText(text, monthLabel(tracePeriod))) {
+      addFailure(categories.answer, `answer did not name its traced latest period ${monthLabel(tracePeriod)}`);
+    }
+  }
+
+  if (expect.traceBoundsInText) {
+    const periods = String(result?.trace?.period ?? "").split(", ").filter(Boolean);
+    if (!periods.length) {
+      addFailure(categories.data, "answer did not expose a normalized trace period window");
+    } else {
+      for (const period of [periods[0], periods.at(-1)]) {
+        if (!includesText(text, monthLabel(period))) addFailure(categories.answer, `answer did not name trace-bound month ${monthLabel(period)}`);
+      }
+    }
   }
 
   if (expect.facilityId && !includesText(haystack, `"facilityId":"${expect.facilityId}"`) && !includesText(haystack, `"facility_id":"${expect.facilityId}"`)) {
