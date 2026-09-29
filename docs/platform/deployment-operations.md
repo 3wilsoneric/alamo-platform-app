@@ -1233,3 +1233,37 @@ The release was made from the clean release checkout rather than the shared
 main checkout, which contains separate in-progress product work. Do not replace
 this immutable runtime with an older image or deploy the shared working tree
 without reconciling those changes first.
+
+### Licensing access and Analytics placement — 2026-09-28
+
+- source commit: `920db3f`, branch `codex/licensing-production-20260928`
+- revision: `alamo-platform-prod-web--licensing-access-920db3f`
+- image: `alamo-platform@sha256:a907d6af426d8e7b5a7e4306fb4ea50f6aadeae5e469e68d221a9786c54462b5`
+- base image: `alamo-platform@sha256:69bc343962ec7f02ce6d4e144f05d02c65b4336b9f9a431793b35b15a4cc3d14`
+- ACR build: `cc3y`; active asset: `/assets/index-CxQlospQ.js`
+
+Licensing now lives at `/analytics/licensing`, alongside Reports and Ask a
+question. Only Betty Dominici and Raj Thandi's tenant-local Entra object IDs
+qualify. The shared browser/server policy is `shared/licensing-access.mjs`.
+All three Licensing API routes require a verified delegated identity and the
+explicit allowlist; denied authenticated requests return generic 404 responses.
+The top-level and community-profile links were removed. Legacy `/licensing`
+links preserve their query string when redirecting to the protected new route.
+
+The approved IDs were verified against the existing Entra directory; no account,
+role, consent, or tenant permission was created or expanded. The scheduled
+collector and its managed identity remain unchanged. The bounded release
+overlay patches only the Licensing API handlers and modules plus the browser
+bundle, preserving the established runtime. Do not roll back to a pre-access
+API image: it would restore access for every authenticated Platform user.
+
+Verification: 8/8 nonbrowser release stages and 4/4 production smoke probes
+passed. Signed-token tests exercise the actual API authentication/handlers,
+reject nonmembers and misleading names/email claims, and let both approved IDs
+reach the report loader. These same tests passed against the overlaid production
+container with networking disabled. Local CUA fixtures verified both permitted
+identities, a denied identity with zero Licensing requests, and 320/390/768/1440px
+navigation. These fixtures did not sign in as Betty or Raj. Production CUA under
+Eric confirmed the exact asset, no Licensing navigation, and redirects from both
+old and new direct URLs to Analytics. The revision is Healthy/Running at 100%
+traffic; all anonymous Licensing APIs return 401/private-no-store.
