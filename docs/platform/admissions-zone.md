@@ -13,48 +13,33 @@ Admissions and Pipeline are deliberately separate product surfaces.
 
 `/admissions` is an Alamo-native working overview. It reads
 `GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and
-opens as one continuous weekly leadership page. There is no Briefing/Census
-surface navigation: the analyst narrative, collapsible weekly deck, and
-referral Board/List answer the management question in one reading path.
-The page uses the same white canvas as the main Home surface. There is no
-repeated page title, explanatory subtitle, or KPI strip.
+opens on the live **Pipeline** page. A two-item Admissions navigation separates
+that operating workspace from the **Briefing** page; `?view=briefing` is
+addressable and survives reload. The page uses the same white canvas as the
+main Home surface. Neither destination uses a repeated product title or KPI
+strip.
 
-- **Briefing** — the current CEO-level admissions readout. A short analyst
-  narrative leads the page and names accepted clients moving toward admission,
-  the current workload by stage, and the busiest communities. It types in only
-  on its first appearance in a browser session; returning to the page or
-  reloading it restores the complete response immediately. Beneath it, a
-  collapsible **This week at a glance** control sits immediately above the
-  referral Board/List and opens the weekly briefing deck. The deck shows governed
-  census by community; referral origin for the trailing seven days, the prior
-  seven days, and the combined 14-day window; a weekly received/accepted/moved-in
-  trend; remaining assessments scheduled through Sunday; and planned and
-  completed move-ins for the Monday-through-Sunday week. The event lists retain
-  client name, community, owner, and workflow status inside the existing
-  authenticated PHI boundary. An unmatched Pipeline destination is surfaced as
-  `No community assigned`, so portfolio totals reconcile rather than silently
-  dropping activity. Every dynamic section carries an explicit source-coverage
-  flag. If Pipeline has not published the required event slice, the interface
-  says the field is incomplete and renders an em dash; it never turns missing
-  coverage into a zero or estimate. The briefing is a page-by-page executive
-  deck rather than one long report. Its fixed six-topic navigation is Summary,
-  Communities, Sources, Trend, Assessments, and Move-ins. Previous/Next moves
-  between those executive topics. Row overflow is paged with small arrows inside
-  its owning topic instead of multiplying the top-level navigation into numbered
-  source, referral, or event tabs. Client-level referral review remains on the
-  Board below, avoiding a duplicate referral report inside the briefing. The live
-  referral board begins directly below the deck and remains available when the
-  deck is collapsed.
-- **Board inside Briefing** — the current governed referral update: Referral received, In
-  progress, and Decision columns holding one card per referral. The columns use
-  calm green, blue, and warm decision surfaces. Cards show client name,
-  destination community, referral number, owner, next step, and days open. A
-  single live analyst response above the board uses two distinct lines and
-  selective emphasis to answer the CEO-level question:
-  how many referrals are active, where they sit in the process, which
-  communities carry the most activity.
-  Community workload is stated in natural language without parenthetical
-  counts. Selecting a client opens an Alamo-native referral chart in a
+- **Briefing dashboard** — the current CEO-level admissions readout. A short
+  analyst narrative names accepted clients moving toward admission, the current
+  workload by stage, and the busiest communities. It types in only on its first
+  appearance in a browser session; returning to the page or reloading it restores
+  the complete response immediately. The responsive dashboard combines governed
+  census and occupancy cards by community, ranked referral-source cards for the
+  trailing 14 days, the weekly received/accepted/moved-in trend, remaining
+  assessments scheduled through Sunday, and planned move-ins for the
+  Monday-through-Sunday week. It has no report tables, stat-strip grids, slide
+  tabs, or duplicated client-referral pages. Referral-source overflow pages only
+  inside that module. Event lists retain client name, community, owner, and
+  workflow status inside the existing authenticated PHI boundary. Every dynamic
+  section carries explicit source coverage and never converts missing data into
+  a zero or estimate.
+- **Pipeline** — the live governed referral workspace: Referral received, In
+  progress, and Decision columns holding one card per referral. Board is the
+  default view, and the adjacent List control always exposes the same governed
+  slice without leaving Pipeline. The columns use calm green, blue, and warm
+  decision surfaces. Cards show client name, destination community, referral
+  number, owner, next step, and days open. Selecting a client opens an
+  Alamo-native referral chart in a
   Pipeline-inspired manila folder frame, with the client name on the folder
   tab. Its larger white chart sheet is a management-facing Meet the Client:
   client and placement facts, a signed-assessment management brief, care and
@@ -67,14 +52,13 @@ repeated page title, explanatory subtitle, or KPI strip.
   in the chart, without linking to raw Pipeline notes or documents. Community
   is the only filter:
   pill controls support selecting multiple communities, while All communities
-  resets the complete board. A List toggle shows the same governed slice on
-  desktop. Below the desktop breakpoint, the three pipeline columns become a
+  resets the complete board. Below the desktop breakpoint, the three pipeline columns become a
   horizontally scrollable category navigation. Selecting Referral received,
   In progress, or Decision renders only that category's client list; selecting
   a client opens the same management chart. The desktop board and its
   Board/List control are not rendered into the mobile reading path. On mobile,
-  the same single page leads into the three board categories directly above the
-  embedded referral list. Community
+  the Pipeline page leads into the three board categories directly above the
+  referral list. Community
   pills also stay in one horizontally scrollable row instead of wrapping into
   a tall control block.
 
