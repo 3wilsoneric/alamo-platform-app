@@ -39,6 +39,7 @@ await withBrowserQa(async (browser) => {
   await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
 
   await page.locator('[data-admissions-overview="true"]').waitFor();
+  await page.locator('[data-admissions-weekly-briefing="true"]').waitFor({ state: "visible" });
   const admissionsBackground = await page.locator('[data-admissions-overview="true"]').evaluate(
     (element) => window.getComputedStyle(element).backgroundColor
   );
@@ -72,19 +73,37 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly briefing" }).count() !== 1
   ) {
-    throw new Error("Admissions must render as one continuous page without Briefing or Census surface tabs.");
+    throw new Error(`Admissions must render as one continuous page without Briefing or Census surface tabs: ${JSON.stringify({
+      surfaceTabs: await page.locator('[data-admissions-surface-tabs="true"], [data-admissions-mobile-surface-navigation="true"]').count(),
+      singlePage: await page.locator('[data-admissions-single-page="true"]').count(),
+      weeklyBriefing: await page.locator('[data-admissions-weekly-briefing="true"]').count(),
+      weeklyBriefingHeading: await page.getByRole("heading", { name: "Weekly briefing" }).count()
+    })}`);
   }
   const briefingPager = page.locator('[data-admissions-briefing-pager="true"]');
   const briefingCollapsible = page.locator('[data-admissions-briefing-collapsible="true"]');
   const briefingToggle = briefingCollapsible.getByRole("button", { name: /^This week at a glance/ });
+  const briefingTabs = briefingPager.getByRole("tab");
   if (
     await briefingCollapsible.count() !== 1 ||
     await briefingToggle.getAttribute("aria-expanded") !== "true" ||
     await briefingPager.count() !== 1 ||
+    await briefingTabs.count() !== 6 ||
     await briefingPager.getByRole("tab", { name: "Summary", exact: true }).getAttribute("aria-selected") !== "true" ||
     await page.getByRole("button", { name: "Next briefing page" }).count() !== 1
   ) {
-    throw new Error("The weekly briefing must open as a page-by-page executive deck.");
+    throw new Error("The weekly briefing must open as a six-topic executive deck.");
+  }
+  for (const name of ["Summary", "Communities", "Sources", "Trend", "Assessments", "Move-ins"]) {
+    if (await briefingPager.getByRole("tab", { name, exact: true }).count() !== 1) {
+      throw new Error(`The weekly briefing is missing its single ${name} topic.`);
+    }
+  }
+  if (
+    await briefingPager.getByRole("tab", { name: /^Sources \d/ }).count() ||
+    await briefingPager.getByRole("tab", { name: /^Referrals/ }).count()
+  ) {
+    throw new Error("Briefing row overflow must stay inside its topic instead of expanding the executive tab strip.");
   }
   const executiveUpdate = page.locator('[data-admissions-executive-update="true"]');
   if (await executiveUpdate.count() === 0) {
@@ -200,7 +219,7 @@ await withBrowserQa(async (browser) => {
   }
   await page.getByRole("button", { name: "Next briefing page" }).click();
   if (
-    await page.locator('[data-admissions-briefing-page^="communities-"]').count() !== 1 ||
+    await page.locator('[data-admissions-briefing-page="communities"]').count() !== 1 ||
     await page.getByRole("heading", { name: "Community briefing" }).count() !== 1 ||
     await resumedExecutiveUpdate.count() !== 1
   ) {
@@ -211,7 +230,7 @@ await withBrowserQa(async (browser) => {
   if (/Immediate follow-up:|Update overdue|Move-in overdue|Needs follow-up/.test(await page.locator("body").innerText())) {
     throw new Error("Admissions must not present automated attention judgments.");
   }
-  const clientNames = page.locator('[data-admissions-client-name="true"]');
+  const clientNames = page.locator('[data-admissions-client-name="true"]').filter({ visible: true });
   await clientNames.first().waitFor({ state: "visible", timeout: 60_000 });
   if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
     throw new Error("Admissions board cards must show the client name.");

@@ -438,7 +438,6 @@ function AdmissionsBriefingPanel({
 
   const communityPages = chunkBriefingRows(briefing.communities, 3);
   const originPages = chunkBriefingRows(briefing.origins, 5);
-  const referralPages = chunkBriefingRows(briefing.recentReferrals, 6);
   const assessmentPages = chunkBriefingRows(briefing.upcomingAssessments, 6);
   const moveInPages = chunkBriefingRows(briefing.plannedMoveIns, 6);
   const slides: Array<{ id: string; label: string; content: ReactNode }> = [
@@ -447,66 +446,83 @@ function AdmissionsBriefingPanel({
       label: "Summary",
       content: <BriefingSummaryPage briefing={briefing} />
     },
-    ...communityPages.map((rows, index) => ({
-      id: `communities-${index + 1}`,
-      label: communityPages.length > 1 ? `Communities ${index + 1}` : "Communities",
-      content: <BriefingCommunitiesPage briefing={briefing} communities={rows} />
-    })),
-    ...originPages.map((rows, index) => ({
-      id: `origins-${index + 1}`,
-      label: originPages.length > 1 ? `Sources ${index + 1}` : "Sources",
-      content: <BriefingOriginsPage briefing={briefing} origins={rows} />
-    })),
+    {
+      id: "communities",
+      label: "Communities",
+      content: (
+        <PaginatedBriefingTopic
+          label="Communities"
+          pages={communityPages}
+          renderPage={(rows) => <BriefingCommunitiesPage briefing={briefing} communities={rows} />}
+        />
+      )
+    },
+    {
+      id: "origins",
+      label: "Sources",
+      content: (
+        <PaginatedBriefingTopic
+          label="Sources"
+          pages={originPages}
+          renderPage={(rows) => <BriefingOriginsPage briefing={briefing} origins={rows} />}
+        />
+      )
+    },
     {
       id: "trend",
       label: "Trend",
       content: <BriefingTrendPanel dashboard={dashboard} />
     },
-    ...(briefing.coverage.recentReferrals && briefing.recentReferrals.length
-      ? referralPages.map((rows, index) => ({
-        id: `referrals-${index + 1}`,
-        label: referralPages.length > 1 ? `Referrals ${index + 1}` : "Referrals",
-        content: <BriefingRecentReferralsPage referrals={rows} />
-      }))
-      : []),
-    ...assessmentPages.map((rows, index) => ({
-      id: `assessments-${index + 1}`,
-      label: assessmentPages.length > 1 ? `Assessments ${index + 1}` : "Assessments",
+    {
+      id: "assessments",
+      label: "Assessments",
       content: (
-        <BriefingSchedule
-          title="Upcoming assessments"
-          covered={briefing.coverage.assessments}
-          emptyLabel="No remaining assessments are scheduled this week."
-          items={rows.map((item) => ({
-            key: `${item.referralId}:${item.scheduledAt}`,
-            clientName: item.clientName,
-            date: item.scheduledAt,
-            community: item.facilityId ? item.community : "No community assigned",
-            owner: item.owner,
-            status: item.status
-          }))}
+        <PaginatedBriefingTopic
+          label="Assessments"
+          pages={assessmentPages}
+          renderPage={(rows) => (
+            <BriefingSchedule
+              title="Upcoming assessments"
+              covered={briefing.coverage.assessments}
+              emptyLabel="No remaining assessments are scheduled this week."
+              items={rows.map((item) => ({
+                key: `${item.referralId}:${item.scheduledAt}`,
+                clientName: item.clientName,
+                date: item.scheduledAt,
+                community: item.facilityId ? item.community : "No community assigned",
+                owner: item.owner,
+                status: item.status
+              }))}
+            />
+          )}
         />
       )
-    })),
-    ...moveInPages.map((rows, index) => ({
-      id: `move-ins-${index + 1}`,
-      label: moveInPages.length > 1 ? `Move-ins ${index + 1}` : "Move-ins",
+    },
+    {
+      id: "move-ins",
+      label: "Move-ins",
       content: (
-        <BriefingSchedule
-          title="Move-ins this week"
-          covered={briefing.coverage.moveIns}
-          emptyLabel="No move-ins are planned for this week."
-          items={rows.map((item) => ({
-            key: `${item.referralId}:${item.plannedAt}`,
-            clientName: item.clientName,
-            date: item.plannedAt,
-            community: item.facilityId ? item.community : "No community assigned",
-            owner: item.owner,
-            status: item.readiness === "unknown" ? item.status : `${item.status} · ${item.readiness}`
-          }))}
+        <PaginatedBriefingTopic
+          label="Move-ins"
+          pages={moveInPages}
+          renderPage={(rows) => (
+            <BriefingSchedule
+              title="Move-ins this week"
+              covered={briefing.coverage.moveIns}
+              emptyLabel="No move-ins are planned for this week."
+              items={rows.map((item) => ({
+                key: `${item.referralId}:${item.plannedAt}`,
+                clientName: item.clientName,
+                date: item.plannedAt,
+                community: item.facilityId ? item.community : "No community assigned",
+                owner: item.owner,
+                status: item.readiness === "unknown" ? item.status : `${item.status} · ${item.readiness}`
+              }))}
+            />
+          )}
         />
       )
-    }))
+    }
   ];
   const currentPage = Math.min(page, slides.length - 1);
   const activeSlide = slides[currentPage]!;
@@ -567,7 +583,7 @@ function BriefingPager({
 }) {
   return (
     <div data-admissions-briefing-pager="true" className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
-      <div role="tablist" aria-label="Weekly briefing pages" className="flex min-w-max items-center gap-1 rounded-xl bg-[#f4f7f5] p-1">
+      <div role="tablist" aria-label="Weekly briefing pages" className="grid min-w-[620px] grid-cols-6 border-b border-[#d9dfdb]">
         {slides.map((slide, index) => (
           <button
             key={slide.id}
@@ -576,12 +592,56 @@ function BriefingPager({
             aria-selected={page === index}
             aria-controls={`admissions-briefing-page-${slide.id}`}
             onClick={() => onPageChange(index)}
-            className={`min-h-9 rounded-lg px-3 text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f8b73] ${page === index ? "bg-white font-semibold text-[#163f36] shadow-sm" : "font-medium text-[#69716c] hover:bg-white/70 hover:text-[#303532]"}`}
+            className={`-mb-px min-h-11 border-b-2 px-3 text-[11px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0f8b73] ${page === index ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
           >
             {slide.label}
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function PaginatedBriefingTopic<T>({
+  label,
+  pages,
+  renderPage
+}: {
+  label: string;
+  pages: T[][];
+  renderPage: (rows: T[]) => ReactNode;
+}) {
+  const [page, setPage] = useState(0);
+  const currentPage = Math.min(page, pages.length - 1);
+  const activeRows = pages[currentPage] ?? [];
+  useEffect(() => setPage(0), [label, pages.length]);
+
+  return (
+    <div data-admissions-briefing-topic={label.toLowerCase()}>
+      {renderPage(activeRows)}
+      {pages.length > 1 ? (
+        <div data-admissions-topic-pager={label.toLowerCase()} className="mt-3 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            aria-label={`Previous ${label} page`}
+            disabled={currentPage === 0}
+            onClick={() => setPage((value) => Math.max(0, value - 1))}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d9dfdb] text-[#315b54] transition-colors hover:bg-[#f1f5f3] disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <span className="min-w-12 text-center text-[10px] font-medium tabular-nums text-[#7a817d]">{currentPage + 1} of {pages.length}</span>
+          <button
+            type="button"
+            aria-label={`Next ${label} page`}
+            disabled={currentPage === pages.length - 1}
+            onClick={() => setPage((value) => Math.min(pages.length - 1, value + 1))}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d9dfdb] text-[#315b54] transition-colors hover:bg-[#f1f5f3] disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -786,29 +846,6 @@ function BriefingOriginsPage({
             ) : <p className="py-8 text-[12px] text-[#737b77]">No referrals were received during the governed 14-day window.</p>
           ) : <IncompleteBriefingField label="Recent-referral dates and origin" />}
         </section>
-  );
-}
-
-function BriefingRecentReferralsPage({
-  referrals
-}: {
-  referrals: AdmissionsDashboardResponse["briefing"]["recentReferrals"];
-}) {
-  return (
-    <section className="rounded-xl border border-[#dfe3e1] bg-white p-4 sm:p-5" aria-labelledby="admissions-recent-referrals-title">
-      <div className="border-b border-[#edf0ee] pb-3">
-        <h2 id="admissions-recent-referrals-title" className="text-[15px] font-semibold tracking-[-0.02em]">New referrals · last 14 days</h2>
-        <p className="mt-1 text-[10px] text-[#737b77]">Client-level source and destination detail.</p>
-      </div>
-      <div className="divide-y divide-[#edf0ee]">
-        {referrals.map((referral) => (
-          <article key={`${referral.referralId}:${referral.receivedAt}`} data-admissions-recent-referral={referral.referralId} className="grid gap-1 py-3 text-[10px] sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-4">
-            <p><strong className="font-semibold text-[#263c35]">{referral.clientName}</strong><span className="text-[#69716c]"> · {referral.sourceName ?? referral.sourceCategory ?? "Origin not recorded"}{referral.referringCounty ? ` · ${referral.referringCounty} County` : ""}</span></p>
-            <p className="text-[#69716c] sm:text-right">{formatEventDate(referral.receivedAt)} · {referral.facilityId ? referral.community : "No community assigned"}</p>
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 
