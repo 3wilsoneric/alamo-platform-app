@@ -1099,3 +1099,26 @@ four results for the substantiated-medication/San Pablo query, source briefs,
 the successful no-change Updates feed, the map and community Licensing link
 (55 San Pablo reports), and the populated Admissions board. The compact layout
 was visually verified; the local phone layout had no horizontal overflow.
+
+### Licensing full-width layout release — 2026-09-28
+
+- source commit: `5821b29`, branch `codex/licensing-production-20260928`
+- image tag: `alamo-platform:licensing-width-5821b29`
+- image digest: `sha256:6e266efc866b895fffbdf7f208850ff1bad1279f29ee0ea7b15b5e4d444b5476`
+- active revision: `alamo-platform-prod-web--licensing-width-5821b29`
+- rollback digest: `sha256:2cfacc47f400a787b501875ced690f71e4c6a62f43f59feeecdb4d8ec4a9e0fb`
+
+The Licensing page now fills the available width with 32-pixel desktop and
+12-pixel phone gutters. Its page and shell width caps are removed only for
+Licensing; the report list retains its 300-pixel desktop width. This is a
+frontend-only overlay on the exact preceding production digest, including
+fresh compressed static files. The live browser asset is
+`/assets/index-Dz0-Q1Nr.js`.
+
+Verification: 8/8 nonbrowser predeployment stages passed, including the full
+analyst checks and production-configured build; browser QA used CUA. Desktop
+content measured 1406 pixels in a 1470-pixel viewport, and the local phone layout
+measured 366 pixels in a 390-pixel viewport, both without horizontal overflow.
+Production is Healthy/Running at 100% traffic, serves matching JS and CSS,
+and passed 4/4 public smoke probes. Signed-in search returned four matching
+reports, and clearing it restored all 93 reports.
