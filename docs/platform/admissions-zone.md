@@ -30,7 +30,12 @@ repeated page title, explanatory subtitle, or KPI strip.
   dropping activity. Every dynamic section carries an explicit source-coverage
   flag. If Pipeline has not published the required event slice, the interface
   says the field is incomplete and renders an em dash; it never turns missing
-  coverage into a zero or estimate.
+  coverage into a zero or estimate. The briefing is a page-by-page executive
+  deck rather than one long report. Summary, community, source, trend,
+  referral-detail, assessment, and move-in pages render one at a time with
+  direct page tabs plus Previous/Next controls. Communities and event lists
+  split into additional pages at fixed row limits, so complete data remains
+  flip-through without nested vertical scroll areas on desktop or mobile.
 - **Board** — the current governed referral update: Referral received, In
   progress, and Decision columns holding one card per referral. The columns use
   calm green, blue, and warm decision surfaces. Cards show client name,
@@ -94,7 +99,7 @@ server, never from the browser and never through Pipeline's internal APIs.
   `decision_timing`). The management profile includes client name, DOB,
   referral source, county, payer, responsible person, conservatorship,
   assessment/readiness state, and capped medication data. Its narrative and
-  support snapshot are populated only from a signed assessment. The optional
+  support snapshot are populated only from a signed assessment. Contract 3.1's
   `briefing` producer slice carries `timezone`, `window_end`, explicit coverage
   booleans, and bounded event arrays: `recent_referrals`,
   `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. Referral rows

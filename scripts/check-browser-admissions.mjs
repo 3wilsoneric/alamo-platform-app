@@ -93,9 +93,17 @@ await withBrowserQa(async (browser) => {
   if (
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1 ||
-    await page.getByRole("heading", { name: "Community briefing" }).count() !== 1
+    await page.getByRole("heading", { name: "This week at a glance" }).count() !== 1
   ) {
     throw new Error("Admissions must open on the weekly leadership briefing.");
+  }
+  const briefingPager = page.locator('[data-admissions-briefing-pager="true"]');
+  if (
+    await briefingPager.count() !== 1 ||
+    await briefingPager.getByRole("tab", { name: "Summary", exact: true }).getAttribute("aria-selected") !== "true" ||
+    await page.getByRole("button", { name: "Next briefing page" }).count() !== 1
+  ) {
+    throw new Error("The weekly briefing must open as a page-by-page executive deck.");
   }
   const executiveUpdate = page.locator('[data-admissions-executive-update="true"]');
   if (await executiveUpdate.count() === 0) {
@@ -202,6 +210,16 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Admissions analyst response must finish its stream and remove the typing caret.");
   }
+  await page.getByRole("button", { name: "Next briefing page" }).click();
+  if (
+    await page.locator('[data-admissions-briefing-page^="communities-"]').count() !== 1 ||
+    await page.getByRole("heading", { name: "Community briefing" }).count() !== 1 ||
+    await executiveUpdate.count()
+  ) {
+    throw new Error("Next must flip to the community page instead of extending a scrolling briefing.");
+  }
+  await page.getByRole("button", { name: "Previous briefing page" }).click();
+  await page.locator('[data-admissions-briefing-page="summary"]').waitFor({ state: "visible" });
   if (/Immediate follow-up:|Update overdue|Move-in overdue|Needs follow-up/.test(await page.locator("body").innerText())) {
     throw new Error("Admissions must not present automated attention judgments.");
   }
@@ -498,6 +516,12 @@ await withBrowserQa(async (browser) => {
     path: `${screenshotDir}/mobile-admissions-briefing.png`,
     fullPage: true
   });
+  if (
+    await mobilePage.locator('[data-admissions-briefing-pager="true"]').count() !== 1 ||
+    await mobilePage.locator('[data-admissions-briefing-page="summary"]').count() !== 1
+  ) {
+    throw new Error("Mobile Admissions must use the same flip-through briefing deck.");
+  }
   await mobileCategoryNavigation.getByRole("tab", { name: /^In progress/ }).click();
   await mobilePage.locator('[data-admissions-mobile-category-list="true"]').waitFor({ state: "visible" });
   const mobileCommunityPills = mobilePage.locator('[data-admissions-community-filters="true"] button');
