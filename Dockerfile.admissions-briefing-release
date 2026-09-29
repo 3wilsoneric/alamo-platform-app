@@ -1,8 +1,10 @@
-ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a907d6af426d8e7b5a7e4306fb4ea50f6aadeae5e469e68d221a9786c54462b5
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:84e4fb881f354714f8fe1cc36d6a9db8c48fcdb2df9b31f849c047f196f9a5ef
 FROM ${BASE_IMAGE}
 
 # Preserve the proven Azure runtime, Licensing modules, configuration, and
 # secrets. Replace only the validated browser bundle and the two reviewed
-# server modules that assemble and normalize the Admissions briefing.
+# server modules that assemble and normalize the Admissions briefing. The
+# release context must include current .gz and .br siblings because production
+# serves those representations when the browser advertises compression.
 COPY --chown=node:node dist /app/dist
 COPY --chown=node:node server/admissions-dashboard.mjs server/pipeline-admissions-summary.mjs /app/server/
