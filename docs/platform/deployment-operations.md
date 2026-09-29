@@ -1324,3 +1324,17 @@ Identity and gzip responses both reference `/assets/index-CfNa8vME.js` and
 `/admissions` URL confirmed that Briefing is selected and Trends is absent.
 Future overlay releases must regenerate and replace the precompressed browser
 representations, not only their source files.
+
+### Owner workspace and Licensing access — 2026-09-29
+
+Eric Wilson's existing tenant-local Entra object ID now joins Betty Dominici
+and Raj Thandi on the explicit Licensing allowlist. The same verified owner ID
+already protects the private Knowledge and Acquisition APIs; the shared browser
+navigation now exposes Fifty States only to that identity. No role, tenant
+assignment, service principal, or access for any other account is expanded.
+
+The release is prepared with `scripts/prepare-licensing-release.mjs` on the
+exact preceding production digest. It replaces the current browser bundle and
+only the shared Licensing/owner access modules plus the owner access server
+adapter. Anonymous requests and authenticated nonmembers continue to receive
+the existing private failure behavior.

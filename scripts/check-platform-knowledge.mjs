@@ -21,6 +21,7 @@ import {
 } from "../server/platform-knowledge-api.mjs";
 import { createPlatformKnowledgeStore } from "../server/platform-knowledge-store.mjs";
 import { assertPlatformKnowledgeOwner } from "../server/platform-knowledge-access.mjs";
+import { hasPlatformOwnerAccess } from "../shared/platform-owner-access.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const testDirectory = await mkdtemp(path.join(os.tmpdir(), "alamo-knowledge-store-"));
@@ -263,6 +264,8 @@ const apiRecord = await getPlatformKnowledgeRecordResponse(new URL("https://www.
 assert(apiRecord.record.id === "demand-wa", "authenticated API record adapter must return exact records", apiRecord);
 
 assertPlatformKnowledgeOwner({ authenticated: false, mode: "explicit-development-bypass", claims: null });
+assert(hasPlatformOwnerAccess({ oid: "f73371d5-d2b4-48b4-a32b-1edc7c88869f" }), "the verified Platform owner identity must retain owner-only workspace access");
+assert(!hasPlatformOwnerAccess({ oid: "wrong-object-id" }), "unlisted identities must remain outside owner-only workspaces");
 assertPlatformKnowledgeOwner({
   authenticated: true,
   mode: "entra-delegated",
@@ -282,12 +285,15 @@ for (const deniedContext of [
 
 const platformApiSource = await readFile(path.join(root, "api/platform.js"), "utf8");
 const devApiSource = await readFile(path.join(root, "server/dev-api.mjs"), "utf8");
+const platformNavigationSource = await readFile(path.join(root, "src/features/california/components/PlatformPageNavigation.tsx"), "utf8");
 for (const route of ["/api/platform/knowledge", "/api/platform/knowledge/search", "/api/platform/knowledge/record"]) {
   assert(platformApiSource.includes(route), `production API must register ${route}`);
   assert(devApiSource.includes(route), `development API must mirror ${route}`);
 }
 assert(platformApiSource.includes("assertPlatformKnowledgeOwner"), "production knowledge routes must enforce owner-only access");
 assert(devApiSource.includes("assertPlatformKnowledgeOwner"), "development knowledge routes must mirror owner-only access");
+assert(platformNavigationSource.includes("usePlatformOwnerAccess"), "shared navigation must resolve the verified owner identity");
+assert(platformNavigationSource.includes('label: "Fifty States"') && platformNavigationSource.includes("ownerOnly: true"), "Fifty States must remain a discoverable owner-only destination");
 
 await rm(testDirectory, { recursive: true, force: true });
 
