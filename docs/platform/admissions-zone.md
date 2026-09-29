@@ -14,12 +14,19 @@ Admissions and Pipeline are deliberately separate product surfaces.
 `/admissions` is an Alamo-native working overview. It reads
 `GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and
 opens directly on a weekly leadership briefing. A single quiet tab row switches
-between Board, Census, and Briefing, with the briefing occupying the former
-Trends position instead of creating a redundant fourth destination.
+between Briefing and Census. Briefing is the primary working surface: its
+analyst narrative, paged weekly deck, and referral board are composed into one
+continuous management view instead of splitting the same operating question
+across separate Board and Briefing destinations.
 The page uses the same white canvas as the main Home surface. There is no
 repeated page title, explanatory subtitle, or KPI strip.
 
-- **Briefing** — the current CEO-level admissions readout. It shows governed
+- **Briefing** — the current CEO-level admissions readout. A short analyst
+  narrative leads the page and names accepted clients moving toward admission,
+  the current workload by stage, and the busiest communities. It types in only
+  on its first appearance in a browser session; returning to the page or
+  switching views restores the complete response immediately. Beneath it, a
+  collapsible weekly briefing deck shows governed
   census by community; referral origin for the trailing seven days, the prior
   seven days, and the combined 14-day window; a weekly received/accepted/moved-in
   trend; remaining assessments scheduled through Sunday; and planned and
@@ -35,8 +42,10 @@ repeated page title, explanatory subtitle, or KPI strip.
   referral-detail, assessment, and move-in pages render one at a time with
   direct page tabs plus Previous/Next controls. Communities and event lists
   split into additional pages at fixed row limits, so complete data remains
-  flip-through without nested vertical scroll areas on desktop or mobile.
-- **Board** — the current governed referral update: Referral received, In
+  flip-through without nested vertical scroll areas on desktop or mobile. The
+  live referral board begins directly below the deck and remains available when
+  the deck is collapsed.
+- **Board inside Briefing** — the current governed referral update: Referral received, In
   progress, and Decision columns holding one card per referral. The columns use
   calm green, blue, and warm decision surfaces. Cards show client name,
   destination community, referral number, owner, next step, and days open. A
@@ -63,7 +72,9 @@ repeated page title, explanatory subtitle, or KPI strip.
   horizontally scrollable category navigation. Selecting Referral received,
   In progress, or Decision renders only that category's client list; selecting
   a client opens the same management chart. The desktop board and its
-  Board/List control are not rendered into the mobile reading path. Community
+  Board/List control are not rendered into the mobile reading path. On mobile,
+  Briefing and Census remain the two top-level views, while the three board
+  categories appear directly above the embedded referral list. Community
   pills also stay in one horizontally scrollable row instead of wrapping into
   a tall control block.
 - **Census** — one compact portfolio row followed by the five communities,
