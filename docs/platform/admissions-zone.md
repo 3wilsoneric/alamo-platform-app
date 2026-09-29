@@ -3,7 +3,7 @@
 - purpose: define the Alamo Admissions overview and the full Pipeline referral-workflow boundary
 - status: current implementation and deployment contract
 - owners: product, engineering, admissions platform
-- updated: 2026-09-28
+- updated: 2026-09-29
 - tags: admissions, pipeline, routing, authentication, integration
 - labels: application-boundary, current-state, deployment
 
@@ -13,11 +13,9 @@ Admissions and Pipeline are deliberately separate product surfaces.
 
 `/admissions` is an Alamo-native working overview. It reads
 `GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and
-opens directly on a weekly leadership briefing. A single quiet tab row switches
-between Briefing and Census. Briefing is the primary working surface: its
-analyst narrative, paged weekly deck, and referral board are composed into one
-continuous management view instead of splitting the same operating question
-across separate Board and Briefing destinations.
+opens as one continuous weekly leadership page. There is no Briefing/Census
+surface navigation: the analyst narrative, collapsible weekly deck, and
+referral Board/List answer the management question in one reading path.
 The page uses the same white canvas as the main Home surface. There is no
 repeated page title, explanatory subtitle, or KPI strip.
 
@@ -25,8 +23,9 @@ repeated page title, explanatory subtitle, or KPI strip.
   narrative leads the page and names accepted clients moving toward admission,
   the current workload by stage, and the busiest communities. It types in only
   on its first appearance in a browser session; returning to the page or
-  switching views restores the complete response immediately. Beneath it, a
-  collapsible weekly briefing deck shows governed
+  reloading it restores the complete response immediately. Beneath it, a
+  collapsible **This week at a glance** control sits immediately above the
+  referral Board/List and opens the weekly briefing deck. The deck shows governed
   census by community; referral origin for the trailing seven days, the prior
   seven days, and the combined 14-day window; a weekly received/accepted/moved-in
   trend; remaining assessments scheduled through Sunday; and planned and
@@ -73,13 +72,10 @@ repeated page title, explanatory subtitle, or KPI strip.
   In progress, or Decision renders only that category's client list; selecting
   a client opens the same management chart. The desktop board and its
   Board/List control are not rendered into the mobile reading path. On mobile,
-  Briefing and Census remain the two top-level views, while the three board
-  categories appear directly above the embedded referral list. Community
+  the same single page leads into the three board categories directly above the
+  embedded referral list. Community
   pills also stay in one horizontally scrollable row instead of wrapping into
   a tall control block.
-- **Census** — one compact portfolio row followed by the five communities,
-  combining census, occupancy, month-to-date admissions, discharges, net
-  movement, and each community's board count.
 
 Census and flow come from the governed snapshot tables
 `community_operating_summary`, `resident_flow_weekly_by_community`, and

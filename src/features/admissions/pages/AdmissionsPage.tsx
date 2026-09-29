@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 
 import {
   fetchAdmissionsDashboard,
@@ -19,7 +19,6 @@ const ADMISSIONS_COLOR = "#0f8b73";
 // Referral series, validated as a set with ADMISSIONS_COLOR (all pairs, CVD).
 const REFERRALS_COLOR = "#4a67c4";
 const ACCEPTED_COLOR = "#c7851a";
-type AdmissionsSurface = "briefing" | "census";
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 type ExecutiveUpdateSegment = { text: string; strong?: boolean };
 type ExecutiveUpdateLine = {
@@ -36,7 +35,6 @@ export default function AdmissionsPage() {
   const [dashboard, setDashboard] = useState<AdmissionsDashboardResponse | null>(readCachedAdmissionsDashboard);
   const [loading, setLoading] = useState(!dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [surface, setSurface] = useState<AdmissionsSurface>("briefing");
   const [mobilePipelineColumn, setMobilePipelineColumn] = useState<AdmissionsBoardColumnKey>("received");
 
   // Every signed-in Platform user sees this working view, including the client
@@ -66,32 +64,9 @@ export default function AdmissionsPage() {
     >
       <div className="mx-auto w-full max-w-[1540px]">
         <h1 className="sr-only">Admissions</h1>
-        <div className="-mx-3 py-2 lg:hidden">
-          <div
-            role="tablist"
-            aria-label="Admissions views"
-            data-admissions-mobile-surface-navigation="true"
-            className="grid min-w-0 w-full grid-cols-2 border-b border-[#d9dfdb] px-3"
-          >
-            <SurfaceTab active={surface === "briefing"} label="Briefing" count={null} panel="admissions-briefing-panel" onClick={() => setSurface("briefing")} compact />
-            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} compact />
-          </div>
-        </div>
-
-        <div className="hidden py-5 lg:block">
-          <div
-            role="tablist"
-            aria-label="Admissions views"
-            data-admissions-surface-tabs="true"
-            className="flex min-w-0 max-w-full justify-center gap-6 overflow-x-auto border-b border-[#d9dfdb] sm:gap-8"
-          >
-            <SurfaceTab active={surface === "briefing"} label="Briefing" count={null} panel="admissions-briefing-panel" onClick={() => setSurface("briefing")} />
-            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} />
-          </div>
-        </div>
 
         {freshnessWarning ? (
-          <div className="mb-4 rounded-lg border border-[#efc8bd] bg-[#fff7f5] px-4 py-3 text-[12px] leading-5 text-[#6e352d]">
+          <div className="mt-4 mb-4 rounded-lg border border-[#efc8bd] bg-[#fff7f5] px-4 py-3 text-[12px] leading-5 text-[#6e352d] sm:mt-6">
             <strong>Data update delayed.</strong> {freshnessWarning}
           </div>
         ) : null}
@@ -103,81 +78,67 @@ export default function AdmissionsPage() {
           </div>
         ) : null}
 
-        <div id={`admissions-${surface}-panel`} role="tabpanel" className="pt-1">
-          {surface === "briefing" ? (
-            <div>
-              {pipeline ? <AdmissionsExecutiveUpdate pipeline={pipeline} /> : null}
-              <AdmissionsBriefingPanel dashboard={dashboard} loading={loading && !dashboard} />
-              <section
-                id="admissions-referral-board-panel"
-                aria-labelledby="admissions-referral-board-title"
-                data-admissions-embedded-board="true"
-                className="mt-8 border-t border-[#dfe3e1] pt-4 sm:mt-10 sm:pt-5"
-              >
-                <h2 id="admissions-referral-board-title" className="sr-only">Referral board</h2>
-                {pipeline ? (
-                  <>
-                    <div
-                      role="tablist"
-                      aria-label="Referral board categories"
-                      data-admissions-mobile-category-navigation="true"
-                      className="-mx-3 mb-3 grid grid-cols-3 border-b border-[#d9dfdb] px-3 lg:hidden"
-                    >
-                      {(["received", "in_progress", "decision"] as const).map((column) => {
-                        const columnSummary = pipeline.board.columns.find((candidate) => candidate.key === column);
-                        return (
-                          <SurfaceTab
-                            key={column}
-                            active={mobilePipelineColumn === column}
-                            label={mobilePipelineLabel(column)}
-                            count={columnSummary?.count ?? null}
-                            panel="admissions-mobile-board-list"
-                            onClick={() => setMobilePipelineColumn(column)}
-                            compact
-                          />
-                        );
-                      })}
-                    </div>
-                    <div
-                      id="admissions-mobile-board-list"
-                      role="tabpanel"
-                      aria-label={`${mobilePipelineLabel(mobilePipelineColumn)} referrals`}
-                    >
-                      <PipelineBoard
-                        pipeline={pipeline}
-                        communities={dashboard?.communities ?? []}
-                        mobileColumn={mobilePipelineColumn}
+        <div data-admissions-single-page="true" className="pt-4 sm:pt-6">
+          {pipeline ? <AdmissionsExecutiveUpdate pipeline={pipeline} /> : null}
+          <AdmissionsBriefingPanel dashboard={dashboard} loading={loading && !dashboard} />
+          <section
+            id="admissions-referral-board-panel"
+            aria-labelledby="admissions-referral-board-title"
+            data-admissions-embedded-board="true"
+            className="mt-8 border-t border-[#dfe3e1] pt-4 sm:mt-10 sm:pt-5"
+          >
+            <h2 id="admissions-referral-board-title" className="sr-only">Referral board</h2>
+            {pipeline ? (
+              <>
+                <div
+                  role="tablist"
+                  aria-label="Referral board categories"
+                  data-admissions-mobile-category-navigation="true"
+                  className="-mx-3 mb-3 grid grid-cols-3 border-b border-[#d9dfdb] px-3 lg:hidden"
+                >
+                  {(["received", "in_progress", "decision"] as const).map((column) => {
+                    const columnSummary = pipeline.board.columns.find((candidate) => candidate.key === column);
+                    return (
+                      <SurfaceTab
+                        key={column}
+                        active={mobilePipelineColumn === column}
+                        label={mobilePipelineLabel(column)}
+                        count={columnSummary?.count ?? null}
+                        panel="admissions-mobile-board-list"
+                        onClick={() => setMobilePipelineColumn(column)}
+                        compact
                       />
-                    </div>
-                  </>
-                ) : (
-                  <div
-                    aria-label="Referral board"
-                    data-admissions-referral-pipeline={referralPipeline?.status ?? "loading"}
-                    className="rounded-xl border border-[#dfe3e1] bg-white px-5 py-12 text-center"
-                  >
-                    <p className="text-[13px] text-[#5f6762]">
-                      {referralPipeline?.status === "unavailable"
-                        ? "The live referral board is temporarily unavailable."
-                        : referralPipeline
-                          ? "The referral feed has not been connected yet."
-                          : "Loading the referral board…"}
-                    </p>
-                  </div>
-                )}
-              </section>
-            </div>
-          ) : null}
-
-          {surface === "census" ? (
-            <CensusPanel
-              dashboard={dashboard}
-              loading={loading && !dashboard}
-              stale={loadFailed && Boolean(dashboard)}
-              pipelineConnected={Boolean(pipeline)}
-            />
-          ) : null}
-
+                    );
+                  })}
+                </div>
+                <div
+                  id="admissions-mobile-board-list"
+                  role="tabpanel"
+                  aria-label={`${mobilePipelineLabel(mobilePipelineColumn)} referrals`}
+                >
+                  <PipelineBoard
+                    pipeline={pipeline}
+                    communities={dashboard?.communities ?? []}
+                    mobileColumn={mobilePipelineColumn}
+                  />
+                </div>
+              </>
+            ) : (
+              <div
+                aria-label="Referral board"
+                data-admissions-referral-pipeline={referralPipeline?.status ?? "loading"}
+                className="rounded-xl border border-[#dfe3e1] bg-white px-5 py-12 text-center"
+              >
+                <p className="text-[13px] text-[#5f6762]">
+                  {referralPipeline?.status === "unavailable"
+                    ? "The live referral board is temporarily unavailable."
+                    : referralPipeline
+                      ? "The referral feed has not been connected yet."
+                      : "Loading the referral board…"}
+                </p>
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>
@@ -564,7 +525,7 @@ function AdmissionsBriefingPanel({
         className="flex min-h-14 w-full items-center justify-between gap-4 rounded-xl bg-[#f4f7f5] px-4 py-3 text-left transition-colors hover:bg-[#edf3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:px-5"
       >
         <span className="min-w-0">
-          <span id="admissions-weekly-briefing-title" className="block text-[13px] font-semibold text-[#263c35]">Weekly briefing</span>
+          <span id="admissions-weekly-briefing-title" className="block text-[13px] font-semibold text-[#263c35]">This week at a glance</span>
           <span className="mt-0.5 block text-[10px] text-[#737b77]">{formatDate(briefing.weekStart)} through {formatDate(briefing.weekEnd)}</span>
         </span>
         <span className="inline-flex shrink-0 items-center gap-2 text-[10px] font-semibold text-[#315b54]">
@@ -664,7 +625,7 @@ function BriefingSummaryPage({ briefing }: { briefing: AdmissionsDashboardRespon
       <section className="overflow-hidden rounded-xl border border-[#dfe3e1] bg-white" aria-labelledby="admissions-briefing-summary-title">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#dfe3e1] px-4 py-4 sm:px-5">
           <div>
-            <h2 id="admissions-briefing-summary-title" className="text-[15px] font-semibold tracking-[-0.02em]">This week at a glance</h2>
+            <h2 id="admissions-briefing-summary-title" className="text-[15px] font-semibold tracking-[-0.02em]">Weekly briefing</h2>
             <p className="mt-1 text-[10px] text-[#737b77]">{formatDate(briefing.weekStart)} through {formatDate(briefing.weekEnd)}</p>
           </div>
           <p className="text-[10px] text-[#737b77]">Census through {formatDate(briefing.asOfDate)}</p>
@@ -942,119 +903,6 @@ function IncompleteBriefingField({ label }: { label: string }) {
   );
 }
 
-function CensusPanel({
-  dashboard,
-  loading,
-  stale,
-  pipelineConnected
-}: {
-  dashboard: AdmissionsDashboardResponse | null;
-  loading: boolean;
-  stale: boolean;
-  pipelineConnected: boolean;
-}) {
-  const portfolio = dashboard?.portfolio ?? null;
-  const monthLabel = dashboard ? formatMonth(dashboard.month) : "This month";
-
-  return (
-    <section aria-labelledby="admissions-community-census-title" className="overflow-hidden rounded-xl border border-[#dfe3e1] bg-white">
-      <h2 id="admissions-community-census-title" className="sr-only">Community census</h2>
-      {stale ? (
-        <p className="flex items-center gap-2 border-b border-[#ead8a9] bg-[#fffaf0] px-4 py-2 text-[11px] text-[#7a5a18]">
-          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-          Showing the last available Alamo snapshot.
-        </p>
-      ) : null}
-
-      {loading ? (
-        <div aria-label="Loading Admissions census" aria-busy="true" className="space-y-px bg-[#d9d9d9]">
-          {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-20 animate-pulse bg-[#f7f8f7]" />)}
-        </div>
-      ) : (
-        <>
-          <div className="space-y-3 p-3 sm:hidden">
-            <article className="rounded-xl bg-[#edf3f0] p-4">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-[13px] font-semibold">Portfolio</span>
-                <strong className="text-[24px] font-semibold tracking-[-0.03em]">{formatNumber(portfolio?.census ?? null)}</strong>
-              </div>
-              <div className="mt-3 grid grid-cols-4 gap-2 text-[10px] text-[#5f6762]">
-                <span>{portfolio?.occupancyPct != null ? `${portfolio.occupancyPct}% full` : "—"}</span>
-                <span>In <strong className="text-[#171918]">{portfolio?.monthToDate.admissions ?? "—"}</strong></span>
-                <span>Out <strong className="text-[#171918]">{portfolio?.monthToDate.discharges ?? "—"}</strong></span>
-                <span className="text-right font-semibold text-[#315b54]">{formatDelta(portfolio?.monthToDate.net ?? null)}</span>
-              </div>
-            </article>
-            {(dashboard?.communities ?? []).map((community) => (
-              <article
-                key={community.facilityId}
-                data-admissions-community-census-card={community.facilityId}
-                className="rounded-xl border border-[#e2e6e3] p-4"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <span className="min-w-0 truncate text-[13px] font-medium">{community.shortName}</span>
-                  <strong className="text-[22px] font-semibold tracking-[-0.03em]">{formatNumber(community.census)}</strong>
-                </div>
-                <div className="mt-3 grid grid-cols-4 gap-2 text-[10px] text-[#69716c]">
-                  <span>{community.occupancyPct != null ? `${community.occupancyPct}% full` : "—"}</span>
-                  <span>In <strong className="text-[#171918]">{community.monthToDate.admissions}</strong></span>
-                  <span>Out <strong className="text-[#171918]">{community.monthToDate.discharges}</strong></span>
-                  <span className="text-right font-semibold text-[#315b54]">{formatDelta(community.monthToDate.net)}</span>
-                </div>
-                {community.referrals ? (
-                  <div className="mt-3 flex gap-2 border-t border-[#edf0ee] pt-3 text-[10px] text-[#69716c]">
-                    <span>{community.referrals.onBoard} on board</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{community.referrals.inDecision} at decision</span>
-                  </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
-
-          <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full min-w-[760px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-[#e2e6e3] text-[10px] font-medium text-[#69716c]">
-                  <th className="px-5 py-4">Community</th>
-                  <th className="px-4 py-4 text-right">Census</th>
-                  <th className="px-4 py-4 text-right">Occupancy</th>
-                  <th className="px-4 py-4 text-right">In · {monthLabel}</th>
-                  <th className="px-4 py-4 text-right">Out · {monthLabel}</th>
-                  <th className="px-4 py-4 text-right">Net</th>
-                  {pipelineConnected ? <th className="px-5 py-4 text-right">Board</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-[#dbe5df] bg-[#edf3f0] text-[12px]">
-                  <td className="px-5 py-4 font-semibold">Portfolio</td>
-                  <td className="px-4 py-4 text-right text-[17px] font-semibold">{formatNumber(portfolio?.census ?? null)}</td>
-                  <td className="px-4 py-4 text-right">{portfolio?.occupancyPct != null ? `${portfolio.occupancyPct}%` : "—"}</td>
-                  <td className="px-4 py-4 text-right">{portfolio?.monthToDate.admissions ?? "—"}</td>
-                  <td className="px-4 py-4 text-right">{portfolio?.monthToDate.discharges ?? "—"}</td>
-                  <td className="px-4 py-4 text-right font-semibold text-[#315b54]">{formatDelta(portfolio?.monthToDate.net ?? null)}</td>
-                  {pipelineConnected ? <td className="px-5 py-4 text-right">{dashboard?.referral_pipeline.status === "connected" ? dashboard.referral_pipeline.board.total : "—"}</td> : null}
-                </tr>
-                {(dashboard?.communities ?? []).map((community) => (
-                  <tr key={community.facilityId} className="border-b border-[#edf0ee] text-[12px] last:border-b-0 hover:bg-[#fafbfa]">
-                    <td className="px-5 py-4 font-medium">{community.communityName}</td>
-                    <td className="px-4 py-4 text-right text-[16px] font-semibold">{formatNumber(community.census)}</td>
-                    <td className="px-4 py-4 text-right text-[#5f6762]">{community.occupancyPct != null ? `${community.occupancyPct}%` : "—"}</td>
-                    <td className="px-4 py-4 text-right">{community.monthToDate.admissions}</td>
-                    <td className="px-4 py-4 text-right">{community.monthToDate.discharges}</td>
-                    <td className="px-4 py-4 text-right font-semibold text-[#315b54]">{formatDelta(community.monthToDate.net)}</td>
-                    {pipelineConnected ? <td className="px-5 py-4 text-right">{community.referrals?.onBoard ?? 0}</td> : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
 function Bar({ value, max, color, partial }: { value: number; max: number; color: string; partial?: boolean }) {
   return (
     <span
@@ -1078,10 +926,6 @@ function LegendSwatch({ color, label }: { color: string; label: string }) {
   );
 }
 
-function formatNumber(value: number | null) {
-  return value == null || !Number.isFinite(value) ? "Not loaded" : value.toLocaleString("en-US");
-}
-
 function formatBriefingCount(value: number | null) {
   return value == null || !Number.isFinite(value) ? "—" : value.toLocaleString("en-US");
 }
@@ -1093,18 +937,6 @@ function formatEventDate(value: string) {
   return new Intl.DateTimeFormat("en-US", includesTime
     ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" }
     : { month: "short", day: "numeric" }).format(date);
-}
-
-function formatDelta(value: number | null) {
-  if (value == null || !Number.isFinite(value)) return "Not loaded";
-  if (value === 0) return "No change";
-  return `${value > 0 ? "+" : ""}${value.toLocaleString("en-US")}`;
-}
-
-function formatMonth(value: string) {
-  const date = new Date(`${value.slice(0, 7)}-01T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
 }
 
 function formatDate(value: string) {
