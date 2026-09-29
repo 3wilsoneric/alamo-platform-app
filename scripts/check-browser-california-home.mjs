@@ -487,7 +487,7 @@ async function main() {
     if (
       homeNavigation.current !== "home" ||
       homeNavigation.left.join(",") !== "home" ||
-      homeNavigation.right.join(",") !== "analytics,admissions,licensing"
+      homeNavigation.right.join(",") !== "analytics,admissions"
     ) {
       throw new Error(`Home platform navigation is out of order: ${JSON.stringify(homeNavigation)}`);
     }
@@ -531,7 +531,7 @@ async function main() {
     if (
       questionNavigation.current !== "analytics" ||
       questionNavigation.left.join(",") !== "home" ||
-      questionNavigation.right.join(",") !== "analytics,admissions,licensing"
+      questionNavigation.right.join(",") !== "analytics,admissions"
     ) {
       throw new Error(`Analytics question navigation is out of order: ${JSON.stringify(questionNavigation)}`);
     }
@@ -617,7 +617,7 @@ async function main() {
     if (
       analyticsNavigation.current !== "analytics" ||
       analyticsNavigation.left.join(",") !== "home" ||
-      analyticsNavigation.right.join(",") !== "analytics,admissions,licensing"
+      analyticsNavigation.right.join(",") !== "analytics,admissions"
     ) {
       throw new Error(`Analytics platform navigation is out of order: ${JSON.stringify(analyticsNavigation)}`);
     }

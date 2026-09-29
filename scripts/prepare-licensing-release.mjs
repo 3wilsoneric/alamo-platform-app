@@ -24,13 +24,29 @@ try {
 const handlerPath = path.join(overlay, "api/platform.js");
 let handler = await readFile(handlerPath, "utf8");
 const marker = "const PLATFORM_GET_ROUTES = Object.freeze({";
-if (handler.includes("/api/platform/licensing") || handler.split(marker).length !== 2) throw new Error("Unexpected production API shape; inspect before overlaying.");
-handler = handler.replace(marker, `import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
+if (handler.split(marker).length !== 2) throw new Error("Unexpected production API shape; inspect before overlaying.");
+if (!handler.includes("/api/platform/licensing")) handler = handler.replace(marker, `import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
 
 ${marker}
   "/api/platform/licensing": ({ requestUrl }) => getLicensingLibrary(requestUrl),
   "/api/platform/licensing/report": ({ requestUrl }) => getLicensingReport(requestUrl),
   "/api/platform/licensing/updates": () => getLicensingUpdates(),`);
+const libraryImport = 'import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";';
+const accessImport = 'import { assertLicensingAccess } from "../server/licensing-access.mjs";';
+if (!handler.includes(accessImport)) {
+  if (handler.split(libraryImport).length !== 2) throw new Error("Unexpected Licensing import; refusing release.");
+  handler = handler.replace(libraryImport, `${libraryImport}\n${accessImport}`);
+}
+for (const [route, loader, needsUrl] of [
+  ["/api/platform/licensing", "getLicensingLibrary", true],
+  ["/api/platform/licensing/report", "getLicensingReport", true],
+  ["/api/platform/licensing/updates", "getLicensingUpdates", false]
+]) {
+  const before = `  "${route}": ${needsUrl ? "({ requestUrl })" : "()"} => ${loader}(${needsUrl ? "requestUrl" : ""}),`;
+  const after = `  "${route}": (${needsUrl ? "{ requestUrl, authContext }" : "{ authContext }"}) => {\n    assertLicensingAccess(authContext);\n    return ${loader}(${needsUrl ? "requestUrl" : ""});\n  },`;
+  if (handler.split(before).length === 2) handler = handler.replace(before, after);
+  else if (handler.split(after).length !== 2) throw new Error(`Unexpected ${route} handler; refusing release.`);
+}
 await writeFile(handlerPath, handler);
 for (const directory of ["server", "shared"]) {
   await mkdir(path.join(overlay, directory), { recursive: true });

@@ -18,6 +18,7 @@ export default function ProtectedAppShell() {
   const isAdmissionsExperience = isAdmissionsPath(location.pathname);
   const isPipelineHandoff = location.pathname === "/pipeline";
   const isStandaloneEditorial = location.pathname === "/fiftystate";
+  const isLicensingExperience = location.pathname === "/licensing" || location.pathname === "/analytics/licensing";
   const isCaliforniaExperience =
     location.pathname === "/" ||
     location.pathname === "/questions" ||
@@ -35,7 +36,7 @@ export default function ProtectedAppShell() {
     isE2EAuthBypassEnabled
   );
   const skipWorkspacePreparation =
-    isAdmissionsExperience || isPipelineHandoff || location.pathname === "/licensing" || admissionsAccess.restrictedToAdmissions;
+    isAdmissionsExperience || isPipelineHandoff || isLicensingExperience || admissionsAccess.restrictedToAdmissions;
   const accountKey = isE2EAuthBypassEnabled
     ? "e2e-authenticated"
     : accounts[0]?.homeAccountId ?? "authenticated";

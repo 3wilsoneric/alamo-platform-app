@@ -7,17 +7,15 @@ import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity"
 const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
   { id: "analytics", label: "Analytics", href: "/analytics" },
-  { id: "admissions", label: "Admissions", href: "/admissions" },
-  { id: "licensing", label: "Licensing", href: "/licensing" }
+  { id: "admissions", label: "Admissions", href: "/admissions" }
 ];
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
   const { pathname } = useLocation();
-  const active = pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions"
+  const active = pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" || pathname === "/licensing"
     ? "analytics"
     : pathname.startsWith("/admissions") ? "admissions"
-      : pathname.startsWith("/licensing") ? "licensing"
-        : pathname === "/" || pathname.startsWith("/home") || pathname.startsWith("/communities") ? "home" : "";
+      : pathname === "/" || pathname.startsWith("/home") || pathname.startsWith("/communities") ? "home" : "";
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES;

@@ -116,6 +116,10 @@ export default function CaliforniaHomePage() {
   }
 
   function openAnalyticsSection(section: AnalyticsSection) {
+    if (section === "licensing") {
+      navigate("/analytics/licensing");
+      return;
+    }
     openPanel(section);
   }
 

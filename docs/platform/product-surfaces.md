@@ -14,11 +14,13 @@
 ## Shared navigation and responsive layout
 
 Every authenticated route shares one header with the Alamo home anchor and
-Analytics, Admissions, and Licensing destinations. Below 768px, Menu exposes
+Analytics and Admissions destinations. Below 768px, Menu exposes
 those links plus Communities; Escape, outside click, and navigation close it.
 Admissions-only identities retain their existing access boundary.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
+Betty Dominici and Raj Thandi also see Licensing in that row. No other account,
+including a platform administrator, receives Licensing access.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
 analysis live in the profiles. Phone Admissions keeps all five section tabs
@@ -362,10 +364,11 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 
 ## Licensing Reports
 
-`/licensing` is a read-only library of the four-community CCLD baseline. The
-California community profile links to it with a community filter for San Pablo,
-Santa Clarita, Turlock, and JC Wallace House. Victoria's House has no licensing
-link until its license number and source collection are established.
+`/analytics/licensing` is a read-only library of the four-community CCLD baseline
+for Betty Dominici and Raj Thandi. It lives inside Analytics beside Reports and
+Ask a question, with no top-level or community-profile navigation item. The
+legacy `/licensing` route preserves query parameters when redirecting to the
+new route. Other accounts return to Analytics before any Licensing data mounts.
 
 The page presents readable briefs with allegations, state finding excerpts,
 cited deficiencies, correction plans, and other recorded follow-up. Each
@@ -382,7 +385,11 @@ AI question-answer service. There are no statistics panels or filter menus.
 Report selection and search remain addressable in the URL.
 
 The authenticated `/api/platform/licensing`, `/api/platform/licensing/report`,
-and `/api/platform/licensing/updates` endpoints read a validated, atomic library
+and `/api/platform/licensing/updates` endpoints independently enforce the same
+two tenant-local Entra object IDs before reading any records. Signed-in
+nonmembers receive a generic 404; names, email claims, administrator roles, app
+tokens, and development bypasses cannot grant access. Anonymous requests remain
+401. The endpoints read a validated, atomic library
 bundle in private Azure Blob storage in production, using the existing managed
 identity. Local development reads `generated/licensing`. Missing, oversized,
 or invalid evidence returns an unavailable response; production never falls
