@@ -559,7 +559,7 @@ export default function DataExplorerPage() {
             <div key={card.label} className="min-w-0 rounded-[14px] bg-[#f7f0e7]/72 px-3 py-2.5 shadow-[inset_0_0_0_1px_rgba(221,212,200,0.52)] sm:rounded-[18px] sm:px-4 sm:py-3">
               <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9a8b78]">{card.label}</div>
               <div className="mt-1 text-[20px] font-semibold tracking-[-0.04em] text-[#201a14]">{card.value}</div>
-              <div className="mt-0.5 truncate text-[12px] font-medium text-[#736657]">{card.detail}</div>
+              <div className="mt-0.5 break-words text-[12px] font-medium leading-5 text-[#736657]">{card.detail}</div>
             </div>
           ))}
         </div>

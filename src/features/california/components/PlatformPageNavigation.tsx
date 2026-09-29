@@ -53,7 +53,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
               {page.label}
             </Link>
           ))}
-          <PlatformUserIdentity className="ml-3" />
+          <PlatformUserIdentity className="ml-3" nameSide="bottom" />
         </div>
         <button type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="platform-mobile-menu" onClick={() => setMenuOpen((open) => !open)} className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-sm font-semibold text-[#315b54] md:hidden">
           <span>Menu</span>{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}

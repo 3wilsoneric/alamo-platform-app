@@ -58,7 +58,7 @@ on phones:
 The public Azure mobile home prioritizes three jobs: **find and open a
 community**, **read governed analysis**, and **ask a governed question**. Phone
 widths replace the California map with one vertically stacked row per
-community. Each row exposes the maintained community name and current census,
+community. Each row exposes the short community name and city,
 uses a large touch-sized target, and opens the same governed profile as the desktop
 map marker. The profile becomes a full-screen phone workspace with a compact
 Overview, Census, Incidents, Medications, and Residents picker. Its census
@@ -66,17 +66,16 @@ trend favors the line and summary values over individual point controls, and
 the standalone Resident Search shortcut is omitted. Desktop retains the
 California map and modal behavior.
 
-The phone home shows only the community rows, without an introductory heading,
-instructions, or repeated profile subtitles. Its rows expand to fill the
-available viewport and scroll on short screens rather than compressing their
-labels. The primary Analytics action is larger without crowding the persistent
-official Alamo Health Management logo. The shared mark is also used by login,
+The phone home places the community rows beneath a single Communities heading.
+Rows scroll on short screens rather than compressing their labels. The Menu
+control shares the header with the official Alamo Health Management logo.
+The shared mark is also used by login,
 loading, error, and non-California platform headers. Community names and
-resident counts use a lighter medium-weight sans-serif treatment rather than
-heavy bold labels. The installed-app, Home Screen, and browser icons use the
+profile facts use the shared sans-serif treatment. The installed-app, Home
+Screen, and browser icons use the
 head-and-tree portion of that same approved mark; the old generic AH monogram
-is not part of the active icon set. Analytics back navigation uses a compact
-horizontal mark so zoomed and tablet-width layouts retain clear header spacing.
+is not part of the active icon set. The same horizontal home mark keeps zoomed
+and tablet-width layouts clear.
 
 The mobile report library and question-category chip grid become compact native
 pickers, preserving the report reader and question list width. Client, Incident,
@@ -90,12 +89,11 @@ scannable. Certified questions reserve the full phone width for prompt text;
 required variables use labeled native selectors below the prompt and the run
 action spans the card width. All phone form controls render at a non-zooming iOS
 font size, and persistent navigation and disclosure actions retain touch-sized
-targets. The source branch
-also contains a separate `MobileCommunityHome` portfolio-pulse design, but that
-is not included in the current public Azure image; do not roll it into a mobile
-release without a separate product decision.
+targets. Narrow screens below 360px stack the Data Explorer selectors so their
+default labels remain readable. Admissions card facts and data-period details
+wrap rather than truncate.
 
-Admissions appears directly below Analytics in primary navigation for every
+Admissions follows Analytics in primary navigation for every
 signed-in Platform identity. Admissions-specific roles may restrict an identity
 to that workspace, but they are not an extra entitlement required by a normal
 Platform user to see the aggregate overview. Fifty States acquisition research,
@@ -114,7 +112,7 @@ is reviewed.
 compact three-column referral board and uses one segmented Board, Census, and
 Trends control instead of a page title, subtitles, KPI strip, and three stacked
 sections. Census and trends use governed portfolio and community context from
-the home-dashboard contract. Its primary navigation item appears directly below
+the home-dashboard contract. Its primary navigation item follows
 Analytics for every authenticated Platform identity. The separate Pipeline
 application owns referral intake, uploads, OCR, packet evidence, assessments,
 decisions, and other transactional workflow. The `/pipeline` path redirects to

@@ -970,7 +970,9 @@ textarea:focus-visible,
 
 @media (max-width: 359px) {
   [data-resident-community-filter="true"],
-  [data-resident-status-filter="true"] {
+  [data-resident-status-filter="true"],
+  [data-explorer-kind] [data-explorer-filter-grid="true"] > label,
+  [data-explorer-kind] [data-explorer-filter-grid="true"] > select {
     grid-column: 1 / -1;
   }
 }
