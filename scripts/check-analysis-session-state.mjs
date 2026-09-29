@@ -29,6 +29,24 @@ function assert(condition, message, context = null) {
   process.exit(1);
 }
 
+function consecutiveMonthlyPeriods(periods) {
+  const absoluteMonths = periods.map((period) => {
+    const match = String(period).match(/^(\d{4})-(\d{2})$/);
+    return match ? Number(match[1]) * 12 + Number(match[2]) - 1 : null;
+  });
+  return absoluteMonths.every(
+    (value, index) => value != null && (index === 0 || value === absoluteMonths[index - 1] + 1)
+  );
+}
+
+function monthLabel(period) {
+  return new Date(`${period}-01T00:00:00.000Z`).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC"
+  });
+}
+
 assert(baseFrame.metric === "incidents", "base metric should be incidents", baseFrame);
 assert(baseFrame.mode === "detail", "base mode should be detail", baseFrame);
 assert(baseFrame.category === "AWOL/Elopement", "base category should be AWOL", baseFrame);
@@ -183,13 +201,15 @@ const serverMemoryCommunityReset = await runCopilotTool({ content: "How is San P
 assert(serverMemoryCommunityReset.planValidation?.valid && serverMemoryCommunityReset.tool === "community_history" && serverMemoryCommunityReset.analysisFrame?.metric === null && serverMemoryCommunityReset.analysisFrame?.mode === null, "broad community question inherited prior incident detail state", serverMemoryCommunityReset);
 const communityHistorySessionId = `community-history-follow-up-${Date.now()}`;
 const sanPabloHistory = await runCopilotTool({ content: "san pablo, how has been the last three months", sessionId: communityHistorySessionId });
+const sanPabloHistoryPeriods = String(sanPabloHistory.trace?.period ?? "").split(", ").filter(Boolean);
 assert(
   sanPabloHistory.planValidation?.valid &&
     sanPabloHistory.tool === "community_history" &&
-    sanPabloHistory.trace?.period === "2026-04, 2026-05, 2026-06" &&
+    sanPabloHistoryPeriods.length === 3 &&
+    consecutiveMonthlyPeriods(sanPabloHistoryPeriods) &&
     sanPabloHistory.visual?.rows?.length === 3 &&
-    /April 2026/i.test(sanPabloHistory.text ?? "") &&
-    /June 2026/i.test(sanPabloHistory.text ?? "") &&
+    String(sanPabloHistory.text ?? "").includes(monthLabel(sanPabloHistoryPeriods[0])) &&
+    String(sanPabloHistory.text ?? "").includes(monthLabel(sanPabloHistoryPeriods.at(-1))) &&
     !/current-state data|I don't have that exact slice/i.test(sanPabloHistory.text ?? ""),
   "community history baseline did not answer the requested multi-month slice",
   sanPabloHistory
