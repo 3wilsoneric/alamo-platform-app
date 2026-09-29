@@ -1338,3 +1338,15 @@ exact preceding production digest. It replaces the current browser bundle and
 only the shared Licensing/owner access modules plus the owner access server
 adapter. Anonymous requests and authenticated nonmembers continue to receive
 the existing private failure behavior.
+
+Source PR `#65` merged as `9e12b431b2258bde23c8dd9a83eea7b3fcfaf385`.
+ACR build `cc42` produced immutable image
+`alamo-platform@sha256:62e5da15dbd8c0321ecfa0385b856c8a1ca3ee23ffec103da65d45dffab40e30`
+from rollback digest
+`sha256:45991a8f5c3db93f8410694985b39e0e497d2a14e7d1cd39122db043d2a7adcf`.
+Revision `alamo-platform-prod-web--owner-access-0929` is Healthy/Running at
+100% traffic. `/healthz` returned 200, the public production smoke suite passed
+4/4, and identity plus gzip HTML both referenced
+`/assets/index-CNv--yTM.js`. Anonymous Licensing remained 401. A signed-in
+Chrome verification under Eric Wilson's production account confirmed both the
+Fifty States header destination and a working Licensing archive.
