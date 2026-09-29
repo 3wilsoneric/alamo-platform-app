@@ -51,7 +51,7 @@ export function ComparisonBarsModule({
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto [scrollbar-width:thin]">
-        <div data-module-chart="comparison-bars" className="min-w-[620px] border border-[#d9d9d9] bg-white p-4">
+        <div data-module-chart="comparison-bars" className="min-w-0 border border-[#d9d9d9] bg-white p-4">
           <div className="mb-4 flex flex-wrap gap-x-5 gap-y-2">
             {visibleSeries.map((name, index) => (
               <div key={name} className="flex items-center gap-2 text-[12px] font-semibold text-[#333333]">
@@ -62,8 +62,8 @@ export function ComparisonBarsModule({
           </div>
           <div className="divide-y divide-[#d9d9d9] border-y border-[#d9d9d9]">
             {visibleRows.map((row) => (
-              <div key={row.id} className="grid grid-cols-[160px_minmax(0,1fr)] gap-4 py-3">
-                <div className="self-center truncate text-[12px] font-semibold text-[#111111]" title={row.label}>
+              <div key={row.id} className="grid gap-3 py-3 sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-4">
+                <div className="self-center break-words text-[12px] font-semibold text-[#111111]" title={row.label}>
                   {row.label}
                 </div>
                 <div className="space-y-1.5">

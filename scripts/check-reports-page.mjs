@@ -97,8 +97,7 @@ assert(
     reportsSource.includes("if (!active) return") &&
     reportsSource.includes('data-reports-embedded={embedded ? "true" : "false"}') &&
     reportsSource.includes('data-analytics-page="true"') &&
-    californiaSource.includes("<PlatformPageNavigation") &&
-    californiaSource.includes('active={activePanel === "map" ? "home" : "analytics"}') &&
+    read("src/shared/layout/ProtectedAppShell.tsx").includes("<PlatformPageNavigation") &&
     californiaSource.includes("<AnalyticsSectionNavigation"),
   "Analytics must be available as a governed home surface without loading reports behind the inactive map"
 );

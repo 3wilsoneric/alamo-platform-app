@@ -27,7 +27,7 @@ export interface LicensingLibrary {
   version: "licensing-baseline-v1";
   runId: string;
   collectedAt: string;
-  monitoring: "not_scheduled";
+  monitoring: "not_scheduled" | "platform_scheduled";
   totalReports: number;
   communities: LicensingCommunity[];
   reports: LicensingReportSummary[];
@@ -38,6 +38,7 @@ export function licensingTextForDisplay(text: string): string;
 export interface LicensingUpdates {
   version: "licensing-updates-v1"; status: "complete" | "failed" | "not_checked";
   lastChecked: string | null; lastSuccessful: string | null;
+  schedule?: { owner: "platform"; timezone: "America/Los_Angeles"; cadence: "weekly"; weekday: "Monday"; hour: 9 };
   alerts: { id: string; community: string; title: string; at: string; reportId: string | null; reportDate: string | null }[];
 }
 export function validateLicensingUpdates(value: unknown): LicensingUpdates;

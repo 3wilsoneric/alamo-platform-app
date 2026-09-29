@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { LICENSING_COMMUNITIES } from "../shared/licensing-contracts.mjs";
-import { validateLicensingBaseline } from "../server/licensing-library.mjs";
+import { validateLicensingBaseline } from "../server/licensing-validation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = path.resolve(process.argv[2] ?? path.join(root, "output/ccld-baseline/data"));
@@ -43,11 +43,11 @@ for (const r of records.filter((row) => row.kind === "report")) {
     textSha256: r.payload.text_sha256, retrievedAt: r.fetched_at, text: r.text });
 }
 const baseline = validateLicensingBaseline({ version: "licensing-baseline-v1", runId,
-  collectedAt: summary.finished_at, monitoring: "not_scheduled", communities,
+  collectedAt: summary.finished_at, monitoring: process.env.LICENSING_CLOUD_JOB === "true" ? "platform_scheduled" : "not_scheduled", communities,
   totalReports: reports.length, reports });
 const destination = path.join(root, "generated/licensing");
 await mkdir(destination, { recursive: true });
 const temporary = path.join(destination, `baseline-${process.pid}.tmp`);
 await writeFile(temporary, JSON.stringify(baseline));
 await rename(temporary, path.join(destination, "baseline.json"));
-console.log(`Imported ${reports.length} verified licensing reports for ${communities.length} communities. No cloud publication or scheduling.`);
+console.log(`Imported ${reports.length} verified licensing reports for ${communities.length} communities. Ready for publication.`);

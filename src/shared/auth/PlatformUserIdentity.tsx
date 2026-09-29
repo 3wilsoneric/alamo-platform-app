@@ -3,7 +3,7 @@ import { useCurrentUserProfile } from "./appUserProfile";
 
 interface PlatformUserIdentityProps {
   className?: string;
-  nameSide?: "left" | "right";
+  nameSide?: "left" | "right" | "bottom";
 }
 
 export function PlatformUserIdentity({
@@ -22,10 +22,12 @@ export function PlatformUserIdentity({
       <span
         aria-hidden="true"
         data-platform-user-name="true"
-        className={`pointer-events-none absolute bottom-1/2 max-w-[220px] translate-y-1/2 whitespace-nowrap rounded-full border border-[#d9d9d9] bg-white px-3 py-1.5 text-[12px] font-semibold tracking-[-0.01em] text-[#333333] opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 ${
-          nameSide === "right"
-            ? "left-[calc(100%+10px)] -translate-x-1"
-            : "right-[calc(100%+10px)] translate-x-1"
+        className={`pointer-events-none absolute max-w-[220px] whitespace-normal rounded-full border border-[#d9d9d9] bg-white px-3 py-1.5 text-[12px] font-semibold tracking-[-0.01em] text-[#333333] opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 ${
+          nameSide === "bottom"
+            ? "right-0 top-[calc(100%+12px)] w-max"
+            : nameSide === "right"
+              ? "bottom-1/2 left-[calc(100%+10px)] -translate-x-1 translate-y-1/2 w-max"
+              : "bottom-1/2 right-[calc(100%+10px)] translate-x-1 translate-y-1/2 w-max"
         }`}
       >
         {displayName}

@@ -533,9 +533,9 @@ export default function WorkspaceHomePage({
     <section
       id={sectionId}
       data-embedded-question-workspace={embedded ? "true" : undefined}
-      className={`bg-white pb-16 text-[#111111] ${
+      className={`bg-white text-[#111111] ${embedded ? "pb-0" : "pb-16"} ${
         embedded
-          ? "min-h-[100dvh] scroll-mt-[72px]"
+          ? "min-h-full scroll-mt-[72px]"
           : "min-h-[calc(100vh-112px)] pt-3 sm:pt-4"
       }`}
     >
@@ -614,7 +614,7 @@ export default function WorkspaceHomePage({
 
             <div
               ref={messageListRef}
-              className={`min-h-[320px] px-1 pb-[44vh] ${
+              className={`min-h-[320px] px-1 ${embedded ? "pb-4" : "pb-[44vh]"} ${
                 embedded ? "mt-0 pt-0" : "mt-2 pt-2"
               }`}
             >
@@ -851,7 +851,7 @@ export default function WorkspaceHomePage({
                     </div>
                   ) : null}
                   <div className="h-1" />
-                  <div aria-hidden="true" className="h-[38vh] min-h-[300px] max-h-[440px]" />
+                  {!embedded ? <div aria-hidden="true" className="h-[38vh] min-h-[300px] max-h-[440px]" /> : null}
                 </div>
               ) : (
                 questionGuideOpen ? (

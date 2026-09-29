@@ -519,27 +519,13 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Selecting a mobile Admissions category must show only that category's client list.");
   }
-  if (
-    await mobilePage.locator('[data-platform-page-target="analytics"]').getAttribute("data-platform-page-side") !== "right"
-  ) {
-    throw new Error("Mobile Admissions must keep Analytics navigation on the right.");
+  await mobilePage.getByRole("button", { name: "Open navigation" }).click();
+  const mobileMenu = mobilePage.getByRole("navigation", { name: "Mobile platform pages" });
+  if (!(await mobileMenu.getByRole("link", { name: "Analytics", exact: true }).isVisible()) ||
+      await mobileMenu.getByRole("link", { name: "Admissions", exact: true }).getAttribute("aria-current") !== "page") {
+    throw new Error("Mobile navigation must show destinations and identify Admissions as current.");
   }
-  const mobilePrimaryLinks = mobilePage.locator('[data-platform-primary-links="true"]');
-  const mobileAnalyticsLink = mobilePrimaryLinks.locator('[data-platform-page-target="analytics"]');
-  const mobileAdmissionsLink = mobilePrimaryLinks.locator('[data-platform-page-target="admissions"]');
-  const [mobileAnalyticsBox, mobileAdmissionsBox] = await Promise.all([
-    mobileAnalyticsLink.boundingBox(),
-    mobileAdmissionsLink.boundingBox()
-  ]);
-  if (
-    !mobileAnalyticsBox ||
-    !mobileAdmissionsBox ||
-    Math.abs(mobileAnalyticsBox.y - mobileAdmissionsBox.y) > 2 ||
-    mobileAdmissionsBox.x <= mobileAnalyticsBox.x + mobileAnalyticsBox.width ||
-    await mobileAdmissionsLink.getAttribute("aria-current") !== "page"
-  ) {
-    throw new Error("Mobile Admissions must keep its adjacent primary links visible with Admissions selected.");
-  }
+  await mobilePage.getByRole("button", { name: "Close navigation" }).click();
   await mobilePage.screenshot({
     path: `${screenshotDir}/mobile-admissions-board.png`,
     fullPage: true

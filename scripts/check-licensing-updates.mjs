@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { readFile, writeFile, rename, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { LICENSING_SCHEDULE } from "./licensing/job-schedule.mjs";
 import { LICENSING_COMMUNITIES } from "../shared/licensing-contracts.mjs";
 
 const exec = promisify(execFile);
@@ -24,7 +25,7 @@ if (!replay) {
 const python = `import sqlite3,json,sys
 c=sqlite3.connect(sys.argv[1]);c.row_factory=sqlite3.Row
 run=c.execute("SELECT id,finished_at,status FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()
-rows=c.execute("SELECT ch.*,r.finished_at FROM changes ch JOIN runs r ON ch.run_id=r.id WHERE ch.change_type!='baseline' AND r.finished_at IS NOT NULL ORDER BY r.started_at DESC LIMIT 100").fetchall()
+rows=c.execute("SELECT ch.*,r.finished_at FROM changes ch JOIN runs r ON ch.run_id=r.id WHERE ch.change_type!='baseline' AND r.status='complete' AND r.finished_at IS NOT NULL ORDER BY r.started_at DESC LIMIT 100").fetchall()
 print(json.dumps({'run':dict(run) if run else None,'changes':[dict(x) for x in rows]}))`;
 const { stdout } = await exec("python3", ["-c", python, path.join(data, "baseline.sqlite")], { timeout: 20_000, maxBuffer: 4 * 1024 * 1024 });
 const ledger = JSON.parse(stdout);
@@ -39,6 +40,7 @@ const alerts = ledger.changes.map((change) => {
     at: change.finished_at, reportId: report?.id ?? null, reportDate: report?.reportDate ?? null };
 });
 const feed = { version: "licensing-updates-v1", lastChecked: failure ? new Date().toISOString() : ledger.run?.finished_at ?? null,
+  ...(process.env.LICENSING_CLOUD_JOB === "true" ? { schedule: LICENSING_SCHEDULE } : {}),
   lastSuccessful: baseline.collectedAt, status: failure || ledger.run?.status !== "complete" || baseline.runId !== ledger.run?.id ? "failed" : "complete", alerts };
 await mkdir(destination, { recursive: true });
 const temporary = path.join(destination, `updates-${process.pid}.tmp`);

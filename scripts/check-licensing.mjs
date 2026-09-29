@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import handler from "../api/platform.js";
 import { LICENSING_COMMUNITIES, licensingTextForDisplay, validateLicensingLibrary, validateLicensingReport, validateLicensingUpdates } from "../shared/licensing-contracts.mjs";
 import { queryLicensingLibrary, validateLicensingBaseline, validateLicensingBundle } from "../server/licensing-library.mjs";
 import { usesLicensingAzureStorage } from "../server/licensing-storage.mjs";
 import { analyzeLicensingReport } from "../shared/licensing-analysis.mjs";
+import { hasLicensingAccess } from "../shared/licensing-access.mjs";
+import { assertLicensingAccess } from "../server/licensing-access.mjs";
 
 const communities = LICENSING_COMMUNITIES.map((c) => ({ ...c,
   licensedName: `${c.name} licensed facility`, licenseStatus: "Licensed", reportCount: 1, complaintCount: 0,
@@ -130,4 +133,68 @@ try {
 } finally {
   if (before === undefined) delete process.env.API_AUTH_REQUIRED; else process.env.API_AUTH_REQUIRED = before;
 }
-console.log("Licensing checks passed: archive integrity, full-text/community/type filtering, distinct same-day reports, invalid input, and protected API access.");
+const tenantId = "d72d9036-cff8-4f5f-a6fa-d698f621d420";
+const licensedUsers = ["424b21d4-605a-43a6-8dff-2a89a846e698", "75099b5b-5f7d-437f-8e3b-181f1fea1653"];
+for (const oid of licensedUsers) {
+  assert.equal(hasLicensingAccess({ tid: tenantId, oid }), true);
+  assert.doesNotThrow(() => assertLicensingAccess({ authenticated: true, mode: "entra-delegated", claims: { tid: tenantId, oid } }));
+}
+for (const claims of [null, {}, { oid: licensedUsers[0] }, { tid: "another-tenant", oid: licensedUsers[0] },
+  { tid: tenantId, oid: "f73371d5-d2b4-48b4-a32b-1edc7c88869f", roles: ["Alamo.Admissions.Admin"] },
+  { tid: tenantId, name: "Betty Dominici", email: "betty@aaahealthservices.com" },
+  { tid: tenantId, name: "Raj Thandi", preferred_username: "raj@aaahealthservices.com" }]) {
+  assert.equal(hasLicensingAccess(claims), false, "only the two exact tenant-local object IDs may match");
+  assert.throws(() => assertLicensingAccess({ authenticated: true, mode: "entra-delegated", claims }), (e) => e.statusCode === 404);
+}
+for (const context of [null, { authenticated: false, mode: "explicit-development-bypass" },
+  { authenticated: true, mode: "entra-service-principal", claims: { tid: tenantId, oid: licensedUsers[0] } }]) {
+  assert.throws(() => assertLicensingAccess(context), (e) => e.statusCode === 404);
+}
+
+// Exercise the real API authentication and route handlers with locally signed
+// test tokens. Only the expected JWKS fetch is stubbed; no token leaves this test.
+const environmentKeys = ["NODE_ENV", "API_AUTH_REQUIRED", "ENTRA_TENANT_ID", "ENTRA_CLIENT_ID", "ENTRA_API_AUDIENCE", "ENTRA_API_SCOPE", "ENTRA_API_REQUIRED_ROLE"];
+const savedEnvironment = Object.fromEntries(environmentKeys.map((key) => [key, process.env[key]]));
+const originalFetch = globalThis.fetch;
+const audience = "api://licensing-access-test";
+const { privateKey, publicKey } = await generateKeyPair("RS256");
+const jwk = { ...await exportJWK(publicKey), kid: "licensing-access-test", alg: "RS256", use: "sig" };
+globalThis.fetch = async (input) => {
+  assert.equal(String(input), `https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`);
+  return new Response(JSON.stringify({ keys: [jwk] }), { headers: { "Content-Type": "application/json" } });
+};
+Object.assign(process.env, { NODE_ENV: "test", API_AUTH_REQUIRED: "true", ENTRA_TENANT_ID: tenantId,
+  ENTRA_CLIENT_ID: "licensing-access-test", ENTRA_API_AUDIENCE: audience, ENTRA_API_SCOPE: "access_as_user", ENTRA_API_REQUIRED_ROLE: "" });
+async function licensingApiResponse(url, claims) {
+  const token = await new SignJWT(claims).setProtectedHeader({ alg: "RS256", kid: jwk.kid })
+    .setIssuer(`https://login.microsoftonline.com/${tenantId}/v2.0`).setAudience(audience).setIssuedAt().setExpirationTime("2m").sign(privateKey);
+  const headers = {};
+  const response = { statusCode: 0, body: null, setHeader(name, value) { headers[name] = value; },
+    getHeader(name) { return headers[name]; }, status(code) { this.statusCode = code; return this; }, json(value) { this.body = value; } };
+  await handler({ method: "GET", url, headers: { authorization: `Bearer ${token}` } }, response);
+  assert.match(String(headers["Cache-Control"]), /no-store/);
+  return response;
+}
+try {
+  const deniedClaims = [
+    { tid: tenantId, oid: "f73371d5-d2b4-48b4-a32b-1edc7c88869f", scp: "access_as_user" },
+    { tid: tenantId, oid: "unlisted-account", name: "Betty Dominici", email: "betty@aaahealthservices.com", scp: "access_as_user" },
+    { tid: "another-tenant", oid: licensedUsers[1], scp: "access_as_user" }
+  ];
+  for (const claims of deniedClaims) for (const path of ["/api/platform/licensing", "/api/platform/licensing/updates", "/api/platform/licensing/report?id=invalid"]) {
+    const result = await licensingApiResponse(path, claims);
+    assert.equal(result.statusCode, 404, "authenticated nonmembers must not reach any Licensing loader");
+    assert.equal(result.body.error, "Not found.");
+  }
+  for (const oid of licensedUsers) {
+    const result = await licensingApiResponse("/api/platform/licensing/report?id=invalid", { tid: tenantId, oid, scp: "access_as_user" });
+    assert.equal(result.statusCode, 400, "Betty and Raj must reach the report loader after authenticated authorization");
+    assert.equal(result.body.code, "licensing_report_invalid");
+  }
+} finally {
+  globalThis.fetch = originalFetch;
+  for (const key of environmentKeys) {
+    if (savedEnvironment[key] === undefined) delete process.env[key]; else process.env[key] = savedEnvironment[key];
+  }
+}
+console.log("Licensing checks passed: archive integrity, search, analysis, and signed-token access limited to Betty and Raj across all three APIs.");

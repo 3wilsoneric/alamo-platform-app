@@ -294,6 +294,38 @@ sub-16px phone inputs that trigger iOS zoom, or browser runtime errors. Intentio
 off-canvas carousel panels and the bounded Fifty States SVG do not count as
 document overflow.
 
+### Responsive review — 2026-09-28
+
+The shared navigation release was exercised through CUA in Chrome at 320×568,
+375×667, 390×844, 768×1024, 834×1194, 844×390, 1024×768, 1280×800,
+1440×900, and 1920×1080. These are browser viewport checks, not physical iOS or
+Safari/WebKit certification; that separate acceptance step remains unverified.
+
+The review covered Home and its five community profiles, Reports and all five
+report selections, Questions and a completed comparison answer, Admissions
+board/census/trends and management folders, Licensing search/reader/Updates,
+Communities and direct community detail, Incident Center, Glossary, all three
+Data Explorer modes, Command Center, Fifty States and its profile/acquisition
+views, Data Architecture, and sign-in. Production checks also exercised the
+phone menu, return navigation, sticky headers, the Monday Licensing schedule,
+and the end of a long analysis answer. No production data was edited.
+
+Fixes include the shared header, tablet report selector, responsive chart
+geometry, readable community labels and medication counts, button contrast,
+safe-area gutters, account tooltip placement, compact search controls, and
+removal of stacked blank spacers after answers. Final rechecks resolved the
+initial Atlas edge overflow. Carousel movement is intentionally clipped by
+its viewport; captures made during its transition are not final-layout results.
+
+Screenshots and DOM geometry observations are retained locally under ignored
+`generated/site-review-20260928/`. They can contain internal records and must
+not be committed or published as public test fixtures. The nonbrowser release
+gate passed all eight stages; focused navigation, docs, type, and production
+build checks were repeated after the final tooltip adjustment. Browser shell
+scripts were replaced by the interactive CUA review for this session. Static
+analyst checks used the maintained June fixture; signed-in production checks
+used the current September snapshot.
+
 `npm run acquisition:refresh` is a networked data refresh rather than a default
 CI gate. It downloads the configured official N-SUMHSS PUF and codebook, reads
 all 50 state partitions from the FindTreatment API, preserves raw source

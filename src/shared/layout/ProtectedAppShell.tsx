@@ -8,9 +8,8 @@ import {
   preloadLikelyWorkspaceSurfaces,
   prepareInitialWorkspace
 } from "../performance/workspacePreload";
-import { PlatformWordmark } from "../branding/PlatformWordmark";
+import PlatformPageNavigation from "../../features/california/components/PlatformPageNavigation";
 import { AuthenticationProgress } from "../../app/auth/AuthenticationProgress";
-import { PlatformUserIdentity } from "../auth/PlatformUserIdentity";
 import { getAccountAdmissionsAccess } from "../auth/admissionsAccess";
 import { isAdmissionsPath } from "../../../shared/admissions-access.mjs";
 
@@ -19,6 +18,7 @@ export default function ProtectedAppShell() {
   const isAdmissionsExperience = isAdmissionsPath(location.pathname);
   const isPipelineHandoff = location.pathname === "/pipeline";
   const isStandaloneEditorial = location.pathname === "/fiftystate";
+  const isLicensingExperience = location.pathname === "/licensing" || location.pathname === "/analytics/licensing";
   const isCaliforniaExperience =
     location.pathname === "/" ||
     location.pathname === "/questions" ||
@@ -26,10 +26,7 @@ export default function ProtectedAppShell() {
     location.pathname.startsWith("/analytics") ||
     location.pathname.startsWith("/reports") ||
     location.pathname.startsWith("/home");
-  const isCaliforniaMap =
-    location.pathname === "/" ||
-    location.pathname === "/home" ||
-    location.pathname.startsWith("/home/community/");
+
 
   const isAuthenticated = useIsAuthenticated();
   const { accounts, inProgress } = useMsal();
@@ -39,7 +36,7 @@ export default function ProtectedAppShell() {
     isE2EAuthBypassEnabled
   );
   const skipWorkspacePreparation =
-    isAdmissionsExperience || isPipelineHandoff || location.pathname === "/licensing" || admissionsAccess.restrictedToAdmissions;
+    isAdmissionsExperience || isPipelineHandoff || isLicensingExperience || admissionsAccess.restrictedToAdmissions;
   const accountKey = isE2EAuthBypassEnabled
     ? "e2e-authenticated"
     : accounts[0]?.homeAccountId ?? "authenticated";
@@ -166,31 +163,9 @@ export default function ProtectedAppShell() {
   }
 
   return (
-    <div className="app-theme-root relative min-h-screen overflow-x-hidden bg-white text-[#241f18]">
-      {!isStandaloneEditorial && !isCaliforniaExperience ? (
-        <>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none fixed inset-x-0 top-0 z-[35] h-[58px] bg-white/95 backdrop-blur-[8px] sm:h-[64px] print:hidden"
-          />
-          <a
-            href="/home"
-            aria-label="Go to the Alamo Platform home"
-            className="fixed left-4 top-[17px] z-40 text-left sm:left-6 sm:top-[19px] print:hidden"
-          >
-            <PlatformWordmark />
-          </a>
-          <div className="fixed right-4 top-4 z-40 sm:right-6 sm:top-5 print:hidden">
-            <PlatformUserIdentity />
-          </div>
-        </>
-      ) : null}
-      {isCaliforniaMap ? (
-        <div className="fixed bottom-5 left-6 z-40 hidden sm:block">
-          <PlatformUserIdentity nameSide="right" />
-        </div>
-      ) : null}
-      <main className="min-h-screen overflow-x-hidden bg-white">
+    <div className="app-theme-root relative min-h-screen overflow-x-clip bg-white text-[#241f18]">
+      <PlatformPageNavigation restricted={admissionsAccess.restrictedToAdmissions} />
+      <main className="min-h-[calc(100dvh-var(--platform-header-height))] min-w-0 bg-white">
         <div
           className={
             isStandaloneEditorial
@@ -198,11 +173,11 @@ export default function ProtectedAppShell() {
               : isCaliforniaExperience
                 ? "px-0 pb-0"
                 : location.pathname === "/licensing"
-                  ? "px-3 pb-10 pt-14 sm:px-4 sm:pt-16 lg:px-8 print:px-0 print:pb-0 print:pt-0"
-                  : "px-3 pb-10 pt-16 sm:px-4 sm:pt-20 lg:px-8 print:px-0 print:pb-0 print:pt-0"
+                  ? "px-3 pb-10 pt-3 sm:px-6 lg:px-8 print:p-0"
+                  : "px-3 pb-10 pt-5 sm:px-6 lg:px-8 print:p-0"
           }
         >
-          <div className={`mx-auto min-h-full w-full ${location.pathname === "/licensing" ? "" : "max-w-[1432px]"}`}>
+          <div className={`mx-auto min-h-full w-full ${location.pathname === "/licensing" || isCaliforniaExperience ? "" : "max-w-[1432px]"}`}>
             <Outlet />
           </div>
         </div>
