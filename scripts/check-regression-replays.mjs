@@ -73,6 +73,11 @@ function validateCaseTurn(testCase, turn, result) {
     failures.push(`expected at least ${expect.artifactRowCountAtLeast} artifact rows, got ${result?.artifact?.rowCount ?? "none"}`);
   }
 
+  if (expect.exactArtifactCountInText) {
+    const expected = `The CSV includes all ${result?.artifact?.rowCount ?? "unknown"} exact matches`;
+    if (!includes(body, expected)) failures.push("answer did not match exact artifact row count");
+  }
+
   if (expect.visualRowsMax != null && Number(result?.visual?.rows?.length ?? 0) > expect.visualRowsMax) {
     failures.push(`expected at most ${expect.visualRowsMax} visual rows, got ${result?.visual?.rows?.length ?? "none"}`);
   }

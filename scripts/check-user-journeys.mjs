@@ -231,6 +231,11 @@ function scoreTurn({ scenario, turn, turnIndex, result }) {
     if (!includesText(text, snippet)) addFailure(categories.answer, `answer missing ${JSON.stringify(snippet)}`);
   }
 
+  if (expect.exactArtifactCountInText) {
+    const expected = `The CSV includes all ${result?.artifact?.rowCount ?? "unknown"} exact matches`;
+    if (!includesText(text, expected)) addFailure(categories.answer, "answer did not match exact artifact row count");
+  }
+
   for (const snippet of asArray(expect.softTextIncludes)) {
     if (!includesText(text, snippet)) addFailure(categories.answer, `answer could be clearer if it included ${JSON.stringify(snippet)}`, "minor");
   }

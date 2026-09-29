@@ -833,9 +833,10 @@ export async function getReportsSummaryData(options = {}) {
   }
 
   reportsSummary ??= await getReportsSummaryDataLive();
-  return options.includeAnalystHistory === false
+  const payload = options.includeAnalystHistory === false
     ? stripAnalystHistoryForClient(reportsSummary)
     : reportsSummary;
+  return normalizeCommunityLabels(payload);
 }
 
 export async function getHomeDashboardData(options = {}) {

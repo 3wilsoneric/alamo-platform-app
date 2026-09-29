@@ -220,7 +220,7 @@
               "maxRows": 50,
               "requiresOriginalRowCount": true
             },
-            "textIncludes": ["The CSV includes all 375 exact matches"],
+            "exactArtifactCountInText": true,
             "textExcludes": ["No rows matched", "Victoria's Place"],
             "direct": true,
             "maxActions": 2
