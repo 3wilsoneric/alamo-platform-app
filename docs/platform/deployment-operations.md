@@ -1203,3 +1203,33 @@ then changed to Schedule with the Pacific-time guard enabled and provisioning
 Succeeded. The old `alamo-licensing-updates` Codex automation was deleted only
 after both successful cloud executions and schedule verification. No Mac,
 Codex session, or interactive Azure sign-in is required for subsequent checks.
+
+### Navigation and responsive review release — 2026-09-28
+
+- source: `2a2f9db`, following `8b5461f` and `3610feb` on
+  `codex/licensing-production-20260928`
+- revision: `alamo-platform-prod-web--responsive-2a2f9db`
+- image: `alamo-platform@sha256:69bc343962ec7f02ce6d4e144f05d02c65b4336b9f9a431793b35b15a4cc3d14`
+- preceding image: `alamo-platform@sha256:1ac18b97d8616a6dd7477e2e4b100d6b4702c40c73a459175763906d474ab34c`
+- active browser asset: `/assets/index-B6wycf3A.js`
+- ACR build: `cc3x`
+
+The frontend-only overlay preserves the currently deployed API/runtime and
+Licensing cloud job. Both gzip and Brotli siblings were regenerated before the
+image build, so compressed index responses reference the new assets. The final
+revision is Healthy/Running with 100% traffic. All eight nonbrowser release
+stages passed, followed by focused checks for the last tooltip adjustment and a
+fresh production build. Public production smoke passes 4/4; anonymous Licensing
+library and Updates requests still return 401 with private/no-store caching.
+
+Signed-in CUA verification confirmed the exact asset above, the corrected
+320px search selectors and Admissions timing, the account hint beneath the
+header, and the shared Analytics/Admissions/Licensing navigation. The broader
+review covered ten viewport sizes and the product routes described in
+`testing-quality.md`. Licensing still reports its Monday 9 a.m. Pacific schedule.
+Physical iOS and Safari/WebKit were not available in this browser session.
+
+The release was made from the clean release checkout rather than the shared
+main checkout, which contains separate in-progress product work. Do not replace
+this immutable runtime with an older image or deploy the shared working tree
+without reconciling those changes first.
