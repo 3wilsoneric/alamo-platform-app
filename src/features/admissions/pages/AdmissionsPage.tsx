@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
 
 import {
   fetchAdmissionsDashboard,
@@ -10,6 +10,7 @@ import type {
   AdmissionsBoardColumnKey,
   AdmissionsReferralPipeline
 } from "../../../shared/types/platformSnapshot";
+import { readStorageItem, writeStorageItem } from "../../../shared/storage/browserStorage";
 import PipelineBoard from "../components/PipelineBoard";
 
 
@@ -18,7 +19,7 @@ const ADMISSIONS_COLOR = "#0f8b73";
 // Referral series, validated as a set with ADMISSIONS_COLOR (all pairs, CVD).
 const REFERRALS_COLOR = "#4a67c4";
 const ACCEPTED_COLOR = "#c7851a";
-type AdmissionsSurface = "briefing" | "board" | "census";
+type AdmissionsSurface = "briefing" | "census";
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 type ExecutiveUpdateSegment = { text: string; strong?: boolean };
 type ExecutiveUpdateLine = {
@@ -29,6 +30,7 @@ type ExecutiveUpdateLine = {
 const CHAT_STREAM_START_DELAY_MS = 240;
 const CHAT_STREAM_TICK_MS = 45;
 const CHAT_STREAM_CHARS_PER_TICK = 3;
+const ADMISSIONS_BRIEFING_TYPED_SESSION_KEY = "alamo:admissions-briefing-typed:v1";
 
 export default function AdmissionsPage() {
   const [dashboard, setDashboard] = useState<AdmissionsDashboardResponse | null>(readCachedAdmissionsDashboard);
@@ -67,29 +69,12 @@ export default function AdmissionsPage() {
         <div className="-mx-3 py-2 lg:hidden">
           <div
             role="tablist"
-            aria-label="Admissions categories"
-            data-admissions-mobile-category-navigation="true"
-            className="grid min-w-0 w-full grid-cols-5 border-b border-[#d9dfdb] px-3"
+            aria-label="Admissions views"
+            data-admissions-mobile-surface-navigation="true"
+            className="grid min-w-0 w-full grid-cols-2 border-b border-[#d9dfdb] px-3"
           >
-            {(["received", "in_progress", "decision"] as const).map((column) => {
-              const columnSummary = pipeline?.board.columns.find((candidate) => candidate.key === column);
-              return (
-                <SurfaceTab
-                  key={column}
-                  active={surface === "board" && mobilePipelineColumn === column}
-                  label={mobilePipelineLabel(column)}
-                  count={columnSummary?.count ?? null}
-                  panel="admissions-board-panel"
-                  onClick={() => {
-                    setMobilePipelineColumn(column);
-                    setSurface("board");
-                  }}
-                  compact
-                />
-              );
-            })}
-            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} compact />
             <SurfaceTab active={surface === "briefing"} label="Briefing" count={null} panel="admissions-briefing-panel" onClick={() => setSurface("briefing")} compact />
+            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} compact />
           </div>
         </div>
 
@@ -100,9 +85,8 @@ export default function AdmissionsPage() {
             data-admissions-surface-tabs="true"
             className="flex min-w-0 max-w-full justify-center gap-6 overflow-x-auto border-b border-[#d9dfdb] sm:gap-8"
           >
-            <SurfaceTab active={surface === "board"} label="Board" count={pipeline?.board.total ?? null} panel="admissions-board-panel" onClick={() => setSurface("board")} />
-            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} />
             <SurfaceTab active={surface === "briefing"} label="Briefing" count={null} panel="admissions-briefing-panel" onClick={() => setSurface("briefing")} />
+            <SurfaceTab active={surface === "census"} label="Census" count={dashboard?.portfolio.census ?? null} panel="admissions-census-panel" onClick={() => setSurface("census")} />
           </div>
         </div>
 
@@ -121,35 +105,68 @@ export default function AdmissionsPage() {
 
         <div id={`admissions-${surface}-panel`} role="tabpanel" className="pt-1">
           {surface === "briefing" ? (
-            <AdmissionsBriefingPanel
-              dashboard={dashboard}
-              loading={loading && !dashboard}
-              pipeline={pipeline}
-            />
-          ) : null}
-
-          {surface === "board" ? (
-            pipeline ? (
-              <PipelineBoard
-                pipeline={pipeline}
-                communities={dashboard?.communities ?? []}
-                mobileColumn={mobilePipelineColumn}
-              />
-            ) : (
+            <div>
+              {pipeline ? <AdmissionsExecutiveUpdate pipeline={pipeline} /> : null}
+              <AdmissionsBriefingPanel dashboard={dashboard} loading={loading && !dashboard} />
               <section
-                aria-label="Referral board"
-                data-admissions-referral-pipeline={referralPipeline?.status ?? "loading"}
-                className="rounded-xl border border-[#dfe3e1] bg-white px-5 py-12 text-center"
+                id="admissions-referral-board-panel"
+                aria-labelledby="admissions-referral-board-title"
+                data-admissions-embedded-board="true"
+                className="mt-8 border-t border-[#dfe3e1] pt-4 sm:mt-10 sm:pt-5"
               >
-                <p className="text-[13px] text-[#5f6762]">
-                  {referralPipeline?.status === "unavailable"
-                    ? "The live referral board is temporarily unavailable."
-                    : referralPipeline
-                      ? "The referral feed has not been connected yet."
-                      : "Loading the referral board…"}
-                </p>
+                <h2 id="admissions-referral-board-title" className="sr-only">Referral board</h2>
+                {pipeline ? (
+                  <>
+                    <div
+                      role="tablist"
+                      aria-label="Referral board categories"
+                      data-admissions-mobile-category-navigation="true"
+                      className="-mx-3 mb-3 grid grid-cols-3 border-b border-[#d9dfdb] px-3 lg:hidden"
+                    >
+                      {(["received", "in_progress", "decision"] as const).map((column) => {
+                        const columnSummary = pipeline.board.columns.find((candidate) => candidate.key === column);
+                        return (
+                          <SurfaceTab
+                            key={column}
+                            active={mobilePipelineColumn === column}
+                            label={mobilePipelineLabel(column)}
+                            count={columnSummary?.count ?? null}
+                            panel="admissions-mobile-board-list"
+                            onClick={() => setMobilePipelineColumn(column)}
+                            compact
+                          />
+                        );
+                      })}
+                    </div>
+                    <div
+                      id="admissions-mobile-board-list"
+                      role="tabpanel"
+                      aria-label={`${mobilePipelineLabel(mobilePipelineColumn)} referrals`}
+                    >
+                      <PipelineBoard
+                        pipeline={pipeline}
+                        communities={dashboard?.communities ?? []}
+                        mobileColumn={mobilePipelineColumn}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    aria-label="Referral board"
+                    data-admissions-referral-pipeline={referralPipeline?.status ?? "loading"}
+                    className="rounded-xl border border-[#dfe3e1] bg-white px-5 py-12 text-center"
+                  >
+                    <p className="text-[13px] text-[#5f6762]">
+                      {referralPipeline?.status === "unavailable"
+                        ? "The live referral board is temporarily unavailable."
+                        : referralPipeline
+                          ? "The referral feed has not been connected yet."
+                          : "Loading the referral board…"}
+                    </p>
+                  </div>
+                )}
               </section>
-            )
+            </div>
           ) : null}
 
           {surface === "census" ? (
@@ -174,13 +191,16 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
     (total, line) => total + line.segments.reduce((lineTotal, segment) => lineTotal + segment.text.length, 0),
     0
   );
-  const responseKey = `${pipeline.generatedAt}:${update?.total ?? 0}`;
-  const [revealedCharacters, setRevealedCharacters] = useState(0);
-  const [typing, setTyping] = useState(true);
+  const [playTypingAnimation] = useState(() => !hasSeenAdmissionsBriefing());
+  const initialCharacterTarget = useRef(totalCharacters);
+  const [revealedCharacters, setRevealedCharacters] = useState(() => playTypingAnimation ? 0 : totalCharacters);
+  const [typing, setTyping] = useState(playTypingAnimation);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setRevealedCharacters(totalCharacters);
+    rememberAdmissionsBriefing();
+    const characterTarget = initialCharacterTarget.current;
+    if (!playTypingAnimation || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setRevealedCharacters(characterTarget);
       setTyping(false);
       return;
     }
@@ -191,9 +211,9 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
     let interval: number | undefined;
     const start = window.setTimeout(() => {
       interval = window.setInterval(() => {
-        revealed = Math.min(totalCharacters, revealed + CHAT_STREAM_CHARS_PER_TICK);
+        revealed = Math.min(characterTarget, revealed + CHAT_STREAM_CHARS_PER_TICK);
         setRevealedCharacters(revealed);
-        if (revealed >= totalCharacters) {
+        if (revealed >= characterTarget) {
           if (interval != null) window.clearInterval(interval);
           setTyping(false);
         }
@@ -203,7 +223,11 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       window.clearTimeout(start);
       if (interval != null) window.clearInterval(interval);
     };
-  }, [responseKey, totalCharacters]);
+  }, [playTypingAnimation]);
+
+  useEffect(() => {
+    if (!typing) setRevealedCharacters(totalCharacters);
+  }, [totalCharacters, typing]);
 
   let characterOffset = 0;
 
@@ -212,7 +236,7 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       data-admissions-executive-update="true"
       data-admissions-chat-response="true"
       data-admissions-chat-typing={typing ? "true" : "false"}
-      aria-label="Admissions analyst update"
+      aria-label="Admissions briefing"
       aria-busy={typing}
       className="mb-6 max-w-[1120px] rounded-[16px] bg-[#f4f7f5] px-4 py-4 text-[#46504b] sm:px-5 sm:py-5"
     >
@@ -222,8 +246,8 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex min-h-8 items-center gap-2">
-            <span className="text-[12px] font-semibold text-[#263c35] sm:text-[13px]">Admissions analyst</span>
-            <span className="text-[10px] text-[#7a847f]" aria-hidden="true">{typing ? "Composing…" : "Live update"}</span>
+            <span className="text-[12px] font-semibold text-[#263c35] sm:text-[13px]">Briefing</span>
+            <span className="text-[10px] text-[#7a847f]" aria-hidden="true">{typing ? "Composing…" : "Current update"}</span>
           </div>
           <div className="mt-2.5 space-y-2 text-[13px] leading-6 sm:text-[14px] sm:leading-7">
             {lines.map((line) => {
@@ -248,6 +272,20 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       </div>
     </section>
   );
+}
+
+function hasSeenAdmissionsBriefing() {
+  return readStorageItem(ADMISSIONS_BRIEFING_TYPED_SESSION_KEY, {
+    kind: "session",
+    label: "Admissions briefing animation"
+  }) === "true";
+}
+
+function rememberAdmissionsBriefing() {
+  writeStorageItem(ADMISSIONS_BRIEFING_TYPED_SESSION_KEY, "true", {
+    kind: "session",
+    label: "Admissions briefing animation"
+  });
 }
 
 function StreamingSegments({ segments, visibleCharacters }: { segments: ExecutiveUpdateSegment[]; visibleCharacters: number }) {
@@ -415,16 +453,15 @@ function mobilePipelineLabel(column: AdmissionsBoardColumnKey) {
 
 function AdmissionsBriefingPanel({
   dashboard,
-  loading,
-  pipeline
+  loading
 }: {
   dashboard: AdmissionsDashboardResponse | null;
   loading: boolean;
-  pipeline: ConnectedAdmissionsPipeline | null;
 }) {
   const briefing = dashboard?.briefing ?? null;
   const briefingKey = briefing ? `${briefing.weekStart}:${briefing.weekEnd}` : "none";
   const [page, setPage] = useState(0);
+  const [expanded, setExpanded] = useState(true);
   useEffect(() => setPage(0), [briefingKey]);
   if (loading) {
     return (
@@ -447,7 +484,7 @@ function AdmissionsBriefingPanel({
     {
       id: "summary",
       label: "Summary",
-      content: <BriefingSummaryPage briefing={briefing} pipeline={pipeline} />
+      content: <BriefingSummaryPage briefing={briefing} />
     },
     ...communityPages.map((rows, index) => ({
       id: `communities-${index + 1}`,
@@ -514,23 +551,47 @@ function AdmissionsBriefingPanel({
   const activeSlide = slides[currentPage]!;
 
   return (
-    <div data-admissions-weekly-briefing="true">
-      <BriefingPager slides={slides} page={currentPage} onPageChange={setPage} />
-      <div
-        id={`admissions-briefing-page-${activeSlide.id}`}
-        role="tabpanel"
-        aria-label={activeSlide.label}
-        data-admissions-briefing-page={activeSlide.id}
-        className="min-h-[420px] pt-4 sm:min-h-[500px]"
+    <section
+      data-admissions-weekly-briefing="true"
+      data-admissions-briefing-collapsible="true"
+      aria-labelledby="admissions-weekly-briefing-title"
+    >
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls="admissions-briefing-carousel"
+        onClick={() => setExpanded((value) => !value)}
+        className="flex min-h-14 w-full items-center justify-between gap-4 rounded-xl bg-[#f4f7f5] px-4 py-3 text-left transition-colors hover:bg-[#edf3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:px-5"
       >
-        {activeSlide.content}
-      </div>
-      <div className="mt-4 flex items-center justify-between border-t border-[#dfe3e1] pt-3">
-        <BriefingFlipButton direction="previous" disabled={currentPage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} />
-        <span className="text-[10px] font-medium tabular-nums text-[#7a817d]">{currentPage + 1} of {slides.length}</span>
-        <BriefingFlipButton direction="next" disabled={currentPage === slides.length - 1} onClick={() => setPage((value) => Math.min(slides.length - 1, value + 1))} />
-      </div>
-    </div>
+        <span className="min-w-0">
+          <span id="admissions-weekly-briefing-title" className="block text-[13px] font-semibold text-[#263c35]">Weekly briefing</span>
+          <span className="mt-0.5 block text-[10px] text-[#737b77]">{formatDate(briefing.weekStart)} through {formatDate(briefing.weekEnd)}</span>
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-2 text-[10px] font-semibold text-[#315b54]">
+          {expanded ? "Collapse" : "Expand"}
+          <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+        </span>
+      </button>
+      {expanded ? (
+        <div id="admissions-briefing-carousel" className="pt-3">
+          <BriefingPager slides={slides} page={currentPage} onPageChange={setPage} />
+          <div
+            id={`admissions-briefing-page-${activeSlide.id}`}
+            role="tabpanel"
+            aria-label={activeSlide.label}
+            data-admissions-briefing-page={activeSlide.id}
+            className="min-h-[420px] pt-4 sm:min-h-[500px]"
+          >
+            {activeSlide.content}
+          </div>
+          <div className="mt-4 flex items-center justify-between border-t border-[#dfe3e1] pt-3">
+            <BriefingFlipButton direction="previous" disabled={currentPage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} />
+            <span className="text-[10px] font-medium tabular-nums text-[#7a817d]">{currentPage + 1} of {slides.length}</span>
+            <BriefingFlipButton direction="next" disabled={currentPage === slides.length - 1} onClick={() => setPage((value) => Math.min(slides.length - 1, value + 1))} />
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -589,13 +650,7 @@ function BriefingFlipButton({
   );
 }
 
-function BriefingSummaryPage({
-  briefing,
-  pipeline
-}: {
-  briefing: AdmissionsDashboardResponse["briefing"];
-  pipeline: ConnectedAdmissionsPipeline | null;
-}) {
+function BriefingSummaryPage({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
   const metrics = [
     ["Current census", briefing.totals.census],
     ["New referrals · 7d", briefing.totals.newReferrals7d],
@@ -605,8 +660,7 @@ function BriefingSummaryPage({
     ["Completed move-ins", briefing.totals.completedMoveInsThisWeek]
   ] as const;
   return (
-    <div className="space-y-4">
-      {pipeline ? <AdmissionsExecutiveUpdate pipeline={pipeline} /> : null}
+    <div>
       <section className="overflow-hidden rounded-xl border border-[#dfe3e1] bg-white" aria-labelledby="admissions-briefing-summary-title">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#dfe3e1] px-4 py-4 sm:px-5">
           <div>

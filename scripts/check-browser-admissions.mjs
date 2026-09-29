@@ -66,7 +66,7 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Admissions must select its own item in the adjacent upper-right Platform navigation.");
   }
-  for (const name of ["Board", "Census", "Briefing"]) {
+  for (const name of ["Briefing", "Census"]) {
     if (await page.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
       throw new Error(`Admissions overview is missing its compact ${name} tab.`);
     }
@@ -91,6 +91,7 @@ await withBrowserQa(async (browser) => {
   }
   const briefingTab = surfaceTabs.getByRole("tab", { name: /^Briefing/ });
   if (
+    await desktopTabs.count() !== 2 ||
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1 ||
     await page.getByRole("heading", { name: "This week at a glance" }).count() !== 1
@@ -98,7 +99,11 @@ await withBrowserQa(async (browser) => {
     throw new Error("Admissions must open on the weekly leadership briefing.");
   }
   const briefingPager = page.locator('[data-admissions-briefing-pager="true"]');
+  const briefingCollapsible = page.locator('[data-admissions-briefing-collapsible="true"]');
+  const briefingToggle = briefingCollapsible.getByRole("button", { name: /^Weekly briefing/ });
   if (
+    await briefingCollapsible.count() !== 1 ||
+    await briefingToggle.getAttribute("aria-expanded") !== "true" ||
     await briefingPager.count() !== 1 ||
     await briefingPager.getByRole("tab", { name: "Summary", exact: true }).getAttribute("aria-selected") !== "true" ||
     await page.getByRole("button", { name: "Next briefing page" }).count() !== 1
@@ -119,13 +124,13 @@ await withBrowserQa(async (browser) => {
       fullPage: true
     });
     await page.setViewportSize({ width: 390, height: 844 });
-    const fallbackMobileNavigation = page.locator('[data-admissions-mobile-category-navigation="true"]');
+    const fallbackMobileNavigation = page.locator('[data-admissions-mobile-surface-navigation="true"]');
     await fallbackMobileNavigation.waitFor({ state: "visible" });
     if (
-      await fallbackMobileNavigation.getByRole("tab").count() !== 5 ||
+      await fallbackMobileNavigation.getByRole("tab").count() !== 2 ||
       await page.locator('[data-admissions-weekly-briefing="true"]').count() !== 1
     ) {
-      throw new Error("The incomplete weekly briefing must retain all five mobile Admissions destinations.");
+      throw new Error("The incomplete weekly briefing must retain the two mobile Admissions views.");
     }
     const fallbackOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     if (fallbackOverflow > 2) {
@@ -210,20 +215,30 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("Admissions analyst response must finish its stream and remove the typing caret.");
   }
+  await surfaceTabs.getByRole("tab", { name: /^Census/ }).click();
+  await page.getByRole("heading", { name: "Community census" }).waitFor();
+  await briefingTab.click();
+  const resumedExecutiveUpdate = page.locator('[data-admissions-executive-update="true"]');
+  await resumedExecutiveUpdate.waitFor({ state: "visible" });
+  if (
+    await resumedExecutiveUpdate.getAttribute("data-admissions-chat-typing") !== "false" ||
+    (await resumedExecutiveUpdate.innerText()).trim() !== executiveText
+  ) {
+    throw new Error("The main Admissions briefing may type only once per browser session.");
+  }
   await page.getByRole("button", { name: "Next briefing page" }).click();
   if (
     await page.locator('[data-admissions-briefing-page^="communities-"]').count() !== 1 ||
     await page.getByRole("heading", { name: "Community briefing" }).count() !== 1 ||
-    await executiveUpdate.count()
+    await resumedExecutiveUpdate.count() !== 1
   ) {
-    throw new Error("Next must flip to the community page instead of extending a scrolling briefing.");
+    throw new Error("Next must flip the briefing carousel without removing the main briefing paragraph.");
   }
   await page.getByRole("button", { name: "Previous briefing page" }).click();
   await page.locator('[data-admissions-briefing-page="summary"]').waitFor({ state: "visible" });
   if (/Immediate follow-up:|Update overdue|Move-in overdue|Needs follow-up/.test(await page.locator("body").innerText())) {
     throw new Error("Admissions must not present automated attention judgments.");
   }
-  await surfaceTabs.getByRole("tab", { name: /^Board/ }).click();
   const clientNames = page.locator('[data-admissions-client-name="true"]');
   await clientNames.first().waitFor({ state: "visible", timeout: 60_000 });
   if (await clientNames.count() < 1 || !(await clientNames.first().innerText()).trim()) {
@@ -236,6 +251,24 @@ await withBrowserQa(async (browser) => {
   if (acceptedClientNames.length < 1 || !acceptedClientNames.every((name) => executiveText.includes(name.trim()))) {
     throw new Error("The briefing must name every accepted client moving toward admission.");
   }
+  const embeddedBoard = page.locator('[data-admissions-embedded-board="true"]');
+  const [briefingBox, embeddedBoardBox] = await Promise.all([
+    briefingCollapsible.boundingBox(),
+    embeddedBoard.boundingBox()
+  ]);
+  if (!briefingBox || !embeddedBoardBox || embeddedBoardBox.y <= briefingBox.y + briefingBox.height) {
+    throw new Error(`The referral board must render underneath the briefing carousel: ${JSON.stringify({ briefingBox, embeddedBoardBox })}`);
+  }
+  await briefingToggle.click();
+  if (
+    await briefingToggle.getAttribute("aria-expanded") !== "false" ||
+    await briefingPager.count() !== 0 ||
+    await clientNames.first().isVisible() !== true
+  ) {
+    throw new Error("Collapsing the briefing carousel must leave the referral board available below it.");
+  }
+  await briefingToggle.click();
+  await briefingPager.waitFor({ state: "visible" });
   const communityFilters = page.locator('[data-admissions-community-filters="true"]');
   await communityFilters.waitFor({ state: "visible" });
   const communityPills = communityFilters.getByRole("button");
@@ -291,7 +324,7 @@ await withBrowserQa(async (browser) => {
   ) {
     throw new Error("All communities must reset the Admissions board to its complete referral set.");
   }
-  const tabTreatment = await surfaceTabs.getByRole("tab", { name: /^Board/ }).evaluate((element) => {
+  const tabTreatment = await briefingTab.evaluate((element) => {
     const tab = window.getComputedStyle(element);
     const list = window.getComputedStyle(element.parentElement);
     return { borderBottomColor: tab.borderBottomColor, borderRadius: tab.borderRadius, listBackground: list.backgroundColor };
@@ -489,18 +522,26 @@ await withBrowserQa(async (browser) => {
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
   await mobilePage.locator('[data-admissions-overview="true"]').waitFor();
-  const mobileSurfaceTabs = mobilePage.locator('[data-admissions-surface-tabs="true"]');
+  const mobileDesktopSurfaceTabs = mobilePage.locator('[data-admissions-surface-tabs="true"]');
+  const mobileSurfaceNavigation = mobilePage.locator('[data-admissions-mobile-surface-navigation="true"]');
   const mobileCategoryNavigation = mobilePage.locator('[data-admissions-mobile-category-navigation="true"]');
+  await mobileSurfaceNavigation.waitFor({ state: "visible" });
   await mobileCategoryNavigation.waitFor({ state: "visible" });
   if (
-    await mobileSurfaceTabs.isVisible() ||
-    await mobileCategoryNavigation.getByRole("tab").count() !== 5 ||
+    await mobileDesktopSurfaceTabs.isVisible() ||
+    await mobileSurfaceNavigation.getByRole("tab").count() !== 2 ||
+    await mobileCategoryNavigation.getByRole("tab").count() !== 3 ||
     await mobilePage.locator('[data-admissions-layout-toggle="true"]').isVisible() ||
     await mobilePage.locator('[data-admissions-board-column]').filter({ visible: true }).count()
   ) {
-    throw new Error("Mobile Admissions must use category navigation and a client list instead of the desktop board controls.");
+    throw new Error("Mobile Admissions must separate its two views from the embedded board categories.");
   }
-  for (const name of ["Referral received", "In progress", "Decision", "Census", "Briefing"]) {
+  for (const name of ["Briefing", "Census"]) {
+    if (await mobileSurfaceNavigation.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
+      throw new Error(`Mobile Admissions is missing its ${name} view.`);
+    }
+  }
+  for (const name of ["Referral received", "In progress", "Decision"]) {
     if (await mobileCategoryNavigation.getByRole("tab", { name: new RegExp(`^${name}`) }).count() !== 1) {
       throw new Error(`Mobile Admissions is missing its ${name} category.`);
     }
