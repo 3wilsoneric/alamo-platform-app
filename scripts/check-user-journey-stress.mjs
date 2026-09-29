@@ -139,7 +139,7 @@ const questionMarathonCases = [
     expect: {
       tools: ["incident_breakdown"],
       facilityId: "343",
-      period: "2026-06",
+      latestPeriod: true,
       textIncludes: ["JC Wallace House"],
       visualType: "bar_chart"
     }
@@ -341,7 +341,7 @@ const inevitabilityCases = [
     expect: {
       tools: ["community_history"],
       facilityId: "337",
-      periodIncludes: ["2026-04", "2026-05", "2026-06"],
+      traceBoundsInText: true,
       textIncludes: ["A & A Health Services San Pablo"],
       visualType: "table",
       decisionFamily: "profile",
@@ -473,6 +473,14 @@ function includesText(haystack, needle) {
   return lower(haystack).includes(lower(needle));
 }
 
+function monthLabel(period) {
+  return new Date(`${period}-01T00:00:00.000Z`).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC"
+  });
+}
+
 function asArray(value) {
   if (value == null) return [];
   return Array.isArray(value) ? value : [value];
@@ -554,6 +562,24 @@ function validateTurn(testCase, result) {
   }
   for (const period of asArray(expect.periodIncludes)) {
     if (!includesText(haystack, period)) failures.push(`missing expected period ${period}`);
+  }
+  if (expect.latestPeriod) {
+    const tracePeriod = String(result?.trace?.period ?? "");
+    if (!/^\d{4}-\d{2}$/.test(tracePeriod)) {
+      failures.push(`latest-period answer did not expose one normalized month (${tracePeriod || "none"})`);
+    } else if (!includesText(text, monthLabel(tracePeriod))) {
+      failures.push(`answer did not name its traced latest period ${monthLabel(tracePeriod)}`);
+    }
+  }
+  if (expect.traceBoundsInText) {
+    const periods = String(result?.trace?.period ?? "").split(", ").filter(Boolean);
+    if (!periods.length) {
+      failures.push("answer did not expose a normalized trace period window");
+    } else {
+      for (const period of [periods[0], periods.at(-1)]) {
+        if (!includesText(text, monthLabel(period))) failures.push(`answer did not name trace-bound month ${monthLabel(period)}`);
+      }
+    }
   }
   if (expect.facilityId && !includesText(haystack, `"facilityId":"${expect.facilityId}"`) && !includesText(haystack, `"facility_id":"${expect.facilityId}"`)) {
     failures.push(`missing facility scope ${expect.facilityId}`);
