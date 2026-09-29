@@ -1267,3 +1267,38 @@ navigation. These fixtures did not sign in as Betty or Raj. Production CUA under
 Eric confirmed the exact asset, no Licensing navigation, and redirects from both
 old and new direct URLs to Analytics. The revision is Healthy/Running at 100%
 traffic; all anonymous Licensing APIs return 401/private-no-store.
+
+### Admissions weekly briefing release — 2026-09-28
+
+- integrated source: `a7b5249` on `main` through PRs #59 and #60
+- revision: `alamo-platform-prod-web--admissions-briefing-0928`
+- image: `alamo-platform@sha256:84e4fb881f354714f8fe1cc36d6a9db8c48fcdb2df9b31f849c047f196f9a5ef`
+- base and rollback image: `alamo-platform@sha256:a907d6af426d8e7b5a7e4306fb4ea50f6aadeae5e469e68d221a9786c54462b5`
+- ACR build: `cc40`; active assets: `/assets/index-CfNa8vME.js` and
+  `/assets/index-DbM4zKqw.css`
+
+Admissions replaces Trends with Briefing and opens there by default. The
+briefing presents current census by community, referral origin over 7 and 14
+days, census trend, upcoming assessments this week, and planned move-ins this
+week. Existing Board and Census workflows remain available. Mobile navigation
+uses the same compact category pattern as Communities.
+
+The release overlay started from the active Licensing-access image and replaces
+only the built browser assets and the two reviewed Admissions aggregation
+modules. It therefore preserves the restricted Licensing route and its runtime.
+The current Pipeline producer contract is version 3.0 and does not yet publish
+the optional `briefing` slice. Census is live; the four dependent briefing
+sections identify themselves as `source_upgrade_required` rather than displaying
+invented zeros. Upgrade the producer contract before treating those sections as
+complete operational reporting.
+
+Verification: all nonbrowser, analyst, regression, stress, fuzz, browser,
+mobile, guided-render, journey, and performance checks passed before release;
+the final reconciled source also passed typecheck, Admissions access/dashboard,
+Licensing, browser-Admissions, and production build checks. Azure reports the
+revision Healthy/Running at 100% traffic. Production serves the expected assets,
+`/healthz` is healthy, and the public smoke suite passes 4/4. Authenticated
+production smoke and guided-question scripts were not executed because the
+release checkout has no saved production browser storage state; their local and
+predeployment equivalents passed. Roll back to the immutable base digest above
+if an authenticated production issue is found.

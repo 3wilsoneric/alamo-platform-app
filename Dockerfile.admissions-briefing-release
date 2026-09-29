@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:6e266efc866b895fffbdf7f208850ff1bad1279f29ee0ea7b15b5e4d444b5476
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a907d6af426d8e7b5a7e4306fb4ea50f6aadeae5e469e68d221a9786c54462b5
 FROM ${BASE_IMAGE}
 
 # Preserve the proven Azure runtime, Licensing modules, configuration, and
