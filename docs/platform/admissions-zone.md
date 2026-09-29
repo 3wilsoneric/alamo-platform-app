@@ -98,7 +98,10 @@ server, never from the browser and never through Pipeline's internal APIs.
   support snapshot are populated only from a signed assessment. Contract 3.1's
   `briefing` producer slice carries `timezone`, `window_end`, explicit coverage
   booleans, and bounded event arrays: `recent_referrals`,
-  `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. Referral rows
+  `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. The dashboard
+  presents the two forward schedules and referral-origin detail; the raw weekly
+  trend series remains contract data but is not displayed in the CEO briefing.
+  Referral rows
   carry received timestamp and origin; assessment and move-in rows carry the
   scheduled timestamp; all three carry referral ID, client name, destination
   community, owner, status, and the same bounded relative `pipeline_path`.
