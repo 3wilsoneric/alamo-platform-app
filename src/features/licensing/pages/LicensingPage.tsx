@@ -55,7 +55,7 @@ export default function LicensingPage() {
     });
   }
 
-  return <section aria-label="Licensing reports" data-licensing-page="true" className="mx-auto max-w-[1240px] pb-6 text-[#263e34]">
+  return <section aria-label="Licensing reports" data-licensing-page="true" className="min-w-0 w-full pb-6 text-[#263e34]">
     <header className="mb-2 flex items-center justify-between gap-4">
       <Link to={selectedCommunity ? `/home/community/${selectedCommunity.facilityId}` : "/home"} className="inline-flex min-h-11 items-center gap-2 text-sm text-[#527065] hover:underline"><ArrowLeft size={15} aria-hidden="true" /> {selectedCommunity ? selectedCommunity.name : "Communities"}</Link>
       <LicensingUpdates onSelect={(id) => setParams({ report: id })} />

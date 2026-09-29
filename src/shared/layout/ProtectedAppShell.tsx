@@ -202,7 +202,7 @@ export default function ProtectedAppShell() {
                   : "px-3 pb-10 pt-16 sm:px-4 sm:pt-20 lg:px-8 print:px-0 print:pb-0 print:pt-0"
           }
         >
-          <div className="mx-auto min-h-full w-full max-w-[1432px]">
+          <div className={`mx-auto min-h-full w-full ${location.pathname === "/licensing" ? "" : "max-w-[1432px]"}`}>
             <Outlet />
           </div>
         </div>
