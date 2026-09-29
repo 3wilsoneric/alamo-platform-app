@@ -37,13 +37,14 @@ repeated page title, explanatory subtitle, or KPI strip.
   flag. If Pipeline has not published the required event slice, the interface
   says the field is incomplete and renders an em dash; it never turns missing
   coverage into a zero or estimate. The briefing is a page-by-page executive
-  deck rather than one long report. Summary, community, source, trend,
-  referral-detail, assessment, and move-in pages render one at a time with
-  direct page tabs plus Previous/Next controls. Communities and event lists
-  split into additional pages at fixed row limits, so complete data remains
-  flip-through without nested vertical scroll areas on desktop or mobile. The
-  live referral board begins directly below the deck and remains available when
-  the deck is collapsed.
+  deck rather than one long report. Its fixed six-topic navigation is Summary,
+  Communities, Sources, Trend, Assessments, and Move-ins. Previous/Next moves
+  between those executive topics. Row overflow is paged with small arrows inside
+  its owning topic instead of multiplying the top-level navigation into numbered
+  source, referral, or event tabs. Client-level referral review remains on the
+  Board below, avoiding a duplicate referral report inside the briefing. The live
+  referral board begins directly below the deck and remains available when the
+  deck is collapsed.
 - **Board inside Briefing** — the current governed referral update: Referral received, In
   progress, and Decision columns holding one card per referral. The columns use
   calm green, blue, and warm decision surfaces. Cards show client name,
