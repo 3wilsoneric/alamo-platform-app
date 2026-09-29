@@ -1350,3 +1350,21 @@ Revision `alamo-platform-prod-web--owner-access-0929` is Healthy/Running at
 `/assets/index-CNv--yTM.js`. Anonymous Licensing remained 401. A signed-in
 Chrome verification under Eric Wilson's production account confirmed both the
 Fifty States header destination and a working Licensing archive.
+
+### David and Angela Platform access — 2026-09-29
+
+David (`david@aaahealthservices.com`) and Angela
+(`angela@aaahealthservices.com`) were invited into the production Entra tenant
+as enabled guest users with the Platform login URL as their invitation return
+path. Their tenant-local object IDs are
+`d238e1f3-fb9d-40bc-a946-59540560bfb1` and
+`530b3414-ff80-4df1-92dc-24bf400c2de1`, respectively.
+
+Both identities are assigned the enabled `Alamo.Admissions.Supervisor` app role
+on the `Alamo-Health-Data-Platform` enterprise application. This role permits
+Admissions and the broader operating workspace; it does not add either user to
+the owner-only Fifty States or Licensing allowlists. The change is live Entra
+configuration and does not require a Container App image revision. Both guest
+objects remain `PendingAcceptance` until each user accepts Microsoft's emailed
+invitation. Production remained Healthy/Running at 100% traffic and
+`/healthz` returned 200 after the assignments.
