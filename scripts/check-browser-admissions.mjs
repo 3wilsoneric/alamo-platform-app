@@ -22,6 +22,7 @@ await withBrowserQa(async (browser) => {
   const briefingTab = surfaceNavigation.getByRole("tab", { name: "Briefing", exact: true });
   if (
     await surfaceNavigation.getByRole("tab").count() !== 2 ||
+    (await surfaceNavigation.getByRole("tab").allTextContents()).join("|") !== "Briefing|Pipeline" ||
     await pipelineTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-pipeline-page="true"]').count() !== 1 ||
     await page.locator('[data-admissions-briefing-page="true"]').count() !== 0
@@ -70,7 +71,9 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-pipeline-page="true"]').count() !== 0 ||
     await dashboard.locator("table").count() !== 0 ||
     await page.locator('[data-admissions-briefing-pager="true"]').count() !== 0 ||
-    await page.locator('[data-admissions-briefing-community]').count() < 5 ||
+    await page.locator('[data-admissions-briefing-community]').count() !== 5 ||
+    await page.locator('[data-admissions-briefing-community]').filter({ hasText: "Unassigned" }).count() !== 0 ||
+    await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
     await page.getByRole("heading", { name: "Where referrals are coming from" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
