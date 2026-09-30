@@ -361,7 +361,7 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
   if (viewport.width < 640) {
     const reportPicker = page.locator('[data-mobile-report-choice="true"]');
     await reportPicker.waitFor({ state: "visible", timeout: 5_000 });
-    assert((await reportPicker.inputValue()) === "overview", `${suffix} mobile report picker did not default to Portfolio overview`);
+    assert((await reportPicker.inputValue()) === "overview", `${suffix} mobile report picker did not default to Overview`);
   }
   await page
     .locator('[data-full-report]')

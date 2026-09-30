@@ -67,7 +67,7 @@ assert(
     reportsSource.includes("definitionValue.reports") &&
     reportsSource.includes("report.showInAnalyticsNav") &&
     reportsSource.includes('useState<FullReportId>("overview")'),
-  "the report library must use the server-owned visibility contract and open on Portfolio overview"
+  "the report library must use the server-owned visibility contract and open on Overview"
 );
 assert(
   !reportsSource.includes("Monday census briefing") &&

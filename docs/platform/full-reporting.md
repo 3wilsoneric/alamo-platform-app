@@ -27,7 +27,7 @@ Every report must:
 - omit columns and sections that have no usable values;
 - aggregate repeated source rows before presenting community comparisons;
 - keep named resident worklists out of portfolio-level population reports;
-- avoid repeating a focused report inside the portfolio overview;
+- avoid repeating a focused report inside the overview;
 - expose only periods covered by its required source slices;
 - show the snapshot update time and a visible stale-data warning when needed;
 - render in the app, at mobile width, and as a standalone printable artifact;
@@ -44,7 +44,7 @@ for release.
 
 | Report | Scope | Period rule | Purpose |
 | --- | --- | --- | --- |
-| Portfolio overview | Portfolio | Latest or census/incident/medication overlap | A concise cross-community operating comparison across census, current capacity, incidents, medication completion, resident flow when loaded, and current aggregate resident context |
+| Overview | Portfolio | Latest or census/incident/medication overlap | A concise cross-community operating comparison across census, current capacity, incidents, medication completion, resident flow when loaded, and current aggregate resident context |
 | Community performance report | One community | Census/incident/medication overlap | One community in full, including census, admissions and discharges, resident profile, incidents, medication performance, documentation coverage, capacity, and watch items |
 | Effectiveness evidence report (hidden until complete) | Portfolio or community, tailored to one supported audience | Latest or census/incident/medication overlap | In-development evidence case retained outside navigation until required external outcomes are governed and complete |
 | Census and resident flow | Portfolio or community | Every loaded census month | Selected-month census, a recent 12-month trend, full-history annual census context, and monthly and annual resident flow when loaded |
@@ -125,7 +125,7 @@ legacy events do not appear as part of a continuous operating trend.
 
 Current resident-profile, documentation, medication-burden, and weekly census
 measures appear only on current-state reports whose purpose requires them. The
-portfolio overview uses aggregate resident context and never reproduces named
+overview uses aggregate resident context and never reproduces named
 resident watchlists. A documentation coverage rate is shown only when every
 governed resident profile in scope has a matching status row. Resident medication
 burden likewise requires a matching MAR summary row for every governed resident

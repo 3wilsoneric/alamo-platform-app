@@ -506,7 +506,7 @@ textarea:focus-visible,
 
   [data-certified-question-header="true"] {
     margin-bottom: 14px !important;
-    padding: 14px 0 13px !important;
+    padding: 14px 16px 13px !important;
   }
 
   [data-certified-question-header="true"] button {
@@ -517,6 +517,7 @@ textarea:focus-visible,
   [data-certified-question-toolbar="true"] {
     display: grid !important;
     gap: 12px !important;
+    padding: 0 16px !important;
   }
 
   [data-certified-question-search-field="true"],
@@ -538,16 +539,16 @@ textarea:focus-visible,
   [data-certified-question-summary="true"] {
     min-height: 30px;
     margin-top: 10px !important;
-    padding-bottom: 9px;
+    padding: 0 16px 9px;
     border-bottom: 1px solid #d9d9d9;
   }
 
   [data-certified-question-results="true"] {
     display: grid !important;
-    gap: 10px !important;
+    gap: 0 !important;
     max-height: none !important;
     margin-top: 10px !important;
-    padding-right: 0 !important;
+    padding: 0 16px !important;
     overflow: visible !important;
     border: 0 !important;
   }
@@ -557,9 +558,10 @@ textarea:focus-visible,
     flex-direction: column;
     align-items: stretch;
     gap: 13px;
-    padding: 15px 14px !important;
-    border: 1px solid #d9d9d9 !important;
-    border-left: 3px solid #d9d9d9 !important;
+    padding: 16px 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid #d9d9d9 !important;
+    border-left: 3px solid transparent !important;
   }
 
   [data-certified-question-results="true"] [data-certified-question-button="true"]:focus-within {
@@ -605,6 +607,7 @@ textarea:focus-visible,
     color: #ffffff !important;
     font-size: 14px !important;
     font-weight: 650 !important;
+    border-radius: 10px !important;
   }
 
   [data-certified-question-submit="true"]:disabled {
@@ -616,6 +619,7 @@ textarea:focus-visible,
   [data-certified-question-pagination="true"] {
     gap: 10px !important;
     margin-top: 14px !important;
+    padding: 0 16px 16px !important;
   }
 
   [data-certified-question-pagination="true"] > div:last-child {
