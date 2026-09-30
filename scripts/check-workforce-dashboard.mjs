@@ -18,7 +18,8 @@ const payload = () => ({
     roles: [{ discipline: "psychiatric_technician", label: "Psych tech", totals: totals() }],
     openPositions: [{
       title: "Psych Tech - Nights", community: "San Pablo", discipline: "psychiatric_technician", roleLabel: "Psych tech",
-      openings: 3, openedOn: "2026-08-04", daysOpen: 56, phase1: 1, phase2: 1, phase3: 1
+      openings: 3, openedOn: "2026-08-04", daysOpen: 56, phase1: 1, phase2: 1, phase3: 1,
+      path: "/hiring?position=0f6b2c3e-9a1d-4c55-8e21-3b7d9f0a1c42"
     }],
     phaseNames: { 1: "Screening", 2: "Interview", 3: "Offer and clearance" }
   }
@@ -30,6 +31,12 @@ assert.equal(summary.workforceUrl, "https://workforce.example");
 assert.deepEqual(summary.phaseNames, ["Screening", "Interview", "Offer and clearance"]);
 assert.equal(summary.communities[0].totals.openRoles, 14);
 assert.equal(summary.openPositions[0].openings, 3);
+assert.equal(summary.openPositions[0].discipline, "psychiatric_technician");
+assert.equal(summary.openPositions[0].url, "https://workforce.example/hiring?position=0f6b2c3e-9a1d-4c55-8e21-3b7d9f0a1c42");
+// A path that could leave the Workforce origin is dropped rather than linked.
+const offsite = payload();
+offsite.overview.openPositions[0].path = "//evil.example/hiring?position=0f6b2c3e-9a1d-4c55-8e21-3b7d9f0a1c42";
+assert.equal(normalizeWorkforceSummary(offsite, "https://workforce.example").openPositions[0].url, null);
 // Only contract fields pass through; anything extra (for example a name) is dropped.
 const withExtra = payload();
 withExtra.overview.openPositions[0].hiringManager = "Should Not Appear";
@@ -65,8 +72,8 @@ assert.match(app, /path="\/workforce"/);
 assert.match(navigation, /id: "workforce", label: "Workforce", href: "\/workforce"/);
 assert.match(platformApi, /"\/api\/platform\/workforce-dashboard": \(\) => getWorkforceDashboardData\(\)/);
 assert.match(devApi, /\/api\/platform\/workforce-dashboard/);
-for (const heading of ["By community", "By role", "Applicants by phase", "Open roles"]) {
-  assert.ok(page.includes(heading), `Workforce page shows ${heading}`);
+for (const surface of ["Needs candidates", "Interviewing", "Ready to hire", "Staffing by community", "Filter by community", "Filter by role"]) {
+  assert.ok(page.includes(surface), `Workforce page shows ${surface}`);
 }
 
 console.log("Workforce dashboard contract checks passed.");

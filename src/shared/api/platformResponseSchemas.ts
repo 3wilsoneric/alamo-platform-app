@@ -583,7 +583,8 @@ function validateWorkforceDashboardPayload(value: unknown) {
   });
   assertArray(workforce.openPositions, endpoint, "workforce.openPositions").forEach((row, index) => {
     const record = assertRecord(row, endpoint, `workforce.openPositions[${index}]`);
-    ["title", "community", "roleLabel"].forEach((field) => assertString(record[field], endpoint, `workforce.openPositions[${index}].${field}`));
+    ["title", "discipline", "community", "roleLabel"].forEach((field) => assertString(record[field], endpoint, `workforce.openPositions[${index}].${field}`));
+    assertString(record.url, endpoint, `workforce.openPositions[${index}].url`, { nullable: true });
     ["openings", "daysOpen", "phase1", "phase2", "phase3"].forEach((field) => assertNumber(record[field], endpoint, `workforce.openPositions[${index}].${field}`));
   });
   return payload as unknown as WorkforceDashboardResponse;

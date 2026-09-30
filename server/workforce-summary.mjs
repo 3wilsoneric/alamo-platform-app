@@ -15,6 +15,8 @@ const TOTAL_FIELDS = Object.freeze([
   "expired", "expiring", "missing", "staffBlockedFromScheduling"
 ]);
 const POSITION_COUNT_FIELDS = Object.freeze(["openings", "daysOpen", "phase1", "phase2", "phase3"]);
+// A relative Workforce location for one role; no scheme, host, or traversal.
+const POSITION_PATH = /^\/hiring\?position=[0-9a-f-]{36}$/;
 
 /** @type {{ value: any, expiresAt: number, promise: Promise<any> | null }} */
 let cache = { value: null, expiresAt: 0, promise: null };
@@ -64,19 +66,21 @@ function normalizeRows(rows, maximum, nameOf) {
   return normalized.some((row) => row === null) ? null : normalized;
 }
 
-function normalizeOpenPosition(row) {
+function normalizeOpenPosition(row, workforceOrigin) {
   const title = text(row?.title, 160);
+  const discipline = text(row?.discipline, 60);
   const community = text(row?.community, 80);
   const roleLabel = text(row?.roleLabel, 80);
   const openedOn = isoCalendarDate(row?.openedOn);
-  if (!title || !community || !roleLabel || !openedOn) return null;
+  if (!title || !discipline || !community || !roleLabel || !openedOn) return null;
   const counts = {};
   for (const field of POSITION_COUNT_FIELDS) {
     const value = count(row[field]);
     if (value == null) return null;
     counts[field] = value;
   }
-  return { title, community, roleLabel, openedOn, ...counts };
+  const url = workforceOrigin && typeof row.path === "string" && POSITION_PATH.test(row.path) ? `${workforceOrigin}${row.path}` : null;
+  return { title, discipline, community, roleLabel, openedOn, url, ...counts };
 }
 
 /**
@@ -101,7 +105,7 @@ export function normalizeWorkforceSummary(payload, workforceOrigin = null) {
     return discipline && label ? { discipline, label } : null;
   });
   const positions = Array.isArray(overview.openPositions) && overview.openPositions.length <= MAX_OPEN_POSITIONS
-    ? overview.openPositions.map(normalizeOpenPosition)
+    ? overview.openPositions.map((row) => normalizeOpenPosition(row, workforceOrigin))
     : null;
   const phaseNames = [1, 2, 3].map((phase) => text(overview.phaseNames?.[String(phase)], 60));
   if (

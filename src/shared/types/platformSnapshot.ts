@@ -891,6 +891,8 @@ export interface WorkforceTotals {
 
 export interface WorkforceOpenPosition {
   title: string;
+  discipline: string;
+  url: string | null;
   community: string;
   roleLabel: string;
   openedOn: string;

@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 import {
   fetchWorkforceDashboard,
@@ -13,8 +13,25 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 
 type ConnectedWorkforce = Extract<WorkforceSummary, { status: "connected" }>;
+type ColumnKey = "sourcing" | "interviewing" | "hiring";
 
-const PHASE_COLORS = ["#8fc9b9", "#2f9d86", "#0b5f4f"] as const;
+// Columns are ordered by the action each role needs next, not by a funnel.
+const COLUMNS: Array<{ key: ColumnKey; label: string; empty: string }> = [
+  { key: "sourcing", label: "Needs candidates", empty: "Every open role has candidates in interviews or later" },
+  { key: "interviewing", label: "Interviewing", empty: "No roles are waiting on interview decisions" },
+  { key: "hiring", label: "Ready to hire", empty: "No candidates are in offer or clearance" }
+];
+
+// Same palette as the Admissions referral board so the two pages read as one system.
+const COLUMN_STYLE: Record<ColumnKey, { surface: string; border: string; accent: string }> = {
+  sourcing: { surface: "#fcf3ed", border: "#efd2bd", accent: "#b65318" },
+  interviewing: { surface: "#f0f3fc", border: "#d4dcf5", accent: "#365fc7" },
+  hiring: { surface: "#eef7f3", border: "#cde5d9", accent: "#257653" }
+};
+
+const PHASE_PIP = ["#b9dccf", "#4f9f86", "#1d5e4b"] as const;
+const MAX_SEATS = 60;
+const STALE_DAYS = 14;
 
 export default function WorkforcePage() {
   const [dashboard, setDashboard] = useState<WorkforceDashboardResponse | null>(readCachedWorkforceDashboard);
@@ -42,216 +59,325 @@ export default function WorkforcePage() {
       data-workforce-overview="true"
       className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-white px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
     >
-      <div className="mx-auto w-full max-w-[1540px] pt-5 sm:pt-7">
+      <div className="mx-auto w-full max-w-[1540px] pt-4 sm:pt-6">
+        <h1 className="sr-only">Workforce</h1>
         {connected ? (
-          <WorkforceOverview workforce={connected} />
+          <WorkforceBoard workforce={connected} />
         ) : loading ? (
           <p role="status" className="py-16 text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-[#737b77]">Loading workforce</p>
         ) : (
-          <>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-[#171918]">Workforce</h1>
-            <div role="alert" className="mt-6 rounded-xl border border-[#e4d1ca] bg-white px-4 py-8">
-              <p className="text-[14px] font-bold text-[#a04436]">
-                {loadFailed || workforce?.status === "unavailable"
-                  ? "Workforce data is temporarily unavailable."
-                  : "Workforce is not connected yet."}
-              </p>
-              <p className="mt-2 text-[12px] leading-5 text-[#737373]">
-                {workforce?.status === "not_connected"
-                  ? "Set WORKFORCE_SUMMARY_URL and WORKFORCE_SUMMARY_TOKEN on the Alamo server to show headcount, open roles, and applicants here."
-                  : "Alamo retries the Workforce feed automatically. The Workforce app itself remains available."}
-              </p>
-            </div>
-          </>
+          <div role="alert" className="rounded-xl border border-[#e4d1ca] bg-white px-4 py-8">
+            <p className="text-[14px] font-bold text-[#a04436]">
+              {loadFailed || workforce?.status === "unavailable"
+                ? "Workforce data is temporarily unavailable."
+                : "Workforce is not connected yet."}
+            </p>
+            <p className="mt-2 text-[12px] leading-5 text-[#737373]">
+              {workforce?.status === "not_connected"
+                ? "Set WORKFORCE_SUMMARY_URL and WORKFORCE_SUMMARY_TOKEN on the Alamo server to show hiring and staffing here."
+                : "Alamo retries the Workforce feed automatically. The Workforce app itself remains available."}
+            </p>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function WorkforceOverview({ workforce }: { workforce: ConnectedWorkforce }) {
-  const { portfolio } = workforce;
-  const openPositions = workforce.openPositions.length;
+function WorkforceBoard({ workforce }: { workforce: ConnectedWorkforce }) {
+  const [communities, setCommunities] = useState<Set<string>>(new Set());
+  const [roles, setRoles] = useState<Set<string>>(new Set());
+  const [mobileColumn, setMobileColumn] = useState<ColumnKey>("sourcing");
+
+  const roleOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    workforce.openPositions.forEach((position) => seen.set(position.discipline, position.roleLabel));
+    return [...seen].sort(([, a], [, b]) => a.localeCompare(b));
+  }, [workforce.openPositions]);
+
+  const positions = workforce.openPositions.filter((position) =>
+    (communities.size === 0 || communities.has(position.community)) &&
+    (roles.size === 0 || roles.has(position.discipline)));
+  const staffing = workforce.communities.filter((row) => communities.size === 0 || communities.has(row.community));
+
   return (
     <>
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[#dfe3e1] pb-5">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0f8b73]">Workforce</p>
-          <h1 className="mt-2 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-[#171918] sm:text-[34px]">
-            {portfolio.openRoles} open {pluralize("role", portfolio.openRoles)} · {portfolio.applicants} {pluralize("applicant", portfolio.applicants)} in the pipeline
-          </h1>
-          <p className="mt-2 text-[13px] leading-5 text-[#5f6762]">
-            {portfolio.active} active staff, {portfolio.onboarding} onboarding, {portfolio.onLeave} on leave across {workforce.communities.length} communities · as of {formatDate(workforce.asOf)}
-          </p>
+      <div className="mb-4 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 space-y-2">
+          <PillRow label="Filter by community">
+            <Pill active={communities.size === 0} onClick={() => setCommunities(new Set())}>All communities</Pill>
+            {workforce.communities.map(({ community }) => (
+              <Pill key={community} active={communities.has(community)} onClick={() => setCommunities(toggle(communities, community))}>{community}</Pill>
+            ))}
+          </PillRow>
+          <PillRow label="Filter by role">
+            <Pill active={roles.size === 0} onClick={() => setRoles(new Set())}>All roles</Pill>
+            {roleOptions.map(([discipline, label]) => (
+              <Pill key={discipline} active={roles.has(discipline)} onClick={() => setRoles(toggle(roles, discipline))}>{label}</Pill>
+            ))}
+          </PillRow>
         </div>
         {workforce.workforceUrl ? (
           <a
             href={workforce.workforceUrl}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#0f8b73] px-4 text-[13px] font-semibold text-white hover:bg-[#0c705f]"
+            className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-lg px-3.5 text-[12px] font-semibold text-[#145e48] hover:bg-[#e5f2ec]"
           >
             Open Workforce
             <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </a>
         ) : null}
-      </header>
+      </div>
 
-      <PhasePipeline phaseNames={workforce.phaseNames} totals={portfolio} />
+      <section aria-label="Hiring board" data-workforce-board="true">
+        <div className="mb-3 flex gap-1 overflow-x-auto lg:hidden" role="group" aria-label="Board column">
+          {COLUMNS.map((column) => (
+            <button
+              key={column.key}
+              type="button"
+              aria-pressed={mobileColumn === column.key}
+              onClick={() => setMobileColumn(column.key)}
+              className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3.5 text-[12px] font-medium ${mobileColumn === column.key ? "bg-[#e5f2ec] text-[#145e48]" : "text-[#59615c]"}`}
+            >
+              {column.label}
+              <span className="rounded-md bg-white px-1.5 py-0.5 text-[10px] font-semibold shadow-sm">{positions.filter((position) => columnFor(position) === column.key).length}</span>
+            </button>
+          ))}
+        </div>
 
-      <BreakdownSection
-        id="workforce-by-community"
-        title="By community"
-        rows={workforce.communities.map((row) => ({ key: row.community, name: row.community, totals: row.totals }))}
-        label="Community"
-      />
-
-      <BreakdownSection
-        id="workforce-by-role"
-        title="By role"
-        rows={workforce.roles.map((row) => ({ key: row.discipline, name: row.label, totals: row.totals }))}
-        label="Role"
-      />
-
-      <section className="mt-8" aria-labelledby="workforce-open-roles">
-        <SectionHeading id="workforce-open-roles" title="Open roles" count={openPositions} note={`${portfolio.openRoles} ${pluralize("opening", portfolio.openRoles)} in total`} />
-        {openPositions === 0 ? (
-          <p className="py-6 text-[12px] text-[#737b77]">No open roles right now.</p>
-        ) : (
-          <OpenRolesTable positions={workforce.openPositions} />
-        )}
+        <div className="grid items-start gap-4 lg:grid-cols-3">
+          {COLUMNS.map((column) => {
+            const cards = positions
+              .filter((position) => columnFor(position) === column.key)
+              .sort((a, b) => urgency(b) - urgency(a));
+            const style = COLUMN_STYLE[column.key];
+            return (
+              <section
+                key={column.key}
+                data-workforce-board-column={column.key}
+                className={`min-w-0 overflow-hidden rounded-2xl border ${mobileColumn === column.key ? "" : "hidden lg:block"}`}
+                style={{ backgroundColor: style.surface, borderColor: style.border }}
+              >
+                <header className="flex items-center gap-2.5 px-5 pb-4 pt-5">
+                  <h2 className="truncate text-[16px] font-semibold tracking-[-0.02em]">{column.label}</h2>
+                  <span className="shrink-0 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-[#3f4642] shadow-sm">{cards.length}</span>
+                </header>
+                {cards.length ? (
+                  <ul className="max-h-[720px] space-y-3 overflow-y-auto px-4 pb-4">
+                    {cards.map((position) => (
+                      <li key={`${position.title}|${position.community}|${position.openedOn}`}>
+                        <RoleCard position={position} phaseNames={workforce.phaseNames} accent={style.accent} />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="mx-4 mb-4 rounded-xl border border-dashed bg-white/55 px-4 py-10 text-center text-[12px] text-[#69716c]" style={{ borderColor: style.border }}>
+                    {column.empty}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
       </section>
+
+      <StaffingMap rows={staffing} workforceUrl={workforce.workforceUrl} />
     </>
   );
 }
 
-function PhasePipeline({ phaseNames, totals }: { phaseNames: [string, string, string]; totals: WorkforceTotals }) {
-  const phases = [totals.phase1, totals.phase2, totals.phase3];
-  return (
-    <section className="mt-6" aria-labelledby="workforce-phases">
-      <SectionHeading id="workforce-phases" title="Applicants by phase" count={totals.applicants} />
-      {totals.applicants > 0 ? (
-        <div className="flex h-3 overflow-hidden rounded-full bg-[#e8eeeb]" aria-hidden="true">
-          {phases.map((count, index) => (
-            <span key={index} style={{ width: `${(count / totals.applicants) * 100}%`, background: PHASE_COLORS[index] }} />
-          ))}
+function RoleCard({ position, phaseNames, accent }: { position: WorkforceOpenPosition; phaseNames: [string, string, string]; accent: string }) {
+  const action = nextAction(position);
+  const body = (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="block truncate text-[15px] font-semibold tracking-[-0.02em] text-[#171918]">{position.title}</span>
+          <span className="mt-1 block truncate text-[11px] text-[#69716c]">{position.community} · {position.roleLabel}</span>
         </div>
+        <span className="shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.06em]" style={{ borderColor: accent, color: accent }}>
+          {position.openings} {position.openings === 1 ? "opening" : "openings"}
+        </span>
+      </div>
+
+      <div className="mt-4 border-y border-[#edf0ee] py-3">
+        <CandidateSeats position={position} phaseNames={phaseNames} />
+      </div>
+
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <span className={`min-w-0 text-[11px] font-semibold leading-4 ${action.className}`}>{action.label}</span>
+        <span className="shrink-0 text-[10px] text-[#7b837f]">{position.daysOpen}d open</span>
+      </div>
+
+      {position.url ? (
+        <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#0f795f]">
+          Open role
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </span>
       ) : null}
-      <ol className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-        {phases.map((count, index) => (
-          <li key={index} className="flex items-center gap-2 text-[13px] text-[#374540]">
-            <span className="h-2.5 w-2.5 rounded-sm" style={{ background: PHASE_COLORS[index] }} aria-hidden="true" />
-            <span>Phase {index + 1} · {phaseNames[index]}</span>
-            <strong className="font-semibold tabular-nums text-[#171918]">{count}</strong>
-          </li>
-        ))}
-      </ol>
-    </section>
+    </>
+  );
+  const className = "group block w-full rounded-xl border border-[#dfe3e1] bg-white p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition hover:-translate-y-px hover:border-[#bfc9c3] hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]";
+  return position.url ? (
+    <a href={position.url} data-workforce-role-card="true" className={className} aria-label={`${position.title}, ${position.community}. ${action.label}. Open in Workforce`}>{body}</a>
+  ) : (
+    <div data-workforce-role-card="true" className={className}>{body}</div>
   );
 }
 
-function BreakdownSection({ id, title, label, rows }: { id: string; title: string; label: string; rows: Array<{ key: string; name: string; totals: WorkforceTotals }> }) {
+/** One square per candidate, shaded by phase, then a hollow square for each opening still uncovered. */
+function CandidateSeats({ position, phaseNames }: { position: WorkforceOpenPosition; phaseNames: [string, string, string] }) {
+  const phases = [position.phase1, position.phase2, position.phase3];
+  const candidates = phases.reduce((total, count) => total + count, 0);
+  const uncovered = Math.max(0, position.openings - candidates);
+  const description = phases.map((count, index) => `${count} in ${(phaseNames[index] ?? `phase ${index + 1}`).toLowerCase()}`).join(", ");
   return (
-    <section className="mt-8" aria-labelledby={id}>
-      <SectionHeading id={id} title={title} count={rows.length} />
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[860px] border-collapse text-left text-[13px]">
-          <thead>
-            <tr className="border-b-2 border-[#171918] text-[10px] font-bold uppercase tracking-[0.1em] text-[#374540]">
-              <th className="py-2 pr-4">{label}</th>
-              <Numeric>Active</Numeric>
-              <Numeric>Onboarding</Numeric>
-              <Numeric>On leave</Numeric>
-              <Numeric>Open roles</Numeric>
-              <Numeric>Applicants</Numeric>
-              <Numeric>Phase 1</Numeric>
-              <Numeric>Phase 2</Numeric>
-              <Numeric>Phase 3</Numeric>
-              <Numeric>Credentials current</Numeric>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ key, name, totals }) => (
-              <tr key={key} data-workforce-row={key} className="border-b border-[#e8ecea] hover:bg-[#f8faf9]">
-                <th scope="row" className="whitespace-nowrap py-3 pr-4 font-semibold text-[#263c35]">{name}</th>
-                <Numeric cell>{totals.active}</Numeric>
-                <Numeric cell>{totals.onboarding}</Numeric>
-                <Numeric cell>{totals.onLeave}</Numeric>
-                <Numeric cell strong={totals.openRoles > 0}>{totals.openRoles}</Numeric>
-                <Numeric cell>{totals.applicants}</Numeric>
-                <Numeric cell>{totals.phase1}</Numeric>
-                <Numeric cell>{totals.phase2}</Numeric>
-                <Numeric cell>{totals.phase3}</Numeric>
-                <Numeric cell>{Math.round(totals.complianceRate * 100)}%</Numeric>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div>
+      <div className="flex flex-wrap gap-1" role="img" aria-label={`${description}; ${uncovered} openings without a candidate`}>
+        {phases.flatMap((count, index) => Array.from({ length: count }, (_, pip) => (
+          <span key={`${index}-${pip}`} className="h-4 w-4 rounded-[4px]" style={{ backgroundColor: PHASE_PIP[index] }} />
+        )))}
+        {Array.from({ length: uncovered }, (_, pip) => (
+          <span key={`open-${pip}`} className="h-4 w-4 rounded-[4px] border-[1.5px] border-dashed border-[#b8c2bd] bg-white" />
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-[#5f6762]">
+        {phases.map((count, index) => count > 0 ? (
+          <span key={index} className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: PHASE_PIP[index] }} aria-hidden="true" />
+            {count} {(phaseNames[index] ?? `phase ${index + 1}`).toLowerCase()}
+          </span>
+        ) : null)}
+        {uncovered > 0 ? <span>{uncovered} {uncovered === 1 ? "opening" : "openings"} without a candidate</span> : null}
+      </div>
+    </div>
+  );
+}
+
+function StaffingMap({ rows, workforceUrl }: { rows: Array<{ community: string; totals: WorkforceTotals }>; workforceUrl: string | null }) {
+  return (
+    <section className="mt-8" aria-labelledby="workforce-staffing-title" data-workforce-staffing="true">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+        <h2 id="workforce-staffing-title" className="text-[17px] font-semibold tracking-[-0.02em] text-[#263c35]">Staffing by community</h2>
+        <SeatLegend />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {rows.map(({ community, totals }) => {
+          const blocked = Math.min(totals.staffBlockedFromScheduling, totals.active + totals.onboarding);
+          const working = totals.active + totals.onboarding - blocked;
+          // Large communities: one dot stands for several people so the map stays readable.
+          const perSeat = Math.max(1, Math.ceil((working + blocked + totals.onLeave + totals.openRoles) / MAX_SEATS));
+          const seats = (count: number) => (count > 0 ? Math.max(1, Math.round(count / perSeat)) : 0);
+          const action = blocked > 0
+            ? { label: `${blocked} can’t be scheduled`, detail: "Missing or expired credentials", href: workforceUrl && `${workforceUrl}/credentials?community=${encodeURIComponent(community)}`, className: "text-[#9a3f36]" }
+            : totals.openRoles > 0
+              ? { label: `${totals.openRoles} ${totals.openRoles === 1 ? "seat" : "seats"} to fill`, detail: `${totals.applicants} ${totals.applicants === 1 ? "candidate" : "candidates"} in the pipeline`, href: workforceUrl && `${workforceUrl}/hiring`, className: "text-[#b65318]" }
+              : { label: "Fully staffed", detail: "No open roles or scheduling blocks", href: null, className: "text-[#257653]" };
+          return (
+            <article key={community} data-workforce-community={community} className="rounded-xl border border-[#e0e6e2] bg-white p-4 shadow-[0_1px_0_rgba(19,45,37,0.03)]">
+              <h4 className="text-[13px] font-semibold text-[#263c35]">{community}</h4>
+              <div
+                className="mt-3 flex flex-wrap gap-1"
+                role="img"
+                aria-label={`${working} staff available, ${blocked} blocked from scheduling, ${totals.onLeave} on leave, ${totals.openRoles} open seats`}
+              >
+                {Seats(seats(blocked), "h-3.5 w-3.5 rounded-full bg-[#d98b3a]")}
+                {Seats(seats(working), "h-3.5 w-3.5 rounded-full bg-[#2f8f74]")}
+                {Seats(seats(totals.onLeave), "h-3.5 w-3.5 rounded-full bg-[#c9d0cc]")}
+                {Seats(seats(totals.openRoles), "h-3.5 w-3.5 rounded-full border-[1.5px] border-dashed border-[#b8c2bd]")}
+              </div>
+              {perSeat > 1 ? <p className="mt-1.5 text-[9px] text-[#7b837f]">Each dot is about {perSeat} people</p> : null}
+              <div className="mt-4 border-t border-[#edf0ee] pt-3">
+                {action.href ? (
+                  <a href={action.href} className={`group inline-flex items-center gap-1 text-[12px] font-semibold ${action.className} hover:underline`}>
+                    {action.label}
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </a>
+                ) : (
+                  <p className={`text-[12px] font-semibold ${action.className}`}>{action.label}</p>
+                )}
+                <p className="mt-1 text-[10px] text-[#737b77]">{action.detail}</p>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-function OpenRolesTable({ positions }: { positions: WorkforceOpenPosition[] }) {
+function SeatLegend() {
+  const items: Array<[string, string]> = [
+    ["h-2.5 w-2.5 rounded-full bg-[#2f8f74]", "Available"],
+    ["h-2.5 w-2.5 rounded-full bg-[#d98b3a]", "Can’t be scheduled"],
+    ["h-2.5 w-2.5 rounded-full bg-[#c9d0cc]", "On leave"],
+    ["h-2.5 w-2.5 rounded-full border-[1.5px] border-dashed border-[#b8c2bd]", "Open seat"]
+  ];
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[760px] border-collapse text-left text-[13px]">
-        <thead>
-          <tr className="border-b-2 border-[#171918] text-[10px] font-bold uppercase tracking-[0.1em] text-[#374540]">
-            <th className="py-2 pr-4">Role</th>
-            <th className="py-2 pr-4">Community</th>
-            <Numeric>Openings</Numeric>
-            <Numeric>Days open</Numeric>
-            <Numeric>Phase 1</Numeric>
-            <Numeric>Phase 2</Numeric>
-            <Numeric>Phase 3</Numeric>
-          </tr>
-        </thead>
-        <tbody>
-          {positions.map((position) => {
-            const applicants = position.phase1 + position.phase2 + position.phase3;
-            return (
-              <tr key={`${position.title}|${position.community}|${position.openedOn}`} className="border-b border-[#e8ecea] hover:bg-[#f8faf9]">
-                <td className="py-3 pr-4">
-                  <span className="font-semibold text-[#263c35]">{position.title}</span>
-                  <span className="block text-[11px] text-[#737b77]">
-                    {position.roleLabel}
-                    {applicants === 0 ? <span className="ml-2 font-semibold text-[#a04436]">No applicants yet</span> : null}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap py-3 pr-4 text-[#374540]">{position.community}</td>
-                <Numeric cell strong>{position.openings}</Numeric>
-                <Numeric cell>{position.daysOpen}</Numeric>
-                <Numeric cell>{position.phase1}</Numeric>
-                <Numeric cell>{position.phase2}</Numeric>
-                <Numeric cell>{position.phase3}</Numeric>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#5f6762]">
+      {items.map(([className, label]) => (
+        <li key={label} className="inline-flex items-center gap-1.5"><span className={className} aria-hidden="true" />{label}</li>
+      ))}
+    </ul>
+  );
+}
+
+function Seats(count: number, className: string) {
+  return Array.from({ length: count }, (_, index) => <span key={`${className}-${index}`} className={className} />);
+}
+
+function PillRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="-mx-3 flex min-w-0 flex-nowrap gap-2 overflow-x-auto overscroll-x-contain px-3 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0" role="group" aria-label={label}>
+      {children}
     </div>
   );
 }
 
-function SectionHeading({ id, title, count, note }: { id: string; title: string; count: number; note?: string }) {
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between gap-3">
-      <h2 id={id} className="text-[17px] font-semibold tracking-[-0.02em] text-[#263c35]">
-        {title} <span className="font-medium tabular-nums text-[#737b77]">{count}</span>
-      </h2>
-      {note ? <p className="text-[11px] text-[#737b77]">{note}</p> : null}
-    </div>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`inline-flex min-h-9 shrink-0 items-center rounded-full border px-3.5 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f795f] bg-[#e5f2ec] text-[#145e48]" : "border-[#d9dfdb] bg-white text-[#59615c] hover:border-[#9eb9ac] hover:bg-[#f7faf8]"}`}
+    >
+      {children}
+    </button>
   );
 }
 
-function Numeric({ children, cell = false, strong = false }: { children: ReactNode; cell?: boolean; strong?: boolean }) {
-  const className = `${cell ? "py-3" : "py-2"} pl-3 text-right tabular-nums ${strong ? "font-semibold text-[#171918]" : cell ? "text-[#374540]" : ""}`;
-  return cell ? <td className={className}>{children}</td> : <th className={className}>{children}</th>;
+function columnFor(position: WorkforceOpenPosition): ColumnKey {
+  if (position.phase3 > 0) return "hiring";
+  if (position.phase2 > 0) return "interviewing";
+  return "sourcing";
 }
 
-function pluralize(word: string, count: number) {
-  return count === 1 ? word : `${word}s`;
+/** Higher sorts first within a column: uncovered openings and age drive urgency. */
+function urgency(position: WorkforceOpenPosition) {
+  const candidates = position.phase1 + position.phase2 + position.phase3;
+  return Math.max(0, position.openings - candidates) * 100 + position.daysOpen;
 }
 
-function formatDate(isoDate: string) {
-  return new Date(`${isoDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+function nextAction(position: WorkforceOpenPosition) {
+  const candidates = position.phase1 + position.phase2 + position.phase3;
+  const short = Math.max(0, position.openings - candidates);
+  if (position.phase3 > 0) {
+    return { label: `${position.phase3} in offer and clearance: finish background, TB, and start date`, className: "text-[#257653]" };
+  }
+  if (position.phase2 > 0) {
+    return { label: `${position.phase2} interviewed: decide and extend offers${short ? `, and find ${short} more` : ""}`, className: "text-[#365fc7]" };
+  }
+  if (candidates === 0) {
+    return position.daysOpen >= STALE_DAYS
+      ? { label: `No applicants in ${position.daysOpen} days: repost or ask staff for referrals`, className: "text-[#9a3f36]" }
+      : { label: "No applicants yet: share the posting", className: "text-[#b65318]" };
+  }
+  return { label: `${position.phase1} to screen: schedule interviews${short ? `, and find ${short} more` : ""}`, className: "text-[#b65318]" };
+}
+
+function toggle(set: Set<string>, value: string) {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
 }

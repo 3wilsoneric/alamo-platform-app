@@ -15,17 +15,21 @@ spreadsheet or Paylocity data that feeds them.
 ## Alamo Workforce overview
 
 `/workforce` is available to signed-in Alamo workspace users, like Communities
-and Analytics. It shows:
+and Analytics. It follows the Admissions board pattern: every element says what
+to do next and links to the place to do it.
 
-- open roles and applicants in the pipeline, with headcount by employment status
-- applicants by hiring phase (Phase 1 Screening, Phase 2 Interview, Phase 3 Offer and clearance)
-- by community and by role: active, onboarding, and on-leave staff, open roles,
-  applicants per phase, and the share of credentials that are current
-- each open role: title, community, role, openings, days open, and applicants per phase
+- community and role filters
+- a hiring board of open roles in three action columns: Needs candidates,
+  Interviewing (Phase 2), and Ready to hire (Phase 3 offer and clearance). Each
+  card shows one square per candidate shaded by phase, a dashed square for each
+  opening without a candidate, the next action, and a link to that role in the
+  Workforce app
+- staffing by community: a seat map (available, can't be scheduled, on leave,
+  open seat) with a link to the community's credential gaps or open roles
 
-The overview carries counts and job titles only. It never receives staff or
-applicant names, emails, employee numbers, or record IDs. It links to the
-Workforce application for detail work and does not iframe it.
+The page shows no headline statistics or trend lines. It carries counts and job
+titles only, never staff or applicant names, emails, or employee numbers. It
+does not iframe the Workforce app.
 
 ## Workforce summary contract
 
@@ -42,7 +46,9 @@ server, never from the browser and never through Workforce's user APIs.
   `Alamo.Workforce.PlatformReader`. The producer contract is
   `docs/ALAMO_WORKFORCE_FEED.md` in the Workforce repository.
 - response: `schemaVersion` 1, `overview.asOf`, `portfolio`, `communities[]`,
-  `roles[]`, `openPositions[]`, and `phaseNames`. Communities use the short
+  `roles[]`, `openPositions[]` (each with a relative `path` such as
+  `/hiring?position=<id>`, which Alamo joins to the summary origin only when it
+  matches that exact shape), and `phaseNames`. Communities use the short
   names in `shared/community-names.mjs`.
 - validation: `server/workforce-summary.mjs` checks every field (integer
   counts, phases summing to applicants, ISO dates, bounded row counts) and
