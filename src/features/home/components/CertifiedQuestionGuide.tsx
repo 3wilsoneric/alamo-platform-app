@@ -81,7 +81,7 @@ function MobileQuestionVariables({
             value={selections[item.id]?.[variable.id] ?? ""}
             onClick={(event) => event.stopPropagation()}
             onChange={(event) => onSelectionChange(item.id, variable.id, event.currentTarget.value)}
-            className="min-h-11 w-full min-w-0 border border-[#bdbdbd] bg-white px-3 text-[16px] font-medium text-[#111111] outline-none focus:border-[#0f8b73]"
+            className="min-h-11 w-full min-w-0 rounded-lg border border-[#c7d3ce] bg-[#f7faf8] px-3 text-[16px] font-semibold text-[#243b36] outline-none transition-colors focus:border-[#0f8b73]"
           >
             <option value="">Choose {getPlaceholderText(variable)}</option>
             {getVariableOptions(variable).map((option) => (
@@ -390,7 +390,7 @@ export function CertifiedQuestionGuide({
   return (
     <div
       data-certified-question-guide="true"
-      className={`border border-[#d9d9d9] bg-white ${compact ? "p-3" : "p-4 sm:p-5"}`}
+      className={`border-x-0 border-b-0 border-t border-[#d9d9d9] bg-white sm:border ${compact ? "p-3" : "p-4 sm:p-5"}`}
     >
       <div
         data-certified-question-header="true"
@@ -410,7 +410,7 @@ export function CertifiedQuestionGuide({
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-11 w-11 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#0f8b73] hover:text-[#111111] sm:h-8 sm:w-8"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#0f8b73] hover:text-[#111111] sm:h-8 sm:w-8"
           aria-label="Close questions"
         >
           <X className="h-3.5 w-3.5" />
@@ -422,7 +422,7 @@ export function CertifiedQuestionGuide({
         </label>
         <div
           data-certified-question-search-field="true"
-          className="flex h-12 items-center gap-2.5 border border-[#bdbdbd] bg-white px-3 transition-colors focus-within:border-[#0f8b73] sm:h-11"
+          className="flex h-12 items-center gap-2.5 rounded-lg border border-[#c7d3ce] bg-[#f7faf8] px-3 transition-colors focus-within:border-[#0f8b73] focus-within:bg-white sm:h-11"
         >
           <Search className="h-4 w-4 shrink-0 text-[#595959]" />
           <input
@@ -447,7 +447,7 @@ export function CertifiedQuestionGuide({
             data-mobile-question-category="true"
             value={category}
             onChange={(event) => onCategoryChange(event.currentTarget.value)}
-            className="min-h-12 w-full border border-[#bdbdbd] bg-white px-3 text-[16px] font-semibold text-[#333333] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+            className="min-h-12 w-full rounded-lg border border-[#c7d3ce] bg-[#f7faf8] px-3 text-[16px] font-semibold text-[#243b36] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
           >
             {categoryOptions.map((option) => (
               <option key={option} value={option}>
@@ -497,7 +497,7 @@ export function CertifiedQuestionGuide({
 
       <div
         data-certified-question-results="true"
-        className={`mt-2 grid gap-2 border-y-0 border-[#d9d9d9] sm:gap-0 sm:border-y ${compact ? "max-h-[280px] overflow-y-auto sm:pr-1" : ""}`}
+        className={`mt-2 grid gap-0 border-y border-[#d9d9d9] ${compact ? "max-h-[280px] overflow-y-auto sm:pr-1" : ""}`}
       >
         {visibleResults.length ? visibleResults.map((item) => {
           const missingVariables = getMissingVariables(item, selections);
@@ -516,11 +516,11 @@ export function CertifiedQuestionGuide({
                   if (window.matchMedia("(max-width: 639px)").matches) return;
                   runItem(item);
                 }}
-                className="group grid w-full gap-3 border border-[#d9d9d9] bg-white px-3 py-4 text-left transition-colors hover:bg-[#f7fbf9] sm:flex sm:items-center sm:justify-between sm:border-x-0 sm:border-b sm:border-t-0 sm:px-2 sm:py-3.5 sm:last:border-b-0"
+                className="group grid w-full gap-3 border-x-0 border-b border-t-0 border-[#d9d9d9] bg-white px-1 py-4 text-left transition-colors hover:bg-[#f7fbf9] last:border-b-0 sm:flex sm:items-center sm:justify-between sm:px-2 sm:py-3.5"
               >
                 <div className="min-w-0 flex-1">
                   <div className="grid gap-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-baseline">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#737373]">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#0f7d69]">
                       {item.category}
                     </span>
                     <span data-certified-question-prompt-text="true" className="text-[16px] font-semibold leading-6 tracking-normal text-[#111111] sm:text-[15px]">
@@ -553,7 +553,7 @@ export function CertifiedQuestionGuide({
                     : "border-[#d9d9d9] bg-[#f7f7f7] text-[#8a8a8a] disabled:cursor-not-allowed sm:bg-white sm:text-[#bdbdbd]"
                   }`}
                 >
-                  <span className="sm:hidden">{canRun ? "Run question" : "Choose options to run"}</span>
+                  <span className="sm:hidden">{canRun ? "View answer" : "Choose options to continue"}</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
             </div>
@@ -588,7 +588,7 @@ export function CertifiedQuestionGuide({
               type="button"
               onClick={() => setPage((current) => Math.max(0, current - 1))}
               disabled={activePage === 0}
-              className="inline-flex min-h-11 items-center gap-2 border border-[#d9d9d9] bg-white px-3 text-[13px] font-semibold text-[#111111] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#d9d9d9] bg-white px-3 text-[13px] font-semibold text-[#111111] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               <span className="sm:hidden">Previous</span>
@@ -599,7 +599,7 @@ export function CertifiedQuestionGuide({
               onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
               disabled={activePage >= totalPages - 1}
               data-dark-action="true"
-              className="inline-flex min-h-11 items-center gap-2 border border-[#111111] bg-[#111111] px-3 text-[13px] font-semibold text-white transition-colors hover:border-[#0f8b73] hover:bg-[#0f8b73] disabled:cursor-not-allowed disabled:border-[#d9d9d9] disabled:bg-white disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#111111] bg-[#111111] px-3 text-[13px] font-semibold text-white transition-colors hover:border-[#0f8b73] hover:bg-[#0f8b73] disabled:cursor-not-allowed disabled:border-[#d9d9d9] disabled:bg-white disabled:text-[#a0a0a0] disabled:opacity-60 sm:min-h-9"
             >
               <span className="sm:hidden">Next</span>
               <span className="hidden sm:inline">Next page</span>

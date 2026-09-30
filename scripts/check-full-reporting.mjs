@@ -447,7 +447,7 @@ for (const invalidRequest of [
 }
 
 const overview = compileFullReportFromContext({ reportId: "overview" }, inputs);
-assert(overview.title === "Portfolio overview", "the report library must open on one live portfolio overview");
+assert(overview.title === "Overview", "the report library must open on one live overview");
 assert(
   overview.metrics.some(
     (metric) => metric.label === "Medication completion" && metric.value === "96.1%"

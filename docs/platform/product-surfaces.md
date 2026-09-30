@@ -352,7 +352,7 @@ Current secondary surfaces:
 - `/reports`: compatibility route for previously shared links; new navigation
   uses `/analytics`
 
-Analytics opens with the live Portfolio overview, then offers distinct
+Analytics opens with the live Overview, then offers distinct
 community, effectiveness, census-and-flow, incident, medication, and
 resident-population reports from the published snapshot. The effectiveness
 report changes its decision frame for county, state, managed-care, provider,

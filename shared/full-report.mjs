@@ -5,7 +5,7 @@ export const FULL_REPORT_VERSION = "governed-full-report-v1";
 export const FULL_REPORT_DEFINITIONS = Object.freeze([
   {
     id: "overview",
-    title: "Portfolio overview",
+    title: "Overview",
     cadence: "Current snapshot",
     audience: "Executive and operations",
     scope: "portfolio",
@@ -120,7 +120,7 @@ export function normalizeFullReportRequest(value = {}) {
     throw new Error("facilityId is required for a community report.");
   }
   if (reportId === "overview" && facilityId) {
-    throw new Error("The portfolio overview does not accept community scope.");
+    throw new Error("The overview does not accept community scope.");
   }
   if (reportId === "residents" && period) {
     throw new Error("The resident population report is current-state only.");

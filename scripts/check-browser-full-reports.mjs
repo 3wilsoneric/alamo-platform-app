@@ -8,7 +8,7 @@ import {
 } from "./browser-qa-utils.mjs";
 
 const reportFamilies = [
-  ["overview", "Portfolio overview"],
+  ["overview", "Overview"],
   ["census", "Census and resident flow"],
   ["incidents", "Incident report"],
   ["medications", "Medication performance report"],

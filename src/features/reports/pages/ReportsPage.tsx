@@ -1,4 +1,5 @@
 import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
+import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import FullReportReader from "../components/FullReportReader";
 import {
@@ -167,18 +168,24 @@ export default function ReportsPage({
             Choose an analysis to review.
           </p>
           <label className="mt-2 block lg:hidden" htmlFor="mobile-report-choice">
-            <span className="sr-only">Choose a report</span>
-            <select
-              id="mobile-report-choice"
-              data-mobile-report-choice="true"
-              value={selectedReportId}
-              onChange={(event) => selectReport(event.currentTarget.value as FullReportId)}
-              className="min-h-12 w-full rounded-none border border-[#bfd1cb] bg-[#eef4f1] px-3 font-sans text-base font-semibold text-[#315b54] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
-            >
-              {reportDefinitions.map((report) => (
-                <option key={report.id} value={report.id}>{report.title}</option>
-              ))}
-            </select>
+            <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">
+              Report
+            </span>
+            <span className="relative block">
+              <select
+                id="mobile-report-choice"
+                data-mobile-report-choice="true"
+                aria-label="Choose a report"
+                value={selectedReportId}
+                onChange={(event) => selectReport(event.currentTarget.value as FullReportId)}
+                className="min-h-12 w-full appearance-none rounded-lg border border-[#bfd1cb] bg-[#eef4f1] px-3 pr-10 font-sans text-base font-semibold text-[#315b54] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+              >
+                {reportDefinitions.map((report) => (
+                  <option key={report.id} value={report.id}>{report.title}</option>
+                ))}
+              </select>
+              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#315b54]" />
+            </span>
           </label>
           <div
             ref={reportLibraryRef}
@@ -219,54 +226,72 @@ export default function ReportsPage({
             <p className="max-w-[780px] font-sans text-[13px] leading-5 text-[#3f3f3f]">
               {selectedReport?.description ?? "Loading the governed analytics catalog."}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div data-report-filters="true" className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
               {supportsCommunityScope ? (
-                <select
-                  aria-label="Report community"
-                  value={selectedFacilityId}
-                  onChange={(event) => {
-                    setSelectedFacilityId(event.target.value);
-                    setSelectedPeriod("");
-                    setPeriodOptions([]);
-                  }}
-                  className="min-h-11 w-full min-w-0 sm:w-auto sm:min-w-[230px] border border-[#b3b3b3] bg-white px-3 py-2 text-base sm:text-sm font-medium outline-none focus:border-[#0f8b73]"
-                >
-                  {!requiresCommunityScope ? <option value="">All communities</option> : null}
-                  {(dashboard?.communities ?? []).map((community) => (
-                    <option key={community.facility_id} value={community.facility_id}>
-                      {ALAMO_FACILITIES.find((item) => item.facilityId === community.facility_id)?.shortName ?? community.community_name}
-                    </option>
-                  ))}
-                </select>
+                <label data-report-filter-field="community" className="block min-w-0 sm:min-w-[230px]">
+                  <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">Community</span>
+                  <span className="relative block">
+                    <select
+                      aria-label="Report community"
+                      value={selectedFacilityId}
+                      onChange={(event) => {
+                        setSelectedFacilityId(event.target.value);
+                        setSelectedPeriod("");
+                        setPeriodOptions([]);
+                      }}
+                      className="min-h-11 w-full min-w-0 appearance-none rounded-lg border border-[#c7d3ce] bg-[#f7faf8] px-3 pr-9 text-base font-semibold text-[#243b36] outline-none transition-colors focus:border-[#0f8b73] sm:text-sm"
+                    >
+                      {!requiresCommunityScope ? <option value="">All communities</option> : null}
+                      {(dashboard?.communities ?? []).map((community) => (
+                        <option key={community.facility_id} value={community.facility_id}>
+                          {ALAMO_FACILITIES.find((item) => item.facilityId === community.facility_id)?.shortName ?? community.community_name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4f625d]" />
+                  </span>
+                </label>
               ) : null}
               {supportsPeriod ? (
-                <select
-                  aria-label="Report period"
-                  value={selectedPeriod}
-                  onChange={(event) => setSelectedPeriod(event.target.value)}
-                  className="min-h-11 w-full min-w-0 sm:w-auto sm:min-w-[170px] border border-[#b3b3b3] bg-white px-3 py-2 text-base sm:text-sm font-medium outline-none focus:border-[#0f8b73]"
-                >
-                  <option value="">Latest governed period</option>
-                  {periodOptions.map((period) => (
-                    <option key={period} value={period}>
-                      {formatMonthLabel(period, { fallback: period })}
-                    </option>
-                  ))}
-                </select>
+                <label data-report-filter-field="period" className="block min-w-0 sm:min-w-[190px]">
+                  <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">Period</span>
+                  <span className="relative block">
+                    <select
+                      aria-label="Report period"
+                      value={selectedPeriod}
+                      onChange={(event) => setSelectedPeriod(event.target.value)}
+                      className="min-h-11 w-full min-w-0 appearance-none rounded-lg border border-[#c7d3ce] bg-[#f7faf8] px-3 pr-9 text-base font-semibold text-[#243b36] outline-none transition-colors focus:border-[#0f8b73] sm:text-sm"
+                    >
+                      <option value="">Latest available period</option>
+                      {periodOptions.map((period) => (
+                        <option key={period} value={period}>
+                          {formatMonthLabel(period, { fallback: period })}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4f625d]" />
+                  </span>
+                </label>
               ) : null}
               {audienceOptions.length ? (
-                <select
-                  aria-label="Report audience"
-                  value={selectedAudience || audienceOptions[0]?.id || ""}
-                  onChange={(event) => setSelectedAudience(event.target.value)}
-                  className="min-h-11 w-full min-w-0 sm:w-auto sm:min-w-[230px] border border-[#b3b3b3] bg-white px-3 py-2 text-base sm:text-sm font-medium outline-none focus:border-[#0f8b73]"
-                >
-                  {audienceOptions.map((audience) => (
-                    <option key={audience.id} value={audience.id}>
-                      {audience.label}
-                    </option>
-                  ))}
-                </select>
+                <label data-report-filter-field="audience" className="block min-w-0 sm:min-w-[230px]">
+                  <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">Audience</span>
+                  <span className="relative block">
+                    <select
+                      aria-label="Report audience"
+                      value={selectedAudience || audienceOptions[0]?.id || ""}
+                      onChange={(event) => setSelectedAudience(event.target.value)}
+                      className="min-h-11 w-full min-w-0 appearance-none rounded-lg border border-[#c7d3ce] bg-[#f7faf8] px-3 pr-9 text-base font-semibold text-[#243b36] outline-none transition-colors focus:border-[#0f8b73] sm:text-sm"
+                    >
+                      {audienceOptions.map((audience) => (
+                        <option key={audience.id} value={audience.id}>
+                          {audience.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4f625d]" />
+                  </span>
+                </label>
               ) : null}
             </div>
           </div>
