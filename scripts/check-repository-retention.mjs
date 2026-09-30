@@ -13,6 +13,7 @@ const rootFiles = new Set([
   "AGENTS.md",
   "Dockerfile.acquisition-overlay",
   "Dockerfile.admissions-briefing-release",
+  "Dockerfile.admissions-county-release",
   "Dockerfile.admissions-identity-release",
   "Dockerfile.workforce-release",
   "Dockerfile.frontend-rebase",

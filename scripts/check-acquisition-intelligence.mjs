@@ -1643,8 +1643,8 @@ const [
   readFile(path.join(root, "scripts/publish-acquisition-intelligence.mjs"), "utf8")
 ]);
 
-assert(pageSource.includes("fetchAcquisitionOverview"), "Fifty States must discover owner access through the protected API");
-assert(pageSource.includes("Acquisition intelligence"), "Fifty States is missing the acquisition workspace control");
+assert(pageSource.includes("fetchAcquisitionOverview"), "Outreach must discover owner access through the protected API");
+assert(pageSource.includes("Acquisition intelligence"), "Outreach is missing the acquisition workspace control");
 assert(workspaceSource.includes("Private operator screen"), "the visible company-level operator screen is missing");
 assert(workspaceSource.includes("data-acquisition-operator-screen"), "the operator screen needs a stable UI contract");
 assert(workspaceSource.includes("fetchAcquisitionOperators"), "the visible screen must use the persistent parent-company index");

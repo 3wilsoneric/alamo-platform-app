@@ -1330,7 +1330,7 @@ representations, not only their source files.
 Eric Wilson's existing tenant-local Entra object ID now joins Betty Dominici
 and Raj Thandi on the explicit Licensing allowlist. The same verified owner ID
 already protects the private Knowledge and Acquisition APIs; the shared browser
-navigation now exposes Fifty States only to that identity. No role, tenant
+navigation now exposes Outreach only to that identity. No role, tenant
 assignment, service principal, or access for any other account is expanded.
 
 The release is prepared with `scripts/prepare-licensing-release.mjs` on the
@@ -1349,7 +1349,7 @@ Revision `alamo-platform-prod-web--owner-access-0929` is Healthy/Running at
 4/4, and identity plus gzip HTML both referenced
 `/assets/index-CNv--yTM.js`. Anonymous Licensing remained 401. A signed-in
 Chrome verification under Eric Wilson's production account confirmed both the
-Fifty States header destination and a working Licensing archive.
+Outreach header destination and a working Licensing archive.
 
 ### David and Angela Platform access — 2026-09-29
 
@@ -1363,7 +1363,7 @@ path. Their tenant-local object IDs are
 Both identities are assigned the enabled `Alamo.Admissions.Supervisor` app role
 on the `Alamo-Health-Data-Platform` enterprise application. This role permits
 Admissions and the broader operating workspace; it does not add either user to
-the owner-only Fifty States or Licensing allowlists. The change is live Entra
+the owner-only Outreach or Licensing allowlists. The change is live Entra
 configuration and does not require a Container App image revision. Both guest
 objects remain `PendingAcceptance` until each user accepts Microsoft's emailed
 invitation. Production remained Healthy/Running at 100% traffic and
@@ -1466,4 +1466,3 @@ The revision is Healthy/Running at 100% traffic. `/`, `/home`, `/admissions`,
 and `/workforce` return 200; platform APIs still reject anonymous callers; the
 server log shows a clean start. Not included: the unpushed
 `codex/admissions-county-outreach` branch, which was not released.
-

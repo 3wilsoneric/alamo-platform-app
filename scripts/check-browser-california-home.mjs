@@ -666,10 +666,10 @@ async function main() {
       fullPage: false
     });
     if (await page.getByRole("button", { name: /50-state targeting atlas/i }).count()) {
-      throw new Error("The direct-URL-only 50-state atlas returned to Analytics navigation.");
+      throw new Error("The direct-URL-only Outreach workspace returned to Analytics navigation.");
     }
-    await page.goto(`${BASE_URL}/fiftystate`, { waitUntil: "domcontentloaded" });
-    await page.waitForURL((url) => url.pathname === "/fiftystate", {
+    await page.goto(`${BASE_URL}/outreach`, { waitUntil: "domcontentloaded" });
+    await page.waitForURL((url) => url.pathname === "/outreach", {
       timeout: 5_000
     });
     await page

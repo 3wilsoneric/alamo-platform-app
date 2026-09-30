@@ -9,7 +9,7 @@ import IncidentCenterPage from "../features/incidents/pages/IncidentCenterPage";
 import CommandCenterPage from "../features/command-center/pages/CommandCenterPage";
 import GlossaryPage from "../features/glossary/pages/GlossaryPage";
 import DataExplorerPage from "../features/explorer/pages/DataExplorerPage";
-import FiftyStatePage from "../features/fiftystate/pages/FiftyStatePage";
+import OutreachPage from "../features/fiftystate/pages/FiftyStatePage";
 import CaliforniaHomePage from "../features/california/pages/CaliforniaHomePage";
 import DataArchitecturePage from "../features/architecture/pages/DataArchitecturePage";
 import AdmissionsPage from "../features/admissions/pages/AdmissionsPage";
@@ -37,6 +37,11 @@ function withRouteBoundary(node: ReactNode) {
 function LegacyLicensingRedirect() {
   const location = useLocation();
   return <Navigate to={`/analytics/licensing${location.search}${location.hash}`} replace />;
+}
+
+function LegacyOutreachRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/outreach${location.search}${location.hash}`} replace />;
 }
 
 export default function App() {
@@ -71,7 +76,8 @@ export default function App() {
         <Route path="/command-center" element={withRouteBoundary(<CommandCenterPage />)} />
         <Route path="/analytics/licensing" element={withRouteBoundary(<LicensingPage />)} />
         <Route path="/licensing" element={<LegacyLicensingRedirect />} />
-        <Route path="/fiftystate" element={withRouteBoundary(<FiftyStatePage />)} />
+        <Route path="/outreach" element={withRouteBoundary(<OutreachPage />)} />
+        <Route path="/fiftystate" element={<LegacyOutreachRedirect />} />
         <Route
           path="/data-architecture"
           element={withRouteBoundary(<DataArchitecturePage />)}

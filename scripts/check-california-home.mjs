@@ -41,7 +41,7 @@ requireText(
   "California home does not defer report loading until the pre-mounted Analytics panel is active"
 );
 if (/reports\/fiftystate/.test(app) || /reports\/fiftystate/.test(page)) {
-  failures.push("the 50-state atlas is still nested under the legacy reports route");
+  failures.push("Outreach is still nested under the legacy reports route");
 }
 requireText(
   page,

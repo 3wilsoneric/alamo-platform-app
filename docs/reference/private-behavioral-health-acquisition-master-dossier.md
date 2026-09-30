@@ -12,7 +12,7 @@
   - [Adult Behavioral-Health Residential Pivot and Acquisition Thesis](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/adult-behavioral-health-residential-pivot-acquisition-thesis.md)
 
 **As of:** September 9, 2026\
-**Access:** Owner-only inside the protected Fifty States acquisition workspace\
+**Access:** Owner-only inside the protected Outreach acquisition workspace\
 **Geography:** United States excluding California\
 **Primary object:** Operating parent company, with brands, legal entities, facilities, programs, licenses, capacity claims, states, sources, and contradictions linked beneath it\
 **Primary target:** Private adult, 24-hour, non-hospital residential behavioral-health operators treating serious or high-acuity primary mental illness, including hospital-diversion and step-down populations\
@@ -379,9 +379,9 @@ Do not label a company high confidence until all four statements are true:
 - Tennessee verifies BrightQuest's two addresses but not their licensed capacity.
 - Pyramid's >80 current locations and broad 1,000+ historical capacity signal require sponsor verification and service-by-service segmentation.
 
-## 11. Fifty States product and research workflow
+## 11. Outreach product and research workflow
 
-The acquisition workspace is an owner-only module within Fifty States. Its local/private acquisition datastore is separate from patient data, deploys inside the same Alamo Platform Azure environment, and remains searchable by parent, brand, state, capacity band, fit, maturity, payer signal, ownership confidence, decision, and research stage.
+The acquisition workspace is an owner-only module within Outreach. Its local/private acquisition datastore is separate from patient data, deploys inside the same Alamo Platform Azure environment, and remains searchable by parent, brand, state, capacity band, fit, maturity, payer signal, ownership confidence, decision, and research stage.
 
 The governed stages are:
 
@@ -521,7 +521,7 @@ Current outputs are assumption-driven and may value only a partial evidenced bed
 
 ## 15. Immediate next steps
 
-1. Use the existing Fifty States filters to select and freeze the first 50–100-company owner cohort.
+1. Use the existing Outreach filters to select and freeze the first 50–100-company owner cohort.
 2. Start with the 20-company mature priority list above plus chosen state or specialty additions.
 3. Build license-level facility maps for the highest-priority states: Pennsylvania and Georgia first; Tennessee and Florida second.
 4. Complete current parent-wide bed sums for Odyssey, Advanced Recovery Systems, Discovery's adult segment, RCA, Banyan, Boca, Northpoint, Haven, Gain/WhiteSands, Avenues, Bradford, and Meadows.

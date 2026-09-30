@@ -10,7 +10,7 @@ const PLATFORM_PAGES = [
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
   { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true },
-  { id: "fiftystate", label: "Outreach", href: "/fiftystate", ownerOnly: true }
+  { id: "outreach", label: "Outreach", href: "/outreach", ownerOnly: true }
 ];
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
@@ -19,7 +19,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
     ? "analytics"
     : pathname.startsWith("/admissions") ? "admissions"
       : pathname.startsWith("/workforce") ? "workforce"
-      : pathname.startsWith("/fiftystate") ? "fiftystate"
+      : pathname.startsWith("/outreach") || pathname.startsWith("/fiftystate") ? "outreach"
       : pathname === "/" || pathname.startsWith("/home") || pathname.startsWith("/communities") ? "home" : "";
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
