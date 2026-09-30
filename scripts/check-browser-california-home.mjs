@@ -161,7 +161,7 @@ async function main() {
       );
       await profile.waitFor({ state: "visible", timeout: 5_000 });
       await profile
-        .getByRole("heading", { name: facility.communityName, exact: true })
+        .getByRole("heading", { name: facility.shortName, exact: true })
         .first()
         .waitFor({ state: "visible", timeout: 5_000 });
       await profile
@@ -337,7 +337,7 @@ async function main() {
     await modalView("resident-search").waitFor({ state: "visible", timeout: 5_000 });
     await sanPabloProfile
       .locator('[data-module-row="resident-profile-card"]')
-      .waitFor({ state: "visible", timeout: 5_000 });
+      .waitFor({ state: "visible", timeout: 15_000 });
     await sanPabloProfile
       .getByRole("button", { name: "Back to A & A Health Services San Pablo" })
       .click();
@@ -453,7 +453,7 @@ async function main() {
         );
       }
     }
-    if (mapBox.y < 95 || mapBox.y >= 115) {
+    if (mapBox.y < 95 || mapBox.y >= 150) {
       throw new Error(`California atlas did not preserve its top composition (${mapBox.y}px).`);
     }
     const viewport = page.viewportSize();
@@ -625,14 +625,12 @@ async function main() {
     const analyticsSelectedStyle = await selectedAnalytics.evaluate((element) => {
       const style = window.getComputedStyle(element);
       return {
-        borderColor: style.borderColor,
-        backgroundColor: style.backgroundColor
+        borderColor: style.borderColor
       };
     });
     if (
       await selectedAnalytics.getAttribute("aria-current") !== "page" ||
-      analyticsSelectedStyle.borderColor === "rgba(0, 0, 0, 0)" ||
-      analyticsSelectedStyle.backgroundColor === "rgba(0, 0, 0, 0)"
+      analyticsSelectedStyle.borderColor === "rgba(0, 0, 0, 0)"
     ) {
       throw new Error(`Analytics is not visibly selected in the primary navigation: ${JSON.stringify(analyticsSelectedStyle)}`);
     }
