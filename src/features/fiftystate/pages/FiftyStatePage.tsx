@@ -185,7 +185,7 @@ export default function FiftyStatePage({ embedded = false }: { embedded?: boolea
       </header>
 
       {acquisitionOverview ? (
-        <nav aria-label="Fifty States workspace" className="flex border-b border-[#b3b3b3]">
+        <nav aria-label="Outreach workspace" className="flex border-b border-[#b3b3b3]">
           <button
             type="button"
             aria-pressed={view === "markets"}

@@ -10,7 +10,7 @@ const PLATFORM_PAGES = [
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
   { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true },
-  { id: "fiftystate", label: "Fifty States", href: "/fiftystate", ownerOnly: true }
+  { id: "fiftystate", label: "Outreach", href: "/fiftystate", ownerOnly: true }
 ];
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
