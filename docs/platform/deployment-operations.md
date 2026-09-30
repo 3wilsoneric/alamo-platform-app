@@ -1486,3 +1486,33 @@ The revision is Healthy/Running at 100% traffic and the public production smoke
 suite passes 4/4. A signed-in Chrome verification confirmed the Outreach
 navigation destination, workspace heading, canonical URL, and legacy redirect.
 Desktop and 390px local browser checks passed without horizontal overflow.
+
+### Mobile platform polish — 2026-09-30
+
+The signed-in phone experience now uses a full-height primary menu with
+touch-sized destinations. The Communities landing page distributes its five
+rows across the available viewport instead of leaving a dead lower half.
+Admissions keeps the same governed content while presenting a denser phone
+brief: census cards omit unavailable activity lines, county outreach opens as
+two summary-first disclosures, and empty or incomplete weekly schedules no
+longer reserve desktop-height panels. Workforce empty action lists follow the
+same compact phone treatment. Desktop layouts and data contracts are unchanged.
+
+- source PR: `#83`; merge commit: `be63f3cd9ac754bc9127724aefa1a04eb03e0b40`
+- ACR build: `cc4j`
+- image: `alamo-platform@sha256:ea53b038166663980d50967515913ea4141db9590c106c1e292477c3db5001fa` (tag `mobile-polish-be63f3c`)
+- active revision: `alamo-platform-prod-web--mobile-polish-0930`
+- rollback image: `alamo-platform@sha256:05713cac42d4e6e28fa5484c8ad82f759d3a36bb73fc4c61c3883784a8a29778`
+- active browser asset: `/assets/index-DspIFtyv.js` (identity, gzip, and Brotli)
+
+The revision is Healthy/Running at 100% traffic and the public production smoke
+suite passes 4/4. Local phone QA passed at 390 and 320 pixels for Communities,
+the community profile, resident search/profile, Analytics, governed questions,
+Admissions, and Outreach. Signed-in production verification at 390 by 844
+pixels measured zero horizontal overflow, a 60-to-844-pixel full-height menu,
+64-pixel menu rows, a 784-pixel Communities workspace, and two collapsed
+county disclosures that both retain their verified detail. The broad analyst
+suite passed its source, registry, live-decision, intent, module, and transition
+stages before a transient Azure identity network error interrupted the unrelated
+long context-fuzz stage; the focused mobile, Admissions, Workforce, type, docs,
+and production-build gates all passed.
