@@ -181,12 +181,17 @@ assert(
   buyerSprint.recommended_next_actions.length === 5,
   "buyer sprint must retain five next actions"
 );
-assert(appSource.includes('path="/fiftystate"'), "the /fiftystate route is not registered");
+assert(appSource.includes('path="/outreach"'), "the /outreach route is not registered");
 assert(
   appSource.includes(
-    'import FiftyStatePage from "../features/fiftystate/pages/FiftyStatePage"'
+    'import OutreachPage from "../features/fiftystate/pages/FiftyStatePage"'
   ),
-  "the authenticated atlas route must remain statically registered"
+  "the authenticated Outreach route must remain statically registered"
+);
+assert(
+  appSource.includes('<Route path="/fiftystate" element={<LegacyOutreachRedirect />} />') &&
+    appSource.includes('to={`/outreach${location.search}${location.hash}`}'),
+  "the retired /fiftystate URL must redirect to /outreach"
 );
 assert(!appSource.includes("lazy("), "registered routes must not use React.lazy");
 assert(

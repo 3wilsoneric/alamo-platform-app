@@ -41,7 +41,7 @@ The phrase “buy versus pivot” hides three materially different transactions.
 
 The first acquisition should usually be Strategy A or a strong hybrid: a functioning core business with a bounded adjacent conversion opportunity. A pure pivot as the first deal forces the buyer to learn a new state, new level of care, new payer product, and new clinical operating model simultaneously. That is a concentration of unpriced risks, not a discount.
 
-For the current Fifty States universe, the practical allocation rule should be:
+For the current Outreach universe, the practical allocation rule should be:
 
 - maintain a **core-acquisition lane** for existing adult psychiatric residential and step-down operators;
 - maintain a separate **pivot-platform lane** for mature adult SUD/co-occurring and lower-acuity adult-MH companies;
@@ -196,7 +196,7 @@ Why it is attractive:
 - the license definition closely matches the desired adult high-acuity, non-hospital step-down product;
 - admission pathways are tied to hospitals and psychiatrists rather than general housing demand;
 - the rule allows charges and private agreements and excludes state/local public beds from the ARMHP definition;
-- the current Fifty States evidence already contains regulator-verified adult ARMHP capacity, proving that private operators are obtaining this license.[^9]
+- the current Outreach evidence already contains regulator-verified adult ARMHP capacity, proving that private operators are obtaining this license.[^9]
 
 What can break the thesis:
 
@@ -455,7 +455,7 @@ A candidate should not advance as a high-fit pivot target if any of the followin
 | **High** | Exact license/service crosswalk, written CHOW/service-change path, facility plans, payer contract/rate or binding process, collected claims, validated staffing model, current quality record |
 | **Transaction-ready** | High-confidence evidence plus confirmed relevant-bed count, facility-level conversion plan, responsible executive, milestone calendar, and bounded operating risks |
 
-## 10. Changes to the Fifty States data model
+## 10. Changes to the Outreach data model
 
 Preserve the current parent-company funnel and add a separate strategy layer. Do not overwrite `core_fit`, current license, current capacity, or current payer signal with the desired future state.
 

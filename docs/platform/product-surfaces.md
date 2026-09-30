@@ -313,7 +313,7 @@ Command Center is a platform operations surface, not a general dashboard.
 Current secondary surfaces:
 
 - `/glossary`: platform definitions
-- `/fiftystate`: market-research atlas that opens on the 15 states with verified
+- `/outreach`: market-research workspace that opens on the 15 states with verified
   demand research and preserves all 50 through an explicit national view. The
   map is a navigation surface, not a synthetic heat score. Every state profile combines
   a consistently defined state-operated psychiatric-bed baseline with the

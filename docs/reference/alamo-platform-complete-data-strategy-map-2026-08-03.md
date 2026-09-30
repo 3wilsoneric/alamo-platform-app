@@ -136,7 +136,7 @@ Publication is expected to be atomic. A failed or oversized package must not rep
 | `/glossary` | Metric glossary | Definitions and interpretation |
 | `/explorer/:kind` | Data Explorer/support surface | Bounded tabular detail for approved kinds |
 | `/command-center` | Command Center | Health, QA, snapshot, and operational diagnostics |
-| `/fiftystate` | State targeting atlas | National governance, demand, buyer, and opportunity research |
+| `/outreach` | Outreach | National governance, demand, buyer, and opportunity research |
 | `/data-architecture` | Data architecture | Data lineage, coverage, and strategic gaps |
 | unknown path | Redirect to `/home` | Fail-safe navigation |
 
@@ -1344,7 +1344,7 @@ The repository has dedicated checks for:
 - answer format, contract, quality, and data depth;
 - weekly analysis and ElderMark date parsing;
 - report catalog and all seven report compilers;
-- 50-state atlas;
+- Outreach;
 - community, MAR, Data Explorer, question, report, mobile, scroll, performance, and production browser journeys;
 - release and ship profiles.
 
@@ -1424,7 +1424,7 @@ Release-grade verification also uses `npm run check:release` or `npm run check:s
 - `src/features/communities/data/communityModels.ts`
 - `src/features/communities/data/communitySurfaceModels.ts`
 
-### Fifty-state research
+### Outreach research
 
 - `src/features/fiftystate/data/stateTargetingData.ts`
 - `src/features/fiftystate/data/stateResearchData.ts`

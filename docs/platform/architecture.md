@@ -84,8 +84,11 @@ Current protected routes:
 - `/explorer/:kind`: full-screen governed incident, census, or resident data.
 - `/glossary`: definitions and metric support.
 - `/command-center`: platform health, analyst QA, intent compiler workbench.
-- `/fiftystate`: national market research plus an owner-only private-acquisition
+- `/outreach`: national market research plus an owner-only private-acquisition
   research and valuation view.
+
+The retired `/fiftystate` URL redirects to `/outreach` so saved links continue
+to work; it is not a second product surface.
 
 Unknown paths redirect to `/home`; retired product routes are not maintained as separate aliases.
 

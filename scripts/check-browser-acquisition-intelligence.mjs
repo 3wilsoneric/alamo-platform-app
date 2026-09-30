@@ -20,7 +20,7 @@ await withBrowserQa(async (browser) => {
     requestFailures.push({ url: response.url(), failure: `HTTP ${response.status()}` });
   });
 
-  await page.goto(`${BASE_URL}/fiftystate`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/outreach`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-fifty-state-page="true"]').waitFor();
   await page.getByRole("heading", { name: "Market map" }).waitFor();
 
@@ -222,7 +222,7 @@ await withBrowserQa(async (browser) => {
 
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const mobilePage = await mobileContext.newPage();
-  await mobilePage.goto(`${BASE_URL}/fiftystate`, { waitUntil: "domcontentloaded" });
+  await mobilePage.goto(`${BASE_URL}/outreach`, { waitUntil: "domcontentloaded" });
   await mobilePage.getByRole("button", { name: "Acquisition intelligence" }).click();
   await mobilePage.locator('[data-acquisition-operator-screen="true"]').waitFor();
   await mobilePage.getByRole("heading", { name: "Private operator screen" }).waitFor();

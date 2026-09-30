@@ -57,8 +57,9 @@ page. Expand one of these reports when its purpose already covers the requested
 analysis. Add a new family only when it has a distinct audience, source
 contract, and operating decision.
 
-The 50-state targeting atlas remains available at `/fiftystate`, but it is not
-part of Analytics report navigation.
+The national targeting workspace remains available as **Outreach** at
+`/outreach`, but it is not part of Analytics report navigation. The retired
+`/fiftystate` URL redirects to the canonical Outreach route.
 
 ## Runtime Flow
 
@@ -77,7 +78,7 @@ Primary implementation:
 - `shared/full-report.mjs`: seven-report registry, request and document validation,
   and the single responsive/print HTML renderer;
 - `shared/effectiveness-evidence.mjs`: shared audience and evidence-plan registry
-  used by the effectiveness report and 50-state atlas;
+  used by the effectiveness report and Outreach;
 - `server/full-reporting.mjs`: governed calculations, period discovery, and
   report compilation;
 - `api/reports.js` and `server/dev-api.mjs`: authenticated report endpoints;

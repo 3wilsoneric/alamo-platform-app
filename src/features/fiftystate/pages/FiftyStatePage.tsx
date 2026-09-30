@@ -32,7 +32,7 @@ import {
 } from "../data/stateTargetingData";
 
 type AtlasScope = "priority" | "all";
-type FiftyStateView = "markets" | "acquisition";
+type OutreachView = "markets" | "acquisition";
 type SortMode =
   | "state-name"
   | "bed-scarcity"
@@ -111,8 +111,8 @@ function sortRecords(records: StateTargetingRecord[], sortMode: SortMode) {
   });
 }
 
-export default function FiftyStatePage({ embedded = false }: { embedded?: boolean }) {
-  const [view, setView] = useState<FiftyStateView>("markets");
+export default function OutreachPage({ embedded = false }: { embedded?: boolean }) {
+  const [view, setView] = useState<OutreachView>("markets");
   const [acquisitionOverview, setAcquisitionOverview] = useState<AcquisitionOverview | null>(null);
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<AtlasScope>("priority");
@@ -170,7 +170,7 @@ export default function FiftyStatePage({ embedded = false }: { embedded?: boolea
     >
       <header className="border-b-2 border-[#111111] pb-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f8b73]">
-          Behavioral-health market atlas
+          Behavioral-health outreach
         </p>
         <div className="mt-1 grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)] lg:items-end lg:gap-8">
           <h1 className="max-w-[720px] font-serif text-[30px] font-semibold leading-[1.02] tracking-[-0.035em] sm:text-[36px]">

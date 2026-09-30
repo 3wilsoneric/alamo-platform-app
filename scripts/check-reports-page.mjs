@@ -102,16 +102,17 @@ assert(
   "Analytics must be available as a governed home surface without loading reports behind the inactive map"
 );
 assert(
-  appSource.includes('<Route path="/fiftystate" element={withRouteBoundary(<FiftyStatePage />)} />') &&
+  appSource.includes('<Route path="/outreach" element={withRouteBoundary(<OutreachPage />)} />') &&
+    appSource.includes('<Route path="/fiftystate" element={<LegacyOutreachRedirect />} />') &&
     !appSource.includes('path="reports/fiftystate"') &&
     !reportsSource.includes("<FiftyStatePage") &&
     !reportsSource.includes("/fiftystate") &&
     !reportsSource.includes("50-state targeting atlas"),
-  "the 50-state atlas must retain its standalone route without appearing in Analytics navigation"
+  "Outreach must retain its standalone route without appearing in Analytics navigation"
 );
 assert(
   !workspaceSource.includes("<ChatHistoryMenu"),
   "the analyst workspace must not expose the retired History menu"
 );
 
-console.log("Analytics page check passed: five finished visible reports, unfinished effectiveness and duplicate community reports hidden, standalone /fiftystate route retained, and no visible History menu.");
+console.log("Analytics page check passed: five finished visible reports, unfinished effectiveness and duplicate community reports hidden, standalone /outreach route retained, and no visible History menu.");

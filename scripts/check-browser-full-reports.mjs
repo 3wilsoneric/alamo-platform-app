@@ -363,7 +363,7 @@ async function runDesktop(browser, screenshotDir) {
     results.push({ reportId, title: titleText });
   }
 
-  await page.goto(`${BASE_URL}/fiftystate`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/outreach`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-fifty-state-page="true"][data-fifty-state-embedded="false"]').waitFor({
     state: "visible",
     timeout: 20_000
@@ -502,7 +502,7 @@ async function runMobile(browser, screenshotDir) {
     fullPage: true
   });
 
-  await page.goto(`${BASE_URL}/fiftystate`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/outreach`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-fifty-state-page="true"]').waitFor({
     state: "visible",
     timeout: 20_000

@@ -33,7 +33,8 @@ export default function ProtectedAppShell() {
   const navigate = useNavigate();
   const isAdmissionsExperience = isAdmissionsPath(location.pathname);
   const isPipelineHandoff = location.pathname === "/pipeline";
-  const isStandaloneEditorial = location.pathname === "/fiftystate";
+  const isStandaloneEditorial =
+    location.pathname === "/outreach" || location.pathname === "/fiftystate";
   const isLicensingExperience = location.pathname === "/licensing" || location.pathname === "/analytics/licensing";
   const isCaliforniaExperience =
     location.pathname === "/" ||
