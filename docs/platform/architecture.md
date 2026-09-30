@@ -98,6 +98,10 @@ is the live shell. It:
 - shows the fixed Alamo logo/home control
 - collapses brand text while chat/module flow is active
 - prefetches heavy workspace modules during idle time
+- converts expired API sessions and HTTP 401 responses into an automatic Entra
+  refresh that returns the user to the same route
+- keeps last-known-good in-session data visible during a network outage,
+  with an explicit offline/stale banner and automatic refresh on reconnect
 - renders the warm canvas background and current route outlet
 
 Retired sidebar/header prototypes were removed. Do not recreate a second shell;

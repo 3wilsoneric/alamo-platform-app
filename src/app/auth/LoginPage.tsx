@@ -14,10 +14,8 @@ import {
   removeStorageItem,
   writeStorageItem
 } from "../../shared/storage/browserStorage";
-import { normalizePostLoginPath } from "./postLoginPath";
+import { normalizePostLoginPath, POST_LOGIN_PATH_KEY } from "./postLoginPath";
 import { PlatformWordmark } from "../../shared/branding/PlatformWordmark";
-
-const POST_LOGIN_PATH_KEY = "alamo-platform-post-login-path";
 
 function MicrosoftMark() {
   return (
@@ -35,18 +33,26 @@ export default function LoginPage() {
   const location = useLocation();
   const isAuthenticated = useIsAuthenticated();
   const { instance, inProgress } = useMsal();
-  const [loginError, setLoginError] = useState<string | null>(() => readRedirectAuthenticationError());
+  const routeState = location.state as {
+    forceReauthentication?: boolean;
+    recoveryError?: string;
+    from?: { pathname?: string };
+  } | null;
+  const forceReauthentication = routeState?.forceReauthentication === true;
+  const [loginError, setLoginError] = useState<string | null>(() => (
+    routeState?.recoveryError ?? readRedirectAuthenticationError()
+  ));
   const [loginRequested, setLoginRequested] = useState(false);
 
   const fromPath = normalizePostLoginPath(
-    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
+    routeState?.from?.pathname
   );
   const savedPath = normalizePostLoginPath(
     readStorageItem(POST_LOGIN_PATH_KEY, { kind: "session", label: "post-login path" })
   );
 
   useEffect(() => {
-    if (!isE2EAuthBypassEnabled && !isAuthenticated) return;
+    if ((!isE2EAuthBypassEnabled && !isAuthenticated) || forceReauthentication) return;
 
     const savedPath = normalizePostLoginPath(
       readStorageItem(POST_LOGIN_PATH_KEY, { kind: "session", label: "post-login path" })
@@ -54,9 +60,9 @@ export default function LoginPage() {
     removeStorageItem(POST_LOGIN_PATH_KEY, { kind: "session", label: "post-login path" });
     clearRedirectAuthenticationError();
     navigate(savedPath, { replace: true });
-  }, [isAuthenticated, navigate]);
+  }, [forceReauthentication, isAuthenticated, navigate]);
 
-  if (isE2EAuthBypassEnabled || isAuthenticated) {
+  if (isE2EAuthBypassEnabled || (isAuthenticated && !forceReauthentication)) {
     return <Navigate to={savedPath} replace />;
   }
 
@@ -67,7 +73,10 @@ export default function LoginPage() {
     writeStorageItem(POST_LOGIN_PATH_KEY, fromPath, { kind: "session", label: "post-login path" });
     try {
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-      await instance.loginRedirect(loginRequest);
+      await instance.loginRedirect({
+        ...loginRequest,
+        ...(forceReauthentication ? { prompt: "select_account" } : {})
+      });
     } catch (error) {
       removeStorageItem(POST_LOGIN_PATH_KEY, { kind: "session", label: "post-login path" });
       setLoginRequested(false);

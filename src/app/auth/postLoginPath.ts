@@ -1,4 +1,5 @@
 const DEFAULT_POST_LOGIN_PATH = "/home";
+export const POST_LOGIN_PATH_KEY = "alamo-platform-post-login-path";
 
 export function normalizePostLoginPath(value: unknown) {
   if (typeof value !== "string") return DEFAULT_POST_LOGIN_PATH;

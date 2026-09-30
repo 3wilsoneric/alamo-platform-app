@@ -45,21 +45,64 @@ const clientCache = new Map<
   {
     value?: unknown;
     expiresAt: number;
+    cachedAt?: number;
     promise?: Promise<unknown>;
   }
 >();
 
 export const PLATFORM_DATA_REFRESH_EVENT = "alamo-platform:data-refresh";
+export const PLATFORM_DATA_DEGRADED_EVENT = "alamo-platform:data-degraded";
+export const PLATFORM_DATA_RECOVERED_EVENT = "alamo-platform:data-recovered";
 const DEFAULT_CACHE_TTL_MS = 10 * 60_000;
 const LIVE_INCIDENT_CACHE_TTL_MS = 10_000;
+const MAX_STALE_FALLBACK_MS = 24 * 60 * 60_000;
 const SESSION_STORAGE_PREFIX = "alamo-platform:warm-cache:";
 const SESSION_CACHE_MAX_BYTES = 750_000;
 
 let sessionCacheHydrated = false;
 let sessionCachePersistenceDisabled = false;
 let clientCachePartition: string | null = null;
+const degradedPaths = new Set<string>();
 
 type ResponseValidator<T> = (value: unknown) => T;
+
+function announceDegradedData(path: string, cachedAt: number) {
+  degradedPaths.add(path);
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(PLATFORM_DATA_DEGRADED_EVENT, {
+    detail: { path, cachedAt }
+  }));
+}
+
+function announceRecoveredData(path: string) {
+  const wasDegraded = degradedPaths.delete(path);
+  if (!wasDegraded || degradedPaths.size || typeof window === "undefined") return;
+  window.dispatchEvent(new Event(PLATFORM_DATA_RECOVERED_EVENT));
+}
+
+function isUsableStaleEntry(entry: { value?: unknown; cachedAt?: number; expiresAt: number } | undefined) {
+  if (entry?.value === undefined) return false;
+  const cachedAt = entry.cachedAt ?? entry.expiresAt - DEFAULT_CACHE_TTL_MS;
+  return Number.isFinite(cachedAt) && cachedAt > 0 && Date.now() - cachedAt <= MAX_STALE_FALLBACK_MS;
+}
+
+function staleCachedValue<T>(
+  path: string,
+  entry: { value?: unknown; cachedAt?: number; expiresAt: number } | undefined,
+  validate?: ResponseValidator<T>
+) {
+  if (!isUsableStaleEntry(entry)) return null;
+  try {
+    const value = validate ? validate(entry?.value) : entry?.value as T;
+    const cachedAt = entry?.cachedAt ?? entry!.expiresAt - DEFAULT_CACHE_TTL_MS;
+    announceDegradedData(path, cachedAt);
+    return value;
+  } catch (error) {
+    clientCache.delete(path);
+    console.warn(`Ignored invalid stale cache entry for ${path}.`, error);
+    return null;
+  }
+}
 
 function getAbortReason(signal: AbortSignal) {
   return signal.reason instanceof Error
@@ -127,6 +170,7 @@ function ensureClientCachePartition() {
   if (clientCachePartition !== nextPartition) {
     const previousPartition = clientCachePartition;
     clientCache.clear();
+    degradedPaths.clear();
     clientCachePartition = nextPartition;
     sessionCacheHydrated = false;
     sessionCachePersistenceDisabled = false;
@@ -142,6 +186,21 @@ function ensureClientCachePartition() {
 
 function getSessionStorageKey(partition: string) {
   return `${SESSION_STORAGE_PREFIX}${partition}`;
+}
+
+export function clearPlatformDataCache() {
+  const previousPartition = clientCachePartition;
+  clientCache.clear();
+  degradedPaths.clear();
+  clientCachePartition = null;
+  sessionCacheHydrated = false;
+  sessionCachePersistenceDisabled = false;
+  if (previousPartition && typeof window !== "undefined") {
+    removeStorageItem(getSessionStorageKey(previousPartition), {
+      kind: "session",
+      label: "signed-out platform warm cache"
+    });
+  }
 }
 
 function hydrateSessionCache() {
@@ -161,11 +220,16 @@ function hydrateSessionCache() {
 
   const now = Date.now();
 
-  Object.entries(payload as Record<string, { value?: unknown; expiresAt?: unknown }>).forEach(([path, entry]) => {
-    if (entry && typeof entry.expiresAt === "number" && entry.expiresAt > now) {
+  Object.entries(payload as Record<string, { value?: unknown; expiresAt?: unknown; cachedAt?: unknown }>).forEach(([path, entry]) => {
+    if (!entry || typeof entry.expiresAt !== "number" || entry.value === undefined) return;
+    const cachedAt = typeof entry.cachedAt === "number"
+      ? entry.cachedAt
+      : entry.expiresAt - DEFAULT_CACHE_TTL_MS;
+    if (cachedAt > 0 && now - cachedAt <= MAX_STALE_FALLBACK_MS) {
       clientCache.set(path, {
         value: entry.value,
-        expiresAt: entry.expiresAt
+        expiresAt: entry.expiresAt,
+        cachedAt
       });
     }
   });
@@ -181,7 +245,11 @@ function persistSessionCache(partition: string) {
   try {
     const now = Date.now();
     const candidates = [...clientCache.entries()]
-      .filter(([, entry]) => entry.value !== undefined && entry.expiresAt > now)
+      .filter(([, entry]) => (
+        entry.value !== undefined &&
+        typeof entry.cachedAt === "number" &&
+        now - entry.cachedAt <= MAX_STALE_FALLBACK_MS
+      ))
       .sort(([leftPath, leftEntry], [rightPath, rightEntry]) => {
         const priorityDelta = getSessionCachePriority(leftPath) - getSessionCachePriority(rightPath);
         if (priorityDelta !== 0) return priorityDelta;
@@ -194,6 +262,7 @@ function persistSessionCache(partition: string) {
       {
         value: unknown;
         expiresAt: number;
+        cachedAt: number;
       }
     > = {};
 
@@ -202,7 +271,8 @@ function persistSessionCache(partition: string) {
         ...payload,
         [path]: {
           value: entry.value,
-          expiresAt: entry.expiresAt
+          expiresAt: entry.expiresAt,
+          cachedAt: entry.cachedAt as number
         }
       };
       const nextSerialized = JSON.stringify(nextPayload);
@@ -254,11 +324,19 @@ async function fetchJson<T>(path: string, signal?: AbortSignal, validate?: Respo
   }
 
   if (cached?.promise) {
-    const pendingValue = await awaitSharedRequest(cached.promise, signal);
-    if (ensureClientCachePartition() !== requestPartition) {
-      throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
+    try {
+      const pendingValue = await awaitSharedRequest(cached.promise, signal);
+      if (ensureClientCachePartition() !== requestPartition) {
+        throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
+      }
+      return validate ? validate(pendingValue) : pendingValue as T;
+    } catch (error) {
+      const fallback = isTransientPlatformReadError(error, signal)
+        ? staleCachedValue(path, cached, validate)
+        : null;
+      if (fallback !== null) return fallback;
+      throw error;
     }
-    return validate ? validate(pendingValue) : pendingValue as T;
   }
 
   const promise = (async () => {
@@ -292,6 +370,10 @@ async function fetchJson<T>(path: string, signal?: AbortSignal, validate?: Respo
 
   if (!signal) {
     clientCache.set(path, {
+      ...(cached?.value !== undefined ? {
+        value: cached.value,
+        cachedAt: cached.cachedAt
+      } : {}),
       expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS,
       promise
     });
@@ -303,25 +385,38 @@ async function fetchJson<T>(path: string, signal?: AbortSignal, validate?: Respo
       throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
     }
 
+    const cachedAt = Date.now();
     clientCache.set(path, {
       value,
-      expiresAt: Date.now() + DEFAULT_CACHE_TTL_MS
+      expiresAt: cachedAt + DEFAULT_CACHE_TTL_MS,
+      cachedAt
     });
     persistSessionCache(requestPartition);
+    announceRecoveredData(path);
 
     return value;
   } catch (error) {
-    if (!signal && clientCache.get(path)?.promise === promise) clientCache.delete(path);
+    const fallback = isTransientPlatformReadError(error, signal)
+      ? staleCachedValue(path, cached, validate)
+      : null;
+    if (fallback !== null) {
+      if (!signal && cached) clientCache.set(path, cached);
+      return fallback;
+    }
+    if (!signal && clientCache.get(path)?.promise === promise) {
+      if (cached?.value !== undefined) clientCache.set(path, cached);
+      else clientCache.delete(path);
+    }
     throw error;
   }
 }
 
 async function fetchLiveJson<T>(path: string, signal?: AbortSignal, validate?: ResponseValidator<T>, ttlMs = 0): Promise<T> {
   const requestPartition = hydrateSessionCache();
+  const cached = ttlMs > 0 ? clientCache.get(path) : undefined;
 
   if (ttlMs > 0) {
     const now = Date.now();
-    const cached = clientCache.get(path);
 
     if (cached?.value && cached.expiresAt > now) {
       try {
@@ -333,11 +428,19 @@ async function fetchLiveJson<T>(path: string, signal?: AbortSignal, validate?: R
     }
 
     if (cached?.promise) {
-      const pendingValue = await awaitSharedRequest(cached.promise, signal);
-      if (ensureClientCachePartition() !== requestPartition) {
-        throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
+      try {
+        const pendingValue = await awaitSharedRequest(cached.promise, signal);
+        if (ensureClientCachePartition() !== requestPartition) {
+          throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
+        }
+        return validate ? validate(pendingValue) : pendingValue as T;
+      } catch (error) {
+        const fallback = isTransientPlatformReadError(error, signal)
+          ? staleCachedValue(path, cached, validate)
+          : null;
+        if (fallback !== null) return fallback;
+        throw error;
       }
-      return validate ? validate(pendingValue) : pendingValue as T;
     }
   }
 
@@ -361,6 +464,10 @@ async function fetchLiveJson<T>(path: string, signal?: AbortSignal, validate?: R
 
   if (ttlMs > 0 && !signal) {
     clientCache.set(path, {
+      ...(cached?.value !== undefined ? {
+        value: cached.value,
+        cachedAt: cached.cachedAt
+      } : {}),
       expiresAt: Date.now() + ttlMs,
       promise
     });
@@ -373,15 +480,29 @@ async function fetchLiveJson<T>(path: string, signal?: AbortSignal, validate?: R
     }
 
     if (ttlMs > 0) {
+      const cachedAt = Date.now();
       clientCache.set(path, {
         value,
-        expiresAt: Date.now() + ttlMs
+        expiresAt: cachedAt + ttlMs,
+        cachedAt
       });
+      persistSessionCache(requestPartition);
     }
+    announceRecoveredData(path);
 
     return value;
   } catch (error) {
-    if (ttlMs > 0 && !signal && clientCache.get(path)?.promise === promise) clientCache.delete(path);
+    const fallback = ttlMs > 0 && isTransientPlatformReadError(error, signal)
+      ? staleCachedValue(path, cached, validate)
+      : null;
+    if (fallback !== null) {
+      if (!signal && cached) clientCache.set(path, cached);
+      return fallback;
+    }
+    if (ttlMs > 0 && !signal && clientCache.get(path)?.promise === promise) {
+      if (cached?.value !== undefined) clientCache.set(path, cached);
+      else clientCache.delete(path);
+    }
     throw error;
   }
 }
