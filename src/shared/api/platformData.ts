@@ -40,15 +40,14 @@ export type {
   WorkforceDashboardResponse
 } from "../types/platformSnapshot";
 
-const clientCache = new Map<
-  string,
-  {
-    value?: unknown;
-    expiresAt: number;
-    cachedAt?: number;
-    promise?: Promise<unknown>;
-  }
->();
+interface ClientCacheEntry {
+  value?: unknown;
+  expiresAt: number;
+  cachedAt?: number;
+  promise?: Promise<unknown>;
+}
+
+const clientCache = new Map<string, ClientCacheEntry>();
 
 export const PLATFORM_DATA_REFRESH_EVENT = "alamo-platform:data-refresh";
 export const PLATFORM_DATA_DEGRADED_EVENT = "alamo-platform:data-degraded";
@@ -80,7 +79,7 @@ function announceRecoveredData(path: string) {
   window.dispatchEvent(new Event(PLATFORM_DATA_RECOVERED_EVENT));
 }
 
-function isUsableStaleEntry(entry: { value?: unknown; cachedAt?: number; expiresAt: number } | undefined) {
+function isUsableStaleEntry(entry: ClientCacheEntry | undefined) {
   if (entry?.value === undefined) return false;
   const cachedAt = entry.cachedAt ?? entry.expiresAt - DEFAULT_CACHE_TTL_MS;
   return Number.isFinite(cachedAt) && cachedAt > 0 && Date.now() - cachedAt <= MAX_STALE_FALLBACK_MS;
@@ -88,7 +87,7 @@ function isUsableStaleEntry(entry: { value?: unknown; cachedAt?: number; expires
 
 function staleCachedValue<T>(
   path: string,
-  entry: { value?: unknown; cachedAt?: number; expiresAt: number } | undefined,
+  entry: ClientCacheEntry | undefined,
   validate?: ResponseValidator<T>
 ) {
   if (!isUsableStaleEntry(entry)) return null;
@@ -133,6 +132,28 @@ function isTransientPlatformReadError(error: unknown, signal?: AbortSignal) {
     /\((408|425|429|5\d\d)\)/.test(message) ||
     /failed to fetch|network|timed out/i.test(message)
   );
+}
+
+async function awaitCachedRequest<T>(
+  path: string,
+  entry: ClientCacheEntry,
+  requestPartition: string,
+  signal?: AbortSignal,
+  validate?: ResponseValidator<T>
+) {
+  try {
+    const pendingValue = await awaitSharedRequest(entry.promise as Promise<unknown>, signal);
+    if (ensureClientCachePartition() !== requestPartition) {
+      throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
+    }
+    return validate ? validate(pendingValue) : pendingValue as T;
+  } catch (error) {
+    const fallback = isTransientPlatformReadError(error, signal)
+      ? staleCachedValue(path, entry, validate)
+      : null;
+    if (fallback !== null) return fallback;
+    throw error;
+  }
 }
 
 async function waitForPlatformReadRetry(signal?: AbortSignal) {
@@ -324,19 +345,7 @@ async function fetchJson<T>(path: string, signal?: AbortSignal, validate?: Respo
   }
 
   if (cached?.promise) {
-    try {
-      const pendingValue = await awaitSharedRequest(cached.promise, signal);
-      if (ensureClientCachePartition() !== requestPartition) {
-        throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
-      }
-      return validate ? validate(pendingValue) : pendingValue as T;
-    } catch (error) {
-      const fallback = isTransientPlatformReadError(error, signal)
-        ? staleCachedValue(path, cached, validate)
-        : null;
-      if (fallback !== null) return fallback;
-      throw error;
-    }
+    return awaitCachedRequest(path, cached, requestPartition, signal, validate);
   }
 
   const promise = (async () => {
@@ -428,19 +437,7 @@ async function fetchLiveJson<T>(path: string, signal?: AbortSignal, validate?: R
     }
 
     if (cached?.promise) {
-      try {
-        const pendingValue = await awaitSharedRequest(cached.promise, signal);
-        if (ensureClientCachePartition() !== requestPartition) {
-          throw new Error("The signed-in account changed while platform data was loading. Retry the request.");
-        }
-        return validate ? validate(pendingValue) : pendingValue as T;
-      } catch (error) {
-        const fallback = isTransientPlatformReadError(error, signal)
-          ? staleCachedValue(path, cached, validate)
-          : null;
-        if (fallback !== null) return fallback;
-        throw error;
-      }
+      return awaitCachedRequest(path, cached, requestPartition, signal, validate);
     }
   }
 
