@@ -14,8 +14,12 @@ spreadsheet or Paylocity data that feeds them.
 
 ## Alamo Workforce overview
 
-`/workforce` is available to signed-in Alamo workspace users, like Communities
-and Analytics. It follows the Admissions board pattern: every element says what
+`/workforce` is owner-only until Workforce is connected to live HR data: the
+navigation item is hidden from other accounts, the page redirects them home,
+and `/api/platform/workforce-dashboard` answers 404 through
+`assertPlatformKnowledgeOwner`, the same gate as the other owner workspaces.
+To open it to leadership, remove `ownerOnly` from the navigation entry, the
+page redirect, and the API assertion together. It follows the Admissions board pattern: every element says what
 to do next and links to the place to do it.
 
 - two surfaces, like Admissions: **Briefing** (`/workforce?view=briefing`) and

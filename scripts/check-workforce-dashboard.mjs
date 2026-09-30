@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getWorkforceSummary, normalizeWorkforceSummary } from "../server/workforce-summary.mjs";
+import { assertPlatformKnowledgeOwner } from "../server/platform-knowledge-access.mjs";
 
 const totals = (overrides = {}) => ({
   active: 7, onboarding: 1, onLeave: 1, openRoles: 14, applicants: 10, phase1: 5, phase2: 3, phase3: 2,
@@ -67,6 +68,14 @@ delete process.env.WORKFORCE_SUMMARY_URL;
 delete process.env.WORKFORCE_SUMMARY_TOKEN;
 assert.deepEqual(await getWorkforceSummary(), { status: "not_connected" });
 
+// The owner gate hides the dashboard (404) from every other signed-in account.
+const signedIn = (oid) => ({ authenticated: true, mode: "entra-delegated", claims: { oid } });
+assert.doesNotThrow(() => assertPlatformKnowledgeOwner(signedIn("f73371d5-d2b4-48b4-a32b-1edc7c88869f"), { ownerObjectId: "", ownerEmail: "" }));
+assert.throws(
+  () => assertPlatformKnowledgeOwner(signedIn("00000000-0000-0000-0000-000000000001"), { ownerObjectId: "", ownerEmail: "" }),
+  (error) => error?.statusCode === 404
+);
+
 const root = path.resolve(import.meta.dirname, "..");
 const [app, navigation, platformApi, devApi, pageSource, briefingSource, staffingSource] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
@@ -79,9 +88,11 @@ const [app, navigation, platformApi, devApi, pageSource, briefingSource, staffin
 ]);
 const page = [pageSource, briefingSource, staffingSource].join("\n");
 assert.match(app, /path="\/workforce"/);
-assert.match(navigation, /id: "workforce", label: "Workforce", href: "\/workforce"/);
-assert.match(platformApi, /"\/api\/platform\/workforce-dashboard": \(\) => getWorkforceDashboardData\(\)/);
-assert.match(devApi, /\/api\/platform\/workforce-dashboard/);
+// Owner-only until Workforce is connected to live HR data: nav, page, and both API hosts.
+assert.match(navigation, /id: "workforce", label: "Workforce", href: "\/workforce", ownerOnly: true/);
+assert.match(platformApi, /"\/api\/platform\/workforce-dashboard": \(\{ authContext \}\) => \{\s+assertPlatformKnowledgeOwner\(authContext\);\s+return getWorkforceDashboardData\(\);/);
+assert.match(devApi, /"\/api\/platform\/workforce-dashboard"\) \{\s+assertPlatformKnowledgeOwner\(authContext\);/);
+assert.match(pageSource, /if \(!isOwner && !isE2EAuthBypassEnabled\) return <Navigate to="\/home" replace \/>/);
 for (const surface of ["Briefing", "Expiring in 30 days", "Offers and clearance", "No candidates yet", "Needs candidates", "Interviewing", "Ready to hire", "Staffing by community", "Filter by community", "Filter by role"]) {
   assert.ok(page.includes(surface), `Workforce page shows ${surface}`);
 }

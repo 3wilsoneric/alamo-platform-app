@@ -384,6 +384,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (requestUrl.pathname === "/api/platform/workforce-dashboard") {
+      assertPlatformKnowledgeOwner(authContext);
       sendJson(res, 200, await getWorkforceDashboardData());
       return;
     }

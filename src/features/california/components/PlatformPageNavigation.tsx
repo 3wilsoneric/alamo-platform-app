@@ -9,7 +9,7 @@ const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
-  { id: "workforce", label: "Workforce", href: "/workforce" },
+  { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true },
   { id: "fiftystate", label: "Fifty States", href: "/fiftystate", ownerOnly: true }
 ];
 

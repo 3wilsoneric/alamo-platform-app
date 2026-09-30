@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
+
+import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
+import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 
 import {
   fetchWorkforceDashboard,
@@ -34,7 +37,14 @@ const COLUMN_STYLE: Record<ColumnKey, { surface: string; border: string; accent:
 const PHASE_PIP = ["#b9dccf", "#4f9f86", "#1d5e4b"] as const;
 const STALE_DAYS = 14;
 
+// Owner-only until Workforce is connected to live HR data; the API enforces the same rule.
 export default function WorkforcePage() {
+  const isOwner = usePlatformOwnerAccess();
+  if (!isOwner && !isE2EAuthBypassEnabled) return <Navigate to="/home" replace />;
+  return <WorkforceOverview />;
+}
+
+function WorkforceOverview() {
   const [dashboard, setDashboard] = useState<WorkforceDashboardResponse | null>(readCachedWorkforceDashboard);
   const [loading, setLoading] = useState(!dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
