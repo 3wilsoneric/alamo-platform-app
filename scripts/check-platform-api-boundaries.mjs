@@ -156,10 +156,19 @@ if (!claudeCopilot.includes("ANTHROPIC_TIMEOUT_MS") || !claudeCopilot.includes("
 if (!claudeCopilot.includes('getBoundedIntegerEnv("ANTHROPIC_MAX_TOKENS"')) {
   failures.push("Claude output tokens must use the bounded integer configuration boundary");
 }
-if (!platformData.includes("awaitSharedRequest(cached.promise, signal)")) {
+const cachedRequestDelegations = (
+  platformData.match(/return awaitCachedRequest\(path, cached, requestPartition, signal, validate\)/g) ?? []
+).length;
+if (
+  !platformData.includes("awaitSharedRequest(entry.promise as Promise<unknown>, signal)") ||
+  cachedRequestDelegations < 2
+) {
   failures.push("platformData.ts: callers must be able to cancel while awaiting a shared cached request");
 }
-if ((platformData.match(/signed-in account changed while platform data was loading/g) ?? []).length < 5) {
+if (
+  (platformData.match(/signed-in account changed while platform data was loading/g) ?? []).length < 4 ||
+  cachedRequestDelegations < 2
+) {
   failures.push("platformData.ts: direct, uncached, and shared pending requests must all reject after an account partition change");
 }
 if (!platformData.includes("previous account platform warm cache")) {
