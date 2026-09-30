@@ -73,7 +73,9 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-briefing-pager="true"]').count() !== 0 ||
     await page.locator('[data-admissions-briefing-community]').count() !== 5 ||
     await page.locator('[data-admissions-briefing-community]').filter({ hasText: "Unassigned" }).count() !== 0 ||
+    await page.locator('[data-admissions-county-community]').count() !== 2 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
+    await page.getByRole("heading", { name: "County outreach" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Where referrals are coming from" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||

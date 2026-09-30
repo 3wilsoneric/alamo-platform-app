@@ -41,6 +41,11 @@ const snapshot = {
           { facility_id: "337", facility_name: "A & A Health Services San Pablo", census: 151, census_delta: 6 },
           { facility_id: "342", facility_name: "Victoria's House", census: 38, census_delta: -1 }
         ],
+        current_resident_county_by_community: [
+          { facility_id: "337", facility_name: "A & A Health Services San Pablo", client_county: "Contra Costa", resident_count: 80, as_of_date: "2026-09-26", source_field: "County_Admitted_From" },
+          { facility_id: "337", facility_name: "A & A Health Services San Pablo", client_county: "Alameda", resident_count: 40, as_of_date: "2026-09-26", source_field: "County_Admitted_From" },
+          { facility_id: "337", facility_name: "A & A Health Services San Pablo", client_county: null, resident_count: 31, as_of_date: "2026-09-26", source_field: "County_Admitted_From" }
+        ],
         resident_flow_weekly_by_community: [
           weekly("337", "2026-09-14", 5, 2),
           weekly("342", "2026-09-14", 1, 1),
@@ -73,8 +78,39 @@ assert.deepEqual(dashboard.weekly.map((point) => [point.period, point.partial]),
 ]);
 assert.equal(dashboard.communities[0].facilityId, "337");
 assert.equal(dashboard.communities[0].occupancyPct, 86.3);
+assert.deepEqual(dashboard.briefing.countyOutreach.communities[0], {
+  facilityId: "337",
+  communityName: "A & A Health Services San Pablo",
+  shortName: "San Pablo",
+  status: "ready",
+  census: 151,
+  knownCountyResidents: 120,
+  countyNotRecorded: 31,
+  coveragePct: 79.5,
+  counties: [
+    { county: "Contra Costa", residents: 80, sharePct: 66.7 },
+    { county: "Alameda", residents: 40, sharePct: 33.3 }
+  ]
+});
+assert.equal(dashboard.briefing.countyOutreach.communities[1].facilityId, "345");
+assert.equal(dashboard.briefing.countyOutreach.communities[1].status, "source_not_published");
 assert.deepEqual(dashboard.referral_pipeline, { status: "not_connected" });
 assert.ok(!/Resident [AB]/.test(JSON.stringify(dashboard)), "resident names must never reach the admissions payload");
+
+const mismatchedCountySnapshot = structuredClone(snapshot);
+mismatchedCountySnapshot.reportsSummary.toolContext.tables.current_resident_county_by_community[0].resident_count = 79;
+const mismatchedCountyDashboard = buildAdmissionsDashboard(mismatchedCountySnapshot);
+assert.equal(mismatchedCountyDashboard.briefing.countyOutreach.communities[0].status, "reconciliation_failed");
+assert.equal(mismatchedCountyDashboard.briefing.countyOutreach.communities[0].knownCountyResidents, null);
+assert.deepEqual(mismatchedCountyDashboard.briefing.countyOutreach.communities[0].counties, []);
+
+const staleCountySnapshot = structuredClone(snapshot);
+for (const row of staleCountySnapshot.reportsSummary.toolContext.tables.current_resident_county_by_community) {
+  row.as_of_date = "2026-09-25";
+}
+const staleCountyDashboard = buildAdmissionsDashboard(staleCountySnapshot);
+assert.equal(staleCountyDashboard.briefing.countyOutreach.communities[0].status, "reconciliation_failed");
+assert.equal(staleCountyDashboard.briefing.countyOutreach.communities[0].coveragePct, null);
 
 // Month rollover: January's prior month is the previous December.
 assert.equal(buildAdmissionsDashboard({ snapshot: { as_of_date: "2027-01-03" } }).prior_month, "2026-12");

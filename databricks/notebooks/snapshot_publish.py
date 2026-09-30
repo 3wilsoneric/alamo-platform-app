@@ -582,6 +582,21 @@ def build_tool_context_summary():
         "v_tool_resident_profile_enriched",
     )
 
+    current_resident_county_rows = required_rows(
+        """
+        SELECT
+          Facility,
+          Facility_Name,
+          client_county,
+          resident_count,
+          as_of_date,
+          source_field
+        FROM alamohealth.gold.v_tool_current_resident_county_by_community
+        ORDER BY Facility, resident_count DESC, client_county
+        """,
+        "v_tool_current_resident_county_by_community",
+    )
+
     resident_incident_summary_rows = optional_rows(
         """
         SELECT
@@ -1055,6 +1070,18 @@ def build_tool_context_summary():
         for row in resident_incident_summary_rows
     ]
 
+    current_resident_county_by_community = [
+        {
+            "facility_id": normalize_str(row["Facility"]),
+            "facility_name": normalize_str(row["Facility_Name"]),
+            "client_county": normalize_nullable(row["client_county"]),
+            "resident_count": normalize_int(row["resident_count"]),
+            "as_of_date": iso_value(row["as_of_date"]),
+            "source_field": normalize_str(row["source_field"]),
+        }
+        for row in current_resident_county_rows
+    ]
+
     documentation_status = [
         {
             "resident_id": str(row["Res_Number"]),
@@ -1435,6 +1462,7 @@ def build_tool_context_summary():
             "incident_detail_current_month": current_incident_details,
             "incident_detail_history": incident_detail_history,
             "resident_profile": resident_profiles,
+            "current_resident_county_by_community": current_resident_county_by_community,
             "resident_incident_summary": resident_incident_summary,
             "resident_episode_history": resident_episode_history,
             "resident_flow_weekly_by_community": resident_flow_weekly_by_community,

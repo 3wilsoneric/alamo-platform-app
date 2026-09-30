@@ -316,6 +316,22 @@ export interface AdmissionsBriefingOriginRow {
   communities: string[];
 }
 
+export interface AdmissionsCountyOutreachCommunity {
+  facilityId: string;
+  communityName: string;
+  shortName: string;
+  status: "ready" | "source_not_published" | "reconciliation_failed";
+  census: number | null;
+  knownCountyResidents: number | null;
+  countyNotRecorded: number | null;
+  coveragePct: number | null;
+  counties: Array<{
+    county: string;
+    residents: number;
+    sharePct: number;
+  }>;
+}
+
 export interface AdmissionsWeeklyBriefing {
   sourceStatus: "ready" | "source_upgrade_required" | "not_connected" | "unavailable";
   asOfDate: string;
@@ -338,6 +354,10 @@ export interface AdmissionsWeeklyBriefing {
     completedMoveInsThisWeek: number | null;
   };
   communities: AdmissionsBriefingCommunityRow[];
+  countyOutreach: {
+    asOfDate: string;
+    communities: AdmissionsCountyOutreachCommunity[];
+  };
   origins: AdmissionsBriefingOriginRow[];
   recentReferrals: AdmissionsPipelineBriefingReferral[];
   upcomingAssessments: AdmissionsPipelineBriefingAssessment[];

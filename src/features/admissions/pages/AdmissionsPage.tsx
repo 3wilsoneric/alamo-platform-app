@@ -492,6 +492,7 @@ function AdmissionsBriefingDashboard({
 
       <div data-admissions-briefing-dashboard="true" className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12"><BriefingCommunityDashboard briefing={briefing} /></div>
+        <div className="lg:col-span-12"><BriefingCountyOutreach briefing={briefing} /></div>
         <div className="lg:col-span-6">
           <BriefingSchedule
             title="Upcoming assessments"
@@ -573,6 +574,81 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
   );
 }
 
+function BriefingCountyOutreach({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
+  return (
+    <section
+      data-admissions-county-outreach="true"
+      className="rounded-2xl border border-[#dfe3e1] bg-white p-4 sm:p-5"
+      aria-labelledby="admissions-county-outreach-title"
+    >
+      <div className="mb-4">
+        <h3 id="admissions-county-outreach-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">County outreach</h3>
+        <p className="mt-1 text-[10px] leading-4 text-[#737b77]">Current residents by the county recorded on their admission, focused on San Pablo and Santa Clarita.</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {briefing.countyOutreach.communities.map((community) => (
+          <CountyOutreachCommunity key={community.facilityId} community={community} />
+        ))}
+      </div>
+      <p className="mt-3 text-[9px] leading-4 text-[#7a817d]">County is sourced from the resident’s current admission record. Percentages use residents with a recorded county as the denominator.</p>
+    </section>
+  );
+}
+
+function CountyOutreachCommunity({
+  community
+}: {
+  community: AdmissionsDashboardResponse["briefing"]["countyOutreach"]["communities"][number];
+}) {
+  if (community.status !== "ready") {
+    return (
+      <article data-admissions-county-community={community.facilityId} className="rounded-xl border border-[#e3e7e5] bg-[#f8faf9] p-4">
+        <h4 className="text-[13px] font-semibold text-[#263c35]">{community.shortName}</h4>
+        <p className="mt-5 max-w-md text-[11px] leading-5 text-[#69716c]">
+          County census is unavailable until the governed admission-county totals reconcile with this community’s current census.
+        </p>
+      </article>
+    );
+  }
+
+  const visibleCounties = community.counties.slice(0, 6);
+  const remainingCounties = community.counties.slice(6);
+  const otherResidents = remainingCounties.reduce((total, row) => total + row.residents, 0);
+  const otherShare = community.knownCountyResidents
+    ? Math.round((otherResidents / community.knownCountyResidents) * 1000) / 10
+    : 0;
+  const rows = [
+    ...visibleCounties,
+    ...(otherResidents ? [{ county: `${remainingCounties.length} other ${pluralize("county", remainingCounties.length)}`, residents: otherResidents, sharePct: otherShare }] : [])
+  ];
+
+  return (
+    <article data-admissions-county-community={community.facilityId} className="rounded-xl border border-[#e0e6e2] bg-[#f8faf9] p-4">
+      <div className="flex items-start justify-between gap-3 border-b border-[#e3e8e5] pb-3">
+        <div>
+          <h4 className="text-[13px] font-semibold text-[#263c35]">{community.shortName}</h4>
+          <p className="mt-1 text-[9px] text-[#737b77]">{formatBriefingCount(community.knownCountyResidents)} of {formatBriefingCount(community.census)} residents have county recorded</p>
+        </div>
+        <span className="shrink-0 text-[12px] font-semibold tabular-nums text-[#176d51]">{community.coveragePct?.toFixed(1)}%</span>
+      </div>
+      {rows.length ? (
+        <ol className="mt-1 divide-y divide-[#e6ebe8]">
+          {rows.map((row) => (
+            <li key={row.county} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-2.5 text-[10px]">
+              <span className="truncate font-medium text-[#34423d]">{/other county/.test(row.county) ? row.county : `${row.county} County`}</span>
+              <span className="tabular-nums text-[#69716c]">{row.sharePct.toFixed(1)}%</span>
+              <strong className="w-8 text-right font-semibold tabular-nums text-[#183f34]">{row.residents}</strong>
+            </li>
+          ))}
+        </ol>
+      ) : <p className="py-6 text-[11px] text-[#69716c]">No resident county is recorded.</p>}
+      {(community.countyNotRecorded ?? 0) > 0 ? (
+        <p className="mt-2 border-t border-[#dfe5e1] pt-2.5 text-[9px] text-[#7a817d]">County not recorded for {community.countyNotRecorded} {pluralize("resident", community.countyNotRecorded ?? 0)}.</p>
+      ) : null}
+    </article>
+  );
+}
+
 function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
   const pageSize = 6;
   const pageCount = Math.max(1, Math.ceil(briefing.origins.length / pageSize));
@@ -606,7 +682,7 @@ function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardRe
                     <div className="min-w-0">
                       <h4 className="truncate text-[12px] font-semibold text-[#263c35]">{origin.sourceName}</h4>
                       <p className="mt-0.5 truncate text-[9px] text-[#7a817d]">
-                        {[origin.referringCounty ? `${origin.referringCounty} County` : null, origin.communities.length ? origin.communities.join(", ") : null].filter(Boolean).join(" · ") || "Source location not recorded"}
+                        {[origin.referringCounty ? `Client county: ${origin.referringCounty} County` : "Client county not recorded", origin.communities.length ? origin.communities.join(", ") : null].filter(Boolean).join(" · ")}
                       </p>
                       <p className="mt-1.5 text-[9px] font-medium text-[#5f6762]">
                         {origin.last7Days} in the last 7 days

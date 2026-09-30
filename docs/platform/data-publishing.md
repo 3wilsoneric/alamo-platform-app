@@ -229,6 +229,7 @@ It creates additive gold views for AH Analyst and modules. Important families:
 - census weekly by community
 - census data quality and resident countability audit
 - resident profile and resident incident summary
+- current-resident county census by community, sourced from the exact current admission episode and reconciled to the current roster
 - resident admission/discharge episode history
 - weekly and monthly intake/discharge flow by community
 - documentation status

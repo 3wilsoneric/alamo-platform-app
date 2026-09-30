@@ -385,7 +385,7 @@ function ProgressModal({
                     >
                       <DataPointGrid>
                         <DataPointFact label="Referral source" value={formatProfileValue(profile.referralSource)} />
-                        <DataPointFact label="Referring county" value={formatProfileValue(profile.referringCounty)} />
+                        <DataPointFact label="Client county" value={formatProfileValue(profile.referringCounty)} />
                       </DataPointGrid>
                     </ChartDisclosureRow>
                     <ChartDisclosureRow

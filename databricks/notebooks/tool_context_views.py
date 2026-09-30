@@ -1263,6 +1263,54 @@ create_view(
 # COMMAND ----------
 
 create_view(
+    "v_tool_current_resident_county_by_community",
+    f"""
+    WITH ranked_admission_history AS (
+      SELECT
+        p.Facility,
+        p.Facility_Name,
+        p.Res_Number,
+        nullif(trim(h.County_Admitted_From), '') AS source_county,
+        row_number() OVER (
+          PARTITION BY p.Facility, p.Res_Number
+          ORDER BY
+            h.__TIMESTAMP DESC NULLS LAST,
+            h.Unique_ID DESC NULLS LAST
+        ) AS rn
+      FROM {target}.v_tool_resident_profile p
+      LEFT JOIN {target}.v_admittance_history h
+        ON cast(h.Res_Number AS string) = p.Res_Number
+       AND cast(h.Facility AS string) = p.Facility
+       AND h.Admit_Date_dt = try_cast(p.Admit_Date AS date)
+       AND h.Admit_Date_dt <= {WINDOW_AS_OF_SQL}
+    ),
+    current_resident_county AS (
+      SELECT
+        Facility,
+        Facility_Name,
+        Res_Number,
+        CASE
+          WHEN source_county IS NULL THEN NULL
+          ELSE trim(regexp_replace(source_county, '(?i)\\s+county$', ''))
+        END AS client_county
+      FROM ranked_admission_history
+      WHERE rn = 1
+    )
+    SELECT
+      Facility,
+      max(Facility_Name) AS Facility_Name,
+      client_county,
+      count(*) AS resident_count,
+      {WINDOW_AS_OF_SQL} AS as_of_date,
+      'County_Admitted_From' AS source_field
+    FROM current_resident_county
+    GROUP BY Facility, client_county
+    """
+)
+
+# COMMAND ----------
+
+create_view(
     "v_tool_resident_incident_summary",
     f"""
     WITH incident_rollup AS (
@@ -1657,6 +1705,19 @@ create_view(
       'Res_Number,resident_name,First_Name,Last_Name,Age,Admit_Date,LOS_Days,Facility,Facility_Name,Unit_Number,Care_Level,Payor_Text,Primary_Diagnosis,Physician_Name,Diet' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_resident_profile
+
+    UNION ALL
+
+    SELECT
+      'current_resident_county_by_community' AS slice_name,
+      'community_current_county' AS grain,
+      count(*) AS row_count,
+      cast(min(as_of_date) AS string) AS min_period,
+      cast(max(as_of_date) AS string) AS max_period,
+      concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
+      'Facility,Facility_Name,client_county,resident_count,as_of_date,source_field' AS fields,
+      current_timestamp() AS generated_at
+    FROM {target}.v_tool_current_resident_county_by_community
 
     UNION ALL
 

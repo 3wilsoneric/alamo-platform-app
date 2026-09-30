@@ -428,6 +428,27 @@ function validateAdmissionsDashboardPayload(value: unknown) {
     ["facilityId", "communityName", "shortName"].forEach((field) => assertString(row[field], endpoint, `briefing.communities[${index}].${field}`));
     ["census", "operatingLimit", "occupancyPct", "newReferrals7d", "newReferrals14d", "assessmentsThisWeek", "plannedMoveInsThisWeek", "completedMoveInsThisWeek"].forEach((field) => assertNumber(row[field], endpoint, `briefing.communities[${index}].${field}`, { nullable: true }));
   });
+  const countyOutreach = assertRecord(briefing.countyOutreach, endpoint, "briefing.countyOutreach");
+  assertIsoCalendarDate(countyOutreach.asOfDate, endpoint, "briefing.countyOutreach.asOfDate");
+  const countyCommunities = assertArray(countyOutreach.communities, endpoint, "briefing.countyOutreach.communities");
+  if (countyCommunities.length !== 2) fail(endpoint, "briefing.countyOutreach.communities must contain San Pablo and Santa Clarita");
+  countyCommunities.forEach((rowValue, index) => {
+    const path = `briefing.countyOutreach.communities[${index}]`;
+    const row = assertRecord(rowValue, endpoint, path);
+    ["facilityId", "communityName", "shortName", "status"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
+    if (!["ready", "source_not_published", "reconciliation_failed"].includes(String(row.status))) {
+      fail(endpoint, `${path}.status is not a known state`);
+    }
+    ["census", "knownCountyResidents", "countyNotRecorded", "coveragePct"].forEach((field) => assertNumber(row[field], endpoint, `${path}.${field}`, { nullable: true }));
+    const counties = assertArray(row.counties, endpoint, `${path}.counties`);
+    if (counties.length > 100) fail(endpoint, `${path}.counties exceeds the 100-item limit`);
+    counties.forEach((countyValue, countyIndex) => {
+      const countyPath = `${path}.counties[${countyIndex}]`;
+      const county = assertRecord(countyValue, endpoint, countyPath);
+      assertString(county.county, endpoint, `${countyPath}.county`);
+      ["residents", "sharePct"].forEach((field) => assertNumber(county[field], endpoint, `${countyPath}.${field}`));
+    });
+  });
   const origins = assertArray(briefing.origins, endpoint, "briefing.origins");
   if (origins.length > 500) fail(endpoint, "briefing.origins exceeds the 500-item limit");
   origins.forEach((rowValue, index) => {

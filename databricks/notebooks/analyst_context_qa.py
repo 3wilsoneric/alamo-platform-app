@@ -91,6 +91,30 @@ def add_check(check_id, domain, severity, passed, expected, actual, detail):
 
 manifest_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_context_manifest") or 0)
 resident_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_resident_profile") or 0)
+current_resident_county_count = int(
+    scalar(f"SELECT coalesce(sum(resident_count), 0) AS value FROM {target}.v_tool_current_resident_county_by_community") or 0
+)
+current_resident_county_reconciliation_failures = int(
+    scalar(
+        f"""
+        WITH profile_counts AS (
+          SELECT Facility, count(*) AS residents
+          FROM {target}.v_tool_resident_profile
+          GROUP BY Facility
+        ),
+        county_counts AS (
+          SELECT Facility, sum(resident_count) AS residents
+          FROM {target}.v_tool_current_resident_county_by_community
+          GROUP BY Facility
+        )
+        SELECT count(*) AS value
+        FROM profile_counts p
+        FULL OUTER JOIN county_counts c ON p.Facility = c.Facility
+        WHERE coalesce(p.residents, -1) <> coalesce(c.residents, -1)
+        """
+    )
+    or 0
+)
 census_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_census_monthly_by_community") or 0)
 census_weekly_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_census_weekly_by_community") or 0)
 weekly_census_latest_date = scalar(
@@ -244,8 +268,10 @@ mar_age_days = int(
     scalar(f"SELECT datediff({QA_AS_OF_SQL}, max(administration_date)) AS value FROM {target}.v_mar_administration_detail") or 0
 )
 
-add_check("manifest-present", "context", "critical", manifest_count >= 21, ">=21 slices", manifest_count, "Tool context manifest includes the governed resident, incident, census, and MAR slices.")
+add_check("manifest-present", "context", "critical", manifest_count >= 22, ">=22 slices", manifest_count, "Tool context manifest includes the governed resident, county, incident, census, and MAR slices.")
 add_check("resident-profile-present", "residents", "critical", resident_count > 0, ">0 rows", resident_count, "Current resident profile rows are available.")
+add_check("current-resident-county-present", "residents", "critical", current_resident_county_count == resident_count, resident_count, current_resident_county_count, "Every current resident is represented once in the county census, including County not recorded.")
+add_check("current-resident-county-reconciles", "residents", "critical", current_resident_county_reconciliation_failures == 0, "0 community mismatches", current_resident_county_reconciliation_failures, "County census totals reconcile to the governed current roster for every community.")
 add_check("census-history-present", "census", "critical", census_count > 0, ">0 rows", census_count, "Monthly census history is available.")
 add_check("census-weekly-present", "census", "critical", census_weekly_count > 0, ">0 rows", census_weekly_count, "Weekly census history is available.")
 add_check(
@@ -368,6 +394,8 @@ context_counts = {
     "census_weekly": census_weekly_count,
     "census_quality": census_quality_count,
     "resident_countability": resident_countability_count,
+    "current_resident_county": current_resident_county_count,
+    "current_resident_county_reconciliation_failures": current_resident_county_reconciliation_failures,
     "non_countable_profile_rows": non_countable_profile_count,
     "duplicate_profile_residents": duplicate_profile_resident_count,
     "resident_episode_history": resident_episode_count,
