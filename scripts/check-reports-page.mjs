@@ -55,6 +55,13 @@ assert(
   "reports must expose a stable page marker"
 );
 assert(
+  reportsSource.includes('value.id === "overview" || value.reportId === "overview"') &&
+    reportsSource.includes('title: "Overview"') &&
+    reportsSource.includes(".map(normalizeOverviewTitle)") &&
+    reportsSource.includes("report: normalizeOverviewTitle(value.report)"),
+  "the frontend must normalize the Overview label across older report-definition and compiled-report API responses"
+);
+assert(
     !reportsSource.includes("Deeper operating analysis.") &&
     !reportsSource.includes("6 report families") &&
     reportsSource.includes("Choose an analysis to review.") &&
