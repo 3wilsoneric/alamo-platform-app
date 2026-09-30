@@ -1,4 +1,5 @@
 import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../shared/community-names.mjs";
+import { buildVerifiedClientCountyRows } from "./admissions-county-crosswalk.mjs";
 
 // Leadership view of admissions. Census and resident-flow data stay aggregate:
 // the flow tables also carry admitted/discharged resident names, which are
@@ -103,63 +104,104 @@ function countyName(value) {
     : cleaned;
 }
 
-function buildCountyOutreach(asOfDate, communities, countyRows) {
+function summarizeCountyRows(asOfDate, community, sourceRows, source) {
+  const sourceAsOfDates = [...new Set(sourceRows.map((row) => isoDate(row.as_of_date)).filter(Boolean))];
+  const rowAsOfDate = sourceAsOfDates.length === 1 ? sourceAsOfDates[0] : null;
+  const baselineDates = [...new Set(sourceRows.map((row) => isoDate(row.source_as_of_date)).filter(Boolean))];
+  const countyCounts = new Map();
+  let countyNotRecorded = 0;
+  for (const row of sourceRows) {
+    const residents = numberValue(row.resident_count);
+    const name = countyName(row.client_county);
+    if (!name) countyNotRecorded += residents;
+    else {
+      const key = name.toLowerCase();
+      const current = countyCounts.get(key) ?? { county: name, residents: 0 };
+      current.residents += residents;
+      countyCounts.set(key, current);
+    }
+  }
+  const counties = [...countyCounts.values()]
+    .sort((left, right) => right.residents - left.residents || left.county.localeCompare(right.county));
+  const knownCountyResidents = counties.reduce((total, row) => total + row.residents, 0);
+  const publishedTotal = knownCountyResidents + countyNotRecorded;
+  const census = community?.census ?? null;
+  const status = !sourceRows.length
+    ? "source_not_published"
+    : census == null || rowAsOfDate !== asOfDate || publishedTotal !== census
+      ? "reconciliation_failed"
+      : "ready";
   return {
-    asOfDate,
-    communities: COUNTY_OUTREACH_FACILITY_IDS.map((id) => {
-      const facility = FACILITY_BY_ID.get(id);
-      const community = communities.find((row) => row.facilityId === id);
-      const sourceRows = countyRows.filter((row) => facilityId(row) === id);
-      const census = community?.census ?? null;
-      const sourceAsOfDates = [...new Set(sourceRows.map((row) => isoDate(row.as_of_date)).filter(Boolean))];
-      const sourceAsOfDate = sourceAsOfDates.length === 1 ? sourceAsOfDates[0] : null;
-      const countyCounts = new Map();
-      let countyNotRecorded = 0;
-      for (const row of sourceRows) {
-        const residents = numberValue(row.resident_count);
-        const name = countyName(row.client_county);
-        if (!name) countyNotRecorded += residents;
-        else {
-          const key = name.toLowerCase();
-          const current = countyCounts.get(key) ?? { county: name, residents: 0 };
-          current.residents += residents;
-          countyCounts.set(key, current);
-        }
-      }
-      const counties = [...countyCounts.values()]
-        .sort((left, right) => right.residents - left.residents || left.county.localeCompare(right.county));
-      const knownCountyResidents = counties.reduce((total, row) => total + row.residents, 0);
-      const publishedTotal = knownCountyResidents + countyNotRecorded;
-      const status = !sourceRows.length
-        ? "source_not_published"
-        : census == null || sourceAsOfDate !== asOfDate || publishedTotal !== census
-          ? "reconciliation_failed"
-          : "ready";
-      return {
-        facilityId: id,
-        communityName: facility?.communityName ?? community?.communityName ?? "Community",
-        shortName: facility?.shortName ?? community?.shortName ?? "Community",
-        status,
-        census,
-        knownCountyResidents: status === "ready" ? knownCountyResidents : null,
-        countyNotRecorded: status === "ready" ? countyNotRecorded : null,
-        coveragePct: status === "ready" && census
-          ? Math.round((knownCountyResidents / census) * 1000) / 10
-          : null,
-        counties: status === "ready"
-          ? counties.map((row) => ({
-            ...row,
-            sharePct: knownCountyResidents
-              ? Math.round((row.residents / knownCountyResidents) * 1000) / 10
-              : 0
-          }))
-          : []
-      };
-    })
+    source: status === "ready" ? source : null,
+    sourceAsOfDate: status === "ready" && baselineDates.length === 1 ? baselineDates[0] : null,
+    status,
+    census,
+    knownCountyResidents: status === "ready" ? knownCountyResidents : null,
+    countyNotRecorded: status === "ready" ? countyNotRecorded : null,
+    coveragePct: status === "ready" && census
+      ? Math.round((knownCountyResidents / census) * 1000) / 10
+      : null,
+    counties: status === "ready"
+      ? counties.map((row) => ({
+        ...row,
+        sharePct: knownCountyResidents
+          ? Math.round((row.residents / knownCountyResidents) * 1000) / 10
+          : 0
+      }))
+      : []
   };
 }
 
-function buildWeeklyBriefing({ asOfDate, census, communities, weeklyRows, countyRows, referralPipeline }) {
+function buildCountyOutreach(asOfDate, communities, publishedCountyRows, verifiedClientCountyRows) {
+  const outreachCommunities = COUNTY_OUTREACH_FACILITY_IDS.map((id) => {
+    const facility = FACILITY_BY_ID.get(id);
+    const community = communities.find((row) => row.facilityId === id);
+    const direct = summarizeCountyRows(
+      asOfDate,
+      community,
+      publishedCountyRows.filter((row) => facilityId(row) === id),
+      "admission_record"
+    );
+    const fallback = summarizeCountyRows(
+      asOfDate,
+      community,
+      verifiedClientCountyRows.filter((row) => facilityId(row) === id),
+      "verified_client_database"
+    );
+    const summary = direct.status === "ready" && direct.knownCountyResidents > 0
+      ? direct
+      : fallback.status === "ready" && fallback.knownCountyResidents > 0
+        ? fallback
+        : direct.status !== "source_not_published"
+          ? direct
+          : fallback;
+    return {
+      facilityId: id,
+      communityName: facility?.communityName ?? community?.communityName ?? "Community",
+      shortName: facility?.shortName ?? community?.shortName ?? "Community",
+      ...summary
+    };
+  });
+  const usableSources = [...new Set(outreachCommunities
+    .filter((community) => community.status === "ready" && (community.knownCountyResidents ?? 0) > 0)
+    .map((community) => community.source))];
+  const source = usableSources.length === 1
+    ? usableSources[0]
+    : usableSources.length > 1
+      ? "mixed"
+      : null;
+  const sourceDates = [...new Set(outreachCommunities
+    .map((community) => community.sourceAsOfDate)
+    .filter(Boolean))];
+  return {
+    asOfDate,
+    source,
+    sourceAsOfDate: sourceDates.length === 1 ? sourceDates[0] : null,
+    communities: outreachCommunities
+  };
+}
+
+function buildWeeklyBriefing({ asOfDate, census, communities, weeklyRows, publishedCountyRows, verifiedClientCountyRows, referralPipeline }) {
   const sourceStatus = pipelineBriefingStatus(referralPipeline);
   const source = referralPipeline.status === "connected" && referralPipeline.briefing.status === "ready"
     ? referralPipeline.briefing
@@ -292,7 +334,7 @@ function buildWeeklyBriefing({ asOfDate, census, communities, weeklyRows, county
       completedMoveInsThisWeek: completedMoveInsCovered ? flowTotals(currentWeekRows).admissions : null
     },
     communities: communityRowsWithUnassigned,
-    countyOutreach: buildCountyOutreach(asOfDate, communities, countyRows),
+    countyOutreach: buildCountyOutreach(asOfDate, communities, publishedCountyRows, verifiedClientCountyRows),
     origins,
     recentReferrals,
     upcomingAssessments,
@@ -303,7 +345,7 @@ function buildWeeklyBriefing({ asOfDate, census, communities, weeklyRows, county
 
 /**
  * @param {any} snapshot
- * @param {{ referralPipeline?: any }} [options]
+ * @param {{ referralPipeline?: any, clientDatabase?: any }} [options]
  */
 export function buildAdmissionsDashboard(snapshot, options = {}) {
   const generatedAt = textValue(snapshot?.snapshot?.generated_at ?? snapshot?.generated_at);
@@ -317,7 +359,12 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
     .filter((row) => (isoDate(row.week_start) ?? "9999") <= asOfDate);
   const monthlyRows = table(snapshot, "resident_flow_monthly_by_community")
     .filter((row) => textValue(row.month_bucket) && textValue(row.month_bucket) <= asOfMonth);
-  const countyRows = table(snapshot, "current_resident_county_by_community");
+  const publishedCountyRows = table(snapshot, "current_resident_county_by_community");
+  const verifiedClientCountyRows = buildVerifiedClientCountyRows(
+    table(snapshot, "resident_profile"),
+    options.clientDatabase ?? null,
+    asOfDate
+  );
 
   const weekly = seriesBy(weeklyRows, "week_start", WEEKLY_POINTS).map((point) => ({
     ...point,
@@ -384,7 +431,8 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
     census,
     communities,
     weeklyRows,
-    countyRows,
+    publishedCountyRows,
+    verifiedClientCountyRows,
     referralPipeline
   });
 

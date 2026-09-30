@@ -3,7 +3,7 @@
 - purpose: define the Alamo Admissions overview and the full Pipeline referral-workflow boundary
 - status: current implementation and deployment contract
 - owners: product, engineering, admissions platform
-- updated: 2026-09-29
+- updated: 2026-09-30
 - tags: admissions, pipeline, routing, authentication, integration
 - labels: application-boundary, current-state, deployment
 
@@ -38,14 +38,25 @@ strip.
   section carries explicit source coverage and never converts missing data into
   a zero or estimate.
 
-The county-outreach panel uses the latest admission-history row that exactly
-matches each governed current resident's facility, resident number, and current
-admission date, using the source field `County_Admitted_From`. It groups only
-aggregate resident counts and publishes no resident identity in the
-Admissions response. Each community renders only when its county groups sum to
-the current governed census on the same as-of date. Missing county values remain
-visible as `County not recorded`; stale or unreconciled data renders unavailable
-instead of being estimated. Referral management charts label Pipeline's current
+The county-outreach panel first uses the latest admission-history row that
+exactly matches each governed current resident's facility, resident number, and
+current admission date, using the source field `County_Admitted_From`. When that
+source has no usable county values, the server may fall back to the separately
+validated client database. The fallback requires an exact normalized resident
+number plus an explicit matching Alamo community and exactly one client
+candidate. It accepts only `county__completion_status = verified`; review-only,
+blank, wrong-community, duplicate, ambiguous, and unmatched records remain
+unverified. It never uses a name or fuzzy match.
+
+Both paths group aggregate resident counts and publish no resident identity in
+the Admissions response. Each target community must reconcile to the current
+governed census on the same roster as-of date and must contain at least one
+verified county before the entire panel renders. If either San Pablo or Santa
+Clarita fails that gate, the panel is hidden rather than presented as complete.
+The UI labels the active source and, for the fallback, the client-database
+baseline date. Percentages use only residents with verified county as the
+denominator; all other current residents remain visible only as a count of
+`County not verified`. Referral management charts label Pipeline's current
 intake county as `Client county`, separate from referral-source organization.
 - **Pipeline** — the live governed referral workspace: Referral received, In
   progress, and Decision columns holding one card per referral. Board is the

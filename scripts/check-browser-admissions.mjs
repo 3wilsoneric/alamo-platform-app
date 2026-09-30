@@ -66,6 +66,8 @@ await withBrowserQa(async (browser) => {
   await briefingTab.click();
   const dashboard = page.locator('[data-admissions-briefing-dashboard="true"]');
   await dashboard.waitFor({ state: "visible" });
+  const countyCommunityCount = await page.locator('[data-admissions-county-community]').count();
+  const countyHeadingCount = await page.getByRole("heading", { name: "County outreach" }).count();
   if (
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-pipeline-page="true"]').count() !== 0 ||
@@ -73,15 +75,18 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-briefing-pager="true"]').count() !== 0 ||
     await page.locator('[data-admissions-briefing-community]').count() !== 5 ||
     await page.locator('[data-admissions-briefing-community]').filter({ hasText: "Unassigned" }).count() !== 0 ||
-    await page.locator('[data-admissions-county-community]').count() !== 2 ||
+    ![0, 2].includes(countyCommunityCount) ||
+    countyHeadingCount !== (countyCommunityCount === 2 ? 1 : 0) ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
-    await page.getByRole("heading", { name: "County outreach" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Where referrals are coming from" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 1
   ) {
     throw new Error("The Briefing page must render as a readable dashboard without report tables or slide navigation.");
+  }
+  if (countyCommunityCount === 2 && !/verified county/i.test(await page.locator('[data-admissions-county-outreach="true"]').innerText())) {
+    throw new Error("County outreach must identify the displayed county data as verified.");
   }
 
   const sourceNotice = page.locator('[data-admissions-briefing-source-notice="true"]');

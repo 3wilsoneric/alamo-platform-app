@@ -430,12 +430,24 @@ function validateAdmissionsDashboardPayload(value: unknown) {
   });
   const countyOutreach = assertRecord(briefing.countyOutreach, endpoint, "briefing.countyOutreach");
   assertIsoCalendarDate(countyOutreach.asOfDate, endpoint, "briefing.countyOutreach.asOfDate");
+  assertString(countyOutreach.source, endpoint, "briefing.countyOutreach.source", { nullable: true });
+  if (countyOutreach.source !== null && !["verified_client_database", "admission_record", "mixed"].includes(String(countyOutreach.source))) {
+    fail(endpoint, "briefing.countyOutreach.source is not a known source");
+  }
+  assertString(countyOutreach.sourceAsOfDate, endpoint, "briefing.countyOutreach.sourceAsOfDate", { nullable: true });
+  if (countyOutreach.sourceAsOfDate !== null) assertIsoCalendarDate(countyOutreach.sourceAsOfDate, endpoint, "briefing.countyOutreach.sourceAsOfDate");
   const countyCommunities = assertArray(countyOutreach.communities, endpoint, "briefing.countyOutreach.communities");
   if (countyCommunities.length !== 2) fail(endpoint, "briefing.countyOutreach.communities must contain San Pablo and Santa Clarita");
   countyCommunities.forEach((rowValue, index) => {
     const path = `briefing.countyOutreach.communities[${index}]`;
     const row = assertRecord(rowValue, endpoint, path);
     ["facilityId", "communityName", "shortName", "status"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
+    assertString(row.source, endpoint, `${path}.source`, { nullable: true });
+    if (row.source !== null && !["verified_client_database", "admission_record"].includes(String(row.source))) {
+      fail(endpoint, `${path}.source is not a known source`);
+    }
+    assertString(row.sourceAsOfDate, endpoint, `${path}.sourceAsOfDate`, { nullable: true });
+    if (row.sourceAsOfDate !== null) assertIsoCalendarDate(row.sourceAsOfDate, endpoint, `${path}.sourceAsOfDate`);
     if (!["ready", "source_not_published", "reconciliation_failed"].includes(String(row.status))) {
       fail(endpoint, `${path}.status is not a known state`);
     }
