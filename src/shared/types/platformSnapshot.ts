@@ -872,3 +872,50 @@ export interface DataExplorerResponse {
   client_database?: ClientDatabaseMetadata;
   rows: DataExplorerRow[];
 }
+
+export interface WorkforceTotals {
+  active: number;
+  onboarding: number;
+  onLeave: number;
+  openRoles: number;
+  applicants: number;
+  phase1: number;
+  phase2: number;
+  phase3: number;
+  expired: number;
+  expiring: number;
+  missing: number;
+  staffBlockedFromScheduling: number;
+  complianceRate: number;
+}
+
+export interface WorkforceOpenPosition {
+  title: string;
+  community: string;
+  roleLabel: string;
+  openedOn: string;
+  openings: number;
+  daysOpen: number;
+  phase1: number;
+  phase2: number;
+  phase3: number;
+}
+
+export type WorkforceSummary =
+  | { status: "not_connected" | "unavailable" }
+  | {
+      status: "connected";
+      workforceUrl: string | null;
+      asOf: string;
+      generatedAt: string;
+      phaseNames: [string, string, string];
+      portfolio: WorkforceTotals;
+      communities: Array<{ community: string; totals: WorkforceTotals }>;
+      roles: Array<{ discipline: string; label: string; totals: WorkforceTotals }>;
+      openPositions: WorkforceOpenPosition[];
+    };
+
+export interface WorkforceDashboardResponse {
+  generated_at: string;
+  workforce: WorkforceSummary;
+}

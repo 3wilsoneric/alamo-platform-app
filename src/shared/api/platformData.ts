@@ -8,7 +8,8 @@ import type {
   LiveCommunitiesDashboardResponse,
   PlatformHealthResponse,
   AnalystTraceTelemetryResponse,
-  ReportsSummaryResponse
+  ReportsSummaryResponse,
+  WorkforceDashboardResponse
 } from "../types/platformSnapshot";
 import {
   readJsonStorage,
@@ -35,7 +36,8 @@ export type {
   LiveCommunitiesDashboardResponse,
   PlatformHealthResponse,
   AnalystTraceTelemetryResponse,
-  ReportsSummaryResponse
+  ReportsSummaryResponse,
+  WorkforceDashboardResponse
 } from "../types/platformSnapshot";
 
 const clientCache = new Map<
@@ -427,6 +429,21 @@ export function fetchAdmissionsDashboard(signal?: AbortSignal) {
     "/api/platform/admissions-dashboard",
     signal,
     platformResponseValidators.admissionsDashboard
+  );
+}
+
+export function fetchWorkforceDashboard(signal?: AbortSignal) {
+  return fetchJson<WorkforceDashboardResponse>(
+    "/api/platform/workforce-dashboard",
+    signal,
+    platformResponseValidators.workforceDashboard
+  );
+}
+
+export function readCachedWorkforceDashboard() {
+  return readCachedJson(
+    "/api/platform/workforce-dashboard",
+    platformResponseValidators.workforceDashboard
   );
 }
 

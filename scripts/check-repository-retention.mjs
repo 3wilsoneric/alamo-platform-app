@@ -48,7 +48,8 @@ const platformDocs = [
   "docs/platform/repository-ownership.md",
   "docs/platform/ship-checklist.md",
   "docs/platform/testing-quality.md",
-  "docs/platform/user-journeys.md"
+  "docs/platform/user-journeys.md",
+  "docs/platform/workforce-zone.md"
 ];
 
 const referenceDocs = [
@@ -100,7 +101,7 @@ const rejectedPathParts = [
   /^docs\/code-bible\//,
   /^public\/strategy\//,
   /^src\/features\/briefings\//,
-  /^src\/features\/(admin|demo|strategy|suite|workflow|workforce)\//,
+  /^src\/features\/(admin|demo|strategy|suite|workflow)\//,
   /^src\/mobile\//,
   /^api\/debug\//,
   /^api\/census\.js$/,

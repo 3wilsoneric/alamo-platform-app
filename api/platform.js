@@ -4,7 +4,8 @@ import {
   getPlatformBootstrap,
   getPlatformHealth,
   getPlatformSnapshotHealth,
-  getPlatformSnapshotMetadata
+  getPlatformSnapshotMetadata,
+  getWorkforceDashboardData
 } from "../server/platform-data.mjs";
 import { getAnalystTraceTelemetry } from "../server/tools/turn-trace.mjs";
 import {
@@ -68,6 +69,7 @@ const PLATFORM_GET_ROUTES = Object.freeze({
     return getLicensingUpdates();
   },
   "/api/platform/admissions-dashboard": () => getAdmissionsDashboardData(),
+  "/api/platform/workforce-dashboard": () => getWorkforceDashboardData(),
   "/api/platform/bootstrap": () => getPlatformBootstrap(),
   "/api/platform/health": () => getPlatformHealth(),
   "/api/platform/analyst-qa": () => getAnalystQaStatus(),
