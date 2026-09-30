@@ -226,7 +226,7 @@ The owner-facing browser presents precomputed low/base/high screening values
 from each operator's bed range and segment defaults. The valuation API still
 accepts explicit bounded inputs for future workflows and rejects invalid,
 missing, or incorrectly ordered bed ranges rather than treating them as zero.
-The API and the Fifty States view use the same owner allowlist as private
+The API and the Outreach view use the same owner allowlist as private
 platform knowledge; other signed-in users receive a generic 404 and never see
 the acquisition view.
 

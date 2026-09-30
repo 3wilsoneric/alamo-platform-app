@@ -284,7 +284,7 @@ parents, state-license rows keep core and adjacent licensed beds separate, and
 the owner-only operator API searches the nested 500/100 funnel by company,
 legal operator, and license number.
 
-`npm run check:browser-acquisition` opens Fifty States at desktop and mobile
+`npm run check:browser-acquisition` opens Outreach at desktop and mobile
 widths, enters the owner-only acquisition view, confirms the company-level
 screen and default active filter, validates SUN's published 579-bed total and
 source link, confirms the facility workflows remain hidden, and rejects browser
@@ -293,11 +293,11 @@ errors, API failures, or viewport overflow.
 Responsive release acceptance also covers every direct product route at compact
 320px, standard iPhone widths, tablet widths, desktop, and wide desktop. Check
 Home, Reports, Questions, Communities, direct community detail, Incident Center,
-Admissions, Glossary, all three Data Explorer modes, Command Center, Fifty States,
+Admissions, Glossary, all three Data Explorer modes, Command Center, Outreach,
 and Data Architecture in Chromium; repeat phone routes and modal states in WebKit.
 The pass fails for document-level horizontal overflow, clipped form controls,
 sub-16px phone inputs that trigger iOS zoom, or browser runtime errors. Intentional
-off-canvas carousel panels and the bounded Fifty States SVG do not count as
+off-canvas carousel panels and the bounded Outreach SVG do not count as
 document overflow.
 
 ### Responsive review — 2026-09-28
@@ -311,7 +311,7 @@ The review covered Home and its five community profiles, Reports and all five
 report selections, Questions and a completed comparison answer, Admissions
 board/census/trends and management folders, Licensing search/reader/Updates,
 Communities and direct community detail, Incident Center, Glossary, all three
-Data Explorer modes, Command Center, Fifty States and its profile/acquisition
+Data Explorer modes, Command Center, Outreach and its profile/acquisition
 views, Data Architecture, and sign-in. Production checks also exercised the
 phone menu, return navigation, sticky headers, the Monday Licensing schedule,
 and the end of a long analysis answer. No production data was edited.

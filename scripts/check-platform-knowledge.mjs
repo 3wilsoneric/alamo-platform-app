@@ -293,7 +293,7 @@ for (const route of ["/api/platform/knowledge", "/api/platform/knowledge/search"
 assert(platformApiSource.includes("assertPlatformKnowledgeOwner"), "production knowledge routes must enforce owner-only access");
 assert(devApiSource.includes("assertPlatformKnowledgeOwner"), "development knowledge routes must mirror owner-only access");
 assert(platformNavigationSource.includes("usePlatformOwnerAccess"), "shared navigation must resolve the verified owner identity");
-assert(platformNavigationSource.includes('label: "Fifty States"') && platformNavigationSource.includes("ownerOnly: true"), "Fifty States must remain a discoverable owner-only destination");
+assert(platformNavigationSource.includes('label: "Outreach"') && platformNavigationSource.includes("ownerOnly: true"), "Outreach must remain a discoverable owner-only destination");
 
 await rm(testDirectory, { recursive: true, force: true });
 

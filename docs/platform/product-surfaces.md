@@ -21,7 +21,7 @@ Admissions-only identities retain their existing access boundary.
 Analytics keeps Reports and Ask a question in a separate row below the header.
 Betty Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
 other account, including a platform administrator, receives Licensing access.
-Eric's verified owner identity also receives a Fifty States destination in the
+Eric's verified owner identity also receives an Outreach destination in the
 shared header; the acquisition workspace and its APIs remain hidden from every
 other account.
 The report catalog becomes a selector below 1024px, preserving a full-width
@@ -101,7 +101,7 @@ wrap rather than truncate.
 Admissions follows Analytics in primary navigation for every
 signed-in Platform identity. Admissions-specific roles may restrict an identity
 to that workspace, but they are not an extra entitlement required by a normal
-Platform user to see the aggregate overview. Fifty States acquisition research,
+Platform user to see the aggregate overview. Outreach acquisition research,
 Command Center, Data Explorer, and other deep tools stay available through
 governed routes or analyst drilldowns, but do not occupy the primary phone
 header. Phone layouts must still render any direct route safely.

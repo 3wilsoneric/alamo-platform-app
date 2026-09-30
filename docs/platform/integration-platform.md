@@ -109,7 +109,7 @@ draft notes.
 
 ### Private acquisition intelligence
 
-Fifty States contains an owner-only acquisition workspace backed by the same
+Outreach contains an owner-only acquisition workspace backed by the same
 Entra and platform API boundary. Its current browser surface is an operator
 screen with one company per row. It combines current public footprint sources,
 bounded bed estimates, confidence labels, and deterministic valuation outputs
@@ -186,7 +186,7 @@ The discovery adapter is operational through
 raw FindTreatment state responses, source hashes, a configurable field map,
 preliminary coded-screen counts, and a named facility index. The protected
 `/api/platform/acquisition/search` route exposes bounded state, disposition,
-and full-text searches to Fifty States. Because SAMHSA does not expose a public
+and full-text searches to Outreach. Because SAMHSA does not expose a public
 facility key shared by these two products, the PUF and directory records are
 not joined at facility level; that limitation is stored and shown in the UI.
 The protected `/api/platform/acquisition/research` GET and POST contract owns
