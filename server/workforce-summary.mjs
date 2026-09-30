@@ -9,6 +9,7 @@ const FAILURE_RETRY_MS = 60_000;
 const MAX_COMMUNITIES = 40;
 const MAX_ROLES = 40;
 const MAX_OPEN_POSITIONS = 400;
+const MAX_EXPIRATION_GROUPS = 100;
 
 const TOTAL_FIELDS = Object.freeze([
   "active", "onboarding", "onLeave", "openRoles", "applicants", "phase1", "phase2", "phase3",
@@ -83,6 +84,22 @@ function normalizeOpenPosition(row, workforceOrigin) {
   return { title, discipline, community, roleLabel, openedOn, url, ...counts };
 }
 
+function normalizeExpirations(rows) {
+  // Added after schemaVersion 1 shipped; older producers omit it.
+  if (rows === undefined) return [];
+  if (!Array.isArray(rows) || rows.length > MAX_EXPIRATION_GROUPS) return null;
+  const normalized = rows.map((row) => {
+    const community = text(row?.community, 80);
+    const label = text(row?.label, 120);
+    const expiresOn = isoCalendarDate(row?.expiresOn);
+    const people = count(row?.people);
+    return community && label && expiresOn && people && typeof row.blocksScheduling === "boolean"
+      ? { community, label, expiresOn, people, blocksScheduling: row.blocksScheduling }
+      : null;
+  });
+  return normalized.some((row) => row === null) ? null : normalized;
+}
+
 /**
  * Validates every field; any contract violation rejects the whole summary so
  * the page never renders partially trusted numbers.
@@ -108,9 +125,10 @@ export function normalizeWorkforceSummary(payload, workforceOrigin = null) {
     ? overview.openPositions.map((row) => normalizeOpenPosition(row, workforceOrigin))
     : null;
   const phaseNames = [1, 2, 3].map((phase) => text(overview.phaseNames?.[String(phase)], 60));
+  const upcomingExpirations = normalizeExpirations(overview.upcomingExpirations);
   if (
     !asOf || !generatedAt || !Number.isFinite(Date.parse(generatedAt)) || !portfolio || !communities || !roles ||
-    !positions || positions.some((position) => position === null) || phaseNames.some((name) => !name)
+    !positions || positions.some((position) => position === null) || phaseNames.some((name) => !name) || !upcomingExpirations
   ) {
     return null;
   }
@@ -124,7 +142,8 @@ export function normalizeWorkforceSummary(payload, workforceOrigin = null) {
     portfolio,
     communities,
     roles,
-    openPositions: positions
+    openPositions: positions,
+    upcomingExpirations
   };
 }
 

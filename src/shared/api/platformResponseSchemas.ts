@@ -587,6 +587,14 @@ function validateWorkforceDashboardPayload(value: unknown) {
     assertString(record.url, endpoint, `workforce.openPositions[${index}].url`, { nullable: true });
     ["openings", "daysOpen", "phase1", "phase2", "phase3"].forEach((field) => assertNumber(record[field], endpoint, `workforce.openPositions[${index}].${field}`));
   });
+  assertArray(workforce.upcomingExpirations, endpoint, "workforce.upcomingExpirations").forEach((row, index) => {
+    const record = assertRecord(row, endpoint, `workforce.upcomingExpirations[${index}]`);
+    assertString(record.community, endpoint, `workforce.upcomingExpirations[${index}].community`);
+    assertString(record.label, endpoint, `workforce.upcomingExpirations[${index}].label`);
+    assertIsoCalendarDate(record.expiresOn, endpoint, `workforce.upcomingExpirations[${index}].expiresOn`);
+    assertNumber(record.people, endpoint, `workforce.upcomingExpirations[${index}].people`);
+    assertBoolean(record.blocksScheduling, endpoint, `workforce.upcomingExpirations[${index}].blocksScheduling`);
+  });
   return payload as unknown as WorkforceDashboardResponse;
 }
 

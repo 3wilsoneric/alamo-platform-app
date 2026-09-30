@@ -18,7 +18,15 @@ spreadsheet or Paylocity data that feeds them.
 and Analytics. It follows the Admissions board pattern: every element says what
 to do next and links to the place to do it.
 
-- community and role filters
+- two surfaces, like Admissions: **Briefing** (`/workforce?view=briefing`) and
+  **Hiring board** (default)
+- the briefing opens with a three-sentence update typed out once per session
+  (open seats and who is in offer and clearance, the longest-waiting role with
+  no candidates, and scheduling blocks plus credentials expiring soon), then
+  three action lists: credentials expiring in the next 30 days (grouped by
+  community, credential, and date), roles with candidates in offer and
+  clearance, and roles with no candidates, each linking into the Workforce app
+- community and role filters on the hiring board
 - a hiring board of open roles in three action columns: Needs candidates,
   Interviewing (Phase 2), and Ready to hire (Phase 3 offer and clearance). Each
   card shows one square per candidate shaded by phase, a dashed square for each
@@ -48,7 +56,10 @@ server, never from the browser and never through Workforce's user APIs.
 - response: `schemaVersion` 1, `overview.asOf`, `portfolio`, `communities[]`,
   `roles[]`, `openPositions[]` (each with a relative `path` such as
   `/hiring?position=<id>`, which Alamo joins to the summary origin only when it
-  matches that exact shape), and `phaseNames`. Communities use the short
+  matches that exact shape), `phaseNames`, and `upcomingExpirations[]`
+  (community, credential label, expiry date, people count, and whether it
+  blocks scheduling; counts only, treated as empty when an older producer
+  omits it). Communities use the short
   names in `shared/community-names.mjs`.
 - validation: `server/workforce-summary.mjs` checks every field (integer
   counts, phases summing to applicants, ISO dates, bounded row counts) and

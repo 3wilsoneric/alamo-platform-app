@@ -903,6 +903,14 @@ export interface WorkforceOpenPosition {
   phase3: number;
 }
 
+export interface WorkforceExpirationGroup {
+  community: string;
+  label: string;
+  expiresOn: string;
+  people: number;
+  blocksScheduling: boolean;
+}
+
 export type WorkforceSummary =
   | { status: "not_connected" | "unavailable" }
   | {
@@ -915,6 +923,7 @@ export type WorkforceSummary =
       communities: Array<{ community: string; totals: WorkforceTotals }>;
       roles: Array<{ discipline: string; label: string; totals: WorkforceTotals }>;
       openPositions: WorkforceOpenPosition[];
+      upcomingExpirations: WorkforceExpirationGroup[];
     };
 
 export interface WorkforceDashboardResponse {
