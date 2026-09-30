@@ -22,6 +22,12 @@ interface ReportsPageProps {
   active?: boolean;
 }
 
+function normalizeOverviewTitle<T extends { id?: string; reportId?: string; title: string }>(value: T): T {
+  return value.id === "overview" || value.reportId === "overview"
+    ? { ...value, title: "Overview" }
+    : value;
+}
+
 export default function ReportsPage({
   embedded = false,
   active = true
@@ -51,9 +57,9 @@ export default function ReportsPage({
       fetchFullReportDefinitions(controller.signal)
     ])
       .then(([dashboardValue, definitionValue]) => {
-        const visibleReports = definitionValue.reports.filter(
-          (report) => report.showInAnalyticsNav
-        );
+        const visibleReports = definitionValue.reports
+          .filter((report) => report.showInAnalyticsNav)
+          .map(normalizeOverviewTitle);
         setDashboard(dashboardValue);
         setReportDefinitions(visibleReports);
         setSelectedReportId((currentReportId) =>
@@ -105,7 +111,10 @@ export default function ReportsPage({
       controller.signal
     )
       .then((value) => {
-        setReportPackage(value);
+        setReportPackage({
+          ...value,
+          report: normalizeOverviewTitle(value.report)
+        });
         setPeriodOptions(value.availablePeriods);
       })
       .catch((reportError) => {
