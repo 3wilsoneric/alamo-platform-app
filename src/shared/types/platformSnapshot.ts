@@ -320,6 +320,8 @@ export interface AdmissionsCountyOutreachCommunity {
   facilityId: string;
   communityName: string;
   shortName: string;
+  source: "verified_client_database" | "admission_record" | null;
+  sourceAsOfDate: string | null;
   status: "ready" | "source_not_published" | "reconciliation_failed";
   census: number | null;
   knownCountyResidents: number | null;
@@ -356,6 +358,8 @@ export interface AdmissionsWeeklyBriefing {
   communities: AdmissionsBriefingCommunityRow[];
   countyOutreach: {
     asOfDate: string;
+    source: "verified_client_database" | "admission_record" | "mixed" | null;
+    sourceAsOfDate: string | null;
     communities: AdmissionsCountyOutreachCommunity[];
   };
   origins: AdmissionsBriefingOriginRow[];

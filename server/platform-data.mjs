@@ -46,11 +46,20 @@ export { getSnapshotFreshness, isSnapshotUnavailableError } from "./snapshot-sta
 // Census and flow come from the governed snapshot; the referral funnel is
 // fetched from Pipeline separately so either source can be missing.
 export async function getAdmissionsDashboardData() {
-  const [snapshot, referralPipeline] = await Promise.all([
-    getRequiredPlatformSnapshot(),
-    getPipelineAdmissionsSummary()
+  const snapshotPromise = getRequiredPlatformSnapshot();
+  const referralPipelinePromise = getPipelineAdmissionsSummary();
+  const snapshot = await snapshotPromise;
+  const [referralPipeline, clientDatabase] = await Promise.all([
+    referralPipelinePromise,
+    readPlatformClientDatabase(snapshot).catch((error) => {
+      console.warn(`[admissions] verified county crosswalk unavailable: ${error instanceof Error ? error.message : "unknown error"}`);
+      return null;
+    })
   ]);
-  return decorateSnapshotPayload(buildAdmissionsDashboard(snapshot, { referralPipeline }), snapshot);
+  return decorateSnapshotPayload(
+    buildAdmissionsDashboard(snapshot, { referralPipeline, clientDatabase }),
+    snapshot
+  );
 }
 
 // Workforce publishes its own aggregate summary; Alamo adds no snapshot data,

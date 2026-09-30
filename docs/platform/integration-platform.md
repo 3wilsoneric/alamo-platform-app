@@ -228,6 +228,14 @@ referenced by `clientDatabase.path` once per pointer identity, indexes it by
 only on that key. Directory search supports name, canonical ID, and resident
 number; full enrichment is returned only for one selected client.
 
+Admissions county outreach uses a separate aggregate-only crosswalk, not the
+client-detail join. It matches exact normalized resident number plus explicit
+Alamo community to one unique client, accepts only client-database counties
+marked `verified`, and returns counts only. It excludes review-only, blank,
+wrong-community, duplicate, ambiguous, and unmatched records and never matches
+on name. The panel remains hidden unless both requested communities reconcile to
+the current roster and have verified coverage.
+
 Pipeline owns assessment history. For a confirmed existing client it stores the
 Alamo `canonical_client_id` with each assessment and never replaces the static
 August 18, 2026 baseline. New-client and incremental Databricks writes remain

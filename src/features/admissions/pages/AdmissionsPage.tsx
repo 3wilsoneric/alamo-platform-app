@@ -473,6 +473,10 @@ function AdmissionsBriefingDashboard({
     return <p className="rounded-2xl border border-[#dfe3e1] bg-white px-5 py-12 text-center text-[13px] text-[#69716c]">The weekly briefing is not available in the current snapshot.</p>;
   }
   const { briefing } = dashboard;
+  const showCountyOutreach = briefing.countyOutreach.communities.length > 0 &&
+    briefing.countyOutreach.communities.every((community) =>
+      community.status === "ready" && (community.knownCountyResidents ?? 0) > 0
+    );
 
   return (
     <section data-admissions-weekly-briefing="true" aria-labelledby="admissions-weekly-briefing-title">
@@ -492,7 +496,9 @@ function AdmissionsBriefingDashboard({
 
       <div data-admissions-briefing-dashboard="true" className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12"><BriefingCommunityDashboard briefing={briefing} /></div>
-        <div className="lg:col-span-12"><BriefingCountyOutreach briefing={briefing} /></div>
+        {showCountyOutreach ? (
+          <div className="lg:col-span-12"><BriefingCountyOutreach briefing={briefing} /></div>
+        ) : null}
         <div className="lg:col-span-6">
           <BriefingSchedule
             title="Upcoming assessments"
@@ -575,6 +581,8 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
 }
 
 function BriefingCountyOutreach({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
+  const usesVerifiedClientDatabase = briefing.countyOutreach.source === "verified_client_database";
+  const usesMixedSources = briefing.countyOutreach.source === "mixed";
   return (
     <section
       data-admissions-county-outreach="true"
@@ -583,14 +591,26 @@ function BriefingCountyOutreach({ briefing }: { briefing: AdmissionsDashboardRes
     >
       <div className="mb-4">
         <h3 id="admissions-county-outreach-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">County outreach</h3>
-        <p className="mt-1 text-[10px] leading-4 text-[#737b77]">Current residents by the county recorded on their admission, focused on San Pablo and Santa Clarita.</p>
+        <p className="mt-1 text-[10px] leading-4 text-[#737b77]">
+          {usesVerifiedClientDatabase
+            ? "Current residents with a verified county matched by exact resident number and community, focused on San Pablo and Santa Clarita."
+            : usesMixedSources
+              ? "Current residents with verified county from the admission record or an exact client-database match, focused on San Pablo and Santa Clarita."
+              : "Current residents by the county recorded on their admission, focused on San Pablo and Santa Clarita."}
+        </p>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {briefing.countyOutreach.communities.map((community) => (
           <CountyOutreachCommunity key={community.facilityId} community={community} />
         ))}
       </div>
-      <p className="mt-3 text-[9px] leading-4 text-[#7a817d]">County is sourced from the resident’s current admission record. Percentages use residents with a recorded county as the denominator.</p>
+      <p className="mt-3 text-[9px] leading-4 text-[#7a817d]">
+        {usesVerifiedClientDatabase
+          ? `Source: verified client database records${briefing.countyOutreach.sourceAsOfDate ? `, baseline ${formatDate(briefing.countyOutreach.sourceAsOfDate)}` : ""}. Review-only, blank, ambiguous, and unmatched records remain unverified.`
+          : usesMixedSources
+            ? "Source: current admission records and verified client database records matched by exact resident number and community. Review-only, blank, ambiguous, and unmatched records remain unverified."
+            : "Source: the resident’s current admission record."} Percentages use residents with verified county as the denominator.
+      </p>
     </section>
   );
 }
@@ -627,7 +647,7 @@ function CountyOutreachCommunity({
       <div className="flex items-start justify-between gap-3 border-b border-[#e3e8e5] pb-3">
         <div>
           <h4 className="text-[13px] font-semibold text-[#263c35]">{community.shortName}</h4>
-          <p className="mt-1 text-[9px] text-[#737b77]">{formatBriefingCount(community.knownCountyResidents)} of {formatBriefingCount(community.census)} residents have county recorded</p>
+          <p className="mt-1 text-[9px] text-[#737b77]">{formatBriefingCount(community.knownCountyResidents)} of {formatBriefingCount(community.census)} residents have verified county</p>
         </div>
         <span className="shrink-0 text-[12px] font-semibold tabular-nums text-[#176d51]">{community.coveragePct?.toFixed(1)}%</span>
       </div>
@@ -641,9 +661,9 @@ function CountyOutreachCommunity({
             </li>
           ))}
         </ol>
-      ) : <p className="py-6 text-[11px] text-[#69716c]">No resident county is recorded.</p>}
+      ) : <p className="py-6 text-[11px] text-[#69716c]">No resident county is verified.</p>}
       {(community.countyNotRecorded ?? 0) > 0 ? (
-        <p className="mt-2 border-t border-[#dfe5e1] pt-2.5 text-[9px] text-[#7a817d]">County not recorded for {community.countyNotRecorded} {pluralize("resident", community.countyNotRecorded ?? 0)}.</p>
+        <p className="mt-2 border-t border-[#dfe5e1] pt-2.5 text-[9px] text-[#7a817d]">County not verified for {community.countyNotRecorded} {pluralize("resident", community.countyNotRecorded ?? 0)}.</p>
       ) : null}
     </article>
   );

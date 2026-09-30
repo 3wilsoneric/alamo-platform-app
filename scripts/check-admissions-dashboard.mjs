@@ -78,10 +78,14 @@ assert.deepEqual(dashboard.weekly.map((point) => [point.period, point.partial]),
 ]);
 assert.equal(dashboard.communities[0].facilityId, "337");
 assert.equal(dashboard.communities[0].occupancyPct, 86.3);
+assert.equal(dashboard.briefing.countyOutreach.source, "admission_record");
+assert.equal(dashboard.briefing.countyOutreach.sourceAsOfDate, null);
 assert.deepEqual(dashboard.briefing.countyOutreach.communities[0], {
   facilityId: "337",
   communityName: "A & A Health Services San Pablo",
   shortName: "San Pablo",
+  source: "admission_record",
+  sourceAsOfDate: null,
   status: "ready",
   census: 151,
   knownCountyResidents: 120,
@@ -94,6 +98,7 @@ assert.deepEqual(dashboard.briefing.countyOutreach.communities[0], {
 });
 assert.equal(dashboard.briefing.countyOutreach.communities[1].facilityId, "345");
 assert.equal(dashboard.briefing.countyOutreach.communities[1].status, "source_not_published");
+assert.equal(dashboard.briefing.countyOutreach.communities[1].source, null);
 assert.deepEqual(dashboard.referral_pipeline, { status: "not_connected" });
 assert.ok(!/Resident [AB]/.test(JSON.stringify(dashboard)), "resident names must never reach the admissions payload");
 
@@ -111,6 +116,71 @@ for (const row of staleCountySnapshot.reportsSummary.toolContext.tables.current_
 const staleCountyDashboard = buildAdmissionsDashboard(staleCountySnapshot);
 assert.equal(staleCountyDashboard.briefing.countyOutreach.communities[0].status, "reconciliation_failed");
 assert.equal(staleCountyDashboard.briefing.countyOutreach.communities[0].coveragePct, null);
+
+const crosswalkSnapshot = structuredClone(snapshot);
+crosswalkSnapshot.reportsSummary.toolContext.tables.community_operating_summary = [
+  { facility_id: "337", facility_name: "A & A Health Services San Pablo", census: 5, census_delta: 0 },
+  { facility_id: "345", facility_name: "Santa Clarita", census: 3, census_delta: 0 }
+];
+crosswalkSnapshot.reportsSummary.toolContext.tables.current_resident_county_by_community = [
+  { facility_id: "337", client_county: null, resident_count: 5, as_of_date: "2026-09-26", source_field: "County_Admitted_From" },
+  { facility_id: "345", client_county: null, resident_count: 3, as_of_date: "2026-09-26", source_field: "County_Admitted_From" }
+];
+crosswalkSnapshot.reportsSummary.toolContext.tables.resident_profile = [
+  { facility_id: "337", res_number: "r-001.0", resident_name: "Private One" },
+  { facility_id: "337", res_number: "R-002", resident_name: "Private Two" },
+  { facility_id: "337", res_number: "R-003", resident_name: "Private Three" },
+  { facility_id: "337", res_number: "R-004", resident_name: "Private Four" },
+  { facility_id: "337", res_number: "R-005", resident_name: "Private Five" },
+  { facility_id: "345", res_number: "S-001", resident_name: "Private Six" },
+  { facility_id: "345", res_number: "S-002", resident_name: "Private Seven" },
+  { facility_id: "345", res_number: "S-003", resident_name: "Private Eight" }
+];
+const countyClient = (id, residentNumbers, community, county, completionStatus = "verified", extra = {}) => ({
+  canonical_client_id: id,
+  resident_numbers: residentNumbers,
+  communities: community,
+  county,
+  county__completion_status: completionStatus,
+  ...extra
+});
+const crosswalkClientDatabase = {
+  baseline_date: "2026-08-18",
+  clients: [
+    countyClient("client-1", ["R-001"], ["San Pablo"], "Contra Costa", "verified", { resident_name: "Must Not Escape" }),
+    countyClient("client-2", ["R-002"], ["San Pablo"], "Alameda", "needs_review"),
+    countyClient("client-3", ["R-003"], ["San Pablo"], null),
+    countyClient("client-4", ["R-004"], ["Turlock"], "Stanislaus"),
+    countyClient("client-5a", ["R-005"], ["San Pablo"], "Contra Costa"),
+    countyClient("client-5b", ["R-005"], ["San Pablo"], "Alameda"),
+    countyClient("client-6", "[\"S-001\"]", "Santa Clarita", "Los Angeles"),
+    countyClient("client-7", null, ["Santa Clarita"], "Los Angeles", "verified", { platform_resident_numbers: ["S-002"] }),
+    countyClient("client-8", null, ["Santa Clarita"], "Ventura", "verified", { medical_record_numbers_json: "[\"S-003\"]" })
+  ]
+};
+const crosswalkDashboard = buildAdmissionsDashboard(crosswalkSnapshot, { clientDatabase: crosswalkClientDatabase });
+assert.equal(crosswalkDashboard.briefing.countyOutreach.source, "verified_client_database");
+assert.equal(crosswalkDashboard.briefing.countyOutreach.sourceAsOfDate, "2026-08-18");
+assert.deepEqual(crosswalkDashboard.briefing.countyOutreach.communities[0], {
+  facilityId: "337",
+  communityName: "A & A Health Services San Pablo",
+  shortName: "San Pablo",
+  source: "verified_client_database",
+  sourceAsOfDate: "2026-08-18",
+  status: "ready",
+  census: 5,
+  knownCountyResidents: 1,
+  countyNotRecorded: 4,
+  coveragePct: 20,
+  counties: [{ county: "Contra Costa", residents: 1, sharePct: 100 }]
+});
+assert.deepEqual(crosswalkDashboard.briefing.countyOutreach.communities[1].counties, [
+  { county: "Los Angeles", residents: 2, sharePct: 66.7 },
+  { county: "Ventura", residents: 1, sharePct: 33.3 }
+]);
+assert.equal(crosswalkDashboard.briefing.countyOutreach.communities[1].knownCountyResidents, 3);
+assert.equal(crosswalkDashboard.briefing.countyOutreach.communities[1].countyNotRecorded, 0);
+assert.ok(!/Private|Must Not Escape/.test(JSON.stringify(crosswalkDashboard)), "county crosswalk must remain aggregate-only");
 
 // Month rollover: January's prior month is the previous December.
 assert.equal(buildAdmissionsDashboard({ snapshot: { as_of_date: "2027-01-03" } }).prior_month, "2026-12");
@@ -348,6 +418,7 @@ assert.equal(dashboard.briefing.totals.completedMoveInsThisWeek, 3);
 const validators = await loadClientValidators();
 validators.admissionsDashboard(dashboard);
 validators.admissionsDashboard(connected);
+validators.admissionsDashboard(crosswalkDashboard);
 assert.throws(() => validators.admissionsDashboard({ ...dashboard, referral_pipeline: { status: "bogus" } }));
 
 console.log("admissions dashboard checks passed");

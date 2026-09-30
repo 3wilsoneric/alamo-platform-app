@@ -138,11 +138,22 @@ The optional `clientDatabase.path` points to a QA-approved JSON object in the
 same protected Azure container. The application validates that object against
 its published client count, baseline date, unique `canonical_client_id` primary
 key, dataset version, and complete source column list before serving it. It is not copied into the general
-platform bootstrap: the server loads it only for resident/client search, caches
-one validated copy per pointer identity, and joins it to `resident_profile` and
-`resident_episode_history` only on `canonical_client_id`. Current resident rows
-without a canonical match remain visible and are marked unmatched; the runtime
-does not infer links from names or resident numbers.
+platform bootstrap: the server loads it only for bounded client workflows and
+caches one validated copy per pointer identity. Client directory/detail joins to
+`resident_profile` and `resident_episode_history` remain limited to
+`canonical_client_id`. Current resident rows without a canonical match remain
+visible and are marked unmatched; the directory runtime does not infer links
+from names or resident numbers.
+
+Admissions has one narrower aggregate-only exception for county outreach when
+the governed current-admission county field has zero usable coverage. It may
+crosswalk the current roster by exact normalized resident number plus explicit
+Alamo community, but only when that pair identifies exactly one client and the
+client database marks county `verified`. The server returns reconciled county
+counts only, never client or resident rows. Review-only, blank,
+wrong-community, duplicate, ambiguous, and unmatched records remain unverified;
+names and fuzzy matching are prohibited. If both requested communities do not
+reconcile and contain verified county coverage, the browser hides the panel.
 
 The protected client directory response contains searchable identity aliases and
 summary fields but not all client records in bulk. Selecting one client requests
@@ -229,7 +240,7 @@ It creates additive gold views for AH Analyst and modules. Important families:
 - census weekly by community
 - census data quality and resident countability audit
 - resident profile and resident incident summary
-- current-resident county census by community, sourced from the exact current admission episode and reconciled to the current roster
+- current-resident county census by community, sourced first from the exact current admission episode and reconciled to the current roster; the Admissions runtime can use the bounded verified client-database fallback above when this view has zero usable county coverage
 - resident admission/discharge episode history
 - weekly and monthly intake/discharge flow by community
 - documentation status
