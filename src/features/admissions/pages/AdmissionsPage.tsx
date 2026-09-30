@@ -417,6 +417,12 @@ function pluralize(noun: string, count: number) {
   return count === 1 ? noun : `${noun}s`;
 }
 
+function formatCountyLabel(value: string) {
+  const county = value.trim();
+  if (/\bother count(?:y|ies)$/i.test(county) || /\bcounty$/i.test(county)) return county;
+  return `${county} County`;
+}
+
 function SurfaceTab({
   active,
   label,
@@ -655,7 +661,7 @@ function CountyOutreachCommunity({
         <ol className="mt-1 divide-y divide-[#e6ebe8]">
           {rows.map((row) => (
             <li key={row.county} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-2.5 text-[10px]">
-              <span className="truncate font-medium text-[#34423d]">{/other county/.test(row.county) ? row.county : `${row.county} County`}</span>
+              <span className="truncate font-medium text-[#34423d]">{formatCountyLabel(row.county)}</span>
               <span className="tabular-nums text-[#69716c]">{row.sharePct.toFixed(1)}%</span>
               <strong className="w-8 text-right font-semibold tabular-nums text-[#183f34]">{row.residents}</strong>
             </li>
@@ -702,7 +708,7 @@ function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardRe
                     <div className="min-w-0">
                       <h4 className="truncate text-[12px] font-semibold text-[#263c35]">{origin.sourceName}</h4>
                       <p className="mt-0.5 truncate text-[9px] text-[#7a817d]">
-                        {[origin.referringCounty ? `Client county: ${origin.referringCounty} County` : "Client county not recorded", origin.communities.length ? origin.communities.join(", ") : null].filter(Boolean).join(" · ")}
+                        {[origin.referringCounty ? `Client county: ${formatCountyLabel(origin.referringCounty)}` : "Client county not recorded", origin.communities.length ? origin.communities.join(", ") : null].filter(Boolean).join(" · ")}
                       </p>
                       <p className="mt-1.5 text-[9px] font-medium text-[#5f6762]">
                         {origin.last7Days} in the last 7 days
