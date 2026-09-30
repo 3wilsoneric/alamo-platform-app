@@ -3,6 +3,7 @@ import { buildDataExplorerPayload, normalizeExplorerKind } from "./data-explorer
 import { buildAdmissionsDashboard } from "./admissions-dashboard.mjs";
 import { buildHomeDashboard } from "./home-dashboard.mjs";
 import { getPipelineAdmissionsSummary } from "./pipeline-admissions-summary.mjs";
+import { getWorkforceSummary } from "./workforce-summary.mjs";
 import { getAnalystQaStatus, getQaArtifactStatuses } from "./qa-artifacts.mjs";
 import {
   getAzureSnapshotStorageSummary,
@@ -50,6 +51,15 @@ export async function getAdmissionsDashboardData() {
     getPipelineAdmissionsSummary()
   ]);
   return decorateSnapshotPayload(buildAdmissionsDashboard(snapshot, { referralPipeline }), snapshot);
+}
+
+// Workforce publishes its own aggregate summary; Alamo adds no snapshot data,
+// so the page works whether or not the governed snapshot is fresh.
+export async function getWorkforceDashboardData() {
+  return {
+    generated_at: new Date().toISOString(),
+    workforce: await getWorkforceSummary()
+  };
 }
 
 function stripAnalystHistoryForClient(reportsSummary) {

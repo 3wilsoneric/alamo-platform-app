@@ -1,6 +1,7 @@
 import type {
   AdmissionsBoardCard,
   AdmissionsDashboardResponse,
+  WorkforceDashboardResponse,
   AnalystQaStatus,
   AnalystTraceTelemetryResponse,
   CommunityIncidentDetailRecord,
@@ -552,8 +553,54 @@ function validateDataExplorerPayload(value: unknown, endpoint: string) {
   return payload as unknown as DataExplorerResponse;
 }
 
+// The server has already enforced the full Workforce contract; this guards the
+// shape the page reads so a stale cache or proxy error cannot render as data.
+function validateWorkforceDashboardPayload(value: unknown) {
+  const endpoint = "workforce dashboard";
+  const payload = assertRecord(value, endpoint);
+  assertString(payload.generated_at, endpoint, "generated_at");
+  const workforce = assertRecord(payload.workforce, endpoint, "workforce");
+  const status = workforce.status;
+  if (status === "not_connected" || status === "unavailable") return payload as unknown as WorkforceDashboardResponse;
+  if (status !== "connected") fail(endpoint, "workforce.status is not recognized");
+  assertIsoCalendarDate(workforce.asOf, endpoint, "workforce.asOf");
+  assertStringArray(workforce.phaseNames, endpoint, "workforce.phaseNames", 3);
+  const assertTotals = (totalsValue: unknown, path: string) => {
+    const totals = assertRecord(totalsValue, endpoint, path);
+    ["active", "onboarding", "onLeave", "openRoles", "applicants", "phase1", "phase2", "phase3", "complianceRate", "staffBlockedFromScheduling"]
+      .forEach((field) => assertNumber(totals[field], endpoint, `${path}.${field}`));
+  };
+  assertTotals(workforce.portfolio, "workforce.portfolio");
+  assertArray(workforce.communities, endpoint, "workforce.communities").forEach((row, index) => {
+    const record = assertRecord(row, endpoint, `workforce.communities[${index}]`);
+    assertString(record.community, endpoint, `workforce.communities[${index}].community`);
+    assertTotals(record.totals, `workforce.communities[${index}].totals`);
+  });
+  assertArray(workforce.roles, endpoint, "workforce.roles").forEach((row, index) => {
+    const record = assertRecord(row, endpoint, `workforce.roles[${index}]`);
+    assertString(record.label, endpoint, `workforce.roles[${index}].label`);
+    assertTotals(record.totals, `workforce.roles[${index}].totals`);
+  });
+  assertArray(workforce.openPositions, endpoint, "workforce.openPositions").forEach((row, index) => {
+    const record = assertRecord(row, endpoint, `workforce.openPositions[${index}]`);
+    ["title", "discipline", "community", "roleLabel"].forEach((field) => assertString(record[field], endpoint, `workforce.openPositions[${index}].${field}`));
+    assertString(record.url, endpoint, `workforce.openPositions[${index}].url`, { nullable: true });
+    ["openings", "daysOpen", "phase1", "phase2", "phase3"].forEach((field) => assertNumber(record[field], endpoint, `workforce.openPositions[${index}].${field}`));
+  });
+  assertArray(workforce.upcomingExpirations, endpoint, "workforce.upcomingExpirations").forEach((row, index) => {
+    const record = assertRecord(row, endpoint, `workforce.upcomingExpirations[${index}]`);
+    assertString(record.community, endpoint, `workforce.upcomingExpirations[${index}].community`);
+    assertString(record.label, endpoint, `workforce.upcomingExpirations[${index}].label`);
+    assertIsoCalendarDate(record.expiresOn, endpoint, `workforce.upcomingExpirations[${index}].expiresOn`);
+    assertNumber(record.people, endpoint, `workforce.upcomingExpirations[${index}].people`);
+    assertBoolean(record.blocksScheduling, endpoint, `workforce.upcomingExpirations[${index}].blocksScheduling`);
+  });
+  return payload as unknown as WorkforceDashboardResponse;
+}
+
 export const platformResponseValidators = {
   admissionsDashboard: validateAdmissionsDashboardPayload,
+  workforceDashboard: validateWorkforceDashboardPayload,
   communitiesDashboard(value: unknown) {
     const payload = assertRecord(value, "communities dashboard");
     assertString(payload.generated_at, "communities dashboard", "generated_at");

@@ -6,6 +6,7 @@ import {
   getAnalystQaStatus,
   getCommunitiesDashboardData,
   getAdmissionsDashboardData,
+  getWorkforceDashboardData,
   getDataExplorerData,
   getHomeDashboardData,
   getPlatformBootstrap,
@@ -379,6 +380,12 @@ const server = http.createServer(async (req, res) => {
 
     if (requestUrl.pathname === "/api/platform/admissions-dashboard") {
       sendJson(res, 200, await getAdmissionsDashboardData());
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/workforce-dashboard") {
+      assertPlatformKnowledgeOwner(authContext);
+      sendJson(res, 200, await getWorkforceDashboardData());
       return;
     }
 

@@ -8,6 +8,7 @@
 - labels: platform-handbook, current-state, authoritative
 - related files:
   - [admissions-zone.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/admissions-zone.md)
+  - [workforce-zone.md](../../docs/platform/workforce-zone.md)
   - [architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md)
   - [integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md)
   - [acquisition-parent-company-program.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/acquisition-parent-company-program.md)
@@ -55,6 +56,7 @@ flowchart LR
 ## Read Order
 
 1. [admissions-zone.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/admissions-zone.md) for the first-party Pipeline Admissions application boundary.
+   [workforce-zone.md](../../docs/platform/workforce-zone.md) for the matching Alamo Workforce boundary.
 2. [architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md) for system boundaries and data flow.
 3. [integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md) for the approved path from the current Alamo implementation to a reusable EHR, eMAR, and analytics integration platform.
 4. [acquisition-parent-company-program.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/acquisition-parent-company-program.md) for the private high-acuity behavioral-health parent-company research program.
