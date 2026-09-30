@@ -29,6 +29,8 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {
     if (!menuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const dismiss = (event: PointerEvent) => {
       if (!headerRef.current?.contains(event.target as Node)) setMenuOpen(false);
     };
@@ -40,6 +42,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", escape);
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("keydown", escape);
     };
@@ -64,9 +67,29 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
         </button>
       </nav>
       {menuOpen ? (
-        <nav id="platform-mobile-menu" aria-label="Mobile platform pages" className="absolute inset-x-0 top-full border-b border-[#bfd1cb] bg-white px-4 pb-3 md:hidden">
-          {pages.map((page) => <Link key={page.id} to={page.href} onClick={() => setMenuOpen(false)} aria-current={active === page.id ? "page" : undefined} className={`flex min-h-12 items-center border-b border-[#edf1ef] px-3 text-base ${active === page.id ? "bg-[#eef5f1] font-semibold text-[#096a58]" : "text-[#315b54]"}`}>{page.label}</Link>)}
-          <div className="flex min-h-14 items-center px-3"><PlatformUserIdentity nameSide="right" /></div>
+        <nav
+          id="platform-mobile-menu"
+          aria-label="Mobile platform pages"
+          data-platform-mobile-menu="true"
+          className="fixed inset-x-0 bottom-0 top-[var(--platform-header-height)] z-50 flex flex-col overflow-y-auto bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4 md:hidden"
+        >
+          <div className="border-t border-[#dce5e0]">
+            {pages.map((page) => (
+              <Link
+                key={page.id}
+                to={page.href}
+                onClick={() => setMenuOpen(false)}
+                aria-current={active === page.id ? "page" : undefined}
+                className={`flex min-h-16 items-center justify-between border-b border-[#dce5e0] px-3 text-[18px] font-medium tracking-[-0.025em] transition-colors ${active === page.id ? "bg-[#eef5f1] text-[#096a58]" : "text-[#315b54] hover:bg-[#f7faf8] hover:text-[#096a58]"}`}
+              >
+                <span>{page.label}</span>
+                {active === page.id ? <span className="h-2 w-2 rounded-full bg-[#0f8b73]" aria-hidden="true" /> : null}
+              </Link>
+            ))}
+          </div>
+          <div className="mt-auto flex min-h-16 items-end border-t border-[#edf1ef] px-3 pt-4">
+            <PlatformUserIdentity nameSide="right" />
+          </div>
         </nav>
       ) : null}
     </header>

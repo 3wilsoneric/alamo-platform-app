@@ -149,7 +149,7 @@ export default function CaliforniaHomePage() {
           inert={activePanel !== "map"}
           className="relative h-full w-1/3 shrink-0 overflow-y-auto overscroll-contain bg-white lg:overflow-clip"
         >
-          <div className="lg:hidden">
+          <div className="h-full lg:hidden">
             <MobileCommunityHome
               communities={CALIFORNIA_COMMUNITIES}
               onSelectCommunity={openCommunity}

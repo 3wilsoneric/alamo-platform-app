@@ -225,7 +225,7 @@ function ActionList({
 }) {
   const treatment = TONES[tone];
   return (
-    <section data-workforce-action-list={tone} className={`h-full min-h-[230px] overflow-hidden rounded-2xl border ${treatment.border} bg-white shadow-[0_2px_8px_rgba(24,63,52,0.04)]`}>
+    <section data-workforce-action-list={tone} className={`h-full overflow-hidden rounded-2xl border ${treatment.border} bg-white shadow-[0_2px_8px_rgba(24,63,52,0.04)] sm:min-h-[230px]`}>
       <div className={`flex items-center justify-between gap-4 px-4 py-4 sm:px-5 ${treatment.surface}`}>
         <div>
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f7974]">{kicker}</p>
@@ -257,7 +257,7 @@ function ActionList({
           })}
         </ul>
       ) : (
-        <p className="flex min-h-[150px] items-center justify-center px-5 text-center text-[12px] text-[#69716c]">{emptyLabel}</p>
+        <p className="flex min-h-[104px] items-center justify-center px-5 text-center text-[12px] text-[#69716c] sm:min-h-[150px]">{emptyLabel}</p>
       )}
     </section>
   );

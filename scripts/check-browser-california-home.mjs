@@ -851,6 +851,16 @@ async function main() {
     if (await mobilePage.locator('[data-mobile-community-card]').count() !== ALAMO_FACILITIES.length) {
       throw new Error("Mobile community list is missing a community card.");
     }
+    const mobileHomeBox = await mobileCommunityHome.boundingBox();
+    const finalCommunityBox = await mobilePage.locator('[data-mobile-community-card]').last().boundingBox();
+    if (
+      !mobileHomeBox ||
+      !finalCommunityBox ||
+      mobileHomeBox.height < 780 ||
+      finalCommunityBox.y + finalCommunityBox.height < 810
+    ) {
+      throw new Error("Mobile community rows do not use the available phone viewport.");
+    }
     for (const facility of ALAMO_FACILITIES) {
       const cardBox = await mobilePage
         .locator(`[data-mobile-community-card="${facility.facilityId}"]`)
@@ -869,6 +879,24 @@ async function main() {
     if (mobileOverflow > 2) {
       throw new Error(`California home has ${mobileOverflow}px of horizontal overflow on mobile.`);
     }
+    await mobilePage.getByRole("button", { name: "Open navigation" }).click();
+    const mobileMenu = mobilePage.locator('[data-platform-mobile-menu="true"]');
+    await mobileMenu.waitFor({ state: "visible", timeout: 5_000 });
+    const mobileMenuBox = await mobileMenu.boundingBox();
+    const mobileMenuLinks = await mobileMenu.getByRole("link").evaluateAll((links) =>
+      links.map((link) => Math.round(link.getBoundingClientRect().height))
+    );
+    if (
+      !mobileMenuBox ||
+      mobileMenuBox.y > 62 ||
+      mobileMenuBox.y + mobileMenuBox.height < 842 ||
+      mobileMenuLinks.some((height) => height < 60)
+    ) {
+      throw new Error(`Mobile platform menu is not a full-height touch workspace: ${JSON.stringify({ mobileMenuBox, mobileMenuLinks })}`);
+    }
+    await mobilePage.screenshot({ path: `${screenshotDir}/mobile-menu.png`, fullPage: false });
+    await mobilePage.getByRole("button", { name: "Close navigation" }).click();
+    await mobileMenu.waitFor({ state: "hidden", timeout: 5_000 });
     if (
       await mobilePage
         .locator('[data-california-carousel-panel="questions"]')
