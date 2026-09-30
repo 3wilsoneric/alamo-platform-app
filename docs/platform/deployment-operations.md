@@ -1466,3 +1466,23 @@ The revision is Healthy/Running at 100% traffic. `/`, `/home`, `/admissions`,
 and `/workforce` return 200; platform APIs still reject anonymous callers; the
 server log shows a clean start. Not included: the unpushed
 `codex/admissions-county-outreach` branch, which was not released.
+
+### Outreach rename — 2026-09-30
+
+The owner-only national market and acquisition workspace is now named
+**Outreach** throughout the live product. `/outreach` is the canonical route.
+The retired `/fiftystate` URL redirects to Outreach and preserves query strings
+and hashes so saved links continue to work. The underlying state research,
+acquisition data, API boundary, and owner allowlist are unchanged.
+
+- source PR: `#81`; merge commit: `7a696cb901be95dd966f8e482bfb541c9c26672b`
+- ACR build: `cc4h`
+- image: `alamo-platform@sha256:05713cac42d4e6e28fa5484c8ad82f759d3a36bb73fc4c61c3883784a8a29778`
+- active revision: `alamo-platform-prod-web--outreach-rename-0930`
+- rollback image: `alamo-platform@sha256:41f5c9eca19c21256a6c3360be8b7833d47a414a54747546ed8eab2c7c0c677f`
+- active browser asset: `/assets/index-CYXljkcc.js` (identity, gzip, and Brotli)
+
+The revision is Healthy/Running at 100% traffic and the public production smoke
+suite passes 4/4. A signed-in Chrome verification confirmed the Outreach
+navigation destination, workspace heading, canonical URL, and legacy redirect.
+Desktop and 390px local browser checks passed without horizontal overflow.
