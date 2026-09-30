@@ -14,6 +14,7 @@ const rootFiles = new Set([
   "Dockerfile.acquisition-overlay",
   "Dockerfile.admissions-briefing-release",
   "Dockerfile.admissions-identity-release",
+  "Dockerfile.workforce-release",
   "Dockerfile.frontend-rebase",
   "Dockerfile.frontend-release",
   "Dockerfile.licensing-job",

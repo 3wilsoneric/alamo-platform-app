@@ -1439,3 +1439,31 @@ this week, and two planned move-ins. The live-feed desktop/mobile Admissions
 browser regression passed without horizontal overflow, the production bundle
 omits Weekly trend, identity and gzip HTML reference the same active asset, and
 the public production smoke suite passed 4/4.
+
+### Workforce owner-only overview — 2026-09-30
+
+Adds `/workforce` (Briefing and Hiring board) fed by the separate Alamo Workforce
+pilot, visible only to the platform owner (nav entry hidden, page redirects, and
+`/api/platform/workforce-dashboard` answers 404 to other accounts). The Workforce
+pilot holds placeholder data only.
+
+Production's `api/platform.js` and `server/platform-data.mjs` differ from `main`
+(main carries unreleased acquisition-operator routes and a community-label
+change). `Dockerfile.workforce-release` therefore overlays production's exact
+files from the base digest plus only the Workforce route, loader, and
+`server/workforce-summary.mjs`; the bundle is built from PR `#75` with
+production's public Entra settings and regenerated `.gz`/`.br` siblings.
+
+- source PR: `#75`
+- ACR build: `cc4b`
+- image: `alamo-platform@sha256:6c9a07b0aa1d0788c6a9d827863fec339f13746934fe6f91176652d5c28ecf85` (tag `workforce-owner-20260930`)
+- active revision: `alamo-platform-prod-web--workforce-owner-0930`
+- rollback image: `alamo-platform@sha256:41bca5d43cdc2d22ee700b201a176f7bf91ad9028a6ec0f9aecdcae74a2e4252`
+- active browser asset: `/assets/index-BBNkATW7.js` (identity, gzip, and Brotli)
+- new settings: `WORKFORCE_SUMMARY_URL`, `WORKFORCE_SUMMARY_TOKEN` (secret `workforce-summary-token`)
+
+The revision is Healthy/Running at 100% traffic. `/`, `/home`, `/admissions`,
+and `/workforce` return 200; platform APIs still reject anonymous callers; the
+server log shows a clean start. Not included: the unpushed
+`codex/admissions-county-outreach` branch, which was not released.
+
