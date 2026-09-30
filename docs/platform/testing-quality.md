@@ -220,6 +220,12 @@ chooses the next free port and records the actual base URL in the generated QA
 artifact. Set `BROWSER_QA_REUSE_EXISTING_APP=true` only when intentionally
 debugging against an already-running local app.
 
+The Admissions browser pass also toggles the browser offline at iPhone width.
+It requires the current page to remain rendered, an actionable connection state
+to appear without horizontal overflow, and automatic recovery when connectivity
+returns. The auth redirect and desktop-readiness contracts separately guard
+expired-session reauthentication and the installed-app offline retry screen.
+
 The default local app may read the repository's deterministic fallback
 snapshot. Do not use a default local browser run to judge production data
 freshness. Any live-data verification must explicitly set

@@ -25,8 +25,8 @@ strip.
   workload by stage, and the busiest communities. It types in only on its first
   appearance in a browser session; returning to the page or reloading it restores
   the complete response immediately. The responsive dashboard combines governed
-  census and occupancy cards by community, a ranked referral-source activity
-  list for the trailing 14 days, the weekly received/accepted/moved-in trend,
+  census and occupancy cards by community, a San Pablo and Santa Clarita county-outreach
+  panel, a ranked referral-source activity list for the trailing 14 days,
   remaining assessments scheduled through Sunday, and planned move-ins for the
   Monday-through-Sunday week. It has no report tables, stat-strip grids, slide
   tabs, decorative referral-source bars, or duplicated client-referral pages.
@@ -37,6 +37,16 @@ strip.
   workflow status inside the existing authenticated PHI boundary. Every dynamic
   section carries explicit source coverage and never converts missing data into
   a zero or estimate.
+
+The county-outreach panel uses the latest admission-history row that exactly
+matches each governed current resident's facility, resident number, and current
+admission date, using the source field `County_Admitted_From`. It groups only
+aggregate resident counts and publishes no resident identity in the
+Admissions response. Each community renders only when its county groups sum to
+the current governed census on the same as-of date. Missing county values remain
+visible as `County not recorded`; stale or unreconciled data renders unavailable
+instead of being estimated. Referral management charts label Pipeline's current
+intake county as `Client county`, separate from referral-source organization.
 - **Pipeline** — the live governed referral workspace: Referral received, In
   progress, and Decision columns holding one card per referral. Board is the
   default view, and the adjacent List control always exposes the same governed

@@ -73,7 +73,9 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-briefing-pager="true"]').count() !== 0 ||
     await page.locator('[data-admissions-briefing-community]').count() !== 5 ||
     await page.locator('[data-admissions-briefing-community]').filter({ hasText: "Unassigned" }).count() !== 0 ||
+    await page.locator('[data-admissions-county-community]').count() !== 2 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
+    await page.getByRole("heading", { name: "County outreach" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Where referrals are coming from" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
@@ -116,6 +118,34 @@ await withBrowserQa(async (browser) => {
     throw new Error("Mobile Admissions must retain the separate Pipeline and Briefing destinations.");
   }
   await mobile.screenshot({ path: `${screenshotDir}/mobile-admissions-briefing-dashboard.png`, fullPage: true });
+
+  await context.setOffline(true);
+  const offlineStatus = mobile.locator('[data-platform-connection-status="offline"]');
+  await offlineStatus.waitFor({ state: "visible" });
+  if (!/previously loaded information stays available/i.test(await offlineStatus.innerText())) {
+    throw new Error("Mobile Admissions must keep loaded information visible when the connection drops.");
+  }
+  const offlineOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (offlineOverflow > 2) throw new Error(`The mobile offline status has ${offlineOverflow}px of horizontal overflow.`);
+  await mobile.screenshot({ path: `${screenshotDir}/mobile-admissions-offline.png`, fullPage: false });
+  await context.setOffline(false);
+  await offlineStatus.waitFor({ state: "hidden" });
+
+  await mobile.evaluate(() => {
+    window.dispatchEvent(new CustomEvent("alamo-platform:data-degraded", {
+      detail: { cachedAt: Date.now() - 60_000 }
+    }));
+  });
+  const staleStatus = mobile.locator('[data-platform-connection-status="stale"]');
+  await staleStatus.waitFor({ state: "visible" });
+  if (
+    !/showing information last loaded/i.test(await staleStatus.innerText()) ||
+    await staleStatus.getByRole("button", { name: "Retry" }).count() !== 1
+  ) {
+    throw new Error("Mobile Admissions must explain stale fallback data and provide a retry action.");
+  }
+  await mobile.evaluate(() => window.dispatchEvent(new Event("alamo-platform:data-recovered")));
+  await staleStatus.waitFor({ state: "hidden" });
 
   if (consoleErrors.length || requestFailures.length) {
     throw new Error(JSON.stringify({ consoleErrors, requestFailures }));

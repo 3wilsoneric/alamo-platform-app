@@ -59,6 +59,7 @@ assert.doesNotMatch(worker, /pathname\.startsWith\("\/api/);
 assert.doesNotMatch(offline, /<script/i);
 assert.doesNotMatch(offline, /resident|diagnosis|medication|assessment/i);
 assert.match(offline, /No platform data is stored/);
+assert.match(offline, /href="\/home"[^>]*>Try again</);
 console.log("desktop readiness check passed");
 
 function readPngDimensions(file) {

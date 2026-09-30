@@ -81,6 +81,7 @@ const cases = [
     visualType: "table",
     periodIncludes: ["2026-06"],
     mustInclude: ["Answer\n", "matching medication refusal records"],
+    unavailableMustInclude: ["not available for June 2026", "available range", "I did not substitute a different period"],
     mustExclude: ["current-state data", "historical slice unavailable", "largest row", "Source:"],
     requiresMarReady: true,
     requiresToolContextVersion: 8
@@ -429,8 +430,14 @@ for (const testCase of cases) {
       }
     }
   }
-  if (!includesAll(text, testCase.mustInclude)) {
-    failures.push(`${testCase.prompt}: missing expected text ${JSON.stringify(testCase.mustInclude.filter((value) => value !== "Answer\n" && !text.includes(value)))}`);
+  const expectedText = (
+    String(result.truthState ?? result.trace?.truthState ?? "") === "not_loaded" &&
+    testCase.unavailableMustInclude
+  )
+    ? testCase.unavailableMustInclude
+    : testCase.mustInclude;
+  if (!includesAll(text, expectedText)) {
+    failures.push(`${testCase.prompt}: missing expected text ${JSON.stringify(expectedText.filter((value) => value !== "Answer\n" && !text.includes(value)))}`);
   }
   if (/^Answer\s*$/im.test(text)) {
     failures.push(`${testCase.prompt}: visible Answer heading leaked into the answer`);

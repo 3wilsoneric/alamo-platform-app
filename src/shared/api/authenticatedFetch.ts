@@ -6,6 +6,33 @@ import {
   msalInstance
 } from "../../app/auth/authConfig";
 
+export const PLATFORM_AUTHENTICATION_REQUIRED_EVENT = "alamo-platform:authentication-required";
+
+export class PlatformAuthenticationRequiredError extends Error {
+  constructor(message = "Your sign-in needs to be refreshed before the platform can load data.") {
+    super(message);
+    this.name = "PlatformAuthenticationRequiredError";
+  }
+}
+
+function announceAuthenticationRequired(reason: "missing_account" | "interaction_required" | "api_unauthorized") {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(PLATFORM_AUTHENTICATION_REQUIRED_EVENT, {
+    detail: { reason }
+  }));
+}
+
+function requiresInteractiveAuthentication(error: unknown) {
+  if (error instanceof InteractionRequiredAuthError) return true;
+  const code = error && typeof error === "object" && "errorCode" in error
+    ? String(error.errorCode ?? "")
+    : "";
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /interaction_required|login_required|no_account_error|monitor_window_timeout|silent_sso_error|token_renewal_error/i.test(
+    `${code} ${message}`
+  );
+}
+
 export function getApiAuthCachePartition() {
   if (!apiAuthEnabled || isE2EAuthBypassEnabled) return "local";
   const account = msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0] ?? null;
@@ -143,7 +170,8 @@ export async function fetchWithApiAuth<T>(
 
       const account = msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0] ?? null;
       if (!account) {
-        throw new Error("Your sign-in session is unavailable. Sign in again and retry.");
+        announceAuthenticationRequired("missing_account");
+        throw new PlatformAuthenticationRequiredError("Your sign-in session has ended. Sign in again to continue.");
       }
 
       try {
@@ -156,8 +184,9 @@ export async function fetchWithApiAuth<T>(
         );
         headers.set("Authorization", `Bearer ${token.accessToken}`);
       } catch (error) {
-        if (error instanceof InteractionRequiredAuthError) {
-          throw new Error("Your sign-in needs to be refreshed before the platform can load data.");
+        if (requiresInteractiveAuthentication(error)) {
+          announceAuthenticationRequired("interaction_required");
+          throw new PlatformAuthenticationRequiredError();
         }
         throw error;
       }
@@ -168,6 +197,10 @@ export async function fetchWithApiAuth<T>(
       headers,
       signal: requestBoundary.signal
     });
+    if (response.status === 401) {
+      announceAuthenticationRequired("api_unauthorized");
+      throw new PlatformAuthenticationRequiredError("Your sign-in session has expired. Sign in again to continue.");
+    }
     return await options.consume(response);
   } finally {
     requestBoundary.cleanup();

@@ -48,6 +48,26 @@ async function readScrollState(page) {
   });
 }
 
+async function ensureUserScrollRange(page, requiredDelta) {
+  return page.evaluate((minimumDelta) => {
+    const workspace = document.querySelector('[data-chat-workspace-panel="true"]');
+    let scrollContainer = workspace?.parentElement ?? null;
+    while (scrollContainer) {
+      const overflowY = window.getComputedStyle(scrollContainer).overflowY;
+      if (/(auto|scroll|overlay)/.test(overflowY)) break;
+      scrollContainer = scrollContainer.parentElement;
+    }
+    if (!scrollContainer) return 0;
+
+    const availableRange = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    if (availableRange < minimumDelta) {
+      const currentPadding = Number.parseFloat(window.getComputedStyle(scrollContainer).paddingBottom) || 0;
+      scrollContainer.style.paddingBottom = `${currentPadding + minimumDelta - availableRange + 120}px`;
+    }
+    return scrollContainer.scrollHeight - scrollContainer.clientHeight;
+  }, requiredDelta);
+}
+
 async function readUserPromptAnchorState(page, prompt) {
   return page.evaluate((submittedPrompt) => {
     const userItems = Array.from(document.querySelectorAll('[data-chat-role="user"][data-chat-item-id]'));
@@ -134,6 +154,7 @@ async function main() {
       const pendingCanvas = await measureCanvas(page);
       const pendingUserAnchor = await readUserPromptAnchorState(page, PROMPT);
       const pendingScroll = await readScrollState(page);
+      const preparedScrollRange = await ensureUserScrollRange(page, USER_SCROLL_DELTA);
 
       const workspaceBox = await page
         .locator('[data-chat-workspace-panel="true"]')
@@ -186,6 +207,7 @@ async function main() {
       finalUserAnchor,
       initialSnapObserved,
       pendingScroll,
+      preparedScrollRange,
       userControlledScroll,
       finalScroll,
       scrollMovedByUser,

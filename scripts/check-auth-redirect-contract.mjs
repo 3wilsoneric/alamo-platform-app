@@ -73,6 +73,14 @@ const protectedShell = await readFile(
   path.join(root, "src/shared/layout/ProtectedAppShell.tsx"),
   "utf8"
 );
+const authenticatedFetch = await readFile(
+  path.join(root, "src/shared/api/authenticatedFetch.ts"),
+  "utf8"
+);
+const platformData = await readFile(
+  path.join(root, "src/shared/api/platformData.ts"),
+  "utf8"
+);
 const workspacePreload = await readFile(
   path.join(root, "src/shared/performance/workspacePreload.ts"),
   "utf8"
@@ -132,6 +140,26 @@ if (!redirectAuthentication.includes("AUTH_REDIRECT_ERROR_KEY")) {
 }
 if (!loginPage.includes("readRedirectAuthenticationError()")) {
   throw new Error("LoginPage must display a preserved Microsoft callback failure");
+}
+if (
+  !authenticatedFetch.includes("PLATFORM_AUTHENTICATION_REQUIRED_EVENT") ||
+  !authenticatedFetch.includes("response.status === 401") ||
+  !authenticatedFetch.includes("monitor_window_timeout") ||
+  !protectedShell.includes("acquireTokenRedirect") ||
+  !protectedShell.includes("Refreshing your sign-in") ||
+  !loginPage.includes("forceReauthentication")
+) {
+  throw new Error("expired API sessions must recover through Microsoft sign-in instead of becoming a broken data screen");
+}
+if (
+  !platformData.includes("MAX_STALE_FALLBACK_MS") ||
+  !platformData.includes("PLATFORM_DATA_DEGRADED_EVENT") ||
+  !platformData.includes("staleCachedValue") ||
+  !protectedShell.includes("clearPlatformDataCache()") ||
+  !protectedShell.includes("ConnectionStatusBanner") ||
+  !protectedShell.includes("Waiting to reconnect")
+) {
+  throw new Error("the app shell must preserve last-known-good data and expose an actionable connection state");
 }
 if (
   !workspacePreload.includes("POST_SIGN_IN_WORKSPACE_MAX_WAIT_MS = 2_000") ||

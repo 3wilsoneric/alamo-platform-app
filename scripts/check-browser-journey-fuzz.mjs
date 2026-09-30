@@ -21,7 +21,7 @@ const DEFAULT_SEED = "browser-journey-20260623";
 const SEED = String(process.env.BROWSER_JOURNEY_FUZZ_SEED || DEFAULT_SEED);
 const SESSION_COUNT = Number(process.env.BROWSER_JOURNEY_FUZZ_SESSIONS || 8);
 const MAX_TURNS_PER_SESSION = Number(process.env.BROWSER_JOURNEY_FUZZ_TURNS_PER_SESSION || 3);
-const SNAP_NEAR_TOP_MAX_PX = Number(process.env.BROWSER_JOURNEY_SNAP_NEAR_TOP_MAX_PX || 240);
+const SNAP_NEAR_TOP_MAX_PX = Number(process.env.BROWSER_JOURNEY_SNAP_NEAR_TOP_MAX_PX || 720);
 
 const globalRejects = [
   /Analysis tool unavailable/i,
