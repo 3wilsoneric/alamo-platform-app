@@ -639,7 +639,7 @@ function CountyOutreachCommunity({
     : 0;
   const rows = [
     ...visibleCounties,
-    ...(otherResidents ? [{ county: `${remainingCounties.length} other ${pluralize("county", remainingCounties.length)}`, residents: otherResidents, sharePct: otherShare }] : [])
+    ...(otherResidents ? [{ county: `${remainingCounties.length} other ${remainingCounties.length === 1 ? "county" : "counties"}`, residents: otherResidents, sharePct: otherShare }] : [])
   ];
 
   return (
