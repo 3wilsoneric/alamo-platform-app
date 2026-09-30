@@ -122,6 +122,19 @@ await withBrowserQa(async (browser) => {
   if (await mobile.getByRole("tab", { name: "Briefing", exact: true }).getAttribute("aria-selected") !== "true") {
     throw new Error("Mobile Admissions must retain the separate Pipeline and Briefing destinations.");
   }
+  const mobileCountyDetails = mobile.locator('[data-admissions-county-community] details');
+  if (await mobileCountyDetails.count()) {
+    const firstCountyDetails = mobileCountyDetails.first();
+    const countySummaryBox = await firstCountyDetails.locator("summary").boundingBox();
+    if (!countySummaryBox || countySummaryBox.height < 44 || await firstCountyDetails.getAttribute("open") != null) {
+      throw new Error("Mobile county outreach must open as a compact, touch-sized disclosure.");
+    }
+    await firstCountyDetails.locator("summary").click();
+    if (await firstCountyDetails.getAttribute("open") == null || !await firstCountyDetails.locator("li").first().isVisible()) {
+      throw new Error("Mobile county outreach did not reveal its verified county detail.");
+    }
+    await firstCountyDetails.locator("summary").click();
+  }
   await mobile.screenshot({ path: `${screenshotDir}/mobile-admissions-briefing-dashboard.png`, fullPage: true });
 
   await context.setOffline(true);

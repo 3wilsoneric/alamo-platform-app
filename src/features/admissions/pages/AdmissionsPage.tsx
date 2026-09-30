@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -552,7 +552,7 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
     .reduce((total, community) => total + (community.newReferrals7d ?? 0), 0);
 
   return (
-    <section className="rounded-2xl border border-[#dfe3e1] bg-[#f8faf9] p-4 sm:p-5" aria-labelledby="admissions-community-dashboard-title">
+    <section className="rounded-2xl border border-[#dfe3e1] bg-[#f8faf9] p-3 sm:p-5" aria-labelledby="admissions-community-dashboard-title">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
           <h3 id="admissions-community-dashboard-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">Census by community</h3>
@@ -560,20 +560,22 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
         </div>
         <p className="text-[11px] font-semibold text-[#315b54]">{formatBriefingCount(briefing.totals.census)} residents</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5">
         {assignedCommunities.map((community) => (
-          <article key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="rounded-xl border border-[#e0e6e2] bg-white p-4 shadow-[0_1px_0_rgba(19,45,37,0.03)]">
+          <article key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="rounded-xl border border-[#e0e6e2] bg-white p-3 shadow-[0_1px_0_rgba(19,45,37,0.03)] sm:p-4">
             <div className="flex items-start justify-between gap-3">
               <h4 className="min-w-0 text-[12px] font-semibold leading-4 text-[#263c35]">{community.shortName}</h4>
               <strong className="text-[24px] font-semibold leading-none tracking-[-0.04em] text-[#183f34]">{formatBriefingCount(community.census)}</strong>
             </div>
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#e8eeeb]" aria-hidden="true">
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e8eeeb] sm:mt-4" aria-hidden="true">
               <span className="block h-full rounded-full bg-[#0f8b73]" style={{ width: `${Math.max(0, Math.min(100, community.occupancyPct ?? 0))}%` }} />
             </div>
-            <p className="mt-2 text-[10px] text-[#69716c]">{community.occupancyPct != null ? `${community.occupancyPct}% occupied` : "Occupancy unavailable"}</p>
-            <p className="mt-3 border-t border-[#edf0ee] pt-3 text-[10px] leading-4 text-[#5f6762]">
-              <strong className="font-semibold text-[#263c35]">{formatBriefingCount(community.newReferrals7d)}</strong> new {pluralize("referral", community.newReferrals7d ?? 0)} · <strong className="font-semibold text-[#263c35]">{formatBriefingCount(community.plannedMoveInsThisWeek)}</strong> planned {pluralize("move-in", community.plannedMoveInsThisWeek ?? 0)}
-            </p>
+            <p className="mt-1.5 text-[10px] text-[#69716c] sm:mt-2">{community.occupancyPct != null ? `${community.occupancyPct}% occupied` : "Occupancy unavailable"}</p>
+            {community.newReferrals7d != null || community.plannedMoveInsThisWeek != null ? (
+              <p className="mt-2 border-t border-[#edf0ee] pt-2 text-[10px] leading-4 text-[#5f6762] sm:mt-3 sm:pt-3">
+                <strong className="font-semibold text-[#263c35]">{formatBriefingCount(community.newReferrals7d)}</strong> new {pluralize("referral", community.newReferrals7d ?? 0)} · <strong className="font-semibold text-[#263c35]">{formatBriefingCount(community.plannedMoveInsThisWeek)}</strong> planned {pluralize("move-in", community.plannedMoveInsThisWeek ?? 0)}
+              </p>
+            ) : null}
           </article>
         ))}
       </div>
@@ -592,7 +594,7 @@ function BriefingCountyOutreach({ briefing }: { briefing: AdmissionsDashboardRes
   return (
     <section
       data-admissions-county-outreach="true"
-      className="rounded-2xl border border-[#dfe3e1] bg-white p-4 sm:p-5"
+      className="rounded-2xl border border-[#dfe3e1] bg-white p-3 sm:p-5"
       aria-labelledby="admissions-county-outreach-title"
     >
       <div className="mb-4">
@@ -649,30 +651,61 @@ function CountyOutreachCommunity({
   ];
 
   return (
-    <article data-admissions-county-community={community.facilityId} className="rounded-xl border border-[#e0e6e2] bg-[#f8faf9] p-4">
-      <div className="flex items-start justify-between gap-3 border-b border-[#e3e8e5] pb-3">
-        <div>
-          <h4 className="text-[13px] font-semibold text-[#263c35]">{community.shortName}</h4>
-          <p className="mt-1 text-[9px] text-[#737b77]">{formatBriefingCount(community.knownCountyResidents)} of {formatBriefingCount(community.census)} residents have verified county</p>
+    <article data-admissions-county-community={community.facilityId} className="overflow-hidden rounded-xl border border-[#e0e6e2] bg-[#f8faf9] md:p-4">
+      <details className="group md:hidden">
+        <summary className="flex min-h-[72px] cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 [&::-webkit-details-marker]:hidden">
+          <div className="min-w-0">
+            <h4 className="text-[13px] font-semibold text-[#263c35]">{community.shortName}</h4>
+            <p className="mt-1 truncate text-[9px] text-[#737b77]">
+              {formatBriefingCount(community.knownCountyResidents)} of {formatBriefingCount(community.census)} verified
+              {rows[0] ? ` · Top: ${formatCountyLabel(rows[0].county)}` : ""}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-[12px] font-semibold tabular-nums text-[#176d51]">{community.coveragePct?.toFixed(1)}%</span>
+            <ChevronDown className="h-4 w-4 text-[#61706a] transition-transform group-open:rotate-180" aria-hidden="true" />
+          </div>
+        </summary>
+        <div className="border-t border-[#e3e8e5] px-3 pb-3">
+          <CountyRows rows={rows} />
+          <CountyVerificationNote community={community} />
         </div>
-        <span className="shrink-0 text-[12px] font-semibold tabular-nums text-[#176d51]">{community.coveragePct?.toFixed(1)}%</span>
+      </details>
+      <div className="hidden md:block">
+        <div className="flex items-start justify-between gap-3 border-b border-[#e3e8e5] pb-3">
+          <div>
+            <h4 className="text-[13px] font-semibold text-[#263c35]">{community.shortName}</h4>
+            <p className="mt-1 text-[9px] text-[#737b77]">{formatBriefingCount(community.knownCountyResidents)} of {formatBriefingCount(community.census)} residents have verified county</p>
+          </div>
+          <span className="shrink-0 text-[12px] font-semibold tabular-nums text-[#176d51]">{community.coveragePct?.toFixed(1)}%</span>
+        </div>
+        <CountyRows rows={rows} />
+        <CountyVerificationNote community={community} />
       </div>
-      {rows.length ? (
-        <ol className="mt-1 divide-y divide-[#e6ebe8]">
-          {rows.map((row) => (
-            <li key={row.county} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-2.5 text-[10px]">
-              <span className="truncate font-medium text-[#34423d]">{formatCountyLabel(row.county)}</span>
-              <span className="tabular-nums text-[#69716c]">{row.sharePct.toFixed(1)}%</span>
-              <strong className="w-8 text-right font-semibold tabular-nums text-[#183f34]">{row.residents}</strong>
-            </li>
-          ))}
-        </ol>
-      ) : <p className="py-6 text-[11px] text-[#69716c]">No resident county is verified.</p>}
-      {(community.countyNotRecorded ?? 0) > 0 ? (
-        <p className="mt-2 border-t border-[#dfe5e1] pt-2.5 text-[9px] text-[#7a817d]">County not verified for {community.countyNotRecorded} {pluralize("resident", community.countyNotRecorded ?? 0)}.</p>
-      ) : null}
     </article>
   );
+}
+
+function CountyRows({ rows }: { rows: Array<{ county: string; residents: number; sharePct: number }> }) {
+  return rows.length ? (
+    <ol className="mt-1 divide-y divide-[#e6ebe8]">
+      {rows.map((row) => (
+        <li key={row.county} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-2.5 text-[10px]">
+          <span className="truncate font-medium text-[#34423d]">{formatCountyLabel(row.county)}</span>
+          <span className="tabular-nums text-[#69716c]">{row.sharePct.toFixed(1)}%</span>
+          <strong className="w-8 text-right font-semibold tabular-nums text-[#183f34]">{row.residents}</strong>
+        </li>
+      ))}
+    </ol>
+  ) : <p className="py-6 text-[11px] text-[#69716c]">No resident county is verified.</p>;
+}
+
+function CountyVerificationNote({ community }: {
+  community: AdmissionsDashboardResponse["briefing"]["countyOutreach"]["communities"][number];
+}) {
+  return (community.countyNotRecorded ?? 0) > 0 ? (
+    <p className="mt-2 border-t border-[#dfe5e1] pt-2.5 text-[9px] text-[#7a817d]">County not verified for {community.countyNotRecorded} {pluralize("resident", community.countyNotRecorded ?? 0)}.</p>
+  ) : null;
 }
 
 function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
@@ -749,7 +782,7 @@ function BriefingSchedule({
     ? { surface: "bg-[#edf7f2]", border: "border-[#c8dfd3]", count: "bg-[#197453] text-white", date: "bg-[#dcefe6] text-[#145b43]" }
     : { surface: "bg-[#f0f3fc]", border: "border-[#d4dcf5]", count: "bg-[#365fc7] text-white", date: "bg-[#e2e8fa] text-[#3159b8]" };
   return (
-    <section data-admissions-priority-schedule={tone} className={`h-full min-h-[230px] overflow-hidden rounded-2xl border ${treatment.border} bg-white shadow-[0_2px_8px_rgba(24,63,52,0.04)]`}>
+    <section data-admissions-priority-schedule={tone} className={`h-full overflow-hidden rounded-2xl border ${treatment.border} bg-white shadow-[0_2px_8px_rgba(24,63,52,0.04)] sm:min-h-[230px]`}>
       <div className={`flex items-center justify-between gap-4 px-4 py-4 sm:px-5 ${treatment.surface}`}>
         <div>
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f7974]">This week</p>
@@ -770,7 +803,7 @@ function BriefingSchedule({
               </article>
             ))}
           </div>
-        ) : <p className="flex min-h-[150px] items-center justify-center px-5 text-center text-[12px] text-[#69716c]">{emptyLabel}</p>
+        ) : <p className="flex min-h-[104px] items-center justify-center px-5 text-center text-[12px] text-[#69716c] sm:min-h-[150px]">{emptyLabel}</p>
       ) : <IncompleteBriefingField label={title} />}
     </section>
   );
@@ -778,7 +811,7 @@ function BriefingSchedule({
 
 function IncompleteBriefingField({ label }: { label: string }) {
   return (
-    <p className="py-8 text-[12px] leading-5 text-[#8a6118]">
+    <p className="py-5 text-[12px] leading-5 text-[#8a6118] sm:py-8">
       {label} is incomplete in the current Pipeline contract. No estimate is shown.
     </p>
   );
