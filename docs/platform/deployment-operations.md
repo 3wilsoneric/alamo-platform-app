@@ -1516,3 +1516,30 @@ suite passed its source, registry, live-decision, intent, module, and transition
 stages before a transient Azure identity network error interrupted the unrelated
 long context-fuzz stage; the focused mobile, Admissions, Workforce, type, docs,
 and production-build gates all passed.
+
+### Analytics controls and governed questions polish — 2026-09-30
+
+Analytics now labels the cross-community report simply `Overview` in both the
+report picker and compiled document while retaining the stable `overview` API
+identifier. Report, period, community, and audience controls use labeled,
+compact fields with explicit chevrons and 44-to-48-pixel phone targets. The
+governed question library uses a quieter editorial list, consistent mobile
+inputs, clear execution states, and preserved pagination instead of stacked
+card borders. The production frontend normalizes the Overview label across the
+current API response so this presentation change does not require a backend
+contract or data-service rollout.
+
+- source PRs: `#85`, merge commit `41e3ad5e2947d6868f0587d0ac4fa60150c0976c`; `#86`, merge commit `1dd29c1305ba108b89f5e66f726635b193f13dfe`
+- ACR builds: `cc4k`, `cc4m`
+- image: `alamo-platform@sha256:c5ab27d612310ed062d54904b581453e57620f613275eb3820e68125a41f952e` (tag `overview-display-0930-1dd29c1`)
+- active revision: `alamo-platform-prod-web--overview-label-0930`
+- rollback image: `alamo-platform@sha256:ea53b038166663980d50967515913ea4141db9590c106c1e292477c3db5001fa`
+- active browser asset: `/assets/index-DJ673HV6.js` (identity, gzip, and Brotli)
+
+The revision is Healthy/Running at 100% traffic. TypeScript, documentation,
+report contracts, the production build, all five full reports, mobile answer
+flow, cross-device Analytics carousel, and 62 desktop/compact guided-question
+controls with four keyboard journeys passed. Signed-in production verification
+at 390 by 844 pixels confirmed `Overview` in both locations, the labeled latest
+period control, a 48-pixel minimum question-control height, and zero horizontal
+overflow. The browser viewport was reset after verification.
