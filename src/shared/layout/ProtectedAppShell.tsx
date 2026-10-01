@@ -239,7 +239,7 @@ export default function ProtectedAppShell() {
   }
 
   if (!effectiveAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <AuthenticationRedirect location={location} />;
   }
 
   if (
@@ -284,6 +284,31 @@ export default function ProtectedAppShell() {
       </main>
     </div>
   );
+}
+
+function AuthenticationRedirect({
+  location
+}: {
+  location: { pathname: string; search: string; hash: string };
+}) {
+  const returnPath = normalizePostLoginPath(
+    `${location.pathname}${location.search}${location.hash}`
+  );
+  const [returnPathSaved, setReturnPathSaved] = useState(false);
+
+  useLayoutEffect(() => {
+    writeStorageItem(POST_LOGIN_PATH_KEY, returnPath, {
+      kind: "session",
+      label: "post-login path"
+    });
+    setReturnPathSaved(true);
+  }, [returnPath]);
+
+  if (!returnPathSaved) {
+    return <AuthenticationProgress label="Preparing sign-in" />;
+  }
+
+  return <Navigate to="/login" replace state={{ from: location }} />;
 }
 
 function ConnectionStatusBanner({ online, staleDataAt }: { online: boolean; staleDataAt: number | null }) {
