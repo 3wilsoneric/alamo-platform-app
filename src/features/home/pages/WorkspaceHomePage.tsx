@@ -59,6 +59,7 @@ import {
 } from "../workspaceModuleModel";
 import { MessageActionStrip, UserMessageControls } from "../components/ChatMessageControls";
 import { AdHocVisualModule } from "../components/AdHocVisualModule";
+import { ConversationalPrompt } from "../components/ConversationalPrompt";
 import {
   CertifiedQuestionGuide,
   type CertifiedQuestionRunRequest
@@ -74,17 +75,21 @@ export default function WorkspaceHomePage({
   embedded = false,
   sectionId,
   initialQuestionsOpen = false,
-  openQuestionsRequest = 0
+  openQuestionsRequest = 0,
+  conversational = false
 }: {
   embedded?: boolean;
   sectionId?: string;
   initialQuestionsOpen?: boolean;
   openQuestionsRequest?: number;
+  conversational?: boolean;
 }) {
   const [homeSearchParams, setHomeSearchParams] = useSearchParams();
   const { account } = useCurrentUserProfile();
   const [chatOpen, setChatOpen] = useState(initialQuestionsOpen);
-  const [questionGuideOpen, setQuestionGuideOpen] = useState(initialQuestionsOpen);
+  const [questionGuideOpen, setQuestionGuideOpen] = useState(
+    conversational ? false : initialQuestionsOpen
+  );
   const [questionGuideSearch, setQuestionGuideSearch] = useState("");
   const [questionGuideCategory, setQuestionGuideCategory] = useState("All");
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -276,10 +281,12 @@ export default function WorkspaceHomePage({
     setTimelineItems([]);
     setChatHistoryId(null);
     setChatOpen(true);
-    setQuestionGuideOpen(true);
+    setQuestionGuideOpen(!conversational);
     setQuestionGuideSearch("");
     setChatError(null);
-    queueChatItemSnap("question-guide", "smooth", { force: true });
+    if (!conversational) {
+      queueChatItemSnap("question-guide", "smooth", { force: true });
+    }
     void resetCopilotAnalysisSession(previousSessionId).catch((error) => {
       console.warn("Could not reset server analysis session.", error);
     });
@@ -837,7 +844,14 @@ export default function WorkspaceHomePage({
                       {questionGuide}
                     </div>
                   ) : null}
-                  {!sending && !questionGuideOpen ? (
+                  {!sending && !questionGuideOpen && conversational ? (
+                    <ConversationalPrompt
+                      compact
+                      sending={sending}
+                      onSubmit={(prompt) => void runToolPrompt(prompt)}
+                      onOpenLibrary={openQuestionGuideInThread}
+                    />
+                  ) : !sending && !questionGuideOpen ? (
                     <div className="flex justify-center pt-5">
                       <button
                         type="button"
@@ -859,6 +873,12 @@ export default function WorkspaceHomePage({
                     {questionGuide}
                     <div className="h-1" />
                   </div>
+                ) : conversational ? (
+                  <ConversationalPrompt
+                    sending={sending}
+                    onSubmit={(prompt) => void runToolPrompt(prompt)}
+                    onOpenLibrary={openQuestionGuideInThread}
+                  />
                 ) : (
                   <div className="flex h-full min-h-[120px] items-center justify-center px-5 text-center">
                     <div>

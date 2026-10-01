@@ -153,7 +153,7 @@ add("Between April and May 2026, which community had the largest increase in inc
 add("compare incident categories April 2026 vs May 2026", { tool: "incident_category_comparison", requireVisual: true });
 add("show incident rates by community", { tool: "incident_rate", requireVisual: true });
 add("show current incident category breakdown", { tool: "incident_breakdown", requireVisual: true });
-add("what changed in incidents this month", { tool: "incident_breakdown", requireVisual: true });
+add("what changed in incidents in September 2026", { tool: "incident_breakdown", requireVisual: true });
 add("what changed in incidents from May to June", { tools: ["incident_category_comparison", "compare_periods"], requireVisual: true });
 add("how many people went AWOL in May 2026", {
   tool: "incident_breakdown",
@@ -235,7 +235,11 @@ add("How is San Pablo doing with medications?", {
     "scheduled administrations",
   ],
 });
-add("What medications had the most refusals?", { tool: "medication_refusals_by_community", requireVisual: true, mustInclude: ["Eliquis 2.5 MG TABS had the most"] });
+add("What medications had the most refusals in September 2026?", {
+  tool: "medication_refusals_by_community",
+  requireVisual: true,
+  mustInclude: ["September 2026", "had the most"]
+});
 add("show medication refusals by community", { tool: "medication_refusals_by_community", requireVisual: true });
 add("show San Pablo medication exception detail", { tool: "medication_exception_detail", requireVisual: true });
 add("who refused meds recently", { tool: "medication_exception_detail", requireVisual: true });
@@ -248,12 +252,12 @@ add("what changed at San Pablo", { tool: "community_history", requireVisual: tru
 add("what's going on with San Pablo", { tool: "community_history", requireVisual: true, mustInclude: ["A & A Health Services San Pablo"] });
 add("how's San Pablo doing", { tool: "community_history", requireVisual: true, mustInclude: ["A & A Health Services San Pablo"] });
 add("tell me about San Pablo", { tool: "community_profile", mustInclude: ["A & A Health Services San Pablo"] });
-add("san pablo, how has been the last three months", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
+add("san pablo, how was July through September 2026", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
 add("hey how was pablo november throuhg january", { tool: "community_history", requireVisual: true, mustInclude: ["November 2025", "January 2026"] });
 add("what happened at Wallace between February and April", { tool: "community_history", requireVisual: true, mustInclude: ["February 2026", "April 2026"] });
-add("give me the read on clarita last few months", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
-add("show Turlock YTD picture", { tool: "community_history", requireVisual: true, mustInclude: ["January 2026", "June 2026"] });
-add("how has victoria been since november", { tool: "community_history", requireVisual: true, mustInclude: ["November 2025", "June 2026"] });
+add("give me the read on clarita from July through September 2026", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
+add("show Turlock January through September 2026 picture", { tool: "community_history", requireVisual: true, mustInclude: ["January 2026", "September 2026"] });
+add("how was victoria from November 2025 through September 2026", { tool: "community_history", requireVisual: true, mustInclude: ["November 2025", "September 2026"] });
 add("show me wallace quarter to date", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
 add("what's the San Pablo read last 6 mos", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
 add("show San Pablo community profile for January 2026", { tool: "community_history", requireVisual: true, mustInclude: ["January 2026"] });

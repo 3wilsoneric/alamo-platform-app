@@ -200,7 +200,7 @@ assert(serverMemoryExport.planValidation?.valid && serverMemoryExport.tool === "
 const serverMemoryCommunityReset = await runCopilotTool({ content: "How is San Pablo?", sessionId });
 assert(serverMemoryCommunityReset.planValidation?.valid && serverMemoryCommunityReset.tool === "community_history" && serverMemoryCommunityReset.analysisFrame?.metric === null && serverMemoryCommunityReset.analysisFrame?.mode === null, "broad community question inherited prior incident detail state", serverMemoryCommunityReset);
 const communityHistorySessionId = `community-history-follow-up-${Date.now()}`;
-const sanPabloHistory = await runCopilotTool({ content: "san pablo, how has been the last three months", sessionId: communityHistorySessionId });
+const sanPabloHistory = await runCopilotTool({ content: "san pablo, how was July through September 2026", sessionId: communityHistorySessionId });
 const sanPabloHistoryPeriods = String(sanPabloHistory.trace?.period ?? "").split(", ").filter(Boolean);
 assert(
   sanPabloHistory.planValidation?.valid &&
@@ -291,7 +291,7 @@ const sanPabloMedicationRefusals = await runCopilotTool({ content: "What medicat
 assert(String(sanPabloMedicationRefusals.trace?.facilityId) === "337", "same-domain medication follow-up lost community scope", sanPabloMedicationRefusals);
 
 const refinementSessionId = `analysis-refinement-check-${Date.now()}`;
-const trend = await runCopilotTool({ content: "compare census trends across communities over the last six months", sessionId: refinementSessionId });
+const trend = await runCopilotTool({ content: "compare census trends across communities from April through September 2026", sessionId: refinementSessionId });
 assert(trend.planValidation?.valid && trend.visual?.type === "multi_line_chart", "multi-series baseline failed", trend);
 const heatmap = await runCopilotTool({ content: "switch this to a heatmap", sessionId: refinementSessionId, analysisFrame: trend.analysisFrame });
 assert(heatmap.planValidation?.valid && heatmap.tool === "community_time_series" && heatmap.visual?.type === "heatmap", "heatmap refinement failed", heatmap);

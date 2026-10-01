@@ -66,9 +66,9 @@ const cases = [
     minimumRows: 10
   },
   {
-    prompt: "compare March April and May incidents by category",
+    prompt: "compare April May and June incidents by category",
     tool: "slice_discovery",
-    period: "2026-03, 2026-04, 2026-05",
+    period: "2026-04, 2026-05, 2026-06",
     noteIncludes: "slice=incident_monthly_by_community_category",
     textIncludes: "top result",
     textExcludes: "accepts exactly two periods",

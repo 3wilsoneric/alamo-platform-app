@@ -42,6 +42,7 @@ export default function ProtectedAppShell() {
     isAdmissionsExperience ||
     location.pathname.startsWith("/analytics") ||
     location.pathname.startsWith("/reports") ||
+    location.pathname === "/chat" ||
     location.pathname.startsWith("/home");
 
 

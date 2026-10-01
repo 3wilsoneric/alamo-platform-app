@@ -24,6 +24,10 @@ other account, including a platform administrator, receives Licensing access.
 Eric's verified owner identity also receives an Outreach destination in the
 shared header; the acquisition workspace and its APIs remain hidden from every
 other account.
+The same verified owner identity can open the unlisted `/chat` route. That
+route is intentionally absent from desktop and mobile navigation and redirects
+every other signed-in identity to `/home`; the owner claim, not knowledge of
+the URL, is the access boundary.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
 analysis live in the profiles. Phone Admissions keeps all five section tabs
@@ -127,6 +131,8 @@ The analyst remains a vertical chat/module workspace:
 
 - the user opens **Analytics**, then **Ask a question**, or follows an
   `/analytics/questions` deep link
+- the verified Platform owner may instead open the unlisted `/chat` prototype,
+  which uses the same analyst, question registry, session, and module pipeline
 - the user chooses a vetted question and its selectors
 - deterministic AH Analyst tools calculate and validate each answer
 - deterministic modules appear in the thread

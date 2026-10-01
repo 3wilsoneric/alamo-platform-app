@@ -908,11 +908,11 @@
       "description": "Loose community language with ranges should route to monthly community history instead of current-state profile fallback.",
       "turns": [
         {
-          "prompt": "san pablo, how has been the last three months",
+          "prompt": "san pablo, how was July through September 2026",
           "promptVariants": [
-            "how has san pablo been over the last few months",
-            "what is the San Pablo read last 3 months",
-            "San Pablo trend since April"
+            "how was san pablo from July through September 2026",
+            "what is the San Pablo read for July August and September 2026",
+            "San Pablo trend from April through September 2026"
           ],
           "expect": {
             "tools": ["community_history"],

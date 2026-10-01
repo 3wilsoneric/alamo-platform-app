@@ -1008,7 +1008,7 @@ export function createAnswerFormattingTools({
         const scheduled = rows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Scheduled")) ?? 0), 0);
         const given = rows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Given")) ?? 0), 0);
         const movement = Math.abs(change) < 0.05
-          ? `was unchanged at ${formatOneDecimal(lastValue)}% from ${firstMonth} through ${lastMonth}`
+          ? `was unchanged at ${formatOneDecimal(lastValue)}% from ${firstMonth} through ${lastMonth}, a 0.0 percentage point change`
           : `${change > 0 ? "increased" : "decreased"} by ${formatOneDecimal(Math.abs(change))} percentage points, from ${formatOneDecimal(firstValue)}% in ${firstMonth} to ${formatOneDecimal(lastValue)}% in ${lastMonth}`;
         return `${result.trace.communityName} medication compliance ${movement}. Across the period, ${formatNumber(given)} of ${formatNumber(scheduled)} scheduled administrations were documented as given.`;
       }

@@ -485,7 +485,7 @@ export function createMedicationSummaryTools(dependencies) {
       : 0;
     const trendSentence = multiMonth && facility && firstPeriod && lastPeriod
       ? Math.abs(complianceChange) < 0.05
-        ? `${label} medication compliance was unchanged at ${formatPercent(lastPeriod.compliance)} from ${formatMonthLabel(firstPeriod.month)} through ${formatMonthLabel(lastPeriod.month)}.`
+        ? `${label} medication compliance was unchanged at ${formatPercent(lastPeriod.compliance)} from ${formatMonthLabel(firstPeriod.month)} through ${formatMonthLabel(lastPeriod.month)}, a 0.0 percentage point change.`
         : `${label} medication compliance ${complianceChange > 0 ? "increased" : "decreased"} by ${Math.abs(complianceChange).toFixed(1)} percentage points, from ${formatPercent(firstPeriod.compliance)} in ${formatMonthLabel(firstPeriod.month)} to ${formatPercent(lastPeriod.compliance)} in ${formatMonthLabel(lastPeriod.month)}.`
       : null;
 

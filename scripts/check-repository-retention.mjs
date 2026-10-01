@@ -16,6 +16,7 @@ const rootFiles = new Set([
   "Dockerfile.admissions-county-release",
   "Dockerfile.admissions-identity-release",
   "Dockerfile.workforce-release",
+  "Dockerfile.chat-release",
   "Dockerfile.frontend-rebase",
   "Dockerfile.frontend-release",
   "Dockerfile.licensing-job",

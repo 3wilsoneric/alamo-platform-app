@@ -33,13 +33,15 @@ sequenceDiagram
     participant User
     participant Home as WorkspaceHomePage
     participant API as /api/chat
+    participant Compiler as bounded intent compiler
     participant Registry as exact question route registry
     participant Tools as deterministic tools
     participant Contract as answer and visual contract
 
-    User->>Home: choose a question and selectors
-    Home->>API: compiled prompt + exact route ID
-    API->>Registry: resolve one registered route and tool
+    User->>Home: ask directly or choose a registered question
+    Home->>API: prompt + optional exact route ID
+    API->>Compiler: resolve bounded intent and scope
+    Compiler->>Registry: select one registered route and tool
     Registry->>Tools: run bounded tool with explicit scope
     Tools-->>Contract: answer, evidence, visual, truth state, artifact
     Contract->>Contract: validate route, tool, prose, columns, modules, and export
@@ -47,12 +49,18 @@ sequenceDiagram
     Home-->>User: render thread item
 ```
 
-The current home experience is question-menu first. Its search box searches
-registered questions; it is not a free-text analysis composer. A menu click
-sends the route ID, so the backend does not rediscover intent from the rendered
-question text. The free-text compiler remains an internal compatibility layer
-for old history items, reruns, and tightly bounded tool actions. It is not the
-primary product path.
+The normal analyst experience remains question-menu first. Its search box
+searches registered questions and a selection sends the exact route ID, so the
+backend does not rediscover intent from rendered question text. The owner-only
+prototype adds a conversational composer that accepts a direct operating
+question and can return prose, a governed visual, or a registered platform
+module. Both paths share the same analysis session, truth-state rules, module
+contracts, and drilldown controls.
+
+The owner-only `/chat` route is an unlisted alternate entry to this exact
+workspace. It does not fork the analyst runtime or data path. Client routing
+checks the verified Platform owner claim and redirects other authenticated
+users to `/home`; the normal Analytics question experience remains unchanged.
 
 Normal answers may offer a short deterministic drilldown ladder. A visible
 next-question action must carry an exact registered question-route ID. The

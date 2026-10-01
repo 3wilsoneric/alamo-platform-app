@@ -491,11 +491,11 @@ export async function clearClientState(page) {
   });
 }
 
-export async function openChat(page, { resetClientState = true } = {}) {
-  await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "domcontentloaded" });
+export async function openChat(page, { resetClientState = true, route = "/analytics/questions" } = {}) {
+  await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
   if (resetClientState) {
     await clearClientState(page);
-    await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
   } else {
     await page.waitForLoadState("domcontentloaded");
   }
@@ -503,7 +503,7 @@ export async function openChat(page, { resetClientState = true } = {}) {
   const workspace = page.locator('[data-chat-workspace-panel="true"]');
   await workspace.waitFor({ state: "visible", timeout: TIMEOUT_MS });
 
-  const composer = page.getByPlaceholder(/Ask anything/i);
+  const composer = page.locator('[data-conversational-input="true"]').filter({ visible: true }).last();
   if (await composer.isVisible().catch(() => false)) return;
 
   const guide = page.locator('[data-certified-question-guide="true"]').first();
@@ -516,7 +516,7 @@ export async function openChat(page, { resetClientState = true } = {}) {
   await questionsButton.click({ timeout: 10_000 });
 
   await page
-    .locator('[data-certified-question-guide="true"], textarea[placeholder*="Ask"]')
+    .locator('[data-certified-question-guide="true"], [data-conversational-prompt]')
     .first()
     .waitFor({ state: "visible", timeout: 10_000 });
 }
@@ -537,6 +537,7 @@ export async function startCleanChat(page) {
     await page.waitForFunction(
       () => (
         Boolean(document.querySelector('[data-certified-question-guide="true"]')) ||
+        Boolean(document.querySelector('[data-conversational-prompt="hero"]')) ||
         Array.from(document.querySelectorAll("button")).some((candidate) =>
           /^(Ask a question|Questions|Open questions)$/i.test(String(candidate.textContent || "").trim())
         )
@@ -549,8 +550,10 @@ export async function startCleanChat(page) {
   }
 
   await clearClientState(page);
-  await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "networkidle" });
-  await page.locator('[data-certified-question-guide="true"]').first().waitFor({
+  const currentPath = new URL(page.url()).pathname;
+  const route = currentPath === "/chat" ? "/chat" : "/analytics/questions";
+  await page.goto(`${BASE_URL}${route}`, { waitUntil: "networkidle" });
+  await page.locator('[data-certified-question-guide="true"], [data-conversational-prompt="hero"]').first().waitFor({
     state: "visible",
     timeout: 10_000
   });
@@ -1064,10 +1067,10 @@ async function maybeCompleteResidentSearch(page, prompt) {
 
 export async function submitQuestion(page, prompt, selection = {}) {
   const itemCountBefore = await page.locator("[data-chat-item-id]").count();
-  const composer = page.getByPlaceholder(/Ask anything/i);
-  if (await composer.isVisible().catch(() => false)) {
+  const composer = page.locator('[data-conversational-input="true"]').filter({ visible: true }).last();
+  if (!selection.questionItemId && await composer.isVisible().catch(() => false)) {
     await composer.fill(prompt);
-    await page.getByRole("button", { name: /Start request/i }).click();
+    await page.getByRole("button", { name: "Send question" }).filter({ visible: true }).last().click();
   } else {
     await selectGuidedQuestion(page, prompt, selection);
   }

@@ -14,6 +14,7 @@ import CaliforniaHomePage from "../features/california/pages/CaliforniaHomePage"
 import DataArchitecturePage from "../features/architecture/pages/DataArchitecturePage";
 import AdmissionsPage from "../features/admissions/pages/AdmissionsPage";
 import WorkforcePage from "../features/workforce/pages/WorkforcePage";
+import OwnerChatPage from "../features/home/pages/OwnerChatPage";
 
 import LicensingPage from "../features/licensing/pages/LicensingPage";
 
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/incidents" element={withRouteBoundary(<IncidentCenterPage />)} />
         <Route path="/admissions" element={withRouteBoundary(<AdmissionsPage />)} />
         <Route path="/workforce" element={withRouteBoundary(<WorkforcePage />)} />
+        <Route path="/chat" element={withRouteBoundary(<OwnerChatPage />)} />
         <Route path="/pipeline" element={<Navigate to="/admissions" replace />} />
         <Route path="/glossary" element={withRouteBoundary(<GlossaryPage />)} />
         <Route path="/explorer/:kind" element={withRouteBoundary(<DataExplorerPage />)} />

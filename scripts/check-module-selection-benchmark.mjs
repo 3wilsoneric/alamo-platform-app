@@ -34,7 +34,7 @@ add([
 
 add([
   ...facilities.map((name) => `show ${name} current incident category breakdown`),
-  ...facilities.map((name) => `${name} incidents by category this month`)
+  ...facilities.map((name) => `${name} incidents by category in September 2026`)
 ], "incident_breakdown", "incident-breakdown", "simple-bars");
 
 add([
@@ -78,9 +78,9 @@ add([
   "compare census trends across communities over the last six months",
   "show census over time by community",
   "show monthly census trends across all communities",
-  "compare incident trends across communities over the last six months",
+  "compare incident trends across communities from April through September 2026",
   "show incidents over time by community",
-  "show an incident heatmap by community over the last six months",
+  "show an incident heatmap by community from April through September 2026",
   "show a census heat map by community over time",
   "incident matrix by community over time",
   "census matrix across all facilities",
