@@ -1,9 +1,9 @@
+import { InteractionStatus } from "@azure/msal-browser";
+import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { AuthenticationProgress } from "../../../app/auth/AuthenticationProgress";
-import { fetchWithApiAuth } from "../../../shared/api/authenticatedFetch";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 import WorkspaceHomePage from "./WorkspaceHomePage";
 
@@ -15,36 +15,19 @@ import WorkspaceHomePage from "./WorkspaceHomePage";
  */
 export default function OwnerChatPage() {
   const isOwner = usePlatformOwnerAccess();
-  const [access, setAccess] = useState<"checking" | "allowed" | "denied">(
-    isE2EAuthBypassEnabled || isOwner ? "allowed" : "checking"
-  );
+  const isAuthenticated = useIsAuthenticated();
+  const { accounts, inProgress, instance } = useMsal();
+  const account = instance.getActiveAccount() ?? accounts[0] ?? null;
+  const ownerClaimReady = Boolean(account?.idTokenClaims);
 
-  useEffect(() => {
-    if (isE2EAuthBypassEnabled || isOwner) {
-      setAccess("allowed");
-      return;
-    }
-
-    const controller = new AbortController();
-    void fetchWithApiAuth(
-      "/api/platform/knowledge",
-      { method: "GET", signal: controller.signal },
-      {
-        timeoutMs: 10_000,
-        consume: async (response) => response.ok
-      }
-    )
-      .then((allowed) => setAccess(allowed ? "allowed" : "denied"))
-      .catch((error) => {
-        if (!controller.signal.aborted) {
-          console.warn("Owner access verification was unavailable.", error);
-          setAccess("denied");
-        }
-      });
-    return () => controller.abort();
-  }, [isOwner]);
-
-  if (!isE2EAuthBypassEnabled && access === "checking") {
+  // On a cold deep link MSAL can report an authenticated session one render
+  // before the account claims are hydrated. Do not treat that transient state
+  // as an access denial; it previously bounced the owner back to /home before
+  // the exact same claim used by the owner-only navigation became available.
+  if (
+    !isE2EAuthBypassEnabled &&
+    (!isAuthenticated || inProgress !== InteractionStatus.None || !ownerClaimReady)
+  ) {
     return (
       <AuthenticationProgress
         label="Opening Alamo Analyst"
@@ -53,7 +36,7 @@ export default function OwnerChatPage() {
     );
   }
 
-  if (!isE2EAuthBypassEnabled && access === "denied") {
+  if (!isE2EAuthBypassEnabled && !isOwner) {
     return <Navigate to="/home" replace />;
   }
 
