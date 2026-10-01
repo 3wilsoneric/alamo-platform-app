@@ -158,6 +158,13 @@ if (
   throw new Error("expired API sessions must recover through Microsoft sign-in instead of becoming a broken data screen");
 }
 if (
+  !protectedShell.includes("<AuthenticationRedirect location={location} />") ||
+  !protectedShell.includes("writeStorageItem(POST_LOGIN_PATH_KEY, returnPath") ||
+  !protectedShell.includes("returnPathSaved")
+) {
+  throw new Error("protected routes must persist their exact return path before mounting the login redirect");
+}
+if (
   !platformData.includes("MAX_STALE_FALLBACK_MS") ||
   !platformData.includes("PLATFORM_DATA_DEGRADED_EVENT") ||
   !platformData.includes("staleCachedValue") ||
