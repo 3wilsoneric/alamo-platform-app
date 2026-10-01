@@ -142,6 +142,12 @@ if (!loginPage.includes("readRedirectAuthenticationError()")) {
   throw new Error("LoginPage must display a preserved Microsoft callback failure");
 }
 if (
+  !loginPage.includes("const authenticatedReturnPath = routeState?.from?.pathname ? fromPath : savedPath") ||
+  !loginPage.includes("<Navigate to={authenticatedReturnPath} replace />")
+) {
+  throw new Error("LoginPage must return an already-authenticated protected deep link to its original route");
+}
+if (
   !authenticatedFetch.includes("PLATFORM_AUTHENTICATION_REQUIRED_EVENT") ||
   !authenticatedFetch.includes("response.status === 401") ||
   !authenticatedFetch.includes("monitor_window_timeout") ||
