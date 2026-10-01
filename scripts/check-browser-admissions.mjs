@@ -66,6 +66,12 @@ await withBrowserQa(async (browser) => {
   await briefingTab.click();
   const dashboard = page.locator('[data-admissions-briefing-dashboard="true"]');
   await dashboard.waitFor({ state: "visible" });
+  const executiveUpdate = page.locator('[data-admissions-executive-update="true"]');
+  const executiveUpdateVisible = await executiveUpdate.isVisible().catch(() => false);
+  if (executiveUpdateVisible) {
+    await page.locator('[data-admissions-executive-update="true"][data-admissions-chat-typing="false"]').waitFor({ state: "visible", timeout: 60_000 });
+  }
+  const executiveText = executiveUpdateVisible ? await executiveUpdate.innerText() : "";
   if (
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-pipeline-page="true"]').count() !== 0 ||
@@ -79,9 +85,13 @@ await withBrowserQa(async (browser) => {
     await page.getByRole("heading", { name: "Where referrals are coming from" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
-    await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 1
+    await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 1 ||
+    (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count() !== 1) ||
+    (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 1) ||
+    (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-row]').count() < 2) ||
+    (executiveUpdateVisible && /admission date not scheduled|accepted clients moving toward admission|where the work is/i.test(executiveText))
   ) {
-    throw new Error("The Briefing page must render as a readable dashboard without report tables or slide navigation.");
+    throw new Error("The Briefing page must render as a concise, structured analyst update without repetitive prose.");
   }
   const sourceNotice = page.locator('[data-admissions-briefing-source-notice="true"]');
   const sourceCards = dashboard.locator('[aria-labelledby="admissions-origin-dashboard-title"] article');

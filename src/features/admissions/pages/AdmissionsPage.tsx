@@ -17,7 +17,9 @@ import PipelineBoard from "../components/PipelineBoard";
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 type ExecutiveUpdateSegment = { text: string; strong?: boolean };
 type ExecutiveUpdateLine = {
-  key: "accepted" | "workload" | "locations";
+  key: string;
+  group: "summary" | "scheduled" | "pending" | "pipeline";
+  label?: string;
   segments: ExecutiveUpdateSegment[];
 };
 
@@ -232,6 +234,20 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
   }, [totalCharacters, typing]);
 
   let characterOffset = 0;
+  const visibleLines = lines.flatMap((line) => {
+    const lineLength = line.segments.reduce((total, segment) => total + segment.text.length, 0);
+    const visibleCharacters = Math.max(0, Math.min(lineLength, revealedCharacters - characterOffset));
+    const lineStarted = visibleCharacters > 0 || (typing && characterOffset === 0);
+    const lineIsStreaming = typing && lineStarted && visibleCharacters < lineLength;
+    characterOffset += lineLength;
+    return lineStarted ? [{ ...line, visibleCharacters, lineIsStreaming }] : [];
+  });
+  const summaryLine = visibleLines.find((line) => line.group === "summary");
+  const answerSections = [
+    { group: "scheduled" as const, title: "Accepted · scheduled" },
+    { group: "pending" as const, title: "Accepted · date pending" },
+    { group: "pipeline" as const, title: "Pipeline" }
+  ];
 
   return (
     <section
@@ -240,33 +256,50 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       data-admissions-chat-typing={typing ? "true" : "false"}
       aria-label="Admissions briefing"
       aria-busy={typing}
-      className="mb-6 max-w-[1120px] rounded-[16px] bg-[#f4f7f5] px-4 py-4 text-[#46504b] sm:px-5 sm:py-5"
+      className="mb-6 max-w-[1120px] rounded-[16px] bg-[#f4f7f5] px-4 py-4 text-[#46504b] sm:px-6 sm:py-5"
     >
       <div className="flex items-start gap-3.5">
         <span data-admissions-chat-avatar="true" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#dcebe5] text-[#176d51] sm:h-9 sm:w-9">
           <Sparkles className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex min-h-8 items-center gap-2">
-            <span className="text-[12px] font-semibold text-[#263c35] sm:text-[13px]">Briefing</span>
-            <span className="text-[10px] text-[#7a847f]" aria-hidden="true">{typing ? "Composing…" : "Current update"}</span>
+          <div className="flex min-h-8 items-center gap-2.5">
+            <span className="text-[12px] font-semibold text-[#263c35] sm:text-[13px]">Admissions analyst</span>
+            {typing ? <span className="text-[10px] text-[#7a847f]" aria-hidden="true">Composing…</span> : null}
           </div>
-          <div className="mt-2.5 space-y-2 text-[13px] leading-6 sm:text-[14px] sm:leading-7">
-            {lines.map((line) => {
-              const lineLength = line.segments.reduce((total, segment) => total + segment.text.length, 0);
-              const visibleCharacters = Math.max(0, Math.min(lineLength, revealedCharacters - characterOffset));
-              const lineStarted = visibleCharacters > 0 || (typing && characterOffset === 0);
-              const lineIsStreaming = typing && visibleCharacters > 0 && visibleCharacters < lineLength;
-              characterOffset += lineLength;
-              if (!lineStarted) return null;
+          <div className="mt-2 text-[13px] leading-6 sm:text-[14px] sm:leading-7">
+            {summaryLine ? (
+              <p data-admissions-executive-summary="true" className="max-w-[860px] text-[#46504b]">
+                <StreamingSegments segments={summaryLine.segments} visibleCharacters={summaryLine.visibleCharacters} />
+                {summaryLine.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+              </p>
+            ) : null}
+            {answerSections.map((section) => {
+              const sectionLines = visibleLines.filter((line) => line.group === section.group);
+              if (!sectionLines.length) return null;
               return (
-                <p
-                  key={line.key}
-                  data-admissions-executive-line={line.key}
+                <section
+                  key={section.group}
+                  data-admissions-executive-section={section.group}
+                  className="mt-4 border-t border-[#dce5e1] pt-3.5 sm:mt-5 sm:pt-4"
                 >
-                  <StreamingSegments segments={line.segments} visibleCharacters={visibleCharacters} />
-                  {lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-                </p>
+                  <h3 className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#66736d] sm:mb-2">{section.title}</h3>
+                  <dl className="divide-y divide-[#e1e8e4]">
+                    {sectionLines.map((line) => (
+                      <div
+                        key={line.key}
+                        data-admissions-executive-row={line.key}
+                        className="grid gap-0.5 py-2 first:pt-1 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-4"
+                      >
+                        <dt className="text-[11px] font-medium leading-5 text-[#66736d] sm:text-[12px] sm:leading-6">{line.label}</dt>
+                        <dd className="min-w-0 text-[12px] leading-5 text-[#46504b] sm:text-[13px] sm:leading-6">
+                          <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
+                          {line.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
               );
             })}
           </div>
@@ -304,60 +337,98 @@ function StreamingSegments({ segments, visibleCharacters }: { segments: Executiv
 
 function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExecutiveUpdate>): ExecutiveUpdateLine[] {
   if (!update) {
-    return [{ key: "workload", segments: [{ text: "There are no active referrals in the current admissions update." }] }];
+    return [{
+      key: "summary",
+      group: "summary",
+      segments: [{ text: "There are no active referrals in the current admissions update." }]
+    }];
   }
 
-  const lines: ExecutiveUpdateLine[] = [];
-  if (update.acceptedClients.length) {
+  const scheduledGroups = groupAcceptedClients(update.acceptedClients.filter((client) => client.plannedAdmissionDate), "scheduled");
+  const pendingGroups = groupAcceptedClients(update.acceptedClients.filter((client) => !client.plannedAdmissionDate), "pending");
+  const scheduledCount = scheduledGroups.reduce((total, group) => total + group.names.length, 0);
+  const pendingCount = pendingGroups.reduce((total, group) => total + group.names.length, 0);
+  const lines: ExecutiveUpdateLine[] = [{
+    key: "summary",
+    group: "summary",
+    segments: [
+      { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
+      { text: update.acceptedClients.length ? ". " : "." },
+      ...(update.acceptedClients.length ? [
+        { text: `${update.acceptedClients.length} accepted ${pluralize("client", update.acceptedClients.length)}`, strong: true },
+        { text: " moving toward admission" },
+        ...(scheduledCount ? [{ text: `; ${scheduledCount} ${scheduledCount === 1 ? "has" : "have"} a scheduled date` }] : []),
+        ...(pendingCount ? [{ text: `${scheduledCount ? " and" : ";"} ${pendingCount} still ${pendingCount === 1 ? "needs" : "need"} scheduling` }] : []),
+        { text: "." }
+      ] : [])
+    ]
+  }];
+  for (const group of scheduledGroups) {
     lines.push({
-      key: "accepted",
-      segments: buildAcceptedClientSegments(update.acceptedClients)
+      key: `scheduled:${group.key}`,
+      group: "scheduled",
+      label: group.label,
+      segments: [...buildNameSegments(group.names), { text: ` · ${group.community}` }]
+    });
+  }
+  for (const group of pendingGroups) {
+    lines.push({
+      key: `pending:${group.key}`,
+      group: "pending",
+      label: group.community,
+      segments: buildNameSegments(group.names)
     });
   }
   lines.push({
-    key: "workload",
+    key: "pipeline:stages",
+    group: "pipeline",
+    label: "Stages",
     segments: [
-      { text: "Admissions is managing " },
-      { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
-      { text: ": " },
-      { text: `${update.received} newly received`, strong: true },
-      { text: ", " },
-      { text: `${update.inProgress} in assessment and review`, strong: true },
-      { text: ", and " },
-      { text: `${update.decision} at decision`, strong: true },
-      { text: "." }
+      { text: `${update.received} new`, strong: true },
+      { text: " · " },
+      { text: `${update.inProgress} assessment / review`, strong: true },
+      { text: " · " },
+      { text: `${update.decision} decision`, strong: true }
     ]
   });
   if (update.busiest.length) {
     lines.push({
-      key: "locations",
-      segments: [
-        { text: "Where the work is:", strong: true },
-        { text: ` ${formatCommunityLoad(update.busiest)}.` }
-      ]
+      key: "pipeline:load",
+      group: "pipeline",
+      label: "Highest load",
+      segments: [{ text: formatCommunityLoad(update.busiest) }]
     });
   }
   return lines;
 }
 
-function buildAcceptedClientSegments(
-  clients: Array<{ name: string; community: string; plannedAdmissionDate: string | null }>
-): ExecutiveUpdateSegment[] {
-  const segments: ExecutiveUpdateSegment[] = [
-    { text: "Accepted clients moving toward admission:", strong: true },
-    { text: " " }
-  ];
-  clients.forEach((client, index) => {
-    segments.push({ text: client.name, strong: true });
-    segments.push({ text: ` to ${client.community}` });
-    segments.push({
-      text: client.plannedAdmissionDate
-        ? `, planned ${formatDate(client.plannedAdmissionDate)}`
-        : ", admission date not scheduled"
-    });
-    segments.push({ text: index === clients.length - 1 ? "." : "; " });
+function buildNameSegments(names: string[]): ExecutiveUpdateSegment[] {
+  const segments: ExecutiveUpdateSegment[] = [];
+  names.forEach((name, index) => {
+    if (index) segments.push({ text: index === names.length - 1 ? (names.length === 2 ? " and " : ", and ") : ", " });
+    segments.push({ text: name, strong: true });
   });
   return segments;
+}
+
+function groupAcceptedClients(
+  clients: Array<{ name: string; community: string; plannedAdmissionDate: string | null }>,
+  mode: "scheduled" | "pending"
+) {
+  const groups = new Map<string, { key: string; label: string; community: string; names: string[] }>();
+  for (const client of clients) {
+    const dateKey = client.plannedAdmissionDate ?? "pending";
+    const key = mode === "scheduled" ? `${dateKey}|${client.community}` : client.community;
+    const current = groups.get(key) ?? {
+      key,
+      label: mode === "scheduled" ? formatDate(dateKey) : client.community,
+      community: client.community,
+      names: []
+    };
+    current.names.push(client.name);
+    groups.set(key, current);
+  }
+  return [...groups.values()].sort((left, right) => left.key.localeCompare(right.key));
 }
 
 function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
