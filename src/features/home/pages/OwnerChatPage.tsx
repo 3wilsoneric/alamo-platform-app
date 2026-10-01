@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { AuthenticationProgress } from "../../../app/auth/AuthenticationProgress";
-import { usePlatformOwnerAccessState } from "../../../shared/auth/platformOwnerAccess";
+import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 import WorkspaceHomePage from "./WorkspaceHomePage";
 
 /**
@@ -13,11 +13,11 @@ import WorkspaceHomePage from "./WorkspaceHomePage";
  * Platform owner claim remains the access boundary; knowing `/chat` is not.
  */
 export default function OwnerChatPage() {
-  const ownerAccess = usePlatformOwnerAccessState();
+  const isOwner = usePlatformOwnerAccess();
   const [denialConfirmed, setDenialConfirmed] = useState(false);
 
   useEffect(() => {
-    if (isE2EAuthBypassEnabled || ownerAccess !== "denied") {
+    if (isE2EAuthBypassEnabled || isOwner) {
       setDenialConfirmed(false);
       return;
     }
@@ -27,12 +27,9 @@ export default function OwnerChatPage() {
     // claim-settling window, without rendering any owner content in the meantime.
     const timeoutId = window.setTimeout(() => setDenialConfirmed(true), 2_500);
     return () => window.clearTimeout(timeoutId);
-  }, [ownerAccess]);
+  }, [isOwner]);
 
-  if (
-    !isE2EAuthBypassEnabled &&
-    (ownerAccess === "pending" || (ownerAccess === "denied" && !denialConfirmed))
-  ) {
+  if (!isE2EAuthBypassEnabled && !isOwner && !denialConfirmed) {
     return (
       <AuthenticationProgress
         label="Opening Alamo Analyst"
@@ -41,7 +38,7 @@ export default function OwnerChatPage() {
     );
   }
 
-  if (!isE2EAuthBypassEnabled && ownerAccess === "denied") {
+  if (!isE2EAuthBypassEnabled && !isOwner) {
     return <Navigate to="/home" replace />;
   }
 
