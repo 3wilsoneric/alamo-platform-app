@@ -50,6 +50,7 @@ export default function LoginPage() {
   const savedPath = normalizePostLoginPath(
     readStorageItem(POST_LOGIN_PATH_KEY, { kind: "session", label: "post-login path" })
   );
+  const authenticatedReturnPath = routeState?.from?.pathname ? fromPath : savedPath;
 
   useEffect(() => {
     if ((!isE2EAuthBypassEnabled && !isAuthenticated) || forceReauthentication) return;
@@ -57,13 +58,14 @@ export default function LoginPage() {
     const savedPath = normalizePostLoginPath(
       readStorageItem(POST_LOGIN_PATH_KEY, { kind: "session", label: "post-login path" })
     );
+    const returnPath = routeState?.from?.pathname ? fromPath : savedPath;
     removeStorageItem(POST_LOGIN_PATH_KEY, { kind: "session", label: "post-login path" });
     clearRedirectAuthenticationError();
-    navigate(savedPath, { replace: true });
-  }, [forceReauthentication, isAuthenticated, navigate]);
+    navigate(returnPath, { replace: true });
+  }, [forceReauthentication, fromPath, isAuthenticated, navigate, routeState?.from?.pathname]);
 
   if (isE2EAuthBypassEnabled || (isAuthenticated && !forceReauthentication)) {
-    return <Navigate to={savedPath} replace />;
+    return <Navigate to={authenticatedReturnPath} replace />;
   }
 
   const handleMicrosoftLogin = async () => {
