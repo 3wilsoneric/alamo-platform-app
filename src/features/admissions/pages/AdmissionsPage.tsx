@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -595,7 +595,6 @@ function AdmissionsBriefingDashboard({
             }))}
           />
         </div>
-        <div className="lg:col-span-12"><BriefingOriginDashboard briefing={briefing} /></div>
       </div>
     </section>
   );
@@ -610,180 +609,42 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
     .reduce((total, community) => total + (community.newReferrals7d ?? 0), 0);
 
   return (
-    <section className="rounded-2xl border border-[#dfe3e1] bg-[#f8faf9] p-3 sm:p-5" aria-labelledby="admissions-community-dashboard-title">
-      <div className="mb-4 flex items-end justify-between gap-3">
+    <section className="border-y border-[#d9dedb] bg-white" aria-labelledby="admissions-community-dashboard-title">
+      <div className="flex items-center justify-between gap-3 border-b border-[#d9dedb] px-1 py-3 sm:px-0">
         <div>
-          <h3 id="admissions-community-dashboard-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">Census by community</h3>
-          <p className="mt-1 text-[10px] text-[#737b77]">Occupancy and this week’s admissions activity together.</p>
+          <h3 id="admissions-community-dashboard-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">Community census</h3>
+          <p className="mt-0.5 text-[10px] text-[#737b77]">Current census with this week’s admissions activity.</p>
         </div>
-        <p className="text-[11px] font-semibold text-[#315b54]">{formatBriefingCount(briefing.totals.census)} residents</p>
+        <p className="text-right text-[10px] uppercase tracking-[0.08em] text-[#737b77]"><strong className="mr-1 text-[18px] font-semibold tracking-[-0.03em] text-[#183f34]">{formatBriefingCount(briefing.totals.census)}</strong> total</p>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5">
+      <div className="hidden grid-cols-[minmax(180px,1fr)_120px_160px_160px] gap-4 border-b border-[#e5e9e7] px-1 py-2 text-[8px] font-semibold uppercase tracking-[0.1em] text-[#858d88] sm:grid">
+        <span>Community</span>
+        <span className="text-right">Census</span>
+        <span className="text-right">Upcoming admits</span>
+        <span className="text-right">New referrals · 7 days</span>
+      </div>
+      <div className="divide-y divide-[#e5e9e7]">
         {assignedCommunities.map((community) => (
-          <article key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="rounded-xl border border-[#e0e6e2] bg-white p-3 shadow-[0_1px_0_rgba(19,45,37,0.03)] sm:p-4">
-            <div className="flex items-start justify-between gap-3">
-              <h4 className="min-w-0 text-[12px] font-semibold leading-4 text-[#263c35]">{community.shortName}</h4>
-              <strong className="text-[24px] font-semibold leading-none tracking-[-0.04em] text-[#183f34]">{formatBriefingCount(community.census)}</strong>
+          <article key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="px-1 py-3 sm:grid sm:grid-cols-[minmax(180px,1fr)_120px_160px_160px] sm:items-center sm:gap-4 sm:py-3.5">
+            <div className="flex items-center justify-between gap-4 sm:block">
+              <h4 className="min-w-0 text-[13px] font-semibold leading-5 text-[#263c35]">{community.shortName}</h4>
+              <p data-admissions-community-census="true" className="text-right sm:hidden"><strong className="text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#183f34]">{formatBriefingCount(community.census)}</strong><span className="ml-1.5 text-[9px] uppercase tracking-[0.08em] text-[#7a817d]">census</span></p>
             </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e8eeeb] sm:mt-4" aria-hidden="true">
-              <span className="block h-full rounded-full bg-[#0f8b73]" style={{ width: `${Math.max(0, Math.min(100, community.occupancyPct ?? 0))}%` }} />
+            <p data-admissions-community-census="true" className="hidden text-right sm:block"><strong className="text-[18px] font-semibold tabular-nums text-[#183f34]">{formatBriefingCount(community.census)}</strong></p>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:contents">
+              <p data-admissions-community-upcoming-admits="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">Upcoming admits</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.plannedMoveInsThisWeek)}</strong><span className="ml-1 sm:hidden">this week</span></p>
+              <p data-admissions-community-referrals="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">New referrals</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1 sm:hidden">last 7 days</span></p>
             </div>
-            <p className="mt-1.5 text-[10px] text-[#69716c] sm:mt-2">{community.occupancyPct != null ? `${community.occupancyPct}% occupied` : "Occupancy unavailable"}</p>
-            {community.newReferrals7d != null || community.plannedMoveInsThisWeek != null ? (
-              <p className="mt-2 border-t border-[#edf0ee] pt-2 text-[10px] leading-4 text-[#5f6762] sm:mt-3 sm:pt-3">
-                <strong className="font-semibold text-[#263c35]">{formatBriefingCount(community.newReferrals7d)}</strong> new {pluralize("referral", community.newReferrals7d ?? 0)} · <strong className="font-semibold text-[#263c35]">{formatBriefingCount(community.plannedMoveInsThisWeek)}</strong> planned {pluralize("move-in", community.plannedMoveInsThisWeek ?? 0)}
-              </p>
-            ) : null}
           </article>
         ))}
       </div>
       {unassignedActivity > 0 ? (
-        <p data-admissions-unassigned-footnote="true" className="mt-3 text-[9px] leading-4 text-[#737b77]">
-          {unassignedActivity} recent {pluralize("referral", unassignedActivity)} {unassignedActivity === 1 ? "has" : "have"} not yet been assigned to a destination community and {unassignedActivity === 1 ? "is" : "are"} omitted from the census cards.
+        <p data-admissions-unassigned-footnote="true" className="border-t border-[#e5e9e7] px-1 py-2.5 text-[9px] leading-4 text-[#737b77]">
+          {unassignedActivity} recent {pluralize("referral", unassignedActivity)} {unassignedActivity === 1 ? "has" : "have"} not yet been assigned to a community and {unassignedActivity === 1 ? "is" : "are"} omitted here.
         </p>
       ) : null}
     </section>
   );
-}
-
-function BriefingOriginDashboard({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
-  const { sources, unattributed } = buildReferralSourceSummaries(briefing.origins);
-  const pageSize = 8;
-  const pageCount = Math.max(1, Math.ceil(sources.length / pageSize));
-  const [page, setPage] = useState(0);
-  const currentPage = Math.min(page, pageCount - 1);
-  const visibleSources = sources.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
-  const currentReferralCount = sources.reduce((total, source) => total + source.last7Days, 0) + unattributed.last7Days;
-  const activeSourceCount = sources.filter((source) => source.last7Days > 0).length;
-  return (
-    <section className="h-full rounded-2xl border border-[#dfe3e1] bg-white p-4 sm:p-5" aria-labelledby="admissions-origin-dashboard-title">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h3 id="admissions-origin-dashboard-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">Referral sources</h3>
-          <p className="mt-1 text-[10px] text-[#737b77]">The last seven days compared with the previous seven.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <p className="text-[10px] text-[#69716c]">
-            <strong className="font-semibold tabular-nums text-[#263c35]">{currentReferralCount}</strong> this week · <strong className="font-semibold tabular-nums text-[#263c35]">{activeSourceCount}</strong> active {pluralize("source", activeSourceCount)}
-          </p>
-          {pageCount > 1 ? (
-            <div className="flex items-center gap-1">
-              <button type="button" aria-label="Previous referral sources" disabled={currentPage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d9dfdb] text-[#315b54] disabled:opacity-25"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
-              <span className="min-w-10 text-center text-[9px] tabular-nums text-[#7a817d]">{currentPage + 1} / {pageCount}</span>
-              <button type="button" aria-label="Next referral sources" disabled={currentPage === pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d9dfdb] text-[#315b54] disabled:opacity-25"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
-            </div>
-          ) : null}
-        </div>
-      </div>
-      {briefing.coverage.recentReferrals ? (
-        visibleSources.length ? (
-          <div className="mt-4 border-y border-[#e4e9e6]">
-            <div className="hidden grid-cols-[minmax(190px,1.25fr)_64px_64px_90px_minmax(160px,1fr)] gap-4 border-b border-[#e4e9e6] px-1 py-2 text-[8px] font-semibold uppercase tracking-[0.1em] text-[#858d88] sm:grid">
-              <span>Source</span>
-              <span className="text-right">Last 7</span>
-              <span className="text-right">Prior 7</span>
-              <span>Change</span>
-              <span>Receiving communities</span>
-            </div>
-            <ol className="divide-y divide-[#e8ecea]">
-              {visibleSources.map((source) => {
-                const direction = source.last7Days - source.previous7Days;
-                const change = referralSourceChange(source.last7Days, source.previous7Days);
-                return (
-                  <li key={source.key} data-admissions-origin-source={source.key}>
-                    <article className="py-3.5 sm:grid sm:grid-cols-[minmax(190px,1.25fr)_64px_64px_90px_minmax(160px,1fr)] sm:items-center sm:gap-4 sm:px-1">
-                      <div className="min-w-0">
-                        <h4 className="truncate text-[12px] font-semibold text-[#263c35]">{source.sourceName}</h4>
-                        {source.categories.length ? <p className="mt-0.5 truncate text-[9px] text-[#7a817d]">{source.categories.join(" · ")}</p> : null}
-                      </div>
-                      <div className="mt-2 grid grid-cols-3 gap-2 sm:contents">
-                        <p className="text-[10px] text-[#78807b] sm:text-right"><span className="block text-[8px] uppercase tracking-[0.08em] sm:hidden">Last 7</span><strong className="text-[15px] font-semibold tabular-nums text-[#183f34] sm:text-[13px]">{source.last7Days}</strong></p>
-                        <p className="text-[10px] text-[#78807b] sm:text-right"><span className="block text-[8px] uppercase tracking-[0.08em] sm:hidden">Prior 7</span><strong className="text-[15px] font-medium tabular-nums text-[#5f6762] sm:text-[13px]">{source.previous7Days}</strong></p>
-                        <div className="flex items-end sm:items-center">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-medium ${direction > 0 ? "bg-[#e8f3ee] text-[#176d51]" : direction < 0 ? "bg-[#f8ece8] text-[#98503c]" : "bg-[#eef1ef] text-[#68716c]"}`}>{change}</span>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-[9px] leading-4 text-[#69716c] sm:mt-0">{formatCommunityList(source.communities)}</p>
-                    </article>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        ) : <p className="py-12 text-[12px] text-[#737b77]">No recorded referral sources were available during the governed 14-day window.</p>
-      ) : <IncompleteBriefingField label="Recent-referral dates and origin" />}
-      {briefing.coverage.recentReferrals && (unattributed.last7Days > 0 || unattributed.previous7Days > 0) ? (
-        <p data-admissions-origin-unattributed="true" className="mt-3 text-[9px] leading-4 text-[#737b77]">
-          Source was not recorded for {unattributed.last7Days} {pluralize("referral", unattributed.last7Days)} in the last seven days and {unattributed.previous7Days} in the previous seven. Those records are excluded from the source list.
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-function buildReferralSourceSummaries(origins: AdmissionsDashboardResponse["briefing"]["origins"]) {
-  const sourceMap = new Map<string, {
-    key: string;
-    sourceName: string;
-    categories: Set<string>;
-    last7Days: number;
-    previous7Days: number;
-    communities: Set<string>;
-  }>();
-  const unattributed = { last7Days: 0, previous7Days: 0 };
-
-  for (const origin of origins) {
-    if (isUnattributedReferralSource(origin.sourceName)) {
-      unattributed.last7Days += origin.last7Days;
-      unattributed.previous7Days += origin.previous7Days;
-      continue;
-    }
-    const key = origin.sourceName.trim().toLowerCase();
-    const current = sourceMap.get(key) ?? {
-      key,
-      sourceName: origin.sourceName.trim(),
-      categories: new Set<string>(),
-      last7Days: 0,
-      previous7Days: 0,
-      communities: new Set<string>()
-    };
-    if (origin.sourceCategory && origin.sourceCategory.trim().toLowerCase() !== key) current.categories.add(origin.sourceCategory.trim());
-    current.last7Days += origin.last7Days;
-    current.previous7Days += origin.previous7Days;
-    for (const community of origin.communities) {
-      if (community && !/unassigned|no community/i.test(community)) current.communities.add(community);
-    }
-    sourceMap.set(key, current);
-  }
-
-  const sources = [...sourceMap.values()]
-    .map((source) => ({
-      ...source,
-      categories: [...source.categories].sort(),
-      communities: [...source.communities].sort()
-    }))
-    .sort((left, right) => right.last7Days - left.last7Days || right.previous7Days - left.previous7Days || left.sourceName.localeCompare(right.sourceName));
-  return { sources, unattributed };
-}
-
-function isUnattributedReferralSource(value: string) {
-  return !value.trim() || /^(?:origin not recorded|source not recorded|unknown|referral packet)$/i.test(value.trim());
-}
-
-function referralSourceChange(current: number, prior: number) {
-  if (current > 0 && prior === 0) return "New";
-  if (current === 0 && prior > 0) return "No current";
-  const difference = current - prior;
-  if (difference > 0) return `+${difference}`;
-  if (difference < 0) return String(difference);
-  return "Steady";
-}
-
-function formatCommunityList(communities: string[]) {
-  if (!communities.length) return "Destination not assigned";
-  if (communities.length === 1) return communities[0];
-  if (communities.length === 2) return `${communities[0]} and ${communities[1]}`;
-  return `${communities.slice(0, -1).join(", ")}, and ${communities.at(-1)}`;
 }
 
 function BriefingSchedule({
