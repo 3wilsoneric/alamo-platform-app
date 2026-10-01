@@ -1653,3 +1653,23 @@ verification confirmed five active sources and seven referrals in the current
 week, rendered eight grouped source rows on the first of three pages, excluded
 unattributed pseudo-sources, and surfaced two current and six prior-week
 unattributed referrals in the footnote.
+
+### Compact Admissions executive briefing — 2026-10-01
+
+The Admissions analyst update now uses the available page width instead of
+stacking every section into one tall response. Its label and executive summary
+share a compact header row on desktop, followed by scheduled admissions,
+accepted clients awaiting dates, and pipeline context in three horizontal
+columns. Mobile retains the same content in a tight stacked layout.
+
+- source PR: `#109`; merge commit: `5236740444c0085f6a480aa3e82387ea00488e74`
+- ACR build: `cc55`
+- image: `alamo-platform@sha256:d7d5362579f044ae3a336a3abb8b95b330d5aad1e73ef0c0987bfbc4804fd2e2` (tag `admissions-compact-1001`)
+- active revision: `alamo-platform-prod-web--admissions-compact-1001`
+- rollback image: `alamo-platform@sha256:fcc13d164c91f0e5085a819918d4d20864da8c7a6d3e0a82802651012913cfe8`
+- active browser asset: `/assets/index-DZlivcoP.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression all pass without mobile horizontal
+overflow.
