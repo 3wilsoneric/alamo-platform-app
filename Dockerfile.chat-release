@@ -6,8 +6,9 @@ FROM ${BASE_IMAGE}
 # this release's governed-answer regression coverage.
 COPY --chown=node:node dist /app/dist
 COPY --chown=node:node deploy/patch-chat-entry.mjs /tmp/patch-chat-entry.mjs
-RUN mkdir -p /app/dist/chat \
+RUN mkdir -p /app/dist/chat /app/dist/admissions \
   && cp /app/dist/index.html /app/dist/chat/index.html \
+  && cp /app/dist/index.html /app/dist/admissions/index.html \
   && node /tmp/patch-chat-entry.mjs \
   && rm /tmp/patch-chat-entry.mjs
 COPY --chown=node:node server/tools/answer-formatting.mjs server/tools/community-history.mjs server/tools/medication-summaries.mjs /app/server/tools/
