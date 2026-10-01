@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { AuthenticationProgress } from "../../../app/auth/AuthenticationProgress";
+import { fetchWithApiAuth } from "../../../shared/api/authenticatedFetch";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 import WorkspaceHomePage from "./WorkspaceHomePage";
 
@@ -14,22 +15,36 @@ import WorkspaceHomePage from "./WorkspaceHomePage";
  */
 export default function OwnerChatPage() {
   const isOwner = usePlatformOwnerAccess();
-  const [denialConfirmed, setDenialConfirmed] = useState(false);
+  const [access, setAccess] = useState<"checking" | "allowed" | "denied">(
+    isE2EAuthBypassEnabled || isOwner ? "allowed" : "checking"
+  );
 
   useEffect(() => {
     if (isE2EAuthBypassEnabled || isOwner) {
-      setDenialConfirmed(false);
+      setAccess("allowed");
       return;
     }
 
-    // A full deep link can briefly expose the previously cached account while
-    // MSAL promotes the redirect account to active. Give that handoff one short
-    // claim-settling window, without rendering any owner content in the meantime.
-    const timeoutId = window.setTimeout(() => setDenialConfirmed(true), 2_500);
-    return () => window.clearTimeout(timeoutId);
+    const controller = new AbortController();
+    void fetchWithApiAuth(
+      "/api/platform/knowledge",
+      { method: "GET", signal: controller.signal },
+      {
+        timeoutMs: 10_000,
+        consume: async (response) => response.ok
+      }
+    )
+      .then((allowed) => setAccess(allowed ? "allowed" : "denied"))
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          console.warn("Owner access verification was unavailable.", error);
+          setAccess("denied");
+        }
+      });
+    return () => controller.abort();
   }, [isOwner]);
 
-  if (!isE2EAuthBypassEnabled && !isOwner && !denialConfirmed) {
+  if (!isE2EAuthBypassEnabled && access === "checking") {
     return (
       <AuthenticationProgress
         label="Opening Alamo Analyst"
@@ -38,7 +53,7 @@ export default function OwnerChatPage() {
     );
   }
 
-  if (!isE2EAuthBypassEnabled && !isOwner) {
+  if (!isE2EAuthBypassEnabled && access === "denied") {
     return <Navigate to="/home" replace />;
   }
 
