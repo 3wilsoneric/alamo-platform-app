@@ -82,7 +82,7 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-county-outreach="true"]').count() !== 0 ||
     await page.getByRole("heading", { name: "County outreach" }).count() !== 0 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
-    await page.getByRole("heading", { name: "Where referrals are coming from" }).count() !== 1 ||
+    await page.getByRole("heading", { name: "Referral sources" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 1 ||
@@ -94,12 +94,18 @@ await withBrowserQa(async (browser) => {
     throw new Error("The Briefing page must render as a concise, structured analyst update without repetitive prose.");
   }
   const sourceNotice = page.locator('[data-admissions-briefing-source-notice="true"]');
-  const sourceCards = dashboard.locator('[aria-labelledby="admissions-origin-dashboard-title"] article');
+  const sourceCards = dashboard.locator('[data-admissions-origin-source]');
   if (
     await sourceCards.count() === 0 &&
     (await sourceNotice.count() !== 1 || !/missing data is never shown as zero/i.test(await sourceNotice.innerText()))
   ) {
     throw new Error("An incomplete Pipeline feed must remain explicit on the Briefing dashboard.");
+  }
+  if (await sourceCards.count()) {
+    const sourceText = (await sourceCards.allTextContents()).join(" ");
+    if (/rank\s+\d|client county|14 days|origin not recorded|referral packet/i.test(sourceText)) {
+      throw new Error("Referral sources must not render rankings, redundant totals, client counties, or unattributed pseudo-sources.");
+    }
   }
   if (await page.getByRole("button", { name: "Next referral sources" }).isEnabled().catch(() => false)) {
     const firstSources = await sourceCards.allTextContents();
