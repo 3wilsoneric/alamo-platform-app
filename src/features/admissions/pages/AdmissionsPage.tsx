@@ -256,54 +256,54 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       data-admissions-chat-typing={typing ? "true" : "false"}
       aria-label="Admissions briefing"
       aria-busy={typing}
-      className="mb-6 max-w-[1120px] rounded-[16px] bg-[#f4f7f5] px-4 py-4 text-[#46504b] sm:px-6 sm:py-5"
+      className="mb-5 w-full rounded-[14px] bg-[#f4f7f5] px-4 py-3.5 text-[#46504b] sm:px-5 sm:py-4"
     >
-      <div className="flex items-start gap-3.5">
-        <span data-admissions-chat-avatar="true" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#dcebe5] text-[#176d51] sm:h-9 sm:w-9">
-          <Sparkles className="h-4 w-4" aria-hidden="true" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex min-h-8 items-center gap-2.5">
-            <span className="text-[12px] font-semibold text-[#263c35] sm:text-[13px]">Admissions analyst</span>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-5">
+        <div className="flex shrink-0 items-center gap-2.5">
+          <span data-admissions-chat-avatar="true" className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dcebe5] text-[#176d51]">
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="whitespace-nowrap text-[12px] font-semibold text-[#263c35]">Admissions analyst</span>
             {typing ? <span className="text-[10px] text-[#7a847f]" aria-hidden="true">Composing…</span> : null}
           </div>
-          <div className="mt-2 text-[13px] leading-6 sm:text-[14px] sm:leading-7">
-            {summaryLine ? (
-              <p data-admissions-executive-summary="true" className="max-w-[860px] text-[#46504b]">
-                <StreamingSegments segments={summaryLine.segments} visibleCharacters={summaryLine.visibleCharacters} />
-                {summaryLine.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-              </p>
-            ) : null}
-            {answerSections.map((section) => {
-              const sectionLines = visibleLines.filter((line) => line.group === section.group);
-              if (!sectionLines.length) return null;
-              return (
-                <section
-                  key={section.group}
-                  data-admissions-executive-section={section.group}
-                  className="mt-4 border-t border-[#dce5e1] pt-3.5 sm:mt-5 sm:pt-4"
-                >
-                  <h3 className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#66736d] sm:mb-2">{section.title}</h3>
-                  <dl className="divide-y divide-[#e1e8e4]">
-                    {sectionLines.map((line) => (
-                      <div
-                        key={line.key}
-                        data-admissions-executive-row={line.key}
-                        className="grid gap-0.5 py-2 first:pt-1 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-4"
-                      >
-                        <dt className="text-[11px] font-medium leading-5 text-[#66736d] sm:text-[12px] sm:leading-6">{line.label}</dt>
-                        <dd className="min-w-0 text-[12px] leading-5 text-[#46504b] sm:text-[13px] sm:leading-6">
-                          <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
-                          {line.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              );
-            })}
-          </div>
         </div>
+        {summaryLine ? (
+          <p data-admissions-executive-summary="true" className="min-w-0 flex-1 text-[13px] leading-5 text-[#46504b] sm:text-[14px]">
+            <StreamingSegments segments={summaryLine.segments} visibleCharacters={summaryLine.visibleCharacters} />
+            {summaryLine.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+          </p>
+        ) : null}
+      </div>
+      <div className="mt-3 border-t border-[#dce5e1] md:grid md:grid-cols-[1.35fr_1fr_0.9fr] md:divide-x md:divide-[#dce5e1]">
+        {answerSections.map((section) => {
+          const sectionLines = visibleLines.filter((line) => line.group === section.group);
+          if (!sectionLines.length) return null;
+          return (
+            <section
+              key={section.group}
+              data-admissions-executive-section={section.group}
+              className="border-t border-[#dce5e1] py-3 first:border-t-0 md:border-t-0 md:px-4 md:first:pl-0 md:last:pr-0"
+            >
+              <h3 className="mb-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#66736d]">{section.title}</h3>
+              <dl className="divide-y divide-[#e1e8e4]">
+                {sectionLines.map((line) => (
+                  <div
+                    key={line.key}
+                    data-admissions-executive-row={line.key}
+                    className="grid grid-cols-[92px_minmax(0,1fr)] gap-2 py-1.5 first:pt-1"
+                  >
+                    <dt className="text-[10px] font-medium leading-4 text-[#66736d]">{line.label}</dt>
+                    <dd className="min-w-0 text-[11px] leading-4 text-[#46504b] sm:text-[12px]">
+                      <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
+                      {line.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          );
+        })}
       </div>
     </section>
   );
