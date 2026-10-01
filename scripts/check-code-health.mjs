@@ -172,8 +172,9 @@ if (!appRoutes.includes('path="/chat"') || !appRoutes.includes("<OwnerChatPage /
 }
 if (
   !ownerChatPage.includes("usePlatformOwnerAccess") ||
-  !ownerChatPage.includes("fetchWithApiAuth") ||
-  !ownerChatPage.includes('"/api/platform/knowledge"') ||
+  !ownerChatPage.includes("useIsAuthenticated") ||
+  !ownerChatPage.includes("InteractionStatus.None") ||
+  !ownerChatPage.includes("ownerClaimReady") ||
   !ownerChatPage.includes('<Navigate to="/home" replace />') ||
   !ownerChatPage.includes("conversational")
 ) {
