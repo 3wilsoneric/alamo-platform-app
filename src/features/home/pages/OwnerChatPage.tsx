@@ -25,7 +25,7 @@ export default function OwnerChatPage() {
     // A full deep link can briefly expose the previously cached account while
     // MSAL promotes the redirect account to active. Give that handoff one short
     // claim-settling window, without rendering any owner content in the meantime.
-    const timeoutId = window.setTimeout(() => setDenialConfirmed(true), 750);
+    const timeoutId = window.setTimeout(() => setDenialConfirmed(true), 2_500);
     return () => window.clearTimeout(timeoutId);
   }, [ownerAccess]);
 
