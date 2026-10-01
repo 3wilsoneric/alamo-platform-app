@@ -164,6 +164,22 @@ const loginPage = contents.get(path.join(root, "src/app/auth/LoginPage.tsx")) ??
 if (!loginPage.includes("normalizePostLoginPath(")) {
   failures.push("src/app/auth/LoginPage.tsx: persisted post-login destinations must pass through the internal-route boundary");
 }
+const appRoutes = contents.get(path.join(root, "src/app/App.tsx")) ?? "";
+const ownerChatPage = contents.get(path.join(root, "src/features/home/pages/OwnerChatPage.tsx")) ?? "";
+const platformNavigation = contents.get(path.join(root, "src/features/california/components/PlatformPageNavigation.tsx")) ?? "";
+if (!appRoutes.includes('path="/chat"') || !appRoutes.includes("<OwnerChatPage />")) {
+  failures.push("src/app/App.tsx: the owner chat prototype must retain its direct /chat route");
+}
+if (
+  !ownerChatPage.includes("usePlatformOwnerAccess") ||
+  !ownerChatPage.includes('<Navigate to="/home" replace />') ||
+  !ownerChatPage.includes("conversational")
+) {
+  failures.push("src/features/home/pages/OwnerChatPage.tsx: the unlisted chat route must fail closed to the verified owner identity");
+}
+if (platformNavigation.includes('href: "/chat"')) {
+  failures.push("src/features/california/components/PlatformPageNavigation.tsx: the owner chat prototype must remain absent from shared navigation");
+}
 const moduleTelemetry = contents.get(path.join(root, "src/shared/analytics/moduleTelemetry.ts")) ?? "";
 if (!moduleTelemetry.includes("sanitizeTelemetryEvent") || /filter\(\(event\) => event\?\.id && event\?\.action\)/.test(moduleTelemetry)) {
   failures.push("src/shared/analytics/moduleTelemetry.ts: persisted telemetry must use exact bounded normalization");
@@ -869,8 +885,15 @@ for (const retiredFreeTextSymbol of [
   "textareaRef"
 ]) {
   if (workspaceHome.includes(retiredFreeTextSymbol)) {
-    failures.push(`WorkspaceHomePage.tsx: rails-only workspace must not reintroduce free-text composer logic (${retiredFreeTextSymbol})`);
+    failures.push(`WorkspaceHomePage.tsx: conversational input state must stay behind the dedicated composer boundary (${retiredFreeTextSymbol})`);
   }
+}
+if (
+  !workspaceHome.includes('import { ConversationalPrompt }') ||
+  !workspaceHome.includes("<ConversationalPrompt") ||
+  !contents.has(path.join(root, "src/features/home/components/ConversationalPrompt.tsx"))
+) {
+  failures.push("WorkspaceHomePage.tsx: governed conversational entry must stay behind ConversationalPrompt.tsx");
 }
 if (workspaceHome.includes("react-hooks/exhaustive-deps")) {
   failures.push("WorkspaceHomePage.tsx: hook dependencies must use explicit event or callback boundaries, not lint suppression");

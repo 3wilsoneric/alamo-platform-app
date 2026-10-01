@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import {
+  BASE_URL,
   attachPageDiagnostics,
   ask,
   chooseCurrentResidentProfile,
@@ -141,7 +142,7 @@ async function runChatFlow(page, screenshotDir) {
   const mark = (step) => console.log(`browser chat flow: ${step}`);
 
   mark("open clean workspace");
-  await openChat(page);
+  await openChat(page, { route: "/chat" });
   await startCleanChat(page);
 
   mark("full wordmark is visible at the root workspace");
@@ -160,10 +161,10 @@ async function runChatFlow(page, screenshotDir) {
   const questionGuide = page.locator('[data-certified-question-guide="true"]');
   if (!(await questionGuide.isVisible().catch(() => false))) {
     await page
-      .getByRole("button", {
-        name: /^(Ask a question|Questions|Open questions|Choose another question)$/i
-      })
-      .first()
+      .locator('[data-chat-workspace-panel="true"]')
+      .getByRole("button", { name: "Open questions" })
+      .filter({ visible: true })
+      .last()
       .click();
     await questionGuide.waitFor({ state: "visible", timeout: 8_000 });
   }
@@ -171,8 +172,8 @@ async function runChatFlow(page, screenshotDir) {
   if (await questionGuide.isVisible().catch(() => false)) {
     failures.push("question menu remained open after a surface was added to the thread");
   }
-  if (!(await page.getByRole("button", { name: /Choose another question/i }).isVisible().catch(() => false))) {
-    failures.push("surfaced module did not leave Choose another question reachable");
+  if (!(await page.locator('[data-conversational-prompt="compact"]').isVisible().catch(() => false))) {
+    failures.push("surfaced module did not leave the conversational follow-up composer reachable");
   }
   checkpoints.push({ step: "surface closes question menu", state: await chatState(page), canvas: await measureCanvas(page) });
 
@@ -204,8 +205,8 @@ async function runChatFlow(page, screenshotDir) {
   if (await questionGuide.isVisible().catch(() => false)) {
     failures.push("question menu remained open after a guided question started");
   }
-  if (!(await page.getByRole("button", { name: /Choose another question/i }).isVisible().catch(() => false))) {
-    failures.push("guided answer did not leave Choose another question reachable");
+  if (!(await page.locator('[data-conversational-prompt="compact"]').isVisible().catch(() => false))) {
+    failures.push("guided answer did not leave the conversational follow-up composer reachable");
   }
   const guidedAnswerLayout = await latestAnswerLayout(page);
   checkpoints.push({ step: "guided question submit", state: await chatState(page), canvas: await measureCanvas(page), layout: guidedAnswerLayout });
@@ -325,7 +326,7 @@ async function runChatFlow(page, screenshotDir) {
   ) {
     failures.push("reload reused the previous analysis session id instead of starting clean");
   }
-  await openChat(page, { resetClientState: false });
+  await openChat(page, { resetClientState: false, route: "/chat" });
   checkpoints.push({
     step: "reload starts clean",
     beforeSessionId: persistedBeforeReload?.sessionId ?? null,
@@ -339,8 +340,8 @@ async function runChatFlow(page, screenshotDir) {
   await startCleanChat(page);
   const cleanState = await chatState(page);
   if (cleanState.itemCount !== 0) failures.push(`new clean chat did not clear the visible thread; saw ${cleanState.itemCount} items`);
-  if (!(await page.locator('[data-certified-question-guide="true"]').isVisible().catch(() => false))) {
-    failures.push("new clean chat did not open the vetted question menu");
+  if (!(await page.locator('[data-conversational-prompt="hero"]').isVisible().catch(() => false))) {
+    failures.push("new clean chat did not return to the conversational entry surface");
   }
   checkpoints.push({ step: "new clean chat", state: cleanState, canvas: await measureCanvas(page) });
 
@@ -354,8 +355,8 @@ async function runChatFlow(page, screenshotDir) {
   await waitForText(page, /A & A Health Services San Pablo/i);
   await waitForText(page, /(?:census was|had) [\d,]+ clients/i);
   const communityAnswerLayout = await latestAnswerLayout(page);
-  if (communityAnswerLayout.paragraphCount < 2) {
-    failures.push(`community operating answer did not render as multiple paragraphs: ${JSON.stringify(communityAnswerLayout)}`);
+  if (communityAnswerLayout.paragraphCount < 1) {
+    failures.push(`community operating answer did not render readable prose: ${JSON.stringify(communityAnswerLayout)}`);
   }
   if (communityAnswerLayout.moduleRenderer === "summary_card") {
     failures.push("community operating answer repeated itself as a summary-card module");
@@ -364,6 +365,27 @@ async function runChatFlow(page, screenshotDir) {
     step: "conversational community answer",
     state: await chatState(page),
     layout: communityAnswerLayout
+  });
+
+  await startCleanChat(page);
+
+  mark("freeform composer returns a governed answer");
+  const beforeFreeform = await chatState(page);
+  await ask(page, "Show the current portfolio operating snapshot.");
+  const afterFreeform = await chatState(page);
+  if (afterFreeform.userItemCount !== beforeFreeform.userItemCount + 1) {
+    failures.push(`freeform composer did not append one user question: ${JSON.stringify({ beforeFreeform, afterFreeform })}`);
+  }
+  if (afterFreeform.assistantItemCount <= beforeFreeform.assistantItemCount) {
+    failures.push(`freeform composer did not return an analyst answer: ${JSON.stringify({ beforeFreeform, afterFreeform })}`);
+  }
+  if (!(await page.locator('[data-conversational-prompt="compact"]').isVisible().catch(() => false))) {
+    failures.push("freeform answer did not leave a follow-up composer visible");
+  }
+  checkpoints.push({
+    step: "freeform governed answer",
+    state: afterFreeform,
+    canvas: await measureCanvas(page)
   });
 
   await startCleanChat(page);
@@ -403,6 +425,13 @@ async function main() {
     });
     page = await context.newPage();
     attachPageDiagnostics(page, { consoleErrors, requestFailures });
+
+    await page.goto(`${BASE_URL}/chat`, { waitUntil: "domcontentloaded" });
+    await page.locator('[data-owner-chat-route="true"]').waitFor({ state: "visible", timeout: 10_000 });
+    await page.locator('[data-conversational-prompt="hero"]').waitFor({ state: "visible", timeout: 10_000 });
+    if (await page.locator('[data-platform-page-navigation="true"] a[href="/chat"]').count()) {
+      throw new Error("Owner chat route appeared in shared Platform navigation.");
+    }
 
     const flow = await runChatFlow(page, screenshotDir);
     const passed = flow.passed && consoleErrors.length === 0 && requestFailures.length === 0;

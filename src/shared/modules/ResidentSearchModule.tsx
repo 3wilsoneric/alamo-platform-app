@@ -1,4 +1,4 @@
-import { ALAMO_FACILITIES } from "../../../shared/community-names.mjs";
+import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../../../shared/community-names.mjs";
 import { Search, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDisplayDate } from "../../../shared/display-date.mjs";
@@ -20,7 +20,7 @@ interface ResidentSearchModuleProps {
 
 function displayValue(value: unknown) {
   if (value == null || value === "") return "—";
-  return String(value);
+  return normalizeKnownCommunityNames(String(value));
 }
 
 function numberValue(value: unknown) {
@@ -125,16 +125,16 @@ function formatProfileValue(value: unknown): string {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number") return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
   if (Array.isArray(value)) return value.length ? value.map(formatProfileValue).join(" · ") : "—";
-  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  if (typeof value === "object") return normalizeKnownCommunityNames(JSON.stringify(value, null, 2));
   const text = String(value).trim();
   if ((text.startsWith("[") && text.endsWith("]")) || (text.startsWith("{") && text.endsWith("}"))) {
     try {
       return formatProfileValue(JSON.parse(text));
     } catch {
-      return text;
+      return normalizeKnownCommunityNames(text);
     }
   }
-  return text || "—";
+  return normalizeKnownCommunityNames(text) || "—";
 }
 
 const CLIENT_PROFILE_GROUPS = [

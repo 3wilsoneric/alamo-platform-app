@@ -22,7 +22,9 @@ const MONTH_OPTIONS = [
   { label: "April 2026", value: "April 2026" },
   { label: "May 2026", value: "May 2026" },
   { label: "June 2026", value: "June 2026" },
-  { label: "July 2026", value: "July 2026" }
+  { label: "July 2026", value: "July 2026" },
+  { label: "August 2026", value: "August 2026" },
+  { label: "September 2026", value: "September 2026" }
 ];
 
 const MONTH_VARIABLE = {
@@ -183,7 +185,7 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
       "How is {community}?",
       "Show {community}'s census, incidents, and medication picture for {month}.",
       "How did {community} do overall in {month}? Include census and incidents.",
-      "Show the last three months for {community}, including census and incidents."
+      "Show July through September 2026 for {community}, including census and incidents."
     ],
     match: (text, context = {}) => {
       if (!hasKnownFacility(text, context)) return false;
@@ -222,9 +224,9 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
     answerStyle: "direct-summary-plus-ranked-breakdown",
     cacheFamily: "incidents:snapshot",
     examples: [
-      "Show the current incident snapshot for this month.",
-      "Summarize current incident volume for this month.",
-      "Show this month's incident picture across the portfolio.",
+      "Show the current incident snapshot.",
+      "Summarize the latest incident volume.",
+      "Show the latest incident picture across the portfolio.",
       "Show the latest incident snapshot.",
       "Give me the current incident summary."
     ],
@@ -729,7 +731,7 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
     cacheFamily: "medications:exceptions",
     variables: [MEDICATION_DETAIL_VARIABLE, COMMUNITY_VARIABLE],
     examples: [
-      "Show {medicationDetail} for {community} from the last 90 days.",
+      "Show {medicationDetail} for {community} in the available 90-day MAR history.",
       "Can you list PRN medication exceptions?",
       "Which medication administrations were late?",
       "Can you show not-given medication detail?"

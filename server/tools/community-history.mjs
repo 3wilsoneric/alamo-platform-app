@@ -74,12 +74,25 @@ export function createCommunityHistoryTools(dependencies) {
     const censusRows = getScopedCensusSeries(communities.census ?? [], facility);
     const incidentRows = filterByFacility(getIncidentRows(communities, reportsSummary), facility);
     const complianceRows = filterByFacility(getMedicationComplianceRows(reportsSummary), facility);
-    const availableMonths = [...new Set([
+    const sourceMonthSets = [
+      new Set(censusRows.map((row) => row.month_bucket).filter(Boolean)),
+      new Set(incidentRows.map((row) => row.month_bucket).filter(Boolean)),
+      new Set(complianceRows.map((row) => row.month_bucket).filter(Boolean))
+    ].filter((months) => months.size > 0);
+    const unionAvailableMonths = [...new Set([
       ...censusRows.map((row) => row.month_bucket).filter(Boolean),
       ...incidentRows.map((row) => row.month_bucket).filter(Boolean),
       ...complianceRows.map((row) => row.month_bucket).filter(Boolean)
     ])].sort();
-    const requestedMonths = getRequestedMonthBuckets(content, availableMonths);
+    const completeAvailableMonths = unionAvailableMonths.filter((month) =>
+      sourceMonthSets.every((months) => months.has(month))
+    );
+    const requestedMonths = getRequestedMonthBuckets(content, unionAvailableMonths);
+    const availableMonths = requestedMonths.length
+      ? unionAvailableMonths
+      : completeAvailableMonths.length
+      ? completeAvailableMonths
+      : unionAvailableMonths;
     const { months: activeMonths, note: fallbackNote } = resolveOperatingMonths(requestedMonths, availableMonths);
     const missingMonths = activeMonths.filter((month) => !availableMonths.includes(month));
 

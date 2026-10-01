@@ -123,7 +123,12 @@ async function assertSurface(moduleRoot, facility, mode) {
   if (focus !== mode.focus) failures.push(`expected focus ${mode.focus || "none"}, got ${focus ?? "none"}`);
   if (!text.includes(facility.communityName)) failures.push(`missing community name ${facility.communityName}`);
   for (const pattern of rejectedText) {
-    if (pattern.test(text)) failures.push(`rejected text ${pattern}`);
+    const match = text.match(pattern);
+    if (match) {
+      const start = Math.max(0, (match.index ?? 0) - 80);
+      const end = Math.min(text.length, (match.index ?? 0) + match[0].length + 80);
+      failures.push(`rejected text ${pattern}: ${JSON.stringify(text.slice(start, end))}`);
+    }
   }
 
   if (mode.required === "census" || mode.required === "trend") {

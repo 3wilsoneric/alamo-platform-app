@@ -68,7 +68,7 @@ const cases = [
     mustExclude: ["T00:00:00.000Z"]
   },
   {
-    prompt: "how is San Pablo",
+    prompt: "how was San Pablo in September 2026",
     tool: "community_history",
     mustInclude: ["Answer\n", "A & A Health Services San Pablo's census was", "clients", "There were", "incidents", "most common category"],
     mustExclude: ["I don't have that exact slice loaded", "current-state data", "had census was", "was census was", "recorded"],
@@ -207,6 +207,13 @@ const cases = [
     visualTitleIncludes: "Medication Compliance",
     mustInclude: ["Answer\n", "May 2026 and June 2026", "were documented as given", "Medication compliance uses scheduled administrations"],
     mustExclude: ["largest row"]
+  },
+  {
+    prompt: "How did medication compliance change at Victoria's House from May 2026 through June 2026?",
+    tool: "medication_compliance",
+    visualTitleIncludes: "Victoria's House Medication Compliance",
+    mustInclude: ["unchanged", "0.0 percentage point change", "scheduled administrations were documented as given"],
+    mustExclude: ["temporarily unavailable"]
   },
   {
     prompt: "How is San Pablo doing with medications?",

@@ -1,0 +1,9 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:c5ab27d612310ed062d54904b581453e57620f613275eb3820e68125a41f952e
+FROM ${BASE_IMAGE}
+
+# Preserve the proven Azure runtime and data-service configuration. Replace
+# only the validated browser bundle plus the three analyst modules corrected by
+# this release's governed-answer regression coverage.
+COPY --chown=node:node dist /app/dist
+COPY --chown=node:node server/tools/answer-formatting.mjs server/tools/community-history.mjs server/tools/medication-summaries.mjs /app/server/tools/
+COPY --chown=node:node shared/certified-analyst-questions.mjs /app/shared/
