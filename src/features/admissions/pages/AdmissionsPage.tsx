@@ -355,10 +355,10 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
       { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
       { text: update.acceptedClients.length ? ". " : "." },
       ...(update.acceptedClients.length ? [
-        { text: `${update.acceptedClients.length} accepted ${pluralize("client", update.acceptedClients.length)}`, strong: true },
-        { text: " moving toward admission" },
-        ...(scheduledCount ? [{ text: `; ${scheduledCount} ${scheduledCount === 1 ? "has" : "have"} a scheduled date` }] : []),
-        ...(pendingCount ? [{ text: `${scheduledCount ? " and" : ";"} ${pendingCount} still ${pendingCount === 1 ? "needs" : "need"} scheduling` }] : []),
+        { text: `${update.acceptedClients.length} accepted`, strong: true },
+        { text: ": " },
+        ...(scheduledCount ? [{ text: `${scheduledCount} scheduled` }] : []),
+        ...(pendingCount ? [{ text: `${scheduledCount ? " and " : ""}${pendingCount} awaiting ${pendingCount === 1 ? "a date" : "dates"}` }] : []),
         { text: "." }
       ] : [])
     ]
