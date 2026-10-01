@@ -265,7 +265,9 @@ assert(apiRecord.record.id === "demand-wa", "authenticated API record adapter mu
 
 assertPlatformKnowledgeOwner({ authenticated: false, mode: "explicit-development-bypass", claims: null });
 assert(hasPlatformOwnerAccess({ oid: "f73371d5-d2b4-48b4-a32b-1edc7c88869f" }), "the verified Platform owner identity must retain owner-only workspace access");
+assert(hasPlatformOwnerAccess({ preferred_username: "ericwilsonalamo@outlook.com" }), "the verified Platform owner email claim must survive Entra account-cache handoffs");
 assert(!hasPlatformOwnerAccess({ oid: "wrong-object-id" }), "unlisted identities must remain outside owner-only workspaces");
+assert(!hasPlatformOwnerAccess({ preferred_username: "someone-else@aaahealthservices.com" }), "unlisted email claims must remain outside owner-only workspaces");
 assertPlatformKnowledgeOwner({
   authenticated: true,
   mode: "entra-delegated",
