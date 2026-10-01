@@ -1556,13 +1556,16 @@ library remains unchanged.
 The release also advances the service-worker cache generation and makes every
 navigation request bypass the HTTP cache. Installed, mobile, and long-lived
 browser sessions therefore discover the current hashed bundle after a release
-instead of continuing to execute an older application shell.
+instead of continuing to execute an older application shell. A follow-up gives
+`/chat` and `/chat/` a dedicated server entry document with `Cache-Control:
+no-store`, preventing an already-open pre-chat shell from routing the owner back
+to Home before the current application bundle loads.
 
-- source PRs: `#88` through `#97`; final merge commit: `c47c41b633395d62f4bc3f1842944a52b4ce70eb`
-- ACR build: `cc4x`
-- image: `alamo-platform@sha256:53d87a68b0d41c89c249d87a37bcf31a66ffbb63e812d3a2efb315185147e52d` (tag `chat-owner-fresh-shell-1001`)
-- active revision: `alamo-platform-prod-web--chat-owner-fresh-1001`
-- rollback image: `alamo-platform@sha256:c5ab27d612310ed062d54904b581453e57620f613275eb3820e68125a41f952e`
+- source PRs: `#88` through `#99`; final merge commit: `4b2eb453cf02bf30d52ff4ec5e610f7cb2e23bc1`
+- ACR build: `cc4y`
+- image: `alamo-platform@sha256:7ecd9deebc12419ac03ad83d421d42389e381727a8601f35c74101a76e4dfc11` (tag `chat-dedicated-entry-1001`)
+- active revision: `alamo-platform-prod-web--chat-dedicated-1001`
+- rollback image: `alamo-platform@sha256:53d87a68b0d41c89c249d87a37bcf31a66ffbb63e812d3a2efb315185147e52d`
 - active browser asset: `/assets/index-ombYQBwC.js`
 
 The revision is Healthy/Running at 100% traffic and the public production smoke
@@ -1572,3 +1575,8 @@ keyboard, interaction, context, mission, fuzz, performance, type, documentation,
 retention, and build gates. Focused owner-route, authentication-redirect,
 platform-knowledge, desktop-readiness, chat-flow, and production-build checks
 also pass.
+
+The dedicated-entry follow-up was additionally verified in Eric Wilson's
+existing signed-in Chrome tab: navigating from the stale Home shell to `/chat`
+loaded the current hashed bundle, retained the `/chat` URL, and rendered the
+owner-only Alamo Analyst prompt instead of redirecting to Home.

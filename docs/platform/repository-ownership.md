@@ -22,7 +22,7 @@ unreachable code are deleted rather than archived in the app repository.
 
 | Class | Paths | Owner | Why it exists |
 |---|---|---|---|
-| App shell and tooling | approved root files | engineering | Build, typecheck, dependency, deployment, and local-development configuration. |
+| App shell and tooling | approved root files and `deploy/**` release overlays | engineering | Build, typecheck, dependency, deployment, and local-development configuration. |
 | Data ingestion configuration | `config/**/*.json` | backend and data platform | Versioned source URLs, source-member names, field mappings, and controlled ingestion identifiers used by repeatable refresh jobs. |
 | Browser runtime | `src/**` | frontend and product | Shipped React routes, workspace modules, authentication, data clients, UI utilities, and source-traceable static research consumed directly by a product surface. |
 | Static browser assets | approved images, manifest, offline shell, and service worker in `public/**` | frontend and product | Shipped branding and installable-browser assets that are served directly. |
