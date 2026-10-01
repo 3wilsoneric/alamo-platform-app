@@ -1628,3 +1628,28 @@ responsive Admissions browser regression pass. Signed-in production
 verification confirmed the concise lead, four scheduled groups, three
 date-pending groups, two pipeline rows, and none of the retired repetitive
 phrases.
+
+### Admissions referral-source redesign — 2026-10-01
+
+The Admissions briefing now treats referral origin as an operating flow rather
+than a ranked leaderboard. Duplicate source organizations are consolidated,
+the current seven days are compared with the previous seven, and each source
+shows the communities receiving its referrals. Rankings, client-county labels,
+and the redundant 14-day total have been removed. Referrals without a recorded
+source are excluded from the source list and disclosed in a separate
+data-quality footnote.
+
+- source PR: `#107`; merge commit: `3197b5e0936ce7299c4a6088a066faad056ff793`
+- ACR build: `cc54`
+- image: `alamo-platform@sha256:fcc13d164c91f0e5085a819918d4d20864da8c7a6d3e0a82802651012913cfe8` (tag `admissions-referral-sources-1001`)
+- active revision: `alamo-platform-prod-web--admissions-sources-1001`
+- rollback image: `alamo-platform@sha256:2a6efee1864bfc90a37265b7135f4e663036b8260de62f2bbadccf0ed8dc4deb`
+- active browser asset: `/assets/index-DMqDBptW.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Signed-in production
+verification confirmed five active sources and seven referrals in the current
+week, rendered eight grouped source rows on the first of three pages, excluded
+unattributed pseudo-sources, and surfaced two current and six prior-week
+unattributed referrals in the footnote.
