@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "alamo-static-";
-const CACHE_NAME = `${CACHE_PREFIX}v4`;
+const CACHE_NAME = `${CACHE_PREFIX}v5`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -50,7 +50,11 @@ self.addEventListener("fetch", (event) => {
 
   // Authenticated pages and APIs remain network-only and are never persisted.
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(async () => {
+    // Do not let an installed app or a long-lived browser tab reuse an older
+    // HTML shell after a deployment. Hashed static assets remain cacheable,
+    // but every navigation must discover the current bundle entry point.
+    const networkRequest = new Request(request, { cache: "no-store" });
+    event.respondWith(fetch(networkRequest).catch(async () => {
       const cache = await caches.open(CACHE_NAME);
       return await cache.match(OFFLINE_URL) ?? new Response("A connection is required.", {
         status: 503,
