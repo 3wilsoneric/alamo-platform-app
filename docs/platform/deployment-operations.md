@@ -1543,3 +1543,32 @@ controls with four keyboard journeys passed. Signed-in production verification
 at 390 by 844 pixels confirmed `Overview` in both locations, the labeled latest
 period control, a 48-pixel minimum question-control height, and zero horizontal
 overflow. The browser viewport was reset after verification.
+
+### Unlisted owner analyst route — 2026-10-01
+
+Adds `/chat` as an unlisted conversational entry to the governed analyst
+workspace. It is absent from shared navigation and waits for the signed-in
+Entra account claims before applying the same verified owner allowlist used by
+Workforce and Outreach. Other authenticated identities are redirected to Home;
+knowing the URL is not the access boundary. The ordinary Analytics question
+library remains unchanged.
+
+The release also advances the service-worker cache generation and makes every
+navigation request bypass the HTTP cache. Installed, mobile, and long-lived
+browser sessions therefore discover the current hashed bundle after a release
+instead of continuing to execute an older application shell.
+
+- source PRs: `#88` through `#97`; final merge commit: `c47c41b633395d62f4bc3f1842944a52b4ce70eb`
+- ACR build: `cc4x`
+- image: `alamo-platform@sha256:53d87a68b0d41c89c249d87a37bcf31a66ffbb63e812d3a2efb315185147e52d` (tag `chat-owner-fresh-shell-1001`)
+- active revision: `alamo-platform-prod-web--chat-owner-fresh-1001`
+- rollback image: `alamo-platform@sha256:c5ab27d612310ed062d54904b581453e57620f613275eb3820e68125a41f952e`
+- active browser asset: `/assets/index-ombYQBwC.js`
+
+The revision is Healthy/Running at 100% traffic and the public production smoke
+suite passes 4/4. The full predeployment platform readiness run passed 17/17
+stages, including 124 guided-answer renders across four viewports, accessibility,
+keyboard, interaction, context, mission, fuzz, performance, type, documentation,
+retention, and build gates. Focused owner-route, authentication-redirect,
+platform-knowledge, desktop-readiness, chat-flow, and production-build checks
+also pass.
