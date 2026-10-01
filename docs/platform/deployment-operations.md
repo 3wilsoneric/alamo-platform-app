@@ -1673,3 +1673,25 @@ The revision is Healthy/Running at 100% traffic and the public production
 smoke suite passes 4/4. TypeScript, code-health, production build, and the
 responsive Admissions browser regression all pass without mobile horizontal
 overflow.
+
+### Admissions community census simplification — 2026-10-01
+
+The Admissions briefing no longer renders the Referral sources section. The
+community census area now follows the Analytics row treatment: one concise row
+per governed community with current census, upcoming admits this week, and new
+referrals assigned to that community during the last seven days. The occupancy
+bars and card grid were removed, while unassigned referral activity remains an
+explicit footnote and missing event coverage remains a dash rather than zero.
+
+- source PR: `#111`; merge commit: `674ad580e02d11f5f2942a711949b727ee6a1376`
+- ACR build: `cc56`
+- image: `alamo-platform@sha256:e37697566144bbad27d677a4a5002f590ca9f8efa4976bf55a9b95e2062a799b` (tag `admissions-community-census-1001`)
+- active revision: `alamo-platform-prod-web--admissions-census-1001`
+- rollback image: `alamo-platform@sha256:d7d5362579f044ae3a336a3abb8b95b330d5aad1e73ef0c0987bfbc4804fd2e2`
+- active browser asset: `/assets/index-CRNhwUWD.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Desktop and mobile verification
+confirmed five governed community rows, all three requested measures, no
+Referral sources UI, and no horizontal overflow.
