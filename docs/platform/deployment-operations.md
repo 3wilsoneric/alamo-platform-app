@@ -1580,3 +1580,28 @@ The dedicated-entry follow-up was additionally verified in Eric Wilson's
 existing signed-in Chrome tab: navigating from the stale Home shell to `/chat`
 loaded the current hashed bundle, retained the `/chat` URL, and rendered the
 owner-only Alamo Analyst prompt instead of redirecting to Home.
+
+### Admissions county-outreach removal — 2026-10-01
+
+The County outreach panel and its mobile disclosures have been removed from
+the Admissions briefing. Admissions retains its executive update, census by
+community, upcoming assessments, move-ins, and referral-origin dashboard. The
+responsive browser regression now requires County outreach to remain absent on
+desktop and mobile.
+
+`/admissions`, `/admissions/`, `/chat`, and `/chat/` use dedicated no-store
+entry documents so a long-lived signed-in browser cannot continue rendering a
+pre-release shell after the browser bundle changes.
+
+- source PRs: `#101`, `#102`; final merge commit: `25e3d4dec698de296fbc7bd72caeb941441eb796`
+- ACR build: `cc51`
+- image: `alamo-platform@sha256:44c08e19e74e41085f718570ab2d85b14113b85db87a47d928b888fd86736608` (tag `admissions-clean-fresh-1001`)
+- active revision: `alamo-platform-prod-web--admissions-fresh-1001`
+- rollback image: `alamo-platform@sha256:7ecd9deebc12419ac03ad83d421d42389e381727a8601f35c74101a76e4dfc11`
+- active browser asset: `/assets/index-BvG4h9iY.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. The Admissions dashboard, access contract, code-health,
+type, build, and responsive desktop/mobile browser checks pass. Signed-in
+production verification loaded the active bundle, rendered both priority
+schedules, and found zero County outreach headings or panels.
