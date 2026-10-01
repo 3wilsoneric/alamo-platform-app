@@ -1605,3 +1605,26 @@ smoke suite passes 4/4. The Admissions dashboard, access contract, code-health,
 type, build, and responsive desktop/mobile browser checks pass. Signed-in
 production verification loaded the active bundle, rendered both priority
 schedules, and found zero County outreach headings or panels.
+
+### Admissions briefing answer structure — 2026-10-01
+
+The Admissions analyst answer is now a compact operational brief instead of a
+long repeated paragraph. It opens with active and accepted counts, groups
+scheduled accepted clients by date and destination, groups accepted clients
+awaiting dates by destination, and closes with stage and workload rows. The
+one-time typing treatment remains, while repeated destination phrases and
+per-client `admission date not scheduled` language are removed.
+
+- source PRs: `#104`, `#105`; final merge commit: `1d26171c8540127d8401a6cac4b2f289bf224ebf`
+- ACR build: `cc53`
+- image: `alamo-platform@sha256:2a6efee1864bfc90a37265b7135f4e663036b8260de62f2bbadccf0ed8dc4deb` (tag `admissions-briefing-answer-v2-1001`)
+- active revision: `alamo-platform-prod-web--admissions-answer-v2-1001`
+- rollback image: `alamo-platform@sha256:44c08e19e74e41085f718570ab2d85b14113b85db87a47d928b888fd86736608`
+- active browser asset: `/assets/index-CF-5ZmKH.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Signed-in production
+verification confirmed the concise lead, four scheduled groups, three
+date-pending groups, two pipeline rows, and none of the retired repetitive
+phrases.
