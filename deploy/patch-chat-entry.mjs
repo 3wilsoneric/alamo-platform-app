@@ -4,8 +4,13 @@ const serverPath = "/app/server/app-server.mjs";
 const source = readFileSync(serverPath, "utf8");
 
 const staticEntryNeedle = `  const requestedFile = resolveStaticPath(pathname);`;
-const staticEntryReplacement = `  if (pathname === "/chat" || pathname === "/chat/") {
-    await sendStaticFile(req, res, path.join(DIST_ROOT, "chat", "index.html"), "no-store");
+const staticEntryReplacement = `  const dedicatedEntry = pathname === "/chat" || pathname === "/chat/"
+    ? "chat"
+    : pathname === "/admissions" || pathname === "/admissions/"
+      ? "admissions"
+      : null;
+  if (dedicatedEntry) {
+    await sendStaticFile(req, res, path.join(DIST_ROOT, dedicatedEntry, "index.html"), "no-store");
     return;
   }
 
