@@ -1813,3 +1813,23 @@ responsive Admissions browser regression pass. Signed-in production
 verification confirmed seven concise answer lines, zero semicolons, bold
 client names, five bold green community references, and the active release
 asset.
+
+### Admissions response header removal — 2026-10-02
+
+The decorative analyst avatar and `Admissions analyst` role label have been
+removed from the Admissions briefing. The response now starts directly with
+the governed summary, preserving its one-time typing treatment and the
+line-by-line details beneath it.
+
+- source PR: `#125`; merge commit: `607a691862b4b55906aac8e1f5f8973678f92a07`
+- ACR build: `cc5e`
+- image: `alamo-platform@sha256:d60363b738d94b056a71e65ed41d3a7c6fa085a97b07892802dc39e07899469c` (tag `admissions-no-analyst-label-1002`)
+- active revision: `alamo-platform-prod-web--admissions-no-label-1002`
+- rollback image: `alamo-platform@sha256:af126b3ffa343c76d4f4fbd9b373927a470ad8e68ed11560de71254cafe59c7e`
+- active browser asset: `/assets/index-CFFuXwmo.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Signed-in production
+verification confirmed the summary begins the panel and both retired header
+elements are absent.
