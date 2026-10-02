@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -8,11 +8,12 @@ import {
   type AdmissionsDashboardResponse
 } from "../../../shared/api/platformData";
 import type {
+  AdmissionsBoardCard,
   AdmissionsBoardColumnKey,
   AdmissionsReferralPipeline
 } from "../../../shared/types/platformSnapshot";
 import { readStorageItem, writeStorageItem } from "../../../shared/storage/browserStorage";
-import PipelineBoard from "../components/PipelineBoard";
+import PipelineBoard, { ProgressModal } from "../components/PipelineBoard";
 
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 type ExecutiveUpdateSegment = { text: string; strong?: boolean };
@@ -34,6 +35,7 @@ export default function AdmissionsPage() {
   const [loading, setLoading] = useState(!dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
   const [mobilePipelineColumn, setMobilePipelineColumn] = useState<AdmissionsBoardColumnKey>("received");
+  const [briefingCard, setBriefingCard] = useState<AdmissionsBoardCard | null>(null);
 
   // Every signed-in Platform user sees this working view, including the client
   // identity already available throughout the authenticated Platform.
@@ -57,6 +59,7 @@ export default function AdmissionsPage() {
   const surface = searchParams.get("view") === "briefing" ? "briefing" : "pipeline";
 
   function showSurface(next: "pipeline" | "briefing") {
+    setBriefingCard(null);
     const params = new URLSearchParams(searchParams);
     if (next === "briefing") params.set("view", "briefing");
     else params.delete("view");
@@ -151,11 +154,19 @@ export default function AdmissionsPage() {
           ) : (
             <div id="admissions-briefing-page" role="tabpanel" aria-label="Admissions briefing" data-admissions-briefing-page="true" className="pt-5 sm:pt-6">
               {pipeline ? <AdmissionsExecutiveUpdate pipeline={pipeline} /> : null}
-              <AdmissionsBriefingDashboard dashboard={dashboard} loading={loading && !dashboard} />
+              <AdmissionsBriefingDashboard
+                dashboard={dashboard}
+                pipeline={pipeline}
+                loading={loading && !dashboard}
+                onOpenCard={setBriefingCard}
+              />
             </div>
           )}
         </div>
       </div>
+      {briefingCard && pipeline ? (
+        <ProgressModal card={briefingCard} generatedAt={pipeline.generatedAt} onClose={() => setBriefingCard(null)} />
+      ) : null}
     </div>
   );
 }
@@ -243,11 +254,7 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
     return lineStarted ? [{ ...line, visibleCharacters, lineIsStreaming }] : [];
   });
   const summaryLine = visibleLines.find((line) => line.group === "summary");
-  const scheduledLines = visibleLines.filter((line) => line.group === "scheduled");
-  const pendingLines = visibleLines.filter((line) => line.group === "pending");
-  const pipelineLines = visibleLines.filter((line) => line.group === "pipeline");
-  const scheduledClientCount = update?.acceptedClients.filter((client) => client.plannedAdmissionDate).length ?? 0;
-  const pendingClientCount = update?.acceptedClients.filter((client) => !client.plannedAdmissionDate).length ?? 0;
+  const conversationLines = visibleLines.filter((line) => line.group !== "summary");
 
   return (
     <section
@@ -275,63 +282,15 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
           </p>
         ) : null}
       </div>
-      <div className="mt-3 grid gap-3 border-t border-[#dce5e1] pt-3 lg:grid-cols-12 lg:gap-4">
-        {scheduledLines.length ? (
-          <section data-admissions-executive-section="scheduled" className="min-w-0 lg:col-span-6">
-            <ExecutiveSectionHeading title="Scheduled move-ins" count={scheduledClientCount} />
-            <div className="mt-2 space-y-1.5">
-              {scheduledLines.map((line) => (
-                <div key={line.key} data-admissions-executive-row={line.key} className="grid min-w-0 grid-cols-[54px_minmax(0,1fr)] items-start gap-2.5">
-                  <span className="rounded-md bg-white px-1.5 py-1 text-center text-[10px] font-semibold tabular-nums text-[#376052] shadow-[inset_0_0_0_1px_#dce5e1]">{line.label}</span>
-                  <p className="pt-0.5 text-[11px] leading-[1.45] text-[#56615c] sm:text-[12px]">
-                    <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
-                    {line.lineIsStreaming ? <TypingCaret /> : null}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {pendingLines.length ? (
-          <section data-admissions-executive-section="pending" className="min-w-0 border-t border-[#dce5e1] pt-3 lg:col-span-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-            <ExecutiveSectionHeading title="Awaiting dates" count={pendingClientCount} />
-            <div className="mt-2 space-y-2">
-              {pendingLines.map((line) => (
-                <p key={line.key} data-admissions-executive-row={line.key} className="text-[11px] leading-[1.45] text-[#56615c] sm:text-[12px]">
-                  <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
-                  {line.lineIsStreaming ? <TypingCaret /> : null}
-                </p>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {pipelineLines.length ? (
-          <section data-admissions-executive-section="pipeline" className="min-w-0 border-t border-[#dce5e1] pt-3 lg:col-span-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-            <ExecutiveSectionHeading title="Pipeline" />
-            <div className="mt-2 space-y-2">
-              {pipelineLines.map((line) => (
-                <p key={line.key} data-admissions-executive-row={line.key} className="text-[11px] leading-[1.5] text-[#56615c] sm:text-[12px]">
-                  {line.label ? <span className="block text-[9px] font-semibold uppercase tracking-[0.08em] text-[#78827d]">{line.label}</span> : null}
-                  <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
-                  {line.lineIsStreaming ? <TypingCaret /> : null}
-                </p>
-              ))}
-            </div>
-          </section>
-        ) : null}
+      <div className="mt-3 max-w-[1180px] space-y-1.5 border-t border-[#dce5e1] pt-3 text-[12px] leading-[1.6] text-[#56615c] sm:text-[13px]">
+        {conversationLines.map((line) => (
+          <p key={line.key} data-admissions-executive-section={line.group} data-admissions-executive-row={line.key}>
+            <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
+            {line.lineIsStreaming ? <TypingCaret /> : null}
+          </p>
+        ))}
       </div>
     </section>
-  );
-}
-
-function ExecutiveSectionHeading({ title, count }: { title: string; count?: number }) {
-  return (
-    <h3 className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.09em] text-[#51615b]">
-      {title}
-      {count != null ? <span className="rounded-full bg-[#dcebe5] px-1.5 py-0.5 text-[9px] font-semibold tracking-normal text-[#176d51]">{count}</span> : null}
-    </h3>
   );
 }
 
@@ -382,47 +341,56 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
     key: "summary",
     group: "summary",
     segments: [
+      { text: "Admissions is managing " },
       { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
-      { text: update.acceptedClients.length ? " · " : "" },
+      { text: update.acceptedClients.length ? ". " : "." },
       ...(update.acceptedClients.length ? [
-        { text: `${update.acceptedClients.length} accepted`, strong: true },
-        ...(scheduledCount ? [{ text: " · " }, { text: `${scheduledCount} scheduled`, strong: true }] : []),
-        ...(pendingCount ? [{ text: " · " }, { text: `${pendingCount} awaiting ${pendingCount === 1 ? "a date" : "dates"}`, strong: true }] : [])
+        { text: `${update.acceptedClients.length} have been accepted`, strong: true },
+        { text: "." }
       ] : [])
     ]
   }];
-  for (const group of scheduledGroups) {
+  if (scheduledGroups.length) {
+    const previewGroups = scheduledGroups.slice(0, 3);
+    const previewCount = previewGroups.reduce((total, group) => total + group.names.length, 0);
+    const segments: ExecutiveUpdateSegment[] = [{ text: "Next on the calendar: " }];
+    previewGroups.forEach((group, index) => {
+      if (index) segments.push({ text: "; " });
+      segments.push(...buildNameSegments(group.names));
+      segments.push({ text: `${group.names.length === 1 ? " is" : " are"} scheduled for ${group.community} on ${group.label}` });
+    });
+    segments.push({ text: "." });
+    if (scheduledCount > previewCount) {
+      const remaining = scheduledCount - previewCount;
+      segments.push({ text: ` ${remaining} later ${pluralize("move-in", remaining)} ${remaining === 1 ? "is" : "are"} also scheduled.` });
+    }
     lines.push({
-      key: `scheduled:${group.key}`,
+      key: "scheduled:summary",
       group: "scheduled",
-      label: group.label,
-      segments: [...buildNameSegments(group.names), { text: ` (${group.community})` }]
+      segments
     });
   }
-  for (const group of pendingGroups) {
+  if (pendingCount) {
     lines.push({
-      key: `pending:${group.key}`,
+      key: "pending:summary",
       group: "pending",
-      segments: [...buildNameSegments(group.names), { text: ` (${group.community})` }]
+      segments: [
+        { text: `${pendingCount} accepted ${pluralize("client", pendingCount)}`, strong: true },
+        { text: ` still ${pendingCount === 1 ? "needs" : "need"} an admission date.` }
+      ]
     });
   }
-  lines.push({
-    key: "pipeline:stages",
-    group: "pipeline",
-    segments: [
-      { text: `${update.received} new`, strong: true },
-      { text: " · " },
-      { text: `${update.inProgress} assessment / review`, strong: true },
-      { text: " · " },
-      { text: `${update.decision} decision`, strong: true }
-    ]
-  });
   if (update.busiest.length) {
+    const [leader, runnerUp] = update.busiest;
     lines.push({
-      key: "pipeline:load",
+      key: "pipeline:summary",
       group: "pipeline",
-      label: "Highest load",
-      segments: [{ text: formatCommunityLoad(update.busiest) }]
+      segments: [
+        { text: `${leader?.name ?? "The leading community"} has the heaviest active workload`, strong: true },
+        { text: ` with ${leader?.count ?? 0} ${pluralize("referral", leader?.count ?? 0)}` },
+        ...(runnerUp ? [{ text: `, followed by ${runnerUp.name} with ${runnerUp.count}` }] : []),
+        { text: `. Across the pipeline, ${update.received} ${update.received === 1 ? "is" : "are"} new, ${update.inProgress} ${update.inProgress === 1 ? "is" : "are"} in assessment or review, and ${update.decision} ${update.decision === 1 ? "is" : "are"} at decision.` }
+      ]
     });
   }
   return lines;
@@ -501,15 +469,6 @@ function isAcceptedReferral(status: string) {
   return normalized.startsWith("accept") || normalized === "awaiting admit" || normalized === "meet the client not sent";
 }
 
-function formatCommunityLoad(communities: Array<{ name: string; count: number }>) {
-  const values = communities.map(({ name, count }) =>
-    name === "No community assigned" ? `${count} unassigned` : `${count} at ${name}`
-  );
-  if (values.length <= 1) return values[0] ?? "";
-  if (values.length === 2) return `${values[0]} and ${values[1]}`;
-  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
-}
-
 function pluralize(noun: string, count: number) {
   return count === 1 ? noun : `${noun}s`;
 }
@@ -552,9 +511,13 @@ function mobilePipelineLabel(column: AdmissionsBoardColumnKey) {
 
 function AdmissionsBriefingDashboard({
   dashboard,
+  pipeline,
+  onOpenCard,
   loading
 }: {
   dashboard: AdmissionsDashboardResponse | null;
+  pipeline: ConnectedAdmissionsPipeline | null;
+  onOpenCard: (card: AdmissionsBoardCard) => void;
   loading: boolean;
 }) {
   if (loading) {
@@ -570,6 +533,8 @@ function AdmissionsBriefingDashboard({
     return <p className="rounded-2xl border border-[#dfe3e1] bg-white px-5 py-12 text-center text-[13px] text-[#69716c]">The weekly briefing is not available in the current snapshot.</p>;
   }
   const { briefing } = dashboard;
+  const awaitingSchedule = pipeline?.board.cards.filter((card) => isAcceptedReferral(card.status) && !card.plannedAdmissionDate) ?? [];
+  const attentionItems = buildAdmissionsAttentionItems(pipeline);
 
   return (
     <section data-admissions-weekly-briefing="true" aria-label="Admissions operating snapshot">
@@ -580,45 +545,199 @@ function AdmissionsBriefingDashboard({
       ) : null}
 
       <div data-admissions-briefing-dashboard="true" className="grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-12"><BriefingCommunityDashboard briefing={briefing} /></div>
-        <div className="lg:col-span-6">
-          <BriefingSchedule
-            title="Upcoming assessments"
-            tone="assessment"
-            covered={briefing.coverage.assessments}
-            emptyLabel="No remaining assessments are scheduled this week."
-            items={briefing.upcomingAssessments.map((item) => ({
-              key: `${item.referralId}:${item.scheduledAt}`,
-              clientName: item.clientName,
-              date: item.scheduledAt,
-              community: item.facilityId ? item.community : "No community assigned",
-              owner: item.owner,
-              status: item.status
-            }))}
+        <div className="lg:col-span-12">
+          <AdmissionsMovement
+            briefing={briefing}
+            pipeline={pipeline}
+            awaitingSchedule={awaitingSchedule}
+            onOpenCard={onOpenCard}
           />
         </div>
-        <div className="lg:col-span-6">
-          <BriefingSchedule
-            title="Move-ins this week"
-            tone="move-in"
-            covered={briefing.coverage.moveIns}
-            emptyLabel="No move-ins are planned for this week."
-            items={briefing.plannedMoveIns.map((item) => ({
-              key: `${item.referralId}:${item.plannedAt}`,
-              clientName: item.clientName,
-              date: item.plannedAt,
-              community: item.facilityId ? item.community : "No community assigned",
-              owner: item.owner,
-              status: item.readiness === "unknown" ? item.status : `${item.status} · ${item.readiness}`
-            }))}
-          />
+        <div className="lg:col-span-12">
+          <BriefingCommunityDashboard briefing={briefing} pipeline={pipeline} onOpenCard={onOpenCard} />
         </div>
+        {attentionItems.length ? (
+          <div className="lg:col-span-12">
+            <AdmissionsAttention items={attentionItems} onOpenCard={onOpenCard} />
+          </div>
+        ) : null}
       </div>
     </section>
   );
 }
 
-function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboardResponse["briefing"] }) {
+type AdmissionsAttentionItem = {
+  card: AdmissionsBoardCard;
+  issues: string[];
+  score: number;
+};
+
+function AdmissionsMovement({
+  briefing,
+  pipeline,
+  awaitingSchedule,
+  onOpenCard
+}: {
+  briefing: AdmissionsDashboardResponse["briefing"];
+  pipeline: ConnectedAdmissionsPipeline | null;
+  awaitingSchedule: AdmissionsBoardCard[];
+  onOpenCard: (card: AdmissionsBoardCard) => void;
+}) {
+  const events = [
+    ...(briefing.coverage.assessments ? briefing.upcomingAssessments.map((item) => ({
+      key: `assessment:${item.referralId}:${item.scheduledAt}`,
+      referralId: item.referralId,
+      kind: "Assessment" as const,
+      date: item.scheduledAt,
+      clientName: item.clientName,
+      community: item.facilityId ? item.community : "Community not assigned",
+      owner: item.owner,
+      detail: item.status
+    })) : []),
+    ...(briefing.coverage.moveIns ? briefing.plannedMoveIns.map((item) => ({
+      key: `move-in:${item.referralId}:${item.plannedAt}`,
+      referralId: item.referralId,
+      kind: "Move-in" as const,
+      date: item.plannedAt,
+      clientName: item.clientName,
+      community: item.facilityId ? item.community : "Community not assigned",
+      owner: item.owner,
+      detail: item.readiness === "unknown" ? item.status : `${item.status} · ${item.readiness}`
+    })) : [])
+  ].sort((left, right) => left.date.localeCompare(right.date) || left.clientName.localeCompare(right.clientName));
+
+  return (
+    <section data-admissions-movement="true" className="border-y border-[#d9dedb] bg-white" aria-labelledby="admissions-movement-title">
+      <div className="flex items-end justify-between gap-4 border-b border-[#d9dedb] px-1 py-3 sm:px-0">
+        <div>
+          <h3 id="admissions-movement-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">Admissions movement</h3>
+          <p className="mt-0.5 text-[10px] text-[#737b77]">The dated work ahead, followed by accepted clients who still need scheduling.</p>
+        </div>
+        <CalendarDays className="h-4 w-4 shrink-0 text-[#39715f]" aria-hidden="true" />
+      </div>
+
+      <div className={`grid ${awaitingSchedule.length ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]" : ""}`}>
+        <div className={awaitingSchedule.length ? "lg:border-r lg:border-[#e2e7e4] lg:pr-5" : ""}>
+          <div className="flex items-center justify-between px-1 py-2.5 sm:px-0">
+            <h4 className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#6b7671]">On the calendar</h4>
+            <span className="text-[10px] font-medium tabular-nums text-[#69736e]">{events.length} scheduled</span>
+          </div>
+          {events.length ? (
+            <div className="divide-y divide-[#e7ebe9] border-t border-[#e7ebe9]">
+              {events.map((event) => {
+                const card = pipeline?.board.cards.find((candidate) => candidate.referralId === event.referralId) ?? null;
+                return (
+                  <button
+                    key={event.key}
+                    type="button"
+                    data-admissions-movement-item={event.kind.toLowerCase()}
+                    disabled={!card}
+                    onClick={() => card && onOpenCard(card)}
+                    className="grid w-full min-w-0 grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-3 px-1 py-3 text-left transition hover:bg-[#f7faf8] disabled:cursor-default disabled:hover:bg-transparent sm:grid-cols-[92px_86px_minmax(0,1fr)_auto] sm:px-0"
+                  >
+                    <time className="text-[10px] font-semibold tabular-nums text-[#315b4e]">{formatEventDate(event.date)}</time>
+                    <span className={`hidden w-fit rounded-full px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.08em] sm:inline-flex ${event.kind === "Move-in" ? "bg-[#e2f1e9] text-[#176d51]" : "bg-[#e8edfb] text-[#365fc7]"}`}>{event.kind}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[12px] font-semibold text-[#273b34]">{event.clientName}<span className="font-normal text-[#727b76]"> · {event.community}</span></span>
+                      <span className="mt-0.5 block truncate text-[9px] text-[#858c88]">{event.owner} · {event.detail}</span>
+                    </span>
+                    {card ? <ChevronRight className="h-3.5 w-3.5 text-[#7d8782]" aria-hidden="true" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="border-t border-[#e7ebe9] px-1 py-5 text-[11px] text-[#737b77] sm:px-0">Nothing else is scheduled in the current weekly window.</p>
+          )}
+        </div>
+
+        {awaitingSchedule.length ? (
+          <div className="border-t border-[#e2e7e4] pt-1 lg:border-t-0 lg:pl-5 lg:pt-0">
+            <div className="flex items-center justify-between px-1 py-2.5 sm:px-0">
+              <h4 className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#6b7671]">Awaiting scheduling</h4>
+              <span className="text-[10px] font-medium tabular-nums text-[#69736e]">{awaitingSchedule.length} accepted</span>
+            </div>
+            <div className="divide-y divide-[#e7ebe9] border-t border-[#e7ebe9]">
+              {awaitingSchedule.map((card) => (
+                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex w-full items-center gap-3 px-1 py-3 text-left transition hover:bg-[#f7faf8] sm:px-0">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[11px] font-semibold text-[#273b34]">{card.clientName}</span>
+                    <span className="mt-0.5 block truncate text-[9px] text-[#7b837f]">{card.facilityId ? card.community : "Community not assigned"} · {card.owner}</span>
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#7d8782]" aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function buildAdmissionsAttentionItems(pipeline: ConnectedAdmissionsPipeline | null): AdmissionsAttentionItem[] {
+  if (!pipeline) return [];
+  return pipeline.board.cards
+    .map((card) => {
+      const issues: string[] = [];
+      let score = 0;
+      if (card.flags.moveInOverdue) {
+        issues.push("Planned move-in is overdue");
+        score += 100;
+      }
+      if (card.managementProfile.blockingRequirements > 0) {
+        issues.push(`${card.managementProfile.blockingRequirements} blocking ${pluralize("requirement", card.managementProfile.blockingRequirements)}`);
+        score += 80;
+      }
+      if (card.flags.unassigned) {
+        issues.push("Community not assigned");
+        score += 60;
+      }
+      if (card.flags.stale) {
+        issues.push(`${card.daysSinceUpdate} days since the last update`);
+        score += 40 + card.daysSinceUpdate;
+      }
+      return { card, issues, score };
+    })
+    .filter((item) => item.issues.length > 0)
+    .sort((left, right) => right.score - left.score || left.card.clientName.localeCompare(right.card.clientName));
+}
+
+function AdmissionsAttention({ items, onOpenCard }: { items: AdmissionsAttentionItem[]; onOpenCard: (card: AdmissionsBoardCard) => void }) {
+  const visibleItems = items.slice(0, 8);
+  return (
+    <section data-admissions-attention="true" className="border-y border-[#e3d8bd] bg-[#fffdf8]" aria-labelledby="admissions-attention-title">
+      <div className="flex items-center justify-between gap-4 border-b border-[#eee5d2] px-1 py-3 sm:px-0">
+        <div>
+          <h3 id="admissions-attention-title" className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.02em] text-[#4e4229]"><AlertTriangle className="h-4 w-4 text-[#9a6b17]" aria-hidden="true" />Needs attention</h3>
+          <p className="mt-0.5 text-[10px] text-[#80745d]">Only referrals with a recorded blocker, overdue date, missing community, or stale update.</p>
+        </div>
+        <span className="text-[10px] font-medium tabular-nums text-[#7a6d54]">{items.length} flagged</span>
+      </div>
+      <div className="divide-y divide-[#eee5d2]">
+        {visibleItems.map(({ card, issues }) => (
+          <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="grid w-full min-w-0 gap-1 px-1 py-3 text-left transition hover:bg-[#fff9ec] sm:grid-cols-[minmax(180px,0.7fr)_minmax(0,1.3fr)_auto] sm:items-center sm:gap-4 sm:px-0">
+            <span className="truncate text-[11px] font-semibold text-[#3e392f]">{card.clientName}<span className="font-normal text-[#817865]"> · {card.facilityId ? card.community : "No community"}</span></span>
+            <span className="text-[10px] leading-4 text-[#7c5c20]">{issues.join(" · ")}</span>
+            <ChevronRight className="hidden h-3.5 w-3.5 text-[#9b8e73] sm:block" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+      {items.length > visibleItems.length ? <p className="border-t border-[#eee5d2] px-1 py-2 text-[9px] text-[#887b63] sm:px-0">Showing the {visibleItems.length} highest-priority items. The complete queue remains in Pipeline.</p> : null}
+    </section>
+  );
+}
+
+function BriefingCommunityDashboard({
+  briefing,
+  pipeline,
+  onOpenCard
+}: {
+  briefing: AdmissionsDashboardResponse["briefing"];
+  pipeline: ConnectedAdmissionsPipeline | null;
+  onOpenCard: (card: AdmissionsBoardCard) => void;
+}) {
+  const [expandedFacilityId, setExpandedFacilityId] = useState<string | null>(null);
   const assignedCommunities = briefing.communities.filter((community) =>
     community.census != null && !/unassigned|no community/i.test(`${community.shortName} ${community.communityName}`)
   );
@@ -642,19 +761,42 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
         <span className="text-right">New referrals · 7 days</span>
       </div>
       <div className="divide-y divide-[#e5e9e7]">
-        {assignedCommunities.map((community) => (
-          <article key={community.facilityId} data-admissions-briefing-community={community.facilityId} className="px-1 py-3 sm:grid sm:grid-cols-[minmax(180px,1fr)_120px_160px_160px] sm:items-center sm:gap-4 sm:py-3.5">
-            <div className="flex items-center justify-between gap-4 sm:block">
-              <h4 className="min-w-0 text-[13px] font-semibold leading-5 text-[#263c35]">{community.shortName}</h4>
-              <p data-admissions-community-census="true" className="text-right sm:hidden"><strong className="text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#183f34]">{formatBriefingCount(community.census)}</strong><span className="ml-1.5 text-[9px] uppercase tracking-[0.08em] text-[#7a817d]">census</span></p>
+        {assignedCommunities.map((community) => {
+          const expanded = expandedFacilityId === community.facilityId;
+          const communityCards = pipeline?.board.cards.filter((card) => card.facilityId === community.facilityId) ?? [];
+          return (
+            <div key={community.facilityId} data-admissions-briefing-community={community.facilityId}>
+              <button
+                type="button"
+                aria-expanded={expanded}
+                onClick={() => setExpandedFacilityId((current) => current === community.facilityId ? null : community.facilityId)}
+                className="w-full px-1 py-3 text-left transition hover:bg-[#f7faf8] sm:grid sm:grid-cols-[minmax(180px,1fr)_120px_160px_160px] sm:items-center sm:gap-4 sm:py-3.5"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <h4 className="min-w-0 text-[13px] font-semibold leading-5 text-[#263c35]">{community.shortName}</h4>
+                  <div className="flex items-center gap-2">
+                    <p data-admissions-community-census="true" className="text-right sm:hidden"><strong className="text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#183f34]">{formatBriefingCount(community.census)}</strong><span className="ml-1.5 text-[9px] uppercase tracking-[0.08em] text-[#7a817d]">census</span></p>
+                    <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-[#7b8580] transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+                  </div>
+                </div>
+                <p data-admissions-community-census="true" className="hidden text-right sm:block"><strong className="text-[18px] font-semibold tabular-nums text-[#183f34]">{formatBriefingCount(community.census)}</strong></p>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:contents">
+                  <p data-admissions-community-upcoming-admits="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">Upcoming admits</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.plannedMoveInsThisWeek)}</strong><span className="ml-1 sm:hidden">this week</span></p>
+                  <p data-admissions-community-referrals="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">New referrals</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1 sm:hidden">last 7 days</span></p>
+                </div>
+              </button>
+              {expanded ? (
+                <CommunityAdmissionsDetail
+                  community={community}
+                  cards={communityCards}
+                  assessments={briefing.upcomingAssessments.filter((item) => item.facilityId === community.facilityId)}
+                  moveIns={briefing.plannedMoveIns.filter((item) => item.facilityId === community.facilityId)}
+                  onOpenCard={onOpenCard}
+                />
+              ) : null}
             </div>
-            <p data-admissions-community-census="true" className="hidden text-right sm:block"><strong className="text-[18px] font-semibold tabular-nums text-[#183f34]">{formatBriefingCount(community.census)}</strong></p>
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:contents">
-              <p data-admissions-community-upcoming-admits="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">Upcoming admits</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.plannedMoveInsThisWeek)}</strong><span className="ml-1 sm:hidden">this week</span></p>
-              <p data-admissions-community-referrals="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">New referrals</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1 sm:hidden">last 7 days</span></p>
-            </div>
-          </article>
-        ))}
+          );
+        })}
       </div>
       {unassignedActivity > 0 ? (
         <p data-admissions-unassigned-footnote="true" className="border-t border-[#e5e9e7] px-1 py-2.5 text-[9px] leading-4 text-[#737b77]">
@@ -665,56 +807,79 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
   );
 }
 
-function BriefingSchedule({
-  title,
-  tone,
-  covered,
-  emptyLabel,
-  items
+function CommunityAdmissionsDetail({
+  community,
+  cards,
+  assessments,
+  moveIns,
+  onOpenCard
 }: {
-  title: string;
-  tone: "assessment" | "move-in";
-  covered: boolean;
-  emptyLabel: string;
-  items: Array<{ key: string; clientName: string; date: string; community: string; owner: string; status: string }>;
+  community: AdmissionsDashboardResponse["briefing"]["communities"][number];
+  cards: AdmissionsBoardCard[];
+  assessments: AdmissionsDashboardResponse["briefing"]["upcomingAssessments"];
+  moveIns: AdmissionsDashboardResponse["briefing"]["plannedMoveIns"];
+  onOpenCard: (card: AdmissionsBoardCard) => void;
 }) {
-  const treatment = tone === "move-in"
-    ? { surface: "bg-[#edf7f2]", border: "border-[#c8dfd3]", count: "bg-[#197453] text-white", date: "bg-[#dcefe6] text-[#145b43]" }
-    : { surface: "bg-[#f0f3fc]", border: "border-[#d4dcf5]", count: "bg-[#365fc7] text-white", date: "bg-[#e2e8fa] text-[#3159b8]" };
+  const stageCounts = {
+    received: cards.filter((card) => card.column === "received").length,
+    inProgress: cards.filter((card) => card.column === "in_progress").length,
+    decision: cards.filter((card) => card.column === "decision").length
+  };
+  const activity = [
+    ...assessments.map((item) => ({ referralId: item.referralId, key: `assessment:${item.referralId}:${item.scheduledAt}`, kind: "Assessment", date: item.scheduledAt, clientName: item.clientName })),
+    ...moveIns.map((item) => ({ referralId: item.referralId, key: `move-in:${item.referralId}:${item.plannedAt}`, kind: "Move-in", date: item.plannedAt, clientName: item.clientName }))
+  ].sort((left, right) => left.date.localeCompare(right.date));
+
   return (
-    <section data-admissions-priority-schedule={tone} className={`h-full overflow-hidden rounded-2xl border ${treatment.border} bg-white shadow-[0_2px_8px_rgba(24,63,52,0.04)] sm:min-h-[230px]`}>
-      <div className={`flex items-center justify-between gap-4 px-4 py-4 sm:px-5 ${treatment.surface}`}>
-        <div>
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f7974]">This week</p>
-          <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.025em] text-[#263c35]">{title}</h2>
-        </div>
-        <span className={`inline-flex min-w-9 items-center justify-center rounded-full px-2.5 py-1.5 text-[12px] font-semibold tabular-nums ${treatment.count}`}>{covered ? items.length : "—"}</span>
-      </div>
-      {covered ? (
-        items.length ? (
-          <div className="space-y-2 p-3 sm:p-4">
-            {items.map((item) => (
-              <article key={item.key} className="grid gap-2 rounded-xl border border-[#e6eae8] bg-white p-3 text-[10px] sm:grid-cols-[84px_minmax(0,1fr)] sm:items-center sm:gap-x-4">
-                <time className={`inline-flex w-fit rounded-lg px-2.5 py-1.5 font-semibold ${treatment.date}`}>{formatEventDate(item.date)}</time>
-                <div className="min-w-0">
-                  <p className="truncate text-[11px]"><strong className="font-semibold text-[#263c35]">{item.clientName}</strong><span className="text-[#69716c]"> · {item.community}</span></p>
-                  <p className="mt-1 text-[9px] leading-4 text-[#7a817d]">{item.owner} · {item.status}</p>
-                </div>
-              </article>
-            ))}
+    <div data-admissions-community-detail="true" className="border-t border-[#dfe5e2] bg-[#f7faf8] px-3 py-4 sm:px-5 sm:py-5">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+        <section aria-label={`${community.shortName} pipeline detail`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <h5 className="mr-2 text-[11px] font-semibold text-[#29483f]">Active pipeline</h5>
+            <CommunityMetric label="New" value={stageCounts.received} />
+            <CommunityMetric label="Assessment / review" value={stageCounts.inProgress} />
+            <CommunityMetric label="Decision" value={stageCounts.decision} />
+            {community.occupancyPct != null ? <CommunityMetric label="Occupied" value={`${community.occupancyPct}%`} /> : null}
           </div>
-        ) : <p className="flex min-h-[104px] items-center justify-center px-5 text-center text-[12px] text-[#69716c] sm:min-h-[150px]">{emptyLabel}</p>
-      ) : <IncompleteBriefingField label={title} />}
-    </section>
+          {cards.length ? (
+            <div className="mt-3 grid gap-x-5 border-t border-[#dde5e1] sm:grid-cols-2">
+              {cards.map((card) => (
+                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex min-w-0 items-center gap-3 border-b border-[#e3e9e6] py-2.5 text-left transition hover:text-[#0f795f]">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[11px] font-semibold text-[#2f3e39]">{card.clientName}</span>
+                    <span className="mt-0.5 block truncate text-[9px] text-[#7a837f]">{card.status} · {card.owner}</span>
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#86908b]" aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          ) : <p className="mt-3 border-t border-[#dde5e1] py-4 text-[10px] text-[#78817d]">No active referrals are assigned to this community.</p>}
+        </section>
+
+        <section aria-label={`${community.shortName} upcoming activity`}>
+          <h5 className="text-[11px] font-semibold text-[#29483f]">Upcoming activity</h5>
+          {activity.length ? (
+            <div className="mt-3 divide-y divide-[#e3e9e6] border-y border-[#dde5e1]">
+              {activity.map((item) => {
+                const card = cards.find((candidate) => candidate.referralId === item.referralId) ?? null;
+                return (
+                  <button key={item.key} type="button" disabled={!card} onClick={() => card && onOpenCard(card)} className="grid w-full grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-2 py-2.5 text-left disabled:cursor-default">
+                    <time className="text-[9px] font-semibold text-[#42675b]">{formatEventDate(item.date)}</time>
+                    <span className="truncate text-[10px] text-[#33443e]"><strong className="font-semibold">{item.clientName}</strong> · {item.kind}</span>
+                    {card ? <ChevronRight className="h-3.5 w-3.5 text-[#86908b]" aria-hidden="true" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          ) : <p className="mt-3 border-t border-[#dde5e1] py-4 text-[10px] text-[#78817d]">No assessments or move-ins are currently scheduled here this week.</p>}
+        </section>
+      </div>
+    </div>
   );
 }
 
-function IncompleteBriefingField({ label }: { label: string }) {
-  return (
-    <p className="py-5 text-[12px] leading-5 text-[#8a6118] sm:py-8">
-      {label} is incomplete in the current Pipeline contract. No estimate is shown.
-    </p>
-  );
+function CommunityMetric({ label, value }: { label: string; value: string | number }) {
+  return <span className="rounded-full border border-[#d8e1dc] bg-white px-2.5 py-1 text-[9px] text-[#64716b]"><strong className="mr-1 font-semibold text-[#24483d]">{value}</strong>{label}</span>;
 }
 
 function formatBriefingCount(value: number | null) {
