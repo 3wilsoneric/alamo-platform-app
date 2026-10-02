@@ -1723,3 +1723,26 @@ checks pass. The exact signed-in Chrome tab that had displayed the older shell
 was reloaded and verified against the active asset: Outreach, County outreach,
 and referral sources were absent; Community census rendered five rows; and all
 three concise analyst bullets shared one horizontal row.
+
+### Admissions community snapshot clarification — 2026-10-02
+
+The Admissions briefing now moves directly from the analyst update into the
+community operating data. The redundant Weekly operating brief title and date
+strip are removed, Community census is renamed Community snapshot, and its
+description now identifies the three measures shown by community. The analyst
+lead is also easier to scan: active, accepted, scheduled, and date-pending
+counts appear as four concise facts, while every accepted client remains tied
+to a destination community in the detail bullets.
+
+- source PR: `#115`; merge commit: `608f386d914c154c1be929558fc3e3f409ae47a2`
+- ACR build: `cc58`
+- image: `alamo-platform@sha256:ea6cb6b934c7c9f1e677781b19ae80e030e3376a0bf6a10ab20eafc4ee051a69` (tag `admissions-snapshot-1002`)
+- active revision: `alamo-platform-prod-web--admissions-snapshot-1002`
+- rollback image: `alamo-platform@sha256:2c1f28a4dd34be9e33cb24f7a4008407edafd330b6e8cae717862e6bc45a5cf6`
+- active browser asset: `/assets/index-FezJ1hoL.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Signed-in production
+verification confirmed the new heading and concise analyst copy, the removed
+weekly framing, five governed community rows, and no Outreach navigation.
