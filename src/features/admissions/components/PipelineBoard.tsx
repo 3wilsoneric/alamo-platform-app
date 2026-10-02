@@ -234,7 +234,7 @@ function decisionTabFor(card: AdmissionsBoardCard) {
   return DECISION_TAB.inProgress;
 }
 
-function ProgressModal({
+export function ProgressModal({
   card,
   generatedAt,
   onClose

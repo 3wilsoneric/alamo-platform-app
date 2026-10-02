@@ -81,7 +81,8 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-briefing-community]').filter({ hasText: "Unassigned" }).count() !== 0 ||
     await page.locator('[data-admissions-county-outreach="true"]').count() !== 0 ||
     await page.getByRole("heading", { name: "County outreach" }).count() !== 0 ||
-    await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
+    await page.locator('[data-admissions-movement="true"]').count() !== 1 ||
+    await page.locator('[data-admissions-priority-schedule]').count() !== 0 ||
     await page.getByRole("heading", { name: "Community snapshot" }).count() !== 1 ||
     await page.getByRole("heading", { name: "Weekly operating brief" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Referral sources" }).count() !== 0 ||
@@ -90,14 +91,23 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-community-upcoming-admits="true"]').count() !== 5 ||
     await page.locator('[data-admissions-community-referrals="true"]').count() !== 5 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
-    await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
-    await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 1 ||
+    await page.getByRole("heading", { name: "Admissions movement" }).count() !== 1 ||
+    await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 0 ||
+    await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 0 ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count() !== 1) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 1) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-row]').count() < 2) ||
     (executiveUpdateVisible && /admission date not scheduled|accepted clients moving toward admission|where the work is/i.test(executiveText))
   ) {
     throw new Error("The Briefing page must render as a concise, structured analyst update without repetitive prose.");
+  }
+  const firstCommunityDisclosure = page.locator('[data-admissions-briefing-community] button[aria-expanded]').first();
+  await firstCommunityDisclosure.click();
+  if (
+    await firstCommunityDisclosure.getAttribute("aria-expanded") !== "true" ||
+    await page.locator('[data-admissions-community-detail="true"]').count() !== 1
+  ) {
+    throw new Error("Community snapshot rows must open an inline operating drill-down.");
   }
   await page.screenshot({ path: `${screenshotDir}/desktop-admissions-briefing-dashboard.png`, fullPage: true });
 
