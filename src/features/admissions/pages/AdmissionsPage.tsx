@@ -243,11 +243,11 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
     return lineStarted ? [{ ...line, visibleCharacters, lineIsStreaming }] : [];
   });
   const summaryLine = visibleLines.find((line) => line.group === "summary");
-  const answerSections = [
-    { group: "scheduled" as const, title: "Scheduled" },
-    { group: "pending" as const, title: "Awaiting dates" },
-    { group: "pipeline" as const, title: "Pipeline" }
-  ];
+  const scheduledLines = visibleLines.filter((line) => line.group === "scheduled");
+  const pendingLines = visibleLines.filter((line) => line.group === "pending");
+  const pipelineLines = visibleLines.filter((line) => line.group === "pipeline");
+  const scheduledClientCount = update?.acceptedClients.filter((client) => client.plannedAdmissionDate).length ?? 0;
+  const pendingClientCount = update?.acceptedClients.filter((client) => !client.plannedAdmissionDate).length ?? 0;
 
   return (
     <section
@@ -275,34 +275,68 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
           </p>
         ) : null}
       </div>
-      <ul className="mt-3 grid gap-2 border-t border-[#dce5e1] pt-3 md:grid-cols-[1.35fr_1fr_0.9fr] md:gap-5">
-        {answerSections.map((section) => {
-          const sectionLines = visibleLines.filter((line) => line.group === section.group);
-          if (!sectionLines.length) return null;
-          return (
-            <li
-              key={section.group}
-              data-admissions-executive-section={section.group}
-              className="flex min-w-0 gap-2 text-[11px] leading-[1.55] text-[#46504b] sm:text-[12px]"
-            >
-              <span className="mt-[0.52em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#0f8b73]" aria-hidden="true" />
-              <p className="min-w-0">
-                <strong className="font-semibold text-[#263c35]">{section.title}:</strong>{" "}
-                {sectionLines.map((line, index) => (
-                  <span key={line.key} data-admissions-executive-row={line.key}>
-                    {index ? "; " : ""}
-                    {line.label ? <span className="font-medium text-[#66736d]">{line.label}: </span> : null}
+      <div className="mt-3 grid gap-3 border-t border-[#dce5e1] pt-3 lg:grid-cols-12 lg:gap-4">
+        {scheduledLines.length ? (
+          <section data-admissions-executive-section="scheduled" className="min-w-0 lg:col-span-6">
+            <ExecutiveSectionHeading title="Scheduled move-ins" count={scheduledClientCount} />
+            <div className="mt-2 space-y-1.5">
+              {scheduledLines.map((line) => (
+                <div key={line.key} data-admissions-executive-row={line.key} className="grid min-w-0 grid-cols-[54px_minmax(0,1fr)] items-start gap-2.5">
+                  <span className="rounded-md bg-white px-1.5 py-1 text-center text-[10px] font-semibold tabular-nums text-[#376052] shadow-[inset_0_0_0_1px_#dce5e1]">{line.label}</span>
+                  <p className="pt-0.5 text-[11px] leading-[1.45] text-[#56615c] sm:text-[12px]">
                     <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
-                    {line.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-                  </span>
-                ))}
-              </p>
-            </li>
-          );
-        })}
-      </ul>
+                    {line.lineIsStreaming ? <TypingCaret /> : null}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {pendingLines.length ? (
+          <section data-admissions-executive-section="pending" className="min-w-0 border-t border-[#dce5e1] pt-3 lg:col-span-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+            <ExecutiveSectionHeading title="Awaiting dates" count={pendingClientCount} />
+            <div className="mt-2 space-y-2">
+              {pendingLines.map((line) => (
+                <p key={line.key} data-admissions-executive-row={line.key} className="text-[11px] leading-[1.45] text-[#56615c] sm:text-[12px]">
+                  <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
+                  {line.lineIsStreaming ? <TypingCaret /> : null}
+                </p>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {pipelineLines.length ? (
+          <section data-admissions-executive-section="pipeline" className="min-w-0 border-t border-[#dce5e1] pt-3 lg:col-span-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+            <ExecutiveSectionHeading title="Pipeline" />
+            <div className="mt-2 space-y-2">
+              {pipelineLines.map((line) => (
+                <p key={line.key} data-admissions-executive-row={line.key} className="text-[11px] leading-[1.5] text-[#56615c] sm:text-[12px]">
+                  {line.label ? <span className="block text-[9px] font-semibold uppercase tracking-[0.08em] text-[#78827d]">{line.label}</span> : null}
+                  <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
+                  {line.lineIsStreaming ? <TypingCaret /> : null}
+                </p>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
     </section>
   );
+}
+
+function ExecutiveSectionHeading({ title, count }: { title: string; count?: number }) {
+  return (
+    <h3 className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.09em] text-[#51615b]">
+      {title}
+      {count != null ? <span className="rounded-full bg-[#dcebe5] px-1.5 py-0.5 text-[9px] font-semibold tracking-normal text-[#176d51]">{count}</span> : null}
+    </h3>
+  );
+}
+
+function TypingCaret() {
+  return <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span>;
 }
 
 function hasSeenAdmissionsBriefing() {
@@ -413,7 +447,7 @@ function groupAcceptedClients(
     const key = mode === "scheduled" ? `${dateKey}|${client.community}` : client.community;
     const current = groups.get(key) ?? {
       key,
-      label: mode === "scheduled" ? formatDate(dateKey) : client.community,
+      label: mode === "scheduled" ? formatEventDate(dateKey) : client.community,
       community: client.community,
       names: []
     };
@@ -694,10 +728,4 @@ function formatEventDate(value: string) {
   return new Intl.DateTimeFormat("en-US", includesTime
     ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" }
     : { month: "short", day: "numeric" }).format(date);
-}
-
-function formatDate(value: string) {
-  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
 }
