@@ -25,15 +25,18 @@ const cachePolicyReplacement = `      : pathname.startsWith("/assets/")
           ? "no-store"
           : "public, max-age=86400";`;
 
-if (!source.includes(staticEntryNeedle)) {
+const hasDedicatedEntry = source.includes(staticEntryReplacement);
+const hasHtmlNoStorePolicy = source.includes(cachePolicyReplacement);
+
+if (!hasDedicatedEntry && !source.includes(staticEntryNeedle)) {
   throw new Error("Production app server no longer exposes the expected static-entry boundary.");
 }
-if (!source.includes(cachePolicyNeedle)) {
+if (!hasHtmlNoStorePolicy && !source.includes(cachePolicyNeedle)) {
   throw new Error("Production app server no longer exposes the expected static cache policy.");
 }
 
 const patched = source
-  .replace(staticEntryNeedle, staticEntryReplacement)
-  .replace(cachePolicyNeedle, cachePolicyReplacement);
+  .replace(hasDedicatedEntry ? staticEntryReplacement : staticEntryNeedle, staticEntryReplacement)
+  .replace(hasHtmlNoStorePolicy ? cachePolicyReplacement : cachePolicyNeedle, cachePolicyReplacement);
 
 writeFileSync(serverPath, patched);
