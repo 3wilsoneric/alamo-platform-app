@@ -82,7 +82,8 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-county-outreach="true"]').count() !== 0 ||
     await page.getByRole("heading", { name: "County outreach" }).count() !== 0 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 2 ||
-    await page.getByRole("heading", { name: "Community census" }).count() !== 1 ||
+    await page.getByRole("heading", { name: "Community snapshot" }).count() !== 1 ||
+    await page.getByRole("heading", { name: "Weekly operating brief" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Referral sources" }).count() !== 0 ||
     await page.locator('[data-admissions-origin-source]').count() !== 0 ||
     await page.locator('[data-admissions-community-census="true"]:visible').count() !== 5 ||

@@ -349,13 +349,11 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
     group: "summary",
     segments: [
       { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
-      { text: update.acceptedClients.length ? ". " : "." },
+      { text: update.acceptedClients.length ? " · " : "" },
       ...(update.acceptedClients.length ? [
         { text: `${update.acceptedClients.length} accepted`, strong: true },
-        { text: ": " },
-        ...(scheduledCount ? [{ text: `${scheduledCount} scheduled` }] : []),
-        ...(pendingCount ? [{ text: `${scheduledCount ? " and " : ""}${pendingCount} awaiting ${pendingCount === 1 ? "a date" : "dates"}` }] : []),
-        { text: "." }
+        ...(scheduledCount ? [{ text: " · " }, { text: `${scheduledCount} scheduled`, strong: true }] : []),
+        ...(pendingCount ? [{ text: " · " }, { text: `${pendingCount} awaiting ${pendingCount === 1 ? "a date" : "dates"}`, strong: true }] : [])
       ] : [])
     ]
   }];
@@ -364,21 +362,19 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
       key: `scheduled:${group.key}`,
       group: "scheduled",
       label: group.label,
-      segments: [...buildNameSegments(group.names), { text: ` · ${group.community}` }]
+      segments: [...buildNameSegments(group.names), { text: ` (${group.community})` }]
     });
   }
   for (const group of pendingGroups) {
     lines.push({
       key: `pending:${group.key}`,
       group: "pending",
-      label: group.community,
-      segments: buildNameSegments(group.names)
+      segments: [...buildNameSegments(group.names), { text: ` (${group.community})` }]
     });
   }
   lines.push({
     key: "pipeline:stages",
     group: "pipeline",
-    label: "Stages",
     segments: [
       { text: `${update.received} new`, strong: true },
       { text: " · " },
@@ -542,15 +538,7 @@ function AdmissionsBriefingDashboard({
   const { briefing } = dashboard;
 
   return (
-    <section data-admissions-weekly-briefing="true" aria-labelledby="admissions-weekly-briefing-title">
-      <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 id="admissions-weekly-briefing-title" className="text-[18px] font-semibold tracking-[-0.025em] text-[#202623]">Weekly operating brief</h2>
-          <p className="mt-1 text-[11px] text-[#737b77]">{formatDate(briefing.weekStart)} through {formatDate(briefing.weekEnd)}</p>
-        </div>
-        <p className="text-[10px] text-[#7a817d]">Census through {formatDate(briefing.asOfDate)}{briefing.pipelineAsOfDate ? ` · Pipeline through ${formatDate(briefing.pipelineAsOfDate)}` : ""}</p>
-      </header>
-
+    <section data-admissions-weekly-briefing="true" aria-label="Admissions operating snapshot">
       {briefing.sourceStatus !== "ready" ? (
         <p data-admissions-briefing-source-notice="true" className="mb-4 rounded-xl border border-[#ead8a9] bg-[#fffaf0] px-4 py-3 text-[11px] leading-5 text-[#75591f]">
           Census remains governed. Pipeline event sections are marked incomplete where the source has not published coverage; missing data is never shown as zero.
@@ -608,8 +596,8 @@ function BriefingCommunityDashboard({ briefing }: { briefing: AdmissionsDashboar
     <section className="border-y border-[#d9dedb] bg-white" aria-labelledby="admissions-community-dashboard-title">
       <div className="flex items-center justify-between gap-3 border-b border-[#d9dedb] px-1 py-3 sm:px-0">
         <div>
-          <h3 id="admissions-community-dashboard-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">Community census</h3>
-          <p className="mt-0.5 text-[10px] text-[#737b77]">Current census with this week’s admissions activity.</p>
+          <h3 id="admissions-community-dashboard-title" className="text-[15px] font-semibold tracking-[-0.02em] text-[#263c35]">Community snapshot</h3>
+          <p className="mt-0.5 text-[10px] text-[#737b77]">Current residents, upcoming admits, and new referrals by community.</p>
         </div>
         <p className="text-right text-[10px] uppercase tracking-[0.08em] text-[#737b77]"><strong className="mr-1 text-[18px] font-semibold tracking-[-0.03em] text-[#183f34]">{formatBriefingCount(briefing.totals.census)}</strong> total</p>
       </div>
