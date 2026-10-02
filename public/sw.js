@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "alamo-static-";
-const CACHE_NAME = `${CACHE_PREFIX}v5`;
+const CACHE_NAME = `${CACHE_PREFIX}v6`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -23,7 +23,7 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(pruneOldAlamoCaches().then(() => self.clients.claim()));
+  event.waitUntil(activateLatestRelease());
 });
 
 self.addEventListener("message", (event) => {
@@ -88,4 +88,26 @@ async function pruneOldAlamoCaches() {
       .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
       .map((name) => caches.delete(name))
   );
+}
+
+async function activateLatestRelease() {
+  const cacheNames = await caches.keys();
+  const replacesOlderRelease = cacheNames.some(
+    (name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME
+  );
+  await pruneOldAlamoCaches();
+  await self.clients.claim();
+  if (!replacesOlderRelease) return;
+
+  const windows = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true
+  });
+  await Promise.all(windows.map(async (client) => {
+    try {
+      await client.navigate(client.url);
+    } catch {
+      // A closed or cross-process window must not block worker activation.
+    }
+  }));
 }

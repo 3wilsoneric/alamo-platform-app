@@ -21,9 +21,9 @@ Admissions-only identities retain their existing access boundary.
 Analytics keeps Reports and Ask a question in a separate row below the header.
 Betty Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
 other account, including a platform administrator, receives Licensing access.
-Eric's verified owner identity also receives an Outreach destination in the
-shared header; the acquisition workspace and its APIs remain hidden from every
-other account.
+The owner-only Outreach workspace remains available by its direct route but is
+absent from shared desktop and mobile navigation; the workspace and its APIs
+remain hidden from every other account.
 The same verified owner identity can open the unlisted `/chat` route. That
 route is intentionally absent from desktop and mobile navigation and redirects
 every other signed-in identity to `/home`; the owner claim, not knowledge of

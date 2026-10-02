@@ -53,6 +53,8 @@ assert.match(worker, /request\.mode === "navigate"/);
 assert.match(worker, /new Request\(request, \{ cache: "no-store" \}\)/);
 assert.match(worker, /fetch\(networkRequest\)\.catch/);
 assert.match(worker, /url\.pathname\.startsWith\("\/assets\/"\)/);
+assert.match(worker, /self\.clients\.matchAll/);
+assert.match(worker, /client\.navigate\(client\.url\)/);
 assert.doesNotMatch(worker, /caches\.match\(/);
 assert.doesNotMatch(worker, /localStorage|sessionStorage|indexedDB/i);
 assert.doesNotMatch(worker, /pathname\.startsWith\("\/api/);

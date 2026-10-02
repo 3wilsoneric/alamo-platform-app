@@ -244,8 +244,8 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
   });
   const summaryLine = visibleLines.find((line) => line.group === "summary");
   const answerSections = [
-    { group: "scheduled" as const, title: "Accepted · scheduled" },
-    { group: "pending" as const, title: "Accepted · date pending" },
+    { group: "scheduled" as const, title: "Scheduled" },
+    { group: "pending" as const, title: "Awaiting dates" },
     { group: "pipeline" as const, title: "Pipeline" }
   ];
 
@@ -275,36 +275,32 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
           </p>
         ) : null}
       </div>
-      <div className="mt-3 border-t border-[#dce5e1] md:grid md:grid-cols-[1.35fr_1fr_0.9fr] md:divide-x md:divide-[#dce5e1]">
+      <ul className="mt-3 grid gap-2 border-t border-[#dce5e1] pt-3 md:grid-cols-[1.35fr_1fr_0.9fr] md:gap-5">
         {answerSections.map((section) => {
           const sectionLines = visibleLines.filter((line) => line.group === section.group);
           if (!sectionLines.length) return null;
           return (
-            <section
+            <li
               key={section.group}
               data-admissions-executive-section={section.group}
-              className="border-t border-[#dce5e1] py-3 first:border-t-0 md:border-t-0 md:px-4 md:first:pl-0 md:last:pr-0"
+              className="flex min-w-0 gap-2 text-[11px] leading-[1.55] text-[#46504b] sm:text-[12px]"
             >
-              <h3 className="mb-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#66736d]">{section.title}</h3>
-              <dl className="divide-y divide-[#e1e8e4]">
-                {sectionLines.map((line) => (
-                  <div
-                    key={line.key}
-                    data-admissions-executive-row={line.key}
-                    className="grid grid-cols-[92px_minmax(0,1fr)] gap-2 py-1.5 first:pt-1"
-                  >
-                    <dt className="text-[10px] font-medium leading-4 text-[#66736d]">{line.label}</dt>
-                    <dd className="min-w-0 text-[11px] leading-4 text-[#46504b] sm:text-[12px]">
-                      <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
-                      {line.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-                    </dd>
-                  </div>
+              <span className="mt-[0.52em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#0f8b73]" aria-hidden="true" />
+              <p className="min-w-0">
+                <strong className="font-semibold text-[#263c35]">{section.title}:</strong>{" "}
+                {sectionLines.map((line, index) => (
+                  <span key={line.key} data-admissions-executive-row={line.key}>
+                    {index ? "; " : ""}
+                    {line.label ? <span className="font-medium text-[#66736d]">{line.label}: </span> : null}
+                    <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
+                    {line.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+                  </span>
                 ))}
-              </dl>
-            </section>
+              </p>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </section>
   );
 }
