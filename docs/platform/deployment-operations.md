@@ -1767,3 +1767,26 @@ smoke suite passes 4/4. TypeScript, production build, and the responsive
 Admissions browser regression pass. Signed-in production verification
 confirmed five scheduled rows, three date-pending rows, two pipeline rows,
 the Community snapshot heading, and the absence of the retired weekly title.
+
+### Conversational Admissions briefing and drill-downs — 2026-10-02
+
+The Admissions analyst lead now speaks as a short operating narrative instead
+of restating the dashboard in labeled columns. The detailed evidence below is
+organized into a combined Admissions movement timeline, an accepted-client
+scheduling queue, expandable community rows, and a collapsed action-only
+attention queue. Community and client rows open the existing management chart
+without duplicating the Pipeline board.
+
+- source PRs: `#119`, `#120`; merge commits: `a9e2d12ec6cddb64efb70047c14800a5ba80cc1c`, `f5ec62572d7edd81b065a06b00eb39888ad64c27`
+- ACR build: `cc5b`
+- image: `alamo-platform@sha256:6ebdeb79917737eface8f2d5fea84cc00c994c076fdbf0b37e76dc2fadc7cb33` (tag `admissions-drilldown-compact-1002`)
+- active revision: `alamo-platform-prod-web--admissions-compact-drill-1002`
+- rollback image: `alamo-platform@sha256:8af1e3c8a8826a9dcefffef53ae74ff29fae2c487572e092171d7828341cda0b`
+- active browser asset: `/assets/index-B8FKlbJZ.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Signed-in production
+verification confirmed five scheduled movement rows, five accepted clients
+awaiting dates, five expandable community rows, a collapsed attention queue,
+and successful management-chart opening from a community drill-down.
