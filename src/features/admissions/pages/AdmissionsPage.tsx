@@ -704,26 +704,31 @@ function buildAdmissionsAttentionItems(pipeline: ConnectedAdmissionsPipeline | n
 }
 
 function AdmissionsAttention({ items, onOpenCard }: { items: AdmissionsAttentionItem[]; onOpenCard: (card: AdmissionsBoardCard) => void }) {
+  const [expanded, setExpanded] = useState(false);
   const visibleItems = items.slice(0, 8);
   return (
     <section data-admissions-attention="true" className="border-y border-[#e3d8bd] bg-[#fffdf8]" aria-labelledby="admissions-attention-title">
-      <div className="flex items-center justify-between gap-4 border-b border-[#eee5d2] px-1 py-3 sm:px-0">
+      <button type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)} className={`flex w-full items-center justify-between gap-4 px-1 py-3 text-left transition hover:bg-[#fff9ec] sm:px-0 ${expanded ? "border-b border-[#eee5d2]" : ""}`}>
         <div>
           <h3 id="admissions-attention-title" className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.02em] text-[#4e4229]"><AlertTriangle className="h-4 w-4 text-[#9a6b17]" aria-hidden="true" />Needs attention</h3>
           <p className="mt-0.5 text-[10px] text-[#80745d]">Only referrals with a recorded blocker, overdue date, missing community, or stale update.</p>
         </div>
-        <span className="text-[10px] font-medium tabular-nums text-[#7a6d54]">{items.length} flagged</span>
-      </div>
-      <div className="divide-y divide-[#eee5d2]">
-        {visibleItems.map(({ card, issues }) => (
-          <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="grid w-full min-w-0 gap-1 px-1 py-3 text-left transition hover:bg-[#fff9ec] sm:grid-cols-[minmax(180px,0.7fr)_minmax(0,1.3fr)_auto] sm:items-center sm:gap-4 sm:px-0">
-            <span className="truncate text-[11px] font-semibold text-[#3e392f]">{card.clientName}<span className="font-normal text-[#817865]"> · {card.facilityId ? card.community : "No community"}</span></span>
-            <span className="text-[10px] leading-4 text-[#7c5c20]">{issues.join(" · ")}</span>
-            <ChevronRight className="hidden h-3.5 w-3.5 text-[#9b8e73] sm:block" aria-hidden="true" />
-          </button>
-        ))}
-      </div>
-      {items.length > visibleItems.length ? <p className="border-t border-[#eee5d2] px-1 py-2 text-[9px] text-[#887b63] sm:px-0">Showing the {visibleItems.length} highest-priority items. The complete queue remains in Pipeline.</p> : null}
+        <span className="flex shrink-0 items-center gap-2 text-[10px] font-medium tabular-nums text-[#7a6d54]">{items.length} flagged<ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" /></span>
+      </button>
+      {expanded ? (
+        <>
+          <div className="divide-y divide-[#eee5d2]">
+            {visibleItems.map(({ card, issues }) => (
+              <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="grid w-full min-w-0 gap-1 px-1 py-3 text-left transition hover:bg-[#fff9ec] sm:grid-cols-[minmax(180px,0.7fr)_minmax(0,1.3fr)_auto] sm:items-center sm:gap-4 sm:px-0">
+                <span className="truncate text-[11px] font-semibold text-[#3e392f]">{card.clientName}<span className="font-normal text-[#817865]"> · {card.facilityId ? card.community : "No community"}</span></span>
+                <span className="text-[10px] leading-4 text-[#7c5c20]">{issues.join(" · ")}</span>
+                <ChevronRight className="hidden h-3.5 w-3.5 text-[#9b8e73] sm:block" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+          {items.length > visibleItems.length ? <p className="border-t border-[#eee5d2] px-1 py-2 text-[9px] text-[#887b63] sm:px-0">Showing the {visibleItems.length} highest-priority items. The complete queue remains in Pipeline.</p> : null}
+        </>
+      ) : null}
     </section>
   );
 }
