@@ -16,7 +16,7 @@ import { readStorageItem, writeStorageItem } from "../../../shared/storage/brows
 import PipelineBoard, { ProgressModal } from "../components/PipelineBoard";
 
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
-type ExecutiveUpdateSegment = { text: string; strong?: boolean };
+type ExecutiveUpdateSegment = { text: string; strong?: boolean; accent?: boolean };
 type ExecutiveUpdateLine = {
   key: string;
   group: "summary" | "scheduled" | "pending" | "pipeline";
@@ -282,7 +282,7 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
           </p>
         ) : null}
       </div>
-      <div className="mt-3 max-w-[1180px] space-y-1.5 border-t border-[#dce5e1] pt-3 text-[12px] leading-[1.6] text-[#56615c] sm:text-[13px]">
+      <div className="mt-3 max-w-[1180px] space-y-2 border-t border-[#dce5e1] pt-3 text-[12px] leading-[1.55] text-[#56615c] sm:text-[13px]">
         {conversationLines.map((line) => (
           <p key={line.key} data-admissions-executive-section={line.group} data-admissions-executive-row={line.key}>
             <StreamingSegments segments={line.segments} visibleCharacters={line.visibleCharacters} />
@@ -318,6 +318,7 @@ function StreamingSegments({ segments, visibleCharacters }: { segments: Executiv
     if (remaining <= 0) return null;
     const text = segment.text.slice(0, remaining);
     remaining -= segment.text.length;
+    if (segment.accent) return <strong key={index} className="font-semibold text-[#0f795f]">{text}</strong>;
     return segment.strong
       ? <strong key={index} className="font-semibold text-[#183f34]">{text}</strong>
       : <span key={index}>{text}</span>;
@@ -353,22 +354,27 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
   if (scheduledGroups.length) {
     const previewGroups = scheduledGroups.slice(0, 3);
     const previewCount = previewGroups.reduce((total, group) => total + group.names.length, 0);
-    const segments: ExecutiveUpdateSegment[] = [{ text: "Next on the calendar: " }];
     previewGroups.forEach((group, index) => {
-      if (index) segments.push({ text: "; " });
-      segments.push(...buildNameSegments(group.names));
-      segments.push({ text: `${group.names.length === 1 ? " is" : " are"} scheduled for ${group.community} on ${group.label}` });
+      lines.push({
+        key: `scheduled:${group.key}`,
+        group: "scheduled",
+        segments: [
+          { text: `${index === 0 ? "On" : "Also on"} ${group.label}, ` },
+          ...buildNameSegments(group.names),
+          { text: `${group.names.length === 1 ? " is" : " are"} scheduled for ` },
+          { text: group.community, accent: true },
+          { text: "." }
+        ]
+      });
     });
-    segments.push({ text: "." });
     if (scheduledCount > previewCount) {
       const remaining = scheduledCount - previewCount;
-      segments.push({ text: ` ${remaining} later ${pluralize("move-in", remaining)} ${remaining === 1 ? "is" : "are"} also scheduled.` });
+      lines.push({
+        key: "scheduled:later",
+        group: "scheduled",
+        segments: [{ text: `${remaining} later ${pluralize("move-in", remaining)} ${remaining === 1 ? "is" : "are"} also on the calendar.` }]
+      });
     }
-    lines.push({
-      key: "scheduled:summary",
-      group: "scheduled",
-      segments
-    });
   }
   if (pendingCount) {
     lines.push({
@@ -383,13 +389,27 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
   if (update.busiest.length) {
     const [leader, runnerUp] = update.busiest;
     lines.push({
-      key: "pipeline:summary",
+      key: "pipeline:load",
       group: "pipeline",
       segments: [
-        { text: `${leader?.name ?? "The leading community"} has the heaviest active workload`, strong: true },
+        { text: leader?.name ?? "The leading community", accent: true },
+        { text: " has the heaviest active workload" },
         { text: ` with ${leader?.count ?? 0} ${pluralize("referral", leader?.count ?? 0)}` },
-        ...(runnerUp ? [{ text: `, followed by ${runnerUp.name} with ${runnerUp.count}` }] : []),
-        { text: `. Across the pipeline, ${update.received} ${update.received === 1 ? "is" : "are"} new, ${update.inProgress} ${update.inProgress === 1 ? "is" : "are"} in assessment or review, and ${update.decision} ${update.decision === 1 ? "is" : "are"} at decision.` }
+        ...(runnerUp ? [{ text: ". " }, { text: runnerUp.name, accent: true }, { text: ` follows with ${runnerUp.count}` }] : []),
+        { text: "." }
+      ]
+    });
+    lines.push({
+      key: "pipeline:stages",
+      group: "pipeline",
+      segments: [
+        { text: "Across the pipeline, " },
+        { text: `${update.received} ${update.received === 1 ? "is" : "are"} new`, strong: true },
+        { text: ". " },
+        { text: `${update.inProgress} ${update.inProgress === 1 ? "is" : "are"} in assessment or review`, strong: true },
+        { text: ". " },
+        { text: `${update.decision} ${update.decision === 1 ? "is" : "are"} at decision`, strong: true },
+        { text: "." }
       ]
     });
   }

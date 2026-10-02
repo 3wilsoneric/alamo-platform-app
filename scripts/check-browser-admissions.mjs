@@ -95,7 +95,7 @@ await withBrowserQa(async (browser) => {
     await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 0 ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count() !== 1) ||
-    (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 1) ||
+    (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 2) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-row]').count() < 2) ||
     (executiveUpdateVisible && /admission date not scheduled|accepted clients moving toward admission|where the work is/i.test(executiveText))
   ) {
