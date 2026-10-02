@@ -1790,3 +1790,26 @@ responsive Admissions browser regression pass. Signed-in production
 verification confirmed five scheduled movement rows, five accepted clients
 awaiting dates, five expandable community rows, a collapsed attention queue,
 and successful management-chart opening from a community drill-down.
+
+### Readable conversational Admissions update — 2026-10-02
+
+The Admissions analyst update now renders each movement as its own short line
+instead of joining client groups with semicolons. Client names retain the
+strong reading hierarchy, destination community names use a consistent bold
+Alamo-green treatment, and workload and stage context are split into plain
+sentences. The release wrapper is also repeatable against a production image
+that already contains the dedicated `/chat` and `/admissions` entry patch.
+
+- source PRs: `#122`, `#123`; merge commits: `159db0167a8065095c832d821babccebbd0783f5`, `34146e851136d8527bfa5be3a8b6c07d7abab836`
+- ACR build: `cc5d`
+- image: `alamo-platform@sha256:af126b3ffa343c76d4f4fbd9b373927a470ad8e68ed11560de71254cafe59c7e` (tag `admissions-readable-chat-1002`)
+- active revision: `alamo-platform-prod-web--admissions-readable-1002`
+- rollback image: `alamo-platform@sha256:6ebdeb79917737eface8f2d5fea84cc00c994c076fdbf0b37e76dc2fadc7cb33`
+- active browser asset: `/assets/index-DVGG8n2l.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Signed-in production
+verification confirmed seven concise answer lines, zero semicolons, bold
+client names, five bold green community references, and the active release
+asset.
