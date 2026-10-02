@@ -1695,3 +1695,31 @@ smoke suite passes 4/4. TypeScript, code-health, production build, and the
 responsive Admissions browser regression pass. Desktop and mobile verification
 confirmed five governed community rows, all three requested measures, no
 Referral sources UI, and no horizontal overflow.
+
+### Stale-shell recovery and Admissions briefing correction — 2026-10-02
+
+The shared header no longer exposes Outreach on desktop or mobile; its
+owner-only direct route remains available. The Admissions analyst update is a
+single concise summary followed by three horizontal bullets for scheduled
+admits, accepted clients awaiting dates, and pipeline status.
+
+The service-worker cache advances to `alamo-static-v6`. When the new worker
+replaces an older Alamo cache, it claims existing windows and navigates them to
+their current URLs. This prevents an already-open platform or installed-app
+window from remaining indefinitely on an older client shell after deployment.
+Navigation HTML and `sw.js` remain served with no-store/no-cache policies.
+
+- source PR: `#113`; merge commit: `44d255018dac50b05b97bc6e8cfa86a786f23c9f`
+- ACR build: `cc57`
+- image: `alamo-platform@sha256:2c1f28a4dd34be9e33cb24f7a4008407edafd330b6e8cae717862e6bc45a5cf6` (tag `platform-shell-refresh-1002`)
+- active revision: `alamo-platform-prod-web--shell-refresh-1002`
+- rollback image: `alamo-platform@sha256:e37697566144bbad27d677a4a5002f590ca9f8efa4976bf55a9b95e2062a799b`
+- active browser asset: `/assets/index-BsetnkgM.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, desktop-readiness,
+platform-knowledge, documentation, build, and responsive Admissions browser
+checks pass. The exact signed-in Chrome tab that had displayed the older shell
+was reloaded and verified against the active asset: Outreach, County outreach,
+and referral sources were absent; Community census rendered five rows; and all
+three concise analyst bullets shared one horizontal row.
