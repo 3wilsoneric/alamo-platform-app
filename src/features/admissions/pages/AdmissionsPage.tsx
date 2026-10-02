@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -265,23 +265,12 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       aria-busy={typing}
       className="mb-5 w-full rounded-[14px] bg-[#f4f7f5] px-4 py-3.5 text-[#46504b] sm:px-5 sm:py-4"
     >
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-5">
-        <div className="flex shrink-0 items-center gap-2.5">
-          <span data-admissions-chat-avatar="true" className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dcebe5] text-[#176d51]">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-          </span>
-          <div className="flex items-center gap-2">
-            <span className="whitespace-nowrap text-[12px] font-semibold text-[#263c35]">Admissions analyst</span>
-            {typing ? <span className="text-[10px] text-[#7a847f]" aria-hidden="true">Composing…</span> : null}
-          </div>
-        </div>
-        {summaryLine ? (
-          <p data-admissions-executive-summary="true" className="min-w-0 flex-1 text-[13px] leading-5 text-[#46504b] sm:text-[14px]">
-            <StreamingSegments segments={summaryLine.segments} visibleCharacters={summaryLine.visibleCharacters} />
-            {summaryLine.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-          </p>
-        ) : null}
-      </div>
+      {summaryLine ? (
+        <p data-admissions-executive-summary="true" className="text-[13px] leading-5 text-[#46504b] sm:text-[14px]">
+          <StreamingSegments segments={summaryLine.segments} visibleCharacters={summaryLine.visibleCharacters} />
+          {summaryLine.lineIsStreaming ? <span data-admissions-typing-caret="true" className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+        </p>
+      ) : null}
       <div className="mt-3 max-w-[1180px] space-y-2 border-t border-[#dce5e1] pt-3 text-[12px] leading-[1.55] text-[#56615c] sm:text-[13px]">
         {conversationLines.map((line) => (
           <p key={line.key} data-admissions-executive-section={line.group} data-admissions-executive-row={line.key}>
