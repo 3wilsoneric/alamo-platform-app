@@ -9,8 +9,7 @@ const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
-  { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true },
-  { id: "outreach", label: "Outreach", href: "/outreach", ownerOnly: true }
+  { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true }
 ];
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
