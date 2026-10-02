@@ -1746,3 +1746,24 @@ smoke suite passes 4/4. TypeScript, code-health, production build, and the
 responsive Admissions browser regression pass. Signed-in production
 verification confirmed the new heading and concise analyst copy, the removed
 weekly framing, five governed community rows, and no Outreach navigation.
+
+### Structured Admissions executive briefing — 2026-10-02
+
+The Admissions analyst panel no longer compresses scheduled clients,
+date-pending clients, and pipeline context into three paragraph-length bullets.
+Scheduled move-ins now render as dated rows, accepted clients awaiting dates
+have a separate readable list, and pipeline stage counts and community load
+occupy their own section. The four-number executive lead remains at the top.
+
+- source PR: `#117`; merge commit: `68a177f38a20ba112371e82e34f4abfb6a813053`
+- ACR build: `cc59`
+- image: `alamo-platform@sha256:f16e3ccd11af40ccc44fbceb40ae89dc4d65b6c04ea963ae7ccf5e264a0f67a0` (tag `admissions-briefing-layout-1002`)
+- active revision: `alamo-platform-prod-web--admissions-layout-1002`
+- rollback image: `alamo-platform@sha256:ea6cb6b934c7c9f1e677781b19ae80e030e3376a0bf6a10ab20eafc4ee051a69`
+- active browser asset: `/assets/index-Cbci_OP4.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, production build, and the responsive
+Admissions browser regression pass. Signed-in production verification
+confirmed five scheduled rows, three date-pending rows, two pipeline rows,
+the Community snapshot heading, and the absence of the retired weekly title.
