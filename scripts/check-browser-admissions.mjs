@@ -102,11 +102,11 @@ await withBrowserQa(async (browser) => {
     await executiveUpdate.locator('[data-admissions-chat-avatar="true"]').count() !== 0 ||
     await executiveUpdate.getByText("Admissions analyst", { exact: true }).count() !== 0 ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count() !== 1) ||
-    (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 2) ||
+    (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 1) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-row]').count() < 2) ||
     scheduledExecutiveRows.some((key) => /^scheduled:(\d{4}-\d{2}-\d{2})\|/.exec(key ?? "")?.[1] < admissionsToday) ||
     visibleMovementDates.some((date) => (date ?? "") < admissionsToday) ||
-    (executiveUpdateVisible && /admission date not scheduled|accepted clients moving toward admission|where the work is/i.test(executiveText))
+    (executiveUpdateVisible && /\balso\b|admission date not scheduled|accepted clients moving toward admission|where the work is/i.test(executiveText))
   ) {
     throw new Error("The Briefing page must render as a concise, structured analyst update without repetitive prose.");
   }

@@ -19,7 +19,7 @@ type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status:
 type ExecutiveUpdateSegment = { text: string; strong?: boolean; accent?: boolean };
 type ExecutiveUpdateLine = {
   key: string;
-  group: "summary" | "scheduled" | "pending" | "attention" | "pipeline";
+  group: "summary" | "scheduled" | "pending" | "pipeline";
   label?: string;
   segments: ExecutiveUpdateSegment[];
 };
@@ -323,70 +323,94 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
     }];
   }
 
-  const scheduledGroups = groupAcceptedClients(
+  const scheduledGroups = groupScheduledClients(
     update.acceptedClients.filter((client) => client.plannedAdmissionDate && client.plannedAdmissionDate >= today),
-    "scheduled"
   );
-  const pendingGroups = groupAcceptedClients(update.acceptedClients.filter((client) => !client.plannedAdmissionDate), "pending");
+  const pendingCount = update.acceptedClients.filter((client) => !client.plannedAdmissionDate).length;
   const pastPlannedCount = update.acceptedClients.filter((client) => client.plannedAdmissionDate && client.plannedAdmissionDate < today).length;
-  const scheduledCount = scheduledGroups.reduce((total, group) => total + group.names.length, 0);
-  const pendingCount = pendingGroups.reduce((total, group) => total + group.names.length, 0);
+  const todayGroups = scheduledGroups.filter((group) => group.date === today);
+  const futureGroups = scheduledGroups.filter((group) => group.date !== today);
   const lines: ExecutiveUpdateLine[] = [{
     key: "summary",
     group: "summary",
     segments: [
       { text: "Admissions is managing " },
       { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
-      { text: update.acceptedClients.length ? ". " : "." },
+      { text: update.acceptedClients.length ? ". Of those, " : "." },
       ...(update.acceptedClients.length ? [
         { text: `${update.acceptedClients.length} have been accepted`, strong: true },
         { text: "." }
       ] : [])
     ]
   }];
-  if (scheduledGroups.length) {
-    const previewGroups = scheduledGroups.slice(0, 3);
-    const previewCount = previewGroups.reduce((total, group) => total + group.names.length, 0);
-    previewGroups.forEach((group, index) => {
-      lines.push({
-        key: `scheduled:${group.key}`,
-        group: "scheduled",
-        segments: [
-          { text: scheduleLead(group.date, group.label, today, index) },
-          ...buildNameSegments(group.names),
-          { text: `${group.names.length === 1 ? " is" : " are"} scheduled for ` },
-          { text: group.community, accent: true },
-          { text: "." }
-        ]
-      });
-    });
-    if (scheduledCount > previewCount) {
-      const remaining = scheduledCount - previewCount;
-      lines.push({
-        key: "scheduled:later",
-        group: "scheduled",
-        segments: [{ text: `${remaining} later ${pluralize("move-in", remaining)} ${remaining === 1 ? "is" : "are"} also on the calendar.` }]
-      });
-    }
-  }
-  if (pendingCount) {
+  if (todayGroups.length) {
+    const todayClients = flattenScheduledClients(todayGroups);
+    const onlyTodayClient = todayClients[0]!;
     lines.push({
-      key: "pending:summary",
-      group: "pending",
-      segments: [
+      key: `scheduled:${today}|today`,
+      group: "scheduled",
+      segments: todayClients.length === 1
+        ? [
+            { text: onlyTodayClient.name, strong: true },
+            { text: " is scheduled for " },
+            { text: onlyTodayClient.community, accent: true },
+            { text: " today." }
+          ]
+        : [
+            { text: "Today's scheduled move-ins are " },
+            ...buildClientDestinationSegments(todayClients),
+            { text: "." }
+          ]
+    });
+  }
+
+  if (futureGroups.length) {
+    const firstFutureGroup = futureGroups[0]!;
+    const nextDate = firstFutureGroup.date ?? today;
+    const nextDateGroups = futureGroups.filter((group) => group.date === nextDate);
+    const firstNextDateGroup = nextDateGroups[0] ?? firstFutureGroup;
+    const laterGroups = futureGroups.filter((group) => group.date !== nextDate);
+    const nextClients = flattenScheduledClients(nextDateGroups);
+    const onlyNextClient = nextClients[0]!;
+    const laterCount = laterGroups.reduce((total, group) => total + group.names.length, 0);
+    const lastScheduledLabel = futureGroups.at(-1)?.label ?? firstNextDateGroup.label;
+    const segments: ExecutiveUpdateSegment[] = nextClients.length === 1
+      ? [
+          { text: onlyNextClient.name, strong: true },
+          { text: " is scheduled for " },
+          { text: onlyNextClient.community, accent: true },
+          { text: ` on ${firstNextDateGroup.label}` }
+        ]
+      : [
+          { text: `The next scheduled move-ins, on ${firstNextDateGroup.label}, are ` },
+          ...buildClientDestinationSegments(nextClients)
+        ];
+    if (laterCount) {
+      segments.push({ text: `, followed by ${laterCount} additional ${pluralize("move-in", laterCount)} through ${lastScheduledLabel}` });
+    }
+    segments.push({ text: "." });
+    lines.push({ key: `scheduled:${nextDate}|future`, group: "scheduled", segments });
+  }
+
+  if (pendingCount || pastPlannedCount) {
+    const segments: ExecutiveUpdateSegment[] = [];
+    if (pendingCount) {
+      segments.push(
         { text: `${pendingCount} accepted ${pluralize("client", pendingCount)}`, strong: true },
         { text: ` still ${pendingCount === 1 ? "needs" : "need"} an admission date.` }
-      ]
-    });
-  }
-  if (pastPlannedCount) {
+      );
+    }
+    if (pastPlannedCount) {
+      if (pendingCount) segments.push({ text: " " });
+      segments.push(
+        { text: `${pastPlannedCount} past-dated ${pluralize("acceptance", pastPlannedCount)}`, strong: true },
+        { text: ` ${pastPlannedCount === 1 ? "needs" : "need"} move-in outcome confirmation.` }
+      );
+    }
     lines.push({
-      key: "attention:past-planned",
-      group: "attention",
-      segments: [
-        { text: `${pastPlannedCount} accepted ${pluralize("client", pastPlannedCount)}`, strong: true },
-        { text: ` ${pastPlannedCount === 1 ? "has" : "have"} a past planned date and ${pastPlannedCount === 1 ? "needs" : "need"} the move-in outcome confirmed.` }
-      ]
+      key: "pending:accepted-follow-up",
+      group: "pending",
+      segments
     });
   }
   if (update.busiest.length) {
@@ -396,22 +420,15 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
       group: "pipeline",
       segments: [
         { text: leader?.name ?? "The leading community", accent: true },
-        { text: " has the heaviest active workload" },
+        { text: " has the largest active workload" },
         { text: ` with ${leader?.count ?? 0} ${pluralize("referral", leader?.count ?? 0)}` },
-        ...(runnerUp ? [{ text: ". " }, { text: runnerUp.name, accent: true }, { text: ` follows with ${runnerUp.count}` }] : []),
-        { text: "." }
-      ]
-    });
-    lines.push({
-      key: "pipeline:stages",
-      group: "pipeline",
-      segments: [
-        { text: "Across the pipeline, " },
-        { text: `${update.received} ${update.received === 1 ? "is" : "are"} new`, strong: true },
-        { text: ". " },
-        { text: `${update.inProgress} ${update.inProgress === 1 ? "is" : "are"} in assessment or review`, strong: true },
-        { text: ". " },
-        { text: `${update.decision} ${update.decision === 1 ? "is" : "are"} at decision`, strong: true },
+        ...(runnerUp ? [{ text: ", followed by " }, { text: runnerUp.name, accent: true }, { text: ` with ${runnerUp.count}` }] : []),
+        { text: ". Pipeline status: " },
+        { text: `${update.received} new ${pluralize("referral", update.received)}`, strong: true },
+        { text: ", " },
+        { text: `${update.inProgress} in assessment or review`, strong: true },
+        { text: ", and " },
+        { text: `${update.decision} at decision`, strong: true },
         { text: "." }
       ]
     });
@@ -419,27 +436,15 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
   return lines;
 }
 
-function buildNameSegments(names: string[]): ExecutiveUpdateSegment[] {
-  const segments: ExecutiveUpdateSegment[] = [];
-  names.forEach((name, index) => {
-    if (index) segments.push({ text: index === names.length - 1 ? (names.length === 2 ? " and " : ", and ") : ", " });
-    segments.push({ text: name, strong: true });
-  });
-  return segments;
-}
-
-function groupAcceptedClients(
-  clients: Array<{ name: string; community: string; plannedAdmissionDate: string | null }>,
-  mode: "scheduled" | "pending"
-) {
+function groupScheduledClients(clients: Array<{ name: string; community: string; plannedAdmissionDate: string | null }>) {
   const groups = new Map<string, { key: string; date: string | null; label: string; community: string; names: string[] }>();
   for (const client of clients) {
-    const dateKey = client.plannedAdmissionDate ?? "pending";
-    const key = mode === "scheduled" ? `${dateKey}|${client.community}` : client.community;
+    const dateKey = client.plannedAdmissionDate ?? "";
+    const key = `${dateKey}|${client.community}`;
     const current = groups.get(key) ?? {
       key,
       date: client.plannedAdmissionDate,
-      label: mode === "scheduled" ? formatEventDate(dateKey) : client.community,
+      label: formatEventDate(dateKey),
       community: client.community,
       names: []
     };
@@ -449,9 +454,21 @@ function groupAcceptedClients(
   return [...groups.values()].sort((left, right) => left.key.localeCompare(right.key));
 }
 
-function scheduleLead(date: string | null, label: string, today: string, index: number) {
-  if (date === today) return index === 0 ? "Today, " : "Also today, ";
-  return `${index === 0 ? "On" : "Also on"} ${label}, `;
+function flattenScheduledClients(groups: Array<{ community: string; names: string[] }>) {
+  return groups.flatMap((group) => group.names.map((name) => ({ name, community: group.community })));
+}
+
+function buildClientDestinationSegments(clients: Array<{ name: string; community: string }>): ExecutiveUpdateSegment[] {
+  const segments: ExecutiveUpdateSegment[] = [];
+  clients.forEach((client, index) => {
+    if (index) segments.push({ text: index === clients.length - 1 ? (clients.length === 2 ? " and " : ", and ") : ", " });
+    segments.push(
+      { text: client.name, strong: true },
+      { text: " to " },
+      { text: client.community, accent: true }
+    );
+  });
+  return segments;
 }
 
 function admissionsToday(now = new Date()) {
