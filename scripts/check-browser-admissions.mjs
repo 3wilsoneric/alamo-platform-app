@@ -7,6 +7,7 @@ import {
 } from "./browser-qa-utils.mjs";
 
 const { screenshotDir } = await prepareArtifactDirs("browser-admissions-overview-qa");
+const admissionsToday = isoDateInTimeZone(new Date(), "America/Los_Angeles");
 
 await withBrowserQa(async (browser) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -72,6 +73,10 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-executive-update="true"][data-admissions-chat-typing="false"]').waitFor({ state: "visible", timeout: 60_000 });
   }
   const executiveText = executiveUpdateVisible ? await executiveUpdate.innerText() : "";
+  const scheduledExecutiveRows = executiveUpdateVisible
+    ? await executiveUpdate.locator('[data-admissions-executive-section="scheduled"]').evaluateAll((rows) => rows.map((row) => row.getAttribute("data-admissions-executive-row")))
+    : [];
+  const visibleMovementDates = await page.locator('[data-admissions-event-date]').evaluateAll((rows) => rows.map((row) => row.getAttribute("data-admissions-event-date")));
   if (
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-pipeline-page="true"]').count() !== 0 ||
@@ -99,6 +104,8 @@ await withBrowserQa(async (browser) => {
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count() !== 1) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 2) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-row]').count() < 2) ||
+    scheduledExecutiveRows.some((key) => /^scheduled:(\d{4}-\d{2}-\d{2})\|/.exec(key ?? "")?.[1] < admissionsToday) ||
+    visibleMovementDates.some((date) => (date ?? "") < admissionsToday) ||
     (executiveUpdateVisible && /admission date not scheduled|accepted clients moving toward admission|where the work is/i.test(executiveText))
   ) {
     throw new Error("The Briefing page must render as a concise, structured analyst update without repetitive prose.");
@@ -167,3 +174,14 @@ await withBrowserQa(async (browser) => {
   await context.close();
   console.log("browser admissions checks passed");
 });
+
+function isoDateInTimeZone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}

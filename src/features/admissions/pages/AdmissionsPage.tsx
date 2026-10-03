@@ -19,7 +19,7 @@ type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status:
 type ExecutiveUpdateSegment = { text: string; strong?: boolean; accent?: boolean };
 type ExecutiveUpdateLine = {
   key: string;
-  group: "summary" | "scheduled" | "pending" | "pipeline";
+  group: "summary" | "scheduled" | "pending" | "attention" | "pipeline";
   label?: string;
   segments: ExecutiveUpdateSegment[];
 };
@@ -201,7 +201,7 @@ function AdmissionsSurfaceNavigation({
 
 function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissionsPipeline }) {
   const update = buildAdmissionsExecutiveUpdate(pipeline);
-  const lines = buildExecutiveUpdateLines(update);
+  const lines = buildExecutiveUpdateLines(update, admissionsToday());
   const totalCharacters = lines.reduce(
     (total, line) => total + line.segments.reduce((lineTotal, segment) => lineTotal + segment.text.length, 0),
     0
@@ -314,7 +314,7 @@ function StreamingSegments({ segments, visibleCharacters }: { segments: Executiv
   });
 }
 
-function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExecutiveUpdate>): ExecutiveUpdateLine[] {
+function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExecutiveUpdate>, today: string): ExecutiveUpdateLine[] {
   if (!update) {
     return [{
       key: "summary",
@@ -323,8 +323,12 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
     }];
   }
 
-  const scheduledGroups = groupAcceptedClients(update.acceptedClients.filter((client) => client.plannedAdmissionDate), "scheduled");
+  const scheduledGroups = groupAcceptedClients(
+    update.acceptedClients.filter((client) => client.plannedAdmissionDate && client.plannedAdmissionDate >= today),
+    "scheduled"
+  );
   const pendingGroups = groupAcceptedClients(update.acceptedClients.filter((client) => !client.plannedAdmissionDate), "pending");
+  const pastPlannedCount = update.acceptedClients.filter((client) => client.plannedAdmissionDate && client.plannedAdmissionDate < today).length;
   const scheduledCount = scheduledGroups.reduce((total, group) => total + group.names.length, 0);
   const pendingCount = pendingGroups.reduce((total, group) => total + group.names.length, 0);
   const lines: ExecutiveUpdateLine[] = [{
@@ -348,7 +352,7 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
         key: `scheduled:${group.key}`,
         group: "scheduled",
         segments: [
-          { text: `${index === 0 ? "On" : "Also on"} ${group.label}, ` },
+          { text: scheduleLead(group.date, group.label, today, index) },
           ...buildNameSegments(group.names),
           { text: `${group.names.length === 1 ? " is" : " are"} scheduled for ` },
           { text: group.community, accent: true },
@@ -372,6 +376,16 @@ function buildExecutiveUpdateLines(update: ReturnType<typeof buildAdmissionsExec
       segments: [
         { text: `${pendingCount} accepted ${pluralize("client", pendingCount)}`, strong: true },
         { text: ` still ${pendingCount === 1 ? "needs" : "need"} an admission date.` }
+      ]
+    });
+  }
+  if (pastPlannedCount) {
+    lines.push({
+      key: "attention:past-planned",
+      group: "attention",
+      segments: [
+        { text: `${pastPlannedCount} accepted ${pluralize("client", pastPlannedCount)}`, strong: true },
+        { text: ` ${pastPlannedCount === 1 ? "has" : "have"} a past planned date and ${pastPlannedCount === 1 ? "needs" : "need"} the move-in outcome confirmed.` }
       ]
     });
   }
@@ -418,12 +432,13 @@ function groupAcceptedClients(
   clients: Array<{ name: string; community: string; plannedAdmissionDate: string | null }>,
   mode: "scheduled" | "pending"
 ) {
-  const groups = new Map<string, { key: string; label: string; community: string; names: string[] }>();
+  const groups = new Map<string, { key: string; date: string | null; label: string; community: string; names: string[] }>();
   for (const client of clients) {
     const dateKey = client.plannedAdmissionDate ?? "pending";
     const key = mode === "scheduled" ? `${dateKey}|${client.community}` : client.community;
     const current = groups.get(key) ?? {
       key,
+      date: client.plannedAdmissionDate,
       label: mode === "scheduled" ? formatEventDate(dateKey) : client.community,
       community: client.community,
       names: []
@@ -432,6 +447,26 @@ function groupAcceptedClients(
     groups.set(key, current);
   }
   return [...groups.values()].sort((left, right) => left.key.localeCompare(right.key));
+}
+
+function scheduleLead(date: string | null, label: string, today: string, index: number) {
+  if (date === today) return index === 0 ? "Today, " : "Also today, ";
+  return `${index === 0 ? "On" : "Also on"} ${label}, `;
+}
+
+function admissionsToday(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+function isCurrentOrFutureEvent(value: string, today: string) {
+  return value.slice(0, 10) >= today;
 }
 
 function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
@@ -542,6 +577,7 @@ function AdmissionsBriefingDashboard({
     return <p className="rounded-2xl border border-[#dfe3e1] bg-white px-5 py-12 text-center text-[13px] text-[#69716c]">The weekly briefing is not available in the current snapshot.</p>;
   }
   const { briefing } = dashboard;
+  const today = admissionsToday();
   const awaitingSchedule = pipeline?.board.cards.filter((card) => isAcceptedReferral(card.status) && !card.plannedAdmissionDate) ?? [];
   const attentionItems = buildAdmissionsAttentionItems(pipeline);
 
@@ -559,11 +595,12 @@ function AdmissionsBriefingDashboard({
             briefing={briefing}
             pipeline={pipeline}
             awaitingSchedule={awaitingSchedule}
+            today={today}
             onOpenCard={onOpenCard}
           />
         </div>
         <div className="lg:col-span-12">
-          <BriefingCommunityDashboard briefing={briefing} pipeline={pipeline} onOpenCard={onOpenCard} />
+          <BriefingCommunityDashboard briefing={briefing} pipeline={pipeline} today={today} onOpenCard={onOpenCard} />
         </div>
         {attentionItems.length ? (
           <div className="lg:col-span-12">
@@ -585,15 +622,17 @@ function AdmissionsMovement({
   briefing,
   pipeline,
   awaitingSchedule,
+  today,
   onOpenCard
 }: {
   briefing: AdmissionsDashboardResponse["briefing"];
   pipeline: ConnectedAdmissionsPipeline | null;
   awaitingSchedule: AdmissionsBoardCard[];
+  today: string;
   onOpenCard: (card: AdmissionsBoardCard) => void;
 }) {
   const events = [
-    ...(briefing.coverage.assessments ? briefing.upcomingAssessments.map((item) => ({
+    ...(briefing.coverage.assessments ? briefing.upcomingAssessments.filter((item) => isCurrentOrFutureEvent(item.scheduledAt, today)).map((item) => ({
       key: `assessment:${item.referralId}:${item.scheduledAt}`,
       referralId: item.referralId,
       kind: "Assessment" as const,
@@ -603,7 +642,7 @@ function AdmissionsMovement({
       owner: item.owner,
       detail: item.status
     })) : []),
-    ...(briefing.coverage.moveIns ? briefing.plannedMoveIns.map((item) => ({
+    ...(briefing.coverage.moveIns ? briefing.plannedMoveIns.filter((item) => isCurrentOrFutureEvent(item.plannedAt, today)).map((item) => ({
       key: `move-in:${item.referralId}:${item.plannedAt}`,
       referralId: item.referralId,
       kind: "Move-in" as const,
@@ -640,6 +679,7 @@ function AdmissionsMovement({
                     key={event.key}
                     type="button"
                     data-admissions-movement-item={event.kind.toLowerCase()}
+                    data-admissions-event-date={event.date.slice(0, 10)}
                     disabled={!card}
                     onClick={() => card && onOpenCard(card)}
                     className="grid w-full min-w-0 grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-3 px-1 py-3 text-left transition hover:bg-[#f7faf8] disabled:cursor-default disabled:hover:bg-transparent sm:grid-cols-[92px_86px_minmax(0,1fr)_auto] sm:px-0"
@@ -745,13 +785,17 @@ function AdmissionsAttention({ items, onOpenCard }: { items: AdmissionsAttention
 function BriefingCommunityDashboard({
   briefing,
   pipeline,
+  today,
   onOpenCard
 }: {
   briefing: AdmissionsDashboardResponse["briefing"];
   pipeline: ConnectedAdmissionsPipeline | null;
+  today: string;
   onOpenCard: (card: AdmissionsBoardCard) => void;
 }) {
   const [expandedFacilityId, setExpandedFacilityId] = useState<string | null>(null);
+  const upcomingAssessments = briefing.upcomingAssessments.filter((item) => isCurrentOrFutureEvent(item.scheduledAt, today));
+  const upcomingMoveIns = briefing.plannedMoveIns.filter((item) => isCurrentOrFutureEvent(item.plannedAt, today));
   const assignedCommunities = briefing.communities.filter((community) =>
     community.census != null && !/unassigned|no community/i.test(`${community.shortName} ${community.communityName}`)
   );
@@ -778,6 +822,9 @@ function BriefingCommunityDashboard({
         {assignedCommunities.map((community) => {
           const expanded = expandedFacilityId === community.facilityId;
           const communityCards = pipeline?.board.cards.filter((card) => card.facilityId === community.facilityId) ?? [];
+          const upcomingAdmits = briefing.coverage.moveIns
+            ? upcomingMoveIns.filter((item) => item.facilityId === community.facilityId).length
+            : null;
           return (
             <div key={community.facilityId} data-admissions-briefing-community={community.facilityId}>
               <button
@@ -795,7 +842,7 @@ function BriefingCommunityDashboard({
                 </div>
                 <p data-admissions-community-census="true" className="hidden text-right sm:block"><strong className="text-[18px] font-semibold tabular-nums text-[#183f34]">{formatBriefingCount(community.census)}</strong></p>
                 <div className="mt-2 grid grid-cols-2 gap-2 sm:contents">
-                  <p data-admissions-community-upcoming-admits="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">Upcoming admits</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.plannedMoveInsThisWeek)}</strong><span className="ml-1 sm:hidden">this week</span></p>
+                  <p data-admissions-community-upcoming-admits="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">Upcoming admits</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(upcomingAdmits)}</strong><span className="ml-1 sm:hidden">this week</span></p>
                   <p data-admissions-community-referrals="true" className="text-[10px] text-[#737b77] sm:text-right"><span className="block text-[8px] font-semibold uppercase tracking-[0.08em] sm:hidden">New referrals</span><strong className="text-[15px] font-semibold tabular-nums text-[#263c35] sm:text-[13px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1 sm:hidden">last 7 days</span></p>
                 </div>
               </button>
@@ -803,8 +850,8 @@ function BriefingCommunityDashboard({
                 <CommunityAdmissionsDetail
                   community={community}
                   cards={communityCards}
-                  assessments={briefing.upcomingAssessments.filter((item) => item.facilityId === community.facilityId)}
-                  moveIns={briefing.plannedMoveIns.filter((item) => item.facilityId === community.facilityId)}
+                  assessments={upcomingAssessments.filter((item) => item.facilityId === community.facilityId)}
+                  moveIns={upcomingMoveIns.filter((item) => item.facilityId === community.facilityId)}
                   onOpenCard={onOpenCard}
                 />
               ) : null}
