@@ -1833,3 +1833,27 @@ smoke suite passes 4/4. TypeScript, code-health, production build, and the
 responsive Admissions browser regression pass. Signed-in production
 verification confirmed the summary begins the panel and both retired header
 elements are absent.
+
+### Date-aware Admissions briefing — 2026-10-02
+
+Forward-looking Admissions surfaces now use the current Los Angeles calendar
+date. Past planned dates are excluded from the analyst schedule, Admissions
+movement list, community upcoming-admit counts, and community activity
+drill-downs. Same-day records read as `Today`; accepted records that still
+carry a past planned date are reported separately as requiring move-in outcome
+confirmation.
+
+- source PR: `#127`; merge commit: `76bc64b409b74ece8f0a2c4a967a376faee68f57`
+- ACR build: `cc5f`
+- image: `alamo-platform@sha256:f2f747f38910a126a27e1b69d906db008b3519ab1a97d520add5c0a84ded7a32` (tag `admissions-date-aware-1002`)
+- active revision: `alamo-platform-prod-web--admissions-date-aware-1002`
+- rollback image: `alamo-platform@sha256:d60363b738d94b056a71e65ed41d3a7c6fa085a97b07892802dc39e07899469c`
+- active browser asset: `/assets/index-DvvW6n9g.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. The responsive Admissions browser regression,
+admissions-dashboard contract check, TypeScript, code-health, and production
+build all pass. Signed-in production verification on October 2 confirmed only
+October 2 and later dates in the forward schedule, two current calendar rows,
+three past-dated accepted records in the explicit confirmation line, and zero
+October 1 rows in the movement list.
