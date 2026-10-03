@@ -1857,3 +1857,24 @@ build all pass. Signed-in production verification on October 2 confirmed only
 October 2 and later dates in the forward schedule, two current calendar rows,
 three past-dated accepted records in the explicit confirmation line, and zero
 October 1 rows in the movement list.
+
+### Natural-language Admissions briefing — 2026-10-02
+
+The Admissions briefing now reads as four concise paragraphs instead of a
+generated checklist. Same-day move-ins share one grammatical sentence, the
+next scheduled movement and later calendar activity are summarized together,
+accepted-client follow-up is consolidated, and workload and pipeline context
+appear in one closing paragraph. Repetitive `Also` openings have been removed.
+
+- source PR: `#129`; merge commit: `ad59ee20e807a9531318fc50cab277c6dc892492`
+- ACR build: `cc5g`
+- image: `alamo-platform@sha256:5f1a6a28cc4a0bd9c67c9fafe6e4ef2ce41cde673ee610e2357974b870e896de` (tag `admissions-prose-1002`)
+- active revision: `alamo-platform-prod-web--admissions-prose-1002`
+- rollback image: `alamo-platform@sha256:f2f747f38910a126a27e1b69d906db008b3519ab1a97d520add5c0a84ded7a32`
+- active browser asset: `/assets/index-Be3GIeKZ.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. TypeScript, code-health, production build, and the
+responsive Admissions browser regression pass. Signed-in production
+verification confirmed the four-paragraph briefing, consolidated current and
+future movement sentences, current date handling, and no use of `Also`.
