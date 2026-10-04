@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-09-29
+- updated: 2026-10-04
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -1908,3 +1908,27 @@ controlled browser test confirmed that a simulated newer entry bundle causes
 the current client URL to reload automatically. Desktop readiness, TypeScript,
 code health, the Admissions dashboard contract, documentation, production
 build, and compression reconciliation checks pass.
+
+### Admissions executive dashboard scale — 2026-10-04
+
+The Admissions briefing now reads as an executive dashboard rather than one
+long operating report. The briefing prose, movement detail, community metrics,
+and management-chart drilldowns remain intact, while the operating content is
+split into large in-place Movement, Communities, and Attention views. Type,
+spacing, event rows, census measures, and phone touch targets are enlarged so
+each view has one clear focal point on desktop and mobile.
+
+- source PR: `#133`; merge commit: `b8262dd4af9b46fb93b9331108ae6cfaf1af7a21`
+- ACR build: `cc5j`
+- image: `alamo-platform@sha256:c20f762a6300f148e194c17e2afd007965109b8e947c29d70035363e4cb1e050` (tag `admissions-dashboard-scale-1004`)
+- active revision: `alamo-platform-prod-web--admissions-scale-1004`
+- rollback image: `alamo-platform@sha256:f1053d5a693c9fdd7284c20709db67cc6bc2b9777238d655e43876adf50713d5`
+- active browser asset: `/assets/index-BQhaYp01.js`
+
+The revision is Healthy/Running at 100% traffic. The production browser asset
+matches the reviewed local build byte-for-byte through identity, gzip, and
+Brotli delivery; the anonymous API health probe remains fail-closed with 401.
+TypeScript, code health, the Admissions dashboard contract, production build,
+and responsive browser regression all pass. The browser regression now covers
+dashboard view switching, community drilldowns, minimum type scale, and
+phone-width horizontal overflow.
