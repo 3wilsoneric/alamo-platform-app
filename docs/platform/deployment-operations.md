@@ -1932,3 +1932,25 @@ TypeScript, code health, the Admissions dashboard contract, production build,
 and responsive browser regression all pass. The browser regression now covers
 dashboard view switching, community drilldowns, minimum type scale, and
 phone-width horizontal overflow.
+
+### Admissions dashboard color system — 2026-10-04
+
+The enlarged Admissions dashboard now uses restrained color to identify its
+operating views without adding solid brand-green panels. Movement uses soft
+blue, Communities uses pale sage, and Attention retains warm amber. The page
+canvas is a warm neutral; the analyst update uses a subtle multi-tone wash;
+community activity measures use quiet blue and sand treatments. All colors are
+secondary to the existing type hierarchy and governed content.
+
+- source PR: `#135`; merge commit: `66bbd241fabb4dfefdd302e0fe9c7f932c0a9dd0`
+- ACR build: `cc5k`
+- image: `alamo-platform@sha256:e74af55f1404e75a10fedd0d1e27d7bc2fee12750ac76af6742ec60d879d7864` (tag `admissions-dashboard-color-1004`)
+- active revision: `alamo-platform-prod-web--admissions-color-1004`
+- rollback image: `alamo-platform@sha256:c20f762a6300f148e194c17e2afd007965109b8e947c29d70035363e4cb1e050`
+- active browser asset: `/assets/index-CtEBLCrX.js`
+
+The revision is Healthy/Running at 100% traffic. Production identity, gzip,
+and Brotli responses reconcile byte-for-byte with the reviewed local build,
+and the anonymous API health probe remains fail-closed with 401. TypeScript,
+code health, the Admissions dashboard contract, production build, and desktop
+and phone browser regression all pass.
