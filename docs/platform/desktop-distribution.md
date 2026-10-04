@@ -23,6 +23,13 @@ backend, desktop secret, or separate Entra application.
 The installed app opens at `/home`. Browser history, deep links, authorization,
 and API behavior remain the same as the web application.
 
+The browser runtime compares its loaded content-hashed JavaScript entry point
+with the current production entry document when it starts, regains focus,
+becomes visible, reconnects, and once per minute while visible. A mismatch
+means a newer frontend release is available, so the runtime reloads the current
+URL once. This applies to ordinary browser tabs and the installed PWA and keeps
+long-lived sessions from remaining on an older UI indefinitely.
+
 ## Data Boundary
 
 The service worker caches only the generic offline page, the AH brand assets,
@@ -58,6 +65,8 @@ npm run check:desktop
 Production verification should confirm that `/manifest.json` and `/sw.js`
 return `no-cache, no-store, must-revalidate`, the manifest exposes 192, 512, and
 1024 pixel icons, and the browser reports an active service worker for `/`.
+It should also simulate a different published entry bundle and confirm that a
+visible client reloads without requiring a manual refresh.
 
 ## Rollback
 

@@ -1878,3 +1878,33 @@ smoke suite passes 4/4. TypeScript, code-health, production build, and the
 responsive Admissions browser regression pass. Signed-in production
 verification confirmed the four-paragraph briefing, consolidated current and
 future movement sentences, current date handling, and no use of `Also`.
+
+### Automatic stale-client recovery — 2026-10-04
+
+An already-open signed-in Admissions tab was observed still rendering the old
+briefing even though Azure was running the newer image. Reloading that exact
+tab immediately adopted the current bundle, proving that the deployment was
+healthy but the long-lived SPA client had not rechecked the release entry
+point. Azure revision health alone was therefore insufficient verification.
+
+The shared browser runtime now compares its loaded content-hashed JavaScript
+entry point with the current no-store production entry document at startup,
+on focus, visibility, and reconnect events, and once per minute while visible.
+It reloads the current URL once when those paths differ. The service-worker
+cache generation advances from v6 to v7, and the behavior remains independent
+of service-worker availability.
+
+- source PR: `#131`; merge commit: `f667ee836aff8dbbe0743d231ac7791ef84e09de`
+- ACR build: `cc5h`
+- image: `alamo-platform@sha256:f1053d5a693c9fdd7284c20709db67cc6bc2b9777238d655e43876adf50713d5` (tag `stale-client-refresh-1004`)
+- active revision: `alamo-platform-prod-web--stale-refresh-1004`
+- rollback image: `alamo-platform@sha256:5f1a6a28cc4a0bd9c67c9fafe6e4ef2ce41cde673ee610e2357974b870e896de`
+- active browser asset: `/assets/index-DcWGrpE5.js`
+
+The revision is Healthy/Running at 100% traffic and the public production
+smoke suite passes 4/4. Identity, gzip, and Brotli production HTML all point to
+the same active browser asset, `/sw.js` serves cache generation v7, and a
+controlled browser test confirmed that a simulated newer entry bundle causes
+the current client URL to reload automatically. Desktop readiness, TypeScript,
+code health, the Admissions dashboard contract, documentation, production
+build, and compression reconciliation checks pass.
