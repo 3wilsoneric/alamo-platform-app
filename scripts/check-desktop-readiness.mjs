@@ -46,9 +46,18 @@ assert.match(main, /<DesktopRuntime \/>/);
 assert.match(runtime, /serviceWorker\.register/);
 assert.match(runtime, /updateViaCache: "none"/);
 assert.match(runtime, /ALAMO_PRUNE_DESKTOP_CACHES/);
+assert.match(runtime, /alamo-release-check/);
+assert.match(runtime, /cache: "no-store"/);
+assert.match(runtime, /visibilitychange/);
+assert.match(runtime, /window\.addEventListener\("focus"/);
+assert.match(runtime, /window\.addEventListener\("online"/);
+assert.match(runtime, /RELEASE_CHECK_INTERVAL_MS/);
+assert.match(runtime, /controllerchange/);
+assert.match(runtime, /window\.location\.reload\(\)/);
 
 assert.match(worker, /CACHE_PREFIX = "alamo-static-"/);
 assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v\d+`/);
+assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v7`/);
 assert.match(worker, /request\.mode === "navigate"/);
 assert.match(worker, /new Request\(request, \{ cache: "no-store" \}\)/);
 assert.match(worker, /fetch\(networkRequest\)\.catch/);
