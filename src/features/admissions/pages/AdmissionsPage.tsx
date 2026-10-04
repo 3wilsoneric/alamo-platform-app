@@ -69,7 +69,7 @@ export default function AdmissionsPage() {
   return (
     <div
       data-admissions-overview="true"
-      className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-white px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
+      className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-[#fbfaf7] px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
     >
       <div className="mx-auto w-full max-w-[1540px]">
         <h1 className="sr-only">Admissions</h1>
@@ -263,7 +263,7 @@ function AdmissionsExecutiveUpdate({ pipeline }: { pipeline: ConnectedAdmissions
       data-admissions-chat-typing={typing ? "true" : "false"}
       aria-label="Admissions briefing"
       aria-busy={typing}
-      className="mb-6 w-full rounded-[24px] bg-[#f2f6f3] px-5 py-5 text-[#46504b] shadow-[0_1px_0_rgba(23,63,53,0.04)] sm:px-8 sm:py-7 lg:px-10 lg:py-8"
+      className="mb-6 w-full rounded-[24px] border border-[#e2ded4] bg-[linear-gradient(135deg,#faf6ef_0%,#f2f7f5_58%,#f5f3f8_100%)] px-5 py-5 text-[#46504b] shadow-[0_10px_30px_rgba(65,59,48,0.05)] sm:px-8 sm:py-7 lg:px-10 lg:py-8"
     >
       {summaryLine ? (
         <p data-admissions-executive-summary="true" className="max-w-[1280px] text-[18px] leading-7 tracking-[-0.018em] text-[#3f4b46] sm:text-[21px] sm:leading-8">
@@ -636,7 +636,7 @@ function AdmissionsBriefingDashboard({
 
       <div data-admissions-briefing-dashboard="true">
         <nav aria-label="Admissions dashboard sections" data-admissions-briefing-navigation="true" className="mb-5">
-          <div role="tablist" className={`grid gap-2 rounded-[20px] bg-[#eef2f0] p-2 ${pages.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+          <div role="tablist" className={`grid gap-2 rounded-[20px] border border-[#e2ded6] bg-[#f3f0eb] p-2 ${pages.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
             {pages.map((page) => {
               const Icon = page.icon;
               const active = briefingPage === page.key;
@@ -648,12 +648,12 @@ function AdmissionsBriefingDashboard({
                   aria-selected={active}
                   aria-controls={`admissions-dashboard-${page.key}`}
                   onClick={() => setBriefingPage(page.key)}
-                  className={`flex min-h-[68px] min-w-0 items-center justify-center gap-3 rounded-[14px] px-3 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:min-h-[78px] sm:justify-start sm:px-5 ${active ? "bg-white text-[#173f35] shadow-[0_2px_12px_rgba(32,65,55,0.09)]" : "text-[#64706a] hover:bg-white/65 hover:text-[#2d4c42]"}`}
+                  className={`flex min-h-[68px] min-w-0 items-center justify-center gap-3 rounded-[14px] border px-3 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:min-h-[78px] sm:justify-start sm:px-5 ${dashboardPageTone(page.key, active)}`}
                 >
-                  <Icon className={`hidden h-5 w-5 shrink-0 sm:block ${active ? "text-[#0f8b73]" : "text-[#7b8982]"}`} aria-hidden="true" />
+                  <Icon className={`hidden h-5 w-5 shrink-0 sm:block ${active ? dashboardPageIconTone(page.key) : "text-[#817f7a]"}`} aria-hidden="true" />
                   <span className="min-w-0">
                     <span className="block truncate text-center text-[14px] font-semibold tracking-[-0.01em] sm:text-left sm:text-[17px]">{page.label}</span>
-                    <span className="mt-0.5 hidden truncate text-[12px] font-normal text-[#74807a] sm:block">{page.detail}</span>
+                    <span className="mt-0.5 hidden truncate text-[12px] font-normal text-[#6f7471] sm:block">{page.detail}</span>
                   </span>
                 </button>
               );
@@ -685,6 +685,28 @@ function AdmissionsBriefingDashboard({
       </div>
     </section>
   );
+}
+
+function dashboardPageTone(page: "movement" | "communities" | "attention", active: boolean) {
+  if (page === "movement") {
+    return active
+      ? "border-[#c8d7e6] bg-[#edf4fa] text-[#315a7d] shadow-[0_4px_16px_rgba(64,98,130,0.10)]"
+      : "border-transparent bg-transparent text-[#686b69] hover:border-[#d4dfe9] hover:bg-[#f2f6fa] hover:text-[#3f6484]";
+  }
+  if (page === "communities") {
+    return active
+      ? "border-[#c8dbd4] bg-[#edf6f2] text-[#27584a] shadow-[0_4px_16px_rgba(50,91,76,0.10)]"
+      : "border-transparent bg-transparent text-[#686b69] hover:border-[#d1dfda] hover:bg-[#f1f6f3] hover:text-[#365f52]";
+  }
+  return active
+    ? "border-[#ead8ae] bg-[#fff6e4] text-[#76561c] shadow-[0_4px_16px_rgba(115,84,30,0.10)]"
+    : "border-transparent bg-transparent text-[#686b69] hover:border-[#eadfc8] hover:bg-[#fbf6ea] hover:text-[#765f34]";
+}
+
+function dashboardPageIconTone(page: "movement" | "communities" | "attention") {
+  if (page === "movement") return "text-[#47749a]";
+  if (page === "communities") return "text-[#33705d]";
+  return "text-[#9a6b17]";
 }
 
 type AdmissionsAttentionItem = {
@@ -730,13 +752,13 @@ function AdmissionsMovement({
   ].sort((left, right) => left.date.localeCompare(right.date) || left.clientName.localeCompare(right.clientName));
 
   return (
-    <section data-admissions-movement="true" className="overflow-hidden rounded-[24px] border border-[#d9dedb] bg-white shadow-[0_10px_30px_rgba(28,61,51,0.06)]" aria-labelledby="admissions-movement-title">
-      <div className="flex items-center justify-between gap-4 border-b border-[#d9dedb] bg-[#fbfcfb] px-5 py-5 sm:px-7 sm:py-6">
+    <section data-admissions-movement="true" className="overflow-hidden rounded-[24px] border border-[#cfd9e5] bg-white shadow-[0_12px_32px_rgba(50,75,105,0.07)]" aria-labelledby="admissions-movement-title">
+      <div className="flex items-center justify-between gap-4 border-b border-[#d8e1eb] bg-[linear-gradient(110deg,#f1f6fb_0%,#f8f5ef_100%)] px-5 py-5 sm:px-7 sm:py-6">
         <div>
           <h3 id="admissions-movement-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Admissions movement</h3>
           <p className="mt-1 text-[13px] leading-5 text-[#6d7872] sm:text-[14px]">Scheduled activity and accepted clients still waiting for a date.</p>
         </div>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#e4f1eb]"><CalendarDays className="h-5 w-5 text-[#24715c]" aria-hidden="true" /></span>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#cddbeb] bg-[#f7fbff]"><CalendarDays className="h-5 w-5 text-[#467299]" aria-hidden="true" /></span>
       </div>
 
       <div className={`grid ${awaitingSchedule.length ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]" : ""}`}>
@@ -757,9 +779,9 @@ function AdmissionsMovement({
                     data-admissions-event-date={event.date.slice(0, 10)}
                     disabled={!card}
                     onClick={() => card && onOpenCard(card)}
-                    className="grid w-full min-w-0 grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 text-left transition hover:bg-[#f5f9f7] disabled:cursor-default disabled:hover:bg-transparent sm:grid-cols-[118px_104px_minmax(0,1fr)_auto] sm:px-7 sm:py-5"
+                    className="grid w-full min-w-0 grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 text-left transition hover:bg-[#f3f7fb] disabled:cursor-default disabled:hover:bg-transparent sm:grid-cols-[118px_104px_minmax(0,1fr)_auto] sm:px-7 sm:py-5"
                   >
-                    <time className="text-[13px] font-semibold tabular-nums text-[#315b4e] sm:text-[14px]">{formatEventDate(event.date)}</time>
+                    <time className="text-[13px] font-semibold tabular-nums text-[#3f678b] sm:text-[14px]">{formatEventDate(event.date)}</time>
                     <span className={`hidden w-fit rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] sm:inline-flex ${event.kind === "Move-in" ? "bg-[#e2f1e9] text-[#176d51]" : "bg-[#e8edfb] text-[#365fc7]"}`}>{event.kind}</span>
                     <span className="min-w-0">
                       <span className="block truncate text-[16px] font-semibold text-[#273b34] sm:text-[17px]">{event.clientName}<span className="font-normal text-[#68736d]"> · {event.community}</span></span>
@@ -776,14 +798,14 @@ function AdmissionsMovement({
         </div>
 
         {awaitingSchedule.length ? (
-          <div className="border-t border-[#e2e7e4] lg:border-t-0">
+          <div className="border-t border-[#e2e7e4] bg-[#fdfbf6] lg:border-t-0">
             <div className="flex items-center justify-between px-5 py-4 sm:px-6">
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#65716b]">Awaiting scheduling</h4>
               <span className="text-[13px] font-medium tabular-nums text-[#65716b]">{awaitingSchedule.length} accepted</span>
             </div>
             <div className="divide-y divide-[#e7ebe9] border-t border-[#e7ebe9]">
               {awaitingSchedule.map((card) => (
-                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-[#f5f9f7] sm:px-6 sm:py-5">
+                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-[#faf4e9] sm:px-6 sm:py-5">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-[#273b34] sm:text-[16px]">{card.clientName}</span>
                     <span className="mt-1 block truncate text-[12px] text-[#737d78]">{card.facilityId ? card.community : "Community not assigned"} · {card.owner}</span>
@@ -874,34 +896,34 @@ function BriefingCommunityDashboard({
     .reduce((total, community) => total + (community.newReferrals7d ?? 0), 0);
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-[#d9dedb] bg-white shadow-[0_10px_30px_rgba(28,61,51,0.06)]" aria-labelledby="admissions-community-dashboard-title">
-      <div className="flex items-center justify-between gap-4 border-b border-[#d9dedb] bg-[#fbfcfb] px-5 py-5 sm:px-7 sm:py-6">
+    <section className="overflow-hidden rounded-[24px] border border-[#cadbd4] bg-white shadow-[0_12px_32px_rgba(37,77,64,0.07)]" aria-labelledby="admissions-community-dashboard-title">
+      <div className="flex items-center justify-between gap-4 border-b border-[#d3e1dc] bg-[linear-gradient(110deg,#eef6f2_0%,#faf7f0_100%)] px-5 py-5 sm:px-7 sm:py-6">
         <div>
           <h3 id="admissions-community-dashboard-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Community snapshot</h3>
           <p className="mt-1 text-[13px] leading-5 text-[#6d7872] sm:text-[14px]">Current residents, upcoming admits, and new referrals by community.</p>
         </div>
         <p className="text-right text-[11px] font-semibold uppercase tracking-[0.09em] text-[#6d7872]"><strong className="block text-[30px] font-semibold leading-none tracking-[-0.05em] text-[#183f34] sm:text-[34px]">{formatBriefingCount(briefing.totals.census)}</strong><span className="mt-1 block">total residents</span></p>
       </div>
-      <div className="hidden grid-cols-[minmax(220px,1fr)_130px_180px_190px] gap-5 border-b border-[#e5e9e7] bg-[#f7f9f8] px-7 py-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-[#747e79] sm:grid">
+      <div className="hidden grid-cols-[minmax(220px,1fr)_130px_180px_190px] gap-5 border-b border-[#e5e9e7] bg-[#f6f4ef] px-7 py-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-[#747e79] sm:grid">
         <span>Community</span>
         <span className="text-right">Census</span>
         <span className="text-right">Upcoming admits</span>
         <span className="text-right">New referrals · 7 days</span>
       </div>
       <div className="divide-y divide-[#e5e9e7]">
-        {assignedCommunities.map((community) => {
+        {assignedCommunities.map((community, communityIndex) => {
           const expanded = expandedFacilityId === community.facilityId;
           const communityCards = pipeline?.board.cards.filter((card) => card.facilityId === community.facilityId) ?? [];
           const upcomingAdmits = briefing.coverage.moveIns
             ? upcomingMoveIns.filter((item) => item.facilityId === community.facilityId).length
             : null;
           return (
-            <div key={community.facilityId} data-admissions-briefing-community={community.facilityId}>
+            <div key={community.facilityId} data-admissions-briefing-community={community.facilityId} className={communityIndex % 2 === 1 ? "bg-[#fcfbf8]" : "bg-white"}>
               <button
                 type="button"
                 aria-expanded={expanded}
                 onClick={() => setExpandedFacilityId((current) => current === community.facilityId ? null : community.facilityId)}
-                className="w-full px-5 py-4 text-left transition hover:bg-[#f5f9f7] sm:grid sm:grid-cols-[minmax(220px,1fr)_130px_180px_190px] sm:items-center sm:gap-5 sm:px-7 sm:py-5"
+                className="w-full px-5 py-4 text-left transition hover:bg-[#f1f7f4] sm:grid sm:grid-cols-[minmax(220px,1fr)_130px_180px_190px] sm:items-center sm:gap-5 sm:px-7 sm:py-5"
               >
                 <div className="flex items-center justify-between gap-4">
                   <h4 className="min-w-0 text-[16px] font-semibold leading-6 text-[#263c35] sm:text-[18px]">{community.shortName}</h4>
@@ -912,8 +934,8 @@ function BriefingCommunityDashboard({
                 </div>
                 <p data-admissions-community-census="true" className="hidden text-right sm:block"><strong className="text-[26px] font-semibold tabular-nums tracking-[-0.03em] text-[#183f34]">{formatBriefingCount(community.census)}</strong></p>
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:contents">
-                  <p data-admissions-community-upcoming-admits="true" className="text-[12px] text-[#68736d] sm:text-right"><span className="block text-[9px] font-semibold uppercase tracking-[0.09em] sm:hidden">Upcoming admits</span><strong className="text-[21px] font-semibold tabular-nums text-[#263c35] sm:text-[22px]">{formatBriefingCount(upcomingAdmits)}</strong><span className="ml-1.5 sm:hidden">this week</span></p>
-                  <p data-admissions-community-referrals="true" className="text-[12px] text-[#68736d] sm:text-right"><span className="block text-[9px] font-semibold uppercase tracking-[0.09em] sm:hidden">New referrals</span><strong className="text-[21px] font-semibold tabular-nums text-[#263c35] sm:text-[22px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1.5 sm:hidden">last 7 days</span></p>
+                  <p data-admissions-community-upcoming-admits="true" className="rounded-xl bg-[#f1f5fa] px-3 py-2 text-[12px] text-[#627181] sm:bg-transparent sm:px-0 sm:py-0 sm:text-right"><span className="block text-[9px] font-semibold uppercase tracking-[0.09em] sm:hidden">Upcoming admits</span><strong className="text-[21px] font-semibold tabular-nums text-[#416b90] sm:text-[22px]">{formatBriefingCount(upcomingAdmits)}</strong><span className="ml-1.5 sm:hidden">this week</span></p>
+                  <p data-admissions-community-referrals="true" className="rounded-xl bg-[#fbf4e9] px-3 py-2 text-[12px] text-[#7a6a57] sm:bg-transparent sm:px-0 sm:py-0 sm:text-right"><span className="block text-[9px] font-semibold uppercase tracking-[0.09em] sm:hidden">New referrals</span><strong className="text-[21px] font-semibold tabular-nums text-[#906633] sm:text-[22px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1.5 sm:hidden">last 7 days</span></p>
                 </div>
               </button>
               {expanded ? (

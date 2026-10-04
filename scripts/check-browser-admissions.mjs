@@ -17,6 +17,10 @@ await withBrowserQa(async (browser) => {
   attachPageDiagnostics(page, { consoleErrors, requestFailures });
 
   await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
+  // A clean browser context may install and assume control of the service worker
+  // immediately. Let that finite controller reload settle before asserting the
+  // routed surface.
+  await page.waitForTimeout(1_500);
   const surfaceNavigation = page.locator('[data-admissions-surface-navigation="true"]');
   await surfaceNavigation.waitFor({ state: "visible" });
   const pipelineTab = surfaceNavigation.getByRole("tab", { name: "Pipeline", exact: true });
@@ -181,6 +185,7 @@ await withBrowserQa(async (browser) => {
   const mobile = await context.newPage();
   await mobile.setViewportSize({ width: 390, height: 844 });
   await mobile.goto(`${BASE_URL}/admissions?view=briefing`, { waitUntil: "domcontentloaded" });
+  await mobile.waitForTimeout(1_500);
   await mobile.locator('[data-admissions-briefing-dashboard="true"]').waitFor({ state: "visible" });
   const mobileDashboardNavigation = mobile.locator('[data-admissions-briefing-navigation="true"]');
   const mobileDashboardLabels = await mobileDashboardNavigation.getByRole("tab").evaluateAll((tabs) => tabs.map((tab) => String(tab.textContent || "").trim().split(/\d/)[0].trim()));
