@@ -28,11 +28,21 @@ await withBrowserQa(async (browser) => {
   if (
     await surfaceNavigation.getByRole("tab").count() !== 2 ||
     (await surfaceNavigation.getByRole("tab").allTextContents()).join("|") !== "Briefing|Pipeline" ||
-    await pipelineTab.getAttribute("aria-selected") !== "true" ||
-    await page.locator('[data-admissions-pipeline-page="true"]').count() !== 1 ||
-    await page.locator('[data-admissions-briefing-page="true"]').count() !== 0
+    await briefingTab.getAttribute("aria-selected") !== "true" ||
+    await page.locator('[data-admissions-pipeline-page="true"]').count() !== 0 ||
+    await page.locator('[data-admissions-briefing-page="true"]').count() !== 1 ||
+    new URL(page.url()).searchParams.has("view")
   ) {
-    throw new Error("Admissions must open on the standalone Pipeline page with Pipeline and Briefing navigation.");
+    throw new Error("Admissions must open on Briefing by default with Pipeline available as a separate destination.");
+  }
+
+  await pipelineTab.click();
+  await page.locator('[data-admissions-pipeline-page="true"]').waitFor({ state: "visible" });
+  if (
+    await pipelineTab.getAttribute("aria-selected") !== "true" ||
+    new URL(page.url()).searchParams.get("view") !== "pipeline"
+  ) {
+    throw new Error("The explicit Pipeline destination must retain its own URL state.");
   }
 
   const board = page.locator('[data-admissions-board="true"]');
@@ -69,6 +79,9 @@ await withBrowserQa(async (browser) => {
   await page.screenshot({ path: `${screenshotDir}/desktop-admissions-pipeline.png`, fullPage: true });
 
   await briefingTab.click();
+  if (new URL(page.url()).searchParams.has("view")) {
+    throw new Error("Briefing must remain the canonical default Admissions URL.");
+  }
   const dashboard = page.locator('[data-admissions-briefing-dashboard="true"]');
   await dashboard.waitFor({ state: "visible" });
   const executiveUpdate = page.locator('[data-admissions-executive-update="true"]');

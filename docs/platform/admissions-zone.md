@@ -13,10 +13,10 @@ Admissions and Pipeline are deliberately separate product surfaces.
 
 `/admissions` is an Alamo-native working overview. It reads
 `GET /api/platform/admissions-dashboard` (`server/admissions-dashboard.mjs`) and
-opens on the live **Pipeline** page. A two-item Admissions navigation displays
-**Briefing** before **Pipeline** while keeping Pipeline as the default operating
-workspace; `?view=briefing` is
-addressable and survives reload. The page uses the same white canvas as the
+opens on **Briefing**. A two-item Admissions navigation displays
+**Briefing** before **Pipeline**; `/admissions` is the canonical Briefing URL,
+while `?view=pipeline` opens the live referral workspace and survives reload.
+The page uses the same white canvas as the
 main Home surface. Neither destination uses a repeated product title or KPI
 strip.
 
