@@ -765,13 +765,15 @@ function AdmissionsMovement({
         : "No assessments or move-ins are scheduled in the current weekly window.";
 
   return (
-    <section data-admissions-movement="true" className="overflow-hidden rounded-[24px] border border-[#c8d6e4] bg-[#f8fafc] shadow-[0_12px_32px_rgba(50,75,105,0.08)]" aria-labelledby="admissions-movement-title">
-      <div className="flex items-center justify-between gap-4 border-b border-[#d8e1eb] bg-[linear-gradient(110deg,#f1f6fb_0%,#f8f5ef_100%)] px-5 py-5 sm:px-7 sm:py-6">
-        <div>
+    <section data-admissions-movement="true" className="overflow-hidden rounded-[24px] border border-[#c8d6e4] border-t-[4px] border-t-[#789ab8] bg-[#f8fafc] shadow-[0_12px_32px_rgba(50,75,105,0.08)]" aria-labelledby="admissions-movement-title">
+      <div className="relative flex items-center justify-between gap-4 overflow-hidden border-b border-[#d8e1eb] bg-[linear-gradient(110deg,#edf5fb_0%,#faf6ee_100%)] px-5 py-5 sm:px-7 sm:py-6">
+        <span aria-hidden="true" className="absolute -right-10 -top-20 h-44 w-44 rotate-12 rounded-[36px] border-[22px] border-[#d8e6f1]/55" />
+        <span aria-hidden="true" className="absolute right-24 top-5 h-20 w-20 rounded-full border border-[#bcd0e0]/55" />
+        <div className="relative z-[1]">
           <h3 id="admissions-movement-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Admissions movement</h3>
           <p className="mt-1 max-w-[900px] text-[14px] font-medium leading-6 text-[#50645f] sm:text-[16px]">{movementHeadline}</p>
         </div>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#cddbeb] bg-[#f7fbff]"><CalendarDays className="h-5 w-5 text-[#467299]" aria-hidden="true" /></span>
+        <span className="relative z-[1] grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#cddbeb] bg-[#f7fbff]"><CalendarDays className="h-5 w-5 text-[#467299]" aria-hidden="true" /></span>
       </div>
 
       <div data-admissions-movement-week="true" className="border-b border-[#dbe3eb] bg-[#eef4f9] bg-[radial-gradient(circle_at_1px_1px,#d7e1ea_1px,transparent_0)] [background-size:18px_18px] px-4 py-4 sm:px-7 sm:py-5">
@@ -923,10 +925,10 @@ function buildAdmissionsAttentionItems(pipeline: ConnectedAdmissionsPipeline | n
 function AdmissionsAttention({ items, onOpenCard }: { items: AdmissionsAttentionItem[]; onOpenCard: (card: AdmissionsBoardCard) => void }) {
   const visibleItems = items.slice(0, 8);
   return (
-    <section data-admissions-attention="true" className="overflow-hidden rounded-[24px] border border-[#e3d8bd] bg-[#fffdf8] shadow-[0_10px_30px_rgba(92,67,22,0.06)]" aria-labelledby="admissions-attention-title">
-      <div className="flex items-center justify-between gap-4 border-b border-[#eee5d2] bg-[#fffbf2] px-5 py-5 sm:px-7 sm:py-6">
+    <section data-admissions-attention="true" className="overflow-hidden rounded-[24px] border border-[#e3d8bd] border-t-[4px] border-t-[#c39243] bg-[#fffdf8] shadow-[0_12px_32px_rgba(92,67,22,0.08)]" aria-labelledby="admissions-attention-title">
+      <div className="flex items-center justify-between gap-4 border-b border-[#eee5d2] bg-[#fffbf2] bg-[repeating-linear-gradient(135deg,rgba(255,251,242,0.96)_0px,rgba(255,251,242,0.96)_12px,rgba(238,221,184,0.22)_12px,rgba(238,221,184,0.22)_13px)] px-5 py-5 sm:px-7 sm:py-6">
         <div>
-          <h3 id="admissions-attention-title" className="flex items-center gap-3 text-[22px] font-semibold tracking-[-0.03em] text-[#4e4229] sm:text-[25px]"><AlertTriangle className="h-6 w-6 text-[#9a6b17]" aria-hidden="true" />Needs attention</h3>
+          <h3 id="admissions-attention-title" className="flex items-center gap-3 text-[22px] font-semibold tracking-[-0.03em] text-[#4e4229] sm:text-[25px]"><span className="grid h-10 w-10 place-items-center rounded-full border border-[#ead8ae] bg-white/80"><AlertTriangle className="h-5 w-5 text-[#9a6b17]" aria-hidden="true" /></span>Needs attention</h3>
           <p className="mt-1 text-[13px] leading-5 text-[#786d58] sm:text-[14px]">Recorded blockers, overdue dates, missing assignments, and stale updates.</p>
         </div>
         <span className="shrink-0 rounded-full bg-[#f4e8ca] px-3 py-1.5 text-[13px] font-semibold tabular-nums text-[#76591f]">{items.length} flagged</span>
@@ -967,13 +969,15 @@ function BriefingCommunityDashboard({
     .reduce((total, community) => total + (community.newReferrals7d ?? 0), 0);
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-[#cadbd4] bg-white shadow-[0_12px_32px_rgba(37,77,64,0.07)]" aria-labelledby="admissions-community-dashboard-title">
-      <div className="flex items-center justify-between gap-4 border-b border-[#d3e1dc] bg-[linear-gradient(110deg,#eef6f2_0%,#faf7f0_100%)] px-5 py-5 sm:px-7 sm:py-6">
-        <div>
+    <section className="overflow-hidden rounded-[24px] border border-[#cadbd4] border-t-[4px] border-t-[#789b8e] bg-white shadow-[0_12px_32px_rgba(37,77,64,0.08)]" aria-labelledby="admissions-community-dashboard-title">
+      <div className="relative flex items-center justify-between gap-4 overflow-hidden border-b border-[#d3e1dc] bg-[linear-gradient(110deg,#ebf5f0_0%,#faf6ed_100%)] px-5 py-5 sm:px-7 sm:py-6">
+        <span aria-hidden="true" className="absolute -right-12 -top-24 h-52 w-52 rounded-full border-[30px] border-[#d7e7df]/60" />
+        <span aria-hidden="true" className="absolute right-32 top-3 h-16 w-16 rounded-full border border-[#bad1c7]/55" />
+        <div className="relative z-[1]">
           <h3 id="admissions-community-dashboard-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Community snapshot</h3>
           <p className="mt-1 text-[13px] leading-5 text-[#6d7872] sm:text-[14px]">Current residents, upcoming admits, and new referrals by community.</p>
         </div>
-        <p className="text-right text-[11px] font-semibold uppercase tracking-[0.09em] text-[#6d7872]"><strong className="block text-[30px] font-semibold leading-none tracking-[-0.05em] text-[#183f34] sm:text-[34px]">{formatBriefingCount(briefing.totals.census)}</strong><span className="mt-1 block">total residents</span></p>
+        <p className="relative z-[1] text-right text-[11px] font-semibold uppercase tracking-[0.09em] text-[#6d7872]"><strong className="block text-[30px] font-semibold leading-none tracking-[-0.05em] text-[#183f34] sm:text-[34px]">{formatBriefingCount(briefing.totals.census)}</strong><span className="mt-1 block">total residents</span></p>
       </div>
       <div className="hidden grid-cols-[minmax(220px,1fr)_130px_180px_190px] gap-5 border-b border-[#e5e9e7] bg-[#f6f4ef] px-7 py-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-[#747e79] sm:grid">
         <span>Community</span>
@@ -1055,7 +1059,7 @@ function CommunityAdmissionsDetail({
   ].sort((left, right) => left.date.localeCompare(right.date));
 
   return (
-    <div data-admissions-community-detail="true" className="border-t border-[#dfe5e2] bg-[#f3f8f5] px-5 py-5 sm:px-7 sm:py-7">
+    <div data-admissions-community-detail="true" className="border-t border-[#dfe5e2] bg-[#f2f7f4] bg-[radial-gradient(circle_at_1px_1px,#d8e5df_1px,transparent_0)] [background-size:22px_22px] px-5 py-5 sm:px-7 sm:py-7">
       <div className="grid gap-7 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <section aria-label={`${community.shortName} pipeline detail`}>
           <div className="flex flex-wrap items-center gap-2.5">
