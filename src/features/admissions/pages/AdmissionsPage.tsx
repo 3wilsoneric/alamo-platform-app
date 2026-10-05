@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Building2, CalendarDays, ChevronDown, ChevronRight } from "lucide-react";
+import { AlertTriangle, Building2, CalendarCheck2, CalendarDays, ChevronDown, ChevronRight, Clock3 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -602,6 +602,7 @@ function AdmissionsBriefingDashboard({
     (briefing.coverage.assessments ? briefing.upcomingAssessments.filter((item) => isCurrentOrFutureEvent(item.scheduledAt, today)).length : 0) +
     (briefing.coverage.moveIns ? briefing.plannedMoveIns.filter((item) => isCurrentOrFutureEvent(item.plannedAt, today)).length : 0)
   );
+  const movementCoverageAvailable = briefing.coverage.assessments || briefing.coverage.moveIns;
   const communityCount = briefing.communities.filter((community) =>
     community.census != null && !/unassigned|no community/i.test(`${community.shortName} ${community.communityName}`)
   ).length;
@@ -609,7 +610,9 @@ function AdmissionsBriefingDashboard({
     {
       key: "movement" as const,
       label: "Movement",
-      detail: `${scheduledCount} scheduled · ${awaitingSchedule.length} awaiting`,
+      detail: movementCoverageAvailable
+        ? `${scheduledCount} scheduled · ${pipeline ? awaitingSchedule.length : "—"} awaiting`
+        : "Schedule coverage unavailable",
       icon: CalendarDays
     },
     {
@@ -652,7 +655,7 @@ function AdmissionsBriefingDashboard({
                 >
                   <Icon className={`hidden h-5 w-5 shrink-0 sm:block ${active ? dashboardPageIconTone(page.key) : "text-[#817f7a]"}`} aria-hidden="true" />
                   <span className="min-w-0">
-                    <span className="block truncate text-center text-[14px] font-semibold tracking-[-0.01em] sm:text-left sm:text-[17px]">{page.label}</span>
+                    <span data-admissions-dashboard-label="true" className="block truncate text-center text-[14px] font-semibold tracking-[-0.01em] sm:text-left sm:text-[17px]">{page.label}</span>
                     <span className="mt-0.5 hidden truncate text-[12px] font-normal text-[#6f7471] sm:block">{page.detail}</span>
                   </span>
                 </button>
@@ -750,21 +753,47 @@ function AdmissionsMovement({
       detail: item.readiness === "unknown" ? item.status : `${item.status} · ${item.readiness}`
     })) : [])
   ].sort((left, right) => left.date.localeCompare(right.date) || left.clientName.localeCompare(right.clientName));
+  const movementDays = buildMovementWeek(today, events.map((event) => event.date));
+  const scheduleCoverageComplete = briefing.coverage.assessments && briefing.coverage.moveIns;
+  const scheduleCoverageAvailable = briefing.coverage.assessments || briefing.coverage.moveIns;
+  const movementHeadline = events.length
+    ? `${events.length} scheduled ${pluralize("event", events.length)} ahead${awaitingSchedule.length ? `; ${awaitingSchedule.length} accepted ${pluralize("client", awaitingSchedule.length)} still ${awaitingSchedule.length === 1 ? "needs" : "need"} a date.` : "."}`
+    : !scheduleCoverageAvailable
+      ? "The movement calendar has not been published in the current snapshot."
+      : awaitingSchedule.length
+        ? `Nothing is scheduled yet; ${awaitingSchedule.length} accepted ${pluralize("client", awaitingSchedule.length)} ${awaitingSchedule.length === 1 ? "still needs" : "still need"} a date.`
+        : "No assessments or move-ins are scheduled in the current weekly window.";
 
   return (
-    <section data-admissions-movement="true" className="overflow-hidden rounded-[24px] border border-[#cfd9e5] bg-white shadow-[0_12px_32px_rgba(50,75,105,0.07)]" aria-labelledby="admissions-movement-title">
+    <section data-admissions-movement="true" className="overflow-hidden rounded-[24px] border border-[#c8d6e4] bg-[#f8fafc] shadow-[0_12px_32px_rgba(50,75,105,0.08)]" aria-labelledby="admissions-movement-title">
       <div className="flex items-center justify-between gap-4 border-b border-[#d8e1eb] bg-[linear-gradient(110deg,#f1f6fb_0%,#f8f5ef_100%)] px-5 py-5 sm:px-7 sm:py-6">
         <div>
           <h3 id="admissions-movement-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Admissions movement</h3>
-          <p className="mt-1 text-[13px] leading-5 text-[#6d7872] sm:text-[14px]">Scheduled activity and accepted clients still waiting for a date.</p>
+          <p className="mt-1 max-w-[900px] text-[14px] font-medium leading-6 text-[#50645f] sm:text-[16px]">{movementHeadline}</p>
         </div>
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#cddbeb] bg-[#f7fbff]"><CalendarDays className="h-5 w-5 text-[#467299]" aria-hidden="true" /></span>
       </div>
 
-      <div className={`grid ${awaitingSchedule.length ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]" : ""}`}>
-        <div className={awaitingSchedule.length ? "lg:border-r lg:border-[#e2e7e4]" : ""}>
+      <div data-admissions-movement-week="true" className="border-b border-[#dbe3eb] bg-[#eef4f9] bg-[radial-gradient(circle_at_1px_1px,#d7e1ea_1px,transparent_0)] [background-size:18px_18px] px-4 py-4 sm:px-7 sm:py-5">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#587087]">Next seven days</p>
+          <p className="text-[12px] text-[#657687]">{events.length ? `${events.length} on the published calendar` : "No dated activity shown"}</p>
+        </div>
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+          {movementDays.map((day) => (
+            <div key={day.isoDate} className={`min-w-0 rounded-xl border px-1 py-2.5 text-center backdrop-blur-[1px] sm:px-2 sm:py-3 ${day.eventCount ? "border-[#abc3d8] bg-white/90 shadow-[0_4px_12px_rgba(58,91,121,0.08)]" : "border-white/80 bg-white/55"}`}>
+              <span className="block truncate text-[9px] font-semibold uppercase tracking-[0.08em] text-[#677887] sm:text-[10px]">{day.weekday}</span>
+              <strong className={`mt-1 block text-[17px] font-semibold leading-none tabular-nums sm:text-[20px] ${day.eventCount ? "text-[#315f86]" : "text-[#65717a]"}`}>{day.dayNumber}</strong>
+              <span className={`mx-auto mt-2 block h-1.5 rounded-full ${day.eventCount ? "w-5 bg-[#5f89ac]" : "w-1.5 bg-[#c5d0d8]"}`} aria-label={`${day.eventCount} scheduled ${pluralize("event", day.eventCount)}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]">
+        <div className="bg-white lg:border-r lg:border-[#dce3e8]">
           <div className="flex items-center justify-between px-5 py-4 sm:px-7">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#65716b]">On the calendar</h4>
+            <h4 className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#65716b]">Published calendar</h4>
             <span className="text-[13px] font-medium tabular-nums text-[#65716b]">{events.length} scheduled</span>
           </div>
           {events.length ? (
@@ -793,16 +822,28 @@ function AdmissionsMovement({
               })}
             </div>
           ) : (
-            <p className="border-t border-[#e7ebe9] px-5 py-10 text-[15px] text-[#68736d] sm:px-7">Nothing else is scheduled in the current weekly window.</p>
+            <div data-admissions-movement-empty={scheduleCoverageComplete ? "clear" : "incomplete"} className="border-t border-[#e1e7eb] px-5 py-5 sm:px-7 sm:py-7">
+              <div className="rounded-[18px] border border-[#d5e0e9] bg-[#f3f7fa] bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(235,243,249,0.82))] px-5 py-6 sm:flex sm:items-center sm:gap-5 sm:px-6">
+                <span className="mb-4 grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#c7d8e6] bg-white text-[#4c789d] sm:mb-0"><CalendarCheck2 className="h-6 w-6" aria-hidden="true" /></span>
+                <div>
+                  <h5 className="text-[17px] font-semibold tracking-[-0.02em] text-[#2f4c61]">{scheduleCoverageAvailable ? "No dated movement is on the published calendar" : "Schedule coverage is not available"}</h5>
+                  <p className="mt-1.5 max-w-[720px] text-[13px] leading-5 text-[#66747e] sm:text-[14px]">
+                    {scheduleCoverageComplete
+                      ? "There is nothing for management to coordinate in the current weekly window. The accepted-client queue at right shows whether scheduling follow-up is still required."
+                      : `This is not a zero. ${briefing.coverage.assessments ? "Assessment coverage is present" : "Assessment coverage is missing"}, and ${briefing.coverage.moveIns ? "move-in coverage is present" : "move-in coverage is missing"}.`}
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
-        {awaitingSchedule.length ? (
-          <div className="border-t border-[#e2e7e4] bg-[#fdfbf6] lg:border-t-0">
-            <div className="flex items-center justify-between px-5 py-4 sm:px-6">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#65716b]">Awaiting scheduling</h4>
-              <span className="text-[13px] font-medium tabular-nums text-[#65716b]">{awaitingSchedule.length} accepted</span>
-            </div>
+        <div className="border-t border-[#e2e7e4] bg-[#fdfaf3] lg:border-t-0">
+          <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+            <h4 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.11em] text-[#6d6657]"><Clock3 className="h-4 w-4 text-[#9a7441]" aria-hidden="true" />Accepted, no date</h4>
+            <span className="text-[13px] font-medium tabular-nums text-[#766d5c]">{pipeline ? `${awaitingSchedule.length} waiting` : "Unavailable"}</span>
+          </div>
+          {awaitingSchedule.length ? (
             <div className="divide-y divide-[#e7ebe9] border-t border-[#e7ebe9]">
               {awaitingSchedule.map((card) => (
                 <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-[#faf4e9] sm:px-6 sm:py-5">
@@ -814,11 +855,41 @@ function AdmissionsMovement({
                 </button>
               ))}
             </div>
-          </div>
-        ) : null}
+          ) : (
+            <div className="border-t border-[#e9e2d5] px-5 py-5 sm:px-6 sm:py-7">
+              <p className="rounded-[16px] border border-[#e7dcc6] bg-white/70 px-4 py-5 text-[13px] leading-5 text-[#746b5c] sm:text-[14px]">
+                {pipeline
+                  ? "The unscheduled queue is clear. No accepted client is currently waiting for an admission date."
+                  : "The accepted-client scheduling queue will appear when the live Pipeline board is available."}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
+}
+
+function buildMovementWeek(today: string, eventDates: string[]) {
+  const [year = 1970, month = 1, day = 1] = today.split("-").map(Number);
+  const baseDate = new Date(Date.UTC(year, month - 1, day));
+  const counts = eventDates.reduce((result, value) => {
+    const isoDate = value.slice(0, 10);
+    result.set(isoDate, (result.get(isoDate) ?? 0) + 1);
+    return result;
+  }, new Map<string, number>());
+
+  return Array.from({ length: 7 }, (_, offset) => {
+    const date = new Date(baseDate);
+    date.setUTCDate(baseDate.getUTCDate() + offset);
+    const isoDate = date.toISOString().slice(0, 10);
+    return {
+      isoDate,
+      weekday: new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(date),
+      dayNumber: date.getUTCDate(),
+      eventCount: counts.get(isoDate) ?? 0
+    };
+  });
 }
 
 function buildAdmissionsAttentionItems(pipeline: ConnectedAdmissionsPipeline | null): AdmissionsAttentionItem[] {
