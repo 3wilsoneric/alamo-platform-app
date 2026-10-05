@@ -36,7 +36,12 @@ strip.
   without a destination is reconciled in a short footnote. Event lists retain client name, community, owner, and
   workflow status inside the existing authenticated PHI boundary. Every dynamic
   section carries explicit source coverage and never converts missing data into
-  a zero or estimate.
+  a zero or estimate. Accepted clients with a current or future planned
+  admission date use one shared projection from the live Pipeline board across
+  the analyst narrative, Schedule list, community counts, and community
+  drilldowns. The bounded briefing event slice enriches those rows when it
+  matches, but cannot cause a move-in named in the narrative to disappear from
+  the detail below.
 
 The county-outreach panel first uses the latest admission-history row that
 exactly matches each governed current resident's facility, resident number, and
