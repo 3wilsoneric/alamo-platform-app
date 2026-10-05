@@ -2027,3 +2027,27 @@ TypeScript, documentation, code health, the Admissions dashboard contract,
 production build, desktop and phone visual QA, and responsive browser
 regression all pass. The broader analyst suite reaches the repository's
 pre-existing `check:unused` package-metadata warning and stops there.
+
+### Admissions Briefing default and deep-link refresh — 2026-10-04
+
+`/admissions` now opens on Briefing without a query string. Pipeline remains
+available through the explicit, reload-safe `?view=pipeline` URL. The frontend
+build also refreshes the physical `/admissions/index.html` and
+`/chat/index.html` route entries so a direct deep link cannot retain an older
+browser bundle from a previous overlay.
+
+- source PRs: `#143` and `#144`; merge commits: `ae2ad5b98b8931bb4780ec2e5a917fb7c839b8fc` and `99c2657a47806e47e4681aa1e91a1d26fd1b83c7`
+- ACR build: `cc5r`
+- image: `alamo-platform@sha256:bb99f444ce0025f71a08f9895d9ff52df92b9cde8dfd153a1312df050c7d8b9f` (tag `briefing-route-refresh-1004`)
+- active revision: `alamo-platform-prod-web--briefing-route-1004`
+- rollback image: `alamo-platform@sha256:dfa3deb18404d8acc6a2d52f77eb34dd32e86f4e7619636b3dc02f1f1c30e841`
+- active browser assets: `/assets/index-BvasIC3Z.js` and `/assets/index-DES-ycMx.css`
+- superseded intermediate image: `alamo-platform@sha256:c701319930edc7df7492756a056d6d5181206a3eccb15ade48036bf01c64063d`; do not use it for rollback because its direct nested route entries are stale
+
+The final revision is Healthy/Running at 100% traffic. Direct requests to `/`,
+`/admissions`, and `/chat` all identify the same active JavaScript and CSS.
+Production identity, gzip, and Brotli responses reconcile byte-for-byte with
+the reviewed local build, and the anonymous API health probe remains
+fail-closed with 401 and `no-store`. TypeScript, source syntax, documentation,
+code health, Admissions access and dashboard contracts, production build, and
+responsive Admissions browser regression all pass.
