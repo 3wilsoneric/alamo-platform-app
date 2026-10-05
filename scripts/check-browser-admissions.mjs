@@ -97,6 +97,9 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-county-outreach="true"]').count() !== 0 ||
     await page.getByRole("heading", { name: "County outreach" }).count() !== 0 ||
     await page.locator('[data-admissions-movement="true"]').count() !== 1 ||
+    await page.locator('[data-admissions-movement-week="true"]').count() !== 1 ||
+    (visibleMovementDates.length === 0 && await page.locator('[data-admissions-movement-empty]').count() !== 1) ||
+    await page.getByRole("heading", { name: "Accepted, no date" }).count() !== 1 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 0 ||
     await page.getByRole("heading", { name: "Community snapshot" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Weekly operating brief" }).count() !== 0 ||
@@ -121,6 +124,8 @@ await withBrowserQa(async (browser) => {
       movementPageCount: await page.locator('[data-admissions-dashboard-page="movement"]').count(),
       communitiesPageCount: await page.locator('[data-admissions-dashboard-page="communities"]').count(),
       movementHeadingCount: await page.getByRole("heading", { name: "Admissions movement" }).count(),
+      movementWeekCount: await page.locator('[data-admissions-movement-week="true"]').count(),
+      movementEmptyState: await page.locator('[data-admissions-movement-empty]').getAttribute("data-admissions-movement-empty").catch(() => null),
       executiveUpdateVisible,
       executiveSummaryCount: await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count(),
       executivePipelineCount: await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count(),
@@ -140,6 +145,7 @@ await withBrowserQa(async (browser) => {
   if ((dashboardTypeScale.summary != null && dashboardTypeScale.summary < 18) || dashboardTypeScale.section < 22) {
     throw new Error(`Admissions briefing typography is too small: ${JSON.stringify(dashboardTypeScale)}`);
   }
+  await page.screenshot({ path: `${screenshotDir}/desktop-admissions-movement.png`, fullPage: true });
 
   await communitiesDashboardTab.click();
   await page.locator('[data-admissions-dashboard-page="communities"]').waitFor({ state: "visible" });
@@ -187,8 +193,9 @@ await withBrowserQa(async (browser) => {
   await mobile.goto(`${BASE_URL}/admissions?view=briefing`, { waitUntil: "domcontentloaded" });
   await mobile.waitForTimeout(1_500);
   await mobile.locator('[data-admissions-briefing-dashboard="true"]').waitFor({ state: "visible" });
+  await mobile.screenshot({ path: `${screenshotDir}/mobile-admissions-movement.png`, fullPage: true });
   const mobileDashboardNavigation = mobile.locator('[data-admissions-briefing-navigation="true"]');
-  const mobileDashboardLabels = await mobileDashboardNavigation.getByRole("tab").evaluateAll((tabs) => tabs.map((tab) => String(tab.textContent || "").trim().split(/\d/)[0].trim()));
+  const mobileDashboardLabels = await mobileDashboardNavigation.locator('[data-admissions-dashboard-label="true"]').allTextContents();
   for (const label of mobileDashboardLabels) {
     await mobileDashboardNavigation.getByRole("tab", { name: new RegExp(`^${label}`) }).click();
     const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
