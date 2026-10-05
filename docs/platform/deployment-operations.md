@@ -1954,3 +1954,26 @@ and Brotli responses reconcile byte-for-byte with the reviewed local build,
 and the anonymous API health probe remains fail-closed with 401. TypeScript,
 code health, the Admissions dashboard contract, production build, and desktop
 and phone browser regression all pass.
+
+### Admissions movement coordination view — 2026-10-04
+
+The Admissions Movement view now explains what management should coordinate
+instead of rendering a plain event list. It leads with a current operating
+takeaway, adds a textured seven-day activity lane, preserves exact scheduled
+assessment and move-in drilldowns, and keeps accepted clients without dates in
+a separate scheduling queue. A clear calendar, a missing Pipeline board, and
+missing schedule coverage now render as distinct states; unavailable coverage
+is never presented as zero activity.
+
+- source PR: `#137`; merge commit: `9ef94e34bbd28debd5b8b2082666ed71268855ff`
+- ACR build: `cc5m`
+- image: `alamo-platform@sha256:bd7bc3a1307e910caf9180bee34a4283d5976d65a0b5a790e0ce808f0b3e9bdc` (tag `admissions-movement-1004`)
+- active revision: `alamo-platform-prod-web--admissions-movement-1004`
+- rollback image: `alamo-platform@sha256:e74af55f1404e75a10fedd0d1e27d7bc2fee12750ac76af6742ec60d879d7864`
+- active browser asset: `/assets/index-O9DL_NSF.js`
+
+The revision is Healthy/Running at 100% traffic. Production identity, gzip,
+and Brotli responses reconcile byte-for-byte with the reviewed local build,
+and the anonymous API health probe remains fail-closed with 401. TypeScript,
+code health, the Admissions dashboard contract, production build, desktop and
+phone visual QA, and responsive browser regression all pass.
