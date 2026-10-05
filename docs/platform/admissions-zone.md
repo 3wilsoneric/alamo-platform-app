@@ -3,7 +3,7 @@
 - purpose: define the Alamo Admissions overview and the full Pipeline referral-workflow boundary
 - status: current implementation and deployment contract
 - owners: product, engineering, admissions platform
-- updated: 2026-09-30
+- updated: 2026-10-04
 - tags: admissions, pipeline, routing, authentication, integration
 - labels: application-boundary, current-state, deployment
 
@@ -21,48 +21,42 @@ main Home surface. Neither destination uses a repeated product title or KPI
 strip.
 
 - **Briefing dashboard** — the current CEO-level admissions readout. A short
-  analyst narrative names accepted clients moving toward admission, the current
-  workload by stage, and the busiest communities. It types in only on its first
-  appearance in a browser session; returning to the page or reloading it restores
-  the complete response immediately. The responsive dashboard combines governed
-  census and occupancy cards by community, a San Pablo and Santa Clarita county-outreach
-  panel, a ranked referral-source activity list for the trailing 14 days,
-  remaining assessments scheduled through Sunday, and planned move-ins for the
-  Monday-through-Sunday week. It has no report tables, stat-strip grids, slide
-  tabs, decorative referral-source bars, or duplicated client-referral pages.
-  Assessments and move-ins sit immediately below census with the strongest panel
-  treatment. Referral-source overflow pages only inside that module. A missing
-  destination never renders as an `Unassigned` community card; governed activity
-  without a destination is reconciled in a short footnote. Event lists retain client name, community, owner, and
-  workflow status inside the existing authenticated PHI boundary. Every dynamic
-  section carries explicit source coverage and never converts missing data into
-  a zero or estimate. Accepted clients with a current or future planned
-  admission date use one shared projection from the live Pipeline board across
-  the analyst narrative, Schedule list, community counts, and community
-  drilldowns. The bounded briefing event slice enriches those rows when it
-  matches, but cannot cause a move-in named in the narrative to disappear from
-  the detail below.
+  analyst narrative summarizes accepted clients moving toward admission, the
+  current workload by stage, and the busiest communities. It types in only on
+  its first appearance in a browser session; returning to the page or reloading
+  it restores the complete response immediately. Three drill-down pages keep the
+  reading path bounded: **Schedule**, **Communities**, and **Open fields**.
+  Schedule reconciles upcoming assessments, current and future planned move-ins,
+  and accepted clients without a planned date. Communities combines governed
+  census with planned admits and recent referrals, then expands in place to show
+  the matching Pipeline workload and upcoming activity. Open fields presents a
+  bounded Pipeline-ordered queue of source-record omissions; it does not invent
+  an editorial risk score. A missing destination never renders as an
+  `Unassigned` community card; governed activity without a destination is
+  reconciled in a short footnote. Event lists retain client name, community,
+  owner, and workflow status inside the existing authenticated PHI boundary.
+  Every dynamic section carries explicit source coverage and never converts
+  missing data into a zero or estimate. Accepted clients with a current or
+  future planned admission date use one shared projection from the live Pipeline
+  board across the analyst narrative, Schedule list, community counts, and
+  community drilldowns. The bounded briefing event slice enriches those rows
+  when it matches, but cannot cause a move-in named in the narrative to disappear
+  from the detail below.
 
-The county-outreach panel first uses the latest admission-history row that
-exactly matches each governed current resident's facility, resident number, and
-current admission date, using the source field `County_Admitted_From`. When that
-source has no usable county values, the server may fall back to the separately
-validated client database. The fallback requires an exact normalized resident
-number plus an explicit matching Alamo community and exactly one client
-candidate. It accepts only `county__completion_status = verified`; review-only,
-blank, wrong-community, duplicate, ambiguous, and unmatched records remain
-unverified. It never uses a name or fuzzy match.
+### Mobile mode
 
-Both paths group aggregate resident counts and publish no resident identity in
-the Admissions response. Each target community must reconcile to the current
-governed census on the same roster as-of date and must contain at least one
-verified county before the entire panel renders. If either San Pablo or Santa
-Clarita fails that gate, the panel is hidden rather than presented as complete.
-The UI labels the active source and, for the fallback, the client-database
-baseline date. Percentages use only residents with verified county as the
-denominator; all other current residents remain visible only as a count of
-`County not verified`. Referral management charts label Pipeline's current
-intake county as `Client county`, separate from referral-source organization.
+Admissions uses a dedicated mobile reading path rather than compressing the
+desktop board. Briefing controls remain at least 44 CSS pixels high, schedule
+metadata wraps instead of truncating, empty schedule lanes collapse to a single
+status row, community drill-downs stay inline, and Open fields reveals five
+records before an explicit disclosure. Pipeline becomes a three-category tab
+view with horizontally scrollable community pills, a six-card preview, compact
+two-column card facts, and the same full management chart in a viewport-bounded
+modal. The modal locks background scrolling, respects iPhone safe areas, and
+provides a 44-pixel close control. Browser checks cover 320, 375, 390, and 430
+pixel portrait widths plus a 667-by-375 landscape viewport, horizontal overflow,
+touch-target sizing, disclosures, modal bounds, offline recovery, and the live
+Pipeline contract.
 - **Pipeline** — the live governed referral workspace: Referral received, In
   progress, and Decision columns holding one card per referral. Board is the
   default view, and the adjacent List control always exposes the same governed
@@ -125,8 +119,8 @@ server, never from the browser and never through Pipeline's internal APIs.
   `briefing` producer slice carries `timezone`, `window_end`, explicit coverage
   booleans, and bounded event arrays: `recent_referrals`,
   `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. The dashboard
-  presents the two forward schedules and referral-origin detail; the raw weekly
-  trend series remains contract data but is not displayed in the CEO briefing.
+  presents the two forward schedules; referral-origin events and the raw weekly
+  trend remain contract data but are not displayed in the CEO briefing.
   Referral rows
   carry received timestamp and origin; assessment and move-in rows carry the
   scheduled timestamp; all three carry referral ID, client name, destination
