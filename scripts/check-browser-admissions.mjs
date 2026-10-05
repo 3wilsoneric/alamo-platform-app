@@ -78,75 +78,85 @@ await withBrowserQa(async (browser) => {
   }
   const executiveText = executiveUpdateVisible ? await executiveUpdate.innerText() : "";
   const dashboardNavigation = page.locator('[data-admissions-briefing-navigation="true"]');
-  const movementDashboardTab = dashboardNavigation.getByRole("tab", { name: /^Movement/ });
+  const scheduleDashboardTab = dashboardNavigation.getByRole("tab", { name: /^Schedule/ });
   const communitiesDashboardTab = dashboardNavigation.getByRole("tab", { name: /^Communities/ });
-  const attentionDashboardTab = dashboardNavigation.getByRole("tab", { name: /^Attention/ });
+  const openFieldsDashboardTab = dashboardNavigation.getByRole("tab", { name: /^Open fields/ });
+  const scheduleTabVisible = await scheduleDashboardTab.count() === 1;
   const scheduledExecutiveRows = executiveUpdateVisible
     ? await executiveUpdate.locator('[data-admissions-executive-section="scheduled"]').evaluateAll((rows) => rows.map((row) => row.getAttribute("data-admissions-executive-row")))
     : [];
-  const visibleMovementDates = await page.locator('[data-admissions-event-date]').evaluateAll((rows) => rows.map((row) => row.getAttribute("data-admissions-event-date")));
   if (
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-pipeline-page="true"]').count() !== 0 ||
     await dashboard.locator("table").count() !== 0 ||
-    await dashboardNavigation.getByRole("tab").count() < 2 ||
+    await dashboardNavigation.getByRole("tab").count() < 1 ||
     await dashboardNavigation.getByRole("tab").count() > 3 ||
-    await movementDashboardTab.getAttribute("aria-selected") !== "true" ||
-    await page.locator('[data-admissions-dashboard-page="movement"]').count() !== 1 ||
-    await page.locator('[data-admissions-dashboard-page="communities"]').count() !== 0 ||
     await page.locator('[data-admissions-county-outreach="true"]').count() !== 0 ||
     await page.getByRole("heading", { name: "County outreach" }).count() !== 0 ||
-    await page.locator('[data-admissions-movement="true"]').count() !== 1 ||
-    await page.locator('[data-admissions-movement-week="true"]').count() !== 1 ||
-    (visibleMovementDates.length === 0 && await page.locator('[data-admissions-movement-empty]').count() !== 1) ||
-    await page.getByRole("heading", { name: "Accepted, no date" }).count() !== 1 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 0 ||
-    await page.getByRole("heading", { name: "Community snapshot" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Weekly operating brief" }).count() !== 0 ||
     await page.getByRole("heading", { name: "Referral sources" }).count() !== 0 ||
     await page.locator('[data-admissions-origin-source]').count() !== 0 ||
     await page.getByRole("heading", { name: "Weekly trend" }).count() !== 0 ||
-    await page.getByRole("heading", { name: "Admissions movement" }).count() !== 1 ||
-    await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 0 ||
-    await page.getByRole("heading", { name: "Move-ins this week" }).count() !== 0 ||
     await executiveUpdate.locator('[data-admissions-chat-avatar="true"]').count() !== 0 ||
     await executiveUpdate.getByText("Admissions analyst", { exact: true }).count() !== 0 ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count() !== 1) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count() !== 1) ||
     (executiveUpdateVisible && await executiveUpdate.locator('[data-admissions-executive-row]').count() < 2) ||
     scheduledExecutiveRows.some((key) => /^scheduled:(\d{4}-\d{2}-\d{2})\|/.exec(key ?? "")?.[1] < admissionsToday) ||
-    visibleMovementDates.some((date) => (date ?? "") < admissionsToday) ||
+    await dashboard.getByText(/needs attention|highest-priority|flagged|risk scoring/i).count() !== 0 ||
     (executiveUpdateVisible && /\balso\b|admission date not scheduled|accepted clients moving toward admission|where the work is/i.test(executiveText))
   ) {
     console.error(JSON.stringify({
       briefingTabs: await dashboardNavigation.getByRole("tab").allTextContents(),
-      movementSelected: await movementDashboardTab.getAttribute("aria-selected"),
-      movementPageCount: await page.locator('[data-admissions-dashboard-page="movement"]').count(),
       communitiesPageCount: await page.locator('[data-admissions-dashboard-page="communities"]').count(),
-      movementHeadingCount: await page.getByRole("heading", { name: "Admissions movement" }).count(),
-      movementWeekCount: await page.locator('[data-admissions-movement-week="true"]').count(),
-      movementEmptyState: await page.locator('[data-admissions-movement-empty]').getAttribute("data-admissions-movement-empty").catch(() => null),
       executiveUpdateVisible,
       executiveSummaryCount: await executiveUpdate.locator('[data-admissions-executive-summary="true"]').count(),
       executivePipelineCount: await executiveUpdate.locator('[data-admissions-executive-section="pipeline"]').count(),
       executiveRowCount: await executiveUpdate.locator('[data-admissions-executive-row]').count(),
       executiveText,
-      scheduledExecutiveRows,
-      visibleMovementDates
+      scheduledExecutiveRows
     }, null, 2));
     throw new Error("The Briefing page must render as a concise, structured analyst update without repetitive prose.");
+  }
+  if (scheduleTabVisible) {
+    await scheduleDashboardTab.click();
+    await page.locator('[data-admissions-dashboard-page="schedule"]').waitFor({ state: "visible" });
+    const visibleScheduleDates = await page.locator('[data-admissions-event-date]').evaluateAll((rows) => rows.map((row) => row.getAttribute("data-admissions-event-date")));
+    const scheduleWeekCount = await page.locator('[data-admissions-schedule-week="true"]').count();
+    const unavailableScheduleCount = await page.locator('[data-admissions-schedule-coverage="unavailable"]').count();
+    if (
+      await scheduleDashboardTab.getAttribute("aria-selected") !== "true" ||
+      await page.locator('[data-admissions-schedule="true"]').count() !== 1 ||
+      scheduleWeekCount + unavailableScheduleCount !== 1 ||
+      await page.locator('[data-admissions-schedule-lane="assessment"]').count() !== 1 ||
+      await page.locator('[data-admissions-schedule-lane="move-in"]').count() !== 1 ||
+      await page.locator('[data-admissions-schedule-lane="accepted-no-date"]').count() !== 1 ||
+      await page.getByRole("heading", { name: "Accepted, no date" }).count() !== 1 ||
+      await page.getByRole("heading", { name: "Admissions schedule" }).count() !== 1 ||
+      await page.getByRole("heading", { name: "Upcoming assessments" }).count() !== 1 ||
+      await page.getByRole("heading", { name: "Planned move-ins" }).count() !== 1 ||
+      visibleScheduleDates.some((date) => (date ?? "") < admissionsToday)
+    ) {
+      throw new Error("Schedule must show literal upcoming assessment, move-in, and accepted-without-date lanes.");
+    }
+    await page.screenshot({ path: `${screenshotDir}/desktop-admissions-schedule.png`, fullPage: true });
+  } else if (
+    await communitiesDashboardTab.getAttribute("aria-selected") !== "true" ||
+    await page.locator('[data-admissions-dashboard-page="communities"]').count() !== 1 ||
+    await page.locator('[data-admissions-dashboard-page="schedule"]').count() !== 0
+  ) {
+    throw new Error("An empty Schedule page must stay hidden so Community snapshot remains useful.");
   }
   const dashboardTypeScale = await page.evaluate(() => ({
     summary: document.querySelector('[data-admissions-executive-summary="true"]')
       ? Number.parseFloat(getComputedStyle(document.querySelector('[data-admissions-executive-summary="true"]')).fontSize)
       : null,
-    section: Number.parseFloat(getComputedStyle(document.querySelector('#admissions-movement-title')).fontSize)
+    section: Number.parseFloat(getComputedStyle(document.querySelector('#admissions-schedule-title, #admissions-community-dashboard-title')).fontSize)
   }));
   if ((dashboardTypeScale.summary != null && dashboardTypeScale.summary < 18) || dashboardTypeScale.section < 22) {
     throw new Error(`Admissions briefing typography is too small: ${JSON.stringify(dashboardTypeScale)}`);
   }
-  await page.screenshot({ path: `${screenshotDir}/desktop-admissions-movement.png`, fullPage: true });
-
   await communitiesDashboardTab.click();
   await page.locator('[data-admissions-dashboard-page="communities"]').waitFor({ state: "visible" });
   if (
@@ -170,15 +180,16 @@ await withBrowserQa(async (browser) => {
   }
   await page.screenshot({ path: `${screenshotDir}/desktop-admissions-briefing-dashboard.png`, fullPage: true });
 
-  if (await attentionDashboardTab.count()) {
-    await attentionDashboardTab.click();
-    await page.locator('[data-admissions-dashboard-page="attention"]').waitFor({ state: "visible" });
+  if (await openFieldsDashboardTab.count()) {
+    await openFieldsDashboardTab.click();
+    await page.locator('[data-admissions-dashboard-page="followup"]').waitFor({ state: "visible" });
     if (
-      await attentionDashboardTab.getAttribute("aria-selected") !== "true" ||
-      await page.getByRole("heading", { name: "Needs attention" }).count() !== 1 ||
-      await page.locator('[data-admissions-attention="true"] button').count() < 1
+      await openFieldsDashboardTab.getAttribute("aria-selected") !== "true" ||
+      await page.getByRole("heading", { name: "Open record fields" }).count() !== 1 ||
+      await page.locator('[data-admissions-follow-up="true"] button').count() < 1 ||
+      await page.locator('[data-admissions-follow-up="true"]').getByText(/highest-priority|flagged|needs attention|priority score/i).count() !== 0
     ) {
-      throw new Error("The Attention dashboard page must expose the ranked review queue directly.");
+      throw new Error("The Open fields page must expose literal unresolved record fields without an inferred ranking.");
     }
   }
 
@@ -193,7 +204,7 @@ await withBrowserQa(async (browser) => {
   await mobile.goto(`${BASE_URL}/admissions?view=briefing`, { waitUntil: "domcontentloaded" });
   await mobile.waitForTimeout(1_500);
   await mobile.locator('[data-admissions-briefing-dashboard="true"]').waitFor({ state: "visible" });
-  await mobile.screenshot({ path: `${screenshotDir}/mobile-admissions-movement.png`, fullPage: true });
+  await mobile.screenshot({ path: `${screenshotDir}/mobile-admissions-briefing-initial.png`, fullPage: true });
   const mobileDashboardNavigation = mobile.locator('[data-admissions-briefing-navigation="true"]');
   const mobileDashboardLabels = await mobileDashboardNavigation.locator('[data-admissions-dashboard-label="true"]').allTextContents();
   for (const label of mobileDashboardLabels) {
