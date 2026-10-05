@@ -56,12 +56,12 @@ export default function AdmissionsPage() {
   const freshnessWarning = dashboard?.snapshot_status?.warning ?? null;
   const referralPipeline = dashboard?.referral_pipeline ?? null;
   const pipeline = referralPipeline?.status === "connected" ? referralPipeline : null;
-  const surface = searchParams.get("view") === "briefing" ? "briefing" : "pipeline";
+  const surface = searchParams.get("view") === "pipeline" ? "pipeline" : "briefing";
 
   function showSurface(next: "pipeline" | "briefing") {
     setBriefingCard(null);
     const params = new URLSearchParams(searchParams);
-    if (next === "briefing") params.set("view", "briefing");
+    if (next === "pipeline") params.set("view", "pipeline");
     else params.delete("view");
     setSearchParams(params, { replace: false });
   }
