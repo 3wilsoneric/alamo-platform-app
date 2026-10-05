@@ -2051,3 +2051,30 @@ the reviewed local build, and the anonymous API health probe remains
 fail-closed with 401 and `no-store`. TypeScript, source syntax, documentation,
 code health, Admissions access and dashboard contracts, production build, and
 responsive Admissions browser regression all pass.
+
+### Admissions move-in schedule reconciliation — 2026-10-04
+
+The Admissions executive update, Schedule move-in lane, Community snapshot
+counts, and Community drilldowns now use one canonical accepted-client move-in
+schedule. The current Pipeline board determines which accepted clients have a
+current or future planned admission; covered briefing rows can enrich those
+records with readiness details but cannot remove a move-in named in the
+executive update. When the Pipeline board is unavailable, the page falls back
+only to a covered briefing slice rather than implying complete data.
+
+- source PR: `#146`; merge commit: `38c04690cdfaa3ba754532d006c099eb69ae82d5`
+- ACR build: `cc5s`
+- image: `alamo-platform@sha256:31b1ac20f887ede11d8505c09f7bb2d6924e426777d96209901b44d594f40f70` (tag `admissions-schedule-reconcile-1004`)
+- active revision: `alamo-platform-prod-web--schedule-reconcile-1004`
+- rollback image: `alamo-platform@sha256:bb99f444ce0025f71a08f9895d9ff52df92b9cde8dfd153a1312df050c7d8b9f`
+- active browser assets: `/assets/index-DRAFD-5n.js` and `/assets/index-DES-ycMx.css`
+
+The revision is Healthy/Running at 100% traffic. Direct requests to `/`,
+`/admissions`, and `/chat` identify the same active JavaScript and CSS.
+Production identity, gzip, and Brotli responses reconcile byte-for-byte with
+the reviewed build, and the anonymous API health probe remains fail-closed
+with 401 and `no-store`. TypeScript, source syntax, documentation, code health,
+the Admissions dashboard contract, production build, and responsive
+Admissions browser regression pass. A dedicated regression also proves that a
+future accepted Pipeline move-in remains present across the executive update
+and detailed dashboard even when the week-bounded briefing slice omits it.
