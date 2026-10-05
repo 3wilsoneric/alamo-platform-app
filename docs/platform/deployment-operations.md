@@ -38,6 +38,9 @@ Source-level browser changes use `Dockerfile.frontend-release`. Build the Vite
 bundle locally, pass the exact current production image digest as `BASE_IMAGE`,
 and replace only `/app/dist`. This preserves the already-proven Azure server,
 API, environment, and data adapters while shipping the reviewed React bundle.
+The production build stages the same current entry document at the root,
+`/admissions`, and `/chat`; this prevents physical route indexes retained from
+an older overlay from serving a stale browser bundle on a direct deep link.
 Record the preceding image digest before promotion so rollback remains an Azure
 Container App image update.
 
