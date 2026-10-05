@@ -53,6 +53,29 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Admissions mobile mode release — 2026-10-04
+
+Admissions now has a dedicated phone reading path across Briefing and Pipeline:
+touch-safe dashboard tabs, wrapping schedule detail, collapsible open-field
+records, bounded mobile Pipeline lists, compact card facts, and a safe-area-aware
+management chart.
+
+- source commit: `b21ea49`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/148`
+- image tag: `alamo-platform:admissions-mobile-b21ea49`
+- image digest: `sha256:9fa7c3337eccb9da963a87b982c024db69833bb1b828b881b5523d56569f76d8`
+- active revision: `alamo-platform-prod-web--admissions-mobile-1004`
+- rollback digest: `sha256:31b1ac20f887ede11d8505c09f7bb2d6924e426777d96209901b44d594f40f70`
+
+This is a frontend-only overlay on the preceding production digest. The release
+passed the live Azure-snapshot and Pipeline browser suite at 320, 375, 390, and
+430 pixel portrait widths and 667-by-375 landscape, including touch targets,
+horizontal overflow, modal bounds, disclosure behavior, and offline recovery.
+Post-promotion verification confirmed a healthy revision with one ready replica
+and 100% traffic, 4/4 public route probes, one shared current asset bundle on
+`/`, `/admissions`, and `/chat`, exact production-to-build JS/CSS hashes, and the
+anonymous API boundary returning `401` with `private, no-store` caching.
+
 ### Admissions board release — 2026-09-26
 
 The compact Admissions workflow board is deployed as a frontend-only release:
