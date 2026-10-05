@@ -22,6 +22,7 @@ type ChartDataPoint =
 
 const NO_COMMUNITY = "none";
 const LIST_PREVIEW = 15;
+const MOBILE_LIST_PREVIEW = 6;
 
 const COLUMN_STYLE: Record<AdmissionsBoardColumnKey, { surface: string; border: string; accent: string; action: string }> = {
   received: {
@@ -290,7 +291,7 @@ export function ProgressModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#10221d]/40 p-2 backdrop-blur-[2px] sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#10221d]/40 p-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] [padding-top:max(0.5rem,env(safe-area-inset-top))] backdrop-blur-[2px] sm:p-6"
       data-admissions-progress-modal="true"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -306,11 +307,11 @@ export function ProgressModal({
         <div data-admissions-chart-folder-tab="true" className="ml-3 flex max-w-[calc(100%-1.5rem)] shrink-0 items-end gap-1.5 sm:ml-8 sm:max-w-[720px] sm:gap-2">
           <div
             data-admissions-chart-name-tab="true"
-            className="flex h-16 min-w-0 items-center rounded-t-xl border border-b-0 border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_-3px_12px_rgba(49,40,18,0.07)] sm:h-[72px] sm:p-[3px]"
+            className="flex h-16 min-w-0 flex-1 items-center rounded-t-xl border border-b-0 border-[#ccb98f] bg-[#f2e5c9] p-2 shadow-[0_-3px_12px_rgba(49,40,18,0.07)] sm:h-[72px] sm:p-[3px]"
           >
             <div
               data-admissions-chart-name-label="true"
-              className="flex h-full min-w-0 items-center rounded-[4px] border border-[#d7d0c1] bg-[#fffdfa] px-3.5 shadow-[0_1px_2px_rgba(58,47,24,0.08)] sm:px-5"
+              className="flex h-full w-full min-w-0 items-center rounded-[4px] border border-[#d7d0c1] bg-[#fffdfa] px-3.5 shadow-[0_1px_2px_rgba(58,47,24,0.08)] sm:px-5"
             >
               <span id="admissions-progress-title" data-admissions-chart-tab-name="true" className="truncate text-[15px] font-semibold tracking-[-0.02em] text-[#202321] sm:text-[17px]">{card.clientName}</span>
             </div>
@@ -335,7 +336,7 @@ export function ProgressModal({
               type="button"
               onClick={onClose}
               aria-label="Close management chart"
-              className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d3dad6] bg-white text-[#4e5752] shadow-sm transition hover:bg-[#eef3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:right-5 sm:top-4"
+              className="absolute right-3 top-3 z-20 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d3dad6] bg-white text-[#4e5752] shadow-sm transition hover:bg-[#eef3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:right-5 sm:top-4"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -706,13 +707,13 @@ function BoardCard({ card, onOpen }: { card: AdmissionsBoardCard; onOpen: () => 
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span data-admissions-client-name="true" className="block truncate text-[15px] font-semibold tracking-[-0.02em] text-[#171918]">{card.clientName}</span>
-          <span className="mt-1 block truncate text-[11px] text-[#69716c]">Referral #{card.referralId} · {communityName(card)}</span>
+          <span data-admissions-client-name="true" className="block break-words text-[15px] font-semibold tracking-[-0.02em] text-[#171918] lg:truncate">{card.clientName}</span>
+          <span className="mt-1 block break-words text-[11px] leading-4 text-[#69716c] lg:truncate">Referral #{card.referralId} · {communityName(card)}</span>
         </div>
         <span data-admissions-card-decision={decision.state} className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.06em] ${decision.className}`}>{decision.label}</span>
       </div>
 
-      <dl className="mt-4 divide-y divide-[#edf0ee] border-y border-[#edf0ee]" data-admissions-card-facts="true">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 border-y border-[#edf0ee] lg:mt-4 lg:block lg:divide-y lg:divide-[#edf0ee]" data-admissions-card-facts="true">
         <BoardCardFact label="Stage" value={card.status} />
         <BoardCardFact label="Owner" value={card.owner || "Unassigned"} />
         <BoardCardFact label="Timing" value={`${formatLongDays(card.daysOpen)} open · updated ${formatLastUpdate(card.daysSinceUpdate).toLowerCase()}`} />
@@ -751,7 +752,7 @@ function MobileCategoryList({
     );
   }
 
-  const shown = expanded ? cards : cards.slice(0, LIST_PREVIEW);
+  const shown = expanded ? cards : cards.slice(0, MOBILE_LIST_PREVIEW);
   return (
     <div data-admissions-mobile-category-list="true">
       <ul className="space-y-3">
@@ -761,7 +762,7 @@ function MobileCategoryList({
           </li>
         ))}
       </ul>
-      {cards.length > LIST_PREVIEW ? (
+      {cards.length > MOBILE_LIST_PREVIEW ? (
         <button type="button" onClick={onToggle} className="mt-4 min-h-11 text-[12px] font-semibold text-[#0f795f] hover:underline">
           {expanded ? "Show fewer" : `Show all ${cards.length}`}
         </button>
@@ -851,7 +852,7 @@ function CommunityPill({ active, onClick, children }: { active: boolean; onClick
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex min-h-9 shrink-0 items-center rounded-full border px-3.5 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f795f] bg-[#e5f2ec] text-[#145e48]" : "border-[#d9dfdb] bg-white text-[#59615c] hover:border-[#9eb9ac] hover:bg-[#f7faf8]"}`}
+      className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-3.5 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${active ? "border-[#0f795f] bg-[#e5f2ec] text-[#145e48]" : "border-[#d9dfdb] bg-white text-[#59615c] hover:border-[#9eb9ac] hover:bg-[#f7faf8]"}`}
     >
       {children}
     </button>
@@ -864,9 +865,9 @@ function communityName(card: AdmissionsBoardCard) {
 
 function BoardCardFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3 py-2" data-admissions-card-fact={label.toLowerCase().replaceAll(" ", "-")}>
+    <div className="min-w-0 py-2.5 lg:grid lg:grid-cols-[92px_minmax(0,1fr)] lg:gap-3 lg:py-2" data-admissions-card-fact={label.toLowerCase().replaceAll(" ", "-")}>
       <dt className="text-[9px] font-medium uppercase tracking-[0.07em] text-[#7b837f]">{label}</dt>
-      <dd className="min-w-0 break-words text-[11px] font-semibold leading-5 text-[#303532]">{value}</dd>
+      <dd className="mt-1 min-w-0 break-words text-[11px] font-semibold leading-4 text-[#303532] lg:mt-0 lg:leading-5">{value}</dd>
     </div>
   );
 }
