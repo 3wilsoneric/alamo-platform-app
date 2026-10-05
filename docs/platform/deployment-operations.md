@@ -1999,3 +1999,28 @@ and Brotli responses reconcile byte-for-byte with the reviewed local build,
 and the anonymous API health probe remains fail-closed with 401. TypeScript,
 code health, the Admissions dashboard contract, production build, desktop and
 phone visual QA, and responsive browser regression all pass.
+
+### Grounded Admissions schedule and open fields — 2026-10-04
+
+The abstract Movement view is replaced by a literal Schedule with separate
+lanes for upcoming assessments, planned move-ins, and accepted clients that do
+not yet have a date. The Schedule view is omitted when it has no actual work,
+so an empty decorative component does not displace the Community snapshot.
+The editorial Attention view is replaced by Open fields, which states only
+unresolved record fields already present in Pipeline and preserves Pipeline
+order. It does not calculate or display an inferred priority score.
+
+- source PR: `#141`; merge commit: `56895afb5ec97f76cbb99f15289cfedf693cd7ee`
+- ACR build: `cc5p`
+- image: `alamo-platform@sha256:dfa3deb18404d8acc6a2d52f77eb34dd32e86f4e7619636b3dc02f1f1c30e841` (tag `admissions-schedule-grounding-1004`)
+- active revision: `alamo-platform-prod-web--admissions-grounding-1004`
+- rollback image: `alamo-platform@sha256:491914f11cf57f1e5d7263e5a750a6d2b81632132438905335b32ef707dbbe79`
+- active browser assets: `/assets/index-lUhAbQEM.js` and `/assets/index-DES-ycMx.css`
+
+The revision is Healthy/Running at 100% traffic. Production identity, gzip,
+and Brotli responses reconcile byte-for-byte with the reviewed local build,
+and the anonymous API health probe remains fail-closed with 401 and `no-store`.
+TypeScript, documentation, code health, the Admissions dashboard contract,
+production build, desktop and phone visual QA, and responsive browser
+regression all pass. The broader analyst suite reaches the repository's
+pre-existing `check:unused` package-metadata warning and stops there.
