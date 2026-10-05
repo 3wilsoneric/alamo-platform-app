@@ -1977,3 +1977,25 @@ and Brotli responses reconcile byte-for-byte with the reviewed local build,
 and the anonymous API health probe remains fail-closed with 401. TypeScript,
 code health, the Admissions dashboard contract, production build, desktop and
 phone visual QA, and responsive browser regression all pass.
+
+### Admissions component texture system — 2026-10-04
+
+Movement, Communities, and Attention now retain the same executive typography
+and layout system while using distinct visual materials. Movement uses a blue
+planning-board edge, calendar dots, and blueprint motifs. Communities uses an
+organic sage edge, circular forms, and a dotted operational drilldown.
+Attention uses a warm amber edge and quiet diagonal paper texture. These are
+restrained orientation cues, not solid brand-color panels.
+
+- source PR: `#139`; merge commit: `e3ba356c2c6b09f27dda996cc4d738b8cda58982`
+- ACR build: `cc5n`
+- image: `alamo-platform@sha256:491914f11cf57f1e5d7263e5a750a6d2b81632132438905335b32ef707dbbe79` (tag `admissions-texture-1004`)
+- active revision: `alamo-platform-prod-web--admissions-texture-1004`
+- rollback image: `alamo-platform@sha256:bd7bc3a1307e910caf9180bee34a4283d5976d65a0b5a790e0ce808f0b3e9bdc`
+- active browser asset: `/assets/index-CMjZqqyL.js`
+
+The revision is Healthy/Running at 100% traffic. Production identity, gzip,
+and Brotli responses reconcile byte-for-byte with the reviewed local build,
+and the anonymous API health probe remains fail-closed with 401. TypeScript,
+code health, the Admissions dashboard contract, production build, desktop and
+phone visual QA, and responsive browser regression all pass.
