@@ -59,7 +59,7 @@
     "check:pipeline-clinical": "node scripts/check-pipeline-clinical-api.mjs",
     "check:alamohealth-demo": "node scripts/check-alamohealth-demo-api.mjs",
     "check:admissions-access": "node scripts/check-admissions-access.mjs",
-    "check:admissions-dashboard": "node scripts/check-admissions-dashboard.mjs",
+    "check:admissions-dashboard": "node scripts/check-admissions-dashboard.mjs && node scripts/check-admissions-schedule.mjs",
     "check:workforce-dashboard": "node scripts/check-workforce-dashboard.mjs",
     "check:regression-replays": "node scripts/check-regression-replays.mjs",
     "check:operator-prompts": "node scripts/check-operator-prompts.mjs",
