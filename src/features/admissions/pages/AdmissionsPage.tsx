@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Building2, CalendarCheck2, CalendarDays, ChevronDown, ChevronRight, Clock3 } from "lucide-react";
+import { Building2, CalendarDays, ChevronDown, ChevronRight, ClipboardList, Clock3, House } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -581,7 +581,7 @@ function AdmissionsBriefingDashboard({
   onOpenCard: (card: AdmissionsBoardCard) => void;
   loading: boolean;
 }) {
-  const [briefingPage, setBriefingPage] = useState<"movement" | "communities" | "attention">("movement");
+  const [briefingPage, setBriefingPage] = useState<"schedule" | "communities" | "followup">("schedule");
   if (loading) {
     return (
       <div aria-label="Loading Admissions briefing" aria-busy="true" className="grid gap-4 lg:grid-cols-12">
@@ -597,37 +597,41 @@ function AdmissionsBriefingDashboard({
   const { briefing } = dashboard;
   const today = admissionsToday();
   const awaitingSchedule = pipeline?.board.cards.filter((card) => isAcceptedReferral(card.status) && !card.plannedAdmissionDate) ?? [];
-  const attentionItems = buildAdmissionsAttentionItems(pipeline);
-  const scheduledCount = (
-    (briefing.coverage.assessments ? briefing.upcomingAssessments.filter((item) => isCurrentOrFutureEvent(item.scheduledAt, today)).length : 0) +
-    (briefing.coverage.moveIns ? briefing.plannedMoveIns.filter((item) => isCurrentOrFutureEvent(item.plannedAt, today)).length : 0)
-  );
-  const movementCoverageAvailable = briefing.coverage.assessments || briefing.coverage.moveIns;
+  const followUpItems = buildAdmissionsFollowUpItems(pipeline);
+  const assessmentCount = briefing.coverage.assessments
+    ? briefing.upcomingAssessments.filter((item) => isCurrentOrFutureEvent(item.scheduledAt, today)).length
+    : null;
+  const moveInCount = briefing.coverage.moveIns
+    ? briefing.plannedMoveIns.filter((item) => isCurrentOrFutureEvent(item.plannedAt, today)).length
+    : null;
+  const scheduleCoverageAvailable = assessmentCount != null || moveInCount != null;
+  const hasScheduleContent = (assessmentCount ?? 0) + (moveInCount ?? 0) + (pipeline ? awaitingSchedule.length : 0) > 0;
   const communityCount = briefing.communities.filter((community) =>
     community.census != null && !/unassigned|no community/i.test(`${community.shortName} ${community.communityName}`)
   ).length;
   const pages = [
-    {
-      key: "movement" as const,
-      label: "Movement",
-      detail: movementCoverageAvailable
-        ? `${scheduledCount} scheduled · ${pipeline ? awaitingSchedule.length : "—"} awaiting`
+    ...(hasScheduleContent ? [{
+      key: "schedule" as const,
+      label: "Schedule",
+      detail: scheduleCoverageAvailable
+        ? `${formatBriefingCount(assessmentCount)} assessments · ${formatBriefingCount(moveInCount)} move-ins`
         : "Schedule coverage unavailable",
       icon: CalendarDays
-    },
+    }] : []),
     {
       key: "communities" as const,
       label: "Communities",
       detail: `${communityCount} locations · ${formatBriefingCount(briefing.totals.census)} residents`,
       icon: Building2
     },
-    ...(attentionItems.length ? [{
-      key: "attention" as const,
-      label: "Attention",
-      detail: `${attentionItems.length} flagged for review`,
-      icon: AlertTriangle
+    ...(followUpItems.length ? [{
+      key: "followup" as const,
+      label: "Open fields",
+      detail: `${followUpItems.length} records with unresolved fields`,
+      icon: ClipboardList
     }] : [])
   ];
+  const activeBriefingPage = pages.some((page) => page.key === briefingPage) ? briefingPage : (pages[0]?.key ?? "communities");
 
   return (
     <section data-admissions-weekly-briefing="true" aria-label="Admissions operating snapshot">
@@ -642,7 +646,7 @@ function AdmissionsBriefingDashboard({
           <div role="tablist" className={`grid gap-2 rounded-[20px] border border-[#e2ded6] bg-[#f3f0eb] p-2 ${pages.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
             {pages.map((page) => {
               const Icon = page.icon;
-              const active = briefingPage === page.key;
+                  const active = activeBriefingPage === page.key;
               return (
                 <button
                   key={page.key}
@@ -664,9 +668,9 @@ function AdmissionsBriefingDashboard({
           </div>
         </nav>
 
-        {briefingPage === "movement" ? (
-          <div id="admissions-dashboard-movement" role="tabpanel" aria-label="Admissions movement dashboard" data-admissions-dashboard-page="movement">
-          <AdmissionsMovement
+        {activeBriefingPage === "schedule" ? (
+          <div id="admissions-dashboard-schedule" role="tabpanel" aria-label="Admissions schedule dashboard" data-admissions-dashboard-page="schedule">
+          <AdmissionsSchedule
             briefing={briefing}
             pipeline={pipeline}
             awaitingSchedule={awaitingSchedule}
@@ -675,14 +679,14 @@ function AdmissionsBriefingDashboard({
           />
           </div>
         ) : null}
-        {briefingPage === "communities" ? (
+        {activeBriefingPage === "communities" ? (
           <div id="admissions-dashboard-communities" role="tabpanel" aria-label="Community dashboard" data-admissions-dashboard-page="communities">
           <BriefingCommunityDashboard briefing={briefing} pipeline={pipeline} today={today} onOpenCard={onOpenCard} />
           </div>
         ) : null}
-        {briefingPage === "attention" && attentionItems.length ? (
-          <div id="admissions-dashboard-attention" role="tabpanel" aria-label="Admissions attention dashboard" data-admissions-dashboard-page="attention">
-            <AdmissionsAttention items={attentionItems} onOpenCard={onOpenCard} />
+        {activeBriefingPage === "followup" && followUpItems.length ? (
+          <div id="admissions-dashboard-followup" role="tabpanel" aria-label="Admissions open fields" data-admissions-dashboard-page="followup">
+            <AdmissionsFollowUp items={followUpItems} onOpenCard={onOpenCard} />
           </div>
         ) : null}
       </div>
@@ -690,8 +694,8 @@ function AdmissionsBriefingDashboard({
   );
 }
 
-function dashboardPageTone(page: "movement" | "communities" | "attention", active: boolean) {
-  if (page === "movement") {
+function dashboardPageTone(page: "schedule" | "communities" | "followup", active: boolean) {
+  if (page === "schedule") {
     return active
       ? "border-[#c8d7e6] bg-[#edf4fa] text-[#315a7d] shadow-[0_4px_16px_rgba(64,98,130,0.10)]"
       : "border-transparent bg-transparent text-[#686b69] hover:border-[#d4dfe9] hover:bg-[#f2f6fa] hover:text-[#3f6484]";
@@ -706,19 +710,29 @@ function dashboardPageTone(page: "movement" | "communities" | "attention", activ
     : "border-transparent bg-transparent text-[#686b69] hover:border-[#eadfc8] hover:bg-[#fbf6ea] hover:text-[#765f34]";
 }
 
-function dashboardPageIconTone(page: "movement" | "communities" | "attention") {
-  if (page === "movement") return "text-[#47749a]";
+function dashboardPageIconTone(page: "schedule" | "communities" | "followup") {
+  if (page === "schedule") return "text-[#47749a]";
   if (page === "communities") return "text-[#33705d]";
   return "text-[#9a6b17]";
 }
 
-type AdmissionsAttentionItem = {
+type AdmissionsFollowUpItem = {
   card: AdmissionsBoardCard;
   issues: string[];
-  score: number;
 };
 
-function AdmissionsMovement({
+type AdmissionsScheduleEvent = {
+  key: string;
+  referralId: number;
+  kind: "Assessment" | "Move-in";
+  date: string;
+  clientName: string;
+  community: string;
+  owner: string;
+  detail: string;
+};
+
+function AdmissionsSchedule({
   briefing,
   pipeline,
   awaitingSchedule,
@@ -731,8 +745,8 @@ function AdmissionsMovement({
   today: string;
   onOpenCard: (card: AdmissionsBoardCard) => void;
 }) {
-  const events = [
-    ...(briefing.coverage.assessments ? briefing.upcomingAssessments.filter((item) => isCurrentOrFutureEvent(item.scheduledAt, today)).map((item) => ({
+  const assessments: AdmissionsScheduleEvent[] = briefing.coverage.assessments
+    ? briefing.upcomingAssessments.filter((item) => isCurrentOrFutureEvent(item.scheduledAt, today)).map((item) => ({
       key: `assessment:${item.referralId}:${item.scheduledAt}`,
       referralId: item.referralId,
       kind: "Assessment" as const,
@@ -741,8 +755,10 @@ function AdmissionsMovement({
       community: item.facilityId ? item.community : "Community not assigned",
       owner: item.owner,
       detail: item.status
-    })) : []),
-    ...(briefing.coverage.moveIns ? briefing.plannedMoveIns.filter((item) => isCurrentOrFutureEvent(item.plannedAt, today)).map((item) => ({
+    }))
+    : [];
+  const moveIns: AdmissionsScheduleEvent[] = briefing.coverage.moveIns
+    ? briefing.plannedMoveIns.filter((item) => isCurrentOrFutureEvent(item.plannedAt, today)).map((item) => ({
       key: `move-in:${item.referralId}:${item.plannedAt}`,
       referralId: item.referralId,
       kind: "Move-in" as const,
@@ -751,128 +767,148 @@ function AdmissionsMovement({
       community: item.facilityId ? item.community : "Community not assigned",
       owner: item.owner,
       detail: item.readiness === "unknown" ? item.status : `${item.status} · ${item.readiness}`
-    })) : [])
-  ].sort((left, right) => left.date.localeCompare(right.date) || left.clientName.localeCompare(right.clientName));
-  const movementDays = buildMovementWeek(today, events.map((event) => event.date));
-  const scheduleCoverageComplete = briefing.coverage.assessments && briefing.coverage.moveIns;
+    }))
+    : [];
+  const events = [...assessments, ...moveIns]
+    .sort((left, right) => left.date.localeCompare(right.date) || left.clientName.localeCompare(right.clientName));
+  const scheduleDays = buildScheduleWeek(today, events.map((event) => event.date));
   const scheduleCoverageAvailable = briefing.coverage.assessments || briefing.coverage.moveIns;
-  const movementHeadline = events.length
-    ? `${events.length} scheduled ${pluralize("event", events.length)} ahead${awaitingSchedule.length ? `; ${awaitingSchedule.length} accepted ${pluralize("client", awaitingSchedule.length)} still ${awaitingSchedule.length === 1 ? "needs" : "need"} a date.` : "."}`
-    : !scheduleCoverageAvailable
-      ? "The movement calendar has not been published in the current snapshot."
-      : awaitingSchedule.length
-        ? `Nothing is scheduled yet; ${awaitingSchedule.length} accepted ${pluralize("client", awaitingSchedule.length)} ${awaitingSchedule.length === 1 ? "still needs" : "still need"} a date.`
-        : "No assessments or move-ins are scheduled in the current weekly window.";
+  const scheduleHeadline = scheduleCoverageAvailable
+    ? `${assessments.length} upcoming ${pluralize("assessment", assessments.length)} and ${moveIns.length} planned ${pluralize("move-in", moveIns.length)}.${pipeline && awaitingSchedule.length ? ` ${awaitingSchedule.length} accepted ${pluralize("client", awaitingSchedule.length)} ${awaitingSchedule.length === 1 ? "still needs" : "still need"} a date.` : ""}`
+    : "Assessment and move-in schedules are not included in the current snapshot.";
 
   return (
-    <section data-admissions-movement="true" className="overflow-hidden rounded-[24px] border border-[#c8d6e4] border-t-[4px] border-t-[#789ab8] bg-[#f8fafc] shadow-[0_12px_32px_rgba(50,75,105,0.08)]" aria-labelledby="admissions-movement-title">
-      <div className="relative flex items-center justify-between gap-4 overflow-hidden border-b border-[#d8e1eb] bg-[linear-gradient(110deg,#edf5fb_0%,#faf6ee_100%)] px-5 py-5 sm:px-7 sm:py-6">
-        <span aria-hidden="true" className="absolute -right-10 -top-20 h-44 w-44 rotate-12 rounded-[36px] border-[22px] border-[#d8e6f1]/55" />
-        <span aria-hidden="true" className="absolute right-24 top-5 h-20 w-20 rounded-full border border-[#bcd0e0]/55" />
-        <div className="relative z-[1]">
-          <h3 id="admissions-movement-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Admissions movement</h3>
-          <p className="mt-1 max-w-[900px] text-[14px] font-medium leading-6 text-[#50645f] sm:text-[16px]">{movementHeadline}</p>
+    <section data-admissions-schedule="true" className="overflow-hidden rounded-[24px] border border-[#c8d6e4] border-t-[4px] border-t-[#789ab8] bg-[#f8fafc] shadow-[0_12px_32px_rgba(50,75,105,0.08)]" aria-labelledby="admissions-schedule-title">
+      <div className="flex items-center justify-between gap-4 border-b border-[#d8e1eb] bg-[linear-gradient(110deg,#edf5fb_0%,#faf6ee_100%)] px-5 py-5 sm:px-7 sm:py-6">
+        <div>
+          <h3 id="admissions-schedule-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Admissions schedule</h3>
+          <p className="mt-1 max-w-[900px] text-[14px] font-medium leading-6 text-[#50645f] sm:text-[16px]">{scheduleHeadline}</p>
         </div>
-        <span className="relative z-[1] grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#cddbeb] bg-[#f7fbff]"><CalendarDays className="h-5 w-5 text-[#467299]" aria-hidden="true" /></span>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#cddbeb] bg-[#f7fbff]"><CalendarDays className="h-5 w-5 text-[#467299]" aria-hidden="true" /></span>
       </div>
 
-      <div data-admissions-movement-week="true" className="border-b border-[#dbe3eb] bg-[#eef4f9] bg-[radial-gradient(circle_at_1px_1px,#d7e1ea_1px,transparent_0)] [background-size:18px_18px] px-4 py-4 sm:px-7 sm:py-5">
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#587087]">Next seven days</p>
-          <p className="text-[12px] text-[#657687]">{events.length ? `${events.length} on the published calendar` : "No dated activity shown"}</p>
-        </div>
-        <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
-          {movementDays.map((day) => (
-            <div key={day.isoDate} className={`min-w-0 rounded-xl border px-1 py-2.5 text-center backdrop-blur-[1px] sm:px-2 sm:py-3 ${day.eventCount ? "border-[#abc3d8] bg-white/90 shadow-[0_4px_12px_rgba(58,91,121,0.08)]" : "border-white/80 bg-white/55"}`}>
-              <span className="block truncate text-[9px] font-semibold uppercase tracking-[0.08em] text-[#677887] sm:text-[10px]">{day.weekday}</span>
-              <strong className={`mt-1 block text-[17px] font-semibold leading-none tabular-nums sm:text-[20px] ${day.eventCount ? "text-[#315f86]" : "text-[#65717a]"}`}>{day.dayNumber}</strong>
-              <span className={`mx-auto mt-2 block h-1.5 rounded-full ${day.eventCount ? "w-5 bg-[#5f89ac]" : "w-1.5 bg-[#c5d0d8]"}`} aria-label={`${day.eventCount} scheduled ${pluralize("event", day.eventCount)}`} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]">
-        <div className="bg-white lg:border-r lg:border-[#dce3e8]">
-          <div className="flex items-center justify-between px-5 py-4 sm:px-7">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#65716b]">Published calendar</h4>
-            <span className="text-[13px] font-medium tabular-nums text-[#65716b]">{events.length} scheduled</span>
+      {scheduleCoverageAvailable ? (
+        <div data-admissions-schedule-week="true" className="border-b border-[#dbe3eb] bg-[#eef4f9] bg-[linear-gradient(to_right,rgba(196,211,224,0.38)_1px,transparent_1px)] [background-size:calc(100%/7)_100%] px-4 py-4 sm:px-7 sm:py-5">
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-[#587087]">Next seven days</p>
+            <p className="text-[12px] text-[#657687]">{events.length} scheduled</p>
           </div>
-          {events.length ? (
-            <div className="divide-y divide-[#e7ebe9] border-t border-[#e7ebe9]">
-              {events.map((event) => {
-                const card = pipeline?.board.cards.find((candidate) => candidate.referralId === event.referralId) ?? null;
-                return (
-                  <button
-                    key={event.key}
-                    type="button"
-                    data-admissions-movement-item={event.kind.toLowerCase()}
-                    data-admissions-event-date={event.date.slice(0, 10)}
-                    disabled={!card}
-                    onClick={() => card && onOpenCard(card)}
-                    className="grid w-full min-w-0 grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 text-left transition hover:bg-[#f3f7fb] disabled:cursor-default disabled:hover:bg-transparent sm:grid-cols-[118px_104px_minmax(0,1fr)_auto] sm:px-7 sm:py-5"
-                  >
-                    <time className="text-[13px] font-semibold tabular-nums text-[#3f678b] sm:text-[14px]">{formatEventDate(event.date)}</time>
-                    <span className={`hidden w-fit rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] sm:inline-flex ${event.kind === "Move-in" ? "bg-[#e2f1e9] text-[#176d51]" : "bg-[#e8edfb] text-[#365fc7]"}`}>{event.kind}</span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[16px] font-semibold text-[#273b34] sm:text-[17px]">{event.clientName}<span className="font-normal text-[#68736d]"> · {event.community}</span></span>
-                      <span className="mt-1 block truncate text-[12px] text-[#7a847f] sm:text-[13px]">{event.owner} · {event.detail}</span>
-                    </span>
-                    {card ? <ChevronRight className="h-5 w-5 text-[#7d8782]" aria-hidden="true" /> : null}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div data-admissions-movement-empty={scheduleCoverageComplete ? "clear" : "incomplete"} className="border-t border-[#e1e7eb] px-5 py-5 sm:px-7 sm:py-7">
-              <div className="rounded-[18px] border border-[#d5e0e9] bg-[#f3f7fa] bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(235,243,249,0.82))] px-5 py-6 sm:flex sm:items-center sm:gap-5 sm:px-6">
-                <span className="mb-4 grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#c7d8e6] bg-white text-[#4c789d] sm:mb-0"><CalendarCheck2 className="h-6 w-6" aria-hidden="true" /></span>
-                <div>
-                  <h5 className="text-[17px] font-semibold tracking-[-0.02em] text-[#2f4c61]">{scheduleCoverageAvailable ? "No dated movement is on the published calendar" : "Schedule coverage is not available"}</h5>
-                  <p className="mt-1.5 max-w-[720px] text-[13px] leading-5 text-[#66747e] sm:text-[14px]">
-                    {scheduleCoverageComplete
-                      ? "There is nothing for management to coordinate in the current weekly window. The accepted-client queue at right shows whether scheduling follow-up is still required."
-                      : `This is not a zero. ${briefing.coverage.assessments ? "Assessment coverage is present" : "Assessment coverage is missing"}, and ${briefing.coverage.moveIns ? "move-in coverage is present" : "move-in coverage is missing"}.`}
-                  </p>
-                </div>
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+            {scheduleDays.map((day) => (
+              <div key={day.isoDate} className={`min-w-0 rounded-lg border px-1 py-2.5 text-center sm:px-2 sm:py-3 ${day.eventCount ? "border-[#abc3d8] bg-white shadow-[0_4px_12px_rgba(58,91,121,0.08)]" : "border-[#d7e1e9] bg-[#f8fafc]"}`}>
+                <span className="block truncate text-[9px] font-semibold uppercase tracking-[0.08em] text-[#677887] sm:text-[10px]">{day.weekday}</span>
+                <strong className={`mt-1 block text-[17px] font-semibold leading-none tabular-nums sm:text-[20px] ${day.eventCount ? "text-[#315f86]" : "text-[#65717a]"}`}>{day.dayNumber}</strong>
+                <span className={`mx-auto mt-2 block h-1.5 rounded-full ${day.eventCount ? "w-5 bg-[#5f89ac]" : "w-1.5 bg-[#c5d0d8]"}`} aria-label={`${day.eventCount} scheduled ${pluralize("event", day.eventCount)}`} />
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
+      ) : (
+        <p data-admissions-schedule-coverage="unavailable" className="border-b border-[#dbe3eb] bg-[#f2f6f9] px-5 py-4 text-[13px] leading-5 text-[#5f7180] sm:px-7 sm:text-[14px]">
+          Schedule coverage is unavailable. The lanes below identify the unpublished sources; no missing schedule is presented as zero.
+        </p>
+      )}
 
-        <div className="border-t border-[#e2e7e4] bg-[#fdfaf3] lg:border-t-0">
+      <div className="grid divide-y divide-[#dce3e8] lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+        <AdmissionsScheduleLane
+          kind="Assessment"
+          events={assessments}
+          coverage={briefing.coverage.assessments}
+          pipeline={pipeline}
+          onOpenCard={onOpenCard}
+        />
+        <AdmissionsScheduleLane
+          kind="Move-in"
+          events={moveIns}
+          coverage={briefing.coverage.moveIns}
+          pipeline={pipeline}
+          onOpenCard={onOpenCard}
+        />
+        <section data-admissions-schedule-lane="accepted-no-date" className="bg-[#fdfaf3]">
           <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
-            <h4 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.11em] text-[#6d6657]"><Clock3 className="h-4 w-4 text-[#9a7441]" aria-hidden="true" />Accepted, no date</h4>
-            <span className="text-[13px] font-medium tabular-nums text-[#766d5c]">{pipeline ? `${awaitingSchedule.length} waiting` : "Unavailable"}</span>
+            <h4 className="flex items-center gap-2 text-[12px] font-semibold text-[#5d5548]"><Clock3 className="h-4 w-4 text-[#9a7441]" aria-hidden="true" />Accepted, no date</h4>
+            <span className="text-[12px] font-medium tabular-nums text-[#766d5c]">{pipeline ? awaitingSchedule.length : "—"}</span>
           </div>
           {awaitingSchedule.length ? (
-            <div className="divide-y divide-[#e7ebe9] border-t border-[#e7ebe9]">
+            <div className="divide-y divide-[#e9e2d5] border-t border-[#e9e2d5]">
               {awaitingSchedule.map((card) => (
-                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-[#faf4e9] sm:px-6 sm:py-5">
+                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-[#faf4e9] sm:px-6">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] font-semibold text-[#273b34] sm:text-[16px]">{card.clientName}</span>
-                    <span className="mt-1 block truncate text-[12px] text-[#737d78]">{card.facilityId ? card.community : "Community not assigned"} · {card.owner}</span>
+                    <span className="block truncate text-[14px] font-semibold text-[#343a36]">{card.clientName}</span>
+                    <span className="mt-1 block truncate text-[12px] text-[#756d60]">{card.facilityId ? card.community : "Community not assigned"} · {card.owner}</span>
                   </span>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-[#7d8782]" aria-hidden="true" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#8e8370]" aria-hidden="true" />
                 </button>
               ))}
             </div>
           ) : (
-            <div className="border-t border-[#e9e2d5] px-5 py-5 sm:px-6 sm:py-7">
-              <p className="rounded-[16px] border border-[#e7dcc6] bg-white/70 px-4 py-5 text-[13px] leading-5 text-[#746b5c] sm:text-[14px]">
-                {pipeline
-                  ? "The unscheduled queue is clear. No accepted client is currently waiting for an admission date."
-                  : "The accepted-client scheduling queue will appear when the live Pipeline board is available."}
-              </p>
-            </div>
+            <p className="border-t border-[#e9e2d5] px-5 py-6 text-[13px] leading-5 text-[#746b5c] sm:px-6">
+              {pipeline ? "No accepted client is currently missing an admission date." : "Available when the live Pipeline board is connected."}
+            </p>
           )}
-        </div>
+        </section>
       </div>
     </section>
   );
 }
 
-function buildMovementWeek(today: string, eventDates: string[]) {
+function AdmissionsScheduleLane({
+  kind,
+  events,
+  coverage,
+  pipeline,
+  onOpenCard
+}: {
+  kind: "Assessment" | "Move-in";
+  events: AdmissionsScheduleEvent[];
+  coverage: boolean;
+  pipeline: ConnectedAdmissionsPipeline | null;
+  onOpenCard: (card: AdmissionsBoardCard) => void;
+}) {
+  const LaneIcon = kind === "Assessment" ? ClipboardList : House;
+  const tone = kind === "Assessment"
+    ? { background: "bg-[#f8faff]", border: "border-[#dce4f0]", icon: "text-[#4f73a1]", hover: "hover:bg-[#f1f5fb]" }
+    : { background: "bg-[#f6faf7]", border: "border-[#d9e6df]", icon: "text-[#3f7966]", hover: "hover:bg-[#eff6f2]" };
+  return (
+    <section data-admissions-schedule-lane={kind.toLowerCase()} className={tone.background}>
+      <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+        <h4 className="flex items-center gap-2 text-[12px] font-semibold text-[#40514b]"><LaneIcon className={`h-4 w-4 ${tone.icon}`} aria-hidden="true" />{kind === "Assessment" ? "Upcoming assessments" : "Planned move-ins"}</h4>
+        <span className="text-[12px] font-medium tabular-nums text-[#66736e]">{coverage ? events.length : "—"}</span>
+      </div>
+      {events.length ? (
+        <div className={`divide-y ${tone.border} border-t ${tone.border}`}>
+          {events.map((event) => {
+            const card = pipeline?.board.cards.find((candidate) => candidate.referralId === event.referralId) ?? null;
+            return (
+              <button
+                key={event.key}
+                type="button"
+                data-admissions-schedule-item={event.kind.toLowerCase()}
+                data-admissions-event-date={event.date.slice(0, 10)}
+                disabled={!card}
+                onClick={() => card && onOpenCard(card)}
+                className={`flex w-full items-center gap-3 px-5 py-4 text-left transition disabled:cursor-default sm:px-6 ${tone.hover}`}
+              >
+                <time className={`w-[78px] shrink-0 text-[12px] font-semibold tabular-nums ${tone.icon}`}>{formatEventDate(event.date)}</time>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-semibold text-[#2f3c37]">{event.clientName}</span>
+                  <span className="mt-1 block truncate text-[11px] text-[#727d77]">{event.community} · {event.owner} · {event.detail}</span>
+                </span>
+                {card ? <ChevronRight className="h-4 w-4 shrink-0 text-[#7d8782]" aria-hidden="true" /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className={`border-t ${tone.border} px-5 py-6 text-[13px] leading-5 text-[#6d7872] sm:px-6`}>
+          {coverage ? `No ${kind === "Assessment" ? "assessments" : "move-ins"} are scheduled in the current window.` : `${kind} schedule coverage was not published.`}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function buildScheduleWeek(today: string, eventDates: string[]) {
   const [year = 1970, month = 1, day = 1] = today.split("-").map(Number);
   const baseDate = new Date(Date.UTC(year, month - 1, day));
   const counts = eventDates.reduce((result, value) => {
@@ -894,55 +930,49 @@ function buildMovementWeek(today: string, eventDates: string[]) {
   });
 }
 
-function buildAdmissionsAttentionItems(pipeline: ConnectedAdmissionsPipeline | null): AdmissionsAttentionItem[] {
+function buildAdmissionsFollowUpItems(pipeline: ConnectedAdmissionsPipeline | null): AdmissionsFollowUpItem[] {
   if (!pipeline) return [];
   return pipeline.board.cards
     .map((card) => {
       const issues: string[] = [];
-      let score = 0;
       if (card.flags.moveInOverdue) {
-        issues.push("Planned move-in is overdue");
-        score += 100;
+        issues.push("Planned admission date has passed; outcome is not recorded");
       }
       if (card.managementProfile.blockingRequirements > 0) {
-        issues.push(`${card.managementProfile.blockingRequirements} blocking ${pluralize("requirement", card.managementProfile.blockingRequirements)}`);
-        score += 80;
+        issues.push(`${card.managementProfile.blockingRequirements} ${pluralize("requirement", card.managementProfile.blockingRequirements)} marked blocking`);
       }
       if (card.flags.unassigned) {
-        issues.push("Community not assigned");
-        score += 60;
+        issues.push("Destination community is not recorded");
       }
       if (card.flags.stale) {
-        issues.push(`${card.daysSinceUpdate} days since the last update`);
-        score += 40 + card.daysSinceUpdate;
+        issues.push(`Last update was ${card.daysSinceUpdate} days ago`);
       }
-      return { card, issues, score };
+      return { card, issues };
     })
-    .filter((item) => item.issues.length > 0)
-    .sort((left, right) => right.score - left.score || left.card.clientName.localeCompare(right.card.clientName));
+    .filter((item) => item.issues.length > 0);
 }
 
-function AdmissionsAttention({ items, onOpenCard }: { items: AdmissionsAttentionItem[]; onOpenCard: (card: AdmissionsBoardCard) => void }) {
+function AdmissionsFollowUp({ items, onOpenCard }: { items: AdmissionsFollowUpItem[]; onOpenCard: (card: AdmissionsBoardCard) => void }) {
   const visibleItems = items.slice(0, 8);
   return (
-    <section data-admissions-attention="true" className="overflow-hidden rounded-[24px] border border-[#e3d8bd] border-t-[4px] border-t-[#c39243] bg-[#fffdf8] shadow-[0_12px_32px_rgba(92,67,22,0.08)]" aria-labelledby="admissions-attention-title">
-      <div className="flex items-center justify-between gap-4 border-b border-[#eee5d2] bg-[#fffbf2] bg-[repeating-linear-gradient(135deg,rgba(255,251,242,0.96)_0px,rgba(255,251,242,0.96)_12px,rgba(238,221,184,0.22)_12px,rgba(238,221,184,0.22)_13px)] px-5 py-5 sm:px-7 sm:py-6">
+    <section data-admissions-follow-up="true" className="overflow-hidden rounded-[24px] border border-[#ded9cf] border-t-[4px] border-t-[#a89675] bg-[#fffdf9] shadow-[0_12px_32px_rgba(74,64,46,0.07)]" aria-labelledby="admissions-follow-up-title">
+      <div className="flex items-center justify-between gap-4 border-b border-[#e8e2d7] bg-[linear-gradient(110deg,#f7f3eb_0%,#fbfaf7_100%)] px-5 py-5 sm:px-7 sm:py-6">
         <div>
-          <h3 id="admissions-attention-title" className="flex items-center gap-3 text-[22px] font-semibold tracking-[-0.03em] text-[#4e4229] sm:text-[25px]"><span className="grid h-10 w-10 place-items-center rounded-full border border-[#ead8ae] bg-white/80"><AlertTriangle className="h-5 w-5 text-[#9a6b17]" aria-hidden="true" /></span>Needs attention</h3>
-          <p className="mt-1 text-[13px] leading-5 text-[#786d58] sm:text-[14px]">Recorded blockers, overdue dates, missing assignments, and stale updates.</p>
+          <h3 id="admissions-follow-up-title" className="flex items-center gap-3 text-[22px] font-semibold tracking-[-0.03em] text-[#464038] sm:text-[25px]"><span className="grid h-10 w-10 place-items-center rounded-xl border border-[#ded6c7] bg-white/80"><ClipboardList className="h-5 w-5 text-[#75664f]" aria-hidden="true" /></span>Open record fields</h3>
+          <p className="mt-1 text-[13px] leading-5 text-[#71695d] sm:text-[14px]">Missing or unresolved fields already present in the admissions record, shown in Pipeline order.</p>
         </div>
-        <span className="shrink-0 rounded-full bg-[#f4e8ca] px-3 py-1.5 text-[13px] font-semibold tabular-nums text-[#76591f]">{items.length} flagged</span>
+        <span className="shrink-0 rounded-full border border-[#ded6c7] bg-white/80 px-3 py-1.5 text-[13px] font-semibold tabular-nums text-[#625746]">{items.length} records</span>
       </div>
-      <div className="divide-y divide-[#eee5d2]">
+      <div className="divide-y divide-[#ebe6dc]">
         {visibleItems.map(({ card, issues }) => (
-          <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="grid w-full min-w-0 gap-1.5 px-5 py-4 text-left transition hover:bg-[#fff8e9] sm:grid-cols-[minmax(220px,0.75fr)_minmax(0,1.25fr)_auto] sm:items-center sm:gap-5 sm:px-7 sm:py-5">
-            <span className="truncate text-[15px] font-semibold text-[#3e392f] sm:text-[16px]">{card.clientName}<span className="font-normal text-[#746b59]"> · {card.facilityId ? card.community : "No community"}</span></span>
-            <span className="text-[13px] leading-5 text-[#76591f] sm:text-[14px]">{issues.join(" · ")}</span>
-            <ChevronRight className="hidden h-5 w-5 text-[#9b8e73] sm:block" aria-hidden="true" />
+          <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="grid w-full min-w-0 gap-1.5 px-5 py-4 text-left transition hover:bg-[#faf7f1] sm:grid-cols-[minmax(220px,0.75fr)_minmax(0,1.25fr)_auto] sm:items-center sm:gap-5 sm:px-7 sm:py-5">
+            <span className="truncate text-[15px] font-semibold text-[#3e3b35] sm:text-[16px]">{card.clientName}<span className="font-normal text-[#746f65]"> · {card.facilityId ? card.community : "Community not recorded"}</span></span>
+            <span className="text-[13px] leading-5 text-[#635c51] sm:text-[14px]">{issues.join(" · ")}</span>
+            <ChevronRight className="hidden h-5 w-5 text-[#918878] sm:block" aria-hidden="true" />
           </button>
         ))}
       </div>
-      {items.length > visibleItems.length ? <p className="border-t border-[#eee5d2] px-5 py-3 text-[12px] text-[#7e735e] sm:px-7">Showing the {visibleItems.length} highest-priority items. The complete queue remains in Pipeline.</p> : null}
+      {items.length > visibleItems.length ? <p className="border-t border-[#ebe6dc] px-5 py-3 text-[12px] text-[#756e62] sm:px-7">Showing the first {visibleItems.length} records in Pipeline order. The complete queue remains in Pipeline.</p> : null}
     </section>
   );
 }
