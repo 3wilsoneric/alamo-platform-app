@@ -12,6 +12,11 @@
       "triggerType": "Schedule",
       "replicaTimeout": 1200,
       "replicaRetryLimit": 1,
+      "secrets": [{
+        "name": "licensing-alert-webhook-url",
+        "keyVaultUrl": "https://alamo-platform-kv-6jtpmf.vault.azure.net/secrets/licensing-alert-webhook-url",
+        "identity": "/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/resourceGroups/alamo-data-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/alamo-platform-prod-runtime"
+      }],
       "scheduleTriggerConfig": {
         "cronExpression": "0 16,17 * * 1",
         "parallelism": 1,
@@ -34,6 +39,7 @@
           { "name": "AZURE_STORAGE_ACCOUNT", "value": "alamodatalake" },
           { "name": "AZURE_STORAGE_CONTAINER", "value": "alamo-platform-snapshots" },
           { "name": "LICENSING_AUTH_MODE", "value": "managed_identity" },
+          { "name": "LICENSING_ALERT_WEBHOOK_URL", "secretRef": "licensing-alert-webhook-url" },
           { "name": "LICENSING_INITIAL_EVIDENCE_SHA256", "value": "58bd4f0f454b64dc4d2bd1f942915be41875744b4f1450e68738e36700b8793d" }
         ]
       }]

@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-04
+- updated: 2026-10-06
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -1157,6 +1157,17 @@ its image is built with `Dockerfile.licensing-job`. The job uses the existing
 platform managed identity and private snapshot container; it has no user login
 or Codex dependency. It publishes into the existing Licensing Updates feed.
 
+Change-only email is delivered by the enabled Logic App
+`alamo-platform-licensing-alerts` through the existing connected Office 365
+Outlook connector. Its source definition is
+`scripts/azure/licensing-alert-workflow.json`; deploy it with
+`npm run licensing:deploy-alert-workflow`. The deployment stores the signed
+callback URL in Key Vault as `licensing-alert-webhook-url`. The job resolves
+that secret through its existing user-assigned identity and never includes the
+URL in its image or source. Recipients are locked to
+`raj@aaahealthservices.com` and `betty@aaahealthservices.com` in both code and
+the workflow definition.
+
 The weekly schedule is Monday at 9 a.m. America/Los_Angeles. Azure evaluates
 cron in UTC, so the job is triggered at both candidate UTC hours and the worker
 checks Pacific local time before contacting the source. Exactly one slot runs
@@ -1172,6 +1183,11 @@ A renewable blob lease prevents overlapping writers. Failed/partial scans
 retain the last complete collection and mark Updates as failed; comparison
 history advances only after all four facilities pass. Job execution history
 also records failures, including storage outages that cannot update the feed.
+After a successful atomic publish, the job queues only the latest run's changes
+under `licensing/notifications/pending/`, calls the mail workflow, and writes an
+immutable receipt under `licensing/notifications/sent/`. Pending envelopes are
+retried before later scans, including the daylight-saving guard execution. A
+run with no new, revised, removed, or reappearing record sends no email.
 
 Use `npm run licensing:prepare-job` to create a bounded image context with only
 collector code and locked dependencies. Build that context in ACR, then deploy
