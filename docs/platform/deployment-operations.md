@@ -1168,13 +1168,14 @@ URL in its image or source. Recipients are locked to
 `raj@aaahealthservices.com` and `betty@aaahealthservices.com` in both code and
 the workflow definition. Delivery is currently launch-gated: the Logic App is
 disabled and the job sets `LICENSING_ALERT_NOTIFICATIONS_ENABLED=false` so the
-weekly collector continues to queue changes without sending them. Launch
+scheduled collector continues to queue changes without sending them. Launch
 requires reauthorizing the Office 365 connection, enabling the Logic App, and
 changing that job setting to exactly `true`; complete all three in one verified
 release. A pending envelope must be reviewed before launch because enabling
 delivery will retry it.
 
-The weekly schedule is Monday at 9 a.m. America/Los_Angeles. Azure evaluates
+The twice-weekly schedule is Monday and Wednesday at 9 a.m.
+America/Los_Angeles. Azure evaluates
 cron in UTC, so the job is triggered at both candidate UTC hours and the worker
 checks Pacific local time before contacting the source. Exactly one slot runs
 in either standard time or daylight time. See Microsoft's
@@ -1226,12 +1227,14 @@ facilities, published 93 reports, and found zero changes.
 Verification: all eight nonbrowser predeployment stages passed, including the
 analyst suite and production build. Additional collector checks verify that
 partial source failures cannot advance history, unsafe archives are rejected,
-leases prevent overlap and release after failure, and Monday's 9 a.m. Pacific
+leases prevent overlap and release after failure, and the Monday/Wednesday
+9 a.m. Pacific
 schedule follows daylight-saving time. Production is Healthy/Running at 100%
 traffic, matches `/assets/index-B75ElOs8.js`, passes 4/4 public smoke probes,
 and returns 401/no-store on anonymous Licensing APIs. Signed-in CUA verification
 confirmed 93 reports, four matches for the substantiated-medication/San Pablo
-query, and the automatic schedule in Updates.
+query, and the automatic schedule in Updates. The original release was
+Monday-only; the current cadence is recorded in the later schedule release.
 
 To suspend collection, change the job trigger to Manual and stop any active
 execution. Keep the current web reader when suspending the schedule. A rollback
@@ -1292,7 +1295,8 @@ Signed-in CUA verification confirmed the exact asset above, the corrected
 320px search selectors and Admissions timing, the account hint beneath the
 header, and the shared Analytics/Admissions/Licensing navigation. The broader
 review covered ten viewport sizes and the product routes described in
-`testing-quality.md`. Licensing still reports its Monday 9 a.m. Pacific schedule.
+`testing-quality.md`. Licensing reported its then-current Monday 9 a.m. Pacific
+schedule; the current cadence is recorded in the later schedule release.
 Physical iOS and Safari/WebKit were not available in this browser session.
 
 The release was made from the clean release checkout rather than the shared

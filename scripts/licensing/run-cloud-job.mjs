@@ -18,7 +18,7 @@ const current = container.getBlockBlobClient(LICENSING_BLOB_PATH);
 try {
   const recoveredNotifications = await deliverPendingLicensingNotifications(container);
   if (process.argv.includes("--scheduled") && !isLicensingScheduledTime()) {
-    console.log(JSON.stringify({ status: "skipped", reason: "Outside Monday 9 a.m. Pacific.", notifications: recoveredNotifications }));
+    console.log(JSON.stringify({ status: "skipped", reason: "Outside Monday/Wednesday 9 a.m. Pacific.", notifications: recoveredNotifications }));
   } else {
     const result = await withLicensingLease(current, async (leaseId, signal) => {
       const previous = await readBlob(current, LICENSING_MAX_BYTES);

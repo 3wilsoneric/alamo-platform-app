@@ -420,7 +420,7 @@ rebuilds the feed without fetching CCLD. Original ledger and evidence remain in
 `output/ccld-baseline/data`; restore those from the private evidence archive if
 moving the collector to a different machine.
 
-The Azure Container Apps job runs Mondays at 9 a.m. Pacific and publishes
+The Azure Container Apps job runs Mondays and Wednesdays at 9 a.m. Pacific and publishes
 updates to the live page without this Mac or Codex. After a complete collection
 publishes atomically, changes from that run are also queued for email to Raj
 Thandi and Betty Dominici. No-change runs do not send mail. The job persists a

@@ -313,7 +313,7 @@ board/census/trends and management folders, Licensing search/reader/Updates,
 Communities and direct community detail, Incident Center, Glossary, all three
 Data Explorer modes, Command Center, Outreach and its profile/acquisition
 views, Data Architecture, and sign-in. Production checks also exercised the
-phone menu, return navigation, sticky headers, the Monday Licensing schedule,
+phone menu, return navigation, sticky headers, the Monday/Wednesday Licensing schedule,
 and the end of a long analysis answer. No production data was edited.
 
 Fixes include the shared header, tablet report selector, responsive chart
