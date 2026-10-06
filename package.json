@@ -132,6 +132,7 @@
     "licensing:import": "node scripts/import-licensing-baseline.mjs",
     "licensing:check-updates": "node scripts/check-licensing-updates.mjs",
     "check:licensing": "node scripts/check-licensing.mjs",
+    "check:licensing-mobile": "node scripts/check-browser-licensing-mobile.mjs",
     "licensing:publish": "node scripts/publish-licensing.mjs",
     "licensing:prepare-release": "node scripts/prepare-licensing-release.mjs",
     "licensing:cloud-job": "node scripts/licensing/run-cloud-job.mjs",
