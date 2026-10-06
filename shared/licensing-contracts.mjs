@@ -113,10 +113,14 @@ export function licensingTextForDisplay(text) {
 export function validateLicensingUpdates(input) {
   const value = object(input);
   if (value.version !== "licensing-updates-v1" || !["complete", "failed", "not_checked"].includes(value.status) || !Array.isArray(value.alerts) || value.alerts.length > 100) invalid();
+  const scheduleWeekdays = value.schedule?.weekdays ?? (value.schedule ? [value.schedule.weekday] : null);
+  const supportedWeekdays = scheduleWeekdays &&
+    (JSON.stringify(scheduleWeekdays) === JSON.stringify(["Monday"]) ||
+      JSON.stringify(scheduleWeekdays) === JSON.stringify(["Monday", "Wednesday"]));
   if (value.schedule && (value.schedule.owner !== "platform" || value.schedule.timezone !== "America/Los_Angeles" ||
-    value.schedule.cadence !== "weekly" || value.schedule.weekday !== "Monday" || value.schedule.hour !== 9)) invalid();
+    value.schedule.cadence !== "weekly" || value.schedule.weekday !== "Monday" || !supportedWeekdays || value.schedule.hour !== 9)) invalid();
   return { version: value.version, status: value.status,
-    ...(value.schedule ? { schedule: { owner: "platform", timezone: "America/Los_Angeles", cadence: "weekly", weekday: "Monday", hour: 9 } } : {}), lastChecked: value.lastChecked ? timestamp(value.lastChecked) : null,
+    ...(value.schedule ? { schedule: { owner: "platform", timezone: "America/Los_Angeles", cadence: "weekly", weekday: "Monday", weekdays: scheduleWeekdays, hour: 9 } } : {}), lastChecked: value.lastChecked ? timestamp(value.lastChecked) : null,
     lastSuccessful: value.lastSuccessful ? timestamp(value.lastSuccessful) : null,
     alerts: value.alerts.map((inputAlert) => {
       const a = object(inputAlert);

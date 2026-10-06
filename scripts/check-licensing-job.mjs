@@ -12,10 +12,10 @@ import {
   queueLicensingChangeNotification
 } from "./licensing/update-notifications.mjs";
 
-for (const value of ["2026-09-28T16:00:00Z", "2026-11-02T17:00:00Z", "2027-03-15T16:00:00Z"]) {
+for (const value of ["2026-09-28T16:00:00Z", "2026-09-30T16:00:00Z", "2026-11-02T17:00:00Z", "2026-11-04T17:00:00Z", "2027-03-15T16:00:00Z", "2027-03-17T16:00:00Z"]) {
   assert.ok(isLicensingScheduledTime(new Date(value)), `Pacific 9 a.m. must run: ${value}`);
 }
-for (const value of ["2026-09-28T17:00:00Z", "2026-11-02T16:00:00Z", "2026-09-29T16:00:00Z"]) {
+for (const value of ["2026-09-28T17:00:00Z", "2026-11-02T16:00:00Z", "2026-09-29T16:00:00Z", "2026-10-01T16:00:00Z"]) {
   assert.ok(!isLicensingScheduledTime(new Date(value)), `Wrong slot must skip: ${value}`);
 }
 let held = false;
@@ -41,7 +41,10 @@ const unbounded = { download: async () => ({ readableStreamBody: Readable.from([
 await assert.rejects(readBlob(unbounded, 10), /size limit/);
 const valid = validateLicensingUpdates({ version: "licensing-updates-v1", status: "complete", alerts: [], schedule: LICENSING_SCHEDULE });
 assert.equal(valid.schedule.timezone, "America/Los_Angeles");
+assert.deepEqual(valid.schedule.weekdays, ["Monday", "Wednesday"]);
+assert.deepEqual(validateLicensingUpdates({ ...valid, schedule: { ...valid.schedule, weekdays: undefined } }).schedule.weekdays, ["Monday"]);
 assert.throws(() => validateLicensingUpdates({ ...valid, schedule: { ...LICENSING_SCHEDULE, hour: 8 } }));
+assert.throws(() => validateLicensingUpdates({ ...valid, schedule: { ...LICENSING_SCHEDULE, weekdays: ["Monday", "Tuesday"] } }));
 
 const notificationInput = {
   runId: "20261005T160021Z-2fb72799",
@@ -119,6 +122,7 @@ assert.equal(workflow.properties.definition.actions.send_licensing_change_email.
 assert.match(workflow.properties.definition.actions.send_licensing_change_email.inputs.host.connection.name, /office365/);
 const job = JSON.parse(await readFile(new URL("./azure/licensing-job.json", import.meta.url), "utf8"));
 assert.equal(job.properties.configuration.secrets[0].keyVaultUrl, "https://alamo-platform-kv-6jtpmf.vault.azure.net/secrets/licensing-alert-webhook-url");
+assert.equal(job.properties.configuration.scheduleTriggerConfig.cronExpression, "0 16,17 * * 1,3");
 assert.equal(job.properties.template.containers[0].env.find((entry) => entry.name === "LICENSING_ALERT_NOTIFICATIONS_ENABLED")?.value, "false");
 assert.equal(job.properties.template.containers[0].env.find((entry) => entry.name === "LICENSING_ALERT_WEBHOOK_URL")?.secretRef, "licensing-alert-webhook-url");
 
