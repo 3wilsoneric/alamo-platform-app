@@ -1273,6 +1273,29 @@ workflow. The existing Office 365 connector also requires reauthorization
 before launch. Do not enable either gate or retry the pending alert without
 explicit approval to send to Raj and Betty.
 
+### Monday/Wednesday Licensing cadence — 2026-10-06
+
+- source merge: `2ae6a58` (PR #153)
+- web revision: `alamo-platform-prod-web--licensing-mon-wed-1006`
+- web image: `alamo-platform@sha256:90bfb108e4dc37280d9a1d62a5afed2b5b36440ba7f95e40ae2146bbe58a2049`
+- preceding web image: `alamo-platform@sha256:9fa7c3337eccb9da963a87b982c024db69833bb1b828b881b5523d56569f76d8`
+- web ACR build: `cc5w`; active assets: `/assets/index-DMBP8I8e.js`
+  and `/assets/index-BxRd7BsG.css`
+- job image: `alamo-licensing-job@sha256:3209766d83f4b50f66535862a0105778678b4a5611e6244e1c9293843e167b03`
+- preceding job image: `alamo-licensing-job@sha256:556933b3a3c8402248ca30a87cbe0070435a99b381a81add3946d8e7cdc0ff8e`
+- job ACR build: `cc5x`
+- verification execution: `alamo-platform-licensing-check-pmqlf0g`
+
+The scheduled job now triggers at both candidate UTC hours on Monday and
+Wednesday, with the worker's America/Los_Angeles guard selecting exactly 9 a.m.
+through daylight-saving changes. Its cron is `0 16,17 * * 1,3`. The web and API
+release accepts the legacy Monday-only schedule while exposing the new
+Monday/Wednesday contract once the next complete check publishes it. The safe
+Tuesday verification execution succeeded and reported that it was outside the
+Monday/Wednesday window. Email remains launch-gated: the Logic App is Disabled,
+the worker flag is `false`, one pending envelope remains queued, and no email
+was sent.
+
 ### Navigation and responsive review release — 2026-09-28
 
 - source: `2a2f9db`, following `8b5461f` and `3610feb` on
