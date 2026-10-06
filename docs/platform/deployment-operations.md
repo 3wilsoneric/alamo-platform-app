@@ -1296,6 +1296,26 @@ Monday/Wednesday window. Email remains launch-gated: the Logic App is Disabled,
 the worker flag is `false`, one pending envelope remains queued, and no email
 was sent.
 
+### Licensing mobile workspace — 2026-10-06
+
+- source merge: `53f42ce` (PR #155)
+- revision: `alamo-platform-prod-web--licensing-mobile-1006`
+- image: `alamo-platform@sha256:cc9f7628cff6d0aaf3fa26c7a0d22b3f3b7586cdcd9af2aab493fe8c48dcdd47`
+- preceding image: `alamo-platform@sha256:90bfb108e4dc37280d9a1d62a5afed2b5b36440ba7f95e40ae2146bbe58a2049`
+- ACR build: `cc5y`
+- active assets: `/assets/index-CGaTtB-f.js` and
+  `/assets/index-Hj-mupV4.css`
+
+The frontend and Licensing-module overlay preserves the production API,
+authentication, private storage, twice-weekly monitor, and paused email gates.
+The Licensing phone view now uses a bounded Updates sheet, a compact search
+control, readable report cards, larger source text, and full-width source and
+download actions. The dedicated browser regression passed at 320, 390, and 430
+pixels across list, Updates, reader, and expanded-source states with no
+horizontal overflow. The revision is Healthy/Running at 100% traffic, the live
+HTML references the expected assets, public smoke passed, and anonymous
+Licensing access remains 401 with private/no-store caching.
+
 ### Navigation and responsive review release — 2026-09-28
 
 - source: `2a2f9db`, following `8b5461f` and `3610feb` on
