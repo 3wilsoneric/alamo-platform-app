@@ -65,26 +65,26 @@ function LicensingWorkspace() {
 
   return <>
     <AnalyticsSectionNavigation active="licensing" onNavigate={(section) => navigate(section === "reports" ? "/analytics" : `/analytics/${section}`)} />
-    <section aria-label="Licensing reports" data-licensing-page="true" className="min-w-0 w-full px-3 pb-6 pt-3 text-[#263e34] sm:px-6 lg:px-8">
-    <header className="mb-2 flex items-center justify-between gap-4">
-      <Link to={selectedCommunity ? `/home/community/${selectedCommunity.facilityId}` : "/home"} className="inline-flex min-h-11 items-center gap-2 text-sm text-[#527065] hover:underline"><ArrowLeft size={15} aria-hidden="true" /> {selectedCommunity ? selectedCommunity.name : "Communities"}</Link>
+    <section aria-label="Licensing reports" data-licensing-page="true" className="min-w-0 w-full px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 text-[#263e34] sm:px-6 lg:px-8">
+    <header className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-[#dce6df] bg-[#f6f9f7] px-3 py-2 sm:mb-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+      <Link to={selectedCommunity ? `/home/community/${selectedCommunity.facilityId}` : "/home"} className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-full px-1 text-[13px] font-medium text-[#45675a] hover:underline sm:text-sm"><ArrowLeft size={16} className="shrink-0" aria-hidden="true" /> <span className="truncate">{selectedCommunity ? selectedCommunity.name : "Communities"}</span></Link>
       <LicensingUpdates onSelect={(id) => setParams({ report: id })} />
     </header>
-    <form className="mb-4 flex items-center gap-3 rounded-lg border border-[#c9d8ca] bg-[#f7f9f5] px-4" onSubmit={(event) => {
+    <form data-licensing-search="true" className="mb-4 grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-1 rounded-2xl border border-[#c9d8ca] bg-white p-1.5 pl-3 shadow-[0_5px_18px_rgba(38,74,58,0.06)] sm:gap-2 sm:rounded-xl sm:pl-4" onSubmit={(event) => {
       event.preventDefault(); const next = new URLSearchParams(); if (community) next.set("community", community);
       const question = String(new FormData(event.currentTarget).get("q") ?? "").trim(); if (question) next.set("q", question); setParams(next);
-    }}><Search size={18} className="shrink-0 text-[#6d8571]" aria-hidden="true" /><input key={q} name="q" aria-label="Search licensing reports" maxLength={200} defaultValue={q} placeholder="Search reports" className="min-h-14 min-w-0 flex-1 bg-transparent text-base outline-none sm:text-sm" /><button type="submit" className="min-h-11 text-sm font-medium text-[#315d40]">Search</button>{q && <button type="button" aria-label="Clear search" onClick={() => setParams(community ? { community } : {})} className="grid min-h-11 min-w-11 place-items-center"><X size={16} /></button>}</form>
+    }}><Search size={18} className="shrink-0 text-[#668075]" aria-hidden="true" /><input key={q} name="q" aria-label="Search licensing reports" maxLength={200} defaultValue={q} placeholder="Search reports" className="min-h-12 min-w-0 bg-transparent px-1 text-base outline-none placeholder:text-[#7d8c85] sm:min-h-14 sm:text-sm" /><button type="submit" className="min-h-11 rounded-full bg-[#e2efe9] px-3 text-[13px] font-semibold text-[#21644e] sm:px-4 sm:text-sm">Search</button>{q ? <button type="button" aria-label="Clear search" onClick={() => setParams(community ? { community } : {})} className="grid min-h-11 min-w-11 place-items-center rounded-full text-[#567168] hover:bg-[#edf3ef]"><X size={16} /></button> : <span aria-hidden="true" className="w-0" />}</form>
     {error ? <div role="alert" className="py-8"><p>{error}</p><button type="button" onClick={() => setAttempt((n) => n + 1)} className="mt-4 min-h-11 underline">Try again</button><Link to="/analytics/licensing" className="ml-5 underline">All reports</Link></div>
       : !library ? <p role="status" className="py-12 text-sm">Loading reports…</p> : <>
-        <div className="grid min-w-0 items-start overflow-hidden rounded-lg border border-[#d5e1d8] lg:grid-cols-[300px_minmax(0,1fr)]">
+        <div data-licensing-workspace="true" className="grid min-w-0 items-start overflow-hidden rounded-[20px] border border-[#d5e1d8] bg-white shadow-[0_8px_24px_rgba(38,74,58,0.05)] lg:grid-cols-[320px_minmax(0,1fr)] lg:rounded-xl">
           <aside aria-label="Browse reports" className={`${selectedParam ? "hidden lg:block" : "block"} min-w-0 lg:max-h-[76vh] lg:overflow-y-auto lg:border-r lg:border-[#d5e1d8]`}>
-            <p className="px-5 py-4 text-xs text-[#6a7f6c]">{q ? `Matches for “${q}”` : "Recent reports"}{selectedCommunity ? ` · ${selectedCommunity.name}` : ""}</p>
-            <ul aria-label="Licensing reports" className="divide-y divide-[#e2eae5]">{library.reports.map((r) => <li key={r.id}><button type="button" onClick={() => selectReport(r.id)} aria-pressed={r.id === selectedId} className={`w-full border-l-[3px] px-5 py-4 text-left ${r.id === selectedId ? "border-[#297253] bg-[#eef5f0]" : "border-transparent bg-white hover:bg-[#f7f9f7]"}`}>
-              <span className="block text-sm font-semibold">{library.communities.find((c) => c.facilityId === r.facilityId)?.name}</span>
-              <span className="mt-1 block text-xs text-[#6c7c70]">{licensingDate(r.reportDate)}</span>
-              <span className="mt-2 block text-sm leading-6 text-[#45604b]">{r.analysis?.headline ?? r.reportType}</span>
+            <div className="border-b border-[#e2eae5] bg-[#f6f9f7] px-4 py-4 sm:px-5"><p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#718078]">{q ? "Search results" : "Report library"}</p><p className="mt-1.5 text-[14px] leading-5 text-[#4c6659]"><strong className="font-semibold text-[#244c3e]">{library.reports.length}</strong> {q ? `matches for “${q}”` : "recent reports"}{selectedCommunity ? ` · ${selectedCommunity.name}` : ""}</p></div>
+            <ul aria-label="Licensing reports" className="divide-y divide-[#e2eae5]">{library.reports.map((r) => <li key={r.id}><button type="button" onClick={() => selectReport(r.id)} aria-pressed={r.id === selectedId} className={`w-full border-l-[4px] px-4 py-4 text-left transition-colors sm:px-5 ${r.id === selectedId ? "border-[#288164] bg-[#edf6f1]" : "border-transparent bg-white hover:bg-[#f7f9f7]"}`}>
+              <span className="flex items-center justify-between gap-3"><span className="min-w-0 truncate text-[15px] font-semibold text-[#244c3e]">{library.communities.find((c) => c.facilityId === r.facilityId)?.name}</span><span className="shrink-0 rounded-full bg-[#edf3ef] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.07em] text-[#63756b]">{r.reportType}</span></span>
+              <span className="mt-1.5 block text-[12px] text-[#6c7c70]">{licensingDate(r.reportDate)}</span>
+              <span className="mt-2 block text-[15px] leading-6 text-[#45604b]">{r.analysis?.headline ?? r.reportType}</span>
             </button></li>)}</ul>
-            {!library.reports.length && <p className="px-5 py-8 text-sm leading-7">No matching reports. Try a community name, topic, finding, or year.</p>}
+            {!library.reports.length && <p className="px-5 py-10 text-[15px] leading-7 text-[#52675d]">No matching reports. Try a community name, topic, finding, or year.</p>}
           </aside>
           <div key={selectedId ?? "empty"} className={`${selectedParam ? "block" : "hidden lg:block"} min-w-0 bg-[#fdfefd] lg:max-h-[76vh] lg:overflow-y-auto`} aria-label="Report reader" aria-busy={Boolean(selectedId && !shownReport && !reportError)}>
             {reportError?.id === selectedId ? <div role="alert" className="p-7"><p>{reportError.message}</p><button type="button" className="mt-4 min-h-11 underline" onClick={() => setAttempt((n) => n + 1)}>Retry report</button><button type="button" className="ml-5 min-h-11 underline" onClick={() => selectReport(null)}>Back to reports</button></div>
@@ -92,7 +92,7 @@ function LicensingWorkspace() {
               : <p role="status" className="p-7 text-sm text-[#617568]">{selectedId ? "Loading report…" : "Select a report to read."}</p>}
           </div>
         </div>
-        <p className="mt-4 text-xs leading-6 text-[#758176]">State records archived {licensingDate(library.collectedAt)}. Open Updates for the latest check.</p>
+        <p className="mt-4 px-1 text-[12px] leading-5 text-[#758176]">State records archived {licensingDate(library.collectedAt)}. Open Updates for the latest check.</p>
       </>}
   </section></>;
 }

@@ -332,6 +332,12 @@ scripts were replaced by the interactive CUA review for this session. Static
 analyst checks used the maintained June fixture; signed-in production checks
 used the current September snapshot.
 
+`npm run check:licensing-mobile` exercises the complete Licensing phone path
+at 320, 390, and 430 pixels with bounded synthetic state-report fixtures. It
+checks the report list, search width, Updates sheet, report reader, expanded
+source text, tap targets, and horizontal overflow without storing live report
+content in the repository.
+
 `npm run acquisition:refresh` is a networked data refresh rather than a default
 CI gate. It downloads the configured official N-SUMHSS PUF and codebook, reads
 all 50 state partitions from the FindTreatment API, preserves raw source

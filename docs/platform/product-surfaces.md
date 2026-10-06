@@ -431,4 +431,6 @@ connected Office 365 Outlook account through the private
 `alamo-platform-licensing-alerts` Logic App; its signed callback URL is resolved
 from Key Vault and is absent from source and browser code. The page uses a
 compact breadcrumb/Updates row above search, without a visible page title or
-subtitle.
+subtitle. On phones, Updates opens as a bounded modal sheet, report browsing and
+reading are separate views, long state text wraps without horizontal overflow,
+and source/download actions become full-width tap targets.
