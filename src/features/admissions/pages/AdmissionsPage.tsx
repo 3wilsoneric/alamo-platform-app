@@ -622,6 +622,11 @@ function AdmissionsBriefingDashboard({
     : null;
   const moveInCount = scheduledMoveIns.length;
   const moveInCoverage = pipeline != null || briefing.coverage.moveIns;
+  const unavailableCoverage = [
+    !briefing.coverage.recentReferrals ? "new referral counts" : null,
+    !briefing.coverage.assessments ? "assessment schedule" : null,
+    !moveInCoverage ? "move-in schedule" : null
+  ].filter((value): value is string => Boolean(value));
   const scheduleCoverageAvailable = assessmentCount != null || moveInCoverage;
   const hasScheduleContent = (assessmentCount ?? 0) + moveInCount + (pipeline ? awaitingSchedule.length : 0) > 0;
   const communityCount = briefing.communities.filter((community) =>
@@ -653,10 +658,15 @@ function AdmissionsBriefingDashboard({
 
   return (
     <section data-admissions-weekly-briefing="true" aria-label="Admissions operating snapshot">
-      {briefing.sourceStatus !== "ready" ? (
-        <p data-admissions-briefing-source-notice="true" className="mb-5 rounded-2xl border border-[#ead8a9] bg-[#fffaf0] px-5 py-4 text-[13px] leading-6 text-[#75591f] sm:px-6 sm:text-[14px]">
-          Census remains governed. Pipeline event sections are marked incomplete where the source has not published coverage; missing data is never shown as zero.
-        </p>
+      {briefing.sourceStatus !== "ready" || unavailableCoverage.length ? (
+        <div data-admissions-briefing-source-notice="true" role="status" className="mb-5 rounded-2xl border border-[#dfd4bc] bg-[#fffaf0] px-5 py-4 text-[#675630] sm:flex sm:items-baseline sm:gap-3 sm:px-6">
+          <strong className="block text-[13px] font-semibold sm:shrink-0 sm:text-[14px]">Partial admissions snapshot</strong>
+          <p className="mt-1 text-[13px] leading-5 sm:mt-0 sm:text-[14px]">
+            {unavailableCoverage.length
+              ? `${joinReadableList(unavailableCoverage)} ${unavailableCoverage.length === 1 ? "was" : "were"} not published and ${unavailableCoverage.length === 1 ? "is" : "are"} shown as unavailable. Census and connected Pipeline values remain available.`
+              : "The detailed admissions briefing feed is unavailable. Census and connected Pipeline values remain available."}
+          </p>
+        </div>
       ) : null}
 
       <div data-admissions-briefing-dashboard="true">
@@ -1063,6 +1073,8 @@ function BriefingCommunityDashboard({
                   cards={communityCards}
                   assessments={upcomingAssessments.filter((item) => item.facilityId === community.facilityId)}
                   moveIns={scheduledMoveIns.filter((item) => item.facilityId === community.facilityId)}
+                  assessmentCoverage={briefing.coverage.assessments}
+                  moveInCoverage={moveInCoverage}
                   onOpenCard={onOpenCard}
                 />
               ) : null}
@@ -1084,12 +1096,16 @@ function CommunityAdmissionsDetail({
   cards,
   assessments,
   moveIns,
+  assessmentCoverage,
+  moveInCoverage,
   onOpenCard
 }: {
   community: AdmissionsDashboardResponse["briefing"]["communities"][number];
   cards: AdmissionsBoardCard[];
   assessments: AdmissionsDashboardResponse["briefing"]["upcomingAssessments"];
   moveIns: AdmissionsScheduleEvent[];
+  assessmentCoverage: boolean;
+  moveInCoverage: boolean;
   onOpenCard: (card: AdmissionsBoardCard) => void;
 }) {
   const stageCounts = {
@@ -1101,6 +1117,10 @@ function CommunityAdmissionsDetail({
     ...assessments.map((item) => ({ referralId: item.referralId, key: `assessment:${item.referralId}:${item.scheduledAt}`, kind: "Assessment", date: item.scheduledAt, clientName: item.clientName })),
     ...moveIns.map((item) => ({ referralId: item.referralId, key: item.key, kind: "Move-in", date: item.date, clientName: item.clientName }))
   ].sort((left, right) => left.date.localeCompare(right.date));
+  const missingActivitySources = [
+    !assessmentCoverage ? "assessment schedule" : null,
+    !moveInCoverage ? "move-in schedule" : null
+  ].filter((value): value is string => Boolean(value));
 
   return (
     <div data-admissions-community-detail="true" className="border-t border-[#dfe5e2] bg-[#f2f7f4] bg-[radial-gradient(circle_at_1px_1px,#d8e5df_1px,transparent_0)] [background-size:22px_22px] px-5 py-5 sm:px-7 sm:py-7">
@@ -1131,19 +1151,28 @@ function CommunityAdmissionsDetail({
         <section aria-label={`${community.shortName} upcoming activity`}>
           <h5 className="text-[15px] font-semibold text-[#29483f]">Upcoming activity</h5>
           {activity.length ? (
-            <div className="mt-4 divide-y divide-[#dde6e1] border-y border-[#d8e2dd]">
-              {activity.map((item) => {
-                const card = cards.find((candidate) => candidate.referralId === item.referralId) ?? null;
-                return (
-                  <button key={item.key} type="button" disabled={!card} onClick={() => card && onOpenCard(card)} className="grid min-h-12 w-full grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 py-3 text-left disabled:cursor-default sm:grid-cols-[82px_minmax(0,1fr)_auto] sm:py-3.5">
-                    <time className="text-[12px] font-semibold leading-4 text-[#42675b]">{formatEventDate(item.date)}</time>
-                    <span className="break-words text-[13px] leading-5 text-[#33443e] sm:truncate"><strong className="font-semibold">{item.clientName}</strong> · {item.kind}</span>
-                    {card ? <ChevronRight className="h-5 w-5 text-[#86908b]" aria-hidden="true" /> : null}
-                  </button>
-                );
-              })}
-            </div>
-          ) : <p className="mt-4 border-t border-[#dde5e1] py-5 text-[13px] text-[#6f7974]">No assessments or move-ins are currently scheduled here.</p>}
+            <>
+              <div className="mt-4 divide-y divide-[#dde6e1] border-y border-[#d8e2dd]">
+                {activity.map((item) => {
+                  const card = cards.find((candidate) => candidate.referralId === item.referralId) ?? null;
+                  return (
+                    <button key={item.key} type="button" disabled={!card} onClick={() => card && onOpenCard(card)} className="grid min-h-12 w-full grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 py-3 text-left disabled:cursor-default sm:grid-cols-[82px_minmax(0,1fr)_auto] sm:py-3.5">
+                      <time className="text-[12px] font-semibold leading-4 text-[#42675b]">{formatEventDate(item.date)}</time>
+                      <span className="break-words text-[13px] leading-5 text-[#33443e] sm:truncate"><strong className="font-semibold">{item.clientName}</strong> · {item.kind}</span>
+                      {card ? <ChevronRight className="h-5 w-5 text-[#86908b]" aria-hidden="true" /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+              {missingActivitySources.length ? <p className="mt-3 text-[12px] leading-5 text-[#6f7974]">Not included: {joinReadableList(missingActivitySources)}.</p> : null}
+            </>
+          ) : (
+            <p className="mt-4 border-t border-[#dde5e1] py-5 text-[13px] leading-5 text-[#6f7974]">
+              {missingActivitySources.length
+                ? `${joinReadableList(missingActivitySources)} ${missingActivitySources.length === 1 ? "was" : "were"} not published for this snapshot.`
+                : "No assessments or move-ins are currently scheduled here."}
+            </p>
+          )}
         </section>
       </div>
     </div>
@@ -1156,6 +1185,12 @@ function CommunityMetric({ label, value }: { label: string; value: string | numb
 
 function formatBriefingCount(value: number | null) {
   return value == null || !Number.isFinite(value) ? "—" : value.toLocaleString("en-US");
+}
+
+function joinReadableList(values: string[]) {
+  if (values.length <= 1) return values[0] ?? "";
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
 }
 
 function formatEventDate(value: string) {

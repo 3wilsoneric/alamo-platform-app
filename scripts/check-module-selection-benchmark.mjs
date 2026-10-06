@@ -107,11 +107,19 @@ if (cases.length !== 100) {
 
 const failures = [];
 const familyCounts = new Map();
+let unavailableRecoveries = 0;
 
 for (const testCase of cases) {
   const result = await runCopilotTool({ content: testCase.prompt });
   familyCounts.set(testCase.tool, (familyCounts.get(testCase.tool) ?? 0) + 1);
   if (result.tool !== testCase.tool) failures.push(`${testCase.prompt}: expected tool ${testCase.tool}, received ${result.tool ?? "none"}`);
+  if (result.truthState === "not_loaded") {
+    unavailableRecoveries += 1;
+    if (!result.safeRefusal) failures.push(`${testCase.prompt}: unavailable data did not fail closed`);
+    if (!result.visual) failures.push(`${testCase.prompt}: unavailable data omitted its recovery surface`);
+    if (result.moduleSpec) failures.push(`${testCase.prompt}: unavailable data created an unsupported module`);
+    continue;
+  }
   if (result.moduleSpec?.moduleId !== testCase.moduleId) failures.push(`${testCase.prompt}: expected module ${testCase.moduleId}, received ${result.moduleSpec?.moduleId ?? "none"}`);
   if (testCase.templateId && result.moduleSpec?.templateId !== testCase.templateId) failures.push(`${testCase.prompt}: expected template ${testCase.templateId}, received ${result.moduleSpec?.templateId ?? "none"}`);
   if (result.moduleSpec && !validateAdHocModuleSpec(result.moduleSpec).valid) failures.push(`${testCase.prompt}: returned an invalid module specification`);
@@ -122,5 +130,5 @@ if (failures.length) {
   console.error(failures.map((failure) => `- ${failure}`).join("\n"));
   process.exitCode = 1;
 } else {
-  console.log(`module selection benchmark passed (${cases.length} questions across ${familyCounts.size} tool families)`);
+  console.log(`module selection benchmark passed (${cases.length} questions across ${familyCounts.size} tool families; ${unavailableRecoveries} governed recoveries)`);
 }

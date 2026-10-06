@@ -9,6 +9,7 @@ import {
 interface StateTargetingMapProps {
   matchingStateNames: ReadonlySet<string>;
   onSelect: (record: StateTargetingRecord) => void;
+  interactive?: boolean;
 }
 
 interface TooltipState {
@@ -37,7 +38,8 @@ function tooltipPosition(clientX: number, clientY: number) {
 
 export default function StateTargetingMap({
   matchingStateNames,
-  onSelect
+  onSelect,
+  interactive = true
 }: StateTargetingMapProps) {
   const [usaMap, setUsaMap] = useState<UsaMapDefinition | null>(null);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
@@ -115,13 +117,13 @@ export default function StateTargetingMap({
               <path
                 key={location.id}
                 d={location.path}
-                role="button"
-                aria-label={`Open ${record.stateName} targeting profile`}
-                aria-disabled={!matches}
-                tabIndex={matches ? 0 : -1}
+                role={interactive ? "button" : undefined}
+                aria-label={interactive ? `Open ${record.stateName} targeting profile` : undefined}
+                aria-disabled={interactive ? !matches : undefined}
+                tabIndex={interactive && matches ? 0 : -1}
                 data-state-code={record.stateCode}
                 className={`origin-center outline-none transition-[fill,opacity,stroke,filter] duration-150 ${
-                  matches
+                  interactive && matches
                     ? "cursor-pointer hover:brightness-90 focus:brightness-90"
                     : "pointer-events-none opacity-70"
                 }`}
@@ -132,29 +134,31 @@ export default function StateTargetingMap({
                   vectorEffect: "non-scaling-stroke"
                 }}
                 onPointerEnter={(event) => {
-                  if (matches) {
+                  if (interactive && matches) {
                     showPointerTooltip(record, event.clientX, event.clientY);
                   }
                 }}
                 onPointerMove={(event) => {
-                  if (matches) {
+                  if (interactive && matches) {
                     showPointerTooltip(record, event.clientX, event.clientY);
                   }
                 }}
-                onPointerLeave={() => setTooltip(null)}
+                onPointerLeave={() => interactive && setTooltip(null)}
                 onFocus={(event) => {
-                  const bounds = event.currentTarget.getBoundingClientRect();
-                  showPointerTooltip(record, bounds.left + bounds.width / 2, bounds.top);
+                  if (interactive && matches) {
+                    const bounds = event.currentTarget.getBoundingClientRect();
+                    showPointerTooltip(record, bounds.left + bounds.width / 2, bounds.top);
+                  }
                 }}
                 onBlur={() => setTooltip(null)}
                 onClick={() => {
-                  if (matches) {
+                  if (interactive && matches) {
                     setTooltip(null);
                     onSelect(record);
                   }
                 }}
                 onKeyDown={(event) => {
-                  if (matches && (event.key === "Enter" || event.key === " ")) {
+                  if (interactive && matches && (event.key === "Enter" || event.key === " ")) {
                     event.preventDefault();
                     setTooltip(null);
                     onSelect(record);
@@ -166,7 +170,7 @@ export default function StateTargetingMap({
         </g>
       </svg>
 
-      {tooltip ? (
+      {interactive && tooltip ? (
         <MapTooltip tooltip={tooltip} />
       ) : null}
     </div>

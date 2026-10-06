@@ -198,7 +198,11 @@ assert(
   mapSource.includes('import("@svg-maps/usa")'),
   "the heavy map geometry should load inside the atlas rather than the app shell"
 );
-assert(mapSource.includes('role="button"'), "map states must remain keyboard-selectable");
+assert(
+  mapSource.includes('role={interactive ? "button" : undefined}') &&
+    mapSource.includes("tabIndex={interactive && matches ? 0 : -1}"),
+  "desktop map states must remain keyboard-selectable when map interaction is enabled"
+);
 assert(mapSource.includes('event.key === "Enter"'), "map states must support Enter");
 assert(modalSource.includes('role="dialog"'), "state details must render as a dialog");
 assert(modalSource.includes('aria-modal="true"'), "state dialog must be modal");
@@ -206,6 +210,11 @@ assert(modalSource.includes('event.key === "Escape"'), "state dialog must close 
 assert(pageSource.includes("StateTargetingMap"), "the map is missing from the atlas page");
 assert(pageSource.includes("StateDetailModal"), "the state detail modal is missing");
 assert(pageSource.includes("filteredRecords"), "the state index must remain filterable");
+assert(
+  pageSource.includes("interactive={!isPhoneLayout}") &&
+    pageSource.includes("visibleStateIndex.map"),
+  "phone Outreach must use the state index instead of tiny interactive SVG states"
+);
 assert(
   researchSource.includes("Expected 50 state bed-supply records") &&
     researchSource.includes("Expected 15 verified demand dossiers") &&

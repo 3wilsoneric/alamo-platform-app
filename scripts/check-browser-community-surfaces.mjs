@@ -140,9 +140,23 @@ async function assertSurface(moduleRoot, facility, mode) {
   if (mode.required === "incidents") {
     if (!(await moduleRoot.locator('[data-community-dashboard-surface="incidents"]').count())) failures.push("missing dedicated incident surface");
     const triage = moduleRoot.locator('[data-community-incident-triage="true"]');
-    await triage.locator("[data-incident-priority]").first().waitFor({ state: "visible", timeout: 20_000 }).catch(() => {});
     if (!(await triage.count())) failures.push("missing community-scoped recent incident triage");
-    if (await triage.locator("[data-incident-priority]").count() !== 3) failures.push("incident triage is missing a priority lane");
+    if (phoneLayout) {
+      const priorityTabs = triage.locator('[data-incident-priority-tabs="true"] [role="tab"]');
+      await priorityTabs.first().waitFor({ state: "visible", timeout: 20_000 }).catch(() => {});
+      if (await priorityTabs.count() !== 3) failures.push("incident triage is missing a phone priority tab");
+      for (const priority of ["HIGH", "MEDIUM", "LOW"]) {
+        const tab = priorityTabs.filter({ hasText: new RegExp(priority, "i") });
+        await tab.click().catch(() => {});
+        if (await tab.getAttribute("aria-selected") !== "true" ||
+          !await triage.locator(`[data-incident-priority-section="${priority}"]`).isVisible().catch(() => false)) {
+          failures.push(`incident triage did not open the ${priority.toLowerCase()} phone lane`);
+        }
+      }
+    } else {
+      await triage.locator("[data-incident-priority]").first().waitFor({ state: "visible", timeout: 20_000 }).catch(() => {});
+      if (await triage.locator("[data-incident-priority]").count() !== 3) failures.push("incident triage is missing a priority lane");
+    }
     if (await triage.locator("[data-incident-date-window]").count() !== 2) failures.push("incident triage is missing one of the latest two loaded-day controls");
     const triageFacilityId = await triage
       .locator('[data-incident-center="true"]')

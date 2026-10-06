@@ -105,14 +105,14 @@ export function DashboardSummarySlider({
   return (
     <section data-community-overview-slider="true" className="mt-3 rounded-[30px] bg-[linear-gradient(180deg,#fffdfa_0%,#f5efe6_100%)] px-4 py-4 shadow-[0_24px_60px_-48px_rgba(91,74,54,0.18)] sm:px-5 sm:py-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:flex-wrap">
           {slides.map((slide, index) => (
             <button
               key={slide.navLabel}
               type="button"
               data-community-overview-tab={slide.navLabel}
               onClick={() => setActiveIndex(index)}
-              className={`min-h-11 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+              className={`min-h-11 rounded-full border px-2 py-1.5 text-[12px] font-semibold tracking-[-0.01em] transition-colors sm:px-3 ${
                 index === activeIndex
                   ? "border-[#0f8b73] bg-[#eef8f5] text-[#0f6f5d]"
                   : "border-[#d8d0c3] bg-white/70 text-[#736657] hover:bg-[#fffdfa]"
@@ -122,7 +122,7 @@ export function DashboardSummarySlider({
             </button>
           ))}
         </div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b7b68]">
+        <div className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b7b68] sm:block">
           {activeIndex + 1} / {slides.length}
         </div>
       </div>

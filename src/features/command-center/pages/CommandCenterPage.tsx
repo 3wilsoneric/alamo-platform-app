@@ -24,6 +24,7 @@ import {
 } from "../../../../shared/analyst-capability-registry.mjs";
 import { formatDisplayDate, formatDisplayDateTime } from "../../../../shared/display-date.mjs";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
+import CommandCenterMobileNavigation, { type CommandCenterSection } from "../components/CommandCenterMobileNavigation";
 
 const QA_RERUN_COMMAND = "npm run qa:analyst";
 
@@ -77,6 +78,7 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
   const [intentLoading, setIntentLoading] = useState(false);
   const [intentResult, setIntentResult] = useState<CopilotIntentDebugResult | null>(null);
   const [rerunCopied, setRerunCopied] = useState(false);
+  const [mobileSection, setMobileSection] = useState<CommandCenterSection>("validation");
   const healthRequestRef = useRef<AbortController | null>(null);
   const intentRequestRef = useRef<AbortController | null>(null);
   const copiedTimerRef = useRef<number | null>(null);
@@ -538,7 +540,9 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
         ) : null}
       </section>
 
-      <section className="rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]">
+      <CommandCenterMobileNavigation active={mobileSection} onChange={setMobileSection} />
+
+      <section data-command-center-section="validation" className={`${mobileSection === "validation" ? "block" : "hidden md:block"} rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b7b68]">
@@ -602,7 +606,7 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
         ) : null}
       </section>
 
-      <section className="rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]">
+      <section data-command-center-section="runtime" className={`${mobileSection === "runtime" ? "block" : "hidden md:block"} rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b7b68]">
@@ -798,7 +802,7 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
         ) : null}
       </section>
 
-      <section className="rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]">
+      <section data-command-center-section="modules" className={`${mobileSection === "modules" ? "block" : "hidden md:block"} rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b7b68]">
@@ -867,7 +871,7 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
         ) : null}
       </section>
 
-      <section className="rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]">
+      <section data-command-center-section="capabilities" className={`${mobileSection === "capabilities" ? "block" : "hidden md:block"} rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b7b68]">
@@ -944,7 +948,7 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]">
+      <section data-command-center-section="workbench" className={`${mobileSection === "workbench" ? "block" : "hidden md:block"} rounded-[30px] border border-[#ddd4c8] bg-white/76 p-5 shadow-[0_18px_58px_-50px_rgba(91,74,54,0.42)]`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b7b68]">

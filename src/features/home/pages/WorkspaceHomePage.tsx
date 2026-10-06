@@ -595,7 +595,7 @@ export default function WorkspaceHomePage({
                     aria-expanded={questionGuideOpen}
                     aria-label={questionGuideOpen ? "Hide questions" : "Open questions"}
                     title={questionGuideOpen ? "Hide questions" : "Questions"}
-                    className={`inline-flex h-8 w-8 items-center justify-center text-[12px] font-semibold transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:border sm:px-3 sm:py-1.5 ${
+                    className={`inline-flex h-11 w-11 items-center justify-center text-[12px] font-semibold transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:border sm:px-3 sm:py-1.5 ${
                       questionGuideOpen
                         ? "border-[#0f8b73] bg-[#f7fbf9] text-[#0f8b73]"
                         : "border-[#d9d9d9] bg-white text-[#595959] hover:border-[#111111] hover:text-[#111111]"
@@ -610,7 +610,7 @@ export default function WorkspaceHomePage({
                     onClick={startNewChat}
                     aria-label="Start a new chat"
                     title="New chat"
-                    className="inline-flex h-8 w-8 items-center justify-center text-[12px] font-semibold text-[#595959] transition-colors hover:text-[#111111] sm:h-auto sm:w-auto sm:gap-1.5 sm:border sm:border-[#d9d9d9] sm:bg-white sm:px-3 sm:py-1.5 sm:hover:border-[#111111]"
+                    className="inline-flex h-11 w-11 items-center justify-center text-[12px] font-semibold text-[#595959] transition-colors hover:text-[#111111] sm:h-auto sm:w-auto sm:gap-1.5 sm:border sm:border-[#d9d9d9] sm:bg-white sm:px-3 sm:py-1.5 sm:hover:border-[#111111]"
                   >
                     <MessageSquarePlus className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">New chat</span>
@@ -645,7 +645,7 @@ export default function WorkspaceHomePage({
                                 recordModuleTelemetry({ action: "dismissed", moduleId: item.module, templateId: null, family: null, scope: item.context?.facilityId ? "community" : "portfolio" });
                                 setTimelineItems((current) => current.filter((entry) => entry.id !== item.id));
                               }}
-                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#111111] hover:text-[#111111]"
+                              className="inline-flex h-11 w-11 shrink-0 items-center justify-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#111111] hover:text-[#111111] sm:h-8 sm:w-8"
                               aria-label="Remove surfaced module"
                             >
                               <X className="h-4 w-4" />

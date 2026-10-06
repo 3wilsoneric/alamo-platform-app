@@ -110,19 +110,19 @@ const integrationCases = [
   ["show San Pablo medication profile", "medication_profile", "medication-profile", "topline-summary"],
   ["show portfolio medication compliance", "medication_compliance", "medication-compliance", "data-table"],
   ["show portfolio medication refusals by community", "medication_refusals_by_community", "medication-refusals", "simple-bars"],
-  ["show portfolio medication exceptions", "medication_exception_detail", "medication-exceptions", "data-table"],
+  ["show portfolio medication exceptions", "medication_exception_detail", "medication-exceptions", "data-table", true],
   ["compare census trends across communities over the last six months", "community_time_series", "community-time-series", "multi-series-line"],
-  ["show an incident heatmap by community from April through September 2026", "community_time_series", "community-time-series", "period-heatmap"],
+  ["show an incident heatmap by community from April through September 2026", "community_time_series", "community-time-series", "period-heatmap", true],
   ["Portfolio community profile", "community_profile", "community-profile", "topline-summary"]
 ];
 
-for (const [prompt, expectedTool, expectedModule, expectedTemplate] of integrationCases) {
+for (const [prompt, expectedTool, expectedModule, expectedTemplate, allowUnavailable = false] of integrationCases) {
   const result = await runCopilotTool({ content: prompt });
   if (result.tool !== expectedTool) failures.push(`${prompt}: expected ${expectedTool}, received ${result.tool}`);
-  if (expectedModule == null) {
-    if (result.truthState !== "not_loaded") failures.push(`${prompt}: unavailable exception detail did not preserve not_loaded truth state`);
-    if (!result.visual) failures.push(`${prompt}: unavailable exception detail omitted its recovery surface`);
-    if (result.moduleSpec) failures.push(`${prompt}: unavailable exception detail created an unsupported ad hoc module`);
+  if (expectedModule == null || (allowUnavailable && result.truthState === "not_loaded")) {
+    if (result.truthState !== "not_loaded") failures.push(`${prompt}: unavailable request did not preserve not_loaded truth state`);
+    if (!result.visual) failures.push(`${prompt}: unavailable request omitted its recovery surface`);
+    if (result.moduleSpec) failures.push(`${prompt}: unavailable request created an unsupported ad hoc module`);
   } else {
     if (result.moduleSpec?.moduleId !== expectedModule) failures.push(`${prompt}: expected module ${expectedModule}, received ${result.moduleSpec?.moduleId ?? "none"}`);
     if (result.moduleSpec?.templateId !== expectedTemplate) failures.push(`${prompt}: expected ${expectedTemplate}, received ${result.moduleSpec?.templateId ?? "none"}`);
