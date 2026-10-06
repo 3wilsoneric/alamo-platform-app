@@ -298,7 +298,8 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
     examples: ["Can you show data availability?", "What is the latest incident date loaded?", "How current is the data?", "What census periods are loaded?", "What documentation data is available?"],
     match: (text) => !isDataSliceCatalogLanguage(text) && (
       /\b(data availability|data freshness|latest loaded|latest incident date|how current|how fresh|what periods are loaded|what data periods are available|available data periods|coverage window)\b/.test(text) ||
-      /\b(snapshot|platform|data|incident|incidents|resident|residents|client|clients|roster|census|documentation|medication|meds)\b.*\b(stale|fresh|refresh|refreshed|last refresh|last updated|loaded|available|coverage)\b/.test(text) ||
+      /\b(snapshot|platform|data|incident|incidents|resident|residents|client|clients|roster|census|documentation|medication|meds)\b.*\b(stale|fresh|refresh|refreshed|last refresh|last updated)\b/.test(text) ||
+      /\b(snapshot|platform|data)\b.*\b(loaded|available|coverage)\b/.test(text) ||
       /\b(when|what time)\b.*\b(platform|snapshot|data|incident|incidents)\b.*\b(refresh|refreshed|updated|loaded)\b/.test(text) ||
       /\b(do we have|can you answer|is there|are there)\b.*\b(incident|incidents|census|resident|residents|client|clients|roster|documentation|medication|meds)\b.*\b(data|rows?|detail|coverage|loaded|available)\b/.test(text) ||
       /\bwhat\b.*\b(census|resident|residents|client|clients|roster|documentation|doc gap|doc gaps|medication|meds|compliance|refusal|refusals)\b.*\b(data|rows?|periods?|coverage)\b.*\b(loaded|available)\b/.test(text) ||

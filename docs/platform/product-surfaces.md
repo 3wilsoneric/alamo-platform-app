@@ -16,7 +16,10 @@
 Every authenticated route shares one header with the Alamo home anchor and
 Analytics and Admissions destinations. Below 768px, Menu exposes
 those links plus Communities; Escape, outside click, and navigation close it.
-Admissions-only identities retain their existing access boundary.
+Admissions-only identities retain their existing access boundary. The shared
+header includes the installed-app top safe area in its measured height, and the
+full-page phone menu begins below that complete header rather than beneath the
+browser status area.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
 Betty Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
@@ -30,8 +33,9 @@ every other signed-in identity to `/home`; the owner claim, not knowledge of
 the URL, is the access boundary.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
-analysis live in the profiles. Phone Admissions keeps all five section tabs
-visible. Chart geometry follows the available width, and two-column community
+analysis live in the profiles. Phone Admissions keeps Briefing and Pipeline as
+the stable page-level choices, with a separate three-category Pipeline control
+and a compact dashboard-section control inside Briefing. Chart geometry follows the available width, and two-column community
 tables no longer force horizontal scrolling. Larger comparison tables retain
 bounded horizontal scrolling.
 
@@ -92,9 +96,9 @@ and Census Search use phone-native record cards inside a bounded results viewpor
 instead of squeezed desktop tables or page-length record dumps. Client Search is
 search-first: exports and the automatic profile preview stay out of the primary
 flow, secondary filters are disclosed on demand, and summary measures use a
-compact two-column grid. Incident Center previews up to four records in each
-priority lane and exposes an explicit Show all/Show fewer control so triage remains
-scannable. Certified questions reserve the full phone width for prompt text;
+compact two-column grid. Incident Center uses touch-sized High, Medium, and Low
+tabs on phones and renders one priority lane at a time; each lane still supports
+an explicit Show all/Show fewer control so triage remains scannable. Certified questions reserve the full phone width for prompt text;
 required variables use labeled native selectors below the prompt and the run
 action spans the card width. All phone form controls render at a non-zooming iOS
 font size, and persistent navigation and disclosure actions retain touch-sized
@@ -115,13 +119,18 @@ maps live operational inputs, integrating referral and enhanced-profile lanes,
 the governed Databricks-to-snapshot pipeline, deterministic question/report
 execution, current data depth, and the evidence still required for deeper
 outcome reporting. It is intentionally absent from primary navigation while it
-is reviewed.
+is reviewed. Phones show one numbered chapter at a time with previous, next,
+and native chapter controls; desktop and print retain the complete document.
 
 `/admissions` is the aggregate Admissions overview inside Alamo. It opens on a
-compact three-column referral board and uses one segmented Board, Census, and
-Trends control instead of a page title, subtitles, KPI strip, and three stacked
-sections. Census and trends use governed portfolio and community context from
-the home-dashboard contract. Its primary navigation item follows
+Briefing, with Pipeline as the second page-level view. Briefing keeps the
+executive update concise, then exposes Schedule, Community snapshot, and Open
+fields only when those sections have useful content. Pipeline preserves the
+three-column desktop board and switches to touch-sized Received, In progress,
+and Decision categories on phones. Census uses governed portfolio and community
+context from the home-dashboard contract; referral, assessment, and move-in
+counts remain unavailable when their publishing coverage is false rather than
+being converted to zero. Its primary navigation item follows
 Analytics for every authenticated Platform identity. The separate Pipeline
 application owns referral intake, uploads, OCR, packet evidence, assessments,
 decisions, and other transactional workflow. The `/pipeline` path redirects to
@@ -271,6 +280,8 @@ Expected behavior:
   facility scoping
 - latest and previous loaded incident-day controls keep the last two available
   daily reviews one click away
+- phone triage exposes High, Medium, and Low as 44px tabs and renders one
+  priority lane at a time; desktop retains the simultaneous three-lane view
 - click incident -> event detail expands
 - click resident/client name -> resident profile/drilldown
 - current data questions should expose latest loaded incident date, today's row
@@ -313,6 +324,9 @@ Current purpose:
 - intent compiler workbench
 
 Command Center is a platform operations surface, not a general dashboard.
+On phones, platform health and the QA summary remain visible first, followed by
+one selectable detailed diagnostic section at a time. Desktop retains all
+detailed sections in one document.
 
 ## Secondary Routes
 
@@ -321,7 +335,10 @@ Current secondary surfaces:
 - `/glossary`: platform definitions
 - `/outreach`: market-research workspace that opens on the 15 states with verified
   demand research and preserves all 50 through an explicit national view. The
-  map is a navigation surface, not a synthetic heat score. Every state profile combines
+  map is a navigation surface on desktop, not a synthetic heat score. On phones,
+  the touch-sized state index is the navigation surface and precedes an
+  informational, noninteractive map; the index starts with the priority states
+  and can expand to the full selected scope. Every state profile combines
   a consistently defined state-operated psychiatric-bed baseline with the
   maintained governance, buyer, target-role, opportunity-path, and
   audience-specific effectiveness layers. The 15 default states also

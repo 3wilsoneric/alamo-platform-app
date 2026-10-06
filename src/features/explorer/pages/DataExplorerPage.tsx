@@ -207,14 +207,14 @@ function FacetChip({
       type="button"
       data-explorer-facet="true"
       onClick={onClick}
-      className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
+      className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-semibold tracking-[-0.01em] transition-colors ${
         active
           ? "border-[#0f8b73] bg-[#eef8f5] text-[#0f6f5d]"
           : "border-[#ddd4c8] bg-white/76 text-[#6f6253] hover:bg-[#f7efe3]"
       }`}
     >
       <span>{label}</span>
-      {count != null ? <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px]">{count.toLocaleString()}</span> : null}
+      {count != null ? <span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] tabular-nums">{count.toLocaleString()}</span> : null}
     </button>
   );
 }
@@ -602,13 +602,13 @@ export default function DataExplorerPage() {
             Showing <span className="font-semibold text-[#201a14]">{visibleRows.length.toLocaleString()}</span> of {exportedRowsLabel}
           </div>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:flex">
-            <button type="button" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="min-h-11 rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[11px] font-semibold text-[#6f6253] disabled:opacity-35 sm:min-h-0">
+            <button type="button" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="min-h-11 rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[12px] font-semibold text-[#6f6253] disabled:opacity-35 sm:min-h-0">
               Previous
             </button>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9a8b78]">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#9a8b78]">
               Page {safePage + 1} / {pageCount}
             </span>
-            <button type="button" disabled={safePage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="min-h-11 rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[11px] font-semibold text-[#6f6253] disabled:opacity-35 sm:min-h-0">
+            <button type="button" disabled={safePage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="min-h-11 rounded-full border border-[#ddd4c8] bg-white/78 px-3 py-1.5 text-[12px] font-semibold text-[#6f6253] disabled:opacity-35 sm:min-h-0">
               Next
             </button>
           </div>

@@ -81,6 +81,7 @@
     "check:browser-explorer": "node scripts/check-browser-explorer.mjs",
     "check:browser-chat-flow": "node scripts/check-browser-chat-flow.mjs",
     "check:browser-mobile": "node scripts/check-browser-mobile.mjs",
+    "check:browser-platform-mobile": "node scripts/check-browser-platform-mobile.mjs",
     "check:browser-question-families": "npm run check:guided-report-shape:runtime && npm run cache:certified:runtime && node --env-file=.env scripts/check-browser-question-families.mjs",
     "check:browser-all-guided-answers": "npm run check:guided-report-shape:runtime && npm run cache:certified:runtime && node --env-file=.env scripts/check-browser-all-guided-answers.mjs",
     "check:browser-guided-accessibility": "node scripts/check-browser-guided-accessibility.mjs",
@@ -146,7 +147,7 @@
     "@azure/msal-browser": "^4.26.0",
     "@azure/msal-react": "^3.0.20",
     "@azure/storage-blob": "^12.33.0",
-    "@databricks/sql": "^2.0.0",
+    "@databricks/sql": "^2.2.0",
     "@svg-maps/usa": "^2.0.0",
     "jose": "^6.2.3",
     "lucide-react": "^0.525.0",
@@ -169,5 +170,8 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.2",
     "vite": "^8.1.5"
+  },
+  "overrides": {
+    "basic-ftp": "6.2.2"
   }
 }

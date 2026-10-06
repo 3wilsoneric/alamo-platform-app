@@ -111,7 +111,7 @@ function Pagination({
         type="button"
         onClick={() => onChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="border border-[#b3b3b3] bg-white px-4 py-2 text-[13px] font-semibold text-[#333] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:opacity-40"
+        className="min-h-11 min-w-11 border border-[#b3b3b3] bg-white px-4 py-2 text-[13px] font-semibold text-[#333] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Previous
       </button>
@@ -122,7 +122,7 @@ function Pagination({
         type="button"
         onClick={() => onChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="border border-[#b3b3b3] bg-white px-4 py-2 text-[13px] font-semibold text-[#333] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:opacity-40"
+        className="min-h-11 min-w-11 border border-[#b3b3b3] bg-white px-4 py-2 text-[13px] font-semibold text-[#333] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
       </button>

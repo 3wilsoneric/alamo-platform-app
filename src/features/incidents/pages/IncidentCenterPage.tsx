@@ -65,6 +65,7 @@ const PRIORITY_CONFIG: Record<
     icon: ArrowDown
   }
 };
+const PRIORITIES: IncidentPriority[] = ["HIGH", "MEDIUM", "LOW"];
 
 function DetailPanel({
   incident,
@@ -537,6 +538,7 @@ export default function IncidentCenterPage({
   const [feedWarning, setFeedWarning] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState(false);
   const [contentPage, setContentPage] = useState(0);
+  const [mobilePriority, setMobilePriority] = useState<IncidentPriority>("HIGH");
   const [residentDrilldownIncident, setResidentDrilldownIncident] = useState<IncidentRecord | null>(null);
   const latestFetchId = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
@@ -638,6 +640,11 @@ export default function IncidentCenterPage({
       .filter((incident) => incident.priority === "LOW")
   };
 
+  useEffect(() => {
+    const highestAvailable = PRIORITIES.find((priority) => byPriority[priority].length > 0) ?? "HIGH";
+    setMobilePriority(highestAvailable);
+  }, [activeDateKey, contentPage, facilityId, previousDateKey]);
+
   const selectedDateIncidents = contentPage === 0 ? activeDateFiltered : previousDateFiltered;
   const totalActive = selectedDateIncidents.filter((incident) => incident.stage !== "reviewed").length;
   const contentPages = [
@@ -714,7 +721,7 @@ export default function IncidentCenterPage({
 
           <div className={embedded ? "border-b border-[#d9d9d9] py-2.5" : "border-b border-white/[0.08] px-1 py-2.5"}>
             <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 {contentPages.map((page, index) => (
                   <button
                     key={page.label}
@@ -724,12 +731,12 @@ export default function IncidentCenterPage({
                     disabled={index === 1 && !previousDateKey}
                     className={
                       embedded
-                        ? `border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                        ? `min-h-11 border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                             contentPage === index
                               ? "border-[#0f8b73] bg-[#eef8f5] text-[#0f6f5d]"
                               : "border-[#d9d9d9] bg-white text-[#595959] hover:border-[#111111] hover:text-[#111111] disabled:cursor-not-allowed disabled:opacity-45"
                           }`
-                        : `rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-all ${
+                        : `min-h-11 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-all ${
                             contentPage === index
                               ? "border border-[#0f8b73] bg-[#eef8f5] text-[#0f6f5d]"
                               : "border border-white/[0.08] bg-white/[0.03] text-white/52 hover:border-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
@@ -764,7 +771,7 @@ export default function IncidentCenterPage({
               {!embedded ? (
                 <button
                   onClick={fetchIncidents}
-                  className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/68 transition-colors hover:bg-white/[0.08]"
+                  className="flex min-h-11 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/68 transition-colors hover:bg-white/[0.08]"
                 >
                   <RefreshCw size={11} />
                   Refresh
@@ -811,16 +818,50 @@ export default function IncidentCenterPage({
               </div>
             ) : (
               isPhoneLayout ? (
-                <div className="space-y-3">
-                  {(["HIGH", "MEDIUM", "LOW"] as const).map((priority) => (
+                <div>
+                  <div
+                    role="tablist"
+                    aria-label="Incident priority"
+                    data-incident-priority-tabs="true"
+                    className="mb-3 grid grid-cols-3 gap-2"
+                  >
+                    {PRIORITIES.map((priority) => {
+                      const selected = mobilePriority === priority;
+                      const cfg = PRIORITY_CONFIG[priority];
+                      const activeCount = partitionIncidentsByReviewStage(byPriority[priority]).active.length;
+                      return (
+                        <button
+                          key={priority}
+                          type="button"
+                          role="tab"
+                          aria-selected={selected}
+                          aria-controls={`incident-priority-panel-${priority.toLowerCase()}`}
+                          onClick={() => setMobilePriority(priority)}
+                          className="min-h-11 border px-2 text-[12px] font-semibold transition-colors"
+                          style={{
+                            color: cfg.color,
+                            borderColor: selected ? cfg.color : cfg.border,
+                            background: selected ? cfg.bg : "#ffffff"
+                          }}
+                        >
+                          {priority[0]}{priority.slice(1).toLowerCase()} <span className="tabular-nums">{activeCount}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div
+                    id={`incident-priority-panel-${mobilePriority.toLowerCase()}`}
+                    role="tabpanel"
+                    aria-label={`${mobilePriority.toLowerCase()} priority incidents`}
+                  >
                     <MobilePrioritySection
-                      key={priority}
-                      priority={priority}
-                      incidents={byPriority[priority]}
+                      key={`${contentPage}-${mobilePriority}`}
+                      priority={mobilePriority}
+                      incidents={byPriority[mobilePriority]}
                       onOpenResident={handleOpenResident}
                       light={embedded}
                     />
-                  ))}
+                  </div>
                 </div>
               ) : (
                 <div

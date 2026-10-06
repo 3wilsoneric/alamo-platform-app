@@ -82,6 +82,7 @@ npm run check:browser-community-questions
 npm run check:browser-mar
 npm run check:browser-explorer
 npm run check:browser-chat-flow
+npm run check:browser-platform-mobile
 npm run check:browser-all-guided-answers
 npm run check:browser-guided-accessibility
 npm run check:browser-guided-interactions
@@ -337,6 +338,23 @@ at 320, 390, and 430 pixels with bounded synthetic state-report fixtures. It
 checks the report list, search width, Updates sheet, report reader, expanded
 source text, tap targets, and horizontal overflow without storing live report
 content in the repository.
+
+`npm run check:browser-platform-mobile` is the cross-route phone release gate.
+It opens 18 direct Platform routes at 320×568, 390×844, 430×932, and 844×390,
+then rejects document overflow, clipped controls or fixed content, offscreen
+dialogs, sub-16px form controls, browser errors, and failed requests. It also
+locks the phone-specific interaction contracts for the Outreach state index,
+Incident Center priority tabs, Command Center diagnostic selector, Data
+Architecture chapters, and installed-app top safe area. It stores geometry and
+failure metadata only—no screenshots or rendered PHI—in:
+
+```text
+generated/browser-platform-mobile-qa/latest.json
+```
+
+The release and full readiness profiles run this gate after the focused mobile
+analyst check. It is Chromium automation; physical iOS/Safari and WebKit remain
+a separate acceptance step.
 
 `npm run acquisition:refresh` is a networked data refresh rather than a default
 CI gate. It downloads the configured official N-SUMHSS PUF and codebook, reads

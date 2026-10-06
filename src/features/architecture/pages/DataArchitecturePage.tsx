@@ -1,6 +1,9 @@
 import type { LucideIcon } from "lucide-react";
+import { useState } from "react";
 import {
   ArrowDown,
+  ChevronLeft,
+  ChevronRight,
   BadgeCheck,
   BookOpenCheck,
   Braces,
@@ -23,6 +26,15 @@ import {
 } from "lucide-react";
 
 type Status = "live" | "integrating" | "needed";
+type ArchitectureChapter = "inputs" | "pipeline" | "delivery" | "intelligence" | "depth";
+
+const ARCHITECTURE_CHAPTERS: Array<{ id: ArchitectureChapter; label: string }> = [
+  { id: "inputs", label: "Inputs" },
+  { id: "pipeline", label: "Governed pipeline" },
+  { id: "delivery", label: "Fast delivery" },
+  { id: "intelligence", label: "Deterministic intelligence" },
+  { id: "depth", label: "Current depth" }
+];
 
 interface SourceLane {
   status: Status;
@@ -392,7 +404,7 @@ function FlowNode({
 
 function DownConnector({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center py-3 text-[#0f8b73]" aria-hidden="true">
+    <div className="hidden flex-col items-center py-3 text-[#0f8b73] md:flex" aria-hidden="true">
       <span className="mb-1 text-[9px] font-bold uppercase tracking-[0.18em]">{label}</span>
       <span className="h-5 w-px bg-[#0f8b73]" />
       <ArrowDown className="-mt-1 h-4 w-4" />
@@ -400,7 +412,75 @@ function DownConnector({ label }: { label: string }) {
   );
 }
 
+function ArchitectureChapterNavigation({
+  active,
+  onChange,
+  position
+}: {
+  active: ArchitectureChapter;
+  onChange: (chapter: ArchitectureChapter) => void;
+  position: "top" | "bottom";
+}) {
+  const index = Math.max(0, ARCHITECTURE_CHAPTERS.findIndex((chapter) => chapter.id === active));
+  const previous = ARCHITECTURE_CHAPTERS[index - 1];
+  const next = ARCHITECTURE_CHAPTERS[index + 1];
+
+  return (
+    <nav
+      aria-label={position === "top" ? "Data architecture chapters" : "Continue through data architecture"}
+      className="border-b border-[#bdb5aa] bg-white px-4 py-3 print:hidden md:hidden"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => previous && onChange(previous.id)}
+          disabled={!previous}
+          className="inline-flex min-h-11 min-w-11 items-center justify-center border border-[#bdb5aa] text-[#315b54] disabled:opacity-30"
+          aria-label="Previous architecture chapter"
+        >
+          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">Architecture chapter</span>
+          <select
+            value={active}
+            onChange={(event) => onChange(event.target.value as ArchitectureChapter)}
+            className="h-11 w-full border border-[#bdb5aa] bg-white px-3 text-[13px] font-semibold text-[#17130f]"
+          >
+            {ARCHITECTURE_CHAPTERS.map((chapter, chapterIndex) => (
+              <option key={chapter.id} value={chapter.id}>{chapterIndex + 1} / {ARCHITECTURE_CHAPTERS.length} · {chapter.label}</option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => next && onChange(next.id)}
+          disabled={!next}
+          className="inline-flex min-h-11 min-w-11 items-center justify-center border border-[#bdb5aa] text-[#315b54] disabled:opacity-30"
+          aria-label="Next architecture chapter"
+        >
+          <ChevronRight className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export default function DataArchitecturePage() {
+  const initialHash = typeof window === "undefined" ? "" : window.location.hash.slice(1);
+  const [activeChapter, setActiveChapter] = useState<ArchitectureChapter>(
+    ARCHITECTURE_CHAPTERS.some((chapter) => chapter.id === initialHash)
+      ? initialHash as ArchitectureChapter
+      : "inputs"
+  );
+  const changeChapter = (chapter: ArchitectureChapter) => {
+    setActiveChapter(chapter);
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}#${chapter}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const chapterClass = (chapter: ArchitectureChapter, classes: string) =>
+    `${activeChapter === chapter ? "block" : "hidden md:block print:block"} ${classes}`;
+
   return (
     <div
       data-data-architecture="true"
@@ -456,8 +536,10 @@ export default function DataArchitecturePage() {
         </div>
       </header>
 
+      <ArchitectureChapterNavigation active={activeChapter} onChange={changeChapter} position="top" />
+
       <div>
-        <section className="border-b border-[#bdb5aa] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <section data-architecture-chapter="inputs" className={chapterClass("inputs", "border-b border-[#bdb5aa] px-5 py-8 sm:px-8 lg:px-12 lg:py-10")}>
           <div className="grid gap-6 lg:grid-cols-[0.55fr_1.45fr]">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.21em] text-[#0f8b73]">
@@ -481,7 +563,7 @@ export default function DataArchitecturePage() {
 
         <DownConnector label="Date-partitioned ingestion" />
 
-        <section className="border-y-2 border-[#17130f] bg-[#f5f3ee] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <section data-architecture-chapter="pipeline" className={chapterClass("pipeline", "border-y-2 border-[#17130f] bg-[#f5f3ee] px-5 py-8 sm:px-8 lg:px-12 lg:py-10")}>
           <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.21em] text-[#0f8b73]">
@@ -529,7 +611,7 @@ export default function DataArchitecturePage() {
           </div>
         </section>
 
-        <section className="bg-[#17130f] px-5 py-7 text-[#fffdf8] sm:px-8 lg:px-12">
+        <section className={chapterClass("pipeline", "bg-[#17130f] px-5 py-7 text-[#fffdf8] sm:px-8 lg:px-12")}>
           <div className="grid gap-6 lg:grid-cols-[0.55fr_1.45fr] lg:items-center">
             <div className="flex items-start gap-4">
               <span className="grid h-12 w-12 shrink-0 place-items-center border border-[#625b53]">
@@ -571,7 +653,7 @@ export default function DataArchitecturePage() {
 
         <DownConnector label="Only validated evidence crosses" />
 
-        <section className="border-y border-[#bdb5aa] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <section data-architecture-chapter="delivery" className={chapterClass("delivery", "border-y border-[#bdb5aa] px-5 py-8 sm:px-8 lg:px-12 lg:py-10")}>
           <div className="grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.21em] text-[#0f8b73]">
@@ -631,7 +713,7 @@ export default function DataArchitecturePage() {
           </div>
         </section>
 
-        <section className="bg-[#f3efe7] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <section data-architecture-chapter="intelligence" className={chapterClass("intelligence", "bg-[#f3efe7] px-5 py-8 sm:px-8 lg:px-12 lg:py-10")}>
           <div className="grid gap-8 lg:grid-cols-[0.6fr_1.4fr]">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.21em] text-[#0f8b73]">
@@ -721,7 +803,7 @@ export default function DataArchitecturePage() {
           </div>
         </section>
 
-        <section className="border-y-2 border-[#17130f] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <section data-architecture-chapter="depth" className={chapterClass("depth", "border-y-2 border-[#17130f] px-5 py-8 sm:px-8 lg:px-12 lg:py-10")}>
           <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
             <div>
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -798,6 +880,8 @@ export default function DataArchitecturePage() {
           </div>
         </section>
       </div>
+
+      <ArchitectureChapterNavigation active={activeChapter} onChange={changeChapter} position="bottom" />
 
       <footer className="flex flex-col gap-5 bg-[#0f8b73] px-5 py-7 text-[#fffdf8] sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12">
         <div>

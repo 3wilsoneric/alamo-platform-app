@@ -6,6 +6,7 @@ import {
 } from "../../../../shared/effectiveness-evidence.mjs";
 import StateDetailModal from "../components/StateDetailModal";
 import StateTargetingMap from "../components/StateTargetingMap";
+import { useIsPhoneLayout } from "../../../shared/hooks/useIsPhoneLayout";
 import AcquisitionIntelligenceWorkspace from "../components/AcquisitionIntelligenceWorkspace";
 import {
   fetchAcquisitionOverview,
@@ -118,6 +119,8 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
   const [scope, setScope] = useState<AtlasScope>("priority");
   const [sortMode, setSortMode] = useState<SortMode>("verified-demand");
   const [selectedRecord, setSelectedRecord] = useState<StateTargetingRecord | null>(null);
+  const [showAllMobileStates, setShowAllMobileStates] = useState(false);
+  const isPhoneLayout = useIsPhoneLayout();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -144,6 +147,12 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
     () => new Set(filteredRecords.map((record) => record.stateName)),
     [filteredRecords]
   );
+  const mobileStateIndexIsCollapsed = isPhoneLayout && !normalizedQuery && !showAllMobileStates && filteredRecords.length > 6;
+  const visibleStateIndex = mobileStateIndexIsCollapsed ? filteredRecords.slice(0, 6) : filteredRecords;
+
+  useEffect(() => {
+    setShowAllMobileStates(false);
+  }, [scope, sortMode]);
 
   function navigateSelectedState(direction: -1 | 1) {
     if (!selectedRecord || !filteredRecords.length) return;
@@ -217,7 +226,7 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
         aria-label="Search and organize the targeting atlas"
         className="grid gap-2.5 border-b border-[#d9d9d9] py-3 md:grid-cols-[minmax(260px,1fr)_auto_minmax(220px,0.46fr)] md:items-center"
       >
-        <label className="flex min-h-10 items-center gap-3 border border-[#b3b3b3] bg-white px-3.5 focus-within:border-[#0f8b73] focus-within:ring-1 focus-within:ring-[#0f8b73]">
+        <label className="flex min-h-11 items-center gap-3 border border-[#b3b3b3] bg-white px-3.5 focus-within:border-[#0f8b73] focus-within:ring-1 focus-within:ring-[#0f8b73]">
           <Search className="h-4 w-4 shrink-0 text-[#0f8b73]" />
           <span className="sr-only">Search states and buyer research</span>
           <input
@@ -247,7 +256,7 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
             type="button"
             aria-pressed={scope === "priority"}
             onClick={() => setScope("priority")}
-            className={`h-[38px] px-3.5 text-[12px] font-semibold transition-colors ${
+            className={`min-h-11 px-3.5 text-[12px] font-semibold transition-colors ${
               scope === "priority"
                 ? "bg-[#111111] text-white"
                 : "bg-white text-[#444444] hover:bg-[#f5f4ef]"
@@ -259,7 +268,7 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
             type="button"
             aria-pressed={scope === "all"}
             onClick={() => setScope("all")}
-            className={`h-[38px] border-l border-[#b3b3b3] px-3.5 text-[12px] font-semibold transition-colors ${
+            className={`min-h-11 border-l border-[#b3b3b3] px-3.5 text-[12px] font-semibold transition-colors ${
               scope === "all"
                 ? "bg-[#111111] text-white"
                 : "bg-white text-[#444444] hover:bg-[#f5f4ef]"
@@ -275,7 +284,7 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
             aria-label="Sort states"
             value={sortMode}
             onChange={(event) => setSortMode(event.target.value as SortMode)}
-            className="h-10 w-full appearance-none border border-[#b3b3b3] bg-white px-3.5 pr-9 text-[13px] font-semibold text-[#222222] outline-none focus:border-[#0f8b73] focus:ring-1 focus:ring-[#0f8b73]"
+            className="h-11 w-full appearance-none border border-[#b3b3b3] bg-white px-3.5 pr-9 text-[13px] font-semibold text-[#222222] outline-none focus:border-[#0f8b73] focus:ring-1 focus:ring-[#0f8b73]"
           >
             <option value="verified-demand">Research priority</option>
             <option value="buyer-research">Buyer research first</option>
@@ -289,23 +298,25 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
           </select>
           <ChevronDown
             aria-hidden="true"
-            className="pointer-events-none absolute right-3.5 top-3 h-4 w-4"
+            className="pointer-events-none absolute right-3.5 top-3.5 h-4 w-4"
           />
         </label>
       </section>
 
       <div className="grid gap-6 py-5 xl:grid-cols-[minmax(0,1.78fr)_minmax(310px,0.66fr)] xl:gap-8">
-        <section aria-labelledby="atlas-map-heading">
+        <section aria-labelledby="atlas-map-heading" className="order-2 xl:order-1">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2
                 id="atlas-map-heading"
                 className="font-serif text-[24px] font-semibold tracking-[-0.035em]"
               >
-                Market map
+                <span className="sm:hidden">Market coverage</span>
+                <span className="hidden sm:inline">Market map</span>
               </h2>
               <p className="mt-1 text-[12px] leading-5 text-[#595959]">
-                Select a highlighted state to open its research.
+                <span className="sm:hidden">Color summarizes the lead purchasing structure. Use the state index above to open research.</span>
+                <span className="hidden sm:inline">Select a highlighted state to open its research.</span>
               </p>
             </div>
             <p className="text-right text-[12px] font-semibold text-[#595959]">
@@ -317,6 +328,7 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
             <StateTargetingMap
               matchingStateNames={matchingStateNames}
               onSelect={setSelectedRecord}
+              interactive={!isPhoneLayout}
             />
           </div>
 
@@ -335,7 +347,7 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
           </div>
         </section>
 
-        <aside aria-labelledby="state-index-heading" className="xl:border-l xl:border-[#d9d9d9] xl:pl-8">
+        <aside aria-labelledby="state-index-heading" className="order-1 xl:order-2 xl:border-l xl:border-[#d9d9d9] xl:pl-8">
           <div className="flex items-end justify-between gap-4 border-b-2 border-[#111111] pb-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#595959]">
@@ -354,8 +366,8 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
           </div>
 
           {filteredRecords.length ? (
-            <div className="max-h-[660px] overflow-y-auto overscroll-contain">
-              {filteredRecords.map((record) => {
+            <div className="xl:max-h-[660px] xl:overflow-y-auto xl:overscroll-contain">
+              {visibleStateIndex.map((record) => {
                 const research = getStateResearchDossier(record);
                 const buyerTargetCount = getStateBuyerResearch(record.stateName)?.targets.length;
                 return (
@@ -363,7 +375,7 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
                     type="button"
                     key={record.stateCode}
                     onClick={() => setSelectedRecord(record)}
-                    className="group grid w-full grid-cols-[4px_minmax(0,1fr)_auto] gap-3 border-b border-[#d9d9d9] py-3 pr-1 text-left transition-colors hover:bg-[#f5f4ef] focus:bg-[#f5f4ef]"
+                    className="group grid min-h-14 w-full grid-cols-[4px_minmax(0,1fr)_auto] gap-3 border-b border-[#d9d9d9] py-3 pr-1 text-left transition-colors hover:bg-[#f5f4ef] focus:bg-[#f5f4ef]"
                   >
                     <span
                       className="h-full min-h-11"
@@ -390,6 +402,16 @@ export default function OutreachPage({ embedded = false }: { embedded?: boolean 
                   </button>
                 );
               })}
+              {isPhoneLayout && !normalizedQuery && filteredRecords.length > 6 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllMobileStates((current) => !current)}
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center border border-[#b3b3b3] bg-white px-4 text-[13px] font-semibold text-[#315b54]"
+                  aria-expanded={showAllMobileStates}
+                >
+                  {showAllMobileStates ? "Show priority states only" : `Show all ${filteredRecords.length} states`}
+                </button>
+              ) : null}
             </div>
           ) : (
             <div className="border-b border-[#d9d9d9] py-10 text-center">

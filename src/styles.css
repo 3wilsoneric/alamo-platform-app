@@ -984,14 +984,24 @@ textarea:focus-visible,
 /* Action text retains its authored contrast; only legacy content is recolored above. */
 
 /* Shared chrome stays in document flow at every viewport width. */
-:root { --platform-header-height: 60px; }
-@media (min-width: 768px) { :root { --platform-header-height: 64px; } }
-@media (max-width: 767px) {
+:root {
+  --platform-safe-top: env(safe-area-inset-top, 0px);
+  --platform-header-bar-height: 60px;
+  --platform-header-height: calc(var(--platform-header-bar-height) + var(--platform-safe-top));
+}
+@media (min-width: 768px) { :root { --platform-header-bar-height: 64px; } }
+@media (max-width: 767px), (max-width: 900px) and (max-height: 500px) {
   .app-theme-root input:not([type="checkbox"]):not([type="radio"]),
   .app-theme-root select,
   .app-theme-root textarea { font-size: 16px; }
 }
-@media print { :root { --platform-header-height: 0px; } }
+@media print {
+  :root {
+    --platform-safe-top: 0px;
+    --platform-header-bar-height: 0px;
+    --platform-header-height: 0px;
+  }
+}
 
 /* Keep notched landscape screens clear without changing each page's gutters. */
 .app-theme-root {

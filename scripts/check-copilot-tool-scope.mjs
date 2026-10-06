@@ -183,10 +183,10 @@ const cases = [
   {
     prompt: "all AWOL incidents since May",
     tool: "incident_detail_list",
+    period: "2026-05, 2026-06",
     noteIncludes: "AWOL/Elopement",
-    textIncludes: "scope did not match",
-    textExcludes: "The CSV includes",
-    safeRefusal: true
+    textIncludes: "May 2026 and June 2026",
+    artifact: true
   },
   {
     prompt: "show monthly census from January through June",
@@ -208,10 +208,9 @@ const cases = [
     tool: "slice_metric",
     period: "2026-02",
     noteIncludes: "category=AWOL/Elopement",
-    textIncludes: "not available for February 2026",
-    visualTitleIncludes: "Available Data for This Request",
-    textExcludes: "AWOL/Elopement Incident Slice",
-    safeRefusal: true
+    textIncludes: "JC Wallace House accounted for 113 of 260 AWOL/Elopement incidents in February 2026",
+    visualTitleIncludes: "AWOL/Elopement Incident Slice",
+    textExcludes: "June 2026"
   },
   {
     prompt: "incdients by communty",
