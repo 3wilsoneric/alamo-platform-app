@@ -53,6 +53,36 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Current Data Architecture explainer release — 2026-10-06
+
+The URL-only `/data-architecture` explainer now documents the production system
+that actually exists: Azure Container Apps, the ElderMark/MAR governed snapshot
+spine, live bounded Pipeline and client-database integrations, separately
+restricted Licensing and acquisition stores, deterministic analyst boundaries,
+and sources that are not connected. Static coverage-month claims were removed;
+the page now directs changing coverage and freshness to the runtime manifest.
+
+- source commit: `670f9c2647729f5eae0402043f7d1c49d10e5771`
+- merge commit: `2cde4a8937a3a1a284eb6ba91948cc9e0dd7b233`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/159`
+- ACR build: `cc61`
+- image tag: `alamo-platform:data-architecture-670f9c2`
+- image digest: `sha256:80b72b6a8d648e0b046273336a5094c3a5169617e9e9ae7d16234fb447db256a`
+- active revision: `alamo-platform-prod-web--data-arch-1006`
+- rollback digest: `sha256:01c4f436f67a209eabf5f03dbcba0dd2137887943ac31a1fc6005f93abb3980c`
+- active browser assets: `/assets/index-CDK1hUw2.js` and
+  `/assets/index-5g3z1oKo.css`
+
+This is a frontend-only release on the exact preceding production image.
+TypeScript, source syntax, lint, documentation, production build, desktop and
+390-pixel visual review, and the 72-case whole-platform phone/landscape matrix
+plus safe-area check passed. Post-promotion verification confirmed one ready
+healthy replica at 100 percent traffic, 4/4 production smoke probes,
+byte-identical deployed JS and CSS hashes, the revised architecture copy in the
+production bundle, and clean application startup. The Licensing job remains on
+its Monday/Wednesday schedule with notifications disabled, the alert Logic App
+remains disabled, and no Licensing email was sent.
+
 ### Whole-platform mobile remediation release — 2026-10-06
 
 The Platform now has one production-tested mobile contract across Home,
