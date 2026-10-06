@@ -115,12 +115,17 @@ governed routes or analyst drilldowns, but do not occupy the primary phone
 header. Phone layouts must still render any direct route safely.
 
 The URL-only `/data-architecture` route is a print-ready platform explainer. It
-maps live operational inputs, integrating referral and enhanced-profile lanes,
-the governed Databricks-to-snapshot pipeline, deterministic question/report
-execution, current data depth, and the evidence still required for deeper
-outcome reporting. It is intentionally absent from primary navigation while it
-is reviewed. Phones show one numbered chapter at a time with previous, next,
-and native chapter controls; desktop and print retain the complete document.
+maps the current production system in five chapters: live and bounded inputs,
+the governed Databricks-to-snapshot spine, Azure Container Apps delivery,
+deterministic question and report execution, and capability boundaries. It
+distinguishes the core ElderMark/MAR snapshot from the bounded Pipeline and
+client-database integrations and the separately restricted Licensing and
+research stores. It also names finance, messaging, and external outcome sources
+that are not connected, and reads changing coverage from the runtime manifest
+rather than hard-coding month counts. It is intentionally absent from primary
+navigation while it is reviewed. Phones show one numbered chapter at a time
+with previous, next, and native chapter controls; desktop and print retain the
+complete document.
 
 `/admissions` is the aggregate Admissions overview inside Alamo. It opens on a
 Briefing, with Pipeline as the second page-level view. Briefing keeps the
