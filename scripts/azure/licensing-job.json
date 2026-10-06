@@ -39,6 +39,7 @@
           { "name": "AZURE_STORAGE_ACCOUNT", "value": "alamodatalake" },
           { "name": "AZURE_STORAGE_CONTAINER", "value": "alamo-platform-snapshots" },
           { "name": "LICENSING_AUTH_MODE", "value": "managed_identity" },
+          { "name": "LICENSING_ALERT_NOTIFICATIONS_ENABLED", "value": "false" },
           { "name": "LICENSING_ALERT_WEBHOOK_URL", "secretRef": "licensing-alert-webhook-url" },
           { "name": "LICENSING_INITIAL_EVIDENCE_SHA256", "value": "58bd4f0f454b64dc4d2bd1f942915be41875744b4f1450e68738e36700b8793d" }
         ]

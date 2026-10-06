@@ -1157,7 +1157,7 @@ its image is built with `Dockerfile.licensing-job`. The job uses the existing
 platform managed identity and private snapshot container; it has no user login
 or Codex dependency. It publishes into the existing Licensing Updates feed.
 
-Change-only email is delivered by the enabled Logic App
+Change-only email is prepared for the Logic App
 `alamo-platform-licensing-alerts` through the existing connected Office 365
 Outlook connector. Its source definition is
 `scripts/azure/licensing-alert-workflow.json`; deploy it with
@@ -1166,7 +1166,13 @@ callback URL in Key Vault as `licensing-alert-webhook-url`. The job resolves
 that secret through its existing user-assigned identity and never includes the
 URL in its image or source. Recipients are locked to
 `raj@aaahealthservices.com` and `betty@aaahealthservices.com` in both code and
-the workflow definition.
+the workflow definition. Delivery is currently launch-gated: the Logic App is
+disabled and the job sets `LICENSING_ALERT_NOTIFICATIONS_ENABLED=false` so the
+weekly collector continues to queue changes without sending them. Launch
+requires reauthorizing the Office 365 connection, enabling the Logic App, and
+changing that job setting to exactly `true`; complete all three in one verified
+release. A pending envelope must be reviewed before launch because enabling
+delivery will retry it.
 
 The weekly schedule is Monday at 9 a.m. America/Los_Angeles. Azure evaluates
 cron in UTC, so the job is triggered at both candidate UTC hours and the worker
