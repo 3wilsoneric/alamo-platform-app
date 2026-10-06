@@ -3,8 +3,8 @@
 - purpose: explain current Alamo Platform architecture and boundaries
 - status: authoritative current-state reference
 - owners: engineering, data platform
-- updated: 2026-09-07
-- tags: architecture, react, vercel, databricks, snapshot, azure
+- updated: 2026-10-06
+- tags: architecture, react, azure-container-apps, databricks, snapshot, azure
 - labels: platform-handbook, current-state
 - related files:
   - [alamo-platform-app/src/app/App.tsx](/Users/eric/CareEngineMain/alamo-platform-app/src/app/App.tsx)
@@ -33,7 +33,7 @@ flowchart TD
       Knowledge["Alamo knowledge records and evidence"]
     end
 
-    subgraph Server["Vercel API / Node modules"]
+    subgraph Server["Azure Container Apps / Node API modules"]
       Snapshot["platform-snapshot.mjs"]
       PlatformData["platform-data.mjs"]
       ChatApi["api/chat.js"]
@@ -48,6 +48,7 @@ flowchart TD
       Home["WorkspaceHomePage chat/module canvas"]
       Communities["Communities surfaces"]
       Incidents["Incident Center"]
+      Admissions["Admissions briefing + pipeline"]
       Command["Command Center"]
     end
 
@@ -57,12 +58,28 @@ flowchart TD
     Knowledge --> KnowledgeApi
     Blob --> Snapshot --> PlatformData
     PlatformData --> Client
+    PlatformData --> Admissions
     Home --> ChatApi --> Tools
     ChatApi --> Claude
     Home --> Reports
     Reports --> Tools
     Reports --> Claude
 ```
+
+The diagram shows the core operating-data path. Production also has bounded
+side paths that do not become general snapshot tables:
+
+- Pipeline supplies one versioned server-to-server Admissions summary.
+- The QA-approved client database is a separate Azure object loaded on demand
+  through a validated pointer in the snapshot.
+- Licensing monitoring and owner-only knowledge and acquisition research use
+  specialized stores and protected API contracts.
+- NetSuite, Outlook or Teams workflows, and external hospital, claims, and
+  outcome feeds are not current Platform data sources.
+
+Every source keeps its own coverage and freshness clock. The UI must not imply
+that the snapshot as-of date also describes Pipeline, the client database, or
+Licensing evidence.
 
 ## Frontend Architecture
 
@@ -75,15 +92,21 @@ Primary app entry:
 Current protected routes:
 
 - `/home`: signed-in California community map and comprehensive community-profile entrypoint.
-- `/questions`: guided-question workspace, answer timeline, and surfaced modules.
+- `/analytics`: governed report library.
+- `/analytics/questions`: guided-question workspace, answer timeline, and surfaced modules.
+- `/admissions`: CEO briefing plus the bounded Pipeline referral workspace.
+- `/workforce`: workforce operating overview.
+- `/chat`: unlisted owner-only conversational entry to the same analyst runtime.
 - `/data-architecture`: URL-only, print-ready infographic of the governed data
-  path, current depth, integrating referral/profile inputs, and outcome-data gaps.
+  paths, current production runtime, bounded integrations, available
+  capabilities, and explicit source gaps.
 - `/communities`: portfolio community overview.
 - `/communities/:facilityId`: focused community detail.
 - `/incidents`: Incident Center.
 - `/explorer/:kind`: full-screen governed incident, census, or resident data.
 - `/glossary`: definitions and metric support.
 - `/command-center`: platform health, analyst QA, intent compiler workbench.
+- `/analytics/licensing`: separately authorized Licensing library and change review.
 - `/outreach`: national market research plus an owner-only private-acquisition
   research and valuation view.
 
@@ -113,7 +136,10 @@ navigation.
 
 ## API Architecture
 
-Vercel rewrites route nested API paths to handler files:
+Azure production runs the React application and Node API together in the
+`alamo-platform-prod-web` Container App. The handler files retain compatibility
+with the Vercel adapter, but Vercel is not the public `www.alamoplatform.com`
+host. The logical API routing is:
 
 - `/api/platform/*` -> [api/platform.js](/Users/eric/CareEngineMain/alamo-platform-app/api/platform.js)
 - `/api/integrations/pipeline/clinical/*` -> [api/platform.js](/Users/eric/CareEngineMain/alamo-platform-app/api/platform.js), isolated by [server/pipeline-clinical-api.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/pipeline-clinical-api.mjs)
