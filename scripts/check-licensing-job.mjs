@@ -8,6 +8,7 @@ import {
   buildLicensingChangeEmail,
   deliverPendingLicensingNotifications,
   LICENSING_ALERT_RECIPIENTS,
+  licensingAlertDeliveryEnabled,
   queueLicensingChangeNotification
 } from "./licensing/update-notifications.mjs";
 
@@ -54,6 +55,9 @@ assert.match(email.html, /Santa Clarita &lt;test&gt;/);
 assert.match(email.html, /Updated facility profile &amp; owner/);
 assert.doesNotMatch(email.html, /Santa Clarita <test>/);
 assert.equal(email.idempotencyKey, `licensing:${notificationInput.runId}`);
+assert.equal(licensingAlertDeliveryEnabled(), false, "Delivery must fail closed without an explicit enable flag");
+assert.equal(licensingAlertDeliveryEnabled("false"), false);
+assert.equal(licensingAlertDeliveryEnabled("true"), true);
 
 const blobs = new Map();
 function blobClient(name) {
@@ -79,8 +83,11 @@ const notificationContainer = {
 };
 assert.equal((await queueLicensingChangeNotification(notificationContainer, { ...notificationInput, alerts: [] })).status, "skipped");
 assert.equal((await queueLicensingChangeNotification(notificationContainer, notificationInput)).status, "queued");
+const paused = await deliverPendingLicensingNotifications(notificationContainer);
+assert.deepEqual(paused, [{ status: "paused", pendingCount: 1 }]);
 let deliveryCalls = 0;
 const delivery = await deliverPendingLicensingNotifications(notificationContainer, {
+  enabled: true,
   webhookUrl: "https://prod-00.westus.logic.azure.com/workflows/test/triggers/manual/paths/invoke?sig=test",
   fetchImpl: async (_url, request) => {
     deliveryCalls += 1;
@@ -93,6 +100,7 @@ const delivery = await deliverPendingLicensingNotifications(notificationContaine
 assert.equal(delivery[0].status, "sent");
 assert.equal(deliveryCalls, 1);
 const repeated = await deliverPendingLicensingNotifications(notificationContainer, {
+  enabled: true,
   webhookUrl: "https://prod-00.westus.logic.azure.com/workflows/test/triggers/manual/paths/invoke?sig=test",
   fetchImpl: async () => { throw new Error("A sent notification must not be delivered twice."); }
 });
@@ -100,16 +108,18 @@ assert.equal(repeated[0].status, "already_sent");
 assert.equal(deliveryCalls, 1);
 blobs.delete(`licensing/notifications/sent/${notificationInput.runId}.json`);
 await assert.rejects(deliverPendingLicensingNotifications({ ...notificationContainer, listBlobsFlat: async function* () { yield { name: "licensing/notifications/pending/20261005T160021Z-2fb72799.json" }; } }, {
+  enabled: true,
   webhookUrl: "http://example.com/insecure",
   fetchImpl: async () => ({ ok: true, status: 200, body: null })
 }), /Azure Logic Apps HTTPS/);
 
 const workflow = JSON.parse(await readFile(new URL("./azure/licensing-alert-workflow.json", import.meta.url), "utf8"));
-assert.equal(workflow.properties.state, "Enabled");
+assert.equal(workflow.properties.state, "Disabled");
 assert.equal(workflow.properties.definition.actions.send_licensing_change_email.inputs.body.To, LICENSING_ALERT_RECIPIENTS.slice().reverse().join(";"));
 assert.match(workflow.properties.definition.actions.send_licensing_change_email.inputs.host.connection.name, /office365/);
 const job = JSON.parse(await readFile(new URL("./azure/licensing-job.json", import.meta.url), "utf8"));
 assert.equal(job.properties.configuration.secrets[0].keyVaultUrl, "https://alamo-platform-kv-6jtpmf.vault.azure.net/secrets/licensing-alert-webhook-url");
+assert.equal(job.properties.template.containers[0].env.find((entry) => entry.name === "LICENSING_ALERT_NOTIFICATIONS_ENABLED")?.value, "false");
 assert.equal(job.properties.template.containers[0].env.find((entry) => entry.name === "LICENSING_ALERT_WEBHOOK_URL")?.secretRef, "licensing-alert-webhook-url");
 
-console.log("Licensing job checks passed: Pacific DST schedule, overlap lock, failure unlock, bounded restore, change-only email, recipient lock, delivery receipt, and schedule validation.");
+console.log("Licensing job checks passed: Pacific DST schedule, overlap lock, failure unlock, bounded restore, paused-by-default change email, recipient lock, delivery receipt, and schedule validation.");

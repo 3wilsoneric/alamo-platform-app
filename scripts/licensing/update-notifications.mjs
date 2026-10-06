@@ -12,6 +12,10 @@ export const LICENSING_ALERT_RECIPIENTS = Object.freeze([
   "raj@aaahealthservices.com"
 ]);
 
+export function licensingAlertDeliveryEnabled(value = process.env.LICENSING_ALERT_NOTIFICATIONS_ENABLED) {
+  return value === "true";
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -92,9 +96,14 @@ async function sentReceiptExists(container, runId) {
   return container.getBlockBlobClient(`${SENT_PREFIX}${runId}.json`).exists();
 }
 
-export async function deliverPendingLicensingNotifications(container, { fetchImpl = fetch, webhookUrl } = {}) {
+export async function deliverPendingLicensingNotifications(container, {
+  enabled = licensingAlertDeliveryEnabled(),
+  fetchImpl = fetch,
+  webhookUrl
+} = {}) {
   const pending = [];
   for await (const blob of container.listBlobsFlat({ prefix: PENDING_PREFIX })) pending.push(blob.name);
+  if (!enabled) return pending.length ? [{ status: "paused", pendingCount: pending.length }] : [];
   const results = [];
   for (const name of pending.sort()) {
     const runId = validatedRunId(name.slice(PENDING_PREFIX.length, -".json".length));
