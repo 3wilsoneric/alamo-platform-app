@@ -53,6 +53,47 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Whole-platform mobile remediation release — 2026-10-06
+
+The Platform now has one production-tested mobile contract across Home,
+Analytics, Admissions, Workforce, Outreach, Incident Center, Command Center,
+Data Architecture, Licensing, Explorer, and governed question surfaces. The
+release adds safe-area-aware navigation, touch-safe controls, bounded dialogs,
+phone-specific prioritization and chapter navigation, and explicit missing-data
+language in Admissions. Desktop and print layouts remain available without the
+phone-only simplifications.
+
+- source commit: `a961a83336ba832d1efde1b57e24b13d123f25b4`
+- merge commit: `127c14e1e2f8054405485bb91dd3f2f60e5b6304`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/157`
+- ACR build: `cc60`
+- image tag: `alamo-platform:platform-mobile-127c14e`
+- image digest: `sha256:01c4f436f67a209eabf5f03dbcba0dd2137887943ac31a1fc6005f93abb3980c`
+- active revision: `alamo-platform-prod-web--platform-mobile-1006`
+- rollback digest: `sha256:cc9f7628cff6d0aaf3fa26c7a0d22b3f3b7586cdcd9af2aab493fe8c48dcdd47`
+- active browser assets: `/assets/index-COD0X9Gr.js` and
+  `/assets/index-B1jtzz9D.css`
+
+This is a frontend-only release on the exact preceding production image. The
+permanent whole-platform browser gate passed 72 route-and-viewport checks across
+18 routes at 320-by-568, 390-by-844, 430-by-932, and 844-by-390, plus a
+synthetic 47-pixel safe-area pass. Focused Admissions, Licensing, Home,
+Explorer, Outreach, community-surface, analyst-capability, question-catalog,
+query-understanding, and governed module checks passed, as did type checking,
+linting, documentation, dependency, API-boundary, production build, and source
+health checks. The broader legacy predeploy runner still encounters an older
+local June fixture when a July-through-September community-history case is
+requested; the release-specific checks and live production guards do not depend
+on that stale fixture.
+
+Post-promotion verification confirmed one ready healthy replica at 100 percent
+traffic, 4/4 production smoke probes, one current bundle on `/`, `/admissions`,
+and `/chat`, byte-identical deployed JS and CSS hashes, and authenticated API
+boundaries returning `401` with private no-store caching when called
+anonymously. The Licensing job remains scheduled for Monday and Wednesday with
+`LICENSING_ALERT_NOTIFICATIONS_ENABLED=false`; the alert Logic App remains
+disabled, and no Licensing email was sent.
+
 ### Admissions mobile mode release — 2026-10-04
 
 Admissions now has a dedicated phone reading path across Briefing and Pipeline:
