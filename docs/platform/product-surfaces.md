@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-09-28
+- updated: 2026-10-06
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -420,8 +420,15 @@ rebuilds the feed without fetching CCLD. Original ledger and evidence remain in
 `output/ccld-baseline/data`; restore those from the private evidence archive if
 moving the collector to a different machine.
 
-The scheduled Codex task runs Mondays at 9 a.m. Pacific and publishes updates to
-the live page. Its trigger still requires this Mac and Codex to be running; it
-is not a cloud scheduler. It stays quiet when nothing changed and alerts here
-on meaningful changes or failure. The page uses a compact breadcrumb/Updates
-row above search, without a visible page title or subtitle.
+The Azure Container Apps job runs Mondays at 9 a.m. Pacific and publishes
+updates to the live page without this Mac or Codex. After a complete collection
+publishes atomically, changes from that run are also queued for email to Raj
+Thandi and Betty Dominici. No-change runs do not send mail. The job persists a
+private pending envelope and an immutable sent receipt under the Licensing
+storage prefix, retries unsent envelopes on a later execution, and never places
+report text or resident information in the message. Delivery uses the existing
+connected Office 365 Outlook account through the private
+`alamo-platform-licensing-alerts` Logic App; its signed callback URL is resolved
+from Key Vault and is absent from source and browser code. The page uses a
+compact breadcrumb/Updates row above search, without a visible page title or
+subtitle.

@@ -9,15 +9,17 @@ import { LICENSING_BLOB_PATH, LICENSING_MAX_BYTES } from "../../server/licensing
 import { licensingContainer, readBlob } from "./cloud-storage.mjs";
 import { withLicensingLease } from "./cloud-storage.mjs";
 import { LICENSING_SCHEDULE, isLicensingScheduledTime } from "./job-schedule.mjs";
+import { deliverPendingLicensingNotifications, queueLicensingChangeNotification } from "./update-notifications.mjs";
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL("../../", import.meta.url));
-if (process.argv.includes("--scheduled") && !isLicensingScheduledTime()) {
-  console.log(JSON.stringify({ status: "skipped", reason: "Outside Monday 9 a.m. Pacific." }));
-} else {
-  const container = licensingContainer();
-  const current = container.getBlockBlobClient(LICENSING_BLOB_PATH);
-  try {
+const container = licensingContainer();
+const current = container.getBlockBlobClient(LICENSING_BLOB_PATH);
+try {
+  const recoveredNotifications = await deliverPendingLicensingNotifications(container);
+  if (process.argv.includes("--scheduled") && !isLicensingScheduledTime()) {
+    console.log(JSON.stringify({ status: "skipped", reason: "Outside Monday 9 a.m. Pacific.", notifications: recoveredNotifications }));
+  } else {
     const result = await withLicensingLease(current, async (leaseId, signal) => {
       const previous = await readBlob(current, LICENSING_MAX_BYTES);
       const saved = validateLicensingBundle(JSON.parse(previous.bytes));
@@ -44,7 +46,15 @@ if (process.argv.includes("--scheduled") && !isLicensingScheduledTime()) {
           env: { ...process.env, LICENSING_CLOUD_JOB: "true", LICENSING_EXPECTED_ETAG: previous.etag, LICENSING_LEASE_ID: leaseId }
         });
         process.stdout.write(stdout);
-        return { status: "complete", schedule: LICENSING_SCHEDULE };
+        const publishedBaseline = JSON.parse(await readFile(path.join(destination, "baseline.json"), "utf8"));
+        const publishedUpdates = JSON.parse(await readFile(path.join(destination, "updates.json"), "utf8"));
+        const latestAlerts = publishedUpdates.alerts.filter((alert) => alert.id.startsWith(`${publishedBaseline.runId}-`));
+        const notification = await queueLicensingChangeNotification(container, {
+          runId: publishedBaseline.runId,
+          alerts: latestAlerts,
+          checkedAt: publishedUpdates.lastChecked
+        });
+        return { status: "complete", schedule: LICENSING_SCHEDULE, notification };
       } catch (error) {
         // Preserve the last published collection and expose failure in Updates.
         // This also covers restore/import/publish failures, not just HTTP errors.
@@ -62,9 +72,10 @@ if (process.argv.includes("--scheduled") && !isLicensingScheduledTime()) {
         throw error;
       }
     });
-    console.log(JSON.stringify(result));
-  } catch (error) {
-    console.error(`Licensing cloud check failed: ${error.message}`);
-    process.exitCode = 1;
+    const deliveredNotifications = await deliverPendingLicensingNotifications(container);
+    console.log(JSON.stringify({ ...result, notifications: [...recoveredNotifications, ...deliveredNotifications] }));
   }
+} catch (error) {
+  console.error(`Licensing cloud check failed: ${error.message}`);
+  process.exitCode = 1;
 }

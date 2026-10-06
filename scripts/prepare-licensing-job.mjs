@@ -8,7 +8,7 @@ const files = ["package.json", "package-lock.json", "Dockerfile.licensing-job",
   "shared/licensing-contracts.mjs", "shared/licensing-analysis.mjs",
   "scripts/check-licensing-updates.mjs", "scripts/import-licensing-baseline.mjs", "scripts/publish-licensing.mjs",
   "scripts/licensing/collect.py", "scripts/licensing/restore.py", "scripts/licensing/cloud-storage.mjs",
-  "scripts/licensing/job-schedule.mjs", "scripts/licensing/run-cloud-job.mjs"];
+  "scripts/licensing/job-schedule.mjs", "scripts/licensing/run-cloud-job.mjs", "scripts/licensing/update-notifications.mjs"];
 for (const file of files) {
   const target = path.join(destination, file === "Dockerfile.licensing-job" ? "Dockerfile" : file);
   await mkdir(path.dirname(target), { recursive: true });

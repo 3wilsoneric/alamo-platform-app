@@ -136,6 +136,7 @@
     "licensing:prepare-release": "node scripts/prepare-licensing-release.mjs",
     "licensing:cloud-job": "node scripts/licensing/run-cloud-job.mjs",
     "check:licensing-job": "node scripts/check-licensing-job.mjs && PYTHONDONTWRITEBYTECODE=1 python3 scripts/licensing/check_collect.py",
+    "licensing:deploy-alert-workflow": "node scripts/deploy-licensing-alert-workflow.mjs",
     "licensing:deploy-job": "node scripts/deploy-licensing-job.mjs",
     "licensing:prepare-job": "node scripts/prepare-licensing-job.mjs"
   },

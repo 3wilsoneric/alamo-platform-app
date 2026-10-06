@@ -1,0 +1,97 @@
+{
+  "location": "westus2",
+  "properties": {
+    "state": "Enabled",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "licensing_change_received": {
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "required": ["version", "runId", "idempotencyKey", "subject", "html", "alertCount"],
+              "properties": {
+                "version": { "type": "string" },
+                "runId": { "type": "string" },
+                "idempotencyKey": { "type": "string" },
+                "subject": { "type": "string" },
+                "html": { "type": "string" },
+                "alertCount": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "actions": {
+        "send_licensing_change_email": {
+          "type": "ApiConnection",
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['office365']['connectionId']"
+              }
+            },
+            "method": "post",
+            "path": "/v2/Mail",
+            "body": {
+              "To": "raj@aaahealthservices.com;betty@aaahealthservices.com",
+              "Subject": "@triggerBody()?['subject']",
+              "Body": "@triggerBody()?['html']",
+              "Importance": "Normal"
+            }
+          },
+          "runAfter": {}
+        },
+        "respond_success": {
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "status": "sent",
+              "idempotencyKey": "@triggerBody()?['idempotencyKey']"
+            }
+          },
+          "runAfter": {
+            "send_licensing_change_email": ["Succeeded"]
+          }
+        },
+        "respond_failure": {
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 502,
+            "body": {
+              "status": "failed",
+              "idempotencyKey": "@triggerBody()?['idempotencyKey']"
+            }
+          },
+          "runAfter": {
+            "send_licensing_change_email": ["Failed", "TimedOut"]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "parameters": {
+      "$connections": {
+        "value": {
+          "office365": {
+            "id": "/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/providers/Microsoft.Web/locations/westus2/managedApis/office365",
+            "connectionId": "/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/resourceGroups/alamo-data-rg/providers/Microsoft.Web/connections/office365",
+            "connectionName": "office365"
+          }
+        }
+      }
+    }
+  }
+}
