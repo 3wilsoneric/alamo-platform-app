@@ -1252,6 +1252,24 @@ Succeeded. The old `alamo-licensing-updates` Codex automation was deleted only
 after both successful cloud executions and schedule verification. No Mac,
 Codex session, or interactive Azure sign-in is required for subsequent checks.
 
+### Licensing email launch hold — 2026-10-06
+
+- source merge: `c29da51` (PR #151)
+- job image: `alamo-licensing-job@sha256:556933b3a3c8402248ca30a87cbe0070435a99b381a81add3946d8e7cdc0ff8e`
+- preceding job image: `alamo-licensing-job@sha256:cf2cabc0d6bb362977910c0fc820a7f6085e475a525df10b09ffd72eb469c90d`
+- ACR build: `cc5v`
+- verification execution: `alamo-platform-licensing-check-g5a0sit`
+
+The change-only email path is installed but not launched. The Logic App is
+Disabled and the scheduled job has
+`LICENSING_ALERT_NOTIFICATIONS_ENABLED=false`. A real Oct 5 Santa Clarita
+change remains in the private pending queue; no sent receipt exists. The
+verification execution succeeded and reported one paused pending envelope,
+proving the scheduled collector can remain healthy without calling the mail
+workflow. The existing Office 365 connector also requires reauthorization
+before launch. Do not enable either gate or retry the pending alert without
+explicit approval to send to Raj and Betty.
+
 ### Navigation and responsive review release — 2026-09-28
 
 - source: `2a2f9db`, following `8b5461f` and `3610feb` on
