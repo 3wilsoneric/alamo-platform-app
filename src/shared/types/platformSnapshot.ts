@@ -950,6 +950,42 @@ export type WorkforceSummary =
       upcomingExpirations: WorkforceExpirationGroup[];
     };
 
+export interface WorkforceRolePosition {
+  title: string;
+  community: string;
+  openings: number;
+  phase1: number;
+  phase2: number;
+  phase3: number;
+}
+
+export interface WorkforceRoleHiring {
+  discipline: string;
+  label: string;
+  openRoles: number;
+  applicants: number;
+  phase1: number;
+  phase2: number;
+  phase3: number;
+  positions: WorkforceRolePosition[];
+}
+
+export type WorkforceRoleOverview =
+  | { status: "not_connected" | "unavailable" }
+  | {
+      status: "connected";
+      placeholderData: boolean;
+      asOf: string;
+      phaseNames: [string, string, string];
+      roles: WorkforceRoleHiring[];
+      rolesWithoutHiring: string[];
+    };
+
+export interface WorkforceRolesResponse {
+  generated_at: string;
+  workforce: WorkforceRoleOverview;
+}
+
 export interface WorkforceDashboardResponse {
   generated_at: string;
   workforce: WorkforceSummary;

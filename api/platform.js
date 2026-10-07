@@ -5,7 +5,8 @@ import {
   getPlatformHealth,
   getPlatformSnapshotHealth,
   getPlatformSnapshotMetadata,
-  getWorkforceDashboardData
+  getWorkforceDashboardData,
+  getWorkforceRolesData
 } from "../server/platform-data.mjs";
 import { getAnalystTraceTelemetry } from "../server/tools/turn-trace.mjs";
 import {
@@ -74,6 +75,8 @@ const PLATFORM_GET_ROUTES = Object.freeze({
     assertPlatformKnowledgeOwner(authContext);
     return getWorkforceDashboardData();
   },
+  // Hiring by role only (no staffing or credential data); open to signed-in Platform users.
+  "/api/platform/workforce-roles": () => getWorkforceRolesData(),
   "/api/platform/bootstrap": () => getPlatformBootstrap(),
   "/api/platform/health": () => getPlatformHealth(),
   "/api/platform/analyst-qa": () => getAnalystQaStatus(),

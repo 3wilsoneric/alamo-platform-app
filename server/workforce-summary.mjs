@@ -5,7 +5,9 @@
 
 const REQUEST_TIMEOUT_MS = 5_000;
 const CACHE_TTL_MS = 5 * 60_000;
-const FAILURE_RETRY_MS = 60_000;
+// The Workforce app scales to zero when idle and takes longer than the request
+// timeout to wake, so retry soon: the next attempt usually reaches a warm app.
+const FAILURE_RETRY_MS = 15_000;
 const MAX_COMMUNITIES = 40;
 const MAX_ROLES = 40;
 const MAX_OPEN_POSITIONS = 400;
@@ -135,6 +137,9 @@ export function normalizeWorkforceSummary(payload, workforceOrigin = null) {
 
   return {
     status: "connected",
+    // Sample data unless the producer explicitly says otherwise, so an older or
+    // malformed producer can never present placeholder numbers as real.
+    placeholderData: payload.placeholderData !== false,
     workforceUrl: workforceOrigin,
     asOf,
     generatedAt,
@@ -144,6 +149,50 @@ export function normalizeWorkforceSummary(payload, workforceOrigin = null) {
     roles,
     openPositions: positions,
     upcomingExpirations
+  };
+}
+
+/**
+ * The view every signed-in Platform user may see: hiring by role only. It carries
+ * role names, open-role titles with their community and openings, and applicant
+ * counts by phase. Staffing levels, credential health, and links into the
+ * Workforce app stay in the owner-only dashboard.
+ * @param {any} summary
+ */
+export function buildWorkforceRoleOverview(summary) {
+  if (summary?.status !== "connected") return { status: summary?.status === "unavailable" ? "unavailable" : "not_connected" };
+  const positionsByRole = new Map();
+  for (const position of summary.openPositions) {
+    const list = positionsByRole.get(position.discipline) ?? [];
+    list.push({
+      title: position.title,
+      community: position.community,
+      openings: position.openings,
+      phase1: position.phase1,
+      phase2: position.phase2,
+      phase3: position.phase3
+    });
+    positionsByRole.set(position.discipline, list);
+  }
+  const roles = summary.roles
+    .map((role) => ({
+      discipline: role.discipline,
+      label: role.label,
+      openRoles: role.totals.openRoles,
+      applicants: role.totals.applicants,
+      phase1: role.totals.phase1,
+      phase2: role.totals.phase2,
+      phase3: role.totals.phase3,
+      positions: (positionsByRole.get(role.discipline) ?? []).sort((a, b) => b.openings - a.openings || a.title.localeCompare(b.title))
+    }))
+    .sort((a, b) => b.openRoles - a.openRoles || b.applicants - a.applicants || a.label.localeCompare(b.label));
+  return {
+    status: "connected",
+    placeholderData: summary.placeholderData,
+    asOf: summary.asOf,
+    phaseNames: summary.phaseNames,
+    roles: roles.filter((role) => role.openRoles > 0 || role.applicants > 0),
+    rolesWithoutHiring: roles.filter((role) => role.openRoles === 0 && role.applicants === 0).map((role) => role.label)
   };
 }
 
@@ -174,7 +223,8 @@ export async function getWorkforceSummary() {
       })
       .catch((error) => {
         console.warn("Workforce summary unavailable:", error instanceof Error ? error.message : error);
-        const value = { status: "unavailable" };
+        // Keep serving the last good summary through a failed refresh.
+        const value = cache.value?.status === "connected" ? cache.value : { status: "unavailable" };
         cache = { value, expiresAt: Date.now() + FAILURE_RETRY_MS, promise: null };
         return value;
       });

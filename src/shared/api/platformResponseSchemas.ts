@@ -2,6 +2,7 @@ import type {
   AdmissionsBoardCard,
   AdmissionsDashboardResponse,
   WorkforceDashboardResponse,
+  WorkforceRolesResponse,
   AnalystQaStatus,
   AnalystTraceTelemetryResponse,
   CommunityIncidentDetailRecord,
@@ -631,9 +632,40 @@ function validateWorkforceDashboardPayload(value: unknown) {
   return payload as unknown as WorkforceDashboardResponse;
 }
 
+function validateWorkforceRolesPayload(value: unknown) {
+  const endpoint = "workforce roles";
+  const payload = assertRecord(value, endpoint);
+  assertString(payload.generated_at, endpoint, "generated_at");
+  const workforce = assertRecord(payload.workforce, endpoint, "workforce");
+  const status = workforce.status;
+  if (status === "not_connected" || status === "unavailable") return payload as unknown as WorkforceRolesResponse;
+  if (status !== "connected") fail(endpoint, "workforce.status is not recognized");
+  assertBoolean(workforce.placeholderData, endpoint, "workforce.placeholderData");
+  assertIsoCalendarDate(workforce.asOf, endpoint, "workforce.asOf");
+  assertStringArray(workforce.phaseNames, endpoint, "workforce.phaseNames", 3);
+  assertStringArray(workforce.rolesWithoutHiring, endpoint, "workforce.rolesWithoutHiring", 40);
+  const counts = ["phase1", "phase2", "phase3"];
+  assertArray(workforce.roles, endpoint, "workforce.roles").forEach((row, index) => {
+    const path = `workforce.roles[${index}]`;
+    const role = assertRecord(row, endpoint, path);
+    assertString(role.discipline, endpoint, `${path}.discipline`);
+    assertString(role.label, endpoint, `${path}.label`);
+    ["openRoles", "applicants", ...counts].forEach((field) => assertNumber(role[field], endpoint, `${path}.${field}`));
+    assertArray(role.positions, endpoint, `${path}.positions`).forEach((positionRow, positionIndex) => {
+      const positionPath = `${path}.positions[${positionIndex}]`;
+      const position = assertRecord(positionRow, endpoint, positionPath);
+      assertString(position.title, endpoint, `${positionPath}.title`);
+      assertString(position.community, endpoint, `${positionPath}.community`);
+      ["openings", ...counts].forEach((field) => assertNumber(position[field], endpoint, `${positionPath}.${field}`));
+    });
+  });
+  return payload as unknown as WorkforceRolesResponse;
+}
+
 export const platformResponseValidators = {
   admissionsDashboard: validateAdmissionsDashboardPayload,
   workforceDashboard: validateWorkforceDashboardPayload,
+  workforceRoles: validateWorkforceRolesPayload,
   communitiesDashboard(value: unknown) {
     const payload = assertRecord(value, "communities dashboard");
     assertString(payload.generated_at, "communities dashboard", "generated_at");

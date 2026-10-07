@@ -9,7 +9,8 @@ import type {
   PlatformHealthResponse,
   AnalystTraceTelemetryResponse,
   ReportsSummaryResponse,
-  WorkforceDashboardResponse
+  WorkforceDashboardResponse,
+  WorkforceRolesResponse
 } from "../types/platformSnapshot";
 import {
   readJsonStorage,
@@ -37,7 +38,8 @@ export type {
   PlatformHealthResponse,
   AnalystTraceTelemetryResponse,
   ReportsSummaryResponse,
-  WorkforceDashboardResponse
+  WorkforceDashboardResponse,
+  WorkforceRolesResponse
 } from "../types/platformSnapshot";
 
 interface ClientCacheEntry {
@@ -555,6 +557,21 @@ export function fetchWorkforceDashboard(signal?: AbortSignal) {
     "/api/platform/workforce-dashboard",
     signal,
     platformResponseValidators.workforceDashboard
+  );
+}
+
+export function fetchWorkforceRoles(signal?: AbortSignal) {
+  return fetchJson<WorkforceRolesResponse>(
+    "/api/platform/workforce-roles",
+    signal,
+    platformResponseValidators.workforceRoles
+  );
+}
+
+export function readCachedWorkforceRoles() {
+  return readCachedJson(
+    "/api/platform/workforce-roles",
+    platformResponseValidators.workforceRoles
   );
 }
 

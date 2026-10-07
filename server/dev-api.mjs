@@ -7,6 +7,7 @@ import {
   getCommunitiesDashboardData,
   getAdmissionsDashboardData,
   getWorkforceDashboardData,
+  getWorkforceRolesData,
   getDataExplorerData,
   getHomeDashboardData,
   getPlatformBootstrap,
@@ -380,6 +381,11 @@ const server = http.createServer(async (req, res) => {
 
     if (requestUrl.pathname === "/api/platform/admissions-dashboard") {
       sendJson(res, 200, await getAdmissionsDashboardData());
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/platform/workforce-roles") {
+      sendJson(res, 200, await getWorkforceRolesData());
       return;
     }
 

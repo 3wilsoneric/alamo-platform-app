@@ -3,13 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
-import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 
 const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
-  { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true }
+  { id: "workforce", label: "Workforce", href: "/workforce" }
 ];
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
@@ -22,8 +21,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
       : pathname === "/" || pathname.startsWith("/home") || pathname.startsWith("/communities") ? "home" : "";
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
-  const canViewOwnerWorkspace = usePlatformOwnerAccess();
-  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace);
+  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES;
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {
