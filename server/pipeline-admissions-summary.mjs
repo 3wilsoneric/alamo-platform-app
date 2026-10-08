@@ -58,6 +58,11 @@ function isoCalendarDate(value) {
     : null;
 }
 
+function isoMonth(value) {
+  const normalized = text(value, 7);
+  return normalized && /^\d{4}-(0[1-9]|1[0-2])$/.test(normalized) ? normalized : null;
+}
+
 function isoTimestamp(value) {
   const normalized = text(value, 40);
   return normalized && Number.isFinite(Date.parse(normalized)) ? normalized : null;
@@ -334,12 +339,25 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
     const values = counts(row, MONTH_FIELDS);
     return month && values ? { month, ...values } : null;
   });
-  const metrics = counts(payload.metrics, {
-    onBoard: "on_board",
-    stale: "stale",
-    unassigned: "unassigned",
-    awaitingAdmission: "awaiting_admission"
-  });
+  const onBoard = count(payload.metrics?.on_board);
+  const stale = count(payload.metrics?.stale);
+  const unassigned = count(payload.metrics?.unassigned);
+  const awaitingAdmission = count(payload.metrics?.awaiting_admission);
+  const baseMetrics = onBoard == null || stale == null || unassigned == null || awaitingAdmission == null
+    ? null
+    : { onBoard, stale, unassigned, awaitingAdmission };
+  const declinedCount = normalizedColumns
+    .filter(Boolean)
+    .flatMap((column) => column.statuses)
+    .filter((row) => row.status.toLowerCase() === "declined")
+    .reduce((totalCount, row) => totalCount + row.count, 0);
+  const activeReferrals = payload.metrics?.active_referrals === undefined
+    ? (baseMetrics ? Math.max(0, baseMetrics.onBoard - declinedCount) : null)
+    : count(payload.metrics?.active_referrals);
+  /** @type {{ onBoard: number, stale: number, unassigned: number, awaitingAdmission: number, activeReferrals: number } | null} */
+  const metrics = baseMetrics && activeReferrals != null
+    ? { ...baseMetrics, activeReferrals }
+    : null;
   const monthOutcomes = counts(history.month_outcomes, MONTH_FIELDS);
   const month = text(history.month_outcomes?.month, 7);
   const upcoming = counts(payload.upcoming_admissions, {
@@ -353,12 +371,17 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
   const decisionsCounted = count(timing?.decisions_counted);
   const windowDays = count(timing?.window_days);
   const total = count(board.total);
+  const coverageStartMonth = history?.coverage_start_month === undefined
+    ? (normalizedMonthly.find(Boolean)?.month ?? null)
+    : (history.coverage_start_month === null ? null : isoMonth(history.coverage_start_month));
 
   if (
     normalizedColumns.some((column) => !column) ||
     normalizedCards.some((card) => !card) ||
     normalizedMonthly.some((row) => !row) ||
-    !metrics || !monthOutcomes || !month || !upcoming || !briefing || total == null ||
+    !metrics || metrics.activeReferrals > metrics.onBoard || !monthOutcomes || !month || !upcoming || !briefing || total == null ||
+    (history?.coverage_start_month !== undefined && history.coverage_start_month !== null && !coverageStartMonth) ||
+    normalizedMonthly.some((row) => row && coverageStartMonth && row.month < coverageStartMonth) ||
     decisionsCounted == null || windowDays == null ||
     !(medianDays === null || (typeof medianDays === "number" && Number.isFinite(medianDays) && medianDays >= 0))
   ) {
@@ -378,6 +401,7 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
     upcomingAdmissions: upcoming,
     briefing,
     history: {
+      coverageStartMonth,
       monthOutcomes: { month, ...monthOutcomes },
       monthly: normalizedMonthly,
       decisionTiming: { windowDays, medianDaysToDecision: medianDays, decisionsCounted }

@@ -281,10 +281,11 @@ export type AdmissionsReferralPipeline =
         columns: Array<{ key: AdmissionsBoardColumnKey; label: string; count: number; statuses: Array<{ status: string; count: number }> }>;
         cards: AdmissionsBoardCard[];
       };
-      metrics: { onBoard: number; stale: number; unassigned: number; awaitingAdmission: number };
+      metrics: { onBoard: number; activeReferrals: number; stale: number; unassigned: number; awaitingAdmission: number };
       upcomingAdmissions: { next7Days: number; next30Days: number; pastPlannedDate: number; noPlannedDate: number };
       briefing: AdmissionsPipelineBriefing;
       history: {
+        coverageStartMonth: string | null;
         monthOutcomes: AdmissionsReferralMonth;
         monthly: AdmissionsReferralMonth[];
         decisionTiming: { windowDays: number; medianDaysToDecision: number | null; decisionsCounted: number };

@@ -17,6 +17,7 @@ import PipelineBoard, { ProgressModal } from "../components/PipelineBoard";
 import {
   buildAdmissionsMoveInSchedule,
   isAcceptedReferral,
+  isDeclinedReferral,
   type AdmissionsScheduleEvent
 } from "../schedule";
 
@@ -509,14 +510,14 @@ function isCurrentOrFutureEvent(value: string, today: string) {
 }
 
 function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
-  const columns = new Map(pipeline.board.columns.map((column) => [column.key, column.count]));
-  const total = pipeline.board.total;
+  const activeCards = pipeline.board.cards.filter((card) => !isDeclinedReferral(card.status));
+  const total = pipeline.metrics.activeReferrals;
   if (!total) return null;
 
-  const received = columns.get("received") ?? 0;
-  const inProgress = columns.get("in_progress") ?? 0;
-  const decision = columns.get("decision") ?? 0;
-  const acceptedClients = pipeline.board.cards
+  const received = activeCards.filter((card) => card.column === "received").length;
+  const inProgress = activeCards.filter((card) => card.column === "in_progress").length;
+  const decision = activeCards.filter((card) => card.column === "decision").length;
+  const acceptedClients = activeCards
     .filter((card) => isAcceptedReferral(card.status))
     .map((card) => ({
       name: card.clientName,
@@ -535,7 +536,7 @@ function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
       return left.name.localeCompare(right.name);
     });
   const communityCounts = new Map<string, number>();
-  for (const card of pipeline.board.cards) {
+  for (const card of activeCards) {
     const community = card.facilityId ? card.community : "No community assigned";
     communityCounts.set(community, (communityCounts.get(community) ?? 0) + 1);
   }
@@ -948,6 +949,7 @@ function buildScheduleWeek(today: string, eventDates: string[]) {
 function buildAdmissionsFollowUpItems(pipeline: ConnectedAdmissionsPipeline | null): AdmissionsFollowUpItem[] {
   if (!pipeline) return [];
   return pipeline.board.cards
+    .filter((card) => !isDeclinedReferral(card.status))
     .map((card) => {
       const issues: string[] = [];
       if (card.flags.moveInOverdue) {

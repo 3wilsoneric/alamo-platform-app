@@ -23,6 +23,10 @@ export function isAcceptedReferral(status: string) {
   return normalized.startsWith("accept") || normalized === "awaiting admit" || normalized === "meet the client not sent";
 }
 
+export function isDeclinedReferral(status: string) {
+  return status.trim().toLowerCase() === "declined";
+}
+
 export function buildAdmissionsMoveInSchedule(
   pipeline: ConnectedAdmissionsPipeline | null,
   briefing: AdmissionsWeeklyBriefing | null,
