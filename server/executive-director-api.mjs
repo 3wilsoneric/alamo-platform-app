@@ -19,7 +19,12 @@ import {
 import { readValidatedJsonRequest } from "./http-body.mjs";
 import { createHttpError, getApiError, getRequestUrl } from "./http-errors.mjs";
 import { applyProtectedApiHeaders } from "./http-response.mjs";
-import { getCommunitySnapshotData } from "./platform-data.mjs";
+import {
+  getAdmissionsDashboardData,
+  getCommunitySnapshotData,
+  getReportsSummaryData
+} from "./platform-data.mjs";
+import { buildExecutiveDirectorCommunityDashboard } from "./executive-director-dashboard.mjs";
 import {
   LIC624_FORM_DEFINITION,
   LIC624_INCIDENT_TYPE_FIELDS,
@@ -69,6 +74,21 @@ async function getDashboardSnapshot(facilityId) {
   }
 }
 
+async function getCommunityDashboard(facilityId) {
+  const [communityResult, reportsResult, admissionsResult] = await Promise.allSettled([
+    getCommunitySnapshotData(facilityId),
+    getReportsSummaryData({ includeAnalystHistory: false }),
+    getAdmissionsDashboardData()
+  ]);
+
+  return buildExecutiveDirectorCommunityDashboard({
+    facilityId,
+    communitySnapshot: communityResult.status === "fulfilled" ? communityResult.value : null,
+    reportsSummary: reportsResult.status === "fulfilled" ? reportsResult.value : null,
+    admissionsDashboard: admissionsResult.status === "fulfilled" ? admissionsResult.value : null
+  });
+}
+
 export function isExecutiveDirectorApiPath(pathname) {
   return String(pathname ?? "").startsWith(`${EXECUTIVE_DIRECTOR_API_PREFIX}/`);
 }
@@ -108,6 +128,28 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
           submissions: submissions.map(toExecutiveDirectorSubmissionSummary)
         },
         form: getLic624FormContract()
+      });
+      return;
+    }
+
+    if (req.method === "GET" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/dashboard`) {
+      const facilityId = resolveExecutiveDirectorFacility(
+        access,
+        requestUrl.searchParams.get("facilityId")
+      );
+      const facility = ALAMO_FACILITIES.find((item) => item.facilityId === facilityId);
+      if (!facility) {
+        throw createHttpError(400, "executive_director_facility_invalid", "Choose a listed Alamo community.");
+      }
+      res.status(200).json({
+        facility: {
+          facilityId: facility.facilityId,
+          communityName: facility.communityName,
+          shortName: facility.shortName,
+          city: facility.city,
+          state: facility.state
+        },
+        dashboard: await getCommunityDashboard(facilityId)
       });
       return;
     }

@@ -2,6 +2,13 @@ import {
   fetchWithApiAuth,
   readBoundedJsonResponse
 } from "../../../shared/api/authenticatedFetch";
+import type {
+  AdmissionsBoardCard,
+  AdmissionsFlowTotals,
+  AdmissionsPipelineBriefingAssessment,
+  AdmissionsPipelineBriefingMoveIn,
+  AdmissionsPipelineBriefingReferral
+} from "../../../shared/types/platformSnapshot";
 
 export type ExecutiveDirectorIntakeStatus =
   | "awaiting_form_definition"
@@ -128,6 +135,61 @@ export interface ExecutiveDirectorBootstrap {
   form: Lic624FormContract;
 }
 
+export interface ExecutiveDirectorCommunityDashboard {
+  version: "executive-director-community-dashboard-v1";
+  status: "ready" | "unavailable";
+  generatedAt: string | null;
+  reportingMonth: string | null;
+  summary: {
+    residents: number | null;
+    currentIncidents: number | null;
+    priorIncidents: number | null;
+    averageAge: number | null;
+    averageLengthOfStay: number | null;
+  } | null;
+  census: Array<{ month: string; census: number }>;
+  incidentTrend: Array<{ month: string; count: number }>;
+  topIncidentCategories: Array<{ label: string; count: number }>;
+  medication: {
+    month: string;
+    compliancePct: number | null;
+    scheduled: number | null;
+    given: number | null;
+    notGiven: number | null;
+  } | null;
+  admissions: {
+    status: "connected" | "not_connected" | "unavailable";
+    generatedAt: string | null;
+    asOfDate: string | null;
+    community: {
+      census: number | null;
+      censusChange: number | null;
+      operatingLimit: number | null;
+      occupancyPct: number | null;
+      monthToDate: AdmissionsFlowTotals;
+      lastMonth: AdmissionsFlowTotals;
+      recentWeeks: AdmissionsFlowTotals;
+      activeReferrals: number | null;
+      inDecision: number | null;
+      needsAttention: number | null;
+      newReferrals7d: number | null;
+      newReferrals14d: number | null;
+      assessmentsThisWeek: number | null;
+      plannedMoveInsThisWeek: number | null;
+      completedMoveInsThisWeek: number | null;
+    } | null;
+    cards: AdmissionsBoardCard[];
+    recentReferrals: AdmissionsPipelineBriefingReferral[];
+    upcomingAssessments: AdmissionsPipelineBriefingAssessment[];
+    plannedMoveIns: AdmissionsPipelineBriefingMoveIn[];
+  };
+}
+
+export interface ExecutiveDirectorCommunityDashboardResponse {
+  facility: ExecutiveDirectorBootstrap["facility"];
+  dashboard: ExecutiveDirectorCommunityDashboard;
+}
+
 async function readApiJson<T>(response: Response): Promise<T> {
   const body = await readBoundedJsonResponse<T & { error?: string }>(response, 2 * 1024 * 1024);
   if (!response.ok) {
@@ -141,6 +203,17 @@ export function fetchExecutiveDirectorBootstrap(facilityId: string, signal?: Abo
     `/api/platform/executive-director/bootstrap?facilityId=${encodeURIComponent(facilityId)}`,
     signal ? { signal } : {},
     { consume: (response) => readApiJson<ExecutiveDirectorBootstrap>(response) }
+  );
+}
+
+export function fetchExecutiveDirectorCommunityDashboard(
+  facilityId: string,
+  signal?: AbortSignal
+) {
+  return fetchWithApiAuth<ExecutiveDirectorCommunityDashboardResponse>(
+    `/api/platform/executive-director/dashboard?facilityId=${encodeURIComponent(facilityId)}`,
+    signal ? { signal } : {},
+    { consume: (response) => readApiJson<ExecutiveDirectorCommunityDashboardResponse>(response) }
   );
 }
 

@@ -58,6 +58,7 @@ for (const file of [
   "api-auth.mjs",
   "executive-director-access.mjs",
   "executive-director-api.mjs",
+  "executive-director-dashboard.mjs",
   "executive-director-intake-storage.mjs",
   "lic624-extraction.mjs",
   "lic624-review.mjs"

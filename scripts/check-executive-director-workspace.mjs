@@ -19,6 +19,7 @@ import {
   saveExecutiveDirectorIntakeReview,
   toExecutiveDirectorSubmissionDetail
 } from "../server/executive-director-intake-storage.mjs";
+import { buildExecutiveDirectorCommunityDashboard } from "../server/executive-director-dashboard.mjs";
 
 const access = getExecutiveDirectorAccess([ALAMO_EXECUTIVE_DIRECTOR_ROLES["344"]]);
 assert.deepEqual(access, {
@@ -39,6 +40,63 @@ assert.doesNotThrow(() => assertApiClaimsWorkspaceAccess(
   { roles: [ALAMO_EXECUTIVE_DIRECTOR_ROLES["344"]] },
   { workspace: "executive-director" }
 ));
+
+const scopedDashboard = buildExecutiveDirectorCommunityDashboard({
+  facilityId: "344",
+  communitySnapshot: {
+    generated_at: "2026-10-08T12:00:00.000Z",
+    reporting_month: "2026-09",
+    summary: { residents: 80, currentIncidents: 3, priorIncidents: 4, averageAge: 42, averageLengthOfStay: 210 },
+    census: [
+      { facility_id: "344", month_bucket: "2026-09", census: 80 },
+      { facility_id: "337", month_bucket: "2026-09", census: 154 }
+    ],
+    incidentTrend: [{ month_bucket: "2026-09", incidentCount: 3 }],
+    topIncidentCategories: [{ label: "Medication", count: 2 }]
+  },
+  reportsSummary: {
+    medicationCompliance: [
+      { facility_id: "344", month_bucket: "2026-09", compliance_pct: 98.5, total_scheduled: 100, given: 98, not_given: 2 },
+      { facility_id: "337", month_bucket: "2026-09", compliance_pct: 93, total_scheduled: 100, given: 93, not_given: 7 }
+    ]
+  },
+  admissionsDashboard: {
+    generated_at: "2026-10-08T12:00:00.000Z",
+    as_of_date: "2026-10-08",
+    communities: [{
+      facilityId: "344",
+      census: 80,
+      censusChange: 1,
+      operatingLimit: 84,
+      occupancyPct: 95.2,
+      monthToDate: { admissions: 2, discharges: 1, net: 1 },
+      lastMonth: { admissions: 5, discharges: 4, net: 1 },
+      recentWeeks: { admissions: 4, discharges: 3, net: 1 },
+      referrals: { onBoard: 2, inDecision: 1, needsAttention: 0 }
+    }],
+    briefing: { communities: [{ facilityId: "344", newReferrals7d: 1, newReferrals14d: 2, assessmentsThisWeek: 1, plannedMoveInsThisWeek: 1, completedMoveInsThisWeek: 0 }] },
+    referral_pipeline: {
+      status: "connected",
+      generatedAt: "2026-10-08T12:00:00.000Z",
+      board: { cards: [
+        { referralId: 1, facilityId: "344", clientName: "Turlock Client" },
+        { referralId: 2, facilityId: "337", clientName: "San Pablo Client" }
+      ] },
+      briefing: {
+        status: "ready",
+        recentReferrals: [{ referralId: 1, facilityId: "344" }, { referralId: 2, facilityId: "337" }],
+        upcomingAssessments: [{ referralId: 1, facilityId: "344" }],
+        plannedMoveIns: [{ referralId: 2, facilityId: "337" }]
+      }
+    }
+  }
+});
+assert.equal(scopedDashboard.summary.residents, 80);
+assert.equal(scopedDashboard.medication.compliancePct, 98.5);
+assert.deepEqual(scopedDashboard.census, [{ month: "2026-09", census: 80 }]);
+assert.deepEqual(scopedDashboard.admissions.cards.map((card) => card.referralId), [1]);
+assert.deepEqual(scopedDashboard.admissions.recentReferrals.map((row) => row.referralId), [1]);
+assert.equal(JSON.stringify(scopedDashboard).includes("San Pablo Client"), false);
 
 const temporaryRoot = await mkdtemp(path.join(tmpdir(), "alamo-executive-intake-"));
 process.env.EXECUTIVE_DIRECTOR_INTAKE_STORAGE = "local";
@@ -131,10 +189,12 @@ try {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const [app, shell, page, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
+const [app, shell, page, dashboardPage, header, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
   readFile(path.join(root, "src/shared/layout/ProtectedAppShell.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorPage.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorDashboardPage.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/executive/components/ExecutiveDirectorHeader.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/components/Lic624ReviewWorkspace.tsx"), "utf8"),
   readFile(path.join(root, "api/platform.js"), "utf8"),
   readFile(path.join(root, "server/dev-api.mjs"), "utf8"),
@@ -142,11 +202,16 @@ const [app, shell, page, reviewWorkspace, platformApi, devApi, plan] = await Pro
 ]);
 
 assert.match(app, /path="\/executive\/licensing"/);
+assert.match(app, /path="\/executive\/dashboard"/);
 assert.match(shell, /executiveDirectorAccess\.restrictedToExecutive/);
-assert.match(shell, /window\.location\.replace\("\/executive\/licensing"\)/);
+assert.match(shell, /window\.location\.replace\("\/executive\/dashboard"\)/);
 assert.match(page, /data-executive-director-upload="true"/);
 assert.match(page, /LIC 624 intake/);
 assert.match(page, /Review form/);
+assert.match(dashboardPage, /data-executive-community-dashboard="true"/);
+assert.match(dashboardPage, /Current operations and admissions activity/);
+assert.match(header, /\/executive\/dashboard/);
+assert.match(header, /Community/);
 assert.match(reviewWorkspace, /data-lic624-review-workspace="true"/);
 assert.match(reviewWorkspace, /Mark reviewed/);
 assert.match(reviewWorkspace, /Original extraction preserved|uploaded original stays unchanged/i);
