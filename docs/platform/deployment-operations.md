@@ -53,6 +53,52 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Hidden Executive Director Licensing workspace — 2026-10-08
+
+The URL-only `/executive/licensing` context app is live for the Platform owner
+and facility-scoped Executive Director Entra roles. It is absent from general
+navigation. Restricted Executive Director identities are redirected into this
+workspace and rejected from general Platform APIs; the server derives their
+facility scope from verified token roles rather than a browser-supplied
+facility ID.
+
+- source commit: `e13546d7dcd86179a5c4355a67a93efdd999453f`
+- source branch: `codex/licensing-nav-refine`
+- ACR build: `cc63`
+- image tag: `alamo-platform:executive-licensing-e13546d`
+- image digest: `sha256:ff6facee113399cc70951034fa4e96bbbbcff26d5ba6dd355f180297e6c4acf7`
+- active revision: `alamo-platform-prod-web--executive-lic-1008`
+- rollback digest: `sha256:a7e86776e618dcab284cb04f52e60a015c907a0ea2661d5fa9137bab3b2a610a`
+- active browser assets: `/assets/index-BjxUXIjt.js` and
+  `/assets/index-D5os_LT7.css`
+
+The release preserves the exact preceding production runtime and patches only
+the validated browser bundle, the Executive Director API/auth modules, and the
+locked `pdf-lib@1.17.1` runtime dependency. The release builder starts from the
+verified production API file so unreleased main-branch API routes are not
+accidentally promoted. Direct route refreshes use the existing Azure SPA
+fallback; only the established Admissions and Chat physical indexes remain.
+
+LIC 624 PDFs, JPGs, and PNGs are stored under the private
+`licensing/executive-director-intake-v1/` prefix in the existing snapshot
+container. The production managed identity has `Storage Blob Data Contributor`
+only at that container scope. Fillable PDFs are mapped into the versioned LIC
+624 review record; image-only files remain explicitly `ocr_required`. The UI
+does not expose extracted PHI in its recent-submissions list.
+
+Release-specific Executive Director, Licensing, Admissions-access, Reports,
+California-home, TypeScript, server-TypeScript, source-syntax, lint,
+documentation, retention, dependency, unused-code, production-build, and
+container-runtime checks passed. The broader legacy predeploy runner reached
+its known local Databricks-credential boundary during the analyst-decision
+suite. Post-promotion verification confirmed a Healthy/Running revision at 100
+percent traffic, 4/4 public smoke probes, byte-identical deployed JS and CSS,
+401 plus private/no-store on both anonymous Executive Director endpoints, and
+signed-in owner rendering of the hidden San Pablo workspace with current
+community data. The existing redesigned Analytics Licensing library also
+loaded its 93-report production collection. No Licensing alert gates or email
+settings changed.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
