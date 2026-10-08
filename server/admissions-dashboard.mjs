@@ -65,10 +65,11 @@ function facilityIdForPipelineCommunity(name) {
 }
 
 function boardCountsFor(cards) {
+  const activeCards = cards.filter((card) => card.status.trim().toLowerCase() !== "declined");
   return {
-    onBoard: cards.length,
-    inDecision: cards.filter((card) => card.column === "decision").length,
-    needsAttention: cards.filter((card) => Object.values(card.flags).some(Boolean)).length
+    onBoard: activeCards.length,
+    inDecision: activeCards.filter((card) => card.column === "decision").length,
+    needsAttention: activeCards.filter((card) => Object.values(card.flags).some(Boolean)).length
   };
 }
 

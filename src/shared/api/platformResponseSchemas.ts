@@ -64,6 +64,14 @@ function assertIsoCalendarDate(value: unknown, endpoint: string, path: string, o
   }
 }
 
+function assertIsoMonth(value: unknown, endpoint: string, path: string, options: { nullable?: boolean } = {}) {
+  if (options.nullable && value === null) return;
+  assertString(value, endpoint, path);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(value))) {
+    fail(endpoint, `${path} must be a valid YYYY-MM month`);
+  }
+}
+
 function assertNumber(value: unknown, endpoint: string, path: string, options: { nullable?: boolean } = {}) {
   if (options.nullable && value === null) return;
   if (typeof value !== "number" || !Number.isFinite(value)) fail(endpoint, `${path} must be a finite number`);
@@ -375,7 +383,7 @@ function validateAdmissionsDashboardPayload(value: unknown) {
       });
       if (!/^https?:\/\//.test(String(card.pipelineUrl))) fail(endpoint, `${path}.pipelineUrl must be a web link`);
     });
-    assertCounts(referralPipeline.metrics, "referral_pipeline.metrics", ["onBoard", "stale", "unassigned", "awaitingAdmission"]);
+    assertCounts(referralPipeline.metrics, "referral_pipeline.metrics", ["onBoard", "activeReferrals", "stale", "unassigned", "awaitingAdmission"]);
     assertCounts(referralPipeline.upcomingAdmissions, "referral_pipeline.upcomingAdmissions", ["next7Days", "next30Days", "pastPlannedDate", "noPlannedDate"]);
     const pipelineBriefing = assertRecord(referralPipeline.briefing, endpoint, "referral_pipeline.briefing");
     if (!["not_supported", "ready"].includes(String(pipelineBriefing.status))) {
@@ -402,10 +410,15 @@ function validateAdmissionsDashboardPayload(value: unknown) {
       });
     }
     const history = assertRecord(referralPipeline.history, endpoint, "referral_pipeline.history");
+    assertIsoMonth(history.coverageStartMonth, endpoint, "referral_pipeline.history.coverageStartMonth", { nullable: true });
     const monthFields = ["received", "accepted", "declined", "admitted"];
-    assertString(assertCounts(history.monthOutcomes, "referral_pipeline.history.monthOutcomes", monthFields).month, endpoint, "referral_pipeline.history.monthOutcomes.month");
+    assertIsoMonth(assertCounts(history.monthOutcomes, "referral_pipeline.history.monthOutcomes", monthFields).month, endpoint, "referral_pipeline.history.monthOutcomes.month");
     assertArray(history.monthly, endpoint, "referral_pipeline.history.monthly").forEach((row, index) => {
-      assertString(assertCounts(row, `referral_pipeline.history.monthly[${index}]`, monthFields).month, endpoint, `referral_pipeline.history.monthly[${index}].month`);
+      const month = assertCounts(row, `referral_pipeline.history.monthly[${index}]`, monthFields).month;
+      assertIsoMonth(month, endpoint, `referral_pipeline.history.monthly[${index}].month`);
+      if (history.coverageStartMonth !== null && String(month) < String(history.coverageStartMonth)) {
+        fail(endpoint, `referral_pipeline.history.monthly[${index}].month precedes coverageStartMonth`);
+      }
     });
     const timing = assertCounts(history.decisionTiming, "referral_pipeline.history.decisionTiming", ["windowDays", "decisionsCounted"]);
     assertNumber(timing.medianDaysToDecision, endpoint, "referral_pipeline.history.decisionTiming.medianDaysToDecision", { nullable: true });

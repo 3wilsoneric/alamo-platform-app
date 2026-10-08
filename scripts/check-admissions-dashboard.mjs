@@ -227,7 +227,7 @@ const column = (key, label, statuses) => ({
   statuses: statuses.map(([status, count]) => ({ status, count }))
 });
 const pipelinePayload = {
-  contract_version: "3.1",
+  contract_version: "3.2",
   generated_at: "2026-09-26T13:00:00.000Z",
   board: {
     total: 3,
@@ -243,7 +243,7 @@ const pipelinePayload = {
     ],
     cards_truncated: false
   },
-  metrics: { on_board: 3, stale: 1, unassigned: 1, awaiting_admission: 1 },
+  metrics: { on_board: 3, active_referrals: 3, stale: 1, unassigned: 1, awaiting_admission: 1 },
   upcoming_admissions: { next_7_days: 0, next_30_days: 0, past_planned_date: 1, no_planned_date: 0 },
   briefing: {
     timezone: "America/Los_Angeles",
@@ -340,6 +340,7 @@ const pipelinePayload = {
     ]
   },
   history: {
+    coverage_start_month: "2026-08",
     month_outcomes: { month: "2026-09", received: 12, accepted: 5, declined: 2, admitted: 1 },
     monthly: [month("2026-08", 15, 6), month("2026-09", 12, 5)],
     decision_timing: { window_days: 90, median_days_to_decision: 4.5, decisions_counted: 9 }
@@ -347,7 +348,8 @@ const pipelinePayload = {
 };
 const summary = normalizePipelineAdmissionsSummary(pipelinePayload, "https://pipeline.example");
 assert.equal(summary?.status, "connected");
-assert.deepEqual(summary?.metrics, { onBoard: 3, stale: 1, unassigned: 1, awaitingAdmission: 1 });
+assert.deepEqual(summary?.metrics, { onBoard: 3, activeReferrals: 3, stale: 1, unassigned: 1, awaitingAdmission: 1 });
+assert.equal(summary?.history.coverageStartMonth, "2026-08");
 assert.equal(summary?.board.cards[0].clientName, "Jordan Lee");
 assert.equal(summary?.board.cards[0].managementProfile.dateOfBirth, "1981-04-03");
 assert.deepEqual(summary?.board.cards[0].managementProfile.supportSnapshot, [{ label: "Mobility", value: "Independent" }]);
@@ -358,6 +360,23 @@ assert.equal(summary?.briefing.status === "ready" ? summary.briefing.recentRefer
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.plannedMoveIns[1]?.readiness : null, "ready");
 const legacySummary = normalizePipelineAdmissionsSummary({ ...pipelinePayload, briefing: undefined });
 assert.deepEqual(legacySummary?.briefing, { status: "not_supported" });
+const legacyMetrics = { ...pipelinePayload.metrics };
+delete legacyMetrics.active_referrals;
+const legacyHistory = { ...pipelinePayload.history };
+delete legacyHistory.coverage_start_month;
+const legacyContractSummary = normalizePipelineAdmissionsSummary({
+  ...pipelinePayload,
+  metrics: legacyMetrics,
+  history: legacyHistory
+});
+assert.equal(legacyContractSummary?.metrics.activeReferrals, 3, "legacy feeds derive active count from visible statuses");
+assert.equal(legacyContractSummary?.history.coverageStartMonth, "2026-08", "legacy feeds infer coverage from the first supplied month");
+const legacyDeclinedPayload = structuredClone(pipelinePayload);
+delete legacyDeclinedPayload.metrics.active_referrals;
+legacyDeclinedPayload.board.cards[2].status = "Declined";
+legacyDeclinedPayload.board.columns[2].statuses = [{ status: "Declined", count: 1 }];
+const legacyDeclinedSummary = normalizePipelineAdmissionsSummary(legacyDeclinedPayload, "https://pipeline.example");
+assert.equal(legacyDeclinedSummary?.metrics.activeReferrals, 2, "legacy feeds exclude declined statuses from the derived active count");
 const reject = (cardOverrides) => normalizePipelineAdmissionsSummary({
   ...pipelinePayload,
   board: { ...pipelinePayload.board, cards: [card(cardOverrides)] }
@@ -368,6 +387,8 @@ assert.equal(reject({ client_name: "" }), null);
 assert.equal(reject({ column: "archive" }), null);
 assert.equal(reject({ flags: { stale: "yes", unassigned: false, move_in_overdue: false } }), null);
 assert.equal(normalizePipelineAdmissionsSummary({ ...pipelinePayload, metrics: { ...pipelinePayload.metrics, on_board: -1 } }), null);
+assert.equal(normalizePipelineAdmissionsSummary({ ...pipelinePayload, metrics: { ...pipelinePayload.metrics, active_referrals: 4 } }), null);
+assert.equal(normalizePipelineAdmissionsSummary({ ...pipelinePayload, history: { ...pipelinePayload.history, coverage_start_month: "2026-09" } }), null);
 assert.equal(normalizePipelineAdmissionsSummary({ generated_at: "x" }), null);
 
 const connected = buildAdmissionsDashboard(snapshot, { referralPipeline: summary });
@@ -377,6 +398,12 @@ assert.equal(cardsById.get(12)?.facilityId, null);
 assert.equal(cardsById.get(13)?.facilityId, "342");
 assert.deepEqual(connected.communities.find((row) => row.facilityId === "337")?.referrals, { onBoard: 1, inDecision: 0, needsAttention: 0 });
 assert.deepEqual(connected.communities.find((row) => row.facilityId === "342")?.referrals, { onBoard: 1, inDecision: 1, needsAttention: 1 });
+const connectedWithDecline = buildAdmissionsDashboard(snapshot, { referralPipeline: legacyDeclinedSummary });
+assert.deepEqual(
+  connectedWithDecline.communities.find((row) => row.facilityId === "342")?.referrals,
+  { onBoard: 0, inDecision: 0, needsAttention: 0 },
+  "declined cards stay reviewable on the board without inflating active community workload"
+);
 assert.deepEqual(connected.referral_trend, [
   { month: "2026-08", received: 15, accepted: 6, censusAdmissions: 22 },
   { month: "2026-09", received: 12, accepted: 5, censusAdmissions: 9 }
@@ -420,5 +447,9 @@ validators.admissionsDashboard(dashboard);
 validators.admissionsDashboard(connected);
 validators.admissionsDashboard(crosswalkDashboard);
 assert.throws(() => validators.admissionsDashboard({ ...dashboard, referral_pipeline: { status: "bogus" } }));
+
+const admissionsPageSource = await readFile(new URL("../src/features/admissions/pages/AdmissionsPage.tsx", import.meta.url), "utf8");
+assert.match(admissionsPageSource, /pipeline\.metrics\.activeReferrals/, "the executive update must use the explicit active-referral metric");
+assert.match(admissionsPageSource, /activeCards = pipeline\.board\.cards\.filter/, "the executive workload must exclude declined cards");
 
 console.log("admissions dashboard checks passed");

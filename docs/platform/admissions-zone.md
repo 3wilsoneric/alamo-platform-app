@@ -111,12 +111,17 @@ server, never from the browser and never through Pipeline's internal APIs.
   `next_action`, `community`, `owner`, `priority`, `days_open`,
   `days_since_update`, `planned_admission_date`, `flags`, a bounded
   `management_profile`, and a relative `pipeline_path`), `metrics`,
-  `upcoming_admissions`, and `history` (`month_outcomes`, six `monthly[]` rows,
-  `decision_timing`). The management profile includes client name, DOB,
+  `upcoming_admissions`, and `history` (`coverage_start_month`,
+  `month_outcomes`, covered `monthly[]` rows, `decision_timing`).
+  `metrics.active_referrals` excludes declined cards while `board.total` and
+  `metrics.on_board` continue to describe everything still visible on the
+  board. Months before `coverage_start_month` are unavailable and are omitted,
+  rather than being represented as zero activity. The management profile includes client name, DOB,
   referral source, county, payer, responsible person, conservatorship,
   assessment/readiness state, and capped medication data. Its narrative and
-  support snapshot are populated only from a signed assessment. Contract 3.1's
-  `briefing` producer slice carries `timezone`, `window_end`, explicit coverage
+  support snapshot are populated only from a signed assessment. The `briefing`
+  producer slice, introduced in contract 3.1, carries `timezone`, `window_end`,
+  explicit coverage
   booleans, and bounded event arrays: `recent_referrals`,
   `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. The dashboard
   presents the two forward schedules; referral-origin events and the raw weekly
