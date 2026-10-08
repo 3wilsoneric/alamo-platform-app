@@ -1,14 +1,19 @@
 import { useMsal } from "@azure/msal-react";
-import { CheckCircle2, FileScan, LoaderCircle, ShieldCheck, Upload, X } from "lucide-react";
+import { CheckCircle2, FileScan, LoaderCircle, PencilLine, ShieldCheck, Upload, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { getAccountExecutiveDirectorAccess } from "../../../shared/auth/executiveDirectorAccess";
 import {
   fetchExecutiveDirectorBootstrap,
+  fetchExecutiveDirectorSubmission,
+  saveExecutiveDirectorLicensingReview,
   uploadExecutiveDirectorLicensingReport,
   type ExecutiveDirectorBootstrap,
+  type ExecutiveDirectorSubmissionDetail,
+  type Lic624ReviewData,
   type ExecutiveDirectorSubmission
 } from "../data/executiveDirectorApi";
+import Lic624ReviewWorkspace from "../components/Lic624ReviewWorkspace";
 
 const DEFAULT_PREVIEW_FACILITY_ID = "337";
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
@@ -49,6 +54,7 @@ export default function ExecutiveDirectorPage() {
   const facilityId = access.primaryFacilityId ?? DEFAULT_PREVIEW_FACILITY_ID;
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const reviewRef = useRef<HTMLDivElement>(null);
   const [bootstrap, setBootstrap] = useState<ExecutiveDirectorBootstrap | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -57,6 +63,9 @@ export default function ExecutiveDirectorPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [activeSubmission, setActiveSubmission] = useState<ExecutiveDirectorSubmissionDetail | null>(null);
+  const [openingSubmissionId, setOpeningSubmissionId] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const loadWorkspace = async (signal?: AbortSignal) => {
     setLoadError(null);
@@ -121,12 +130,39 @@ export default function ExecutiveDirectorPage() {
           ? `LIC 624 fields extracted. ${result.submission.extractionSummary?.extractedFieldCount ?? 0} populated fields are ready for review.`
           : "Report stored securely. The OCR step is required before review."
       );
+      if (result.submission.draftData) {
+        setActiveSubmission(result.submission);
+        window.setTimeout(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+      }
       await loadWorkspace();
     } catch (error) {
       setFileError(error instanceof Error ? error.message : "The report could not be uploaded.");
     } finally {
       setUploading(false);
     }
+  };
+
+  const openSubmission = async (submissionId: string) => {
+    if (openingSubmissionId) return;
+    setOpeningSubmissionId(submissionId);
+    setReviewError(null);
+    try {
+      const result = await fetchExecutiveDirectorSubmission(facilityId, submissionId);
+      setActiveSubmission(result.submission);
+      window.setTimeout(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "The digital form could not be opened.");
+    } finally {
+      setOpeningSubmissionId(null);
+    }
+  };
+
+  const saveReview = async (data: Lic624ReviewData, confirm: boolean) => {
+    if (!activeSubmission) throw new Error("Choose a licensing submission first.");
+    const result = await saveExecutiveDirectorLicensingReview(facilityId, activeSubmission, data, confirm);
+    setActiveSubmission(result.submission);
+    await loadWorkspace();
+    return result.submission;
   };
 
   return (
@@ -260,6 +296,21 @@ export default function ExecutiveDirectorPage() {
         </aside>
       </div>
 
+      {reviewError ? (
+        <p role="alert" className="mt-7 border-l-4 border-[#b24c3d] bg-[#fff7f5] px-4 py-3 text-[14px] font-medium text-[#7f3328]">{reviewError}</p>
+      ) : null}
+
+      <div ref={reviewRef} className="scroll-mt-6">
+        {activeSubmission && bootstrap?.form ? (
+          <Lic624ReviewWorkspace
+            submission={activeSubmission}
+            form={bootstrap.form}
+            onClose={() => setActiveSubmission(null)}
+            onSave={saveReview}
+          />
+        ) : null}
+      </div>
+
       <section className="mt-10 border-t border-[#d8dedb] pt-7" data-executive-director-submissions="true">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -282,9 +333,22 @@ export default function ExecutiveDirectorPage() {
                     </p>
                   ) : null}
                 </div>
-                <span className="w-fit rounded-full bg-[#eef5f1] px-3 py-1.5 text-[12px] font-semibold text-[#176b58]">
-                  {statusLabel(submission.status)}
-                </span>
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <span className="w-fit rounded-full bg-[#eef5f1] px-3 py-1.5 text-[12px] font-semibold text-[#176b58]">
+                    {statusLabel(submission.status)}
+                  </span>
+                  {submission.extractionSummary?.method === "pdf_acroform" ? (
+                    <button
+                      type="button"
+                      onClick={() => void openSubmission(submission.submissionId)}
+                      disabled={Boolean(openingSubmissionId)}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#08725d] bg-white px-4 text-[13px] font-bold text-[#08725d] transition hover:bg-[#eef7f3] disabled:opacity-50"
+                    >
+                      {openingSubmissionId === submission.submissionId ? <LoaderCircle className="animate-spin" size={16} aria-hidden="true" /> : <PencilLine size={16} aria-hidden="true" />}
+                      {openingSubmissionId === submission.submissionId ? "Opening" : submission.status === "ready_to_file" ? "Open form" : "Review form"}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

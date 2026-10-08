@@ -14,7 +14,10 @@ import {
 import { assertApiClaimsWorkspaceAccess } from "../server/api-auth.mjs";
 import {
   createExecutiveDirectorIntakeSubmission,
-  listExecutiveDirectorIntakeSubmissions
+  getExecutiveDirectorIntakeSubmission,
+  listExecutiveDirectorIntakeSubmissions,
+  saveExecutiveDirectorIntakeReview,
+  toExecutiveDirectorSubmissionDetail
 } from "../server/executive-director-intake-storage.mjs";
 
 const access = getExecutiveDirectorAccess([ALAMO_EXECUTIVE_DIRECTOR_ROLES["344"]]);
@@ -75,7 +78,52 @@ try {
   assert.ok(["high", "medium"].includes(submission.extraction.confidence));
   assert.equal(submission.byteLength, pdf.byteLength);
   assert.match(submission.sha256, /^[a-f0-9]{64}$/);
-  assert.equal((await listExecutiveDirectorIntakeSubmissions("344")).length, 1);
+  const detail = toExecutiveDirectorSubmissionDetail(
+    await getExecutiveDirectorIntakeSubmission("344", submission.submissionId)
+  );
+  assert.equal(detail.reviewRevision, 0);
+  assert.equal(detail.draftData.facility.name, "Test Community");
+
+  const edited = structuredClone(detail.draftData);
+  edited.facility.telephone = "209-555-0100";
+  edited.incidentTypes = [{ key: "unauthorized_absence", label: "Unauthorized absence" }];
+  const saved = await saveExecutiveDirectorIntakeReview({
+    facilityId: "344",
+    submissionId: submission.submissionId,
+    expectedRevision: 0,
+    data: edited,
+    confirm: false,
+    authContext: { authenticated: false }
+  });
+  assert.equal(saved.status, "needs_review");
+  assert.equal(saved.reviewRevision, 1);
+  assert.equal(saved.review.data.facility.telephone, "209-555-0100");
+
+  await assert.rejects(
+    saveExecutiveDirectorIntakeReview({
+      facilityId: "344",
+      submissionId: submission.submissionId,
+      expectedRevision: 0,
+      data: edited,
+      confirm: false,
+      authContext: { authenticated: false }
+    }),
+    (error) => error?.statusCode === 409 && error?.code === "lic624_review_conflict"
+  );
+
+  const confirmed = await saveExecutiveDirectorIntakeReview({
+    facilityId: "344",
+    submissionId: submission.submissionId,
+    expectedRevision: 1,
+    data: edited,
+    confirm: true,
+    authContext: { authenticated: false }
+  });
+  assert.equal(confirmed.status, "ready_to_file");
+  assert.equal(confirmed.reviewRevision, 2);
+  const listed = await listExecutiveDirectorIntakeSubmissions("344");
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].status, "ready_to_file");
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
   delete process.env.EXECUTIVE_DIRECTOR_INTAKE_STORAGE;
@@ -83,10 +131,11 @@ try {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const [app, shell, page, platformApi, devApi, plan] = await Promise.all([
+const [app, shell, page, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
   readFile(path.join(root, "src/shared/layout/ProtectedAppShell.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorPage.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/executive/components/Lic624ReviewWorkspace.tsx"), "utf8"),
   readFile(path.join(root, "api/platform.js"), "utf8"),
   readFile(path.join(root, "server/dev-api.mjs"), "utf8"),
   readFile(path.join(root, "docs/platform/executive-director-workspace.md"), "utf8")
@@ -97,6 +146,10 @@ assert.match(shell, /executiveDirectorAccess\.restrictedToExecutive/);
 assert.match(shell, /window\.location\.replace\("\/executive\/licensing"\)/);
 assert.match(page, /data-executive-director-upload="true"/);
 assert.match(page, /LIC 624 intake/);
+assert.match(page, /Review form/);
+assert.match(reviewWorkspace, /data-lic624-review-workspace="true"/);
+assert.match(reviewWorkspace, /Mark reviewed/);
+assert.match(reviewWorkspace, /Original extraction preserved|uploaded original stays unchanged/i);
 assert.match(platformApi, /handleExecutiveDirectorApiRequest/);
 assert.match(devApi, /handleExecutiveDirectorApiRequest/);
 assert.match(plan, /Nothing is sorted or filed|no automatic addition/i);

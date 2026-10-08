@@ -61,3 +61,12 @@ export const LIC624_INCIDENT_TYPE_FIELDS = Object.freeze([
   Object.freeze({ key: "property_damage", label: "Property damage", source: "Client Abuse20" }),
   Object.freeze({ key: "other", label: "Other", source: "Client Abuse21" })
 ]);
+
+export const LIC624_NOTIFICATION_FIELDS = Object.freeze([
+  Object.freeze({ key: "licensing", label: "Licensing" }),
+  Object.freeze({ key: "protective_services", label: "Adult/Child Protective Services" }),
+  Object.freeze({ key: "ombudsman", label: "Long Term Care Ombudsman" }),
+  Object.freeze({ key: "law_enforcement", label: "Law enforcement" }),
+  Object.freeze({ key: "guardian", label: "Parent/Guardian/Conservator" }),
+  Object.freeze({ key: "placement_agency", label: "Placement agency" })
+]);

@@ -59,7 +59,8 @@ for (const file of [
   "executive-director-access.mjs",
   "executive-director-api.mjs",
   "executive-director-intake-storage.mjs",
-  "lic624-extraction.mjs"
+  "lic624-extraction.mjs",
+  "lic624-review.mjs"
 ]) {
   await cp(path.join(root, "server", file), path.join(overlay, "server", file));
 }
@@ -83,7 +84,7 @@ await compress(path.join(overlay, "dist"));
 
 await writeFile(
   path.join(destination, "Dockerfile"),
-  `FROM ${base}\nUSER root\nWORKDIR /app\nRUN rm -rf /app/dist\nCOPY overlay /app\nRUN npm install --no-package-lock --no-save --omit=dev --ignore-scripts --no-audit --no-fund pdf-lib@1.17.1 \\\n  && chown -R node:node /app/dist /app/api/platform.js /app/server/api-auth.mjs /app/server/executive-director-access.mjs /app/server/executive-director-api.mjs /app/server/executive-director-intake-storage.mjs /app/server/lic624-extraction.mjs /app/shared/executive-director-access.mjs /app/shared/lic624-contracts.mjs /app/node_modules/pdf-lib /app/node_modules/@pdf-lib\nUSER node\n`
+  `FROM ${base}\nUSER root\nWORKDIR /app\nRUN rm -rf /app/dist\nCOPY overlay /app\nRUN npm install --no-package-lock --no-save --omit=dev --ignore-scripts --no-audit --no-fund pdf-lib@1.17.1 \\\n  && chown -R node:node /app/dist /app/api/platform.js /app/server/api-auth.mjs /app/server/executive-director-access.mjs /app/server/executive-director-api.mjs /app/server/executive-director-intake-storage.mjs /app/server/lic624-extraction.mjs /app/server/lic624-review.mjs /app/shared/executive-director-access.mjs /app/shared/lic624-contracts.mjs /app/node_modules/pdf-lib /app/node_modules/@pdf-lib\nUSER node\n`
 );
 await writeFile(path.join(root, "generated/executive-director-release/context.txt"), destination);
 console.log(destination);

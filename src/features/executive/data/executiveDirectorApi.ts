@@ -32,6 +32,75 @@ export interface ExecutiveDirectorSubmission {
   filedAt: string | null;
 }
 
+export interface Lic624Resident {
+  name: string;
+  dateOccurred: string;
+  age: string;
+  sex: string;
+  admissionDate: string;
+}
+
+export interface Lic624IncidentType {
+  key: string;
+  label: string;
+}
+
+export interface Lic624Notification extends Lic624IncidentType {
+  selected: boolean;
+  detail: string;
+}
+
+export interface Lic624ReviewData {
+  facility: {
+    name: string;
+    fileNumber: string;
+    telephone: string;
+    address: string;
+    cityStateZip: string;
+  };
+  residents: Lic624Resident[];
+  incidentTypes: Lic624IncidentType[];
+  eventNarrative: string;
+  observers: string;
+  immediateAction: string;
+  treatment: {
+    necessary: boolean | null;
+    nature: string;
+    whereAdministered: string;
+    administeredBy: string;
+    followUp: string;
+  };
+  plannedAction: string;
+  supervisorComments: string;
+  attendingPhysician: string;
+  submission: {
+    submittedBy: string;
+    submittedDate: string;
+    reviewedBy: string;
+    reviewedDate: string;
+  };
+  notifications: Lic624Notification[];
+}
+
+export interface ExecutiveDirectorSubmissionDetail extends ExecutiveDirectorSubmission {
+  sourceData: Lic624ReviewData | null;
+  draftData: Lic624ReviewData | null;
+  reviewIssues: string[];
+  reviewRevision: number;
+  reviewUpdatedAt: string | null;
+  confirmedAt: string | null;
+}
+
+export interface Lic624FormContract {
+  id: "LIC624";
+  revision: string;
+  title: string;
+  agency: string;
+  sections: Array<{ id: string; label: string; fields: string[] }>;
+  incidentTypes: Lic624IncidentType[];
+  notifications: Lic624IncidentType[];
+}
+
 export interface ExecutiveDirectorBootstrap {
   version: "executive-director-workspace-v1";
   facility: {
@@ -56,13 +125,7 @@ export interface ExecutiveDirectorBootstrap {
     };
     submissions: ExecutiveDirectorSubmission[];
   };
-  form: {
-    id: "LIC624";
-    revision: string;
-    title: string;
-    agency: string;
-    sections: Array<{ id: string; label: string; fields: string[] }>;
-  };
+  form: Lic624FormContract;
 }
 
 async function readApiJson<T>(response: Response): Promise<T> {
@@ -88,7 +151,8 @@ export function uploadExecutiveDirectorLicensingReport(
 ) {
   return fetchWithApiAuth<{
     version: "executive-director-licensing-intake-v1";
-    submission: ExecutiveDirectorSubmission;
+    submission: ExecutiveDirectorSubmissionDetail;
+    form: Lic624FormContract;
   }>(
     "/api/platform/executive-director/licensing-intake",
     {
@@ -105,7 +169,68 @@ export function uploadExecutiveDirectorLicensingReport(
       timeoutMs: 60_000,
       consume: (response) => readApiJson<{
         version: "executive-director-licensing-intake-v1";
-        submission: ExecutiveDirectorSubmission;
+        submission: ExecutiveDirectorSubmissionDetail;
+        form: Lic624FormContract;
+      }>(response)
+    }
+  );
+}
+
+export function fetchExecutiveDirectorSubmission(
+  facilityId: string,
+  submissionId: string,
+  signal?: AbortSignal
+) {
+  const params = new URLSearchParams({ facilityId, submissionId });
+  return fetchWithApiAuth<{
+    version: "executive-director-licensing-review-v1";
+    submission: ExecutiveDirectorSubmissionDetail;
+    form: Lic624FormContract;
+  }>(
+    `/api/platform/executive-director/licensing-intake?${params.toString()}`,
+    signal ? { signal } : {},
+    {
+      consume: (response) => readApiJson<{
+        version: "executive-director-licensing-review-v1";
+        submission: ExecutiveDirectorSubmissionDetail;
+        form: Lic624FormContract;
+      }>(response)
+    }
+  );
+}
+
+export function saveExecutiveDirectorLicensingReview(
+  facilityId: string,
+  submission: ExecutiveDirectorSubmissionDetail,
+  data: Lic624ReviewData,
+  confirm: boolean,
+  signal?: AbortSignal
+) {
+  return fetchWithApiAuth<{
+    version: "executive-director-licensing-review-v1";
+    submission: ExecutiveDirectorSubmissionDetail;
+    form: Lic624FormContract;
+  }>(
+    "/api/platform/executive-director/licensing-intake/review",
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        submissionId: submission.submissionId,
+        expectedRevision: submission.reviewRevision,
+        confirm,
+        data
+      }),
+      ...(signal ? { signal } : {}),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Facility-Id": facilityId
+      }
+    },
+    {
+      consume: (response) => readApiJson<{
+        version: "executive-director-licensing-review-v1";
+        submission: ExecutiveDirectorSubmissionDetail;
+        form: Lic624FormContract;
       }>(response)
     }
   );

@@ -6,13 +6,25 @@ import {
 } from "./executive-director-access.mjs";
 import {
   createExecutiveDirectorIntakeSubmission,
+  getExecutiveDirectorIntakeSubmission,
   listExecutiveDirectorIntakeSubmissions,
+  saveExecutiveDirectorIntakeReview,
+  toExecutiveDirectorSubmissionDetail,
   toExecutiveDirectorSubmissionSummary
 } from "./executive-director-intake-storage.mjs";
+import {
+  assertLic624SubmissionId,
+  validateLic624ReviewRequest
+} from "./lic624-review.mjs";
+import { readValidatedJsonRequest } from "./http-body.mjs";
 import { createHttpError, getApiError, getRequestUrl } from "./http-errors.mjs";
 import { applyProtectedApiHeaders } from "./http-response.mjs";
 import { getCommunitySnapshotData } from "./platform-data.mjs";
-import { LIC624_FORM_DEFINITION } from "../shared/lic624-contracts.mjs";
+import {
+  LIC624_FORM_DEFINITION,
+  LIC624_INCIDENT_TYPE_FIELDS,
+  LIC624_NOTIFICATION_FIELDS
+} from "../shared/lic624-contracts.mjs";
 
 export const EXECUTIVE_DIRECTOR_API_PREFIX = "/api/platform/executive-director";
 
@@ -27,6 +39,14 @@ function summarizeSubmissions(submissions) {
     ocrRequired: submissions.filter((item) => item.status === "ocr_required").length,
     needsReview: submissions.filter((item) => item.status === "needs_review").length,
     readyToFile: submissions.filter((item) => item.status === "ready_to_file").length
+  };
+}
+
+function getLic624FormContract() {
+  return {
+    ...LIC624_FORM_DEFINITION,
+    incidentTypes: LIC624_INCIDENT_TYPE_FIELDS.map(({ key, label }) => ({ key, label })),
+    notifications: LIC624_NOTIFICATION_FIELDS
   };
 }
 
@@ -87,7 +107,22 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
           summary: summarizeSubmissions(submissions),
           submissions: submissions.map(toExecutiveDirectorSubmissionSummary)
         },
-        form: LIC624_FORM_DEFINITION
+        form: getLic624FormContract()
+      });
+      return;
+    }
+
+    if (req.method === "GET" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake`) {
+      const facilityId = resolveExecutiveDirectorFacility(
+        access,
+        requestUrl.searchParams.get("facilityId")
+      );
+      const submissionId = assertLic624SubmissionId(requestUrl.searchParams.get("submissionId"));
+      const submission = await getExecutiveDirectorIntakeSubmission(facilityId, submissionId);
+      res.status(200).json({
+        version: "executive-director-licensing-review-v1",
+        submission: toExecutiveDirectorSubmissionDetail(submission),
+        form: getLic624FormContract()
       });
       return;
     }
@@ -97,13 +132,30 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
       const submission = await createExecutiveDirectorIntakeSubmission({ req, facilityId, authContext });
       res.status(201).json({
         version: "executive-director-licensing-intake-v1",
-        submission: toExecutiveDirectorSubmissionSummary(submission)
+        submission: toExecutiveDirectorSubmissionDetail(submission),
+        form: getLic624FormContract()
       });
       return;
     }
 
-    res.status(req.method === "GET" || req.method === "POST" ? 404 : 405).json({
-      error: req.method === "GET" || req.method === "POST" ? "Not found." : "Method not allowed."
+    if (req.method === "PUT" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake/review`) {
+      const facilityId = resolveExecutiveDirectorFacility(access, getHeader(req, "x-facility-id"));
+      const request = await readValidatedJsonRequest(req, validateLic624ReviewRequest, 128 * 1024);
+      const submission = await saveExecutiveDirectorIntakeReview({
+        facilityId,
+        ...request,
+        authContext
+      });
+      res.status(200).json({
+        version: "executive-director-licensing-review-v1",
+        submission: toExecutiveDirectorSubmissionDetail(submission),
+        form: getLic624FormContract()
+      });
+      return;
+    }
+
+    res.status(["GET", "POST", "PUT"].includes(req.method) ? 404 : 405).json({
+      error: ["GET", "POST", "PUT"].includes(req.method) ? "Not found." : "Method not allowed."
     });
   } catch (error) {
     const response = getApiError(error, "Executive Director workspace request failed.");
