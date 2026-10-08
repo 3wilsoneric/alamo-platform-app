@@ -19,6 +19,10 @@ import PlatformPageNavigation from "../../features/california/components/Platfor
 import { AuthenticationProgress } from "../../app/auth/AuthenticationProgress";
 import { getAccountAdmissionsAccess } from "../auth/admissionsAccess";
 import { isAdmissionsPath } from "../../../shared/admissions-access.mjs";
+import { getAccountExecutiveDirectorAccess } from "../auth/executiveDirectorAccess";
+import { isExecutiveDirectorPath } from "../../../shared/executive-director-access.mjs";
+import { usePlatformOwnerAccess } from "../auth/platformOwnerAccess";
+import { ExecutiveDirectorHeader } from "../../features/executive/components/ExecutiveDirectorHeader";
 import { PLATFORM_AUTHENTICATION_REQUIRED_EVENT } from "../api/authenticatedFetch";
 import {
   clearPlatformDataCache,
@@ -32,6 +36,7 @@ export default function ProtectedAppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmissionsExperience = isAdmissionsPath(location.pathname);
+  const isExecutiveDirectorExperience = isExecutiveDirectorPath(location.pathname);
   const isPipelineHandoff = location.pathname === "/pipeline";
   const isStandaloneEditorial =
     location.pathname === "/outreach" || location.pathname === "/fiftystate";
@@ -53,8 +58,18 @@ export default function ProtectedAppShell() {
     accounts[0],
     isE2EAuthBypassEnabled
   );
+  const executiveDirectorAccess = getAccountExecutiveDirectorAccess(
+    accounts[0],
+    isE2EAuthBypassEnabled
+  );
+  const hasPlatformOwnerAccess = usePlatformOwnerAccess();
   const skipWorkspacePreparation =
-    isAdmissionsExperience || isPipelineHandoff || isLicensingExperience || admissionsAccess.restrictedToAdmissions;
+    isAdmissionsExperience ||
+    isExecutiveDirectorExperience ||
+    isPipelineHandoff ||
+    isLicensingExperience ||
+    admissionsAccess.restrictedToAdmissions ||
+    executiveDirectorAccess.restrictedToExecutive;
   const accountKey = isE2EAuthBypassEnabled
     ? "e2e-authenticated"
     : accounts[0]?.homeAccountId ?? "authenticated";
@@ -243,6 +258,22 @@ export default function ProtectedAppShell() {
   }
 
   if (
+    executiveDirectorAccess.restrictedToExecutive &&
+    !isExecutiveDirectorExperience
+  ) {
+    return <ExecutiveDirectorZoneRedirect />;
+  }
+
+  if (
+    isExecutiveDirectorExperience &&
+    !executiveDirectorAccess.allowed &&
+    !hasPlatformOwnerAccess &&
+    !isE2EAuthBypassEnabled
+  ) {
+    return <Navigate to="/home" replace />;
+  }
+
+  if (
     admissionsAccess.restrictedToAdmissions &&
     !isAdmissionsExperience &&
     !isPipelineHandoff
@@ -261,14 +292,18 @@ export default function ProtectedAppShell() {
 
   return (
     <div className="app-theme-root relative min-h-screen overflow-x-clip bg-white text-[#241f18]">
-      <PlatformPageNavigation restricted={admissionsAccess.restrictedToAdmissions} />
+      {isExecutiveDirectorExperience
+        ? <ExecutiveDirectorHeader />
+        : <PlatformPageNavigation restricted={admissionsAccess.restrictedToAdmissions} />}
       {!online || staleDataAt ? (
         <ConnectionStatusBanner online={online} staleDataAt={staleDataAt} />
       ) : null}
-      <main className="min-h-[calc(100dvh-var(--platform-header-height))] min-w-0 bg-white">
+      <main className={`min-h-[calc(100dvh-var(--platform-header-height))] min-w-0 ${isExecutiveDirectorExperience ? "bg-[#f4f6f5]" : "bg-white"}`}>
         <div
           className={
-            isStandaloneEditorial
+            isExecutiveDirectorExperience
+              ? "px-0 pb-0"
+              : isStandaloneEditorial
               ? "px-3 pb-10 pt-3 sm:px-4 sm:pt-4 lg:px-8"
               : isCaliforniaExperience
                 ? "px-0 pb-0"
@@ -277,7 +312,7 @@ export default function ProtectedAppShell() {
                   : "px-3 pb-10 pt-5 sm:px-6 lg:px-8 print:p-0"
           }
         >
-          <div className={`mx-auto min-h-full w-full ${location.pathname === "/licensing" || isCaliforniaExperience ? "" : "max-w-[1432px]"}`}>
+          <div className={`mx-auto min-h-full w-full ${location.pathname === "/licensing" || isCaliforniaExperience || isExecutiveDirectorExperience ? "" : "max-w-[1432px]"}`}>
             <Outlet />
           </div>
         </div>
@@ -352,6 +387,19 @@ function AdmissionsZoneRedirect() {
     <AuthenticationProgress
       label="Opening Admissions"
       detail="Loading your Admissions overview..."
+    />
+  );
+}
+
+function ExecutiveDirectorZoneRedirect() {
+  useEffect(() => {
+    window.location.replace("/executive/licensing");
+  }, []);
+
+  return (
+    <AuthenticationProgress
+      label="Opening your community"
+      detail="Loading the Executive Director workspace..."
     />
   );
 }

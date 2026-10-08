@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { createHttpError } from "./http-errors.mjs";
 import { getAdmissionsAccess } from "../shared/admissions-access.mjs";
+import { getExecutiveDirectorAccess } from "../shared/executive-director-access.mjs";
 
 const jwksByTenant = new Map();
 
@@ -103,12 +104,23 @@ export function assertApiClaimsPermission(payload, policy) {
   }
 }
 
-export function assertApiClaimsWorkspaceAccess(payload) {
+export function assertApiClaimsWorkspaceAccess(payload, options = {}) {
   if (getAdmissionsAccess(getTokenRoles(payload)).restrictedToAdmissions) {
     throw createHttpError(
       403,
       "api_admissions_only",
       "Your account is assigned to the Admissions workspace only."
+    );
+  }
+
+  if (
+    getExecutiveDirectorAccess(getTokenRoles(payload)).restrictedToExecutive &&
+    options.workspace !== "executive-director"
+  ) {
+    throw createHttpError(
+      403,
+      "api_executive_director_only",
+      "Your account is assigned to the Executive Director workspace only."
     );
   }
 }
@@ -131,7 +143,8 @@ export async function requireApiUser(req, options = {}) {
       issuer: config.issuers
     });
     assertApiClaimsPermission(payload, config);
-    assertApiClaimsWorkspaceAccess(payload);
+    if (options.workspace === undefined) assertApiClaimsWorkspaceAccess(payload);
+    else assertApiClaimsWorkspaceAccess(payload, options);
     return {
       authenticated: true,
       mode: payload.scp ? "entra-delegated" : "entra-service-principal",

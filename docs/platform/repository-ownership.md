@@ -10,6 +10,7 @@
   - [AGENTS.md](/Users/eric/CareEngineMain/alamo-platform-app/AGENTS.md)
   - [package.json](/Users/eric/CareEngineMain/alamo-platform-app/package.json)
   - [check-repository-retention.mjs](/Users/eric/CareEngineMain/alamo-platform-app/scripts/check-repository-retention.mjs)
+  - [executive-director-workspace.md](executive-director-workspace.md)
 
 ## Retention Rule
 

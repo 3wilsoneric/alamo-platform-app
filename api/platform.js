@@ -54,6 +54,10 @@ import {
 
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
 import { assertLicensingAccess } from "../server/licensing-access.mjs";
+import {
+  handleExecutiveDirectorApiRequest,
+  isExecutiveDirectorApiPath
+} from "../server/executive-director-api.mjs";
 
 const PLATFORM_GET_ROUTES = Object.freeze({
   "/api/platform/licensing": ({ requestUrl, authContext }) => {
@@ -120,6 +124,10 @@ const PLATFORM_GET_ROUTES = Object.freeze({
 
 export default async function handler(req, res) {
   const requestPath = String(req.url ?? "").split("?", 1)[0] ?? "";
+  if (isExecutiveDirectorApiPath(requestPath)) {
+    await handleExecutiveDirectorApiRequest(req, res);
+    return;
+  }
   if (requestPath.startsWith(PIPELINE_CLINICAL_API_PREFIX)) {
     await handlePipelineClinicalApiRequest(req, res);
     return;

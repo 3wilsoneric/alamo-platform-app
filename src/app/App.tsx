@@ -17,6 +17,7 @@ import WorkforcePage from "../features/workforce/pages/WorkforcePage";
 import OwnerChatPage from "../features/home/pages/OwnerChatPage";
 
 import LicensingPage from "../features/licensing/pages/LicensingPage";
+import ExecutiveDirectorPage from "../features/executive/pages/ExecutiveDirectorPage";
 
 function RouteBoundary({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -71,6 +72,8 @@ export default function App() {
         <Route path="/incidents" element={withRouteBoundary(<IncidentCenterPage />)} />
         <Route path="/admissions" element={withRouteBoundary(<AdmissionsPage />)} />
         <Route path="/workforce" element={withRouteBoundary(<WorkforcePage />)} />
+        <Route path="/executive" element={<Navigate to="/executive/licensing" replace />} />
+        <Route path="/executive/licensing" element={withRouteBoundary(<ExecutiveDirectorPage />)} />
         <Route path="/chat" element={withRouteBoundary(<OwnerChatPage />)} />
         <Route path="/pipeline" element={<Navigate to="/admissions" replace />} />
         <Route path="/glossary" element={withRouteBoundary(<GlossaryPage />)} />

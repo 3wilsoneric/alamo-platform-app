@@ -111,14 +111,62 @@ await withBrowserQa(async (browser) => {
     await page.locator("article[data-licensing-reader]").waitFor({ state: "visible" });
     const reader = await measure(page);
     assert.ok(reader.overflow <= 1, `${viewport.width}px reader overflowed by ${reader.overflow}px`);
-    await page.getByText("View original source text").click();
-    const expanded = await measure(page);
-    assert.ok(expanded.overflow <= 1, `${viewport.width}px expanded source overflowed by ${expanded.overflow}px`);
-    assert.equal(expanded.undersized.length, 0, `${viewport.width}px exposed undersized controls: ${expanded.undersized.join(", ")}`);
-    if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-reader-390.png"), fullPage: false });
-    results.push({ viewport, list, reader, expanded, panel: panelBox });
+    const readerTitleBox = await page.locator("article[data-licensing-reader] h2").boundingBox();
+    assert.ok(readerTitleBox && readerTitleBox.y >= 0 && readerTitleBox.y < viewport.height, `${viewport.width}px reader did not return to its title`);
+    assert.equal(await page.getByRole("link", { name: "Open state record" }).count(), 1, `${viewport.width}px reader lost the state record action`);
+    assert.equal(await page.getByRole("button", { name: "Open original text" }).count(), 1, `${viewport.width}px reader lost the original text action`);
+    assert.equal(await page.getByRole("button", { name: "Download original text" }).count(), 1, `${viewport.width}px reader lost the download action`);
+    assert.equal(reader.undersized.length, 0, `${viewport.width}px exposed undersized reader controls: ${reader.undersized.join(", ")}`);
+    if (viewport.width === 390) {
+      await page.screenshot({ path: path.join(output, "licensing-reader-390.png"), fullPage: false });
+      const popupPromise = page.waitForEvent("popup");
+      await page.getByRole("button", { name: "Open original text" }).click();
+      const popup = await popupPromise;
+      await popup.waitForLoadState();
+      assert.match(await popup.locator("body").innerText(), /COMPLAINT INVESTIGATION REPORT/, "original text action did not open the archived report");
+      await popup.close();
+      const downloadPromise = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Download original text" }).click();
+      const download = await downloadPromise;
+      assert.match(download.suggestedFilename(), /^CCLD-079201030-2026-08-12-\d{8}\.txt$/, "original text download used an unexpected filename");
+    }
+    results.push({ viewport, list, reader, panel: panelBox });
     await context.close();
   }
+  const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const desktop = await desktopContext.newPage();
+  await installApiFixtures(desktop);
+  await desktop.goto(`${BASE_URL}/analytics/licensing`, { waitUntil: "domcontentloaded" });
+  await desktop.locator('[data-licensing-workspace="true"]').waitFor({ state: "visible" });
+  const desktopLayout = await desktop.evaluate(() => {
+    const aside = document.querySelector('[data-licensing-workspace="true"] aside');
+    const selectedReport = aside?.querySelector('[aria-pressed="true"]');
+    const reader = document.querySelector('[data-licensing-workspace="true"] [aria-label="Report reader"]');
+    const page = document.querySelector('[data-licensing-page="true"]');
+    const analyticsLink = document.querySelector('[data-platform-page-target="analytics"]');
+    const licensingLink = document.querySelector('[data-analytics-section-target="licensing"]');
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      asideWidth: Math.round(aside?.getBoundingClientRect().width ?? 0),
+      readerWidth: Math.round(reader?.getBoundingClientRect().width ?? 0),
+      pageBackground: page ? getComputedStyle(page).backgroundColor : null,
+      asideBackground: aside ? getComputedStyle(aside).backgroundColor : null,
+      selectedReportBackground: selectedReport ? getComputedStyle(selectedReport).backgroundColor : null,
+      readerBackground: reader ? getComputedStyle(reader).backgroundColor : null,
+      analyticsCurrent: analyticsLink?.getAttribute("aria-current"),
+      licensingCurrent: licensingLink?.getAttribute("aria-current")
+    };
+  });
+  assert.ok(desktopLayout.overflow <= 1, `desktop licensing overflowed by ${desktopLayout.overflow}px`);
+  assert.ok(desktopLayout.asideWidth >= 240, "desktop report rail was too narrow to scan");
+  assert.ok(desktopLayout.readerWidth > desktopLayout.asideWidth, "desktop report reader did not retain the primary width");
+  assert.equal(desktopLayout.pageBackground, "rgb(255, 255, 255)", "licensing canvas did not retain the requested white foundation");
+  assert.notEqual(desktopLayout.selectedReportBackground, desktopLayout.readerBackground, "selected report did not separate from the reader");
+  assert.equal(desktopLayout.analyticsCurrent, "page", "primary Analytics navigation was not active");
+  assert.equal(desktopLayout.licensingCurrent, "page", "Licensing navigation was not active");
+  await desktop.screenshot({ path: path.join(output, "licensing-desktop-1440.png"), fullPage: false });
+  results.push({ viewport: { width: 1440, height: 900 }, desktop: desktopLayout });
+  await desktopContext.close();
   await writeFile(path.join(output, "latest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), passed: true, results }, null, 2));
-  console.log("Licensing mobile QA passed at 320px, 390px, and 430px with list, updates sheet, reader, and expanded source coverage.");
+  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px with navigation, list, updates sheet, summary reader, and original-record actions.");
 });

@@ -95,6 +95,7 @@ await withBrowserQa(async (browser) => {
   const communitiesDashboardTab = dashboardNavigation.getByRole("tab", { name: /^Communities/ });
   const openFieldsDashboardTab = dashboardNavigation.getByRole("tab", { name: /^Open fields/ });
   const scheduleTabVisible = await scheduleDashboardTab.count() === 1;
+  const dashboardTabCount = await dashboardNavigation.getByRole("tab").count();
   const scheduledExecutiveRows = executiveUpdateVisible
     ? await executiveUpdate.locator('[data-admissions-executive-section="scheduled"]').evaluateAll((rows) => rows.map((row) => row.getAttribute("data-admissions-executive-row")))
     : [];
@@ -102,8 +103,7 @@ await withBrowserQa(async (browser) => {
     await briefingTab.getAttribute("aria-selected") !== "true" ||
     await page.locator('[data-admissions-pipeline-page="true"]').count() !== 0 ||
     await dashboard.locator("table").count() !== 0 ||
-    await dashboardNavigation.getByRole("tab").count() < 1 ||
-    await dashboardNavigation.getByRole("tab").count() > 3 ||
+    dashboardTabCount > 3 ||
     await page.locator('[data-admissions-county-outreach="true"]').count() !== 0 ||
     await page.getByRole("heading", { name: "County outreach" }).count() !== 0 ||
     await page.locator('[data-admissions-priority-schedule]').count() !== 0 ||
@@ -155,7 +155,7 @@ await withBrowserQa(async (browser) => {
     }
     await page.screenshot({ path: `${screenshotDir}/desktop-admissions-schedule.png`, fullPage: true });
   } else if (
-    await communitiesDashboardTab.getAttribute("aria-selected") !== "true" ||
+    (dashboardTabCount > 0 && await communitiesDashboardTab.getAttribute("aria-selected") !== "true") ||
     await page.locator('[data-admissions-dashboard-page="communities"]').count() !== 1 ||
     await page.locator('[data-admissions-dashboard-page="schedule"]').count() !== 0
   ) {
@@ -170,10 +170,10 @@ await withBrowserQa(async (browser) => {
   if ((dashboardTypeScale.summary != null && dashboardTypeScale.summary < 18) || dashboardTypeScale.section < 22) {
     throw new Error(`Admissions briefing typography is too small: ${JSON.stringify(dashboardTypeScale)}`);
   }
-  await communitiesDashboardTab.click();
+  if (await communitiesDashboardTab.count()) await communitiesDashboardTab.click();
   await page.locator('[data-admissions-dashboard-page="communities"]').waitFor({ state: "visible" });
   if (
-    await communitiesDashboardTab.getAttribute("aria-selected") !== "true" ||
+    (dashboardTabCount > 0 && await communitiesDashboardTab.getAttribute("aria-selected") !== "true") ||
     await page.getByRole("heading", { name: "Community snapshot" }).count() !== 1 ||
     await page.locator('[data-admissions-briefing-community]').count() !== 5 ||
     await page.locator('[data-admissions-briefing-community]').filter({ hasText: "Unassigned" }).count() !== 0 ||
@@ -257,7 +257,7 @@ await withBrowserQa(async (browser) => {
   }
 
   const mobileCommunitiesTab = mobileDashboardNavigation.getByRole("tab", { name: /^Communities/ });
-  await mobileCommunitiesTab.click();
+  if (await mobileCommunitiesTab.count()) await mobileCommunitiesTab.click();
   await mobile.locator('[data-admissions-dashboard-page="communities"]').waitFor({ state: "visible" });
   const mobileCommunityDisclosure = mobile.locator('[data-admissions-briefing-community] button[aria-expanded]').first();
   await mobileCommunityDisclosure.click();

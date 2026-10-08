@@ -127,6 +127,15 @@ navigation while it is reviewed. Phones show one numbered chapter at a time
 with previous, next, and native chapter controls; desktop and print retain the
 complete document.
 
+`/executive/licensing` is the facility-scoped Executive Director context app,
+named **Licensing**. Executive
+Director Entra roles are mapped to explicit facility IDs and are redirected to
+this route instead of the general Platform. The initial surface is intentionally
+small: current community context, secure LIC 624 upload, and the recent intake
+queue. Fillable PDFs are stripped into the versioned LIC 624 draft and move to
+review. Image-only reports remain in `ocr_required`; the route does not imply
+that OCR or filing has already occurred.
+
 `/admissions` is the aggregate Admissions overview inside Alamo. It opens on a
 Briefing, with Pipeline as the second page-level view. Briefing keeps the
 executive update concise, then exposes Schedule, Community snapshot, and Open
