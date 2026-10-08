@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-06
+- updated: 2026-10-08
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -177,6 +177,54 @@ and CSS, `401` plus `private, no-store` on both anonymous Executive Director
 API endpoints, and signed-in owner rendering of the live San Pablo Overview
 and Admissions sections. No licensing submission, alert setting, email, or
 Pipeline record was changed during verification.
+
+### Executive Director dashboard and incident-intake scale-up — 2026-10-08
+
+The Executive Director community dashboard now presents one facility-scoped
+operating brief instead of a grid of detached KPI cards. Census, admissions,
+incidents, and medication administration each open a larger detail workspace
+using only the assigned facility's governed data. The existing client chart
+remains available from the admissions work list.
+
+The LIC 624 intake backend now supports an ongoing multi-user report library.
+Each facility has a private ETag-protected catalog with retry-safe concurrent
+updates, cursor pagination, status and filename filtering, full-history totals,
+immutable source and extraction records, and authenticated retrieval of the
+original report. Source retrieval verifies the stored SHA-256 digest before
+returning a private, non-cacheable response. Existing manifests are indexed
+without rewriting their originals or review history.
+
+- dashboard source commit: `4fc18ee`
+- intake source commit: `3f72085`
+- merge commit: `f8629dfe208012d39b4c5b5732e58968a151386f`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/168`
+- ACR build: `cc66`
+- image tag: `alamo-platform:executive-intake-f8629df`
+- image digest: `sha256:e6c69f28b8a983fad59c43d1ab555600b74cc4c1148a2364ffe57501e90d1418`
+- active revision: `alamo-platform-prod-web--executive-intake-1008`
+- rollback digest: `sha256:f408902c1c2bdcccd96e5df472fe46043b3d903492c1007e49f52bc88508523b`
+- active browser assets: `/assets/index-DqhlC7bl.js` and
+  `/assets/index-DEi9zNM3.css`
+
+The release uses the bounded Executive Director overlay on the exact preceding
+production digest and retains the proven Platform runtime and data adapters.
+Release-specific verification covered documentation, TypeScript, server
+TypeScript, source syntax, code health, unused code, duplication, Platform API
+contracts, Executive Director contracts, production build, concurrent catalog
+updates, paginated and filtered reads, original-source digest integrity,
+optimistic review conflicts, and 390px and 1440px layouts without horizontal
+overflow. The broader predeploy runner stopped at the existing dynamic-period
+fixture mismatch in the unrelated AWOL-since-May analyst case.
+
+Post-promotion verification confirmed a Healthy/Running revision with one
+replica and 100 percent traffic; 4/4 public route probes; byte-identical live
+HTML, JavaScript, and CSS; and `401` plus `private, no-store` on all four
+anonymous Executive Director API probes. A signed-in owner check confirmed the
+live San Pablo dashboard, census drill-down, report queue, and authenticated
+two-page original-PDF retrieval. The legacy signed-in smoke script reached its
+retired California-carousel selector after its route probes; the direct
+Executive Director checks passed. No report, review, alert setting, email, or
+Pipeline record was created or changed during deployment verification.
 
 ### Current Data Architecture explainer release — 2026-10-06
 
