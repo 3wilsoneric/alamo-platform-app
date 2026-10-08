@@ -14,13 +14,16 @@
 
 ## Product decision
 
-Executive Directors receive a separate, deliberately small context app named
-**Licensing** at `/executive/licensing`. It is not another item in the general Platform navigation. An
+Executive Directors receive a separate, deliberately small community context app. It opens on the
+facility dashboard at `/executive/dashboard`, with **Licensing** at
+`/executive/licensing`. It is not another item in the general Platform navigation. An
 Executive Director identity is assigned to one or more communities by Entra
 application role, lands directly in this workspace, and cannot use general
 Platform APIs or routes.
 
-The first useful job is licensing-report intake. The user uploads the original
+The dashboard carries the selected community's governed census, incidents,
+medication performance, and facility-filtered Admissions activity. Licensing
+intake remains the primary workflow: the user uploads the original
 scan, sees that it was received, and follows its processing state. The source
 document is retained privately and its SHA-256 checksum is recorded. Uploading
 does not publish the report, populate the existing Licensing library, or mark
@@ -67,8 +70,9 @@ the server-side OCR adapter is connected.
 ## Current implementation slice
 
 - facility-scoped Entra role contract
-- forced Executive Director landing route and minimal header
-- simple community dashboard with governed current-resident context
+- forced Executive Director dashboard landing route and minimal Community/Licensing header
+- community dashboard with governed census, incidents, medication performance,
+  and facility-filtered referral, assessment, and move-in activity
 - private scanned-report upload with type, size, signature, checksum, identity,
   facility, and timestamp metadata
 - direct LIC 624 AcroForm extraction into a private structured draft
@@ -105,4 +109,5 @@ evaluation rather than preceding it.
 - no extraction output presented as final without human confirmation
 - no automatic addition to the existing Licensing library
 - no cross-community query or upload based only on a request parameter
+- no cross-community cards or schedules in the Executive Director dashboard response
 - no email or notification until recipients and triggers are explicitly approved

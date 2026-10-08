@@ -97,7 +97,8 @@ Current protected routes:
 - `/admissions`: CEO briefing plus the bounded Pipeline referral workspace.
 - `/workforce`: workforce operating overview.
 - `/chat`: unlisted owner-only conversational entry to the same analyst runtime.
-- `/executive/licensing`: facility-scoped Executive Director Licensing context app.
+- `/executive/dashboard`: facility-scoped Executive Director community dashboard.
+- `/executive/licensing`: facility-scoped Executive Director Licensing workflow.
 - `/data-architecture`: URL-only, print-ready infographic of the governed data
   paths, current production runtime, bounded integrations, available
   capabilities, and explicit source gaps.

@@ -393,7 +393,7 @@ function AdmissionsZoneRedirect() {
 
 function ExecutiveDirectorZoneRedirect() {
   useEffect(() => {
-    window.location.replace("/executive/licensing");
+    window.location.replace("/executive/dashboard");
   }, []);
 
   return (
