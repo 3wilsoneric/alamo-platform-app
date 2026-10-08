@@ -18,3 +18,7 @@ export const LIC624_INCIDENT_TYPE_FIELDS: ReadonlyArray<Readonly<{
   label: string;
   source: string;
 }>>;
+export const LIC624_NOTIFICATION_FIELDS: ReadonlyArray<Readonly<{
+  key: string;
+  label: string;
+}>>;

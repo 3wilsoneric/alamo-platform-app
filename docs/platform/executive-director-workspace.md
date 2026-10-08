@@ -50,8 +50,10 @@ Executive Director role boundary.
    source in the private Azure container, and write an audit manifest.
 3. **Extract:** strip fillable LIC 624 PDF fields into the versioned logical
    record. Image-only PDFs, JPGs, and PNGs move to the OCR-required queue.
-4. **Review:** show the scan beside extracted fields, confidence, and required
-   corrections. Low-confidence and missing required fields must be explicit.
+4. **Review:** open a digital LIC 624 immediately after fillable-PDF extraction,
+   or reopen it from the queue. The reviewer checks every section, edits the
+   structured draft, saves versioned changes, and may confirm only when the
+   required-field check passes. The uploaded original remains unchanged.
 5. **Sort:** classify the approved draft using the agreed report type, date,
    control number, community, findings, plan-of-correction, and follow-up rules.
 6. **File:** an authorized person confirms the record before it enters the
@@ -70,6 +72,11 @@ the server-side OCR adapter is connected.
 - private scanned-report upload with type, size, signature, checksum, identity,
   facility, and timestamp metadata
 - direct LIC 624 AcroForm extraction into a private structured draft
+- Pipeline-style digital LIC 624 review with editable facility, people,
+  incident, treatment, notification, supervisor, and signature sections
+- explicit edited-field cues, missing-required-field checks, draft saving,
+  optimistic concurrency protection, and human confirmation
+- immutable source extraction plus versioned review audit records
 - recent-submission queue with extraction method, populated-field count, and honest processing status
 - Azure Blob persistence in production and ignored local persistence for development
 
@@ -86,8 +93,8 @@ LIC 624 reports and answer these questions:
 - What retention, deletion, and notification rules apply to original scans and
   extracted records?
 
-Those answers finish the confidence rules, review form, sorting behavior, and
-filing contract. Azure Document Intelligence is the likely server-side OCR
+Those answers finish the confidence rules, sorting behavior, and filing
+contract. Azure Document Intelligence is the likely server-side OCR
 service for image-only reports, but service selection follows the sample-scan
 evaluation rather than preceding it.
 

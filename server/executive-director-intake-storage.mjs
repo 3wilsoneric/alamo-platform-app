@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { BlobServiceClient } from "@azure/storage-blob";
@@ -7,6 +7,11 @@ import { ManagedIdentityCredential } from "@azure/identity";
 import { createHttpError } from "./http-errors.mjs";
 import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { extractLic624Report, summarizeLic624Extraction } from "./lic624-extraction.mjs";
+import {
+  assertLic624SubmissionId,
+  getLic624ReviewIssues,
+  validateLic624ReviewData
+} from "./lic624-review.mjs";
 
 export const EXECUTIVE_DIRECTOR_INTAKE_MAX_BYTES = 20 * 1024 * 1024;
 export const EXECUTIVE_DIRECTOR_INTAKE_TYPES = Object.freeze([
@@ -168,6 +173,99 @@ async function streamToBuffer(stream, maximumBytes = 64 * 1024) {
   return Buffer.concat(chunks);
 }
 
+async function findLocalManifest(facilityId, submissionId) {
+  const facilityRoot = path.join(localRoot(), facilityId);
+  let files;
+  try {
+    files = await readdir(facilityRoot, { recursive: true, withFileTypes: true });
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return null;
+    throw error;
+  }
+  const entry = files.find((item) => item.isFile() && item.name === "manifest.json" && item.parentPath.endsWith(submissionId));
+  if (!entry) return null;
+  const manifestPath = path.join(entry.parentPath, entry.name);
+  return {
+    manifest: JSON.parse(await readFile(manifestPath, "utf8")),
+    location: { kind: "local", manifestPath }
+  };
+}
+
+async function findAzureManifest(facilityId, submissionId) {
+  const container = getAzureContainer();
+  const prefix = `${STORAGE_ROOT}/${facilityId}/`;
+  const suffix = `/${submissionId}/manifest.json`;
+  for await (const blob of container.listBlobsFlat({ prefix })) {
+    if (!blob.name.endsWith(suffix)) continue;
+    const download = await container.getBlobClient(blob.name).download();
+    return {
+      manifest: JSON.parse((await streamToBuffer(download.readableStreamBody, 256 * 1024)).toString("utf8")),
+      location: { kind: "azure", blobName: blob.name, etag: download.etag }
+    };
+  }
+  return null;
+}
+
+async function findStoredManifest(facilityId, submissionId) {
+  const validSubmissionId = assertLic624SubmissionId(submissionId);
+  const stored = shouldUseAzure()
+    ? await findAzureManifest(facilityId, validSubmissionId)
+    : await findLocalManifest(facilityId, validSubmissionId);
+  if (!stored || stored.manifest?.facilityId !== facilityId || stored.manifest?.submissionId !== validSubmissionId) {
+    throw createHttpError(404, "licensing_intake_not_found", "The licensing submission was not found.");
+  }
+  return stored;
+}
+
+function reviewIdentity(authContext) {
+  return authContext?.authenticated
+    ? {
+        tenantId: String(authContext.claims?.tid ?? "").trim() || null,
+        objectId: String(authContext.claims?.oid ?? authContext.claims?.sub ?? "").trim() || null
+      }
+    : { tenantId: null, objectId: "development-bypass" };
+}
+
+async function writeReview(stored, manifest, audit) {
+  if (stored.location.kind === "azure") {
+    const container = getAzureContainer();
+    const reviewName = `${stored.location.blobName.slice(0, -("manifest.json".length))}reviews/${String(audit.revision).padStart(4, "0")}-${randomUUID()}.json`;
+    await container.getBlockBlobClient(reviewName).uploadData(
+      Buffer.from(`${JSON.stringify(audit, null, 2)}\n`, "utf8"),
+      {
+        blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" },
+        conditions: { ifNoneMatch: "*" }
+      }
+    );
+    try {
+      await container.getBlockBlobClient(stored.location.blobName).uploadData(
+        Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, "utf8"),
+        {
+          blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" },
+          ...(stored.location.etag ? { conditions: { ifMatch: stored.location.etag } } : {})
+        }
+      );
+    } catch (error) {
+      if (error && typeof error === "object" && "statusCode" in error && error.statusCode === 412) {
+        throw createHttpError(409, "lic624_review_conflict", "This review changed in another session. Reload it before saving again.");
+      }
+      throw error;
+    }
+    return;
+  }
+
+  const reviewDirectory = path.join(path.dirname(stored.location.manifestPath), "reviews");
+  await mkdir(reviewDirectory, { recursive: true });
+  await writeFile(
+    path.join(reviewDirectory, `${String(audit.revision).padStart(4, "0")}-${randomUUID()}.json`),
+    `${JSON.stringify(audit, null, 2)}\n`,
+    { flag: "wx" }
+  );
+  const temporaryPath = `${stored.location.manifestPath}.${randomUUID()}.tmp`;
+  await writeFile(temporaryPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" });
+  await rename(temporaryPath, stored.location.manifestPath);
+}
+
 async function listAzureManifests(facilityId) {
   const container = getAzureContainer();
   const prefix = `${STORAGE_ROOT}/${facilityId}/`;
@@ -210,6 +308,8 @@ export async function createExecutiveDirectorIntakeSubmission({ req, facilityId,
       : { tenantId: null, objectId: "development-bypass" },
     status: extraction.status,
     extraction,
+    review: null,
+    reviewRevision: 0,
     reviewedAt: null,
     filedAt: null
   };
@@ -219,7 +319,95 @@ export async function createExecutiveDirectorIntakeSubmission({ req, facilityId,
   return manifest;
 }
 
+export function toExecutiveDirectorSubmissionDetail(manifest) {
+  const sourceData = manifest.extraction?.data
+    ? validateLic624ReviewData(manifest.extraction.data)
+    : null;
+  const draftData = manifest.review?.data
+    ? validateLic624ReviewData(manifest.review.data)
+    : sourceData;
+  return {
+    ...toExecutiveDirectorSubmissionSummary(manifest),
+    sourceData,
+    draftData,
+    reviewIssues: draftData ? getLic624ReviewIssues(draftData) : (manifest.extraction?.reviewIssues ?? []),
+    reviewRevision: Number.isInteger(manifest.reviewRevision) ? manifest.reviewRevision : 0,
+    reviewUpdatedAt: manifest.review?.updatedAt ?? null,
+    confirmedAt: manifest.review?.confirmedAt ?? null
+  };
+}
+
+export async function getExecutiveDirectorIntakeSubmission(facilityId, submissionId) {
+  const { manifest } = await findStoredManifest(facilityId, submissionId);
+  return manifest;
+}
+
+export async function saveExecutiveDirectorIntakeReview({
+  facilityId,
+  submissionId,
+  expectedRevision,
+  data,
+  confirm,
+  authContext
+}) {
+  const stored = await findStoredManifest(facilityId, submissionId);
+  const currentRevision = Number.isInteger(stored.manifest.reviewRevision)
+    ? stored.manifest.reviewRevision
+    : 0;
+  if (currentRevision !== expectedRevision) {
+    throw createHttpError(409, "lic624_review_conflict", "This review changed in another session. Reload it before saving again.");
+  }
+  if (stored.manifest.extraction?.method !== "pdf_acroform" || !stored.manifest.extraction?.data) {
+    throw createHttpError(409, "lic624_review_unavailable", "This report requires OCR before its fields can be reviewed.");
+  }
+
+  const reviewIssues = getLic624ReviewIssues(data);
+  if (confirm && reviewIssues.length) {
+    throw createHttpError(422, "lic624_review_incomplete", "Complete the required review fields before marking this report reviewed.");
+  }
+
+  const updatedAt = new Date().toISOString();
+  const revision = currentRevision + 1;
+  const actor = reviewIdentity(authContext);
+  const review = {
+    version: "lic624-review-v1",
+    revision,
+    data,
+    reviewIssues,
+    updatedAt,
+    updatedBy: actor,
+    confirmedAt: confirm ? updatedAt : null,
+    confirmedBy: confirm ? actor : null
+  };
+  const manifest = {
+    ...stored.manifest,
+    status: confirm ? "ready_to_file" : "needs_review",
+    review,
+    reviewRevision: revision,
+    reviewedAt: confirm ? updatedAt : null
+  };
+  const audit = {
+    version: "lic624-review-audit-v1",
+    submissionId,
+    facilityId,
+    sourceSha256: manifest.sha256,
+    revision,
+    status: manifest.status,
+    updatedAt,
+    updatedBy: actor,
+    confirmed: confirm,
+    reviewIssues,
+    data
+  };
+  await writeReview(stored, manifest, audit);
+  return manifest;
+}
+
 export function toExecutiveDirectorSubmissionSummary(manifest) {
+  const extractionSummary = manifest.extraction ? summarizeLic624Extraction(manifest.extraction) : null;
+  if (extractionSummary && manifest.review?.reviewIssues) {
+    extractionSummary.reviewIssueCount = manifest.review.reviewIssues.length;
+  }
   return {
     submissionId: manifest.submissionId,
     facilityId: manifest.facilityId,
@@ -229,7 +417,7 @@ export function toExecutiveDirectorSubmissionSummary(manifest) {
     sha256: manifest.sha256,
     createdAt: manifest.createdAt,
     status: manifest.status,
-    extractionSummary: manifest.extraction ? summarizeLic624Extraction(manifest.extraction) : null,
+    extractionSummary,
     reviewedAt: manifest.reviewedAt,
     filedAt: manifest.filedAt
   };
