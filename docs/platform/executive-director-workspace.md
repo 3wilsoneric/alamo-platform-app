@@ -83,6 +83,19 @@ the server-side OCR adapter is connected.
 - immutable source extraction plus versioned review audit records
 - recent-submission queue with extraction method, populated-field count, and honest processing status
 - Azure Blob persistence in production and ignored local persistence for development
+- one private facility catalog per community, updated with ETag preconditions so concurrent uploads and reviews do not overwrite one another
+- direct catalog-backed submission lookup instead of rescanning every full extraction manifest
+- complete facility-level queue counts plus cursor pagination, status filtering, and filename search for queues that grow beyond the recent 25 reports
+- authenticated original-file retrieval through the API; no blob URL or storage path is exposed to the browser, and every retrieval rechecks the stored SHA-256 checksum
+- automatic catalog creation from existing stored manifests, preserving compatibility with reports uploaded before the catalog existed
+
+The production persistence model is designed for a small group of concurrent
+facility users and hundreds to thousands of reports over time. Each source
+file remains immutable under its facility/year/submission path. The catalog
+contains only bounded queue metadata and storage references; extracted form
+content remains in the private per-submission manifest. Review changes still
+produce append-only audit records and use the manifest ETag plus the logical
+review revision to reject stale edits.
 
 ## Next definition session
 

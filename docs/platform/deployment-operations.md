@@ -81,7 +81,10 @@ fallback; only the established Admissions and Chat physical indexes remain.
 
 LIC 624 PDFs, JPGs, and PNGs are stored under the private
 `licensing/executive-director-intake-v1/` prefix in the existing snapshot
-container. The production managed identity has `Storage Blob Data Contributor`
+container. Each facility has an ETag-protected `catalog.json` queue projection,
+while immutable originals, extraction manifests, and append-only review audits
+remain under facility/year/submission paths. Existing manifests are cataloged
+automatically on first read. The production managed identity has `Storage Blob Data Contributor`
 only at that container scope. Fillable PDFs are mapped into the versioned LIC
 624 review record; image-only files remain explicitly `ocr_required`. The UI
 does not expose extracted PHI in its recent-submissions list.
