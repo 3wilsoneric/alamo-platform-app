@@ -136,6 +136,45 @@ and signed-in owner rendering of the San Pablo workspace with current community
 data. No sample or production licensing report was created during live
 verification, and no alert or email configuration changed.
 
+### Executive Director community dashboard — 2026-10-08
+
+Facility-scoped Executive Director identities now land on
+`/executive/dashboard`, with Community and Licensing as the only context-app
+destinations. The dashboard adapts the main community profile into a simpler
+operating view and adds the assigned facility's Pipeline referrals,
+assessments, planned move-ins, and management-chart drilldown. The Executive
+Director API filters every admissions card and schedule row on the server; the
+browser never receives another facility's records.
+
+- source commit: `39d0abfc8b7e6d62fbf30bd487702cca512d4ce9`
+- merge commit: `5cfea0c3aab0d83070aa0876180cd80f3dd7ae85`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/166`
+- ACR build: `cc65`
+- image tag: `alamo-platform:executive-community-5cfea0c`
+- image digest: `sha256:f408902c1c2bdcccd96e5df472fe46043b3d903492c1007e49f52bc88508523b`
+- active revision: `alamo-platform-prod-web--executive-community-1008`
+- rollback digest: `sha256:0c22acada4960b058517c8dfaa072138306bb74b8f9fce4db3c0fd706ba8b2ac`
+- active browser assets: `/assets/index-C33IYSiE.js` and
+  `/assets/index-CFcAjl9g.css`
+
+The release uses the bounded Executive Director overlay on the exact preceding
+production digest. It replaces the browser bundle and the Executive Director
+API modules while retaining the proven application runtime, platform data
+adapters, environment, and locked PDF dependency. Verification included the
+facility-isolation fixture, Executive Director workflow contract, TypeScript,
+server TypeScript, source syntax, documentation, production build, 320px,
+390px, and 1440px responsive rendering, and the 320px management-chart modal.
+The broad analyst gate reached the existing dynamic-period fixture mismatch in
+the AWOL-since-May case; release-specific and production checks do not depend
+on that fixture.
+
+Post-promotion verification confirmed Healthy/Running with one ready replica
+and 100 percent traffic, 4/4 public smoke probes, byte-identical deployed JS
+and CSS, `401` plus `private, no-store` on both anonymous Executive Director
+API endpoints, and signed-in owner rendering of the live San Pablo Overview
+and Admissions sections. No licensing submission, alert setting, email, or
+Pipeline record was changed during verification.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
