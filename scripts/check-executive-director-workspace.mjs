@@ -189,11 +189,12 @@ try {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const [app, shell, page, dashboardPage, header, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
+const [app, shell, page, dashboardPage, dashboardModal, header, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
   readFile(path.join(root, "src/shared/layout/ProtectedAppShell.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorPage.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorDashboardPage.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/executive/components/ExecutiveCommunityDetailModal.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/components/ExecutiveDirectorHeader.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/components/Lic624ReviewWorkspace.tsx"), "utf8"),
   readFile(path.join(root, "api/platform.js"), "utf8"),
@@ -209,7 +210,14 @@ assert.match(page, /data-executive-director-upload="true"/);
 assert.match(page, /LIC 624 intake/);
 assert.match(page, /Review form/);
 assert.match(dashboardPage, /data-executive-community-dashboard="true"/);
-assert.match(dashboardPage, /Current operations and admissions activity/);
+assert.match(dashboardPage, /Community briefing/);
+assert.match(dashboardPage, /onOpenDetail\("census"\)/);
+assert.match(dashboardPage, /onOpenDetail\("admissions"\)/);
+assert.match(dashboardModal, /data-executive-community-detail-modal/);
+assert.match(dashboardModal, /data-executive-detail-view="census"/);
+assert.match(dashboardModal, /data-executive-detail-view="incidents"/);
+assert.match(dashboardModal, /data-executive-detail-view="medications"/);
+assert.match(dashboardModal, /data-executive-detail-view="admissions"/);
 assert.match(header, /\/executive\/dashboard/);
 assert.match(header, /Community/);
 assert.match(reviewWorkspace, /data-lic624-review-workspace="true"/);
