@@ -97,6 +97,7 @@ Current protected routes:
 - `/admissions`: CEO briefing plus the bounded Pipeline referral workspace.
 - `/workforce`: workforce operating overview.
 - `/chat`: unlisted owner-only conversational entry to the same analyst runtime.
+- `/executive/licensing`: facility-scoped Executive Director Licensing context app.
 - `/data-architecture`: URL-only, print-ready infographic of the governed data
   paths, current production runtime, bounded integrations, available
   capabilities, and explicit source gaps.
@@ -166,6 +167,8 @@ Core API contracts:
 - `POST /api/platform/acquisition/valuation`
 - `GET /api/platform/snapshot-health`
 - `GET /api/platform/snapshot-metadata`
+- `GET /api/platform/executive-director/bootstrap?facilityId=...`
+- `POST /api/platform/executive-director/licensing-intake`
 - `GET /api/communities/dashboard`
 - `GET /api/communities/snapshot?facilityId=...`
 - `GET /api/home-dashboard`

@@ -671,7 +671,7 @@ function AdmissionsBriefingDashboard({
       ) : null}
 
       <div data-admissions-briefing-dashboard="true">
-        <nav aria-label="Admissions dashboard sections" data-admissions-briefing-navigation="true" className="mb-5">
+        {pages.length > 1 ? <nav aria-label="Admissions dashboard sections" data-admissions-briefing-navigation="true" className="mb-5">
           <div role="tablist" className={`grid gap-1 rounded-[16px] border border-[#e2ded6] bg-[#f3f0eb] p-1 sm:gap-2 sm:rounded-[20px] sm:p-2 ${pages.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
             {pages.map((page) => {
               const Icon = page.icon;
@@ -695,7 +695,7 @@ function AdmissionsBriefingDashboard({
               );
             })}
           </div>
-        </nav>
+        </nav> : null}
 
         {activeBriefingPage === "schedule" ? (
           <div id="admissions-dashboard-schedule" role="tabpanel" aria-label="Admissions schedule dashboard" data-admissions-dashboard-page="schedule">
@@ -1025,48 +1025,46 @@ function BriefingCommunityDashboard({
     .reduce((total, community) => total + (community.newReferrals7d ?? 0), 0);
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-[#cadbd4] border-t-[4px] border-t-[#789b8e] bg-white shadow-[0_12px_32px_rgba(37,77,64,0.08)]" aria-labelledby="admissions-community-dashboard-title">
-      <div className="relative flex items-center justify-between gap-4 overflow-hidden border-b border-[#d3e1dc] bg-[linear-gradient(110deg,#ebf5f0_0%,#faf6ed_100%)] px-5 py-5 sm:px-7 sm:py-6">
-        <span aria-hidden="true" className="absolute -right-12 -top-24 h-52 w-52 rounded-full border-[30px] border-[#d7e7df]/60" />
-        <span aria-hidden="true" className="absolute right-32 top-3 h-16 w-16 rounded-full border border-[#bad1c7]/55" />
-        <div className="relative z-[1]">
-          <h3 id="admissions-community-dashboard-title" className="text-[22px] font-semibold tracking-[-0.03em] text-[#263c35] sm:text-[25px]">Community snapshot</h3>
-          <p className="mt-1 text-[13px] leading-5 text-[#6d7872] sm:text-[14px]">Current residents, upcoming admits, and new referrals by community.</p>
+    <section className="overflow-hidden border-t-2 border-[#202321] bg-[#fffaf3]" aria-labelledby="admissions-community-dashboard-title">
+      <div className="flex items-end justify-between gap-5 border-b border-[#202321] px-4 py-4 sm:px-6 sm:py-5">
+        <div>
+          <h3 id="admissions-community-dashboard-title" className="text-[27px] font-semibold leading-none tracking-[-0.045em] text-[#202321] sm:text-[32px]">Community snapshot</h3>
+          <p className="mt-2 text-[14px] leading-5 text-[#64615b] sm:text-[15px]">Current residents, upcoming admits, and new referrals.</p>
         </div>
-        <p className="relative z-[1] text-right text-[11px] font-semibold uppercase tracking-[0.09em] text-[#6d7872]"><strong className="block text-[30px] font-semibold leading-none tracking-[-0.05em] text-[#183f34] sm:text-[34px]">{formatBriefingCount(briefing.totals.census)}</strong><span className="mt-1 block">total residents</span></p>
+        <p className="shrink-0 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6a665e]"><strong className="block text-[34px] font-semibold leading-none tracking-[-0.055em] text-[#202321] sm:text-[40px]">{formatBriefingCount(briefing.totals.census)}</strong><span className="mt-1 block">residents</span></p>
       </div>
-      <div className="hidden grid-cols-[minmax(220px,1fr)_130px_180px_190px] gap-5 border-b border-[#e5e9e7] bg-[#f6f4ef] px-7 py-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-[#747e79] sm:grid">
+      <div className="hidden grid-cols-[minmax(220px,1fr)_130px_180px_190px] gap-5 border-b border-[#d9d2c7] px-6 py-2.5 text-[10px] font-semibold uppercase tracking-[0.11em] text-[#716d66] sm:grid">
         <span>Community</span>
         <span className="text-right">Census</span>
         <span className="text-right">Upcoming admits</span>
         <span className="text-right">New referrals · 7 days</span>
       </div>
       <div className="divide-y divide-[#e5e9e7]">
-        {assignedCommunities.map((community, communityIndex) => {
+        {assignedCommunities.map((community) => {
           const expanded = expandedFacilityId === community.facilityId;
           const communityCards = pipeline?.board.cards.filter((card) => card.facilityId === community.facilityId) ?? [];
           const upcomingAdmits = moveInCoverage
             ? scheduledMoveIns.filter((item) => item.facilityId === community.facilityId).length
             : null;
           return (
-            <div key={community.facilityId} data-admissions-briefing-community={community.facilityId} className={communityIndex % 2 === 1 ? "bg-[#fcfbf8]" : "bg-white"}>
+            <div key={community.facilityId} data-admissions-briefing-community={community.facilityId}>
               <button
                 type="button"
                 aria-expanded={expanded}
                 onClick={() => setExpandedFacilityId((current) => current === community.facilityId ? null : community.facilityId)}
-                className="w-full px-5 py-4 text-left transition hover:bg-[#f1f7f4] sm:grid sm:grid-cols-[minmax(220px,1fr)_130px_180px_190px] sm:items-center sm:gap-5 sm:px-7 sm:py-5"
+                className={`w-full px-4 py-4 text-left transition sm:grid sm:grid-cols-[minmax(220px,1fr)_130px_180px_190px] sm:items-center sm:gap-5 sm:px-6 sm:py-4 ${expanded ? "bg-[#f7f3eb]" : "hover:bg-[#fdf5e9]"}`}
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h4 className="min-w-0 text-[16px] font-semibold leading-6 text-[#263c35] sm:text-[18px]">{community.shortName}</h4>
+                  <h4 className="min-w-0 text-[19px] font-semibold leading-6 tracking-[-0.025em] text-[#202321] sm:text-[20px]">{community.shortName}</h4>
                   <div className="flex items-center gap-2">
-                    <p data-admissions-community-census="true" className="text-right sm:hidden"><strong className="text-[28px] font-semibold leading-none tracking-[-0.05em] text-[#183f34]">{formatBriefingCount(community.census)}</strong><span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#717b76]">census</span></p>
+                    <p data-admissions-community-census="true" className="text-right sm:hidden"><strong className="text-[30px] font-semibold leading-none tracking-[-0.05em] text-[#202321]">{formatBriefingCount(community.census)}</strong><span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#726d65]">census</span></p>
                     <ChevronDown className={`h-5 w-5 shrink-0 text-[#74807a] transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
                   </div>
                 </div>
-                <p data-admissions-community-census="true" className="hidden text-right sm:block"><strong className="text-[26px] font-semibold tabular-nums tracking-[-0.03em] text-[#183f34]">{formatBriefingCount(community.census)}</strong></p>
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:contents">
-                  <p data-admissions-community-upcoming-admits="true" className="rounded-xl bg-[#f1f5fa] px-3 py-2 text-[12px] text-[#627181] sm:bg-transparent sm:px-0 sm:py-0 sm:text-right"><span className="block text-[9px] font-semibold uppercase tracking-[0.09em] sm:hidden">Upcoming admits</span><strong className="text-[21px] font-semibold tabular-nums text-[#416b90] sm:text-[22px]">{formatBriefingCount(upcomingAdmits)}</strong><span className="ml-1.5 sm:hidden">scheduled</span></p>
-                  <p data-admissions-community-referrals="true" className="rounded-xl bg-[#fbf4e9] px-3 py-2 text-[12px] text-[#7a6a57] sm:bg-transparent sm:px-0 sm:py-0 sm:text-right"><span className="block text-[9px] font-semibold uppercase tracking-[0.09em] sm:hidden">New referrals</span><strong className="text-[21px] font-semibold tabular-nums text-[#906633] sm:text-[22px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1.5 sm:hidden">last 7 days</span></p>
+                <p data-admissions-community-census="true" className="hidden text-right sm:block"><strong className="text-[30px] font-semibold tabular-nums tracking-[-0.04em] text-[#202321]">{formatBriefingCount(community.census)}</strong></p>
+                <div className="mt-3 grid grid-cols-2 border-t border-[#ddd5ca] pt-3 sm:contents sm:border-0 sm:pt-0">
+                  <p data-admissions-community-upcoming-admits="true" className="border-r border-[#ddd5ca] pr-3 text-[12px] text-[#4f5c82] sm:border-0 sm:pr-0 sm:text-right"><span className="block text-[10px] font-semibold uppercase tracking-[0.09em] sm:hidden">Upcoming admits</span><strong className="text-[24px] font-semibold tabular-nums text-[#365fc7] sm:text-[26px]">{formatBriefingCount(upcomingAdmits)}</strong><span className="ml-1.5 sm:hidden">scheduled</span></p>
+                  <p data-admissions-community-referrals="true" className="pl-3 text-[12px] text-[#4f6a5e] sm:pl-0 sm:text-right"><span className="block text-[10px] font-semibold uppercase tracking-[0.09em] sm:hidden">New referrals</span><strong className="text-[24px] font-semibold tabular-nums text-[#257653] sm:text-[26px]">{formatBriefingCount(community.newReferrals7d)}</strong><span className="ml-1.5 sm:hidden">last 7 days</span></p>
                 </div>
               </button>
               {expanded ? (
@@ -1085,7 +1083,7 @@ function BriefingCommunityDashboard({
         })}
       </div>
       {unassignedActivity > 0 ? (
-        <p data-admissions-unassigned-footnote="true" className="border-t border-[#e5e9e7] bg-[#fbfcfb] px-5 py-3 text-[12px] leading-5 text-[#68736d] sm:px-7">
+        <p data-admissions-unassigned-footnote="true" className="border-t border-[#d9d2c7] px-4 py-3 text-[12px] leading-5 text-[#68645d] sm:px-6">
           {unassignedActivity} recent {pluralize("referral", unassignedActivity)} {unassignedActivity === 1 ? "has" : "have"} not yet been assigned to a community and {unassignedActivity === 1 ? "is" : "are"} omitted here.
         </p>
       ) : null}
@@ -1125,9 +1123,9 @@ function CommunityAdmissionsDetail({
   ].filter((value): value is string => Boolean(value));
 
   return (
-    <div data-admissions-community-detail="true" className="border-t border-[#dfe5e2] bg-[#f2f7f4] bg-[radial-gradient(circle_at_1px_1px,#d8e5df_1px,transparent_0)] [background-size:22px_22px] px-5 py-5 sm:px-7 sm:py-7">
-      <div className="grid gap-7 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <section aria-label={`${community.shortName} pipeline detail`}>
+    <div data-admissions-community-detail="true" className="border-t border-[#cfc5b8] bg-[#f7f3eb] px-4 py-4 sm:px-6 sm:py-5">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] lg:divide-x lg:divide-[#d8cfc3]">
+        <section aria-label={`${community.shortName} pipeline detail`} className="min-w-0 lg:pr-6">
           <div className="flex flex-wrap items-center gap-2.5">
             <h5 className="mr-2 text-[15px] font-semibold text-[#29483f]">Active pipeline</h5>
             <CommunityMetric label="New" value={stageCounts.received} />
@@ -1136,9 +1134,9 @@ function CommunityAdmissionsDetail({
             {community.occupancyPct != null ? <CommunityMetric label="Occupied" value={`${community.occupancyPct}%`} /> : null}
           </div>
           {cards.length ? (
-            <div className="mt-4 grid gap-x-6 border-t border-[#d8e2dd] sm:grid-cols-2">
+            <div className="mt-3 grid gap-x-6 border-t border-[#d8cfc3] sm:grid-cols-2">
               {cards.map((card) => (
-                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex min-w-0 items-center gap-3 border-b border-[#dde6e1] py-3.5 text-left transition hover:text-[#0f795f]">
+                <button key={card.referralId} type="button" onClick={() => onOpenCard(card)} className="flex min-w-0 items-center gap-3 border-b border-[#ded5c9] py-3 text-left transition hover:text-[#0f795f]">
                   <span className="min-w-0 flex-1">
                     <span className="block break-words text-[14px] font-semibold text-[#2f3e39] sm:truncate sm:text-[15px]">{card.clientName}</span>
                     <span className="mt-1 block break-words text-[12px] leading-4 text-[#6f7a74] sm:truncate">{card.status} · {card.owner}</span>
@@ -1147,14 +1145,14 @@ function CommunityAdmissionsDetail({
                 </button>
               ))}
             </div>
-          ) : <p className="mt-4 border-t border-[#dde5e1] py-5 text-[13px] text-[#6f7974]">No active referrals are assigned to this community.</p>}
+          ) : <p className="mt-3 border-t border-[#d8cfc3] py-3 text-[13px] text-[#69655e]">No active referrals are assigned to this community.</p>}
         </section>
 
-        <section aria-label={`${community.shortName} upcoming activity`}>
+        <section aria-label={`${community.shortName} upcoming activity`} className="min-w-0 border-t border-[#d8cfc3] pt-4 lg:border-t-0 lg:pl-6 lg:pt-0">
           <h5 className="text-[15px] font-semibold text-[#29483f]">Upcoming activity</h5>
           {activity.length ? (
             <>
-              <div className="mt-4 divide-y divide-[#dde6e1] border-y border-[#d8e2dd]">
+              <div className="mt-3 divide-y divide-[#ded5c9] border-y border-[#d8cfc3]">
                 {activity.map((item) => {
                   const card = cards.find((candidate) => candidate.referralId === item.referralId) ?? null;
                   return (
@@ -1169,7 +1167,7 @@ function CommunityAdmissionsDetail({
               {missingActivitySources.length ? <p className="mt-3 text-[12px] leading-5 text-[#6f7974]">Not included: {joinReadableList(missingActivitySources)}.</p> : null}
             </>
           ) : (
-            <p className="mt-4 border-t border-[#dde5e1] py-5 text-[13px] leading-5 text-[#6f7974]">
+            <p className="mt-3 border-t border-[#d8cfc3] py-3 text-[13px] leading-5 text-[#69655e]">
               {missingActivitySources.length
                 ? `${joinReadableList(missingActivitySources)} ${missingActivitySources.length === 1 ? "was" : "were"} not published for this snapshot.`
                 : "No assessments or move-ins are currently scheduled here."}
@@ -1182,7 +1180,7 @@ function CommunityAdmissionsDetail({
 }
 
 function CommunityMetric({ label, value }: { label: string; value: string | number }) {
-  return <span className="rounded-full border border-[#d3ded8] bg-white px-3 py-1.5 text-[11px] text-[#5f6d66]"><strong className="mr-1.5 text-[13px] font-semibold text-[#24483d]">{value}</strong>{label}</span>;
+  return <span className="text-[12px] text-[#656159]"><strong className="mr-1.5 text-[15px] font-semibold text-[#202321]">{value}</strong>{label}</span>;
 }
 
 function formatBriefingCount(value: number | null) {

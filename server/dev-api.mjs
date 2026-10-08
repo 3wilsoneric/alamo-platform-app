@@ -83,6 +83,10 @@ import {
   handleAlamoHealthDemoApiRequest,
   isAlamoHealthDemoPath
 } from "./alamohealth-demo-api.mjs";
+import {
+  handleExecutiveDirectorApiRequest,
+  isExecutiveDirectorApiPath
+} from "./executive-director-api.mjs";
 
 const PORT = Number(process.env.API_PORT || process.env.PORT || 3002);
 const LOOPBACK_DEV_ORIGIN = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/i;
@@ -107,7 +111,7 @@ function applyDevCors(req, res) {
 
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-File-Name, X-Facility-Id");
   appendResponseVaryHeader(res, "Origin");
   return true;
 }
@@ -172,6 +176,11 @@ const server = http.createServer(async (req, res) => {
 
   if (isAlamoHealthDemoPath(requestUrl.pathname)) {
     await handleAlamoHealthDemoApiRequest(req, res, requestUrl);
+    return;
+  }
+
+  if (isExecutiveDirectorApiPath(requestUrl.pathname)) {
+    await handleExecutiveDirectorApiRequest(req, createVercelResponseAdapter(res));
     return;
   }
 
