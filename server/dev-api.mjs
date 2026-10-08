@@ -139,6 +139,10 @@ function createVercelResponseAdapter(res) {
     },
     json(body) {
       sendJson(res, this.statusCode, body);
+    },
+    send(body) {
+      res.statusCode = this.statusCode;
+      res.end(body);
     }
   };
 }

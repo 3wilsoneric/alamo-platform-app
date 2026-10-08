@@ -129,6 +129,8 @@ export interface ExecutiveDirectorBootstrap {
       ocrRequired: number;
       needsReview: number;
       readyToFile: number;
+      filed: number;
+      failed: number;
     };
     submissions: ExecutiveDirectorSubmission[];
   };
@@ -268,6 +270,24 @@ export function fetchExecutiveDirectorSubmission(
         submission: ExecutiveDirectorSubmissionDetail;
         form: Lic624FormContract;
       }>(response)
+    }
+  );
+}
+
+export function fetchExecutiveDirectorSubmissionSource(
+  facilityId: string,
+  submissionId: string,
+  signal?: AbortSignal
+) {
+  const params = new URLSearchParams({ facilityId, submissionId });
+  return fetchWithApiAuth<Blob>(
+    `/api/platform/executive-director/licensing-intake/source?${params.toString()}`,
+    signal ? { signal } : {},
+    {
+      consume: async (response) => {
+        if (!response.ok) await readApiJson(response);
+        return response.blob();
+      }
     }
   );
 }

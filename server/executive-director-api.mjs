@@ -6,11 +6,12 @@ import {
 } from "./executive-director-access.mjs";
 import {
   createExecutiveDirectorIntakeSubmission,
+  getExecutiveDirectorIntakeOverview,
+  getExecutiveDirectorIntakeSource,
   getExecutiveDirectorIntakeSubmission,
-  listExecutiveDirectorIntakeSubmissions,
+  queryExecutiveDirectorIntakeSubmissions,
   saveExecutiveDirectorIntakeReview,
-  toExecutiveDirectorSubmissionDetail,
-  toExecutiveDirectorSubmissionSummary
+  toExecutiveDirectorSubmissionDetail
 } from "./executive-director-intake-storage.mjs";
 import {
   assertLic624SubmissionId,
@@ -36,15 +37,6 @@ export const EXECUTIVE_DIRECTOR_API_PREFIX = "/api/platform/executive-director";
 function getHeader(req, name) {
   const value = req.headers?.[name];
   return Array.isArray(value) ? value[0] : value;
-}
-
-function summarizeSubmissions(submissions) {
-  return {
-    total: submissions.length,
-    ocrRequired: submissions.filter((item) => item.status === "ocr_required").length,
-    needsReview: submissions.filter((item) => item.status === "needs_review").length,
-    readyToFile: submissions.filter((item) => item.status === "ready_to_file").length
-  };
 }
 
 function getLic624FormContract() {
@@ -109,8 +101,8 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
       if (!facility) {
         throw createHttpError(400, "executive_director_facility_invalid", "Choose a listed Alamo community.");
       }
-      const [submissions, dashboard] = await Promise.all([
-        listExecutiveDirectorIntakeSubmissions(facilityId),
+      const [intake, dashboard] = await Promise.all([
+        getExecutiveDirectorIntakeOverview(facilityId),
         getDashboardSnapshot(facilityId)
       ]);
       res.status(200).json({
@@ -124,8 +116,8 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
         },
         dashboard,
         intake: {
-          summary: summarizeSubmissions(submissions),
-          submissions: submissions.map(toExecutiveDirectorSubmissionSummary)
+          summary: intake.summary,
+          submissions: intake.submissions
         },
         form: getLic624FormContract()
       });
@@ -151,6 +143,37 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
         },
         dashboard: await getCommunityDashboard(facilityId)
       });
+      return;
+    }
+
+    if (req.method === "GET" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake/submissions`) {
+      const facilityId = resolveExecutiveDirectorFacility(
+        access,
+        requestUrl.searchParams.get("facilityId")
+      );
+      const page = await queryExecutiveDirectorIntakeSubmissions({
+        facilityId,
+        limit: requestUrl.searchParams.get("limit"),
+        cursor: requestUrl.searchParams.get("cursor"),
+        status: requestUrl.searchParams.get("status"),
+        query: requestUrl.searchParams.get("q")
+      });
+      res.status(200).json(page);
+      return;
+    }
+
+    if (req.method === "GET" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake/source`) {
+      const facilityId = resolveExecutiveDirectorFacility(
+        access,
+        requestUrl.searchParams.get("facilityId")
+      );
+      const submissionId = assertLic624SubmissionId(requestUrl.searchParams.get("submissionId"));
+      const source = await getExecutiveDirectorIntakeSource(facilityId, submissionId);
+      res.setHeader("Content-Type", source.contentType);
+      res.setHeader("Content-Length", String(source.byteLength));
+      res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(source.originalFileName)}`);
+      res.setHeader("X-Content-SHA256", source.sha256);
+      res.status(200).send(source.bytes);
       return;
     }
 

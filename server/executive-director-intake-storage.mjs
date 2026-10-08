@@ -21,12 +21,18 @@ export const EXECUTIVE_DIRECTOR_INTAKE_TYPES = Object.freeze([
 ]);
 
 const STORAGE_ROOT = "licensing/executive-director-intake-v1";
+const CATALOG_VERSION = "executive-director-intake-catalog-v1";
+const DEFAULT_PAGE_LIMIT = 25;
+const MAX_PAGE_LIMIT = 100;
+const MAX_CATALOG_BYTES = 8 * 1024 * 1024;
 const DEFAULT_LOCAL_ROOT = fileURLToPath(new URL("../generated/executive-director-intake", import.meta.url));
 const EXTENSION_BY_TYPE = Object.freeze({
   "application/pdf": ".pdf",
   "image/jpeg": ".jpg",
   "image/png": ".png"
 });
+let cachedAzureContainer = null;
+let cachedAzureContainerKey = null;
 
 function normalizeFileName(value) {
   const baseName = Array.from(path.basename(String(value ?? "").trim()))
@@ -67,12 +73,16 @@ function getAzureContainer() {
   if (!account || !containerName || !clientId) {
     throw new Error("Executive Director intake storage is not configured.");
   }
+  const cacheKey = `${account}\u0000${containerName}\u0000${clientId}`;
+  if (cachedAzureContainer && cachedAzureContainerKey === cacheKey) return cachedAzureContainer;
   const service = new BlobServiceClient(
     `https://${account}.blob.core.windows.net`,
     new ManagedIdentityCredential(clientId),
     { retryOptions: { maxTries: 2, tryTimeoutInMs: 10_000 } }
   );
-  return service.getContainerClient(containerName);
+  cachedAzureContainer = service.getContainerClient(containerName);
+  cachedAzureContainerKey = cacheKey;
+  return cachedAzureContainer;
 }
 
 function shouldUseAzure() {
@@ -92,6 +102,75 @@ function storagePaths(facilityId, submissionId, contentType) {
   return {
     source: `${root}/source${EXTENSION_BY_TYPE[contentType]}`,
     manifest: `${root}/manifest.json`
+  };
+}
+
+function catalogObjectName(facilityId) {
+  return `${STORAGE_ROOT}/${facilityId}/catalog.json`;
+}
+
+function emptyCatalog(facilityId) {
+  return {
+    version: CATALOG_VERSION,
+    facilityId,
+    revision: 0,
+    updatedAt: null,
+    submissions: []
+  };
+}
+
+function isMissingStorageObject(error) {
+  return Boolean(error && typeof error === "object" && (
+    ("statusCode" in error && error.statusCode === 404)
+    || ("code" in error && error.code === "ENOENT")
+  ));
+}
+
+function isStorageConflict(error) {
+  return Boolean(error && typeof error === "object" && "statusCode" in error && error.statusCode === 412);
+}
+
+function normalizeCatalog(catalog, facilityId) {
+  if (!catalog || catalog.version !== CATALOG_VERSION || catalog.facilityId !== facilityId || !Array.isArray(catalog.submissions)) {
+    throw new Error("Executive Director intake catalog is invalid.");
+  }
+  return catalog;
+}
+
+function serializeCatalog(catalog) {
+  const bytes = Buffer.from(`${JSON.stringify(catalog, null, 2)}\n`, "utf8");
+  if (bytes.byteLength > MAX_CATALOG_BYTES) {
+    throw createHttpError(507, "licensing_catalog_capacity", "The licensing queue index reached its configured capacity.");
+  }
+  return bytes;
+}
+
+function toCatalogRecord(manifest) {
+  return {
+    ...toExecutiveDirectorSubmissionSummary(manifest),
+    updatedAt: manifest.review?.updatedAt ?? manifest.createdAt,
+    storage: manifest.storage ?? null
+  };
+}
+
+function catalogRecordForResponse(record) {
+  const { storage: _storage, updatedAt: _updatedAt, ...summary } = record;
+  return summary;
+}
+
+function withCatalogRecord(catalog, manifest) {
+  const nextRecord = toCatalogRecord(manifest);
+  const submissions = catalog.submissions.filter((item) => item.submissionId !== nextRecord.submissionId);
+  submissions.push(nextRecord);
+  submissions.sort((left, right) => {
+    const byDate = String(right.createdAt).localeCompare(String(left.createdAt));
+    return byDate || String(right.submissionId).localeCompare(String(left.submissionId));
+  });
+  return {
+    ...catalog,
+    revision: Number(catalog.revision ?? 0) + 1,
+    updatedAt: new Date().toISOString(),
+    submissions
   };
 }
 
@@ -173,7 +252,101 @@ async function streamToBuffer(stream, maximumBytes = 64 * 1024) {
   return Buffer.concat(chunks);
 }
 
+async function readAzureCatalog(facilityId) {
+  const blob = getAzureContainer().getBlobClient(catalogObjectName(facilityId));
+  try {
+    const download = await blob.download();
+    const catalog = JSON.parse((await streamToBuffer(download.readableStreamBody, MAX_CATALOG_BYTES)).toString("utf8"));
+    return { catalog: normalizeCatalog(catalog, facilityId), etag: download.etag ?? null };
+  } catch (error) {
+    if (isMissingStorageObject(error)) return { catalog: null, etag: null };
+    throw error;
+  }
+}
+
+async function readLocalCatalog(facilityId) {
+  const catalogPath = path.join(localRoot(), facilityId, "catalog.json");
+  try {
+    return {
+      catalog: normalizeCatalog(JSON.parse(await readFile(catalogPath, "utf8")), facilityId),
+      catalogPath
+    };
+  } catch (error) {
+    if (isMissingStorageObject(error)) return { catalog: null, catalogPath };
+    throw error;
+  }
+}
+
+async function mutateAzureCatalog(facilityId, update) {
+  const blob = getAzureContainer().getBlockBlobClient(catalogObjectName(facilityId));
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const current = await readAzureCatalog(facilityId);
+    const next = update(structuredClone(current.catalog ?? emptyCatalog(facilityId)));
+    try {
+      await blob.uploadData(serializeCatalog(next), {
+        blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" },
+        conditions: current.etag ? { ifMatch: current.etag } : { ifNoneMatch: "*" }
+      });
+      return next;
+    } catch (error) {
+      if (isStorageConflict(error)) {
+        const delay = Math.min(15 * (2 ** attempt), 250) + Math.floor(Math.random() * 30);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw createHttpError(503, "licensing_catalog_busy", "The licensing queue changed repeatedly. Try again.");
+}
+
+const localCatalogUpdates = new Map();
+
+async function mutateLocalCatalog(facilityId, update) {
+  const previous = localCatalogUpdates.get(facilityId) ?? Promise.resolve();
+  const pending = previous.catch(() => {}).then(async () => {
+    const current = await readLocalCatalog(facilityId);
+    const next = update(structuredClone(current.catalog ?? emptyCatalog(facilityId)));
+    await mkdir(path.dirname(current.catalogPath), { recursive: true });
+    const temporaryPath = `${current.catalogPath}.${randomUUID()}.tmp`;
+    await writeFile(temporaryPath, serializeCatalog(next), { flag: "wx" });
+    await rename(temporaryPath, current.catalogPath);
+    return next;
+  });
+  localCatalogUpdates.set(facilityId, pending);
+  try {
+    return await pending;
+  } finally {
+    if (localCatalogUpdates.get(facilityId) === pending) localCatalogUpdates.delete(facilityId);
+  }
+}
+
+function mutateCatalog(facilityId, update) {
+  return shouldUseAzure()
+    ? mutateAzureCatalog(facilityId, update)
+    : mutateLocalCatalog(facilityId, update);
+}
+
+function readCatalog(facilityId) {
+  return shouldUseAzure()
+    ? readAzureCatalog(facilityId).then((result) => result.catalog)
+    : readLocalCatalog(facilityId).then((result) => result.catalog);
+}
+
 async function findLocalManifest(facilityId, submissionId) {
+  const catalog = await readCatalog(facilityId);
+  const indexed = catalog?.submissions.find((item) => item.submissionId === submissionId);
+  if (indexed?.storage?.manifestObject) {
+    const manifestPath = path.join(localRoot(), indexed.storage.manifestObject.replace(`${STORAGE_ROOT}/`, ""));
+    try {
+      return {
+        manifest: JSON.parse(await readFile(manifestPath, "utf8")),
+        location: { kind: "local", manifestPath }
+      };
+    } catch (error) {
+      if (!isMissingStorageObject(error)) throw error;
+    }
+  }
   const facilityRoot = path.join(localRoot(), facilityId);
   let files;
   try {
@@ -193,6 +366,20 @@ async function findLocalManifest(facilityId, submissionId) {
 
 async function findAzureManifest(facilityId, submissionId) {
   const container = getAzureContainer();
+  const catalog = await readCatalog(facilityId);
+  const indexed = catalog?.submissions.find((item) => item.submissionId === submissionId);
+  if (indexed?.storage?.manifestObject) {
+    const directBlob = container.getBlobClient(indexed.storage.manifestObject);
+    try {
+      const download = await directBlob.download();
+      return {
+        manifest: JSON.parse((await streamToBuffer(download.readableStreamBody, 256 * 1024)).toString("utf8")),
+        location: { kind: "azure", blobName: indexed.storage.manifestObject, etag: download.etag }
+      };
+    } catch (error) {
+      if (!isMissingStorageObject(error)) throw error;
+    }
+  }
   const prefix = `${STORAGE_ROOT}/${facilityId}/`;
   const suffix = `/${submissionId}/manifest.json`;
   for await (const blob of container.listBlobsFlat({ prefix })) {
@@ -273,7 +460,7 @@ async function listAzureManifests(facilityId) {
   for await (const blob of container.listBlobsFlat({ prefix })) {
     if (!blob.name.endsWith("/manifest.json")) continue;
     const download = await container.getBlobClient(blob.name).download();
-    results.push(JSON.parse((await streamToBuffer(download.readableStreamBody)).toString("utf8")));
+    results.push(JSON.parse((await streamToBuffer(download.readableStreamBody, 512 * 1024)).toString("utf8")));
   }
   return results;
 }
@@ -291,6 +478,7 @@ export async function createExecutiveDirectorIntakeSubmission({ req, facilityId,
   const createdAt = new Date().toISOString();
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const extraction = await extractLic624Report(bytes, contentType);
+  const paths = storagePaths(facilityId, submissionId, contentType);
   const manifest = {
     version: "executive-director-licensing-intake-v1",
     submissionId,
@@ -311,11 +499,15 @@ export async function createExecutiveDirectorIntakeSubmission({ req, facilityId,
     review: null,
     reviewRevision: 0,
     reviewedAt: null,
-    filedAt: null
+    filedAt: null,
+    storage: {
+      sourceObject: paths.source,
+      manifestObject: paths.manifest
+    }
   };
-  const paths = storagePaths(facilityId, submissionId, contentType);
   if (shouldUseAzure()) await writeAzureSubmission(paths, bytes, manifest);
   else await writeLocalSubmission(paths, bytes, manifest);
+  await mutateCatalog(facilityId, (catalog) => withCatalogRecord(catalog, manifest));
   return manifest;
 }
 
@@ -400,6 +592,7 @@ export async function saveExecutiveDirectorIntakeReview({
     data
   };
   await writeReview(stored, manifest, audit);
+  await mutateCatalog(facilityId, (catalog) => withCatalogRecord(catalog, manifest));
   return manifest;
 }
 
@@ -423,12 +616,153 @@ export function toExecutiveDirectorSubmissionSummary(manifest) {
   };
 }
 
-export async function listExecutiveDirectorIntakeSubmissions(facilityId) {
+function summarizeCatalogRecords(records) {
+  return {
+    total: records.length,
+    ocrRequired: records.filter((item) => item.status === "ocr_required").length,
+    needsReview: records.filter((item) => item.status === "needs_review").length,
+    readyToFile: records.filter((item) => item.status === "ready_to_file").length,
+    filed: records.filter((item) => item.status === "filed").length,
+    failed: records.filter((item) => item.status === "failed").length
+  };
+}
+
+async function ensureCatalog(facilityId) {
+  const existing = await readCatalog(facilityId);
+  if (existing) return existing;
   const manifests = shouldUseAzure()
     ? await listAzureManifests(facilityId)
     : await listLocalManifests(facilityId);
-  return manifests
+  return mutateCatalog(facilityId, (catalog) => manifests
     .filter((manifest) => manifest?.facilityId === facilityId)
-    .sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)))
-    .slice(0, 25);
+    .reduce((next, manifest) => withCatalogRecord(next, manifest), catalog));
+}
+
+function parsePageLimit(value) {
+  if (value == null || value === "") return DEFAULT_PAGE_LIMIT;
+  const limit = Number(value);
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_PAGE_LIMIT) {
+    throw createHttpError(400, "licensing_page_limit_invalid", `Choose a page size from 1 to ${MAX_PAGE_LIMIT}.`);
+  }
+  return limit;
+}
+
+function encodePageCursor(record) {
+  return Buffer.from(JSON.stringify([record.createdAt, record.submissionId]), "utf8").toString("base64url");
+}
+
+function decodePageCursor(value) {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(String(value), "base64url").toString("utf8"));
+    if (!Array.isArray(parsed) || parsed.length !== 2 || parsed.some((item) => typeof item !== "string" || !item)) throw new Error("invalid");
+    return { createdAt: parsed[0], submissionId: parsed[1] };
+  } catch {
+    throw createHttpError(400, "licensing_page_cursor_invalid", "The licensing queue cursor is invalid.");
+  }
+}
+
+/**
+ * @param {{
+ *   facilityId: string;
+ *   limit?: string | number | null;
+ *   cursor?: string | null;
+ *   status?: string | null;
+ *   query?: string | null;
+ * }} options
+ */
+export async function queryExecutiveDirectorIntakeSubmissions({
+  facilityId,
+  limit = DEFAULT_PAGE_LIMIT,
+  cursor = null,
+  status = null,
+  query = null
+}) {
+  const catalog = await ensureCatalog(facilityId);
+  const pageLimit = parsePageLimit(limit);
+  const pageCursor = decodePageCursor(cursor);
+  const normalizedStatus = String(status ?? "").trim().toLowerCase();
+  const normalizedQuery = String(query ?? "").trim().toLowerCase().slice(0, 120);
+  const allowedStatuses = new Set(["awaiting_form_definition", "ocr_required", "needs_review", "ready_to_file", "filed", "failed"]);
+  if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
+    throw createHttpError(400, "licensing_status_invalid", "Choose a valid licensing queue status.");
+  }
+  const filtered = catalog.submissions.filter((record) => (
+    (!normalizedStatus || record.status === normalizedStatus)
+    && (!normalizedQuery || String(record.originalFileName).toLowerCase().includes(normalizedQuery))
+  ));
+  let startIndex = 0;
+  if (pageCursor) {
+    const cursorIndex = filtered.findIndex((record) => (
+      record.createdAt === pageCursor.createdAt && record.submissionId === pageCursor.submissionId
+    ));
+    if (cursorIndex < 0) {
+      throw createHttpError(400, "licensing_page_cursor_stale", "The licensing queue changed. Refresh the list.");
+    }
+    startIndex = cursorIndex + 1;
+  }
+  const page = filtered.slice(startIndex, startIndex + pageLimit);
+  const hasMore = startIndex + page.length < filtered.length;
+  return {
+    version: CATALOG_VERSION,
+    facilityId,
+    catalogRevision: catalog.revision,
+    updatedAt: catalog.updatedAt,
+    summary: summarizeCatalogRecords(catalog.submissions),
+    filteredTotal: filtered.length,
+    submissions: page.map(catalogRecordForResponse),
+    nextCursor: hasMore && page.length ? encodePageCursor(page.at(-1)) : null
+  };
+}
+
+export async function getExecutiveDirectorIntakeOverview(facilityId) {
+  return queryExecutiveDirectorIntakeSubmissions({ facilityId, limit: DEFAULT_PAGE_LIMIT });
+}
+
+export async function listExecutiveDirectorIntakeSubmissions(facilityId) {
+  return (await getExecutiveDirectorIntakeOverview(facilityId)).submissions;
+}
+
+async function resolveSourceObject(stored) {
+  if (stored.manifest.storage?.sourceObject) return stored.manifest.storage.sourceObject;
+  if (stored.location.kind === "azure") {
+    const prefix = stored.location.blobName.slice(0, -("manifest.json".length));
+    for await (const blob of getAzureContainer().listBlobsFlat({ prefix })) {
+      if (/\/source\.(pdf|jpg|png)$/i.test(blob.name)) return blob.name;
+    }
+    return null;
+  }
+  const directory = path.dirname(stored.location.manifestPath);
+  const entries = await readdir(directory, { withFileTypes: true });
+  const source = entries.find((entry) => entry.isFile() && /^source\.(pdf|jpg|png)$/i.test(entry.name));
+  return source ? path.join(directory, source.name) : null;
+}
+
+export async function getExecutiveDirectorIntakeSource(facilityId, submissionId) {
+  const stored = await findStoredManifest(facilityId, submissionId);
+  const sourceObject = await resolveSourceObject(stored);
+  if (!sourceObject) {
+    throw createHttpError(404, "licensing_source_not_found", "The original licensing report was not found.");
+  }
+  let bytes;
+  if (stored.location.kind === "azure") {
+    const download = await getAzureContainer().getBlobClient(sourceObject).download();
+    bytes = await streamToBuffer(download.readableStreamBody, EXECUTIVE_DIRECTOR_INTAKE_MAX_BYTES);
+  } else {
+    const sourcePath = sourceObject.startsWith(`${STORAGE_ROOT}/`)
+      ? path.join(localRoot(), sourceObject.replace(`${STORAGE_ROOT}/`, ""))
+      : sourceObject;
+    bytes = await readFile(sourcePath);
+  }
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (sha256 !== stored.manifest.sha256) {
+    throw createHttpError(500, "licensing_source_integrity_failed", "The original licensing report did not pass its integrity check.");
+  }
+  return {
+    bytes,
+    contentType: stored.manifest.contentType,
+    originalFileName: stored.manifest.originalFileName,
+    byteLength: stored.manifest.byteLength,
+    sha256
+  };
 }

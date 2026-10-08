@@ -1,11 +1,12 @@
 import { useMsal } from "@azure/msal-react";
-import { CheckCircle2, FileScan, LoaderCircle, PencilLine, ShieldCheck, Upload, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileScan, LoaderCircle, PencilLine, ShieldCheck, Upload, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { getAccountExecutiveDirectorAccess } from "../../../shared/auth/executiveDirectorAccess";
 import {
   fetchExecutiveDirectorBootstrap,
   fetchExecutiveDirectorSubmission,
+  fetchExecutiveDirectorSubmissionSource,
   saveExecutiveDirectorLicensingReview,
   uploadExecutiveDirectorLicensingReport,
   type ExecutiveDirectorBootstrap,
@@ -65,6 +66,7 @@ export default function ExecutiveDirectorPage() {
   const [dragging, setDragging] = useState(false);
   const [activeSubmission, setActiveSubmission] = useState<ExecutiveDirectorSubmissionDetail | null>(null);
   const [openingSubmissionId, setOpeningSubmissionId] = useState<string | null>(null);
+  const [openingSourceId, setOpeningSourceId] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
   const loadWorkspace = async (signal?: AbortSignal) => {
@@ -154,6 +156,32 @@ export default function ExecutiveDirectorPage() {
       setReviewError(error instanceof Error ? error.message : "The digital form could not be opened.");
     } finally {
       setOpeningSubmissionId(null);
+    }
+  };
+
+  const openOriginal = async (submission: ExecutiveDirectorSubmission) => {
+    if (openingSourceId) return;
+    const previewWindow = window.open("", "_blank");
+    if (previewWindow) previewWindow.opener = null;
+    setOpeningSourceId(submission.submissionId);
+    setReviewError(null);
+    try {
+      const source = await fetchExecutiveDirectorSubmissionSource(facilityId, submission.submissionId);
+      const objectUrl = URL.createObjectURL(source);
+      if (previewWindow) previewWindow.location.replace(objectUrl);
+      else {
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (error) {
+      previewWindow?.close();
+      setReviewError(error instanceof Error ? error.message : "The original report could not be opened.");
+    } finally {
+      setOpeningSourceId(null);
     }
   };
 
@@ -317,7 +345,7 @@ export default function ExecutiveDirectorPage() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#0a765f]">Licensing queue</p>
             <h2 className="mt-1 text-[26px] font-semibold tracking-[-0.035em] text-[#151917]">Recent submissions</h2>
           </div>
-          <p className="text-[13px] text-[#707975]">{recentSubmissions.length} shown</p>
+          <p className="text-[13px] text-[#707975]">{recentSubmissions.length} of {bootstrap?.intake.summary.total ?? 0} shown</p>
         </div>
 
         {recentSubmissions.length ? (
@@ -337,6 +365,15 @@ export default function ExecutiveDirectorPage() {
                   <span className="w-fit rounded-full bg-[#eef5f1] px-3 py-1.5 text-[12px] font-semibold text-[#176b58]">
                     {statusLabel(submission.status)}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => void openOriginal(submission)}
+                    disabled={Boolean(openingSourceId)}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#aebbb5] bg-white px-4 text-[13px] font-semibold text-[#33413b] transition hover:border-[#55645d] hover:bg-[#f5f8f6] disabled:opacity-50"
+                  >
+                    {openingSourceId === submission.submissionId ? <LoaderCircle className="animate-spin" size={16} aria-hidden="true" /> : <ExternalLink size={16} aria-hidden="true" />}
+                    {openingSourceId === submission.submissionId ? "Opening" : "Original"}
+                  </button>
                   {submission.extractionSummary?.method === "pdf_acroform" ? (
                     <button
                       type="button"

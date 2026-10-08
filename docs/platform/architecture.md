@@ -169,7 +169,12 @@ Core API contracts:
 - `GET /api/platform/snapshot-health`
 - `GET /api/platform/snapshot-metadata`
 - `GET /api/platform/executive-director/bootstrap?facilityId=...`
+- `GET /api/platform/executive-director/dashboard?facilityId=...`
 - `POST /api/platform/executive-director/licensing-intake`
+- `GET /api/platform/executive-director/licensing-intake?facilityId=...&submissionId=...`
+- `PUT /api/platform/executive-director/licensing-intake/review`
+- `GET /api/platform/executive-director/licensing-intake/submissions?facilityId=...&limit=...&cursor=...&status=...&q=...`
+- `GET /api/platform/executive-director/licensing-intake/source?facilityId=...&submissionId=...`
 - `GET /api/communities/dashboard`
 - `GET /api/communities/snapshot?facilityId=...`
 - `GET /api/home-dashboard`

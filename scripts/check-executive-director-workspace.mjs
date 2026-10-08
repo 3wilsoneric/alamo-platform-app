@@ -14,8 +14,11 @@ import {
 import { assertApiClaimsWorkspaceAccess } from "../server/api-auth.mjs";
 import {
   createExecutiveDirectorIntakeSubmission,
+  getExecutiveDirectorIntakeOverview,
+  getExecutiveDirectorIntakeSource,
   getExecutiveDirectorIntakeSubmission,
   listExecutiveDirectorIntakeSubmissions,
+  queryExecutiveDirectorIntakeSubmissions,
   saveExecutiveDirectorIntakeReview,
   toExecutiveDirectorSubmissionDetail
 } from "../server/executive-director-intake-storage.mjs";
@@ -179,9 +182,41 @@ try {
   });
   assert.equal(confirmed.status, "ready_to_file");
   assert.equal(confirmed.reviewRevision, 2);
+  const source = await getExecutiveDirectorIntakeSource("344", submission.submissionId);
+  assert.equal(source.sha256, submission.sha256);
+  assert.deepEqual(source.bytes, pdf);
+
+  const concurrentSubmissions = await Promise.all(
+    Array.from({ length: 12 }, async (_, index) => {
+      const concurrentRequest = Readable.from([pdf]);
+      concurrentRequest.headers = {
+        "content-type": "application/pdf",
+        "x-file-name": `incident-${String(index + 1).padStart(2, "0")}.pdf`
+      };
+      return createExecutiveDirectorIntakeSubmission({
+        req: concurrentRequest,
+        facilityId: "344",
+        authContext: { authenticated: false }
+      });
+    })
+  );
+  assert.equal(new Set(concurrentSubmissions.map((item) => item.submissionId)).size, 12);
+
+  const overview = await getExecutiveDirectorIntakeOverview("344");
+  assert.equal(overview.summary.total, 13);
+  assert.equal(overview.summary.readyToFile, 1);
+  assert.equal(overview.submissions.length, 13);
+  const firstPage = await queryExecutiveDirectorIntakeSubmissions({ facilityId: "344", limit: 5 });
+  assert.equal(firstPage.submissions.length, 5);
+  assert.ok(firstPage.nextCursor);
+  const secondPage = await queryExecutiveDirectorIntakeSubmissions({ facilityId: "344", limit: 5, cursor: firstPage.nextCursor });
+  assert.equal(secondPage.submissions.length, 5);
+  assert.equal(new Set([...firstPage.submissions, ...secondPage.submissions].map((item) => item.submissionId)).size, 10);
+  const reviewPage = await queryExecutiveDirectorIntakeSubmissions({ facilityId: "344", status: "ready_to_file" });
+  assert.deepEqual(reviewPage.submissions.map((item) => item.submissionId), [submission.submissionId]);
   const listed = await listExecutiveDirectorIntakeSubmissions("344");
-  assert.equal(listed.length, 1);
-  assert.equal(listed[0].status, "ready_to_file");
+  assert.equal(listed.length, 13);
+  assert.equal(listed.some((item) => item.status === "ready_to_file"), true);
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
   delete process.env.EXECUTIVE_DIRECTOR_INTAKE_STORAGE;
@@ -189,11 +224,12 @@ try {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const [app, shell, page, dashboardPage, header, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
+const [app, shell, page, dashboardPage, dashboardModal, header, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
   readFile(path.join(root, "src/shared/layout/ProtectedAppShell.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorPage.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorDashboardPage.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/executive/components/ExecutiveCommunityDetailModal.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/components/ExecutiveDirectorHeader.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/components/Lic624ReviewWorkspace.tsx"), "utf8"),
   readFile(path.join(root, "api/platform.js"), "utf8"),
@@ -209,7 +245,14 @@ assert.match(page, /data-executive-director-upload="true"/);
 assert.match(page, /LIC 624 intake/);
 assert.match(page, /Review form/);
 assert.match(dashboardPage, /data-executive-community-dashboard="true"/);
-assert.match(dashboardPage, /Current operations and admissions activity/);
+assert.match(dashboardPage, /Community briefing/);
+assert.match(dashboardPage, /onOpenDetail\("census"\)/);
+assert.match(dashboardPage, /onOpenDetail\("admissions"\)/);
+assert.match(dashboardModal, /data-executive-community-detail-modal/);
+assert.match(dashboardModal, /data-executive-detail-view="census"/);
+assert.match(dashboardModal, /data-executive-detail-view="incidents"/);
+assert.match(dashboardModal, /data-executive-detail-view="medications"/);
+assert.match(dashboardModal, /data-executive-detail-view="admissions"/);
 assert.match(header, /\/executive\/dashboard/);
 assert.match(header, /Community/);
 assert.match(reviewWorkspace, /data-lic624-review-workspace="true"/);
@@ -217,6 +260,11 @@ assert.match(reviewWorkspace, /Mark reviewed/);
 assert.match(reviewWorkspace, /Original extraction preserved|uploaded original stays unchanged/i);
 assert.match(platformApi, /handleExecutiveDirectorApiRequest/);
 assert.match(devApi, /handleExecutiveDirectorApiRequest/);
+assert.match(dashboardPage, /ExecutiveCommunityDetailModal/);
+assert.match(platformApi, /isExecutiveDirectorApiPath/);
+assert.match(devApi, /send\(body\)/);
+assert.match(plan, /cursor pagination/);
+assert.match(plan, /SHA-256 checksum/);
 assert.match(plan, /Nothing is sorted or filed|no automatic addition/i);
 
 console.log("executive director workspace checks passed");

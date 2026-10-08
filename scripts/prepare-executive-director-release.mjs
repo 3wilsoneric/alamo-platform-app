@@ -22,6 +22,7 @@ const { stdout } = await exec("docker", ["create", "--platform", "linux/amd64", 
 const container = stdout.trim();
 try {
   await exec("docker", ["cp", `${container}:/app/api/platform.js`, path.join(overlay, "api/platform.js")]);
+  await exec("docker", ["cp", `${container}:/app/server/dev-api.mjs`, path.join(overlay, "server/dev-api.mjs")]);
 } finally {
   await exec("docker", ["rm", container]);
 }
@@ -54,6 +55,25 @@ if (!handler.includes("isExecutiveDirectorApiPath(requestPath)")) {
 }
 await writeFile(handlerPath, handler);
 
+const runtimePath = path.join(overlay, "server/dev-api.mjs");
+let runtime = await readFile(runtimePath, "utf8");
+const responseAdapterMarker = `    json(body) {
+      sendJson(res, this.statusCode, body);
+    }`;
+if (!runtime.includes(responseAdapterMarker) && !runtime.includes("send(body)")) {
+  throw new Error("The selected production image has an unexpected response adapter shape.");
+}
+if (!runtime.includes("send(body)")) {
+  runtime = runtime.replace(responseAdapterMarker, `    json(body) {
+      sendJson(res, this.statusCode, body);
+    },
+    send(body) {
+      res.statusCode = this.statusCode;
+      res.end(body);
+    }`);
+}
+await writeFile(runtimePath, runtime);
+
 for (const file of [
   "api-auth.mjs",
   "executive-director-access.mjs",
@@ -85,7 +105,7 @@ await compress(path.join(overlay, "dist"));
 
 await writeFile(
   path.join(destination, "Dockerfile"),
-  `FROM ${base}\nUSER root\nWORKDIR /app\nRUN rm -rf /app/dist\nCOPY overlay /app\nRUN npm install --no-package-lock --no-save --omit=dev --ignore-scripts --no-audit --no-fund pdf-lib@1.17.1 \\\n  && chown -R node:node /app/dist /app/api/platform.js /app/server/api-auth.mjs /app/server/executive-director-access.mjs /app/server/executive-director-api.mjs /app/server/executive-director-intake-storage.mjs /app/server/lic624-extraction.mjs /app/server/lic624-review.mjs /app/shared/executive-director-access.mjs /app/shared/lic624-contracts.mjs /app/node_modules/pdf-lib /app/node_modules/@pdf-lib\nUSER node\n`
+  `FROM ${base}\nUSER root\nWORKDIR /app\nRUN rm -rf /app/dist\nCOPY overlay /app\nRUN npm install --no-package-lock --no-save --omit=dev --ignore-scripts --no-audit --no-fund pdf-lib@1.17.1 \\\n  && chown -R node:node /app/dist /app/api/platform.js /app/server/dev-api.mjs /app/server/api-auth.mjs /app/server/executive-director-access.mjs /app/server/executive-director-api.mjs /app/server/executive-director-intake-storage.mjs /app/server/lic624-extraction.mjs /app/server/lic624-review.mjs /app/shared/executive-director-access.mjs /app/shared/lic624-contracts.mjs /app/node_modules/pdf-lib /app/node_modules/@pdf-lib\nUSER node\n`
 );
 await writeFile(path.join(root, "generated/executive-director-release/context.txt"), destination);
 console.log(destination);
