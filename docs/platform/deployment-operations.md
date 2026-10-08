@@ -99,6 +99,43 @@ community data. The existing redesigned Analytics Licensing library also
 loaded its 93-report production collection. No Licensing alert gates or email
 settings changed.
 
+### Digital LIC 624 review workflow — 2026-10-08
+
+The hidden `/executive/licensing` workspace now opens a structured digital LIC
+624 immediately after fillable-PDF extraction and can reopen the same review
+from the licensing queue. Reviewers can correct the facility, people, incident,
+treatment, notification, supervisor, and signature sections; save a draft; and
+mark the form reviewed only after required fields are complete. The original
+upload and source extraction remain immutable. Saved reviews use explicit
+revisions, append-only audit records, and optimistic concurrency protection.
+
+- source commit: `369aef716e8ea53a626224c2467d1546fdf2aa0e`
+- merge commit: `d44907c9c16695e03bd4bc6247ffe671e96c5373`
+- source PR: `https://github.com/3wilsoneric/alamo-platform-app/pull/164`
+- ACR build: `cc64`
+- image tag: `alamo-platform:executive-lic-review-369aef7`
+- image digest: `sha256:0c22acada4960b058517c8dfaa072138306bb74b8f9fce4db3c0fd706ba8b2ac`
+- active revision: `alamo-platform-prod-web--lic624-review-1008`
+- rollback digest: `sha256:ff6facee113399cc70951034fa4e96bbbbcff26d5ba6dd355f180297e6c4acf7`
+- active browser assets: `/assets/index-BRY0Uuj0.js` and
+  `/assets/index-CiISyH-H.css`
+
+The release uses the bounded Executive Director overlay on the exact preceding
+production digest. It replaces the browser bundle and only the related API,
+storage, extraction, validation, and shared-contract modules while retaining
+the proven application runtime and locked `pdf-lib@1.17.1` dependency.
+
+Verification included documentation, TypeScript, server TypeScript, source
+syntax, JavaScript lint, dependency reachability, the full Executive Director
+upload/review/reopen/concurrency/confirmation contract, production build, 390px
+responsive rendering without horizontal overflow, release-container syntax
+and content checks, and image-configuration parity. Post-promotion verification
+confirmed Healthy/Running at 100 percent traffic, byte-identical deployed JS
+and CSS, successful public route probes, private/no-store anonymous API guards,
+and signed-in owner rendering of the San Pablo workspace with current community
+data. No sample or production licensing report was created during live
+verification, and no alert or email configuration changed.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
