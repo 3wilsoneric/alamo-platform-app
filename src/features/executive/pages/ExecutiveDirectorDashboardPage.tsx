@@ -120,7 +120,6 @@ function CommunityOverview({
   onOpenDetail: (view: ExecutiveCommunityDetailView) => void;
   onOpenCard: (card: AdmissionsBoardCard) => void;
 }) {
-  const community = dashboard.admissions.community;
   const censusPoints = dashboard.census.slice(-12).map((point) => ({
     id: point.month,
     label: formatMonthLabel(point.month, { fallback: point.month, month: "short" }),
@@ -129,83 +128,32 @@ function CommunityOverview({
   const incidentDelta = dashboard.summary?.currentIncidents != null && dashboard.summary?.priorIncidents != null
     ? dashboard.summary.currentIncidents - dashboard.summary.priorIncidents
     : null;
-  const latestCensus = dashboard.census.at(-1);
-  const priorCensus = dashboard.census.at(-2);
-  const censusDelta = latestCensus && priorCensus ? latestCensus.census - priorCensus.census : null;
-  const firstMoveIn = dashboard.admissions.plannedMoveIns[0];
   const impendingCards = impendingAdmissionCards(dashboard.admissions.cards);
-  const scheduledImpending = impendingCards.filter((card) => card.plannedAdmissionDate);
-  const undatedImpending = impendingCards.filter((card) => !card.plannedAdmissionDate);
   const incidentChange = incidentDelta == null
     ? "Prior comparison unavailable"
     : incidentDelta === 0
       ? "No change from prior month"
       : `${formatExecutiveNumber(Math.abs(incidentDelta))} ${incidentDelta > 0 ? "more" : "fewer"} than prior month`;
-  const censusChange = censusDelta == null
-    ? "Prior comparison unavailable"
-    : censusDelta === 0
-      ? "No change from prior month"
-      : `${censusDelta > 0 ? "+" : "−"}${formatExecutiveNumber(Math.abs(censusDelta))} from prior month`;
-
   return (
     <div data-daily-operating-summary="true" className="pt-4">
-      <section aria-label="Current community snapshot" className="grid grid-cols-2 overflow-hidden rounded-[20px] border border-[#cdd5d1] bg-white xl:grid-cols-4">
-        <SnapshotButton
-          label="Census"
-          value={formatExecutiveNumber(dashboard.summary?.residents ?? community?.census)}
-          detail={community?.occupancyPct != null && community.operatingLimit != null ? `${formatExecutiveNumber(community.occupancyPct, "%")} occupied · ${formatExecutiveNumber(community.operatingLimit)} capacity` : censusChange}
-          tone="sand"
-          onClick={() => onOpenDetail("census")}
-        />
-        <SnapshotButton
-          label="Impending admits"
-          value={dashboard.admissions.status === "connected" ? formatExecutiveNumber(impendingCards.length) : "—"}
-          detail={dashboard.admissions.status === "connected" ? `${formatExecutiveNumber(scheduledImpending.length)} scheduled · ${formatExecutiveNumber(undatedImpending.length)} need a date` : "Admissions feed unavailable"}
-          tone="blue"
-          onClick={() => onOpenDetail("admissions")}
-        />
-        <SnapshotButton
-          label="Incidents"
-          value={formatExecutiveNumber(dashboard.summary?.currentIncidents)}
-          detail={incidentChange}
-          tone="peach"
-          onClick={() => onOpenDetail("incidents")}
-        />
-        <SnapshotButton
-          label="Med pass"
-          value={formatExecutiveNumber(dashboard.medication?.compliancePct, "%")}
-          detail={dashboard.medication ? `${formatExecutiveNumber(dashboard.medication.given)} of ${formatExecutiveNumber(dashboard.medication.scheduled)} given` : "Latest period unavailable"}
-          tone="green"
-          onClick={() => onOpenDetail("medications")}
-        />
-      </section>
-
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
-        <article className="overflow-hidden rounded-[22px] border border-[#c8d8d1] border-t-[4px] border-t-[#2c8269] bg-[#fbfdfc] p-4 sm:p-5">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
+        <article data-executive-dashboard-panel="census" className="overflow-hidden rounded-[22px] border border-[#b8cac1] border-t-[4px] border-t-[#2d735c] bg-[#e6ece8] p-4 sm:p-5">
           <div className="flex items-start justify-between gap-5 border-b border-[#e0e4e2] pb-3">
-            <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#c6ddd4] bg-[#eef7f3]"><UsersRound className="h-4 w-4 text-[#28745d]" aria-hidden="true" /></span>12-month census</h2>
+            <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#b8cac1] bg-[#dce8e2]"><UsersRound className="h-4 w-4 text-[#245f4d]" aria-hidden="true" /></span>12-month census</h2>
             <DetailLink onClick={() => onOpenDetail("census")}>History</DetailLink>
           </div>
           <div className="mt-3"><CensusTrendModule points={censusPoints} height={220} emptyLabel="Census history is not available for this community." /></div>
-          <dl className="mt-3 grid border-t border-[#e0e4e2] sm:grid-cols-2">
-            <CompactFact label="Average age" value={dashboard.summary?.averageAge == null ? "—" : `${formatExecutiveNumber(Math.round(dashboard.summary.averageAge * 10) / 10)} years`} />
-            <CompactFact label="Average stay" value={dashboard.summary?.averageLengthOfStay == null ? "—" : `${formatExecutiveNumber(Math.round(dashboard.summary.averageLengthOfStay))} days`} />
-          </dl>
         </article>
 
-        <article data-executive-impending-summary="true" className="overflow-hidden rounded-[22px] border border-[#cbd5ec] border-t-[4px] border-t-[#5877bf] bg-[#f5f7fd] p-4 sm:p-5">
+        <article data-executive-dashboard-panel="admissions" data-executive-impending-summary="true" className="overflow-hidden rounded-[22px] border border-[#b8cac1] border-t-[4px] border-t-[#2d735c] bg-[#e6ece8] p-4 sm:p-5">
           <div className="flex items-center justify-between gap-4 border-b border-[#d7ddda] pb-3">
-            <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#ccd6ef] bg-white"><CalendarCheck2 className="h-4 w-4 text-[#4667b5]" aria-hidden="true" /></span>Impending admits</h2>
+            <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#b8cac1] bg-[#dce8e2]"><CalendarCheck2 className="h-4 w-4 text-[#245f4d]" aria-hidden="true" /></span>Impending admits <span className="text-[11px] font-normal text-[#65716b]">{formatExecutiveNumber(impendingCards.length)} clients</span></h2>
             <DetailLink onClick={() => onOpenDetail("admissions")}>Meet the clients</DetailLink>
           </div>
           {dashboard.admissions.status === "connected" ? (
             <>
-              <div className="grid border-b border-[#d7ddda] sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <CompactEvent label="Next move-in" name={firstMoveIn?.clientName ?? "None scheduled"} date={firstMoveIn?.plannedAt ?? null} detail={firstMoveIn ? `${firstMoveIn.status}${firstMoveIn.readiness === "ready" ? "" : ` · ${firstMoveIn.readiness}`}` : "This week"} />
-                <CompactEvent label="Date pending" name={undatedImpending.length ? `${formatExecutiveNumber(undatedImpending.length)} ${undatedImpending.length === 1 ? "client" : "clients"}` : "None"} date={null} detail="Accepted profiles" />
-              </div>
               {impendingCards.length ? (
-                <ol className="divide-y divide-[#d7ddda]">
+                <ol className="divide-y divide-[#d7ddda] border-t border-[#d7ddda]">
                   {impendingCards.slice(0, 4).map((card) => (
                     <li key={card.referralId}>
                       <button type="button" onClick={() => onOpenCard(card)} className="group flex min-h-12 w-full items-center justify-between gap-3 px-1 py-2.5 text-left transition-colors hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73]">
@@ -222,11 +170,11 @@ function CommunityOverview({
       </div>
 
       <section className="mt-5 grid gap-5 lg:grid-cols-2" aria-label="Operational detail">
-        <article className="overflow-hidden rounded-[22px] border border-[#ead2c1] border-t-[4px] border-t-[#bd7040] bg-[#fff8f3] p-4 sm:p-5">
+        <article data-executive-dashboard-panel="incidents" className="overflow-hidden rounded-[22px] border border-[#b8cac1] border-t-[4px] border-t-[#2d735c] bg-[#e6ece8] p-4 sm:p-5">
           <div className="flex items-start justify-between gap-5">
             <div>
-              <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#efd7c6] bg-white"><ClipboardList className="h-4 w-4 text-[#ad6437]" aria-hidden="true" /></span>Incident categories</h2>
-              <p className="mt-0.5 text-[11px] text-[#68716d]">{dashboard.reportingMonth ? `${formatMonthLabel(dashboard.reportingMonth, { month: "long" })} · ` : ""}{incidentChange}</p>
+              <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#b8cac1] bg-[#dce8e2]"><ClipboardList className="h-4 w-4 text-[#245f4d]" aria-hidden="true" /></span>Incident categories</h2>
+              <p className="mt-0.5 text-[11px] text-[#68716d]">The latest month recorded {formatExecutiveNumber(dashboard.summary?.currentIncidents)} incidents. {incidentChange}.</p>
             </div>
             <DetailLink onClick={() => onOpenDetail("incidents")}>Trend</DetailLink>
           </div>
@@ -241,11 +189,11 @@ function CommunityOverview({
           ) : <CompactEmpty>No category totals available.</CompactEmpty>}
         </article>
 
-        <article className="overflow-hidden rounded-[22px] border border-[#c5ddd3] border-t-[4px] border-t-[#2e8065] bg-[#f3faf7] p-4 sm:p-5">
+        <article data-executive-dashboard-panel="medications" className="overflow-hidden rounded-[22px] border border-[#b8cac1] border-t-[4px] border-t-[#2d735c] bg-[#e6ece8] p-4 sm:p-5">
           <div className="flex items-start justify-between gap-5">
             <div>
-              <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#c8dfd5] bg-white"><Pill className="h-4 w-4 text-[#28745d]" aria-hidden="true" /></span>Medication totals</h2>
-              <p className="mt-0.5 text-[11px] text-[#68716d]">Latest governed period</p>
+              <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#b8cac1] bg-[#dce8e2]"><Pill className="h-4 w-4 text-[#245f4d]" aria-hidden="true" /></span>Medication totals</h2>
+              <p className="mt-0.5 text-[11px] text-[#68716d]">{formatExecutiveNumber(dashboard.medication?.compliancePct, "%")} compliance · latest governed period</p>
             </div>
             <DetailLink onClick={() => onOpenDetail("medications")}>Detail</DetailLink>
           </div>
@@ -254,11 +202,7 @@ function CommunityOverview({
               <div className="mt-4 h-2 overflow-hidden bg-[#e2e8e5]" aria-label={`Medication compliance ${formatExecutiveNumber(dashboard.medication.compliancePct, "%")}`}>
                 <span className="block h-full bg-[#0f8b73]" style={{ width: `${Math.min(Math.max(dashboard.medication.compliancePct ?? 0, 0), 100)}%` }} />
               </div>
-              <dl className="mt-4 grid grid-cols-3 border-t border-[#d7ddda]">
-                <CompactFact label="Scheduled" value={formatExecutiveNumber(dashboard.medication.scheduled)} />
-                <CompactFact label="Given" value={formatExecutiveNumber(dashboard.medication.given)} />
-                <CompactFact label="Not given" value={formatExecutiveNumber(dashboard.medication.notGiven)} />
-              </dl>
+              <p className="mt-4 text-[12px] leading-5 text-[#4f5954]">{formatExecutiveNumber(dashboard.medication.given)} of {formatExecutiveNumber(dashboard.medication.scheduled)} scheduled administrations were given; {formatExecutiveNumber(dashboard.medication.notGiven)} were not.</p>
             </>
           ) : <CompactEmpty>Medication totals unavailable.</CompactEmpty>}
         </article>
@@ -267,36 +211,8 @@ function CommunityOverview({
   );
 }
 
-const SNAPSHOT_TONE = {
-  sand: "bg-[#fbf7ef] hover:bg-[#f6efe3]",
-  blue: "bg-[#f1f4fc] hover:bg-[#e9eefb]",
-  peach: "bg-[#fff4ec] hover:bg-[#fbeade]",
-  green: "bg-[#edf7f2] hover:bg-[#e4f2ec]"
-} as const;
-
-function SnapshotButton({ label, value, detail, tone, onClick }: { label: string; value: string; detail: string; tone: keyof typeof SNAPSHOT_TONE; onClick: () => void }) {
-  return (
-    <button type="button" data-executive-dashboard-tone={tone} onClick={onClick} className={`group flex min-h-[102px] items-center justify-between gap-3 border-b border-[#d4dad7] px-3 py-3 text-left transition-colors odd:border-r focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73] [&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:px-5 xl:last:border-r-0 ${SNAPSHOT_TONE[tone]}`}>
-      <span className="min-w-0">
-        <span className="block text-[11px] font-semibold text-[#4f5a55]">{label}</span>
-        <strong className="mt-0.5 block text-[26px] leading-none tabular-nums tracking-[-0.045em] text-[#173f36] sm:text-[30px]">{value}</strong>
-        <span className="mt-1.5 block min-h-8 text-[10px] leading-4 text-[#68716d] sm:text-[11px]">{detail}</span>
-      </span>
-      <ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
-    </button>
-  );
-}
-
 function DetailLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return <button type="button" onClick={onClick} className="inline-flex min-h-8 shrink-0 items-center gap-1.5 text-[11px] font-semibold text-[#08745d] transition-colors hover:text-[#054b3c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]">{children}<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>;
-}
-
-function CompactFact({ label, value }: { label: string; value: string }) {
-  return <div className="border-b border-[#e0e4e2] px-2 py-2.5 first:pl-0 last:pr-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><dt className="text-[10px] text-[#68716d]">{label}</dt><dd className="mt-0.5 text-[13px] font-semibold tabular-nums text-[#17201c]">{value}</dd></div>;
-}
-
-function CompactEvent({ label, name, date, detail }: { label: string; name: string; date: string | null; detail: string }) {
-  return <div className="min-w-0 border-b border-[#d7ddda] px-1 py-3 sm:border-b-0 sm:border-r sm:px-3 sm:first:pl-0 sm:last:border-r-0 sm:last:pr-0 xl:border-b xl:border-r-0 xl:px-1 xl:first:pl-1 2xl:border-b-0 2xl:border-r 2xl:px-3 2xl:first:pl-0 2xl:last:border-r-0 2xl:last:pr-0"><p className="text-[10px] font-semibold uppercase tracking-[0.09em] text-[#68716d]">{label}</p><strong className="mt-1 block truncate text-[13px] text-[#17201c]">{name}</strong><p className="mt-0.5 truncate text-[11px] text-[#68716d]">{date ? `${formatExecutiveDate(date, true)} · ` : ""}{detail}</p></div>;
 }
 
 function CompactEmpty({ children }: { children: React.ReactNode }) {

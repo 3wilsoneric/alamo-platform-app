@@ -159,12 +159,11 @@ await withBrowserQa(async (browser) => {
   if (forbiddenCopy.test(await dashboard.innerText())) {
     throw new Error("The repeat-use dashboard reintroduced introductory or explanatory title copy.");
   }
-  if (await summary.getByRole("button").count() < 4) {
-    throw new Error("The daily operating summary must keep all four drill-down entry points.");
+  if (await summary.locator("[data-executive-dashboard-panel]").count() !== 4) {
+    throw new Error("The dashboard must keep four integrated operating components without a separate stat strip.");
   }
-  const summaryTones = await summary.locator("[data-executive-dashboard-tone]").evaluateAll((items) => items.map((item) => item.getAttribute("data-executive-dashboard-tone")));
-  if (new Set(summaryTones).size !== 4) {
-    throw new Error(`The operating summary must retain four distinct restrained tones: ${JSON.stringify(summaryTones)}`);
+  if (await summary.locator("[data-executive-dashboard-tone]").count()) {
+    throw new Error("The removed multi-color KPI strip must not return.");
   }
   if (await dashboard.locator('[data-executive-referral-status="true"]').count() !== Math.min(expectedImpendingCards.length, 4)) {
     throw new Error("The executive admissions component must surface status language only for impending admits.");
@@ -175,7 +174,7 @@ await withBrowserQa(async (browser) => {
   }
   const desktopMetrics = await page.evaluate(() => {
     const root = document.querySelector('[data-executive-community-dashboard="true"]');
-    const summary = document.querySelector('[aria-label="Current community snapshot"]');
+    const summary = document.querySelector('[data-executive-dashboard-panel="census"]');
     const rootRect = root?.getBoundingClientRect();
     const summaryRect = summary?.getBoundingClientRect();
     return {
@@ -185,12 +184,12 @@ await withBrowserQa(async (browser) => {
       rootTop: rootRect?.top ?? null
     };
   });
-  if (desktopMetrics.overflow > 2 || desktopMetrics.summaryTop == null || desktopMetrics.summaryTop > 190 || desktopMetrics.summaryBottom > 330) {
+  if (desktopMetrics.overflow > 2 || desktopMetrics.summaryTop == null || desktopMetrics.summaryTop > 210) {
     throw new Error(`The desktop dashboard is not compact enough: ${JSON.stringify(desktopMetrics)}`);
   }
   await page.screenshot({ path: `${screenshotDir}/desktop-1440.png`, fullPage: true });
 
-  await summary.getByRole("button", { name: /^Census/ }).click();
+  await dashboard.getByRole("button", { name: "History" }).click();
   const detailShell = page.locator("[data-executive-community-detail-modal]");
   const detailModal = page.locator('[data-executive-community-detail-modal="census"]');
   await detailModal.waitFor({ state: "visible" });
@@ -223,7 +222,7 @@ await withBrowserQa(async (browser) => {
   await activeDetailModal.getByRole("button", { name: /Close Medications detail/i }).click();
   await detailShell.waitFor({ state: "hidden" });
 
-  await summary.getByRole("button", { name: /^Impending admits/ }).click();
+  await dashboard.getByRole("button", { name: "Meet the clients" }).click();
   const meetClientModal = page.locator('[data-executive-community-detail-modal="admissions"]');
   await meetClientModal.waitFor({ state: "visible" });
   await meetClientModal.locator('[data-executive-meet-client]').first().getByRole("button", { name: "Meet the client" }).click();
@@ -241,13 +240,13 @@ await withBrowserQa(async (browser) => {
   const mobileMetrics = await page.evaluate(() => ({
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     width: document.documentElement.clientWidth,
-    firstMetricHeight: document.querySelector('[aria-label="Current community snapshot"] button')?.getBoundingClientRect().height ?? 0
+    firstPanelTop: document.querySelector('[data-executive-dashboard-panel="census"]')?.getBoundingClientRect().top ?? 0
   }));
-  if (mobileMetrics.overflow > 2 || mobileMetrics.width !== 390 || mobileMetrics.firstMetricHeight < 44) {
+  if (mobileMetrics.overflow > 2 || mobileMetrics.width !== 390 || mobileMetrics.firstPanelTop <= 0) {
     throw new Error(`The mobile dashboard is not viewport-safe: ${JSON.stringify(mobileMetrics)}`);
   }
   await page.screenshot({ path: `${screenshotDir}/mobile-390.png`, fullPage: false });
-  await summary.getByRole("button", { name: /^Impending admits/ }).click();
+  await dashboard.getByRole("button", { name: "Meet the clients" }).click();
   const mobileAdmissionsModal = page.locator('[data-executive-community-detail-modal="admissions"]');
   await mobileAdmissionsModal.waitFor({ state: "visible" });
   const mobileDetailMetrics = await page.evaluate(() => ({

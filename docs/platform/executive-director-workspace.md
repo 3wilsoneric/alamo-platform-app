@@ -31,17 +31,15 @@ anything filed.
 
 The dashboard is a repeat-use operating surface, not an introductory report.
 Its header is limited to the community, reporting period, and refresh time.
-Current census, admissions, incidents, and medication performance appear first
-in one compact linked summary; the census trend, near-term admissions work, and
-operational detail follow without explanatory title stacks. Each area opens the
-larger facility-scoped detail workspace when the user needs history or record
-detail. The compact components reuse the Admissions Pipeline's restrained status
-colors and referral state language so the two surfaces feel related without
-turning the executive dashboard into a second workflow board.
+Current census, impending admissions, incidents, and medication performance are
+integrated into four operating components without a separate KPI or stat strip.
+Each area opens the larger facility-scoped detail workspace when the user needs
+history or record detail. Components use one darker Alamo-green surface system;
+semantic referral badges remain reserved for meaningful client status.
 
 Dashboard drill-downs stay facility-scoped and open in one switchable workspace.
-Each begins with a compact measure strip and then exposes the underlying governed
-records: census periods, monthly incident volume and categories, medication
+They expose the underlying governed records directly without repeating a KPI
+strip: census periods, monthly incident volume and categories, medication
 administration totals, or impending admissions. The executive admissions view
 does not reproduce the referral board or assessment workflow: it shows only
 clients accepted or otherwise moving toward admission, their scheduled or
