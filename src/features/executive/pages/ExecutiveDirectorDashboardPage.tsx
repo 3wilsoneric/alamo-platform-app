@@ -9,6 +9,7 @@ import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot
 import { ProgressModal } from "../../admissions/components/PipelineBoard";
 import { ExecutiveCommunityDetailModal, type ExecutiveCommunityDetailView } from "../components/ExecutiveCommunityDetailModal";
 import { ExecutiveReferralStatusPill } from "../components/ExecutiveReferralStatusPill";
+import { formatImpendingAdmissionDate, impendingAdmissionCards } from "../components/executiveAdmissions";
 import { formatExecutiveDate, formatExecutiveNumber } from "../components/executiveDashboardFormatters";
 import {
   fetchExecutiveDirectorCommunityDashboard,
@@ -131,9 +132,10 @@ function CommunityOverview({
   const latestCensus = dashboard.census.at(-1);
   const priorCensus = dashboard.census.at(-2);
   const censusDelta = latestCensus && priorCensus ? latestCensus.census - priorCensus.census : null;
-  const firstAssessment = dashboard.admissions.upcomingAssessments[0];
   const firstMoveIn = dashboard.admissions.plannedMoveIns[0];
-  const recentCards = dashboard.admissions.cards.slice(0, 4);
+  const impendingCards = impendingAdmissionCards(dashboard.admissions.cards);
+  const scheduledImpending = impendingCards.filter((card) => card.plannedAdmissionDate);
+  const undatedImpending = impendingCards.filter((card) => !card.plannedAdmissionDate);
   const incidentChange = incidentDelta == null
     ? "Prior comparison unavailable"
     : incidentDelta === 0
@@ -156,9 +158,9 @@ function CommunityOverview({
           onClick={() => onOpenDetail("census")}
         />
         <SnapshotButton
-          label="Active referrals"
-          value={dashboard.admissions.status === "connected" ? formatExecutiveNumber(community?.activeReferrals) : "—"}
-          detail={dashboard.admissions.status === "connected" ? `${formatExecutiveNumber(community?.assessmentsThisWeek)} assessments · ${formatExecutiveNumber(community?.plannedMoveInsThisWeek)} move-ins this week` : "Admissions feed unavailable"}
+          label="Impending admits"
+          value={dashboard.admissions.status === "connected" ? formatExecutiveNumber(impendingCards.length) : "—"}
+          detail={dashboard.admissions.status === "connected" ? `${formatExecutiveNumber(scheduledImpending.length)} scheduled · ${formatExecutiveNumber(undatedImpending.length)} need a date` : "Admissions feed unavailable"}
           tone="blue"
           onClick={() => onOpenDetail("admissions")}
         />
@@ -191,29 +193,29 @@ function CommunityOverview({
           </dl>
         </article>
 
-        <article className="overflow-hidden rounded-[22px] border border-[#cbd5ec] border-t-[4px] border-t-[#5877bf] bg-[#f5f7fd] p-4 sm:p-5">
+        <article data-executive-impending-summary="true" className="overflow-hidden rounded-[22px] border border-[#cbd5ec] border-t-[4px] border-t-[#5877bf] bg-[#f5f7fd] p-4 sm:p-5">
           <div className="flex items-center justify-between gap-4 border-b border-[#d7ddda] pb-3">
-            <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#ccd6ef] bg-white"><CalendarCheck2 className="h-4 w-4 text-[#4667b5]" aria-hidden="true" /></span>Admissions</h2>
-            <DetailLink onClick={() => onOpenDetail("admissions")}>All activity</DetailLink>
+            <h2 className="flex items-center gap-2.5 !font-sans text-[15px] font-semibold text-[#17201c]"><span className="grid h-8 w-8 place-items-center rounded-lg border border-[#ccd6ef] bg-white"><CalendarCheck2 className="h-4 w-4 text-[#4667b5]" aria-hidden="true" /></span>Impending admits</h2>
+            <DetailLink onClick={() => onOpenDetail("admissions")}>Meet the clients</DetailLink>
           </div>
           {dashboard.admissions.status === "connected" ? (
             <>
               <div className="grid border-b border-[#d7ddda] sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <CompactEvent label="Next assessment" name={firstAssessment?.clientName ?? "None scheduled"} date={firstAssessment?.scheduledAt ?? null} detail={firstAssessment?.status ?? "This week"} />
                 <CompactEvent label="Next move-in" name={firstMoveIn?.clientName ?? "None scheduled"} date={firstMoveIn?.plannedAt ?? null} detail={firstMoveIn ? `${firstMoveIn.status}${firstMoveIn.readiness === "ready" ? "" : ` · ${firstMoveIn.readiness}`}` : "This week"} />
+                <CompactEvent label="Date pending" name={undatedImpending.length ? `${formatExecutiveNumber(undatedImpending.length)} ${undatedImpending.length === 1 ? "client" : "clients"}` : "None"} date={null} detail="Accepted profiles" />
               </div>
-              {recentCards.length ? (
+              {impendingCards.length ? (
                 <ol className="divide-y divide-[#d7ddda]">
-                  {recentCards.map((card) => (
+                  {impendingCards.slice(0, 4).map((card) => (
                     <li key={card.referralId}>
                       <button type="button" onClick={() => onOpenCard(card)} className="group flex min-h-12 w-full items-center justify-between gap-3 px-1 py-2.5 text-left transition-colors hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73]">
-                        <span className="min-w-0"><strong className="block truncate text-[13px] text-[#17201c]">{card.clientName}</strong><span className="mt-1 flex min-w-0 items-center gap-2"><ExecutiveReferralStatusPill status={card.status} /><span className="truncate text-[10px] text-[#68716d]">{formatExecutiveNumber(card.daysOpen)}d open</span></span></span>
+                        <span className="min-w-0"><strong className="block truncate text-[13px] text-[#17201c]">{card.clientName}</strong><span className="mt-1 flex min-w-0 items-center gap-2"><ExecutiveReferralStatusPill status={card.status} /><span className="truncate text-[10px] text-[#68716d]">{card.plannedAdmissionDate ? formatImpendingAdmissionDate(card.plannedAdmissionDate, false) : "Date pending"}</span></span></span>
                         <ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
                       </button>
                     </li>
                   ))}
                 </ol>
-              ) : <CompactEmpty>No active referral charts.</CompactEmpty>}
+              ) : <CompactEmpty>No clients are currently moving toward admission.</CompactEmpty>}
             </>
           ) : <CompactEmpty>Admissions feed unavailable.</CompactEmpty>}
         </article>

@@ -42,9 +42,11 @@ turning the executive dashboard into a second workflow board.
 Dashboard drill-downs stay facility-scoped and open in one switchable workspace.
 Each begins with a compact measure strip and then exposes the underlying governed
 records: census periods, monthly incident volume and categories, medication
-administration totals, or the community's assessment, move-in, and referral
-charts. Referral cards retain the same stage and decision language used by the
-Admissions Pipeline and continue into the existing management chart.
+administration totals, or impending admissions. The executive admissions view
+does not reproduce the referral board or assessment workflow: it shows only
+clients accepted or otherwise moving toward admission, their scheduled or
+missing admission date, readiness, and a concise profile. Each client continues
+into the existing meet-the-client management chart.
 
 ## Access model
 

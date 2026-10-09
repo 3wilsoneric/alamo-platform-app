@@ -3,9 +3,10 @@ import { useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 import { CensusTrendModule } from "../../../shared/modules/CensusTrendModule";
-import type { AdmissionsBoardCard, AdmissionsBoardColumnKey } from "../../../shared/types/platformSnapshot";
+import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot";
 import type { ExecutiveDirectorCommunityDashboardResponse } from "../data/executiveDirectorApi";
 import { ExecutiveReferralStatusPill } from "./ExecutiveReferralStatusPill";
+import { formatImpendingAdmissionDate, impendingAdmissionCards, impendingAdmissionReadiness } from "./executiveAdmissions";
 import { formatExecutiveDate, formatExecutiveNumber } from "./executiveDashboardFormatters";
 
 export type ExecutiveCommunityDetailView = "census" | "incidents" | "medications" | "admissions";
@@ -23,12 +24,6 @@ const VIEW_TONE = {
   incidents: { accent: "#bd7040", border: "#ead2c1", surface: "#fff4ec", ink: "#98532b" },
   medications: { accent: "#2e8065", border: "#c5ddd3", surface: "#edf7f2", ink: "#22644f" }
 } satisfies Record<ExecutiveCommunityDetailView, { accent: string; border: string; surface: string; ink: string }>;
-
-const ADMISSION_STAGES: Array<{ key: AdmissionsBoardColumnKey; label: string; surface: string; border: string; accent: string }> = [
-  { key: "received", label: "Received", surface: "#eef7f3", border: "#cde5d9", accent: "#257653" },
-  { key: "in_progress", label: "In progress", surface: "#f0f3fc", border: "#d4dcf5", accent: "#365fc7" },
-  { key: "decision", label: "Decision", surface: "#fcf3ed", border: "#efd2bd", accent: "#b65318" }
-];
 
 function keepFocusInsideDialog(event: KeyboardEvent, dialog: HTMLElement | null) {
   if (event.key !== "Tab" || !dialog) return;
@@ -254,51 +249,66 @@ function MedicationDetail({ dashboard }: { dashboard: ExecutiveDirectorCommunity
 
 function AdmissionsDetail({ dashboard, onOpenCard }: { dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"]; onOpenCard: (card: AdmissionsBoardCard) => void }) {
   const admissions = dashboard.admissions;
-  const community = admissions.community;
-  const columns = useMemo(() => ADMISSION_STAGES.map((stage) => ({ ...stage, cards: admissions.cards.filter((card) => card.column === stage.key) })), [admissions.cards]);
+  const clients = useMemo(() => impendingAdmissionCards(admissions.cards), [admissions.cards]);
+  const plannedByReferral = useMemo(() => new Map(admissions.plannedMoveIns.map((item) => [item.referralId, item])), [admissions.plannedMoveIns]);
+  const scheduled = clients.filter((card) => card.plannedAdmissionDate || plannedByReferral.has(card.referralId));
+  const withoutDate = clients.filter((card) => !card.plannedAdmissionDate && !plannedByReferral.has(card.referralId));
+  const ready = clients.filter((card) => impendingAdmissionReadiness(card) === "Ready for admission");
   if (admissions.status !== "connected") return <EmptyState>The admissions feed is temporarily unavailable.</EmptyState>;
   return (
     <div data-executive-detail-view="admissions" className="space-y-5">
       <MetricStrip
         view="admissions"
         items={[
-          { label: "Active referrals", value: formatExecutiveNumber(community?.activeReferrals), detail: "Assigned to community" },
-          { label: "Received", value: formatExecutiveNumber(columns.find((item) => item.key === "received")?.cards.length) },
-          { label: "In progress", value: formatExecutiveNumber(columns.find((item) => item.key === "in_progress")?.cards.length) },
-          { label: "Decision", value: formatExecutiveNumber(columns.find((item) => item.key === "decision")?.cards.length) }
+          { label: "Impending admits", value: formatExecutiveNumber(clients.length), detail: "Accepted or awaiting admission" },
+          { label: "Scheduled", value: formatExecutiveNumber(scheduled.length), detail: "Admission date recorded" },
+          { label: "Need a date", value: formatExecutiveNumber(withoutDate.length), detail: "Accepted profiles" },
+          { label: "Ready", value: formatExecutiveNumber(ready.length), detail: "No open profile requirements" }
         ]}
       />
-      <div className="grid gap-5 lg:grid-cols-2">
-        <ScheduleList tone="blue" title="Upcoming assessments" empty="No remaining assessments are scheduled this week." items={admissions.upcomingAssessments.map((item) => ({ id: item.referralId, date: item.scheduledAt, name: item.clientName, detail: item.status }))} />
-        <ScheduleList tone="green" title="Planned move-ins" empty="No move-ins are currently scheduled this week." items={admissions.plannedMoveIns.map((item) => ({ id: item.referralId, date: item.plannedAt, name: item.clientName, detail: item.readiness === "ready" ? item.status : `${item.status} · ${item.readiness}` }))} />
-      </div>
-      <section className="overflow-hidden rounded-[22px] border border-[#ccd5d0] bg-white p-4 sm:p-6">
-        <div className="flex items-center justify-between gap-4 border-b border-[#dce2df] pb-3"><SectionTitle icon={<span className="grid h-8 w-8 place-items-center rounded-lg border border-[#cbd5ec] bg-[#f1f4fc]"><CalendarCheck2 className="h-4 w-4 text-[#4667b5]" aria-hidden="true" /></span>}>Referral charts</SectionTitle><span className="text-[12px] text-[#606964]">{admissions.cards.length} total</span></div>
-        <div className="grid items-start gap-5 pt-5 lg:grid-cols-3">
-          {columns.map((column) => (
-            <article key={column.key} className="overflow-hidden rounded-2xl border" style={{ backgroundColor: column.surface, borderColor: column.border }}>
-              <header className="flex items-center justify-between px-4 py-3.5"><h4 className="!font-sans text-[14px] font-semibold">{column.label}</h4><span className="rounded-md bg-white px-2 py-1 text-[11px] font-semibold tabular-nums" style={{ color: column.accent }}>{column.cards.length}</span></header>
-              {column.cards.length ? <ol className="space-y-2.5 px-3 pb-3">{column.cards.map((card) => <li key={card.referralId}><button type="button" onClick={() => onOpenCard(card)} className="group flex min-h-20 w-full items-center justify-between gap-3 rounded-xl border border-[#dde3df] bg-white px-3.5 py-3 text-left transition hover:-translate-y-px hover:border-[#bfc9c3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73]"><span className="min-w-0"><strong className="block truncate text-[14px]">{card.clientName}</strong><span className="mt-1.5 flex min-w-0 items-center gap-2"><ExecutiveReferralStatusPill status={card.status} /><span className="truncate text-[10px] text-[#7a827e]">{card.daysOpen == null ? "Timing unavailable" : `${card.daysOpen}d open`}</span></span></span><ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" /></button></li>)}</ol> : <p className="mx-3 mb-3 rounded-xl border border-dashed bg-white/55 px-4 py-7 text-center text-[12px] text-[#68716d]" style={{ borderColor: column.border }}>No referrals here</p>}
-            </article>
-          ))}
-        </div>
+      <section className="overflow-hidden rounded-[22px] border border-[#ccd5d0] bg-white p-4 sm:p-6" data-executive-impending-admits="true">
+        <div className="flex items-center justify-between gap-4 border-b border-[#dce2df] pb-3"><SectionTitle icon={<span className="grid h-8 w-8 place-items-center rounded-lg border border-[#cbd5ec] bg-[#f1f4fc]"><CalendarCheck2 className="h-4 w-4 text-[#4667b5]" aria-hidden="true" /></span>}>Impending admits</SectionTitle><span className="text-[12px] text-[#606964]">{clients.length} clients</span></div>
+        {clients.length ? (
+          <ol className="grid gap-4 pt-5 lg:grid-cols-2">
+            {clients.map((card) => {
+              const planned = plannedByReferral.get(card.referralId);
+              return <li key={card.referralId}><MeetClientCard card={card} plannedAt={planned?.plannedAt ?? card.plannedAdmissionDate} onOpen={() => onOpenCard(card)} /></li>;
+            })}
+          </ol>
+        ) : <EmptyState>No clients are currently moving toward admission.</EmptyState>}
       </section>
     </div>
   );
 }
 
-function ScheduleList({ title, items, empty, tone }: { title: string; items: Array<{ id: number; date: string; name: string; detail: string }>; empty: string; tone: "blue" | "green" }) {
-  const palette = tone === "blue"
-    ? { border: "#cbd5ec", accent: "#5877bf", surface: "#f4f6fc", icon: "#4667b5" }
-    : { border: "#c5ddd3", accent: "#2e8065", surface: "#f3faf7", icon: "#28745d" };
+function MeetClientCard({ card, plannedAt, onOpen }: { card: AdmissionsBoardCard; plannedAt: string | null | undefined; onOpen: () => void }) {
+  const profile = card.managementProfile;
+  const readiness = impendingAdmissionReadiness(card);
+  const readinessTone = readiness === "Ready for admission"
+    ? "border-[#b8d9ca] bg-[#e9f5ef] text-[#21664f]"
+    : readiness.includes("blocking")
+      ? "border-[#e3bbb3] bg-[#fcedea] text-[#963f36]"
+      : "border-[#e2cf91] bg-[#fff6d9] text-[#75591d]";
+  const facts = [
+    ["Payer", profile.payer || "Not recorded"],
+    ["Referral source", profile.referralSource || "Not recorded"],
+    ["Referring county", profile.referringCounty || "Not recorded"]
+  ];
   return (
-    <section className="overflow-hidden rounded-[20px] border border-t-[4px] bg-white" style={{ borderColor: palette.border, borderTopColor: palette.accent }}>
-      <div className="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-5" style={{ backgroundColor: palette.surface }}>
-        <h2 className="flex items-center gap-2.5 !font-sans text-[14px] font-semibold"><CalendarCheck2 className="h-4 w-4" style={{ color: palette.icon }} aria-hidden="true" />{title}</h2>
-        <span className="text-[11px] font-semibold tabular-nums" style={{ color: palette.icon }}>{items.length}</span>
+    <article className="flex h-full flex-col overflow-hidden rounded-[18px] border border-[#d5dce8] bg-[#fbfcff]" data-executive-meet-client={card.referralId}>
+      <div className="flex items-start justify-between gap-3 border-b border-[#dce2ee] bg-[#f1f4fc] px-4 py-3.5 sm:px-5">
+        <div className="min-w-0"><h3 className="truncate !font-sans text-[17px] font-semibold text-[#17201c]">{card.clientName}</h3><p className="mt-1 text-[11px] font-medium text-[#526a9e]">{plannedAt ? `Planned ${formatImpendingAdmissionDate(plannedAt, true)}` : "Admission date pending"}</p></div>
+        <ExecutiveReferralStatusPill status={card.status} />
       </div>
-      {items.length ? <ol className={`divide-y ${tone === "blue" ? "divide-[#cbd5ec]" : "divide-[#c5ddd3]"}`}>{items.map((item) => <li key={item.id} className="grid gap-1 px-4 py-3.5 sm:grid-cols-[132px_1fr_auto] sm:items-center sm:gap-4 sm:px-5"><time className="text-[12px] font-semibold" style={{ color: palette.icon }}>{formatExecutiveDate(item.date, true)}</time><strong className="truncate text-[14px]">{item.name}</strong><span className="text-[11px] text-[#68716d] sm:text-right">{item.detail}</span></li>)}</ol> : <p className="border-t px-4 py-5 text-[12px] leading-5 text-[#68716d] sm:px-5" style={{ borderColor: palette.border }}>{empty}</p>}
-    </section>
+      <div className="flex flex-1 flex-col px-4 py-4 sm:px-5">
+        <span className={`w-fit rounded-md border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.05em] ${readinessTone}`}>{readiness}</span>
+        <dl className="mt-4 grid gap-px overflow-hidden rounded-xl border border-[#dfe4ea] bg-[#dfe4ea] sm:grid-cols-3">
+          {facts.map(([label, value]) => <div key={label} className="min-w-0 bg-white px-3 py-2.5"><dt className="text-[8px] font-semibold uppercase tracking-[0.07em] text-[#78807c]">{label}</dt><dd className="mt-1 truncate text-[11px] font-semibold text-[#343a37]">{value}</dd></div>)}
+        </dl>
+        {profile.overview.length ? <ul className="mt-4 space-y-2 text-[12px] leading-5 text-[#57615c]">{profile.overview.slice(0, 2).map((item) => <li key={item} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#5877bf]" aria-hidden="true" /><span>{item}</span></li>)}</ul> : null}
+        <button type="button" onClick={onOpen} className="group mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-[#dce2ee] pt-3 text-left text-[12px] font-semibold text-[#3159a8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]">Meet the client<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></button>
+      </div>
+    </article>
   );
 }
 

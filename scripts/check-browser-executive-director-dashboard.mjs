@@ -9,6 +9,39 @@ import {
 
 const { artifactDir, screenshotDir } = await prepareArtifactDirs("browser-executive-director-dashboard");
 
+function mockAdmissionsCard(card, profile = {}) {
+  return {
+    nextAction: "Review the client profile",
+    community: "San Pablo",
+    owner: "Admissions team",
+    priority: "standard",
+    daysSinceUpdate: 0,
+    plannedAdmissionDate: null,
+    flags: { stale: false, unassigned: false, moveInOverdue: false },
+    managementProfile: {
+      dateOfBirth: "1984-05-12",
+      referralSource: "County behavioral health",
+      referringCounty: "Contra Costa County",
+      payer: "Medi-Cal",
+      responsiblePerson: "Self",
+      conservedStatus: "Not conserved",
+      documentStatus: "Reviewed",
+      assessmentStatus: "Complete",
+      assessmentSigned: true,
+      assessmentDate: "2026-10-07",
+      openRequirements: 0,
+      blockingRequirements: 0,
+      overview: ["Step-down behavioral health placement", "Medication support and community transition planning"],
+      supportSnapshot: [{ label: "Mobility", value: "Independent" }],
+      medications: ["Medication list reviewed"],
+      medicationSource: "signed_assessment",
+      ...profile
+    },
+    pipelineUrl: "https://pipeline.example/referral",
+    ...card
+  };
+}
+
 const dashboardResponse = {
   facility: {
     facilityId: "337",
@@ -82,14 +115,14 @@ const dashboardResponse = {
         completedMoveInsThisWeek: 0
       },
       cards: [
-        { referralId: 1, facilityId: "337", clientName: "Sean Bobier", status: "Awaiting admit", column: "decision", daysOpen: 9 },
-        { referralId: 2, facilityId: "337", clientName: "Ben Randolph", status: "Assessment scheduled", column: "in_progress", daysOpen: 4 },
-        { referralId: 3, facilityId: "337", clientName: "Georgette Moore", status: "Assessment scheduled", column: "in_progress", daysOpen: 3 },
-        { referralId: 4, facilityId: "337", clientName: "Jonah Wicker", status: "Clinical review", column: "in_progress", daysOpen: 2 },
-        { referralId: 5, facilityId: "337", clientName: "Deanna Bell", status: "Accepted", column: "decision", daysOpen: 12 },
-        { referralId: 6, facilityId: "337", clientName: "Mario Manzaro", status: "Under review", column: "decision", daysOpen: 7 },
-        { referralId: 7, facilityId: "337", clientName: "Iris Delgado", status: "Referral received", column: "received", daysOpen: 1 },
-        { referralId: 8, facilityId: "337", clientName: "Malcolm Reed", status: "Document review", column: "in_progress", daysOpen: 5 }
+        mockAdmissionsCard({ referralId: 1, facilityId: "337", clientName: "Sean Bobier", status: "Awaiting admit", column: "decision", daysOpen: 9, plannedAdmissionDate: "2026-10-09" }),
+        mockAdmissionsCard({ referralId: 2, facilityId: "337", clientName: "Ben Randolph", status: "Assessment scheduled", column: "in_progress", daysOpen: 4 }),
+        mockAdmissionsCard({ referralId: 3, facilityId: "337", clientName: "Georgette Moore", status: "Assessment scheduled", column: "in_progress", daysOpen: 3 }),
+        mockAdmissionsCard({ referralId: 4, facilityId: "337", clientName: "Jonah Wicker", status: "Clinical review", column: "in_progress", daysOpen: 2 }),
+        mockAdmissionsCard({ referralId: 5, facilityId: "337", clientName: "Deanna Bell", status: "Accepted", column: "decision", daysOpen: 12 }, { assessmentSigned: false, assessmentStatus: "Awaiting signature", openRequirements: 1 }),
+        mockAdmissionsCard({ referralId: 6, facilityId: "337", clientName: "Mario Manzaro", status: "Under review", column: "decision", daysOpen: 7 }),
+        mockAdmissionsCard({ referralId: 7, facilityId: "337", clientName: "Iris Delgado", status: "Referral received", column: "received", daysOpen: 1 }),
+        mockAdmissionsCard({ referralId: 8, facilityId: "337", clientName: "Malcolm Reed", status: "Document review", column: "in_progress", daysOpen: 5 })
       ],
       recentReferrals: [],
       upcomingAssessments: [],
@@ -99,6 +132,11 @@ const dashboardResponse = {
     }
   }
 };
+
+const expectedImpendingCards = dashboardResponse.dashboard.admissions.cards.filter((card) => {
+  const status = card.status.trim().toLowerCase();
+  return card.plannedAdmissionDate || status.startsWith("accept") || status === "awaiting admit" || status === "meet the client not sent";
+});
 
 await withBrowserQa(async (browser) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -128,8 +166,12 @@ await withBrowserQa(async (browser) => {
   if (new Set(summaryTones).size !== 4) {
     throw new Error(`The operating summary must retain four distinct restrained tones: ${JSON.stringify(summaryTones)}`);
   }
-  if (await dashboard.locator('[data-executive-referral-status="true"]').count() !== Math.min(dashboardResponse.dashboard.admissions.cards.length, 4)) {
-    throw new Error("The executive admissions component must surface Pipeline status language for each visible referral.");
+  if (await dashboard.locator('[data-executive-referral-status="true"]').count() !== Math.min(expectedImpendingCards.length, 4)) {
+    throw new Error("The executive admissions component must surface status language only for impending admits.");
+  }
+  const impendingSummary = dashboard.locator('[data-executive-impending-summary="true"]');
+  if (!/Sean Bobier[\s\S]*Oct 9[\s\S]*Deanna Bell[\s\S]*Date pending/i.test(await impendingSummary.innerText())) {
+    throw new Error("The dashboard must present impending admits with date-safe scheduling and pending-date context.");
   }
   const desktopMetrics = await page.evaluate(() => {
     const root = document.querySelector('[data-executive-community-dashboard="true"]');
@@ -163,8 +205,13 @@ await withBrowserQa(async (browser) => {
     if (await nextModal.getByRole("tab", { selected: true }).count() !== 1) {
       throw new Error(`The ${nextView} drill-down must have exactly one selected navigation tab.`);
     }
-    if (nextKey === "admissions" && await nextModal.locator('[data-executive-referral-status="true"]').count() !== dashboardResponse.dashboard.admissions.cards.length) {
-      throw new Error("The admissions drill-down must carry Pipeline status language into every referral card.");
+    if (nextKey === "admissions") {
+      if (await nextModal.locator('[data-executive-meet-client]').count() !== expectedImpendingCards.length) {
+        throw new Error("The admissions drill-down must contain only impending admits with meet-the-client profiles.");
+      }
+      if (await nextModal.getByText(/Upcoming assessments|Referral charts|Received|In progress|Decision/, { exact: true }).count()) {
+        throw new Error("The admissions drill-down must not reproduce Pipeline stages or assessment workflow.");
+      }
     }
     await page.screenshot({ path: `${screenshotDir}/desktop-${nextKey}-detail.png`, fullPage: false });
   }
@@ -175,6 +222,19 @@ await withBrowserQa(async (browser) => {
   }
   await activeDetailModal.getByRole("button", { name: /Close Medications detail/i }).click();
   await detailShell.waitFor({ state: "hidden" });
+
+  await summary.getByRole("button", { name: /^Impending admits/ }).click();
+  const meetClientModal = page.locator('[data-executive-community-detail-modal="admissions"]');
+  await meetClientModal.waitFor({ state: "visible" });
+  await meetClientModal.locator('[data-executive-meet-client]').first().getByRole("button", { name: "Meet the client" }).click();
+  const clientProfile = page.locator('[data-admissions-progress-modal="true"]');
+  await clientProfile.waitFor({ state: "visible" });
+  if (!/Sean Bobier|Deanna Bell/.test(await clientProfile.innerText())) {
+    throw new Error("Meet the client must open the existing management profile for the selected impending admit.");
+  }
+  await page.screenshot({ path: `${screenshotDir}/desktop-meet-client-profile.png`, fullPage: false });
+  await clientProfile.getByRole("button", { name: "Close management chart" }).click();
+  await clientProfile.waitFor({ state: "hidden" });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -187,7 +247,7 @@ await withBrowserQa(async (browser) => {
     throw new Error(`The mobile dashboard is not viewport-safe: ${JSON.stringify(mobileMetrics)}`);
   }
   await page.screenshot({ path: `${screenshotDir}/mobile-390.png`, fullPage: false });
-  await summary.getByRole("button", { name: /^Active referrals/ }).click();
+  await summary.getByRole("button", { name: /^Impending admits/ }).click();
   const mobileAdmissionsModal = page.locator('[data-executive-community-detail-modal="admissions"]');
   await mobileAdmissionsModal.waitFor({ state: "visible" });
   const mobileDetailMetrics = await page.evaluate(() => ({
