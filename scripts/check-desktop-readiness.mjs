@@ -57,7 +57,7 @@ assert.match(runtime, /window\.location\.reload\(\)/);
 
 assert.match(worker, /CACHE_PREFIX = "alamo-static-"/);
 assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v\d+`/);
-assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v7`/);
+assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v8`/);
 assert.match(worker, /request\.mode === "navigate"/);
 assert.match(worker, /new Request\(request, \{ cache: "no-store" \}\)/);
 assert.match(worker, /fetch\(networkRequest\)\.catch/);
