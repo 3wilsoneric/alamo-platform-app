@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-08
+- updated: 2026-10-09
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -54,6 +54,65 @@ the current image's user, environment, working directory, entrypoint, and
 command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
+
+### Executive Director workspace and bounded LIC 624 uploads — 2026-10-09
+
+The facility workspace now has Overview, MARs, and Incidents, a New client
+notification opening the existing client profile, and a searchable, paginated
+full-history incident register. Licensing retains the editable digital LIC 624
+and now accepts up to 100 PDF/JPG/PNG files per batch, 20 MB each, with one
+upload in flight, per-file receipts, failed-file retry, and facility-scoped
+exact-byte duplicate protection. Reviewed forms and their immutable originals
+are preserved when the same bytes are delivered again.
+
+- source commit: `a6863b21967b8a6ba70127ae5a04902a68706c46`
+- source branch: `codex/compact-executive-dashboard`
+- ACR build: `cc6e`
+- image tag: `alamo-platform:executive-upload-review-a6863b2`
+- image digest: `sha256:4b3d7a966d927a3d40a701fbda6bb34324965faef995a0b5bf235a306d1854ec`
+- active revision: `alamo-platform-prod-web--executive-upload-1009`
+- rollback digest: `sha256:4abc417b5a114d451f0821b77c8b36502247fb14087031bb158b5dda92a4a5e3`
+- active browser assets: `/assets/index-Cvi0sR18.js` and
+  `/assets/index-DPixrpLO.css`
+
+The bounded overlay retains the exact preceding production runtime. Packaging
+now includes all incident and receipt/lock/object modules and checks their
+transitive relative imports against the combined candidate filesystem. The
+actual runtime-plus-overlay passed API module linkage, incident contracts, and
+all 20 synthetic batch persistence/recovery tests with networking disabled.
+The built image also passed API/PDF-library imports and entry-document hash
+parity before promotion. No real reports were uploaded during verification.
+
+Focused verification passed documentation, retention, TypeScript and server
+TypeScript, dependency audit, desktop freshness guards, Platform API and
+Admissions access boundaries, Executive Director contracts, the production
+build, Licensing browser tests at 320/390/768/1440px and 200%-equivalent zoom,
+and dashboard tests at 320/390/768/1024/1440px and 200%-equivalent zoom.
+
+The user explicitly approved this limited release with focused verification
+and rollback, despite the full analyst gate not being green. The maintained
+June fixture conflicts with later analyst test windows and lacks monthly MAR
+refusal detail. A current Azure probe of the unchanged AWOL-since-May analyst
+path returned a safe refusal and no artifact, so that failure is not classified
+as merely an outdated expected date. Analyst runtime and those tests were not
+changed. This is a one-release exception, not a successful full `check:ship`.
+
+Post-promotion checks confirmed Healthy/Running, one replica, and 100% traffic;
+28 exact-byte/cache/access probes across six routes, two assets, and four
+Executive Director APIs; current retirement-worker bytes; and 4/4 public smoke
+probes. Identity, gzip, and Brotli responses match the candidate. An already-open
+signed-in Chrome tab adopted the release without a manual reload. Owner checks
+confirmed the existing report queue and editable form, batch controls, live
+community Overview, MARs, and the complete incident register. No report, review,
+incident, Pipeline record, or email was created or changed. Identity, ingress,
+environment, scaling, and all other non-image application settings have an
+unchanged configuration hash.
+
+The user's selected scope is upload/review only. Scans remain explicitly
+Awaiting OCR. No database, OCR processing, incoming Outlook connector, Microsoft
+mailbox grant, outgoing notification, or Raj/Betty alert was activated. The
+current catalog remains unsuitable for the proposed 20,000-report backfill;
+that requires the separately approved processing/index milestone.
 
 ### Hidden Executive Director Licensing workspace — 2026-10-08
 

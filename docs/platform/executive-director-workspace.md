@@ -122,9 +122,9 @@ counts. Ongoing uploads and future scan-to-email attachments must converge on
 the same intake, review, and original-document contracts. An incident count is
 not a confirmed inventory of available LIC 624 documents.
 
-### 1. Safe batch intake — first local milestone
+### 1. Safe batch intake — deployed upload/review milestone
 
-Implemented locally: up to 100 selected files, sequential upload, per-file
+Deployed October 9: up to 100 selected files, sequential upload, per-file
 receipts, failed-file retry, and facility-scoped exact-byte duplicate protection.
 The single-file editable form remains the same. On October 9 the user selected
 deployment of upload/review only; the database, scanned OCR, and incoming mail
@@ -158,7 +158,9 @@ documentation checks, and the production build. No real reports were uploaded
 and the Azure write path was not exercised. The full platform-wide gate is not
 green: current Azure data and the maintained June fixture disagree with
 different analyst tests' fixed date expectations, and the June fixture lacks
-monthly medication-refusal detail. Do not report these as passed checks.
+monthly medication-refusal detail. The unchanged AWOL-since-May Azure analyst
+path also returned a safe refusal with no artifact, not just a date-assertion
+mismatch. Do not report these as passed checks.
 
 For this release only, the user explicitly authorized a limited deployment on
 October 9 using focused upload/review, mobile, access-control, production-build,
