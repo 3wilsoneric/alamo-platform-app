@@ -120,6 +120,13 @@ await withBrowserQa(async (browser) => {
   if (await summary.getByRole("button").count() < 4) {
     throw new Error("The daily operating summary must keep all four drill-down entry points.");
   }
+  const summaryTones = await summary.locator("[data-executive-dashboard-tone]").evaluateAll((items) => items.map((item) => item.getAttribute("data-executive-dashboard-tone")));
+  if (new Set(summaryTones).size !== 4) {
+    throw new Error(`The operating summary must retain four distinct restrained tones: ${JSON.stringify(summaryTones)}`);
+  }
+  if (await dashboard.locator('[data-executive-referral-status="true"]').count() !== dashboardResponse.dashboard.admissions.cards.length) {
+    throw new Error("The executive admissions component must surface Pipeline status language for each visible referral.");
+  }
   const desktopMetrics = await page.evaluate(() => {
     const root = document.querySelector('[data-executive-community-dashboard="true"]');
     const summary = document.querySelector('[aria-label="Current community snapshot"]');

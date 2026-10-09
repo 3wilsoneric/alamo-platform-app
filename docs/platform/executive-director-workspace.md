@@ -35,7 +35,9 @@ Current census, admissions, incidents, and medication performance appear first
 in one compact linked summary; the census trend, near-term admissions work, and
 operational detail follow without explanatory title stacks. Each area opens the
 larger facility-scoped detail workspace when the user needs history or record
-detail.
+detail. The compact components reuse the Admissions Pipeline's restrained status
+colors and referral state language so the two surfaces feel related without
+turning the executive dashboard into a second workflow board.
 
 ## Access model
 
