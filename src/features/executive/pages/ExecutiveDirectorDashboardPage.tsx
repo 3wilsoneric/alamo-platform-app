@@ -1,5 +1,5 @@
 import { useMsal } from "@azure/msal-react";
-import { ArrowRight, CalendarDays } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
@@ -57,24 +57,18 @@ export default function ExecutiveDirectorDashboardPage() {
   }
 
   return (
-    <section data-executive-community-dashboard="true" className="mx-auto w-full max-w-[1480px] px-4 pb-20 pt-6 sm:px-6 sm:pt-9 lg:px-8">
-      <header className="grid gap-5 border-b-2 border-[#111111] pb-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-end">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#0f8b73]">
-            {[facility?.city, facility?.state].filter(Boolean).join(", ") || "Your community"}
-          </p>
-          <h1 className="mt-2 text-[38px] font-semibold tracking-[-0.052em] text-[#111111] sm:text-[52px]">
+    <section data-executive-community-dashboard="true" className="mx-auto w-full max-w-[1480px] px-4 pb-16 pt-4 font-sans sm:px-6 sm:pt-5 lg:px-8">
+      <header className="flex min-h-12 flex-col justify-center gap-1 border-b border-[#cfd6d2] pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+        <div className="flex min-w-0 items-baseline gap-3">
+          <h1 className="truncate !font-sans text-[27px] font-semibold tracking-[-0.045em] text-[#111111] sm:text-[31px]">
             {facility?.shortName ?? "Community"}
           </h1>
-          <p className="mt-3 max-w-[760px] text-[17px] leading-7 text-[#4f5854] sm:text-[19px] sm:leading-8">
-            A current view of resident census, operational activity, medication administration, and the admissions work ahead.
-          </p>
+          {facility?.state ? <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#0f8b73]">{facility.state}</span> : null}
         </div>
-        <div className="border-l-[3px] border-[#0f8b73] pl-4 text-[12px] leading-5 text-[#5d6662]">
-          <strong className="block text-[13px] text-[#1b211e]">Community data</strong>
-          <span>{dashboard?.reportingMonth ? `Reporting through ${formatMonthLabel(dashboard.reportingMonth, { month: "long" })}` : "Latest available reporting period"}</span>
-          {generatedAt ? <span className="block">Updated {formatExecutiveDate(generatedAt, true)}</span> : null}
-        </div>
+        <p className="text-[11px] leading-5 text-[#68716d] sm:text-right sm:text-[12px]">
+          {dashboard?.reportingMonth ? formatMonthLabel(dashboard.reportingMonth, { month: "long" }) : "Latest period"}
+          {generatedAt ? ` · Updated ${formatExecutiveDate(generatedAt, true)}` : ""}
+        </p>
       </header>
 
       {error ? <div role="alert" className="mt-6 border-l-4 border-[#b24c3d] bg-[#fff7f5] px-4 py-3 text-[14px] text-[#7f3328]">{error}</div> : null}
@@ -133,135 +127,164 @@ function CommunityOverview({
   const incidentDelta = dashboard.summary?.currentIncidents != null && dashboard.summary?.priorIncidents != null
     ? dashboard.summary.currentIncidents - dashboard.summary.priorIncidents
     : null;
+  const latestCensus = dashboard.census.at(-1);
+  const priorCensus = dashboard.census.at(-2);
+  const censusDelta = latestCensus && priorCensus ? latestCensus.census - priorCensus.census : null;
   const firstAssessment = dashboard.admissions.upcomingAssessments[0];
   const firstMoveIn = dashboard.admissions.plannedMoveIns[0];
   const recentCards = dashboard.admissions.cards.slice(0, 4);
+  const incidentChange = incidentDelta == null
+    ? "Prior comparison unavailable"
+    : incidentDelta === 0
+      ? "No change from prior month"
+      : `${formatExecutiveNumber(Math.abs(incidentDelta))} ${incidentDelta > 0 ? "more" : "fewer"} than prior month`;
+  const censusChange = censusDelta == null
+    ? "Prior comparison unavailable"
+    : censusDelta === 0
+      ? "No change from prior month"
+      : `${censusDelta > 0 ? "+" : "−"}${formatExecutiveNumber(Math.abs(censusDelta))} from prior month`;
 
   return (
-    <div className="pt-8">
-      <section aria-labelledby="community-brief-title">
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#0f8b73]">At a glance</p>
-            <h2 id="community-brief-title" className="mt-1 text-[27px] font-semibold tracking-[-0.04em] text-[#171b19] sm:text-[32px]">Community briefing</h2>
-          </div>
-          <p className="max-w-[520px] text-[14px] leading-6 text-[#5d6662] sm:text-right">Select any area to open the underlying community detail.</p>
-        </div>
-
-        <div className="mt-5 grid border-y-2 border-[#111111] bg-white md:grid-cols-2">
-          <BriefingLink
-            label="Census"
-            title={`${formatExecutiveNumber(dashboard.summary?.residents ?? community?.census)} residents in community`}
-            detail={community?.occupancyPct != null && community.operatingLimit != null ? `${formatExecutiveNumber(community.occupancyPct, "%")} occupancy against an operating limit of ${formatExecutiveNumber(community.operatingLimit)}.` : "Open the resident trend and monthly history."}
-            onClick={() => onOpenDetail("census")}
-          />
-          <BriefingLink
-            label="Admissions"
-            title={dashboard.admissions.status === "connected" ? `${formatExecutiveNumber(community?.activeReferrals)} active community referrals` : "Admissions feed unavailable"}
-            detail={dashboard.admissions.status === "connected" ? `${formatExecutiveNumber(community?.assessmentsThisWeek)} assessments and ${formatExecutiveNumber(community?.plannedMoveInsThisWeek)} planned move-ins remain this week.` : "The community dashboard will update when the feed reconnects."}
-            onClick={() => onOpenDetail("admissions")}
-          />
-          <BriefingLink
-            label="Incidents"
-            title={`${formatExecutiveNumber(dashboard.summary?.currentIncidents)} recorded in the latest month`}
-            detail={incidentDelta == null ? "Open the monthly trend and category mix." : `${incidentDelta > 0 ? "+" : ""}${incidentDelta} compared with the prior month. Open the trend and category mix.`}
-            onClick={() => onOpenDetail("incidents")}
-          />
-          <BriefingLink
-            label="Medication administration"
-            title={dashboard.medication?.compliancePct == null ? "Latest period unavailable" : `${formatExecutiveNumber(dashboard.medication.compliancePct, "%")} compliance in the latest period`}
-            detail={dashboard.medication ? `${formatExecutiveNumber(dashboard.medication.given)} of ${formatExecutiveNumber(dashboard.medication.scheduled)} scheduled administrations were given.` : "Medication administration totals are not available."}
-            onClick={() => onOpenDetail("medications")}
-          />
-        </div>
+    <div data-daily-operating-summary="true" className="pt-4">
+      <section aria-label="Current community snapshot" className="grid grid-cols-2 overflow-hidden border-y border-[#9ea9a4] bg-white xl:grid-cols-4">
+        <SnapshotButton
+          label="Census"
+          value={formatExecutiveNumber(dashboard.summary?.residents ?? community?.census)}
+          detail={community?.occupancyPct != null && community.operatingLimit != null ? `${formatExecutiveNumber(community.occupancyPct, "%")} occupied · ${formatExecutiveNumber(community.operatingLimit)} capacity` : censusChange}
+          onClick={() => onOpenDetail("census")}
+        />
+        <SnapshotButton
+          label="Active referrals"
+          value={dashboard.admissions.status === "connected" ? formatExecutiveNumber(community?.activeReferrals) : "—"}
+          detail={dashboard.admissions.status === "connected" ? `${formatExecutiveNumber(community?.assessmentsThisWeek)} assessments · ${formatExecutiveNumber(community?.plannedMoveInsThisWeek)} move-ins this week` : "Admissions feed unavailable"}
+          onClick={() => onOpenDetail("admissions")}
+        />
+        <SnapshotButton
+          label="Incidents"
+          value={formatExecutiveNumber(dashboard.summary?.currentIncidents)}
+          detail={incidentChange}
+          onClick={() => onOpenDetail("incidents")}
+        />
+        <SnapshotButton
+          label="Med pass"
+          value={formatExecutiveNumber(dashboard.medication?.compliancePct, "%")}
+          detail={dashboard.medication ? `${formatExecutiveNumber(dashboard.medication.given)} of ${formatExecutiveNumber(dashboard.medication.scheduled)} given` : "Latest period unavailable"}
+          onClick={() => onOpenDetail("medications")}
+        />
       </section>
 
-      <section className="mt-12 grid gap-8 border-b border-[#aeb8b3] pb-12 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)] xl:gap-12" aria-labelledby="census-movement-title">
-        <div>
-          <SectionHeading eyebrow="Census" title="Resident movement" id="census-movement-title" />
-          <div className="mt-5"><CensusTrendModule points={censusPoints} height={300} emptyLabel="Census history is not available for this community." /></div>
-        </div>
-        <div className="border-t-2 border-[#111111] xl:border-l xl:border-t-0 xl:border-[#b9c1bd] xl:pl-8">
-          <div className="py-5 xl:pt-0">
-            <h3 className="text-[17px] font-semibold text-[#171b19]">How to read this</h3>
-            <p className="mt-2 text-[14px] leading-6 text-[#5b6560]">The chart shows the governed monthly census history for this community. Open the detail to inspect every available period.</p>
-            <TextLink onClick={() => onOpenDetail("census")}>Open census detail</TextLink>
+      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
+        <article className="border border-[#c7cfcb] bg-white p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-5 border-b border-[#e0e4e2] pb-3">
+            <h2 className="!font-sans text-[15px] font-semibold text-[#17201c]">12-month census</h2>
+            <DetailLink onClick={() => onOpenDetail("census")}>History</DetailLink>
           </div>
-          <dl className="border-t border-[#cbd2ce]">
-            <InlineRow label="Average age" value={dashboard.summary?.averageAge == null ? "—" : `${dashboard.summary.averageAge} years`} />
-            <InlineRow label="Average length of stay" value={dashboard.summary?.averageLengthOfStay == null ? "—" : `${formatExecutiveNumber(dashboard.summary.averageLengthOfStay)} days`} />
+          <div className="mt-3"><CensusTrendModule points={censusPoints} height={220} emptyLabel="Census history is not available for this community." /></div>
+          <dl className="mt-3 grid border-t border-[#e0e4e2] sm:grid-cols-2">
+            <CompactFact label="Average age" value={dashboard.summary?.averageAge == null ? "—" : `${formatExecutiveNumber(Math.round(dashboard.summary.averageAge * 10) / 10)} years`} />
+            <CompactFact label="Average stay" value={dashboard.summary?.averageLengthOfStay == null ? "—" : `${formatExecutiveNumber(Math.round(dashboard.summary.averageLengthOfStay))} days`} />
           </dl>
-        </div>
-      </section>
+        </article>
 
-      <section className="-mx-4 border-b border-[#b9c7c1] bg-[#edf3f0] px-4 py-10 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8" aria-labelledby="admissions-next-title">
-        <div className="mx-auto max-w-[1416px]">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <SectionHeading eyebrow="Admissions" title="What is next" id="admissions-next-title" />
-            <TextLink onClick={() => onOpenDetail("admissions")}>Open admissions detail</TextLink>
+        <article className="border border-[#c7cfcb] bg-[#f7f9f8] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-4 border-b border-[#d7ddda] pb-3">
+            <h2 className="!font-sans text-[15px] font-semibold text-[#17201c]">Admissions</h2>
+            <DetailLink onClick={() => onOpenDetail("admissions")}>All activity</DetailLink>
           </div>
           {dashboard.admissions.status === "connected" ? (
-            <div className="mt-6 grid border-y border-[#91a79d] bg-white lg:grid-cols-2">
-              <NextEvent title="Next assessment" name={firstAssessment?.clientName ?? "No remaining assessment scheduled"} date={firstAssessment?.scheduledAt ?? null} detail={firstAssessment?.status ?? "The weekly assessment schedule is clear."} />
-              <NextEvent title="Next planned move-in" name={firstMoveIn?.clientName ?? "No move-in currently scheduled"} date={firstMoveIn?.plannedAt ?? null} detail={firstMoveIn ? `${firstMoveIn.status}${firstMoveIn.readiness === "ready" ? "" : ` · ${firstMoveIn.readiness}`}` : "The weekly move-in schedule is clear."} />
-            </div>
-          ) : <UnavailableCopy label="The admissions feed is temporarily unavailable." />}
+            <>
+              <div className="grid border-b border-[#d7ddda] sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                <CompactEvent label="Next assessment" name={firstAssessment?.clientName ?? "None scheduled"} date={firstAssessment?.scheduledAt ?? null} detail={firstAssessment?.status ?? "This week"} />
+                <CompactEvent label="Next move-in" name={firstMoveIn?.clientName ?? "None scheduled"} date={firstMoveIn?.plannedAt ?? null} detail={firstMoveIn ? `${firstMoveIn.status}${firstMoveIn.readiness === "ready" ? "" : ` · ${firstMoveIn.readiness}`}` : "This week"} />
+              </div>
+              {recentCards.length ? (
+                <ol className="divide-y divide-[#d7ddda]">
+                  {recentCards.map((card) => (
+                    <li key={card.referralId}>
+                      <button type="button" onClick={() => onOpenCard(card)} className="group flex min-h-12 w-full items-center justify-between gap-4 px-1 py-2.5 text-left transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73]">
+                        <span className="min-w-0"><strong className="block truncate text-[13px] text-[#17201c]">{card.clientName}</strong><span className="block truncate text-[11px] text-[#68716d]">{card.status}</span></span>
+                        <ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              ) : <CompactEmpty>No active referral charts.</CompactEmpty>}
+            </>
+          ) : <CompactEmpty>Admissions feed unavailable.</CompactEmpty>}
+        </article>
+      </div>
 
-          {recentCards.length ? (
-            <div className="mt-7">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#527067]">Current referral work</p>
-              <ol className="grid border-t border-[#aebdb6] sm:grid-cols-2">
-                {recentCards.map((card) => (
-                  <li key={card.referralId} className="border-b border-[#aebdb6] sm:odd:border-r">
-                    <button type="button" onClick={() => onOpenCard(card)} className="group flex min-h-20 w-full items-center justify-between gap-4 bg-transparent px-1 py-4 text-left transition-colors hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:px-4">
-                      <span><strong className="block text-[15px] text-[#17201c]">{card.clientName}</strong><span className="mt-1 block text-[12px] text-[#65706a]">{card.status}</span></span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                    </button>
-                  </li>
-                ))}
-              </ol>
+      <section className="mt-5 grid gap-5 lg:grid-cols-2" aria-label="Operational detail">
+        <article className="border border-[#c7cfcb] bg-white p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-5">
+            <div>
+              <h2 className="!font-sans text-[15px] font-semibold text-[#17201c]">Incident categories</h2>
+              <p className="mt-0.5 text-[11px] text-[#68716d]">{dashboard.reportingMonth ? `${formatMonthLabel(dashboard.reportingMonth, { month: "long" })} · ` : ""}{incidentChange}</p>
             </div>
-          ) : null}
-        </div>
-      </section>
+            <DetailLink onClick={() => onOpenDetail("incidents")}>Trend</DetailLink>
+          </div>
+          {dashboard.topIncidentCategories.length ? (
+            <ol className="mt-4 grid border-t border-[#d7ddda] sm:grid-cols-2">
+              {dashboard.topIncidentCategories.slice(0, 4).map((item, index) => (
+                <li key={item.label} className={`flex items-center justify-between gap-4 border-b border-[#d7ddda] py-2.5 text-[12px] sm:px-3 ${index % 2 === 0 ? "sm:border-r sm:pl-0" : "sm:pr-0"}`}>
+                  <span className="truncate text-[#4f5954]">{item.label}</span><strong className="tabular-nums text-[#17201c]">{formatExecutiveNumber(item.count)}</strong>
+                </li>
+              ))}
+            </ol>
+          ) : <CompactEmpty>No category totals available.</CompactEmpty>}
+        </article>
 
-      <section className="grid gap-10 border-b-2 border-[#111111] py-12 lg:grid-cols-2 lg:gap-16" aria-label="Operational detail">
-        <OperationalDetail eyebrow="Incidents" title="Latest category mix" onClick={() => onOpenDetail("incidents")} empty="No incident category totals are available for the latest month." items={dashboard.topIncidentCategories.slice(0, 5).map((item) => ({ label: item.label, value: formatExecutiveNumber(item.count) }))} />
-        <OperationalDetail eyebrow="Medication administration" title="Latest administration period" onClick={() => onOpenDetail("medications")} empty="Medication administration totals are not available." items={dashboard.medication ? [{ label: "Scheduled", value: formatExecutiveNumber(dashboard.medication.scheduled) }, { label: "Given", value: formatExecutiveNumber(dashboard.medication.given) }, { label: "Not given", value: formatExecutiveNumber(dashboard.medication.notGiven) }] : []} />
+        <article className="border border-[#c7cfcb] bg-white p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-5">
+            <div>
+              <h2 className="!font-sans text-[15px] font-semibold text-[#17201c]">Medication totals</h2>
+              <p className="mt-0.5 text-[11px] text-[#68716d]">Latest governed period</p>
+            </div>
+            <DetailLink onClick={() => onOpenDetail("medications")}>Detail</DetailLink>
+          </div>
+          {dashboard.medication ? (
+            <>
+              <div className="mt-4 h-2 overflow-hidden bg-[#e2e8e5]" aria-label={`Medication compliance ${formatExecutiveNumber(dashboard.medication.compliancePct, "%")}`}>
+                <span className="block h-full bg-[#0f8b73]" style={{ width: `${Math.min(Math.max(dashboard.medication.compliancePct ?? 0, 0), 100)}%` }} />
+              </div>
+              <dl className="mt-4 grid grid-cols-3 border-t border-[#d7ddda]">
+                <CompactFact label="Scheduled" value={formatExecutiveNumber(dashboard.medication.scheduled)} />
+                <CompactFact label="Given" value={formatExecutiveNumber(dashboard.medication.given)} />
+                <CompactFact label="Not given" value={formatExecutiveNumber(dashboard.medication.notGiven)} />
+              </dl>
+            </>
+          ) : <CompactEmpty>Medication totals unavailable.</CompactEmpty>}
+        </article>
       </section>
     </div>
   );
 }
 
-function BriefingLink({ label, title, detail, onClick }: { label: string; title: string; detail: string; onClick: () => void }) {
+function SnapshotButton({ label, value, detail, onClick }: { label: string; value: string; detail: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="group grid min-h-[150px] grid-cols-[minmax(0,1fr)_auto] gap-5 border-b border-[#bfc7c3] p-5 text-left transition-colors hover:bg-[#f5f8f6] focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73] md:odd:border-r md:[&:nth-last-child(-n+2)]:border-b-0 sm:p-7">
-      <span><span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">{label}</span><strong className="mt-2 block text-[19px] leading-6 tracking-[-0.02em] text-[#151a17] sm:text-[22px] sm:leading-7">{title}</strong><span className="mt-2 block max-w-[560px] text-[13px] leading-5 text-[#5d6662]">{detail}</span></span>
-      <ArrowRight className="mt-1 h-5 w-5 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
+    <button type="button" onClick={onClick} className="group flex min-h-[96px] items-center justify-between gap-3 border-b border-[#d4dad7] px-3 py-3 text-left transition-colors odd:border-r hover:bg-[#f3f7f5] focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73] [&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:px-5 xl:last:border-r-0">
+      <span className="min-w-0">
+        <span className="block text-[11px] font-semibold text-[#4f5a55]">{label}</span>
+        <strong className="mt-0.5 block text-[26px] leading-none tabular-nums tracking-[-0.045em] text-[#173f36] sm:text-[30px]">{value}</strong>
+        <span className="mt-1.5 block min-h-8 text-[10px] leading-4 text-[#68716d] sm:text-[11px]">{detail}</span>
+      </span>
+      <ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
     </button>
   );
 }
 
-function SectionHeading({ eyebrow, title, id }: { eyebrow: string; title: string; id?: string }) {
-  return <div><p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#0f8b73]">{eyebrow}</p><h2 id={id} className="mt-1 text-[27px] font-semibold tracking-[-0.04em] text-[#171b19] sm:text-[32px]">{title}</h2></div>;
+function DetailLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return <button type="button" onClick={onClick} className="inline-flex min-h-8 shrink-0 items-center gap-1.5 text-[11px] font-semibold text-[#08745d] transition-colors hover:text-[#054b3c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]">{children}<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>;
 }
 
-function TextLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="mt-4 inline-flex min-h-11 items-center gap-2 text-[13px] font-semibold text-[#08745d] underline decoration-[#8fb9aa] underline-offset-4 transition-colors hover:text-[#054b3c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]">{children}<ArrowRight className="h-4 w-4" aria-hidden="true" /></button>;
+function CompactFact({ label, value }: { label: string; value: string }) {
+  return <div className="border-b border-[#e0e4e2] px-2 py-2.5 first:pl-0 last:pr-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><dt className="text-[10px] text-[#68716d]">{label}</dt><dd className="mt-0.5 text-[13px] font-semibold tabular-nums text-[#17201c]">{value}</dd></div>;
 }
 
-function InlineRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex items-center justify-between gap-4 border-b border-[#d8ddda] py-3 text-[13px]"><dt className="text-[#5e6863]">{label}</dt><dd className="font-semibold tabular-nums text-[#18201c]">{value}</dd></div>;
+function CompactEvent({ label, name, date, detail }: { label: string; name: string; date: string | null; detail: string }) {
+  return <div className="min-w-0 border-b border-[#d7ddda] px-1 py-3 sm:border-b-0 sm:border-r sm:px-3 sm:first:pl-0 sm:last:border-r-0 sm:last:pr-0 xl:border-b xl:border-r-0 xl:px-1 xl:first:pl-1 2xl:border-b-0 2xl:border-r 2xl:px-3 2xl:first:pl-0 2xl:last:border-r-0 2xl:last:pr-0"><p className="text-[10px] font-semibold uppercase tracking-[0.09em] text-[#68716d]">{label}</p><strong className="mt-1 block truncate text-[13px] text-[#17201c]">{name}</strong><p className="mt-0.5 truncate text-[11px] text-[#68716d]">{date ? `${formatExecutiveDate(date, true)} · ` : ""}{detail}</p></div>;
 }
 
-function NextEvent({ title, name, date, detail }: { title: string; name: string; date: string | null; detail: string }) {
-  return <article className="grid min-h-[138px] grid-cols-[auto_minmax(0,1fr)] gap-4 border-b border-[#c8d2cd] p-5 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0 sm:p-6"><CalendarDays className="mt-0.5 h-5 w-5 text-[#0f8b73]" aria-hidden="true" /><div><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#607169]">{title}</p><h3 className="mt-2 text-[18px] font-semibold text-[#17201c]">{name}</h3><p className="mt-1 text-[13px] text-[#5d6762]">{date ? `${formatExecutiveDate(date, true)} · ` : ""}{detail}</p></div></article>;
-}
-
-function OperationalDetail({ eyebrow, title, items, empty, onClick }: { eyebrow: string; title: string; items: Array<{ label: string; value: string }>; empty: string; onClick: () => void }) {
-  return <article><SectionHeading eyebrow={eyebrow} title={title} />{items.length ? <ol className="mt-5 border-y border-[#aeb8b3]">{items.map((item) => <li key={item.label} className="flex items-center justify-between gap-4 border-b border-[#d8ddda] py-3.5 text-[14px] last:border-b-0"><span>{item.label}</span><strong className="tabular-nums">{item.value}</strong></li>)}</ol> : <UnavailableCopy label={empty} />}<TextLink onClick={onClick}>Open full detail</TextLink></article>;
-}
-
-function UnavailableCopy({ label }: { label: string }) {
-  return <p className="mt-5 border-y border-[#cfd6d2] py-5 text-[13px] leading-5 text-[#68716d]">{label}</p>;
+function CompactEmpty({ children }: { children: React.ReactNode }) {
+  return <p className="mt-3 border-t border-[#d7ddda] py-4 text-[12px] text-[#68716d]">{children}</p>;
 }

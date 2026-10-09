@@ -29,6 +29,14 @@ document is retained privately and its SHA-256 checksum is recorded. Uploading
 does not publish the report, populate the existing Licensing library, or mark
 anything filed.
 
+The dashboard is a repeat-use operating surface, not an introductory report.
+Its header is limited to the community, reporting period, and refresh time.
+Current census, admissions, incidents, and medication performance appear first
+in one compact linked summary; the census trend, near-term admissions work, and
+operational detail follow without explanatory title stacks. Each area opens the
+larger facility-scoped detail workspace when the user needs history or record
+detail.
+
 ## Access model
 
 The browser and API use the same facility role mapping:
