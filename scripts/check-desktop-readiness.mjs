@@ -12,6 +12,7 @@ const worker = read("public/sw.js");
 const offline = read("public/offline.html");
 const recoveryPage = read("public/recover.html");
 const recoveryClient = read("public/recover-client.js");
+const platformReady = read("scripts/check-platform-ready.mjs");
 
 assert.equal(manifest.id, "/");
 assert.equal(manifest.start_url, "/home");
@@ -91,6 +92,11 @@ assert.match(recoveryClient, /document\.body\.innerHTML = '<div id="root"><\/div
 assert.match(recoveryClient, /await import\(releaseScriptUrl\.toString\(\)\)/);
 assert.match(recoveryClient, /window\.location\.replace/);
 assert.match(recoveryClient, /"\/executive\/dashboard"/);
+assert.equal(
+  platformReady.match(/"check:desktop"/g)?.length,
+  3,
+  "quick, release, and full platform-ready profiles must enforce desktop currency checks"
+);
 console.log("desktop readiness check passed");
 
 function readPngDimensions(file) {

@@ -315,6 +315,10 @@ Future releases remain network-current because the application has no
 controlling worker and the entry document is served with
 `no-cache, max-age=0, must-revalidate`.
 
+`check:desktop` is a required stage in quick, release, and full platform-ready
+profiles. A future build fails its release gate if application worker
+registration, fetch interception, or bundle caching is reintroduced.
+
 Desktop readiness, TypeScript, production build, and 390px/1440px Executive
 Director browser checks passed. The broader analyst suite reached its existing
 local Databricks-credential boundary after its preceding checks passed.

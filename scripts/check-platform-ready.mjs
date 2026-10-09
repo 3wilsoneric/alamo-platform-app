@@ -18,6 +18,7 @@ const BROWSER_STAGE_SETTLE_MS = Number(
 const commandProfiles = {
   quick: [
     "check:docs",
+    "check:desktop",
     "typecheck",
     "check:code-health",
     "check:platform-api",
@@ -30,6 +31,7 @@ const commandProfiles = {
   ],
   release: [
     "check:docs",
+    "check:desktop",
     "typecheck",
     "check:code-health",
     "check:dependencies",
@@ -57,6 +59,7 @@ const commandProfiles = {
   ],
   full: [
     "check:docs",
+    "check:desktop",
     "check:dependencies",
     "check:analyst",
     "check:regression-replays",
