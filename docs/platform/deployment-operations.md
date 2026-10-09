@@ -359,6 +359,34 @@ loaded that bundle, rendered four compact dashboard panels, and contained none
 of the retired Community briefing markup. No server, API, data, report, alert,
 email, or Pipeline state changed.
 
+### Executive Director dashboard color and type scale — 2026-10-09
+
+The compact facility dashboard now gives its four operating components distinct
+visual identities instead of repeating the mint treatment. Census uses navy,
+impending admissions uses ochre, incidents uses rust, and medication
+administration uses plum. Component headings, client rows, values, metadata,
+controls, and the community title use a larger type scale. At phone widths the
+header uses the head-and-tree mark so Community and Licensing remain readable
+without squeezing the page.
+
+- source commit: `d2546d7`
+- source branch: `codex/compact-executive-dashboard`
+- ACR build: `cc6d`
+- image tag: `alamo-platform:executive-color-d2546d7`
+- image digest: `sha256:4abc417b5a114d451f0821b77c8b36502247fb14087031bb158b5dda92a4a5e3`
+- active revision: `alamo-platform-prod-web--executive-color-1009`
+- rollback digest: `sha256:f8c89a033da30aa944cf63a566ad9cd4adabc5bc93bcbde6abbd58011511752b`
+- active browser assets: `/assets/index-DCQ2TIN1.js` and
+  `/assets/index-BoEmI97a.css`
+
+TypeScript, the Executive Director contract, desktop readiness, production
+build, and 390px/1440px browser checks passed. Post-promotion verification
+confirmed a Healthy/Running revision at 100 percent traffic; identity, gzip,
+and Brotli entry responses decompress to the same byte-identical HTML and
+reference the same active bundle. Signed-in Chrome rendered four differently
+colored components with 20px headings and no retired Community briefing copy.
+No server, API, data, report, alert, email, or Pipeline state changed.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
