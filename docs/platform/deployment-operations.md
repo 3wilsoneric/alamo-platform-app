@@ -226,6 +226,42 @@ retired California-carousel selector after its route probes; the direct
 Executive Director checks passed. No report, review, alert setting, email, or
 Pipeline record was created or changed during deployment verification.
 
+### Executive Director dashboard visual refinement — 2026-10-08
+
+The facility dashboard now presents census, impending admissions, incidents,
+and medication administration as four integrated operating components. The
+detached KPI shelves and internal mini-stat strips were removed, admissions is
+limited to clients moving toward admission, and every component now uses one
+restrained, darker Alamo-green surface system. The existing client management
+chart remains available from each impending-admit profile.
+
+- source commit: `f08d94b`
+- source branch: `codex/compact-executive-dashboard`
+- ACR build: `cc67`
+- image tag: `alamo-platform:executive-dashboard-f08d94b`
+- image digest: `sha256:36b2af9cacc6c1ec8fcc5fc47a380845a01ef42d049d8a03fea3280e8d19bb42`
+- active revision: `alamo-platform-prod-web--executive-dash-1008`
+- rollback digest: `sha256:e6c69f28b8a983fad59c43d1ab555600b74cc4c1148a2364ffe57501e90d1418`
+- active browser assets: `/assets/index-D8gNi9yF.js` and
+  `/assets/index-BJ2YsHCL.css`
+
+This is a frontend-only overlay on the exact preceding production digest; the
+server, API, data adapters, Licensing persistence, scheduled monitor, alert
+settings, and email settings are unchanged. Focused TypeScript, Executive
+Director contract, production build, documentation, unused-code, duplication,
+and 390px/1440px browser checks passed. The broad legacy predeploy gate stopped
+at its documented local Databricks-credential boundary after its preceding
+checks passed.
+
+Post-promotion verification confirmed one Healthy/Running replica at 100
+percent traffic, 4/4 public route probes, byte-identical HTML/JavaScript/CSS on
+the root, `/admissions`, and `/chat`, and `401` plus `private, no-store` on all
+four anonymous Executive Director API probes. The browser correctly redirected
+an unauthenticated `/executive/dashboard` request to Microsoft sign-in; no
+saved production session was available for a signed-in visual pass. No report,
+review, alert setting, email, or Pipeline record was created or changed during
+deployment verification.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
