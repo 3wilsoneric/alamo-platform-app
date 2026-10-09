@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 
-const SERVICE_WORKER_PATH = "/sw.js";
-const SERVICE_WORKER_SCOPE = "/";
 const RELEASE_CHECK_INTERVAL_MS = 60_000;
+const LEGACY_CACHE_PREFIX = "alamo-static-";
 
 function getBundlePath(documentValue: Document) {
   const script = documentValue.querySelector<HTMLScriptElement>(
@@ -39,7 +38,6 @@ export function DesktopRuntime() {
   useEffect(() => {
     if (!window.isSecureContext && window.location.hostname !== "localhost") return;
 
-    const supportsServiceWorker = "serviceWorker" in navigator;
     let cancelled = false;
     let releaseCheckInFlight = false;
     let reloadRequested = false;
@@ -74,26 +72,25 @@ export function DesktopRuntime() {
       if (document.visibilityState === "visible") void checkForCurrentRelease();
     };
 
-    const register = async () => {
-      if (!supportsServiceWorker) {
-        await checkForCurrentRelease();
-        return;
-      }
-
+    const retireLegacyDesktopCache = async () => {
       try {
-        const registration = await navigator.serviceWorker.register(SERVICE_WORKER_PATH, {
-          scope: SERVICE_WORKER_SCOPE,
-          updateViaCache: "none"
-        });
-        if (cancelled) return;
-
-        const ready = await navigator.serviceWorker.ready;
-        ready.active?.postMessage({ type: "ALAMO_PRUNE_DESKTOP_CACHES" });
-        await registration.update();
-        await checkForCurrentRelease();
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+        }
+        if ("caches" in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames
+              .filter((name) => name.startsWith(LEGACY_CACHE_PREFIX))
+              .map((name) => caches.delete(name))
+          );
+        }
       } catch {
-        // Desktop installation support must never block the web application.
+        // Legacy install cleanup must never block the web application.
       }
+
+      await checkForCurrentRelease();
     };
 
     const releaseCheckInterval = window.setInterval(
@@ -103,11 +100,7 @@ export function DesktopRuntime() {
     document.addEventListener("visibilitychange", checkVisibleRelease);
     window.addEventListener("focus", checkVisibleRelease);
     window.addEventListener("online", checkVisibleRelease);
-    if (supportsServiceWorker) {
-      navigator.serviceWorker.addEventListener("controllerchange", requestReload);
-    }
-
-    void register();
+    void retireLegacyDesktopCache();
     return () => {
       cancelled = true;
       controller.abort();
@@ -115,9 +108,6 @@ export function DesktopRuntime() {
       document.removeEventListener("visibilitychange", checkVisibleRelease);
       window.removeEventListener("focus", checkVisibleRelease);
       window.removeEventListener("online", checkVisibleRelease);
-      if (supportsServiceWorker) {
-        navigator.serviceWorker.removeEventListener("controllerchange", requestReload);
-      }
     };
   }, []);
 
