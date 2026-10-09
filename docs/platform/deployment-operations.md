@@ -262,6 +262,31 @@ saved production session was available for a signed-in visual pass. No report,
 review, alert setting, email, or Pipeline record was created or changed during
 deployment verification.
 
+### Executive Director stale-client activation follow-up — 2026-10-08
+
+An already-open Executive Director window remained on the superseded
+title-heavy dashboard after the visual-refinement release. The published HTML,
+JavaScript, and CSS were current, but the unchanged service worker did not emit
+a controller change for that long-lived window. Cache generation `v8` now
+activates over `v7`, prunes the older static cache, claims open windows, and
+navigates them to their current URL so the compact dashboard is adopted.
+
+- source commit: `3c2c029`
+- source branch: `codex/compact-executive-dashboard`
+- ACR build: `cc68`
+- image tag: `alamo-platform:executive-dashboard-refresh-3c2c029`
+- image digest: `sha256:51202c7e7c12b55e5766243fdcfbe7c80f46e2e449676ed7ae6ed3795d5670ac`
+- active revision: `alamo-platform-prod-web--executive-refresh-1008`
+- rollback digest: `sha256:36b2af9cacc6c1ec8fcc5fc47a380845a01ef42d049d8a03fea3280e8d19bb42`
+- active browser assets: `/assets/index-D8gNi9yF.js` and
+  `/assets/index-BJ2YsHCL.css`
+
+Desktop readiness, TypeScript, Executive Director contract, production build,
+and 390px/1440px browser checks passed. Post-promotion verification confirmed
+one Healthy/Running replica at 100 percent traffic, 4/4 public probes, current
+byte-identical browser assets, and `/sw.js` serving cache generation `v8`. No
+server, API, data, report, alert, email, or Pipeline state changed.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
