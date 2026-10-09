@@ -39,10 +39,12 @@ bundle locally, pass the exact current production image digest as `BASE_IMAGE`,
 and replace only `/app/dist`. This preserves the already-proven Azure server,
 API, environment, and data adapters while shipping the reviewed React bundle.
 The production build stages the same current entry document at the root,
-`/admissions`, and `/chat`; this prevents physical route indexes retained from
-an older overlay from serving a stale browser bundle on a direct deep link.
-Record the preceding image digest before promotion so rollback remains an Azure
-Container App image update.
+`/admissions`, and `/chat`, then regenerates gzip and Brotli siblings for every
+served HTML, JavaScript, CSS, JSON, and SVG file. This prevents physical route
+indexes or compressed representations retained from an older overlay from
+serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
+entry responses before promotion. Record the preceding image digest so
+rollback remains an Azure Container App image update.
 
 Repeated frontend overlays eventually approach the registry's image-depth
 ceiling. When that happens, use `Dockerfile.frontend-rebase` once with the exact

@@ -6,7 +6,8 @@ FROM ${BASE_IMAGE}
 # Keep this to one filesystem layer. Repeated frontend-only releases inherit
 # every preceding image layer, and extra RUN/USER/WORKDIR steps eventually hit
 # the registry's maximum image depth. Fingerprinted Vite assets can safely
-# coexist with older unreferenced files. The production build stages current
-# index documents for the root, /admissions, and /chat so this single copy also
-# replaces nested route entries left by an earlier release.
+# coexist with older unreferenced files. `npm run build` must stage current
+# root, /admissions, and /chat entry documents and regenerate their gzip and
+# Brotli siblings so compressed browser requests can never inherit an older
+# shell from the base image.
 COPY --chown=node:node dist /app/dist

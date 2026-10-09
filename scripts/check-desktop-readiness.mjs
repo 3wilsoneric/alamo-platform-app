@@ -13,6 +13,8 @@ const offline = read("public/offline.html");
 const recoveryPage = read("public/recover.html");
 const recoveryClient = read("public/recover-client.js");
 const platformReady = read("scripts/check-platform-ready.mjs");
+const packageJson = JSON.parse(read("package.json"));
+const compressionBuild = read("scripts/compress-browser-dist.mjs");
 
 assert.equal(manifest.id, "/");
 assert.equal(manifest.start_url, "/home");
@@ -92,6 +94,10 @@ assert.match(recoveryClient, /document\.body\.innerHTML = '<div id="root"><\/div
 assert.match(recoveryClient, /await import\(releaseScriptUrl\.toString\(\)\)/);
 assert.match(recoveryClient, /window\.location\.replace/);
 assert.match(recoveryClient, /"\/executive\/dashboard"/);
+assert.match(packageJson.scripts.build, /scripts\/compress-browser-dist\.mjs/);
+assert.match(compressionBuild, /gzipSync\(bytes\)/);
+assert.match(compressionBuild, /brotliCompressSync\(bytes\)/);
+assert.match(compressionBuild, /\.\(\?:html\|js\|css\|json\|svg\)\$/);
 assert.equal(
   platformReady.match(/"check:desktop"/g)?.length,
   3,
