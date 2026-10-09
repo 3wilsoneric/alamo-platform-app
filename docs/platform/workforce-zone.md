@@ -3,7 +3,7 @@
 - purpose: define the Alamo `/workforce` overview and its boundary with the separate Alamo Workforce application
 - status: current implementation and deployment contract
 - owners: product, engineering, HR operations
-- updated: 2026-09-29
+- updated: 2026-10-07
 - tags: workforce, hr, hiring, recruiting, integration
 - labels: application-boundary, current-state, deployment
 
@@ -14,13 +14,21 @@ spreadsheet or Paylocity data that feeds them.
 
 ## Alamo Workforce overview
 
-`/workforce` is owner-only until Workforce is connected to live HR data: the
-navigation item is hidden from other accounts, the page redirects them home,
-and `/api/platform/workforce-dashboard` answers 404 through
-`assertPlatformKnowledgeOwner`, the same gate as the other owner workspaces.
-To open it to leadership, remove `ownerOnly` from the navigation entry, the
-page redirect, and the API assertion together. It follows the Admissions board pattern: every element says what
-to do next and links to the place to do it.
+`/workforce` has two audiences.
+
+**Every signed-in Platform user** sees **Hiring by role**, read from
+`/api/platform/workforce-roles`: for each role, how many roles are open and
+what they are (title, community, openings), and how many applicants are in
+Phase 1, 2, and 3. That endpoint carries nothing else: no staffing levels,
+credential health, or links into the Workforce app. While the Workforce
+producer reports `placeholderData` (anything other than an explicit `false`),
+the page labels its contents as sample data.
+
+**The platform owner** also sees the Briefing and Hiring board, which include
+staffing and credential gaps. Their API, `/api/platform/workforce-dashboard`,
+answers 404 to other accounts through `assertPlatformKnowledgeOwner`. They
+follow the Admissions board pattern: every element says what to do next and
+links to the place to do it.
 
 - two surfaces, like Admissions: **Briefing** (`/workforce?view=briefing`) and
   **Hiring board** (default)
@@ -68,8 +76,11 @@ server, never from the browser and never through Workforce's user APIs.
 - validation: `server/workforce-summary.mjs` checks every field (integer
   counts, phases summing to applicants, ISO dates, bounded row counts) and
   rejects the whole summary on any violation. Unknown fields are dropped.
-- caching: five minutes on success, one minute after a failure. The route
-  never throws; failures render as "temporarily unavailable".
+- caching: five minutes on success. After a failed refresh the last good
+  summary keeps being served and the next attempt comes 15 seconds later,
+  because the Workforce app scales to zero and can take longer than the
+  5-second request timeout to wake. The by-role page retries a few times
+  before showing "temporarily unavailable". The routes never throw.
 
 ## Verification
 

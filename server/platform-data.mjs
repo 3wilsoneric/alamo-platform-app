@@ -3,7 +3,7 @@ import { buildDataExplorerPayload, normalizeExplorerKind } from "./data-explorer
 import { buildAdmissionsDashboard } from "./admissions-dashboard.mjs";
 import { buildHomeDashboard } from "./home-dashboard.mjs";
 import { getPipelineAdmissionsSummary } from "./pipeline-admissions-summary.mjs";
-import { getWorkforceSummary } from "./workforce-summary.mjs";
+import { buildWorkforceRoleOverview, getWorkforceSummary } from "./workforce-summary.mjs";
 import { getAnalystQaStatus, getQaArtifactStatuses } from "./qa-artifacts.mjs";
 import {
   getAzureSnapshotStorageSummary,
@@ -68,6 +68,14 @@ export async function getWorkforceDashboardData() {
   return {
     generated_at: new Date().toISOString(),
     workforce: await getWorkforceSummary()
+  };
+}
+
+// Hiring by role for every signed-in Platform user; see buildWorkforceRoleOverview.
+export async function getWorkforceRolesData() {
+  return {
+    generated_at: new Date().toISOString(),
+    workforce: buildWorkforceRoleOverview(await getWorkforceSummary())
   };
 }
 

@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { getWorkforceSummary, normalizeWorkforceSummary } from "../server/workforce-summary.mjs";
+import { buildWorkforceRoleOverview, getWorkforceSummary, normalizeWorkforceSummary } from "../server/workforce-summary.mjs";
 import { assertPlatformKnowledgeOwner } from "../server/platform-knowledge-access.mjs";
 
 const totals = (overrides = {}) => ({
@@ -68,6 +68,34 @@ delete process.env.WORKFORCE_SUMMARY_URL;
 delete process.env.WORKFORCE_SUMMARY_TOKEN;
 assert.deepEqual(await getWorkforceSummary(), { status: "not_connected" });
 
+// Placeholder labelling fails safe: only an explicit false from the producer removes it.
+assert.equal(summary.placeholderData, true, "a producer that does not declare its data is treated as sample data");
+assert.equal(normalizeWorkforceSummary({ ...payload(), placeholderData: true }).placeholderData, true);
+assert.equal(normalizeWorkforceSummary({ ...payload(), placeholderData: "no" }).placeholderData, true);
+assert.equal(normalizeWorkforceSummary({ ...payload(), placeholderData: false }).placeholderData, false);
+
+// The by-role view every Platform user sees: roles, open-role titles, and applicants by phase only.
+const quietRole = payload();
+quietRole.overview.roles.push({ discipline: "registered_nurse", label: "Registered nurse", totals: totals({ openRoles: 0, applicants: 0, phase1: 0, phase2: 0, phase3: 0 }) });
+const roleView = buildWorkforceRoleOverview(normalizeWorkforceSummary(quietRole, "https://workforce.example"));
+assert.deepEqual(roleView, {
+  status: "connected",
+  placeholderData: true,
+  asOf: "2026-09-29",
+  phaseNames: ["Screening", "Interview", "Offer and clearance"],
+  roles: [{
+    discipline: "psychiatric_technician", label: "Psych tech", openRoles: 14, applicants: 10, phase1: 5, phase2: 3, phase3: 2,
+    positions: [{ title: "Psych Tech - Nights", community: "San Pablo", openings: 3, phase1: 1, phase2: 1, phase3: 1 }]
+  }],
+  rolesWithoutHiring: ["Registered nurse"]
+});
+const roleViewJson = JSON.stringify(roleView);
+for (const withheld of ["staffBlockedFromScheduling", "complianceRate", "expired", "onLeave", "upcomingExpirations", "workforce.example", "url"]) {
+  assert.equal(roleViewJson.includes(withheld), false, `by-role view must not carry ${withheld}`);
+}
+assert.deepEqual(buildWorkforceRoleOverview({ status: "not_connected" }), { status: "not_connected" });
+assert.deepEqual(buildWorkforceRoleOverview({ status: "unavailable" }), { status: "unavailable" });
+
 // The owner gate hides the dashboard (404) from every other signed-in account.
 const signedIn = (oid) => ({ authenticated: true, mode: "entra-delegated", claims: { oid } });
 assert.doesNotThrow(() => assertPlatformKnowledgeOwner(signedIn("f73371d5-d2b4-48b4-a32b-1edc7c88869f"), { ownerObjectId: "", ownerEmail: "" }));
@@ -77,23 +105,29 @@ assert.throws(
 );
 
 const root = path.resolve(import.meta.dirname, "..");
-const [app, navigation, platformApi, devApi, pageSource, briefingSource, staffingSource] = await Promise.all([
+const [app, navigation, platformApi, devApi, pageSource, briefingSource, staffingSource, rolesSource] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
   readFile(path.join(root, "src/features/california/components/PlatformPageNavigation.tsx"), "utf8"),
   readFile(path.join(root, "api/platform.js"), "utf8"),
   readFile(path.join(root, "server/dev-api.mjs"), "utf8"),
   readFile(path.join(root, "src/features/workforce/pages/WorkforcePage.tsx"), "utf8"),
   readFile(path.join(root, "src/features/workforce/components/WorkforceBriefing.tsx"), "utf8"),
-  readFile(path.join(root, "src/features/workforce/components/StaffingMap.tsx"), "utf8")
+  readFile(path.join(root, "src/features/workforce/components/StaffingMap.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/workforce/components/WorkforceRoles.tsx"), "utf8")
 ]);
-const page = [pageSource, briefingSource, staffingSource].join("\n");
+const page = [pageSource, briefingSource, staffingSource, rolesSource].join("\n");
 assert.match(app, /path="\/workforce"/);
-// Owner-only until Workforce is connected to live HR data: nav, page, and both API hosts.
-assert.match(navigation, /id: "workforce", label: "Workforce", href: "\/workforce", ownerOnly: true/);
+// Hiring by role is open to signed-in Platform users; the dashboard behind the briefing and
+// hiring board stays owner-only on both API hosts.
+assert.match(navigation, /id: "workforce", label: "Workforce", href: "\/workforce" \}/);
+assert.match(platformApi, /"\/api\/platform\/workforce-roles": \(\) => getWorkforceRolesData\(\)/);
+assert.match(devApi, /"\/api\/platform\/workforce-roles"\) \{\s+sendJson\(res, 200, await getWorkforceRolesData\(\)\);/);
 assert.match(platformApi, /"\/api\/platform\/workforce-dashboard": \(\{ authContext \}\) => \{\s+assertPlatformKnowledgeOwner\(authContext\);\s+return getWorkforceDashboardData\(\);/);
 assert.match(devApi, /"\/api\/platform\/workforce-dashboard"\) \{\s+assertPlatformKnowledgeOwner\(authContext\);/);
-assert.match(pageSource, /if \(!isOwner && !isE2EAuthBypassEnabled\) return <Navigate to="\/home" replace \/>/);
-for (const surface of ["Briefing", "Expiring in 30 days", "Offers and clearance", "No candidates yet", "Needs candidates", "Interviewing", "Ready to hire", "Staffing by community", "Filter by community", "Filter by role"]) {
+assert.match(pageSource, /if \(isOwner \|\| isE2EAuthBypassEnabled\) return <WorkforceOverview \/>;/);
+assert.doesNotMatch(rolesSource, /fetchWorkforceDashboard|workforce-dashboard/, "the by-role view must not read the owner-only dashboard");
+assert.match(rolesSource, /workforce\.placeholderData \? \(/, "sample data is labelled");
+for (const surface of ["Hiring by role", "Applicants by phase", "Open roles", "Sample data.", "Briefing", "Expiring in 30 days", "Offers and clearance", "No candidates yet", "Needs candidates", "Interviewing", "Ready to hire", "Staffing by community", "Filter by community", "Filter by role"]) {
   assert.ok(page.includes(surface), `Workforce page shows ${surface}`);
 }
 

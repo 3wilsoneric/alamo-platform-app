@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
@@ -16,6 +16,7 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 import { StaffingMap } from "../components/StaffingMap";
 import WorkforceBriefing from "../components/WorkforceBriefing";
+import WorkforceRoles from "../components/WorkforceRoles";
 
 type ConnectedWorkforce = Extract<WorkforceSummary, { status: "connected" }>;
 type ColumnKey = "sourcing" | "interviewing" | "hiring";
@@ -37,11 +38,30 @@ const COLUMN_STYLE: Record<ColumnKey, { surface: string; border: string; accent:
 const PHASE_PIP = ["#b9dccf", "#4f9f86", "#1d5e4b"] as const;
 const STALE_DAYS = 14;
 
-// Owner-only until Workforce is connected to live HR data; the API enforces the same rule.
+// Every signed-in Platform user sees hiring by role. The briefing and hiring board, which also
+// show staffing and credential gaps, stay owner-only; their API enforces the same rule.
 export default function WorkforcePage() {
   const isOwner = usePlatformOwnerAccess();
-  if (!isOwner && !isE2EAuthBypassEnabled) return <Navigate to="/home" replace />;
-  return <WorkforceOverview />;
+  if (isOwner || isE2EAuthBypassEnabled) return <WorkforceOverview />;
+  return (
+    <WorkforceFrame>
+      <WorkforceRoles />
+    </WorkforceFrame>
+  );
+}
+
+function WorkforceFrame({ children }: { children: ReactNode }) {
+  return (
+    <div
+      data-workforce-overview="true"
+      className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-white px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
+    >
+      <div className="mx-auto w-full max-w-[1540px] pt-4 sm:pt-6">
+        <h1 className="sr-only">Workforce</h1>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function WorkforceOverview() {
@@ -66,12 +86,7 @@ function WorkforceOverview() {
   const connected = workforce?.status === "connected" ? workforce : null;
 
   return (
-    <div
-      data-workforce-overview="true"
-      className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-white px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
-    >
-      <div className="mx-auto w-full max-w-[1540px] pt-4 sm:pt-6">
-        <h1 className="sr-only">Workforce</h1>
+    <WorkforceFrame>
         {connected ? (
           <WorkforceSurfaces workforce={connected} />
         ) : loading ? (
@@ -90,22 +105,24 @@ function WorkforceOverview() {
             </p>
           </div>
         )}
-      </div>
-    </div>
+    </WorkforceFrame>
   );
 }
 
-type Surface = "board" | "briefing";
+type Surface = "board" | "briefing" | "roles";
+
+const SURFACE_LABELS: Record<Surface, string> = { briefing: "Briefing", board: "Hiring board", roles: "By role" };
 
 /** Same two-surface layout as Admissions: a briefing and the working board, addressable by ?view=. */
 function WorkforceSurfaces({ workforce }: { workforce: ConnectedWorkforce }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const surface: Surface = searchParams.get("view") === "briefing" ? "briefing" : "board";
+  const view = searchParams.get("view");
+  const surface: Surface = view === "briefing" || view === "roles" ? view : "board";
 
   function show(next: Surface) {
     const params = new URLSearchParams(searchParams);
-    if (next === "briefing") params.set("view", "briefing");
-    else params.delete("view");
+    if (next === "board") params.delete("view");
+    else params.set("view", next);
     setSearchParams(params, { replace: false });
   }
 
@@ -113,7 +130,7 @@ function WorkforceSurfaces({ workforce }: { workforce: ConnectedWorkforce }) {
     <>
       <nav aria-label="Workforce pages" className="mb-5 border-b border-[#d9dfdb]">
         <div role="tablist" className="flex items-end gap-7">
-          {(["briefing", "board"] as const).map((item) => (
+          {(["briefing", "board", "roles"] as const).map((item) => (
             <button
               key={item}
               type="button"
@@ -122,13 +139,15 @@ function WorkforceSurfaces({ workforce }: { workforce: ConnectedWorkforce }) {
               onClick={() => show(item)}
               className={`-mb-px min-h-11 border-b-2 px-0.5 text-[13px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${surface === item ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
             >
-              {item === "briefing" ? "Briefing" : "Hiring board"}
+              {SURFACE_LABELS[item]}
             </button>
           ))}
         </div>
       </nav>
-      <div role="tabpanel" aria-label={surface === "briefing" ? "Workforce briefing" : "Hiring board"}>
-        {surface === "briefing" ? <WorkforceBriefing workforce={workforce} /> : <WorkforceBoard workforce={workforce} />}
+      <div role="tabpanel" aria-label={SURFACE_LABELS[surface]}>
+        {surface === "briefing" ? <WorkforceBriefing workforce={workforce} />
+          : surface === "roles" ? <WorkforceRoles />
+            : <WorkforceBoard workforce={workforce} />}
       </div>
     </>
   );
