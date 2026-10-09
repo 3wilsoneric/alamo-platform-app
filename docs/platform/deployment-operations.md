@@ -330,6 +330,35 @@ document, the credential-free recovery bootstrap, the fetch-free retirement
 worker, and the anonymous Executive Director API still failing closed with
 `401`.
 
+### Compressed browser shell correction — 2026-10-09
+
+The compact Executive Director dashboard is now served from the same release
+for identity, gzip, and Brotli requests. The preceding frontend overlay copied
+the current uncompressed entry document over a production base image but did
+not replace the base image's older `index.html.gz` and `index.html.br`
+siblings. Chrome requested Brotli and therefore received the older dashboard,
+while the identity-only command-line smoke probe saw the current dashboard.
+
+- source commit: `728aaa7`
+- source branch: `codex/compact-executive-dashboard`
+- ACR build: `cc6c`
+- image tag: `alamo-platform:compressed-shell-728aaa7`
+- image digest: `sha256:f8c89a033da30aa944cf63a566ad9cd4adabc5bc93bcbde6abbd58011511752b`
+- active revision: `alamo-platform-prod-web--compressed-shell-1009`
+- rollback digest: `sha256:2be22aec101a59b014a1b5136f660e1f31707768db9c03cc114784ac8b372d5f`
+- active browser assets: `/assets/index-DgyuGtSb.js` and
+  `/assets/index-BJ2YsHCL.css`
+
+`npm run build` now regenerates gzip and Brotli siblings after staging every
+SPA entry document. Desktop readiness enforces that build step so it cannot be
+removed from quick, release, or full release gates without failing the check.
+Post-promotion verification confirmed a Healthy/Running revision at 100
+percent traffic; identity, gzip, and Brotli entry responses decompress to the
+same byte-identical HTML and reference the same active bundle. Signed-in Chrome
+loaded that bundle, rendered four compact dashboard panels, and contained none
+of the retired Community briefing markup. No server, API, data, report, alert,
+email, or Pipeline state changed.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
