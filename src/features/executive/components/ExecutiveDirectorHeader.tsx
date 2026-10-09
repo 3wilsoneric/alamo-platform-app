@@ -10,10 +10,10 @@ export function ExecutiveDirectorHeader() {
         className="mx-auto flex h-[var(--platform-header-bar-height)] max-w-[1480px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
       >
         <Link to="/executive/dashboard" aria-label="Community dashboard home" className="flex min-h-11 min-w-0 items-center">
-          <span className="hidden h-9 w-9 place-items-center max-[359px]:grid">
+          <span className="hidden h-9 w-9 place-items-center max-[639px]:grid">
             <img src="/brand/alamo-head-tree-mark.png" alt="" aria-hidden="true" className="max-h-9 max-w-9 object-contain" />
           </span>
-          <span className="max-[359px]:hidden"><PlatformWordmark compact /></span>
+          <span className="max-[639px]:hidden"><PlatformWordmark compact /></span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-center rounded-xl border border-[#d9dfdc] bg-[#f8faf9] p-1">

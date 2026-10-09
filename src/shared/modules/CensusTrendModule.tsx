@@ -11,13 +11,15 @@ interface CensusTrendModuleProps {
   variant?: "light" | "dark";
   height?: number;
   emptyLabel?: string;
+  accentColor?: string;
 }
 
 export function CensusTrendModule({
   points,
   variant = "light",
   height = 300,
-  emptyLabel = "Census trend data is not available for this selection."
+  emptyLabel = "Census trend data is not available for this selection.",
+  accentColor = "#0f8b73"
 }: CensusTrendModuleProps) {
   const dark = variant === "dark";
   const [activePoint, setActivePoint] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export function CensusTrendModule({
           <div className={`text-right text-[13px] leading-5 ${dark ? "text-white/66" : "text-[#595959]"}`}>
             <div>{latest.name}</div>
             {delta !== null ? (
-              <div className={delta > 0 ? "text-[#0f8b73]" : delta < 0 ? "text-[#bd5c54]" : ""}>
+              <div className={delta < 0 ? "text-[#bd5c54]" : ""} style={delta > 0 ? { color: accentColor } : undefined}>
                 {delta > 0 ? "+" : ""}
                 {delta.toLocaleString()} vs {prior?.name}
               </div>
@@ -125,7 +127,7 @@ export function CensusTrendModule({
                   <polyline
                     points={linePoints}
                     fill="none"
-                    stroke={dark ? "#6dd9a2" : "#0f8b73"}
+                    stroke={dark ? "#6dd9a2" : accentColor}
                     strokeWidth="3"
                     strokeLinejoin="round"
                     strokeLinecap="round"
@@ -152,9 +154,9 @@ export function CensusTrendModule({
                     onFocus={() => setActivePoint(pointKey)}
                     onBlur={() => setActivePoint(null)}
                     className={`absolute z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-sm outline-none transition-transform hover:scale-125 focus-visible:scale-125 ${
-                      dark ? "border-[#6dd9a2] bg-[#151b27]" : "border-[#0f8b73] bg-white"
+                      dark ? "border-[#6dd9a2] bg-[#151b27]" : "bg-white"
                     }`}
-                    style={{ left: `${point.x}%`, top: `${point.y}%` }}
+                    style={{ left: `${point.x}%`, top: `${point.y}%`, borderColor: dark ? undefined : accentColor }}
                   >
                     <span
                       data-chart-point-tooltip="census"

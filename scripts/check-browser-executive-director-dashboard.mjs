@@ -162,6 +162,21 @@ await withBrowserQa(async (browser) => {
   if (await summary.locator("[data-executive-dashboard-panel]").count() !== 4) {
     throw new Error("The dashboard must keep four integrated operating components without a separate stat strip.");
   }
+  const panelVisuals = await summary.locator("[data-executive-dashboard-panel]").evaluateAll((panels) => panels.map((panel) => {
+    const style = window.getComputedStyle(panel);
+    const heading = panel.querySelector("h2");
+    return {
+      backgroundColor: style.backgroundColor,
+      borderTopColor: style.borderTopColor,
+      headingSize: heading ? Number.parseFloat(window.getComputedStyle(heading).fontSize) : 0
+    };
+  }));
+  if (new Set(panelVisuals.map((panel) => panel.backgroundColor)).size !== 4 || new Set(panelVisuals.map((panel) => panel.borderTopColor)).size !== 4) {
+    throw new Error(`The four operating components must remain visually distinct: ${JSON.stringify(panelVisuals)}`);
+  }
+  if (panelVisuals.some((panel) => panel.headingSize < 18)) {
+    throw new Error(`Dashboard component headings are too small: ${JSON.stringify(panelVisuals)}`);
+  }
   if (await summary.locator("[data-executive-dashboard-tone]").count()) {
     throw new Error("The removed multi-color KPI strip must not return.");
   }
