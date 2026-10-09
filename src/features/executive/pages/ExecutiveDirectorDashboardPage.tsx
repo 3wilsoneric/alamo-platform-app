@@ -1,227 +1,284 @@
 import { useMsal } from "@azure/msal-react";
-import { ArrowRight, CalendarCheck2, ClipboardList, Pill, UsersRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, Bell, ClipboardList, Pill, UsersRound } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { getAccountExecutiveDirectorAccess } from "../../../shared/auth/executiveDirectorAccess";
-import { CensusTrendModule } from "../../../shared/modules/CensusTrendModule";
 import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot";
 import { ProgressModal } from "../../admissions/components/PipelineBoard";
-import { ExecutiveCommunityDetailModal, type ExecutiveCommunityDetailView } from "../components/ExecutiveCommunityDetailModal";
+import { ExecutiveCommunityDetailModal, ExecutiveCommunityWorkspace, type ExecutiveCommunityDetailView } from "../components/ExecutiveCommunityDetailModal";
 import { ExecutiveReferralStatusPill } from "../components/ExecutiveReferralStatusPill";
+import { ExecutiveTrendChart } from "../components/ExecutiveTrendChart";
+import { ExecutiveIncidentRegister } from "../components/ExecutiveIncidentRegister";
 import { formatImpendingAdmissionDate, impendingAdmissionCards } from "../components/executiveAdmissions";
 import { formatExecutiveDate, formatExecutiveNumber } from "../components/executiveDashboardFormatters";
-import {
-  fetchExecutiveDirectorCommunityDashboard,
-  type ExecutiveDirectorCommunityDashboardResponse
-} from "../data/executiveDirectorApi";
+import { executiveIncidentCategoryPeriod } from "../components/executiveIncidentCategories";
+import { fetchExecutiveDirectorCommunityDashboard, type ExecutiveDirectorCommunityDashboardResponse } from "../data/executiveDirectorApi";
+import "../executiveCommunity.css";
 
 const DEFAULT_PREVIEW_FACILITY_ID = "337";
+const ADMISSIONS_STALE_MESSAGE = "Updates unavailable. Showing the last connected Pipeline data.";
 
 export default function ExecutiveDirectorDashboardPage() {
   const { accounts, instance } = useMsal();
   const account = instance.getActiveAccount() ?? accounts[0];
   const access = getAccountExecutiveDirectorAccess(account, isE2EAuthBypassEnabled);
   const facilityId = access.primaryFacilityId ?? DEFAULT_PREVIEW_FACILITY_ID;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const view = requestedView === "mars" || requestedView === "incidents" ? requestedView : "overview";
   const [response, setResponse] = useState<ExecutiveDirectorCommunityDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [detailView, setDetailView] = useState<ExecutiveCommunityDetailView | null>(null);
-  const [selectedCard, setSelectedCard] = useState<AdmissionsBoardCard | null>(null);
+  const [admissionsStale, setAdmissionsStale] = useState(false);
+  const [detailView, setDetailView] = useState<"census" | "admissions" | null>(null);
+  const [admissionId, setAdmissionId] = useState<number | null>(null);
+  const [managementId, setManagementId] = useState<number | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const communityRef = useRef<HTMLElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationPopoverRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    communityRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
+  }, [view]);
 
   useEffect(() => {
     const controller = new AbortController();
+    let inFlight = false;
+    setResponse(null);
+    setLoading(true);
     setError(null);
-    fetchExecutiveDirectorCommunityDashboard(facilityId, controller.signal)
-      .then(setResponse)
-      .catch((reason) => {
+    setAdmissionsStale(false);
+    setNotificationsOpen(false);
+    setDetailView(null);
+    setManagementId(null);
+    setAdmissionId(null);
+    async function refresh() {
+      if (inFlight || controller.signal.aborted) return;
+      inFlight = true;
+      try {
+        const fresh = await fetchExecutiveDirectorCommunityDashboard(facilityId, controller.signal);
+        if (controller.signal.aborted) return;
+        setAdmissionsStale(fresh.dashboard.admissions.status !== "connected");
+        setResponse((previous) => {
+          // A failed feed refresh must not dismiss a pending client's notification.
+          if (fresh.dashboard.admissions.status !== "connected" && previous?.facility.facilityId === fresh.facility.facilityId && previous.dashboard.admissions.status === "connected") {
+            return { ...fresh, dashboard: { ...fresh.dashboard, admissions: previous.dashboard.admissions } };
+          }
+          return fresh;
+        });
+        setError(null);
+      } catch (reason) {
         if (!controller.signal.aborted) {
-          setError(reason instanceof Error ? reason.message : "The community dashboard is unavailable.");
+          setAdmissionsStale(true);
+          setError(reason instanceof Error ? reason.message : "The community dashboard could not be refreshed.");
         }
-      })
-      .finally(() => {
+      } finally {
+        inFlight = false;
         if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
+      }
+    }
+    const refreshVisible = () => { if (document.visibilityState !== "hidden") void refresh(); };
+    void refresh();
+    const timer = window.setInterval(refreshVisible, 60_000);
+    window.addEventListener("focus", refreshVisible);
+    window.addEventListener("online", refreshVisible);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshVisible);
+      window.removeEventListener("online", refreshVisible);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
   }, [facilityId]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    function fitPopover() {
+      const popover = notificationPopoverRef.current;
+      if (!popover) return;
+      const visualViewport = window.visualViewport;
+      const bottom = (visualViewport?.height ?? window.innerHeight) + (visualViewport?.offsetTop ?? 0);
+      popover.style.maxHeight = `${Math.max(0, bottom - popover.getBoundingClientRect().top - 12)}px`;
+    }
+    function closeOutside(event: PointerEvent) {
+      if (event.target instanceof Node && !notificationRef.current?.contains(event.target)) setNotificationsOpen(false);
+    }
+    function closeEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setNotificationsOpen(false);
+      notificationButtonRef.current?.focus();
+    }
+    window.addEventListener("pointerdown", closeOutside);
+    window.addEventListener("keydown", closeEscape);
+    window.addEventListener("resize", fitPopover);
+    window.addEventListener("scroll", fitPopover, true);
+    window.visualViewport?.addEventListener("resize", fitPopover);
+    fitPopover();
+    return () => {
+      window.removeEventListener("pointerdown", closeOutside);
+      window.removeEventListener("keydown", closeEscape);
+      window.removeEventListener("resize", fitPopover);
+      window.removeEventListener("scroll", fitPopover, true);
+      window.visualViewport?.removeEventListener("resize", fitPopover);
+    };
+  }, [notificationsOpen]);
 
   const facility = response?.facility;
   const dashboard = response?.dashboard;
   const admissions = dashboard?.admissions;
-  const generatedAt = [dashboard?.generatedAt, admissions?.generatedAt]
-    .filter((value): value is string => Boolean(value))
-    .sort()
-    .at(-1) ?? null;
-
-  function openAdmissionCard(card: AdmissionsBoardCard) {
+  const clients = impendingAdmissionCards(admissions?.cards ?? []);
+  const selectedCard = clients.find((card) => card.referralId === managementId) ?? null;
+  const generatedAt = [dashboard?.generatedAt, admissions?.generatedAt].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
+  const closeDetail = useCallback(() => {
     setDetailView(null);
-    setSelectedCard(card);
+    if (detailView === "admissions") {
+      setAdmissionId(null);
+      notificationButtonRef.current?.focus();
+    }
+  }, [detailView]);
+  const closeManagement = useCallback(() => {
+    setManagementId(null);
+    setDetailView("admissions");
+  }, []);
+
+  useEffect(() => {
+    if (!admissions || admissions.status !== "connected" || admissionsStale) return;
+    const pending = impendingAdmissionCards(admissions.cards);
+    if (admissionId != null && !pending.some((card) => card.referralId === admissionId)) {
+      setDetailView((current) => current === "admissions" ? null : current);
+      setManagementId(null);
+      setAdmissionId(null);
+      if (detailView === "admissions" || managementId != null) notificationButtonRef.current?.focus();
+    }
+  }, [admissions, admissionsStale, admissionId, detailView, managementId]);
+
+  function selectView(next: "overview" | "mars" | "incidents") {
+    setNotificationsOpen(false);
+    setSearchParams((current) => {
+      const params = new URLSearchParams(current);
+      if (next === "overview") params.delete("view");
+      else params.set("view", next);
+      return params;
+    });
+  }
+  function openDetail(next: ExecutiveCommunityDetailView) {
+    if (next === "medications" || next === "incidents") {
+      selectView(next === "medications" ? "mars" : "incidents");
+    } else {
+      setDetailView(next);
+    }
+  }
+  function meetClient(card: AdmissionsBoardCard) {
+    setAdmissionId(card.referralId);
+    setNotificationsOpen(false);
+    setDetailView("admissions");
   }
 
   return (
-    <section data-executive-community-dashboard="true" className="mx-auto w-full max-w-[1480px] px-4 pb-16 pt-5 font-sans sm:px-6 sm:pt-6 lg:px-8">
-      <header className="flex min-h-14 flex-col justify-center gap-1.5 border-b-2 border-[#222825] pb-4 sm:flex-row sm:items-end sm:justify-between sm:gap-5">
-        <div className="flex min-w-0 items-baseline gap-3">
-          <h1 className="truncate !font-sans text-[35px] font-semibold leading-none tracking-[-0.05em] text-[#101311] sm:text-[42px]">
-            {facility?.shortName ?? "Community"}
-          </h1>
-          {facility?.state ? <span className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">{facility.state}</span> : null}
-        </div>
-        <p className="text-[13px] font-medium leading-5 text-[#5d6661] sm:text-right sm:text-[14px]">
-          {dashboard?.reportingMonth ? formatMonthLabel(dashboard.reportingMonth, { month: "long" }) : "Latest period"}
-          {generatedAt ? ` · Updated ${formatExecutiveDate(generatedAt, true)}` : ""}
-        </p>
+    <section ref={communityRef} data-executive-community-dashboard="true" className="executive-director-community">
+      <header className="executive-director-community__masthead">
+        <div><h1>{facility?.shortName ?? "Community"}</h1>{facility?.state ? <span>{facility.state}</span> : null}</div>
+        <p>{dashboard?.reportingMonth ? formatMonthLabel(dashboard.reportingMonth, { month: "long" }) : "Latest period"}{generatedAt ? ` · Updated ${formatExecutiveDate(generatedAt, true)}` : ""}</p>
       </header>
-
-      {error ? <div role="alert" className="mt-6 border-l-4 border-[#b24c3d] bg-[#fff7f5] px-4 py-3 text-[14px] text-[#7f3328]">{error}</div> : null}
-      {loading && !response ? <DashboardLoading /> : null}
-      {!loading && dashboard?.status === "unavailable" ? (
-        <div role="status" className="mt-8 border-y border-[#cfd6d2] bg-white px-1 py-8 text-[15px] text-[#5b6560]">
-          Current community measures are temporarily unavailable. Admissions activity will remain visible when its feed is connected.
+      <div className="executive-community-toolbar">
+        <div role="tablist" aria-label="Community views" className="executive-community-tabs">
+          {([{ id: "overview", label: "Overview" }, { id: "mars", label: "MARs" }, { id: "incidents", label: "Incidents" }] as const).map((item, index, items) => <button key={item.id} id={`executive-tab-${item.id}`} type="button" role="tab" aria-selected={view === item.id} aria-controls="executive-view-panel" tabIndex={view === item.id ? 0 : -1} onClick={() => selectView(item.id)} onKeyDown={(event) => {
+            const offset = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+            if (!offset && event.key !== "Home" && event.key !== "End") return;
+            event.preventDefault();
+            const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (index + offset + items.length) % items.length;
+            const next = items[nextIndex];
+            if (!next) return;
+            selectView(next.id);
+            document.getElementById(`executive-tab-${next.id}`)?.focus();
+          }}>{item.label}</button>)}
         </div>
-      ) : null}
-
-      {dashboard ? <CommunityOverview dashboard={dashboard} onOpenDetail={setDetailView} onOpenCard={openAdmissionCard} /> : null}
-
-      {dashboard && facility && detailView ? (
-        <ExecutiveCommunityDetailModal
-          facility={facility}
-          dashboard={dashboard}
-          view={detailView}
-          onViewChange={setDetailView}
-          onClose={() => setDetailView(null)}
-          onOpenAdmissionCard={openAdmissionCard}
-        />
-      ) : null}
-
-      {selectedCard && admissions?.status === "connected" ? (
-        <ProgressModal card={selectedCard} generatedAt={admissions.generatedAt ?? generatedAt ?? new Date().toISOString()} onClose={() => setSelectedCard(null)} />
-      ) : null}
+        <div className="executive-client-notifications" ref={notificationRef}>
+          <button ref={notificationButtonRef} data-executive-meet-client-trigger="true" className="executive-client-notifications__trigger" type="button" aria-label="New client notifications" aria-expanded={notificationsOpen} aria-controls="executive-client-notifications" onClick={() => setNotificationsOpen((open) => !open)}>
+            <Bell aria-hidden="true" /><span>New client</span>{admissions?.status === "connected" && clients.length > 0 ? <b data-executive-notification-count="true">{clients.length}</b> : null}
+          </button>
+          {notificationsOpen ? <section ref={notificationPopoverRef} id="executive-client-notifications" data-executive-client-notifications="true" role="region" aria-label="New client notifications" className="executive-client-notifications__popover">
+            <header><h2>New client</h2>{admissions?.status === "connected" ? <span>{clients.length} pending</span> : null}</header>
+            {admissions?.status === "connected" ? <>
+              {admissionsStale ? <p role="status" className="executive-client-notifications__status">{ADMISSIONS_STALE_MESSAGE}</p> : null}
+              {clients.length ? <ul>{clients.map((card) => <li key={card.referralId}><button type="button" onClick={() => meetClient(card)}><span><strong>{card.clientName}</strong><small>{card.plannedAdmissionDate ? `Planned ${formatImpendingAdmissionDate(card.plannedAdmissionDate, false)}` : "Date pending"}</small><ExecutiveReferralStatusPill status={card.status} /></span><ArrowRight aria-hidden="true" /></button></li>)}</ul> : <p className="executive-client-notifications__status">No clients awaiting admission.</p>}
+            </> : <p className="executive-client-notifications__status">{loading ? "Loading client notifications…" : "Admissions feed unavailable."}</p>}
+          </section> : null}
+        </div>
+      </div>
+      {error ? <div role="alert" className="executive-dashboard-message">{error}</div> : null}
+      {loading && !response ? <div role="status" className="executive-dashboard-loading">Loading community dashboard…</div> : null}
+      {!loading && dashboard?.status === "unavailable" ? <div role="status" className="executive-dashboard-message">Community measures are temporarily unavailable.</div> : null}
+      <div id="executive-view-panel" role="tabpanel" aria-labelledby={`executive-tab-${view}`}>
+        {dashboard && view === "overview" ? <CommunityOverview dashboard={dashboard} onOpenDetail={openDetail} /> : null}
+        {view === "overview" ? <div className="executive-all-incidents"><ExecutiveIncidentRegister key={facilityId} facilityId={facilityId} /></div> : null}
+        {dashboard && facility && view !== "overview" ? <ExecutiveCommunityWorkspace key={view} facility={facility} dashboard={dashboard} view={view === "mars" ? "medications" : "incidents"} onBack={() => selectView("overview")} /> : null}
+      </div>
+      {dashboard && facility && detailView ? <ExecutiveCommunityDetailModal facility={facility} dashboard={dashboard} view={detailView} initialAdmissionId={admissionId} sourceNotice={detailView === "admissions" && admissionsStale ? ADMISSIONS_STALE_MESSAGE : null} onAdmissionSelectionChange={setAdmissionId} onClose={closeDetail} onOpenAdmissionCard={(card) => { setAdmissionId(card.referralId); setDetailView(null); setManagementId(card.referralId); }} /> : null}
+      {selectedCard && admissions?.status === "connected" ? <ProgressModal card={selectedCard} generatedAt={admissions.generatedAt ?? generatedAt ?? new Date().toISOString()} sourceNotice={admissionsStale ? ADMISSIONS_STALE_MESSAGE : null} onClose={closeManagement} /> : null}
     </section>
   );
 }
 
-function DashboardLoading() {
-  return (
-    <div role="status" className="mt-8 space-y-4">
-      <span className="block h-44 animate-pulse border-y border-[#dfe4e1] bg-white" />
-      <span className="block h-72 animate-pulse border-y border-[#dfe4e1] bg-white" />
-      <span className="sr-only">Loading community dashboard…</span>
-    </div>
-  );
-}
-
-function CommunityOverview({
-  dashboard,
-  onOpenDetail,
-  onOpenCard
-}: {
+function CommunityOverview({ dashboard, onOpenDetail }: {
   dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"];
-  onOpenDetail: (view: ExecutiveCommunityDetailView) => void;
-  onOpenCard: (card: AdmissionsBoardCard) => void;
+  onOpenDetail: (view: ExecutiveCommunityDetailView, card?: AdmissionsBoardCard) => void;
 }) {
-  const censusPoints = dashboard.census.slice(-12).map((point) => ({
-    id: point.month,
-    label: formatMonthLabel(point.month, { fallback: point.month, month: "short" }),
-    value: point.census
-  }));
-  const incidentDelta = dashboard.summary?.currentIncidents != null && dashboard.summary?.priorIncidents != null
-    ? dashboard.summary.currentIncidents - dashboard.summary.priorIncidents
-    : null;
-  const impendingCards = impendingAdmissionCards(dashboard.admissions.cards);
-  const incidentChange = incidentDelta == null
-    ? "Prior comparison unavailable"
-    : incidentDelta === 0
-      ? "No change from prior month"
-      : `${formatExecutiveNumber(Math.abs(incidentDelta))} ${incidentDelta > 0 ? "more" : "fewer"} than prior month`;
-  return (
-    <div data-daily-operating-summary="true" className="pt-5 sm:pt-6">
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(380px,0.65fr)]">
-        <article data-executive-dashboard-panel="census" data-executive-dashboard-theme="census" className="overflow-hidden rounded-[22px] border border-[#9fb2c5] border-t-[6px] border-t-[#315d89] bg-[#e5ebf2] p-5 shadow-[0_14px_34px_rgba(33,55,78,0.08)] sm:p-7">
-          <div className="flex items-start justify-between gap-5 border-b border-[#b9c7d5] pb-4">
-            <h2 className="flex items-center gap-3 !font-sans text-[18px] font-semibold text-[#172433] sm:text-[20px]"><span className="grid h-10 w-10 place-items-center rounded-xl border border-[#9fb2c5] bg-[#d4dfea]"><UsersRound className="h-5 w-5 text-[#315d89]" aria-hidden="true" /></span>12-month census</h2>
-            <DetailLink tone="navy" onClick={() => onOpenDetail("census")}>History</DetailLink>
-          </div>
-          <div className="mt-5"><CensusTrendModule points={censusPoints} height={250} accentColor="#315d89" emptyLabel="Census history is not available for this community." /></div>
-        </article>
+  const census = dashboard.census.at(-1);
+  const priorCensus = dashboard.census.at(-2);
+  const delta = census && priorCensus ? census.census - priorCensus.census : null;
+  const limit = dashboard.admissions.community?.operatingLimit ?? null;
+  const occupancy = census && limit ? census.census / limit * 100 : null;
+  const incident = dashboard.incidentTrend.at(-1);
+  const priorIncident = dashboard.incidentTrend.at(-2);
+  const incidentIsMonthToDate = Boolean(incident && dashboard.generatedAt?.startsWith(incident.month));
+  const medication = dashboard.medication;
+  const categoryPeriod = executiveIncidentCategoryPeriod(dashboard, incident?.month);
+  const categories = categoryPeriod.categories.slice(0, 4);
+  const categoryMaximum = Math.max(...categories.map((item) => item.count), 1);
 
-        <article data-executive-dashboard-panel="admissions" data-executive-dashboard-theme="admissions" data-executive-impending-summary="true" className="overflow-hidden rounded-[22px] border border-[#c8ad77] border-t-[6px] border-t-[#98661e] bg-[#f1e7d6] p-5 shadow-[0_14px_34px_rgba(91,62,20,0.08)] sm:p-7">
-          <div className="flex items-center justify-between gap-4 border-b border-[#d2bc8e] pb-4">
-            <h2 className="flex min-w-0 items-center gap-3 !font-sans text-[18px] font-semibold text-[#332613] sm:text-[20px]"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#c8ad77] bg-[#e5d2ac]"><CalendarCheck2 className="h-5 w-5 text-[#835618]" aria-hidden="true" /></span><span>Impending admits <span className="whitespace-nowrap text-[13px] font-medium text-[#705b38]">{formatExecutiveNumber(impendingCards.length)} clients</span></span></h2>
-            <DetailLink tone="ochre" onClick={() => onOpenDetail("admissions")}>Meet the clients</DetailLink>
-          </div>
-          {dashboard.admissions.status === "connected" ? (
-            <>
-              {impendingCards.length ? (
-                <ol className="mt-5 overflow-hidden rounded-xl border border-[#d2bc8e] bg-[#fffdf8] divide-y divide-[#ddcba7]">
-                  {impendingCards.slice(0, 4).map((card) => (
-                    <li key={card.referralId}>
-                      <button type="button" onClick={() => onOpenCard(card)} className="group flex min-h-16 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f9f0df] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#98661e]">
-                        <span className="min-w-0"><strong className="block truncate text-[15px] text-[#241b0e]">{card.clientName}</strong><span className="mt-1.5 flex min-w-0 items-center gap-2"><ExecutiveReferralStatusPill status={card.status} /><span className="truncate text-[12px] font-medium text-[#705f43]">{card.plannedAdmissionDate ? formatImpendingAdmissionDate(card.plannedAdmissionDate, false) : "Date pending"}</span></span></span>
-                        <ArrowRight className="h-5 w-5 shrink-0 text-[#98661e] transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              ) : <CompactEmpty>No clients are currently moving toward admission.</CompactEmpty>}
-            </>
-          ) : <CompactEmpty>Admissions feed unavailable.</CompactEmpty>}
-        </article>
+  return <div data-daily-operating-summary="true" className="executive-dashboard-index">
+    <DomainPanel kind="census" label="Census" title="12-month census" icon={<UsersRound />} action="History" onOpen={() => onOpenDetail("census")}>
+      <div className="executive-census-overview">
+        <div className="executive-census-figure"><strong>{formatExecutiveNumber(census?.census)}</strong><span>residents</span><small>{formatExecutiveNumber(occupancy, "%")} occupied{limit ? ` · ${limit} operating limit` : ""}</small></div>
+        <div className="executive-census-change"><span>{census ? formatMonthLabel(census.month, { month: "short" }) : "No period"}</span>{delta != null ? <strong>{delta > 0 ? "+" : ""}{delta} <small>vs {formatMonthLabel(priorCensus!.month, { month: "short" })}</small></strong> : null}</div>
       </div>
-
-      <section className="mt-6 grid gap-6 lg:grid-cols-2" aria-label="Operational detail">
-        <article data-executive-dashboard-panel="incidents" data-executive-dashboard-theme="incidents" className="overflow-hidden rounded-[22px] border border-[#c39f96] border-t-[6px] border-t-[#8b493e] bg-[#efe3df] p-5 shadow-[0_14px_34px_rgba(84,44,36,0.07)] sm:p-7">
-          <div className="flex items-start justify-between gap-5">
-            <div>
-              <h2 className="flex items-center gap-3 !font-sans text-[18px] font-semibold text-[#34201c] sm:text-[20px]"><span className="grid h-10 w-10 place-items-center rounded-xl border border-[#c39f96] bg-[#e4cec8]"><ClipboardList className="h-5 w-5 text-[#824238]" aria-hidden="true" /></span>Incident categories</h2>
-              <p className="mt-2 text-[13px] leading-5 text-[#6f554f] sm:text-[14px]">The latest month recorded {formatExecutiveNumber(dashboard.summary?.currentIncidents)} incidents. {incidentChange}.</p>
-            </div>
-            <DetailLink tone="rust" onClick={() => onOpenDetail("incidents")}>Trend</DetailLink>
-          </div>
-          {dashboard.topIncidentCategories.length ? (
-            <ol className="mt-5 grid gap-2.5 sm:grid-cols-2">
-              {dashboard.topIncidentCategories.slice(0, 4).map((item) => (
-                <li key={item.label} className="flex items-center justify-between gap-4 rounded-xl border border-[#d2b6b0] bg-[#fffaf8] px-4 py-3.5">
-                  <span className="truncate text-[13px] font-medium text-[#694b45] sm:text-[14px]">{item.label}</span><strong className="text-[18px] tabular-nums text-[#34201c]">{formatExecutiveNumber(item.count)}</strong>
-                </li>
-              ))}
-            </ol>
-          ) : <CompactEmpty>No category totals available.</CompactEmpty>}
-        </article>
-
-        <article data-executive-dashboard-panel="medications" data-executive-dashboard-theme="medications" className="overflow-hidden rounded-[22px] border border-[#aca4ba] border-t-[6px] border-t-[#665074] bg-[#ebe7ee] p-5 shadow-[0_14px_34px_rgba(58,44,66,0.07)] sm:p-7">
-          <div className="flex items-start justify-between gap-5">
-            <div>
-              <h2 className="flex items-center gap-3 !font-sans text-[18px] font-semibold text-[#2e2733] sm:text-[20px]"><span className="grid h-10 w-10 place-items-center rounded-xl border border-[#aca4ba] bg-[#ddd6e2]"><Pill className="h-5 w-5 text-[#665074]" aria-hidden="true" /></span>Medication totals</h2>
-              <p className="mt-2 text-[13px] font-medium text-[#655d6a] sm:text-[14px]">{formatExecutiveNumber(dashboard.medication?.compliancePct, "%")} compliance · latest governed period</p>
-            </div>
-            <DetailLink tone="plum" onClick={() => onOpenDetail("medications")}>Detail</DetailLink>
-          </div>
-          {dashboard.medication ? (
-            <>
-              <div className="mt-6 h-3 overflow-hidden rounded-full bg-[#d5cfda]" aria-label={`Medication compliance ${formatExecutiveNumber(dashboard.medication.compliancePct, "%")}`}>
-                <span className="block h-full rounded-full bg-[#665074]" style={{ width: `${Math.min(Math.max(dashboard.medication.compliancePct ?? 0, 0), 100)}%` }} />
-              </div>
-              <p className="mt-5 rounded-xl border border-[#c8c0ce] bg-[#fdfbfe] px-4 py-4 text-[14px] leading-6 text-[#554c5a]">{formatExecutiveNumber(dashboard.medication.given)} of {formatExecutiveNumber(dashboard.medication.scheduled)} scheduled administrations were given; <strong className="font-semibold text-[#2e2733]">{formatExecutiveNumber(dashboard.medication.notGiven)} were not</strong>.</p>
-            </>
-          ) : <CompactEmpty>Medication totals unavailable.</CompactEmpty>}
-        </article>
-      </section>
-    </div>
-  );
+      <ExecutiveTrendChart points={dashboard.census.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.census }))} accent="#174f81" height={180} compact ariaLabel="Community census history" />
+    </DomainPanel>
+    <DomainPanel kind="incidents" label="Incidents" title="Incident activity" icon={<ClipboardList />} action="Trend" onOpen={() => onOpenDetail("incidents")}>
+      <div className="executive-incident-overview">
+        <div><div className="executive-section-meta"><span>{incident ? formatMonthLabel(incident.month, { month: "long" }) : "Latest period"}{incidentIsMonthToDate ? " · to date" : ""}</span><strong>{formatExecutiveNumber(incident?.count)}</strong></div>
+          <ExecutiveTrendChart points={dashboard.incidentTrend.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.count }))} accent="#9b3826" height={145} compact ariaLabel="Community incident history" />
+          {priorIncident ? <p className="executive-period-note">{formatMonthLabel(priorIncident.month, { month: "short" })}: {formatExecutiveNumber(priorIncident.count)} recorded in the full month.</p> : null}
+        </div>
+        <div className="executive-category-index"><div className="executive-section-meta">{categoryPeriod.complete ? "Recorded categories" : `${categoryPeriod.recordCount} available records`}</div>{categories.length ? <ol>{categories.map((item) => <li key={item.label}><span>{item.label}</span><strong>{formatExecutiveNumber(item.count)}</strong><i><b style={{ width: `${item.count / categoryMaximum * 100}%` }} /></i></li>)}</ol> : <CompactEmpty>No category records available for this month.</CompactEmpty>}</div>
+      </div>
+    </DomainPanel>
+    <DomainPanel kind="medications" label="MAR" title="Medication administration" icon={<Pill />} action="Detail" onOpen={() => onOpenDetail("medications")}>
+      {medication ? <>
+        <div className="executive-medication-overview"><div><strong>{formatExecutiveNumber(medication.compliancePct, "%")}</strong><span>given</span></div><span>{formatMonthLabel(medication.month, { month: "long" })}</span></div>
+        <div className="executive-medication-bar" aria-label={`${formatExecutiveNumber(medication.compliancePct, "%")} given`}><span style={{ width: `${Math.min(Math.max(medication.compliancePct ?? 0, 0), 100)}%` }} /></div>
+        <dl className="executive-medication-totals"><MedicationSummaryRow label="Scheduled" value={medication.scheduled} /><MedicationSummaryRow label="Given" value={medication.given} /><MedicationSummaryRow label="Not given" value={medication.notGiven} /></dl>
+        <p className="executive-period-note">{formatExecutiveNumber(medication.given)} of {formatExecutiveNumber(medication.scheduled)} scheduled administrations were given.</p>
+      </> : <CompactEmpty>Medication totals unavailable.</CompactEmpty>}
+    </DomainPanel>
+  </div>;
 }
 
-function DetailLink({ children, onClick, tone = "emerald" }: { children: React.ReactNode; onClick: () => void; tone?: "emerald" | "navy" | "ochre" | "rust" | "plum" }) {
-  const toneClass = {
-    emerald: "text-[#08745d] hover:text-[#054b3c] focus-visible:outline-[#0f8b73]",
-    navy: "text-[#315d89] hover:text-[#1f4264] focus-visible:outline-[#315d89]",
-    ochre: "text-[#835618] hover:text-[#5f3d10] focus-visible:outline-[#98661e]",
-    rust: "text-[#824238] hover:text-[#5e2f28] focus-visible:outline-[#8b493e]",
-    plum: "text-[#665074] hover:text-[#46344f] focus-visible:outline-[#665074]"
-  }[tone];
-  return <button type="button" onClick={onClick} className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 text-[12px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:text-[13px] ${toneClass}`}>{children}<ArrowRight className="h-4 w-4" aria-hidden="true" /></button>;
+function DomainPanel({ kind, label, title, icon, action, onOpen, children }: { kind: ExecutiveCommunityDetailView; label: string; title: string; icon: React.ReactNode; action: string; onOpen: () => void; children: React.ReactNode }) {
+  return <article data-executive-dashboard-panel={kind} className={`executive-domain-card executive-domain-card--${kind}`}>
+    <span data-executive-panel-tab={kind} className="executive-domain-card__tab" aria-hidden="true">{label}</span>
+    <div className="executive-domain-card__paper"><header data-executive-panel-header={kind}><h2><span>{icon}</span>{title}</h2><button type="button" onClick={onOpen} aria-label={action}>{kind === "admissions" ? "Open" : action}<ArrowRight aria-hidden="true" /></button></header><div data-executive-panel-body={kind}>{children}</div></div>
+  </article>;
 }
-
+function MedicationSummaryRow({ label, value }: { label: string; value: number | null }) {
+  return <div><dt>{label}</dt><dd>{formatExecutiveNumber(value)}</dd></div>;
+}
 function CompactEmpty({ children }: { children: React.ReactNode }) {
-  return <p className="mt-4 border-t border-current/15 py-5 text-[14px] text-[#5e6662]">{children}</p>;
+  return <p className="executive-inline-empty">{children}</p>;
 }

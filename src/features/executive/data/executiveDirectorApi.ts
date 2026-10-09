@@ -151,7 +151,42 @@ export interface ExecutiveDirectorCommunityDashboard {
   } | null;
   census: Array<{ month: string; census: number }>;
   incidentTrend: Array<{ month: string; count: number }>;
+  incidentCategoryPeriods?: Array<{
+    month: string;
+    categories: Array<{ label: string; count: number }>;
+    recordCount: number;
+    totalCount: number | null;
+    complete: boolean;
+  }>;
   topIncidentCategories: Array<{ label: string; count: number }>;
+  incidentDetails: Array<{
+    id: string;
+    residentId: string | null;
+    residentName: string;
+    date: string | null;
+    category: string;
+    location: string | null;
+    injuryOccurred: boolean | null;
+    policeCalled: boolean | null;
+    response: string | null;
+  }>;
+  residentMovements: Array<{
+    id: string;
+    residentId: string | null;
+    residentName: string;
+    date: string | null;
+    action: "Move-in" | "Move-out";
+    type: "Admission" | "Discharge";
+    destination: string | null;
+    note: string | null;
+  }>;
+  medicationHistory: Array<{
+    month: string;
+    compliancePct: number | null;
+    scheduled: number | null;
+    given: number | null;
+    notGiven: number | null;
+  }>;
   medication: {
     month: string;
     compliancePct: number | null;
@@ -159,6 +194,22 @@ export interface ExecutiveDirectorCommunityDashboard {
     given: number | null;
     notGiven: number | null;
   } | null;
+  medicationExceptions: Array<{
+    id: string;
+    residentId: string | null;
+    residentName: string;
+    medication: string;
+    dosage: string | null;
+    date: string | null;
+    outcome: string;
+    reason: string | null;
+    noteRecorded: boolean;
+  }>;
+  medicationWatch: Array<{
+    residentId: string | null;
+    residentName: string;
+    exceptions: number;
+  }>;
   admissions: {
     status: "connected" | "not_connected" | "unavailable";
     generatedAt: string | null;
@@ -219,16 +270,102 @@ export function fetchExecutiveDirectorCommunityDashboard(
   );
 }
 
+export interface ExecutiveDirectorIncident {
+  id: string;
+  residentId: string | null;
+  residentName: string;
+  date: string | null;
+  receivedAt: string | null;
+  category: string;
+  incidentType: string | null;
+  location: string | null;
+  description: string | null;
+  response: string | null;
+  staffName: string | null;
+  injuryOccurred: boolean | null;
+  emergencyServicesNotified: boolean | null;
+  sentinelEvent: boolean | null;
+}
+
+export interface ExecutiveDirectorIncidentRegister {
+  version: "executive-director-incidents-v1";
+  status: "ready" | "unavailable";
+  facilityId: string;
+  generatedAt: string | null;
+  asOfDate: string | null;
+  totalIncidents: number | null;
+  matchingIncidents: number | null;
+  incidents: ExecutiveDirectorIncident[];
+  categories: Array<{ label: string; count: number }>;
+  nextCursor: string | null;
+  coverage: {
+    status: "complete" | "partial" | "unavailable";
+    startDate: string | null;
+    endDate: string | null;
+    reportedTotal: number | null;
+    note: string;
+  };
+  freshness: { stale: boolean; warning: string | null };
+}
+
+export function fetchExecutiveDirectorIncidents(
+  facilityId: string,
+  options: { query?: string; category?: string; from?: string; to?: string; cursor?: string } = {},
+  signal?: AbortSignal
+) {
+  const params = new URLSearchParams({ facilityId, limit: "25" });
+  if (options.query) params.set("q", options.query);
+  if (options.category) params.set("category", options.category);
+  if (options.from) params.set("from", options.from);
+  if (options.to) params.set("to", options.to);
+  if (options.cursor) params.set("cursor", options.cursor);
+  return fetchWithApiAuth<ExecutiveDirectorIncidentRegister>(
+    `/api/platform/executive-director/incidents?${params.toString()}`,
+    signal ? { signal } : {},
+    { consume: (response) => readApiJson<ExecutiveDirectorIncidentRegister>(response) }
+  );
+}
+
+export interface ExecutiveDirectorSubmissionCatalog {
+  version: "executive-director-intake-catalog-v1";
+  facilityId: string;
+  catalogRevision: number;
+  updatedAt: string | null;
+  summary: ExecutiveDirectorBootstrap["intake"]["summary"];
+  filteredTotal: number;
+  submissions: ExecutiveDirectorSubmission[];
+  nextCursor: string | null;
+}
+
+export function fetchExecutiveDirectorSubmissions(
+  facilityId: string,
+  options: { status?: string; query?: string; cursor?: string } = {},
+  signal?: AbortSignal
+) {
+  const params = new URLSearchParams({ facilityId, limit: "25" });
+  if (options.status) params.set("status", options.status);
+  if (options.query) params.set("q", options.query);
+  if (options.cursor) params.set("cursor", options.cursor);
+  return fetchWithApiAuth<ExecutiveDirectorSubmissionCatalog>(
+    `/api/platform/executive-director/licensing-intake/submissions?${params.toString()}`,
+    signal ? { signal } : {},
+    { consume: (response) => readApiJson<ExecutiveDirectorSubmissionCatalog>(response) }
+  );
+}
+
+export interface ExecutiveDirectorUploadResponse {
+  version: "executive-director-licensing-intake-v1";
+  submission: ExecutiveDirectorSubmissionDetail;
+  form: Lic624FormContract;
+  duplicate?: boolean;
+}
+
 export function uploadExecutiveDirectorLicensingReport(
   facilityId: string,
   file: File,
   signal?: AbortSignal
 ) {
-  return fetchWithApiAuth<{
-    version: "executive-director-licensing-intake-v1";
-    submission: ExecutiveDirectorSubmissionDetail;
-    form: Lic624FormContract;
-  }>(
+  return fetchWithApiAuth<ExecutiveDirectorUploadResponse>(
     "/api/platform/executive-director/licensing-intake",
     {
       method: "POST",
@@ -242,11 +379,7 @@ export function uploadExecutiveDirectorLicensingReport(
     },
     {
       timeoutMs: 60_000,
-      consume: (response) => readApiJson<{
-        version: "executive-director-licensing-intake-v1";
-        submission: ExecutiveDirectorSubmissionDetail;
-        form: Lic624FormContract;
-      }>(response)
+      consume: (response) => readApiJson<ExecutiveDirectorUploadResponse>(response)
     }
   );
 }

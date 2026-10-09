@@ -26,6 +26,7 @@ import {
   getReportsSummaryData
 } from "./platform-data.mjs";
 import { buildExecutiveDirectorCommunityDashboard } from "./executive-director-dashboard.mjs";
+import { getExecutiveDirectorIncidents } from "./executive-director-incidents.mjs";
 import {
   LIC624_FORM_DEFINITION,
   LIC624_INCIDENT_TYPE_FIELDS,
@@ -69,7 +70,7 @@ async function getDashboardSnapshot(facilityId) {
 async function getCommunityDashboard(facilityId) {
   const [communityResult, reportsResult, admissionsResult] = await Promise.allSettled([
     getCommunitySnapshotData(facilityId),
-    getReportsSummaryData({ includeAnalystHistory: false }),
+    getReportsSummaryData({ includeAnalystHistory: true }),
     getAdmissionsDashboardData()
   ]);
 
@@ -146,6 +147,26 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
       return;
     }
 
+    if (req.method === "GET" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/incidents`) {
+      const facilityId = resolveExecutiveDirectorFacility(access, requestUrl.searchParams.get("facilityId"));
+      const allowedParameters = new Set(["facilityId", "q", "category", "from", "to", "cursor", "limit"]);
+      for (const key of requestUrl.searchParams.keys()) {
+        if (!allowedParameters.has(key) || requestUrl.searchParams.getAll(key).length !== 1) {
+          throw createHttpError(400, "executive_incidents_query_invalid", "Incident search parameters are invalid.");
+        }
+      }
+      res.status(200).json(await getExecutiveDirectorIncidents({
+        facilityId,
+        query: requestUrl.searchParams.get("q"),
+        category: requestUrl.searchParams.get("category"),
+        from: requestUrl.searchParams.get("from"),
+        to: requestUrl.searchParams.get("to"),
+        cursor: requestUrl.searchParams.get("cursor"),
+        limit: requestUrl.searchParams.get("limit")
+      }));
+      return;
+    }
+
     if (req.method === "GET" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake/submissions`) {
       const facilityId = resolveExecutiveDirectorFacility(
         access,
@@ -195,8 +216,9 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
     if (req.method === "POST" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake`) {
       const facilityId = resolveExecutiveDirectorFacility(access, getHeader(req, "x-facility-id"));
       const submission = await createExecutiveDirectorIntakeSubmission({ req, facilityId, authContext });
-      res.status(201).json({
+      res.status(submission.duplicate ? 200 : 201).json({
         version: "executive-director-licensing-intake-v1",
+        duplicate: submission.duplicate,
         submission: toExecutiveDirectorSubmissionDetail(submission),
         form: getLic624FormContract()
       });

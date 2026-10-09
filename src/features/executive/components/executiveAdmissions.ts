@@ -2,8 +2,9 @@ import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot
 import { formatExecutiveDate } from "./executiveDashboardFormatters";
 
 export function isImpendingAdmissionCard(card: AdmissionsBoardCard) {
-  if (card.plannedAdmissionDate) return true;
   const status = card.status.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  if (/^(?:declined|denied|rejected|cancelled|canceled|withdrawn|closed|admitted|discharged|deceased|archived|moved in|admission completed?)(?:\b|$)/.test(status)) return false;
+  if (card.plannedAdmissionDate) return true;
   return status.startsWith("accept") || status === "awaiting admit" || status === "meet the client not sent";
 }
 
@@ -21,19 +22,6 @@ export function impendingAdmissionCards(cards: AdmissionsBoardCard[]) {
       }
       return left.clientName.localeCompare(right.clientName);
     });
-}
-
-export function impendingAdmissionReadiness(card: AdmissionsBoardCard) {
-  const profile = card.managementProfile;
-  if (profile.blockingRequirements > 0) {
-    return `${profile.blockingRequirements} blocking ${profile.blockingRequirements === 1 ? "requirement" : "requirements"}`;
-  }
-  if (!profile.assessmentSigned) return "Assessment not signed";
-  if (profile.documentStatus !== "Reviewed") return "Documents not reviewed";
-  if (profile.openRequirements > 0) {
-    return `${profile.openRequirements} open ${profile.openRequirements === 1 ? "requirement" : "requirements"}`;
-  }
-  return "Ready for admission";
 }
 
 export function formatImpendingAdmissionDate(value: string, includeTime = true) {

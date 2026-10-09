@@ -3,7 +3,7 @@
 - purpose: define the facility-scoped Executive Director dashboard and licensing-report intake workflow
 - status: active implementation plan and security contract
 - owners: product, operations, engineering, compliance
-- updated: 2026-10-08
+- updated: 2026-10-09
 - tags: executive-director, licensing, intake, ocr, role-access, azure
 - labels: platform-handbook, implementation-plan, security-boundary
 - related files:
@@ -114,7 +114,149 @@ content remains in the private per-submission manifest. Review changes still
 produce append-only audit records and use the manifest ETag plus the logical
 review revision to reject stale edits.
 
-## Next definition session
+## Scanned imports and incoming reports: implementation plan
+
+Continue the existing Licensing workspace and digital LIC 624. The historical
+backfill consists of existing scanned reports, not forms generated from incident
+counts. Ongoing uploads and future scan-to-email attachments must converge on
+the same intake, review, and original-document contracts. An incident count is
+not a confirmed inventory of available LIC 624 documents.
+
+### 1. Safe batch intake — first local milestone
+
+Implemented locally: up to 100 selected files, sequential upload, per-file
+receipts, failed-file retry, and facility-scoped exact-byte duplicate protection.
+The single-file editable form remains the same. On October 9 the user selected
+deployment of upload/review only; the database, scanned OCR, and incoming mail
+remain deferred and unconnected.
+
+- Extend the existing upload view to accept a bounded batch of files, retain
+  per-file results, and retry failed files without re-uploading successful ones.
+  Keep one-file review convenient and preserve the existing form and styling.
+- Scope exact-byte SHA-256 duplicate detection to the authorized facility.
+  Concurrent deliveries reserve one durable receipt and converge on the same
+  original submission; retries must not reset a reviewed form or its audit.
+- Recover an interrupted source/manifest/catalog write through the receipt.
+  Adopt matching legacy submissions without rewriting originals or reviews.
+- Keep PDF/JPG/PNG validation and the 20 MB per-file limit. Do not infer that
+  identical names mean identical documents, or that different scans of the
+  same report are exact duplicates.
+- Only server-acknowledged files are durable. Pending browser files remain in
+  memory, are not stored in localStorage/IndexedDB, and need reselection after
+  leaving the page. This is not an autonomous background OCR queue.
+- Fillable PDFs still extract to review; scans remain explicitly
+  `ocr_required`. No automatic filing, incident creation, mail, or cloud
+  provisioning is part of this milestone.
+
+Acceptance: mixed batches, one-file review, exact duplicates, same-file
+concurrency, different-community isolation, failed-file retry, interrupted-write
+recovery, unchanged reviewed drafts, legacy reports, and 320/390/1440px layouts.
+
+Local verification on October 9 passed synthetic persistence/recovery checks,
+fixture-only browser upload/review tests, mobile layouts, TypeScript checks,
+documentation checks, and the production build. No real reports were uploaded
+and the Azure write path was not exercised. The full platform-wide gate is not
+green: current Azure data and the maintained June fixture disagree with
+different analyst tests' fixed date expectations, and the June fixture lacks
+monthly medication-refusal detail. Do not report these as passed checks.
+
+For this release only, the user explicitly authorized a limited deployment on
+October 9 using focused upload/review, mobile, access-control, production-build,
+and live verification, with rollback if those checks fail. This exception does
+not relax later release gates or authorize unrelated analyst runtime changes.
+Database provisioning, OCR, incoming mail, and outbound notifications remain off.
+
+### 2. Durable processing and the large report index
+
+Before the historical import, replace whole-facility catalog rewrites with an
+indexed transactional metadata store in the existing Alamo Azure boundary;
+Azure-hosted Postgres is the proposed target, subject to the deployment review.
+Keep immutable originals and extraction artifacts in private Blob storage.
+The current 8 MiB catalog is not the 20,000-report production architecture.
+
+Model source documents, delivery receipts, submissions, processing jobs,
+extraction versions, review revisions, and proposed incident links separately.
+A delivery is not another incident. Jobs need durable leases, bounded retries,
+idempotent completion, abandoned-work recovery, and a visible failed-job queue.
+Use an outbox/receipt handoff so storing a file and scheduling its work cannot
+silently diverge. Backfill work and new daily arrivals must have separate
+concurrency budgets so the historical import does not block current reports.
+
+Migrate existing catalog metadata without moving original files or rewriting
+review history. Validate counts and source checksums, retain a rollback path,
+and switch reads only after reconciliation. Load-test at least 25,000 synthetic
+reports, including a heavily skewed single-community collection, multi-user
+writes, pagination/search, worker restarts, duplicate delivery, and recovery.
+
+### 3. Scanned extraction and reviewed incident matching
+
+Pilot representative scans before a full backfill: typed and handwritten
+forms, rotated/low-quality pages, attachments, and PDFs containing several
+reports. Preserve page order and page-to-report provenance; uncertain document
+boundaries require review rather than silently merging or splitting incidents.
+
+Connect the server-side OCR adapter to the existing logical LIC 624 schema.
+Azure Document Intelligence remains the candidate already identified below,
+not an activated Platform integration. Read-only setup verification found the
+existing `alamo-docreader` service in `alamo-data-rg`; Platform has no configured
+OCR endpoint or processing permission yet. Preserve raw extraction separately from the reviewed
+draft, with source page references and field-level confidence. Unreadable or
+missing values stay unfilled. Treat document text as untrusted data, never as
+instructions. Validate file/page/resource limits and isolate document parsing.
+
+Match only within the verified community, using resident identity and incident
+date/details as evidence. Present ambiguous and unmatched reports for review;
+names or date alone must not silently establish identity. Confirmed links
+attach a document to an existing incident without incrementing incident totals.
+Never overwrite the source incident from OCR. An unmatched report does not
+automatically create a clinical incident or become officially filed.
+
+Acceptance: staff-reviewed pilot accuracy, clear correction workflow, immutable
+evidence, duplicate-rescan review, and no source-record changes. Measure page
+volume, processing time, and cost during the pilot before approving the backfill.
+
+### 4. Receive incoming scans through the same intake
+
+Add a dedicated receiving mailbox or approved existing mailbox only after its
+address, ownership, allowed senders, and access scope are confirmed. Restrict
+the connector to that mailbox; receiving scans does not require send access.
+Reuse the intake receipt with message/attachment provenance and replay-safe
+processing. Store progress server-side and reconcile missed deliveries.
+
+Validate attachments and quarantine unsupported, suspicious, or ambiguously
+assigned reports. Recipient routing can suggest a community, but untrusted
+sender/subject/OCR text cannot authorize cross-community access. Retain the
+original message/attachment identifiers without exposing mailbox credentials
+or private storage paths in the browser. Acknowledgment emails and recipient
+notifications remain separately approved work.
+
+The interim address chosen in the setup conversation is a personal Outlook
+account. The user approved the required mailbox-wide delegated read scope, but
+Microsoft sign-in/consent and connector activation remain pending and outside
+the selected upload/review release. Personal Outlook does not support Exchange
+Application RBAC or folder-scoped OAuth consent: processing only a dedicated
+intake folder must be enforced by the connector. A separate consumer-capable
+registration is required; do not broaden the enterprise Platform app's
+`AzureADMyOrg` sign-in boundary or request send/write/delete mail permissions.
+
+The existing CCLD monitor and its paused outbound Raj/Betty alert workflow are
+separate; do not repurpose or activate them for incoming LIC 624 attachments.
+
+### Rollout boundaries
+
+Build and test locally first. No production import, mailbox permission,
+external OCR submission, cloud provisioning, or deployment follows merely from
+the local implementation. Agree the data-handling/retention and operator rules,
+approve the configured services, run a small controlled pilot, then import in
+restartable batches with received/reviewed/failed reconciliation.
+
+Duplicate protection requires every server writer to use the receipt-aware
+implementation. Reconcile any older duplicate/orphaned submissions during the
+index migration; adoption of a canonical indexed report does not itself clean
+up historical extra copies. Crash-left temporary objects also need an explicit
+retention/reconciliation policy before the backfill.
+
+## Remaining operator definitions
 
 Before OCR and final filing are implemented, collect representative scanned
 LIC 624 reports and answer these questions:

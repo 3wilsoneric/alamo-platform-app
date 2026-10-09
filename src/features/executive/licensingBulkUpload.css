@@ -1,0 +1,41 @@
+.licensing-bulk-upload .licensing-dropzone--compact { min-height: 155px; padding: 18px; gap: 8px; }
+.licensing-bulk-upload .licensing-dropzone--compact > svg { display: none; }
+.licensing-bulk-upload .licensing-dropzone p { overflow-wrap: anywhere; }
+.licensing-batch { margin-top: 22px; min-width: 0; border-top: 1px solid #b2c0b5; padding-top: 16px; }
+.licensing-batch__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.app-theme-root .licensing-batch__heading h3 { font: 600 22px/1.2 var(--ed-serif); color: #233e31; }
+.licensing-batch__summary { margin-top: 10px; color: #576d61; font: 400 12px/1.6 var(--ed-sans); }
+.licensing-batch__summary:focus { outline: 2px solid #23745c; outline-offset: 4px; }
+.licensing-batch__progress { width: 100%; height: 7px; margin-top: 12px; accent-color: #285c49; }
+.licensing-batch__list { max-height: 485px; margin: 14px 0 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; list-style: none; border: 1px solid #c8cfc2; background: #fffdf7; }
+.licensing-batch__list > li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 9px 11px; padding: 13px; }
+.licensing-batch__list > li + li { border-top: 1px solid #dce0d5; }
+.licensing-batch__file-icon { align-self: start; color: #59715f; padding-top: 2px; }
+.licensing-batch__file-icon svg { width: 21px; height: 21px; }
+.licensing-batch__file { min-width: 0; }
+.licensing-batch__file h4 { color: #233e45; font: 500 14px/1.4 var(--ed-sans); overflow-wrap: anywhere; }
+.licensing-batch__file p { margin-top: 4px; color: #687467; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.licensing-batch__file .licensing-batch__error { color: #9a442e; }
+.licensing-batch__state { align-self: start; padding: 4px 6px; border: 1px solid #c6c8bc; border-radius: 3px; color: #687164; background: #f0f0e7; font: 500 11px/1.3 var(--ed-sans); }
+.licensing-batch__state.is-received { color: #27543d; border-color: #aec5ae; background: #eef1e5; }
+.licensing-batch__state.is-duplicate { color: #4b6280; border-color: #b7c5d2; background: #edf1f6; }
+.licensing-batch__state.is-failed { color: #913e2b; border-color: #d7b9a7; background: #faede1; }
+.licensing-batch__state.is-uploading { color: #7a5925; border-color: #c8b487; background: #f5edd9; }
+.licensing-batch__actions { display: flex; justify-content: flex-end; gap: 8px; grid-column: 2 / -1; }
+.licensing-batch__actions > button:not(.licensing-button) { display: grid; place-items: center; width: 44px; height: 44px; color: #607364; }
+.licensing-batch__actions > button:not(.licensing-button) svg { width: 17px; height: 17px; }
+.licensing-batch__actions button:disabled { opacity: .45; cursor: not-allowed; }
+.licensing-batch__submit { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 15px; }
+.licensing-batch__submit:empty { display: none; }
+.licensing-bulk-upload .licensing-batch__session-note { margin-top: 10px; padding-top: 10px; border-top: 1px solid #d8ddd1; font-size: 12px; }
+@media (max-width: 767px) {
+  .licensing-batch__heading { flex-wrap: wrap; gap: 9px; }
+  .app-theme-root .licensing-batch__heading h3 { font-size: 21px; }
+  .licensing-batch__list { max-height: 460px; }
+  .licensing-batch__list > li { grid-template-columns: minmax(0, 1fr) auto; padding: 12px; }
+  .licensing-batch__file-icon { display: none; }
+  .licensing-batch__file { grid-column: 1; }
+  .licensing-batch__state { grid-column: 2; }
+  .licensing-batch__actions { grid-column: 1 / -1; }
+  .licensing-batch__submit > button { flex: 1; white-space: normal; }
+}

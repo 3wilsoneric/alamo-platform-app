@@ -238,10 +238,12 @@ function decisionTabFor(card: AdmissionsBoardCard) {
 export function ProgressModal({
   card,
   generatedAt,
+  sourceNotice,
   onClose
 }: {
   card: AdmissionsBoardCard;
   generatedAt: string;
+  sourceNotice?: string | null;
   onClose: () => void;
 }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -342,6 +344,7 @@ export function ProgressModal({
             </button>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
+              {sourceNotice ? <p role="status" className="border-b border-[#d8c5a0] bg-[#fbf4e5] py-3 pl-5 pr-16 text-sm text-[#79531c] sm:pl-8 sm:pr-20">{sourceNotice}</p> : null}
               <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] py-5 pl-5 pr-16 sm:px-8 sm:pr-20">
                 <h3 id="admissions-chart-next-action" className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Current management focus</h3>
                 <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>

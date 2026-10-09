@@ -2,28 +2,33 @@ import {
   AlertTriangle,
   Check,
   FileCheck2,
+  FileText,
   PencilLine,
   RotateCcw,
   Save,
   UserRoundPlus,
   X
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type {
   ExecutiveDirectorSubmissionDetail,
   Lic624FormContract,
   Lic624ReviewData
 } from "../data/executiveDirectorApi";
+import "../lic624Review.css";
 
 interface Lic624ReviewWorkspaceProps {
   submission: ExecutiveDirectorSubmissionDetail;
   form: Lic624FormContract;
   onClose: () => void;
   onSave: (data: Lic624ReviewData, confirm: boolean) => Promise<ExecutiveDirectorSubmissionDetail>;
+  onDirtyChange?: (dirty: boolean) => void;
+  onBusyChange?: (busy: boolean) => void;
+  onOpenOriginal?: () => void;
 }
 
-const INPUT_CLASS = "min-h-12 w-full rounded-[12px] border-2 border-[#9ca7a1] bg-white px-3.5 py-2.5 text-[16px] leading-6 text-[#171b19] outline-none transition focus:border-[#08725d] focus:ring-4 focus:ring-[#08725d]/10";
-const TEXTAREA_CLASS = `${INPUT_CLASS} min-h-[132px] resize-y`;
+const INPUT_CLASS = "lic624-review__input";
+const TEXTAREA_CLASS = `${INPUT_CLASS} lic624-review__textarea`;
 const EMPTY_RESIDENT = { name: "", dateOccurred: "", age: "", sex: "", admissionDate: "" };
 
 function copyData<T>(value: T): T {
@@ -64,21 +69,21 @@ function Field({
   children: ReactNode;
 }) {
   const labelNode = (
-    <span className="mb-2 flex min-h-5 items-center gap-2 text-[13px] font-bold uppercase tracking-[0.075em] text-[#36403b]">
+    <span className="lic624-review__label">
         {label}
-        {required ? <span className="text-[#a04435]" aria-label="required">Required</span> : null}
+        {required ? <span className="lic624-review__required" aria-label="required">Required</span> : null}
         {changed ? (
-          <span className="rounded-full bg-[#f5e8c9] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#755618]">Edited</span>
+          <span className="lic624-review__edited">Edited</span>
         ) : null}
     </span>
   );
   return asGroup ? (
-    <fieldset className={wide ? "sm:col-span-2" : undefined}>
+    <fieldset className={`lic624-review__field${wide ? " sm:col-span-2" : ""}`}>
       <legend className="w-full">{labelNode}</legend>
       {children}
     </fieldset>
   ) : (
-    <label className={wide ? "sm:col-span-2" : undefined}>
+    <label className={`lic624-review__field${wide ? " sm:col-span-2" : ""}`}>
       {labelNode}
       {children}
     </label>
@@ -87,12 +92,12 @@ function Field({
 
 function Section({ number, title, note, children }: { number: string; title: string; note: string; children: ReactNode }) {
   return (
-    <section className="border-t-2 border-[#34413b] px-4 py-7 sm:px-7 sm:py-8 lg:px-9">
-      <div className="mb-6 flex items-start gap-4">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] border-2 border-[#08725d] bg-[#edf5f1] text-[15px] font-extrabold text-[#08725d]">{number}</span>
+    <section className="lic624-review__section" data-lic624-section={number}>
+      <div className="lic624-review__section-heading">
+        <span className="lic624-review__section-number">{number}</span>
         <div>
-          <h3 className="text-[23px] font-bold tracking-[-0.035em] text-[#151a17] sm:text-[26px]">{title}</h3>
-          <p className="mt-1 text-[14px] leading-6 text-[#5c6661]">{note}</p>
+          <h3 tabIndex={-1}>{title}</h3>
+          <p>{note}</p>
         </div>
       </div>
       {children}
@@ -100,23 +105,36 @@ function Section({ number, title, note, children }: { number: string; title: str
   );
 }
 
-export default function Lic624ReviewWorkspace({ submission, form, onClose, onSave }: Lic624ReviewWorkspaceProps) {
+export default function Lic624ReviewWorkspace({ submission, form, onClose, onSave, onDirtyChange, onBusyChange, onOpenOriginal }: Lic624ReviewWorkspaceProps) {
   const savedData = submission.draftData;
   const sourceData = submission.sourceData;
   const [draft, setDraft] = useState<Lic624ReviewData | null>(savedData ? copyData(savedData) : null);
   const [saving, setSaving] = useState<"draft" | "confirm" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const reviewRef = useRef<HTMLElement>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     setDraft(savedData ? copyData(savedData) : null);
+  }, [submission.submissionId, submission.reviewRevision, savedData]);
+
+  useEffect(() => {
     setMessage(null);
     setError(null);
-  }, [submission.submissionId, submission.reviewRevision, savedData]);
+  }, [submission.submissionId]);
 
   const issues = useMemo(() => draft ? getReviewIssues(draft) : [], [draft]);
   const unsaved = Boolean(draft && savedData && !dataEqual(draft, savedData));
   const changedFromSource = Boolean(draft && sourceData && !dataEqual(draft, sourceData));
+
+  useEffect(() => {
+    onDirtyChange?.(unsaved);
+  }, [onDirtyChange, unsaved]);
+
+  useEffect(() => {
+    onBusyChange?.(Boolean(saving));
+  }, [onBusyChange, saving]);
 
   if (!draft || !sourceData) return null;
 
@@ -163,7 +181,8 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
   const changed = (current: unknown, source: unknown) => !dataEqual(current, source);
 
   const save = async (confirm: boolean) => {
-    if (saving || (confirm && issues.length)) return;
+    if (savingRef.current || (confirm && issues.length)) return;
+    savingRef.current = true;
     setSaving(confirm ? "confirm" : "draft");
     setMessage(null);
     setError(null);
@@ -174,60 +193,81 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "The review could not be saved.");
     } finally {
+      savingRef.current = false;
       setSaving(null);
     }
   };
 
   return (
     <article
+      ref={reviewRef}
       data-lic624-review-workspace="true"
-      className="mt-10 overflow-hidden rounded-[26px] border-2 border-[#34413b] bg-[#fbfaf6] shadow-[0_24px_70px_rgba(35,48,42,0.16)]"
+      className="lic624-review"
     >
-      <div className="border-b-2 border-[#34413b] bg-[#eadfc7] px-4 py-5 sm:px-7 lg:px-9">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-start gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] border-2 border-[#34413b] bg-white text-[#08725d] shadow-[3px_3px_0_#bcae8e]">
-              <PencilLine size={23} aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#52605a]">Digital LIC 624</p>
-                <span className="rounded-full border-2 border-[#08725d] bg-white px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#08725d]">
-                  {submission.status === "ready_to_file" ? "Reviewed" : "Check extraction"}
-                </span>
-              </div>
-              <h2 className="mt-1 truncate text-[27px] font-bold tracking-[-0.04em] text-[#151a17] sm:text-[34px]">{submission.originalFileName}</h2>
-              <p className="mt-1 text-[14px] leading-6 text-[#58635e]">The uploaded original stays unchanged. Edits below are versioned as the review record.</p>
+      <header className="lic624-review__header">
+        <div className="lic624-review__identity">
+          <span className="lic624-review__document-icon"><PencilLine size={22} aria-hidden="true" /></span>
+          <div className="min-w-0">
+            <div className="lic624-review__eyebrow">
+              <p>Digital LIC 624</p>
+              <span className={`lic624-review__status${submission.status === "ready_to_file" ? " is-reviewed" : ""}`}>
+                {submission.status === "ready_to_file" ? "Reviewed" : "Check extraction"}
+              </span>
             </div>
+            <h2>{submission.originalFileName}</h2>
+            <p className="lic624-review__preservation">The uploaded original stays unchanged.</p>
           </div>
-          <div className="flex items-center justify-between gap-3 lg:justify-end">
-            <div className="text-left lg:text-right">
-              <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#65706b]">Review revision</p>
-              <p className="mt-0.5 text-[18px] font-bold text-[#19201c]">{submission.reviewRevision || "Original"}</p>
-            </div>
-            <button type="button" onClick={onClose} aria-label="Close digital form" className="grid h-12 w-12 place-items-center rounded-full border-2 border-[#34413b] bg-white text-[#252c28] transition hover:bg-[#f4f1e9]">
-              <X size={20} aria-hidden="true" />
-            </button>
+        </div>
+        <div className="lic624-review__header-actions">
+          <div className="lic624-review__revision">
+            <span>Review revision</span>
+            <strong>{submission.reviewRevision || "Original"}</strong>
           </div>
+          {onOpenOriginal ? <button type="button" onClick={onOpenOriginal} className="lic624-review__button"><FileText size={17} aria-hidden="true" /> Original</button> : null}
+          <button type="button" disabled={Boolean(saving)} onClick={() => { if (!savingRef.current) onClose(); }} aria-label="Close digital form" className="lic624-review__close">
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+      </header>
+
+      <div className="lic624-review__summary">
+        <div>
+          <span>Extraction</span>
+          <strong>{submission.extractionSummary?.extractedFieldCount ?? 0} populated fields</strong>
+        </div>
+        <div>
+          <span>Required check</span>
+          <strong className={issues.length ? "lic624-review__warning-text" : "lic624-review__success-text"}>{issues.length ? `${issues.length} item${issues.length === 1 ? "" : "s"} remaining` : "Complete"}</strong>
+        </div>
+        <div>
+          <span>Review state</span>
+          <strong>{unsaved ? "Unsaved changes" : changedFromSource ? "Edits saved" : "Matches extraction"}</strong>
         </div>
       </div>
 
-      <div className="grid border-b-2 border-[#34413b] bg-white sm:grid-cols-3">
-        <div className="border-b-2 border-[#34413b] px-5 py-4 sm:border-b-0 sm:border-r-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.11em] text-[#6a746f]">Extraction</p>
-          <p className="mt-1 text-[17px] font-bold text-[#1b211e]">{submission.extractionSummary?.extractedFieldCount ?? 0} populated fields</p>
-        </div>
-        <div className="border-b-2 border-[#34413b] px-5 py-4 sm:border-b-0 sm:border-r-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.11em] text-[#6a746f]">Required check</p>
-          <p className={`mt-1 text-[17px] font-bold ${issues.length ? "text-[#9c3f31]" : "text-[#08725d]"}`}>{issues.length ? `${issues.length} item${issues.length === 1 ? "" : "s"} remaining` : "Complete"}</p>
-        </div>
-        <div className="px-5 py-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.11em] text-[#6a746f]">Review state</p>
-          <p className="mt-1 text-[17px] font-bold text-[#1b211e]">{unsaved ? "Unsaved changes" : changedFromSource ? "Edits saved" : "Matches extraction"}</p>
-        </div>
-      </div>
+      <nav className="lic624-review__section-nav" aria-label="Review sections">
+        <label>
+          <span>Section</span>
+          <select aria-label="Jump to review section" value="" onChange={(event) => {
+            const section = reviewRef.current?.querySelector<HTMLElement>(`[data-lic624-section="${event.target.value}"]`);
+            section?.scrollIntoView({ behavior: "instant", block: "start" });
+            section?.querySelector("h3")?.focus({ preventScroll: true });
+          }}>
+            <option value="" disabled>Jump to section</option>
+            <option value="01">1. Facility and people</option>
+            <option value="02">2. Incident details</option>
+            <option value="03">3. Treatment and follow-up</option>
+            <option value="04">4. Notifications and review</option>
+            <option value="05">5. Submit and confirm</option>
+          </select>
+        </label>
+      </nav>
 
-      <form onSubmit={(event) => { event.preventDefault(); void save(false); }}>
+      <form aria-busy={Boolean(saving)} onSubmit={(event) => { event.preventDefault(); void save(false); }} onChange={() => setMessage(null)} onClick={(event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest(".lic624-review__fields button")) setMessage(null);
+      }}>
+        <fieldset disabled={Boolean(saving)} className="lic624-review__fields" aria-label="LIC 624 fields">
         <Section number="01" title="Facility and people involved" note="Confirm the community information and every person named on the report.">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Field label="Facility name" required changed={changed(draft.facility.name, sourceData.facility.name)}>
@@ -247,21 +287,21 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
             </Field>
           </div>
 
-          <div className="mt-7 border-t-2 border-[#c7cfca] pt-6">
-            <div className="flex items-center justify-between gap-3">
-              <h4 className="text-[18px] font-bold text-[#1c231f]">People involved</h4>
+          <div className="lic624-review__people">
+            <div className="lic624-review__subheading">
+              <h4>People involved</h4>
               {draft.residents.length < 4 ? (
-                <button type="button" onClick={() => setDraft((current) => current ? { ...current, residents: [...current.residents, { ...EMPTY_RESIDENT }] } : current)} className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#08725d] bg-white px-4 text-[13px] font-bold text-[#08725d] hover:bg-[#eef7f3]">
+                <button type="button" onClick={() => setDraft((current) => current ? { ...current, residents: [...current.residents, { ...EMPTY_RESIDENT }] } : current)} className="lic624-review__button">
                   <UserRoundPlus size={17} aria-hidden="true" /> Add person
                 </button>
               ) : null}
             </div>
             <div className="mt-4 space-y-4">
               {draft.residents.map((resident, index) => (
-                <div key={index} className="rounded-[16px] border-2 border-[#7f8b85] bg-white p-4 shadow-[4px_4px_0_#e3ded2]">
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="text-[13px] font-extrabold uppercase tracking-[0.09em] text-[#08725d]">Person {index + 1}</p>
-                    {draft.residents.length > 1 ? <button type="button" onClick={() => setDraft((current) => current ? { ...current, residents: current.residents.filter((_, row) => row !== index) } : current)} className="text-[12px] font-bold text-[#9a3e32] hover:underline">Remove</button> : null}
+                <div key={index} className="lic624-review__person">
+                  <div className="lic624-review__person-heading">
+                    <p>Person {index + 1}</p>
+                    {draft.residents.length > 1 ? <button type="button" onClick={() => setDraft((current) => current ? { ...current, residents: current.residents.filter((_, row) => row !== index) } : current)} className="lic624-review__remove">Remove</button> : null}
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                     <Field label="Name" required={index === 0} changed={changed(resident.name, sourceData.residents[index]?.name ?? "")}><input className={INPUT_CLASS} value={resident.name} onChange={(event) => updateResident(index, "name", event.target.value)} /></Field>
@@ -282,8 +322,8 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
               {form.incidentTypes.map((option) => {
                 const selected = draft.incidentTypes.some((item) => item.key === option.key);
                 return (
-                  <button key={option.key} type="button" aria-pressed={selected} onClick={() => toggleIncident(option.key, option.label)} className={`flex min-h-12 items-center gap-3 rounded-[12px] border-2 px-3 text-left text-[14px] font-semibold transition ${selected ? "border-[#08725d] bg-[#e9f4ef] text-[#075d4c]" : "border-[#aab4af] bg-white text-[#353d39] hover:border-[#65736c]"}`}>
-                    <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border-2 ${selected ? "border-[#08725d] bg-[#08725d] text-white" : "border-[#87928c]"}`}>{selected ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : null}</span>
+                  <button key={option.key} type="button" aria-pressed={selected} onClick={() => toggleIncident(option.key, option.label)} className="lic624-review__choice">
+                    <span className="lic624-review__check">{selected ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : null}</span>
                     {option.label}
                   </button>
                 );
@@ -301,7 +341,7 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
           <Field label="Medical treatment necessary" asGroup changed={changed(draft.treatment.necessary, sourceData.treatment.necessary)}>
             <div className="grid max-w-xl grid-cols-3 gap-2">
               {([{ label: "Yes", value: true }, { label: "No", value: false }, { label: "Not recorded", value: null }] as const).map((option) => (
-                <button key={option.label} type="button" aria-pressed={draft.treatment.necessary === option.value} onClick={() => updateTreatment("necessary", option.value)} className={`min-h-12 rounded-[12px] border-2 px-3 text-[13px] font-bold ${draft.treatment.necessary === option.value ? "border-[#08725d] bg-[#e9f4ef] text-[#075d4c]" : "border-[#aab4af] bg-white text-[#4b5550]"}`}>{option.label}</button>
+                <button key={option.label} type="button" aria-pressed={draft.treatment.necessary === option.value} onClick={() => updateTreatment("necessary", option.value)} className="lic624-review__choice lic624-review__choice--centered">{option.label}</button>
               ))}
             </div>
           </Field>
@@ -317,9 +357,9 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
         <Section number="04" title="Notifications and supervisor review" note="Record who was notified and preserve management comments with the incident record.">
           <div className="grid gap-3 lg:grid-cols-2">
             {draft.notifications.map((notification) => (
-              <div key={notification.key} className={`rounded-[15px] border-2 p-4 ${notification.selected ? "border-[#08725d] bg-[#eff7f3]" : "border-[#aab4af] bg-white"}`}>
-                <label className="flex cursor-pointer items-center gap-3 text-[15px] font-bold text-[#202622]">
-                  <input type="checkbox" checked={notification.selected} onChange={(event) => updateNotification(notification.key, "selected", event.target.checked)} className="h-5 w-5 accent-[#08725d]" />
+              <div key={notification.key} className={`lic624-review__notification${notification.selected ? " is-selected" : ""}`}>
+                <label className="lic624-review__notification-label">
+                  <input type="checkbox" checked={notification.selected} onChange={(event) => updateNotification(notification.key, "selected", event.target.checked)} />
                   {notification.label}
                 </label>
                 {notification.selected ? <input className={`${INPUT_CLASS} mt-3`} value={notification.detail} onChange={(event) => updateNotification(notification.key, "detail", event.target.value)} placeholder="Name, date, or reference" /> : null}
@@ -341,31 +381,32 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
           </div>
 
           {issues.length ? (
-            <div role="status" className="mt-6 flex items-start gap-3 rounded-[16px] border-2 border-[#bb685a] bg-[#fff5f1] p-4 text-[#7e352b]">
+            <div role="status" className="lic624-review__validation">
               <AlertTriangle className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
               <div>
-                <p className="text-[14px] font-extrabold">Complete before marking reviewed</p>
+                <p className="font-semibold">Complete before marking reviewed</p>
                 <p className="mt-1 text-[14px] leading-6">{issues.join(" · ")}</p>
               </div>
             </div>
           ) : null}
         </Section>
+        </fieldset>
 
-        <div className="sticky bottom-0 z-10 border-t-2 border-[#34413b] bg-[#f1eadb]/95 px-4 py-4 shadow-[0_-12px_35px_rgba(35,48,42,0.12)] backdrop-blur sm:px-7 lg:px-9">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-h-6 text-[14px] font-semibold">
-              {error ? <p role="alert" className="text-[#a13c30]">{error}</p> : null}
-              {message ? <p role="status" className="text-[#08725d]">{message}</p> : null}
-              {!error && !message ? <p className="text-[#59645f]">{unsaved ? "You have unsaved changes." : "All current changes are saved."}</p> : null}
+        <div className="lic624-review__footer">
+          <div className="lic624-review__footer-inner">
+            <div className="lic624-review__save-status">
+              {error ? <p role="alert" className="lic624-review__warning-text">{error}</p> : null}
+              {message ? <p role="status" className="lic624-review__success-text">{message}</p> : null}
+              {!error && !message ? <p>{saving ? "Saving review…" : unsaved ? "Unsaved changes" : "All changes saved"}</p> : null}
             </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <button type="button" disabled={!unsaved || Boolean(saving)} onClick={() => { setDraft(copyData(savedData)); setMessage(null); setError(null); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border-2 border-[#69766f] bg-white px-5 text-[14px] font-bold text-[#39423d] disabled:opacity-40">
+            <div className="lic624-review__save-actions">
+              <button type="button" disabled={!unsaved || Boolean(saving)} onClick={() => { if (savingRef.current) return; setDraft(copyData(savedData)); setMessage(null); setError(null); }} className="lic624-review__button">
                 <RotateCcw size={17} aria-hidden="true" /> Reset
               </button>
-              <button type="submit" disabled={Boolean(saving)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border-2 border-[#08725d] bg-white px-5 text-[14px] font-bold text-[#08725d] hover:bg-[#eef7f3] disabled:opacity-50">
+              <button type="submit" disabled={Boolean(saving)} className="lic624-review__button">
                 <Save size={17} aria-hidden="true" /> {saving === "draft" ? "Saving" : "Save draft"}
               </button>
-              <button type="button" disabled={Boolean(saving) || Boolean(issues.length)} onClick={() => void save(true)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border-2 border-[#075f4e] bg-[#08725d] px-5 text-[14px] font-bold text-white shadow-[3px_3px_0_#34413b] hover:bg-[#075f4e] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none">
+              <button type="button" disabled={Boolean(saving) || Boolean(issues.length)} onClick={() => void save(true)} className="lic624-review__button lic624-review__button--primary">
                 <FileCheck2 size={18} aria-hidden="true" /> {saving === "confirm" ? "Confirming" : "Mark reviewed"}
               </button>
             </div>

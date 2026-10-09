@@ -62,6 +62,7 @@
     "check:admissions-access": "node scripts/check-admissions-access.mjs",
     "check:executive-director": "node scripts/check-executive-director-workspace.mjs",
     "check:browser-executive-director": "node scripts/check-browser-executive-director-dashboard.mjs",
+    "check:browser-executive-licensing": "node scripts/check-browser-executive-director-licensing.mjs",
     "check:admissions-dashboard": "node scripts/check-admissions-dashboard.mjs && node scripts/check-admissions-schedule.mjs",
     "check:workforce-dashboard": "node scripts/check-workforce-dashboard.mjs",
     "check:regression-replays": "node scripts/check-regression-replays.mjs",

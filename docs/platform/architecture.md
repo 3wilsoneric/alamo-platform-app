@@ -198,6 +198,19 @@ requires a delegated Entra access token with the configured `access_as_user`
 scope. Authentication runs before route dispatch; request parsing and domain
 execution never run for an anonymous request.
 
+Executive Director batch intake keeps the existing single-file POST contract:
+new reports return 201, exact-byte duplicates return 200 with `duplicate: true`.
+The local implementation reserves a private, immutable facility/SHA-256 receipt
+before publishing the original and manifest. Retries converge on the reserved
+UUID and finish incomplete persistence without replacing existing reviewed
+manifests. Source bytes are integrity-checked again before acknowledging a
+duplicate. Azure object creation is conditional; catalog mutations retain ETag
+checks. Local create-only objects use atomic publication, and catalog writes
+use a bounded single-host process lock with dead-owner recovery. The response
+flag is not persisted as report content. The existing 8 MiB facility catalog
+remains a limit; the indexed store and background processing stages are tracked
+in the [Executive Director plan](./executive-director-workspace.md).
+
 The removed legacy assistant compatibility endpoints are not part of the API contract.
 Deterministic tools own data access; Claude is the bounded synthesis path.
 Governed reports accept only completed registered-question evidence. The
@@ -408,6 +421,21 @@ Snapshot storage behavior:
 and tries live Databricks first because Incident Center is an operational feed.
 If live Databricks fails, it falls back to the published snapshot and includes a
 warning.
+
+`GET /api/platform/executive-director/incidents` uses the same operational
+exception for the Executive Director's searchable incident register, without
+changing the snapshot-first dashboard contract. The API authenticates the user
+and authorizes the facility before its live read. One bounded SQL statement
+returns a full-source count, matching count, category facets, revision, and a
+cursor page from `alamohealth.gold.v_incidents`, joined to facility-scoped
+resident names from `alamohealth.gold.v_tool_resident_countability_audit`.
+There is no history cutoff; undated incidents remain included unless a date
+filter is applied. Cursors bind to facility, filters, source, and revision.
+The configured service principal needs read access to these views. If that
+read is unavailable, the first page may use published incident detail, but
+coverage is always partial (publishing is bounded by age and row count).
+A live-page failure does not substitute snapshot rows. Counts distinguish
+available detail from published aggregates, and unavailable data is not zero.
 
 ## Auth And Identity
 

@@ -1,0 +1,66 @@
+.executive-trend-chart {
+  --executive-chart-accent: #174f81;
+  position: relative;
+  container-type: inline-size;
+  container-name: executive-chart;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: 8px;
+  min-width: 0;
+  padding: 24px 6px 38px 0;
+  color: #34445b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+
+.executive-trend-chart__axis,
+.executive-trend-chart__plot { position: relative; min-height: 0; min-width: 0; }
+.executive-trend-chart__axis > span { position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap; }
+.executive-trend-chart__plot { border-left: 1px solid #bdc8d4; border-bottom: 1px solid #bdc8d4; }
+.executive-trend-chart__drawing { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.executive-trend-chart__vertical-grid { stroke: #e8edf2; stroke-width: 0.7; }
+.executive-trend-chart__horizontal-grid { stroke: #dbe2ea; stroke-width: 0.7; stroke-dasharray: 2 2; }
+.executive-trend-chart__reference { position: absolute; left: 8px; transform: translateY(calc(-100% - 4px)); padding: 1px 4px; color: var(--executive-chart-accent); background: #ffffffd9; font-size: 11px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+
+.executive-trend-chart__point {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(40px, calc(100% / var(--executive-chart-point-count)));
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--executive-chart-accent);
+  font: inherit;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.executive-trend-chart__dot { width: 7px; height: 7px; flex: 0 0 7px; border: 1.5px solid var(--executive-chart-accent); border-radius: 50%; background: white; box-sizing: border-box; }
+.executive-trend-chart__point[aria-pressed="true"] .executive-trend-chart__dot { width: 10px; height: 10px; flex-basis: 10px; background: var(--executive-chart-accent); box-shadow: 0 0 0 2px white; }
+.executive-trend-chart__point:hover .executive-trend-chart__dot { background: var(--executive-chart-accent); }
+.executive-trend-chart__point:focus-visible { outline: 2px solid var(--executive-chart-accent); outline-offset: 1px; background: #ffffffc9; }
+.executive-trend-chart__value { position: absolute; bottom: calc(50% + 8px); left: 50%; transform: translateX(-50%); color: #19304c; font-size: 11px; line-height: 1; font-weight: 600; white-space: nowrap; pointer-events: none; }
+.executive-trend-chart__point[aria-pressed="true"] .executive-trend-chart__value { color: var(--executive-chart-accent); font-weight: 700; }
+.executive-trend-chart__month { position: absolute; top: calc(100% + 9px); display: grid; gap: 1px; min-width: 30px; text-align: center; transform: translateX(-50%); font-size: 10px; line-height: 1.25; white-space: nowrap; }
+.executive-trend-chart__month[data-selected="true"] { color: var(--executive-chart-accent); font-weight: 700; }
+.executive-trend-chart--compact { padding-top: 20px; padding-bottom: 32px; grid-template-columns: 30px minmax(0, 1fr); column-gap: 6px; font-size: 10px; }
+.executive-trend-chart--compact .executive-trend-chart__value { font-size: 10px; }
+.executive-trend-chart--compact .executive-trend-chart__month { font-size: 9px; top: calc(100% + 7px); }
+.executive-trend-chart--empty { display: flex; justify-content: center; align-items: center; color: #6a7280; font-size: 13px; }
+
+@container executive-chart (max-width: 440px) {
+  .executive-trend-chart__value[data-sparse="false"] { visibility: hidden; }
+  .executive-trend-chart__point[aria-pressed="true"] .executive-trend-chart__value,
+  .executive-trend-chart__point:focus-visible .executive-trend-chart__value,
+  .executive-trend-chart__point:hover .executive-trend-chart__value { visibility: visible; }
+  .executive-trend-chart__month[data-sparse="false"][data-selected="false"] { visibility: hidden; }
+}

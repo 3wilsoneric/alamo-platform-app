@@ -133,11 +133,53 @@ Director Entra roles are mapped to explicit facility IDs and are redirected to
 the community dashboard instead of the general Platform. The dashboard adapts
 the main community profile's visual hierarchy while serving a separate,
 server-filtered contract: census, incidents, medication performance, and only
-that facility's referrals, assessments, move-ins, and pipeline cards. Licensing
-adds secure LIC 624 upload and the recent intake queue. Fillable PDFs are
+that facility's referrals, assessments, move-ins, and pipeline cards. Community
+navigation is Overview, MARs, and Incidents; MARs and Incidents open their own
+full-page workspaces. New client is a persistent notification list that
+opens the client folder from any view. Reading a folder does not dismiss its
+notification: eligibility follows the connected Pipeline status until admission
+or another terminal outcome. Visible dashboards refresh every minute and on
+focus; an unavailable refresh retains the last connected client list with an
+explicit stale-data message. Licensing
+uses a matching paper-and-register workspace with Reports, Upload report, and
+Review form tabs. The facility-scoped report catalog supports filename search,
+status filters, and cursor pagination. The existing digital LIC 624 stays
+mounted across tab changes to preserve unsaved edits; replacing or closing an
+edited form asks for confirmation. Normal Community/brand navigation also
+confirms dirty reviews, and pending report actions lock editing and replacement.
+Browser reload/close uses `beforeunload`; browser Back is not blocked by the
+current BrowserRouter. The long review form has section jumps and a compact
+mobile action footer. Month and client tabs support arrow/Home/End navigation,
+keep the selected tab visible, and use a single keyboard tab stop. Wide record
+tables are named, keyboard-scrollable regions with overflow-only column hints.
+Fillable PDFs are
 stripped into the versioned LIC 624 draft and move to review. Image-only reports
 remain in `ocr_required`; neither route implies that OCR or filing has already
 occurred.
+
+The local batch-intake implementation extends that upload view to at most 100
+PDF/JPG/PNG files, 20 MB each, sent sequentially with per-file results and a
+failed-files-only retry action. One-file uploads retain automatic form review;
+batches expose explicit review actions for each extracted report. Exact-byte
+duplicates within the same authorized facility reuse the existing report and
+review history. A received scan is still Awaiting OCR, not processed or filed.
+Pending files are memory-only and require reselection after leaving; confirmed
+receipts remain server-side. This does not yet supply background OCR, incoming
+email, or the indexed report store required for the historical backfill.
+
+Overview and the Incidents workspace also expose an All incidents register.
+The register starts with all available history, supports server-side text,
+category, and inclusive date filters, and returns 25 records per page with
+expandable recorded details. Chart-month and category selections filter the
+same register; Reset filters returns to all history. Every request enforces
+the signed-in director's facility before reading records. Its dedicated
+operational endpoint prefers a single full-history Databricks query (including
+undated records), independent of the dashboard's bounded preview. A published
+snapshot fallback is always labeled partial, with available records separated
+from published aggregate totals; it never claims an all-time total. Live pages
+do not silently switch to snapshot records, and changed data requires a page
+restart. LIC 624 uploads remain separate documents and are not merged into
+incident totals or automatically linked to these records.
 
 `/admissions` is the aggregate Admissions overview inside Alamo. It opens on a
 Briefing, with Pipeline as the second page-level view. Briefing keeps the

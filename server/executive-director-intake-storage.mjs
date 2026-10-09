@@ -7,6 +7,9 @@ import { ManagedIdentityCredential } from "@azure/identity";
 import { createHttpError } from "./http-errors.mjs";
 import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { extractLic624Report, summarizeLic624Extraction } from "./lic624-extraction.mjs";
+import { createAzureIntakeObjectStore, createLocalIntakeObjectStore } from "./executive-director-intake-objects.mjs";
+import { persistIdempotentIntakeUpload } from "./executive-director-intake-receipts.mjs";
+import { withLocalIntakeCatalogLock } from "./executive-director-intake-lock.mjs";
 import {
   assertLic624SubmissionId,
   getLic624ReviewIssues,
@@ -149,17 +152,25 @@ function toCatalogRecord(manifest) {
   return {
     ...toExecutiveDirectorSubmissionSummary(manifest),
     updatedAt: manifest.review?.updatedAt ?? manifest.createdAt,
+    reviewRevision: manifest.reviewRevision ?? 0,
     storage: manifest.storage ?? null
   };
 }
 
 function catalogRecordForResponse(record) {
-  const { storage: _storage, updatedAt: _updatedAt, ...summary } = record;
+  const { storage: _storage, updatedAt: _updatedAt, reviewRevision: _reviewRevision, ...summary } = record;
   return summary;
 }
 
 function withCatalogRecord(catalog, manifest) {
   const nextRecord = toCatalogRecord(manifest);
+  const existing = catalog.submissions.find((item) => item.submissionId === nextRecord.submissionId);
+  const existingRevision = Number(existing?.reviewRevision ?? 0);
+  if (existing && (
+    existingRevision > nextRecord.reviewRevision
+    || (existingRevision === nextRecord.reviewRevision && typeof existing.updatedAt === "string" && existing.updatedAt > String(nextRecord.updatedAt))
+    || JSON.stringify(existing) === JSON.stringify(nextRecord)
+  )) return catalog;
   const submissions = catalog.submissions.filter((item) => item.submissionId !== nextRecord.submissionId);
   submissions.push(nextRecord);
   submissions.sort((left, right) => {
@@ -193,34 +204,6 @@ async function readRequestBytes(req) {
     chunks.push(buffer);
   }
   return Buffer.concat(chunks);
-}
-
-async function writeAzureSubmission(paths, bytes, manifest) {
-  const container = getAzureContainer();
-  await container.getBlockBlobClient(paths.source).uploadData(bytes, {
-    blobHTTPHeaders: { blobContentType: manifest.contentType },
-    metadata: {
-      facilityId: manifest.facilityId,
-      submissionId: manifest.submissionId,
-      sha256: manifest.sha256
-    },
-    conditions: { ifNoneMatch: "*" }
-  });
-  await container.getBlockBlobClient(paths.manifest).uploadData(
-    Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, "utf8"),
-    {
-      blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" },
-      conditions: { ifNoneMatch: "*" }
-    }
-  );
-}
-
-async function writeLocalSubmission(paths, bytes, manifest) {
-  const sourcePath = path.join(localRoot(), paths.source.replace(`${STORAGE_ROOT}/`, ""));
-  const manifestPath = path.join(localRoot(), paths.manifest.replace(`${STORAGE_ROOT}/`, ""));
-  await mkdir(path.dirname(sourcePath), { recursive: true });
-  await writeFile(sourcePath, bytes, { flag: "wx" });
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" });
 }
 
 async function listLocalManifests(facilityId) {
@@ -282,6 +265,7 @@ async function mutateAzureCatalog(facilityId, update) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const current = await readAzureCatalog(facilityId);
     const next = update(structuredClone(current.catalog ?? emptyCatalog(facilityId)));
+    if (current.catalog && JSON.stringify(next) === JSON.stringify(current.catalog)) return current.catalog;
     try {
       await blob.uploadData(serializeCatalog(next), {
         blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" },
@@ -304,15 +288,16 @@ const localCatalogUpdates = new Map();
 
 async function mutateLocalCatalog(facilityId, update) {
   const previous = localCatalogUpdates.get(facilityId) ?? Promise.resolve();
-  const pending = previous.catch(() => {}).then(async () => {
+  const pending = previous.catch(() => {}).then(() => withLocalIntakeCatalogLock(localRoot(), facilityId, async () => {
     const current = await readLocalCatalog(facilityId);
     const next = update(structuredClone(current.catalog ?? emptyCatalog(facilityId)));
+    if (current.catalog && JSON.stringify(next) === JSON.stringify(current.catalog)) return current.catalog;
     await mkdir(path.dirname(current.catalogPath), { recursive: true });
     const temporaryPath = `${current.catalogPath}.${randomUUID()}.tmp`;
     await writeFile(temporaryPath, serializeCatalog(next), { flag: "wx" });
     await rename(temporaryPath, current.catalogPath);
     return next;
-  });
+  }));
   localCatalogUpdates.set(facilityId, pending);
   try {
     return await pending;
@@ -465,7 +450,23 @@ async function listAzureManifests(facilityId) {
   return results;
 }
 
-export async function createExecutiveDirectorIntakeSubmission({ req, facilityId, authContext }) {
+async function findLegacyIntakeManifest(facilityId, sha256) {
+  const catalog = await ensureCatalog(facilityId);
+  const indexed = catalog.submissions.filter((item) => item.facilityId === facilityId && item.sha256 === sha256);
+  const candidates = indexed.length ? indexed : (shouldUseAzure() ? await listAzureManifests(facilityId) : await listLocalManifests(facilityId))
+    .filter((item) => item.facilityId === facilityId && item.sha256 === sha256);
+  if (candidates.length > 1) throw createHttpError(409, "licensing_duplicate_ambiguous", "Multiple existing copies of this report require reconciliation. No new copy was created.");
+  if (!candidates.length) return null;
+  const stored = await findStoredManifest(facilityId, candidates[0].submissionId);
+  const manifest = stored.manifest;
+  const manifestObject = stored.location.kind === "azure" ? stored.location.blobName : `${STORAGE_ROOT}/${path.relative(localRoot(), stored.location.manifestPath).split(path.sep).join("/")}`;
+  return {
+    ...manifest,
+    storage: manifest.storage ?? { manifestObject, sourceObject: manifestObject.replace("manifest.json", `source${EXTENSION_BY_TYPE[manifest.contentType]}`) }
+  };
+}
+
+export async function createExecutiveDirectorIntakeSubmission({ req, facilityId, authContext }, { afterPersist = async (_stage, _record) => {} } = {}) {
   const contentType = normalizeContentType(req.headers?.["content-type"]);
   const originalFileName = normalizeFileName(req.headers?.["x-file-name"]);
   const bytes = await readRequestBytes(req);
@@ -477,10 +478,8 @@ export async function createExecutiveDirectorIntakeSubmission({ req, facilityId,
   const submissionId = randomUUID();
   const createdAt = new Date().toISOString();
   const sha256 = createHash("sha256").update(bytes).digest("hex");
-  const extraction = await extractLic624Report(bytes, contentType);
   const paths = storagePaths(facilityId, submissionId, contentType);
-  const manifest = {
-    version: "executive-director-licensing-intake-v1",
+  const metadata = {
     submissionId,
     facilityId,
     originalFileName,
@@ -494,21 +493,31 @@ export async function createExecutiveDirectorIntakeSubmission({ req, facilityId,
           objectId: String(authContext.claims?.oid ?? authContext.claims?.sub ?? "").trim() || null
         }
       : { tenantId: null, objectId: "development-bypass" },
-    status: extraction.status,
-    extraction,
-    review: null,
-    reviewRevision: 0,
-    reviewedAt: null,
-    filedAt: null,
     storage: {
       sourceObject: paths.source,
       manifestObject: paths.manifest
     }
   };
-  if (shouldUseAzure()) await writeAzureSubmission(paths, bytes, manifest);
-  else await writeLocalSubmission(paths, bytes, manifest);
-  await mutateCatalog(facilityId, (catalog) => withCatalogRecord(catalog, manifest));
-  return manifest;
+  const result = await persistIdempotentIntakeUpload({ facilityId, sha256, bytes, metadata }, {
+    objects: shouldUseAzure() ? createAzureIntakeObjectStore(getAzureContainer()) : createLocalIntakeObjectStore(localRoot(), STORAGE_ROOT),
+    findLegacy: findLegacyIntakeManifest,
+    async buildManifest(initial) {
+      const extraction = await extractLic624Report(bytes, initial.contentType);
+      const { version: _receiptVersion, ...fields } = initial;
+      return { version: "executive-director-licensing-intake-v1", ...fields, status: extraction.status, extraction, review: null, reviewRevision: 0, reviewedAt: null, filedAt: null };
+    },
+    async assertCapacity(manifest) {
+      serializeCatalog(withCatalogRecord(await ensureCatalog(facilityId), manifest));
+    },
+    async indexManifest(manifest) {
+      // If the projection was lost, rebuild every existing submission first;
+      // repairing one receipt must not hide the community's other reports.
+      await ensureCatalog(facilityId);
+      return mutateCatalog(facilityId, (catalog) => withCatalogRecord(catalog, manifest));
+    },
+    afterPersist
+  });
+  return { ...result.manifest, duplicate: result.duplicate };
 }
 
 export function toExecutiveDirectorSubmissionDetail(manifest) {

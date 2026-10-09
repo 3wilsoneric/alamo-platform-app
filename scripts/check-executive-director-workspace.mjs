@@ -6,6 +6,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { PDFDocument } from "pdf-lib";
+import ts from "typescript";
 import {
   ALAMO_EXECUTIVE_DIRECTOR_ROLES,
   getExecutiveDirectorAccess,
@@ -55,13 +56,27 @@ const scopedDashboard = buildExecutiveDirectorCommunityDashboard({
       { facility_id: "337", month_bucket: "2026-09", census: 154 }
     ],
     incidentTrend: [{ month_bucket: "2026-09", incidentCount: 3 }],
-    topIncidentCategories: [{ label: "Medication", count: 2 }]
+    topIncidentCategories: [{ label: "Medication", count: 2 }],
+    incidentDetails: [
+      { id: "incident-344", facility_id: "344", resident_id: "resident-344", client_name: "Turlock Resident", incident_date: "2026-09-12", category: "Medication", location: "Unit A" },
+      { id: "incident-337", facility_id: "337", resident_id: "resident-337", client_name: "San Pablo Resident", incident_date: "2026-09-13", category: "Medication", location: "Unit B" }
+    ]
   },
   reportsSummary: {
     medicationCompliance: [
       { facility_id: "344", month_bucket: "2026-09", compliance_pct: 98.5, total_scheduled: 100, given: 98, not_given: 2 },
       { facility_id: "337", month_bucket: "2026-09", compliance_pct: 93, total_scheduled: 100, given: 93, not_given: 7 }
-    ]
+    ],
+    toolContext: {
+      marExceptionDetails: [
+        { administration_id: "mar-344", facility_id: "344", resident_id: "resident-344", resident_name: "Turlock Resident", medication_name: "Medication A", administration_date: "2026-09-14", administration_outcome: "Not given" },
+        { administration_id: "mar-337", facility_id: "337", resident_id: "resident-337", resident_name: "San Pablo Resident", medication_name: "Medication B", administration_date: "2026-09-15", administration_outcome: "Not given" }
+      ],
+      residentEpisodeHistory: [
+        { episode_id: "episode-344", facility_id: "344", resident_id: "resident-344", resident_name: "Turlock Resident", admit_date: "2026-09-01" },
+        { episode_id: "episode-337", facility_id: "337", resident_id: "resident-337", resident_name: "San Pablo Resident", admit_date: "2026-09-02" }
+      ]
+    }
   },
   admissionsDashboard: {
     generated_at: "2026-10-08T12:00:00.000Z",
@@ -99,7 +114,99 @@ assert.equal(scopedDashboard.medication.compliancePct, 98.5);
 assert.deepEqual(scopedDashboard.census, [{ month: "2026-09", census: 80 }]);
 assert.deepEqual(scopedDashboard.admissions.cards.map((card) => card.referralId), [1]);
 assert.deepEqual(scopedDashboard.admissions.recentReferrals.map((row) => row.referralId), [1]);
+assert.deepEqual(scopedDashboard.incidentDetails.map((row) => row.id), ["incident-344"]);
+assert.deepEqual(scopedDashboard.medicationExceptions.map((row) => row.id), ["mar-344"]);
+assert.deepEqual(scopedDashboard.residentMovements.map((row) => row.id), ["episode-344-admit"]);
+assert.deepEqual(scopedDashboard.medicationWatch.map((row) => row.residentName), ["Turlock Resident"]);
 assert.equal(JSON.stringify(scopedDashboard).includes("San Pablo Client"), false);
+assert.equal(JSON.stringify(scopedDashboard).includes("San Pablo Resident"), false);
+assert.equal(scopedDashboard.incidentDetails[0].injuryOccurred, null);
+assert.equal(scopedDashboard.incidentDetails[0].policeCalled, null);
+assert.deepEqual(scopedDashboard.incidentCategoryPeriods, [{
+  month: "2026-09", categories: [{ label: "Medication", count: 1 }], recordCount: 1, totalCount: 3, complete: false
+}]);
+assert.deepEqual(scopedDashboard.topIncidentCategories, [{ label: "Medication", count: 1 }]);
+
+const categoryDashboard = buildExecutiveDirectorCommunityDashboard({
+  facilityId: "344",
+  communitySnapshot: {
+    reporting_month: "2026-10",
+    incidentTrend: [{ month_bucket: "2026-10", incidentCount: 60 }, { month_bucket: "2026-09", incidentCount: 2 }],
+    topIncidentCategories: [{ label: "Medication Refusal", count: 1168 }],
+    incidentDetails: [
+      ...Array.from({ length: 56 }, (_, index) => ({ id: `oct-${index}`, facility_id: "344", incident_date: "2026-10-08", category: "Medication Refusal" })),
+      { id: "sep-1", facility_id: "344", incident_date: "2026-09-12", category: "Other" },
+      { id: "sep-2", facility_id: "344", received_at: "2026-09-13T12:00:00Z", category: "Other" },
+      { id: "aug-1", facility_id: "344", incident_date: "2026-08-01", category: "Other" },
+      { id: "other-facility", facility_id: "337", incident_date: "2026-10-08", category: "Other facility category" },
+      { id: "undated", facility_id: "344", category: "Undated category" },
+      { id: "invalid-month", facility_id: "344", incident_date: "2026-13-08", category: "Invalid date category" },
+      { id: "invalid-day", facility_id: "344", incident_date: "2026-10-99", category: "Invalid date category" }
+    ]
+  }
+});
+assert.deepEqual(categoryDashboard.topIncidentCategories, [{ label: "Medication Refusal", count: 56 }]);
+assert.equal(categoryDashboard.incidentDetails.length, 50);
+assert.deepEqual(categoryDashboard.incidentCategoryPeriods, [
+  { month: "2026-08", categories: [{ label: "Other", count: 1 }], recordCount: 1, totalCount: null, complete: false },
+  { month: "2026-09", categories: [{ label: "Other", count: 2 }], recordCount: 2, totalCount: 2, complete: true },
+  { month: "2026-10", categories: [{ label: "Medication Refusal", count: 56 }], recordCount: 56, totalCount: 60, complete: false }
+]);
+const missingCategoryDashboard = buildExecutiveDirectorCommunityDashboard({
+  facilityId: "344",
+  communitySnapshot: {
+    incidentTrend: [{ month_bucket: "2026-10", incidentCount: 108 }],
+    topIncidentCategories: [{ label: "Medication Refusal", count: 1168 }],
+    incidentDetails: [{ id: "old-incident", facility_id: "344", incident_date: "2026-09-12", category: "Other" }]
+  }
+});
+assert.deepEqual(missingCategoryDashboard.topIncidentCategories, []);
+assert.deepEqual(missingCategoryDashboard.incidentCategoryPeriods.at(-1), {
+  month: "2026-10", categories: [], recordCount: 0, totalCount: 108, complete: false
+});
+
+const incidentBooleanCases = [
+  [true, true], [false, false], [1, true], [0, false],
+  ["yes", true], [" TRUE ", true], ["Y", true], ["1", true],
+  ["no", false], [" FALSE ", false], ["N", false], ["0", false],
+  [null, null], [undefined, null], ["", null], ["unknown", null], [2, null]
+];
+const booleanDashboard = buildExecutiveDirectorCommunityDashboard({
+  facilityId: "344",
+  communitySnapshot: {
+    incidentDetails: incidentBooleanCases.map(([value], index) => ({
+      id: `boolean-${index}`, facility_id: "344", injury_occurred: value, police_called: value
+    }))
+  }
+});
+incidentBooleanCases.forEach(([, expected], index) => {
+  const row = booleanDashboard.incidentDetails.find((item) => item.id === `boolean-${index}`);
+  assert.equal(row.injuryOccurred, expected);
+  assert.equal(row.policeCalled, expected);
+});
+
+function typescriptModuleUrl(source) {
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }
+  });
+  return `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
+}
+const formattersUrl = typescriptModuleUrl(await readFile(new URL("../src/features/executive/components/executiveDashboardFormatters.ts", import.meta.url), "utf8"));
+const admissionsSource = await readFile(new URL("../src/features/executive/components/executiveAdmissions.ts", import.meta.url), "utf8");
+const { isImpendingAdmissionCard, impendingAdmissionCards } = await import(typescriptModuleUrl(admissionsSource.replace('"./executiveDashboardFormatters"', JSON.stringify(formattersUrl))));
+const terminalStatuses = ["Declined", "Declined by family", "Denied", "Rejected", "Canceled", "CANCELLED", "Withdrawn", "Closed", "Admitted", "Discharged", "Deceased", "Archived", "Moved_in", "Admission complete"];
+for (const status of terminalStatuses) {
+  assert.equal(isImpendingAdmissionCard({ status, plannedAdmissionDate: "2026-10-09" }), false, `${status} must not be an impending admit when a planned date is retained`);
+}
+for (const status of ["Accepted", "Accepted, requirements open", "Awaiting_admit", "Meet the client not sent"]) {
+  assert.equal(isImpendingAdmissionCard({ status, plannedAdmissionDate: null }), true, `${status} remains an impending admit without a date`);
+}
+assert.equal(isImpendingAdmissionCard({ status: "Assessment scheduled", plannedAdmissionDate: null }), false);
+assert.deepEqual(impendingAdmissionCards([
+  { clientName: "Undated Client", status: "Accepted", plannedAdmissionDate: null },
+  { clientName: "Closed Client", status: "Admitted", plannedAdmissionDate: "2026-10-01" },
+  { clientName: "Scheduled Client", status: "Awaiting admit", plannedAdmissionDate: "2026-10-09" }
+]).map((card) => card.clientName), ["Scheduled Client", "Undated Client"]);
 
 const temporaryRoot = await mkdtemp(path.join(tmpdir(), "alamo-executive-intake-"));
 process.env.EXECUTIVE_DIRECTOR_INTAKE_STORAGE = "local";
@@ -188,7 +295,11 @@ try {
 
   const concurrentSubmissions = await Promise.all(
     Array.from({ length: 12 }, async (_, index) => {
-      const concurrentRequest = Readable.from([pdf]);
+      // Pagination needs distinct reports. Renaming identical bytes now reuses
+      // the existing submission instead of manufacturing another report.
+      const distinctDocument = await PDFDocument.load(pdf);
+      distinctDocument.setSubject(`Synthetic incident report ${index + 1}`);
+      const concurrentRequest = Readable.from([Buffer.from(await distinctDocument.save())]);
       concurrentRequest.headers = {
         "content-type": "application/pdf",
         "x-file-name": `incident-${String(index + 1).padStart(2, "0")}.pdf`
@@ -224,10 +335,11 @@ try {
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const [app, shell, page, dashboardPage, dashboardModal, header, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
+const [app, shell, page, batchUpload, dashboardPage, dashboardModal, header, reviewWorkspace, platformApi, devApi, plan] = await Promise.all([
   readFile(path.join(root, "src/app/App.tsx"), "utf8"),
   readFile(path.join(root, "src/shared/layout/ProtectedAppShell.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorPage.tsx"), "utf8"),
+  readFile(path.join(root, "src/features/executive/components/LicensingBulkUpload.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/pages/ExecutiveDirectorDashboardPage.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/components/ExecutiveCommunityDetailModal.tsx"), "utf8"),
   readFile(path.join(root, "src/features/executive/components/ExecutiveDirectorHeader.tsx"), "utf8"),
@@ -241,19 +353,34 @@ assert.match(app, /path="\/executive\/licensing"/);
 assert.match(app, /path="\/executive\/dashboard"/);
 assert.match(shell, /executiveDirectorAccess\.restrictedToExecutive/);
 assert.match(shell, /window\.location\.replace\("\/executive\/dashboard"\)/);
-assert.match(page, /data-executive-director-upload="true"/);
-assert.match(page, /LIC 624 intake/);
+assert.match(page, /<LicensingBulkUpload/);
+assert.match(batchUpload, /data-executive-director-upload="true"/);
+assert.match(batchUpload, /LIC 624 intake/);
 assert.match(page, /Review form/);
 assert.match(dashboardPage, /data-executive-community-dashboard="true"/);
 assert.match(dashboardPage, /data-daily-operating-summary="true"/);
 assert.doesNotMatch(dashboardPage, /A current view of resident census|Community briefing|Select any area to open/);
 assert.match(dashboardPage, /onOpenDetail\("census"\)/);
-assert.match(dashboardPage, /onOpenDetail\("admissions"\)/);
+assert.match(dashboardPage, /aria-label="Community views"/);
+assert.match(dashboardPage, /label: "Overview"/);
+assert.match(dashboardPage, /label: "MARs"/);
+assert.match(dashboardPage, /label: "Incidents"/);
+assert.doesNotMatch(dashboardPage, /<DomainPanel kind="admissions"/);
+assert.match(dashboardPage, /data-executive-meet-client-trigger="true"/);
+assert.match(dashboardPage, /data-executive-client-notifications="true"/);
+assert.match(dashboardPage, /aria-label="New client notifications"/);
+assert.match(dashboardPage, /<h2>New client<\/h2>/);
+assert.doesNotMatch(dashboardPage, /Meet the client/);
+assert.match(dashboardPage, /onClick=\{\(\) => meetClient\(card\)\}/);
+assert.match(dashboardPage, /ExecutiveCommunityWorkspace/);
 assert.match(dashboardModal, /data-executive-community-detail-modal/);
 assert.match(dashboardModal, /data-executive-detail-view="census"/);
 assert.match(dashboardModal, /data-executive-detail-view="incidents"/);
 assert.match(dashboardModal, /data-executive-detail-view="medications"/);
 assert.match(dashboardModal, /data-executive-detail-view="admissions"/);
+assert.match(dashboardModal, /data-census-ledger="true"/);
+assert.match(dashboardModal, /data-incident-register="true"/);
+assert.match(dashboardModal, /data-mar-binder="true"/);
 assert.match(header, /\/executive\/dashboard/);
 assert.match(header, /Community/);
 assert.match(reviewWorkspace, /data-lic624-review-workspace="true"/);
@@ -268,4 +395,6 @@ assert.match(plan, /cursor pagination/);
 assert.match(plan, /SHA-256 checksum/);
 assert.match(plan, /Nothing is sorted or filed|no automatic addition/i);
 
+await import("./check-executive-director-incidents.mjs");
+await import("./check-executive-director-batch-intake.mjs");
 console.log("executive director workspace checks passed");
