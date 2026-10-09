@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "alamo-static-";
-const CACHE_NAME = `${CACHE_PREFIX}v8`;
+const CACHE_NAME = `${CACHE_PREFIX}v9`;
 const OFFLINE_URL = "/offline.html";
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -64,7 +64,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (!url.search && (STATIC_ASSETS.includes(url.pathname) || url.pathname.startsWith("/assets/"))) {
+  // The authenticated application bundle is deliberately network-owned. A
+  // long-lived installed app must never pin an older hashed JavaScript bundle
+  // after production has moved to a newer release. Only the PHI-free offline
+  // shell and brand artwork are cached for installation support.
+  if (!url.search && STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(cacheStaticAsset(request));
   }
 });

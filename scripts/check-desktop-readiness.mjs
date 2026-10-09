@@ -10,6 +10,8 @@ const runtime = read("src/shared/desktop/DesktopRuntime.tsx");
 const main = read("src/main.tsx");
 const worker = read("public/sw.js");
 const offline = read("public/offline.html");
+const recoveryPage = read("public/recover.html");
+const recoveryClient = read("public/recover-client.js");
 
 assert.equal(manifest.id, "/");
 assert.equal(manifest.start_url, "/home");
@@ -57,11 +59,11 @@ assert.match(runtime, /window\.location\.reload\(\)/);
 
 assert.match(worker, /CACHE_PREFIX = "alamo-static-"/);
 assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v\d+`/);
-assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v8`/);
+assert.match(worker, /CACHE_NAME = `\$\{CACHE_PREFIX\}v9`/);
 assert.match(worker, /request\.mode === "navigate"/);
 assert.match(worker, /new Request\(request, \{ cache: "no-store" \}\)/);
 assert.match(worker, /fetch\(networkRequest\)\.catch/);
-assert.match(worker, /url\.pathname\.startsWith\("\/assets\/"\)/);
+assert.doesNotMatch(worker, /url\.pathname\.startsWith\("\/assets\/"\)/);
 assert.match(worker, /self\.clients\.matchAll/);
 assert.match(worker, /client\.navigate\(client\.url\)/);
 assert.doesNotMatch(worker, /caches\.match\(/);
@@ -72,6 +74,16 @@ assert.doesNotMatch(offline, /<script/i);
 assert.doesNotMatch(offline, /resident|diagnosis|medication|assessment/i);
 assert.match(offline, /No platform data is stored/);
 assert.match(offline, /href="\/home"[^>]*>Try again</);
+
+assert.match(recoveryPage, /<script src="\/recover-client\.js" defer><\/script>/);
+assert.match(recoveryPage, /noindex, nofollow/);
+assert.doesNotMatch(recoveryPage, /resident|diagnosis|medication|assessment/i);
+assert.match(recoveryClient, /serviceWorker\.getRegistrations\(\)/);
+assert.match(recoveryClient, /registration\.unregister\(\)/);
+assert.match(recoveryClient, /name\.startsWith\("alamo-static-"\)/);
+assert.match(recoveryClient, /caches\.delete\(name\)/);
+assert.match(recoveryClient, /window\.location\.replace/);
+assert.match(recoveryClient, /"\/executive\/dashboard"/);
 console.log("desktop readiness check passed");
 
 function readPngDimensions(file) {
