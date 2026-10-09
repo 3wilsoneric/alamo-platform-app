@@ -8,6 +8,7 @@ import { CensusTrendModule } from "../../../shared/modules/CensusTrendModule";
 import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot";
 import { ProgressModal } from "../../admissions/components/PipelineBoard";
 import { ExecutiveCommunityDetailModal, type ExecutiveCommunityDetailView } from "../components/ExecutiveCommunityDetailModal";
+import { ExecutiveReferralStatusPill } from "../components/ExecutiveReferralStatusPill";
 import { formatExecutiveDate, formatExecutiveNumber } from "../components/executiveDashboardFormatters";
 import {
   fetchExecutiveDirectorCommunityDashboard,
@@ -206,7 +207,7 @@ function CommunityOverview({
                   {recentCards.map((card) => (
                     <li key={card.referralId}>
                       <button type="button" onClick={() => onOpenCard(card)} className="group flex min-h-12 w-full items-center justify-between gap-3 px-1 py-2.5 text-left transition-colors hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f8b73]">
-                        <span className="min-w-0"><strong className="block truncate text-[13px] text-[#17201c]">{card.clientName}</strong><span className="mt-1 flex min-w-0 items-center gap-2"><ReferralStatusPill status={card.status} /><span className="truncate text-[10px] text-[#68716d]">{formatExecutiveNumber(card.daysOpen)}d open</span></span></span>
+                        <span className="min-w-0"><strong className="block truncate text-[13px] text-[#17201c]">{card.clientName}</strong><span className="mt-1 flex min-w-0 items-center gap-2"><ExecutiveReferralStatusPill status={card.status} /><span className="truncate text-[10px] text-[#68716d]">{formatExecutiveNumber(card.daysOpen)}d open</span></span></span>
                         <ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
                       </button>
                     </li>
@@ -282,18 +283,6 @@ function SnapshotButton({ label, value, detail, tone, onClick }: { label: string
       <ArrowRight className="h-4 w-4 shrink-0 text-[#0f8b73] transition-transform group-hover:translate-x-1" aria-hidden="true" />
     </button>
   );
-}
-
-function ReferralStatusPill({ status }: { status: string }) {
-  const normalized = status.trim().toLowerCase();
-  const tone = normalized.includes("accept") || normalized.includes("awaiting admit")
-    ? "border-[#a9d2c0] bg-[#e3f3eb] text-[#1e684e]"
-    : normalized.includes("declin") || normalized.includes("deni")
-      ? "border-[#e2aaa4] bg-[#fae5e2] text-[#963c34]"
-      : normalized === "under review"
-        ? "border-[#dfc36f] bg-[#fff0bb] text-[#76580b]"
-        : "border-[#bccaf0] bg-[#e8edfc] text-[#365ba9]";
-  return <span data-executive-referral-status="true" className={`inline-flex max-w-full truncate rounded-md border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.05em] ${tone}`}>{status}</span>;
 }
 
 function DetailLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {

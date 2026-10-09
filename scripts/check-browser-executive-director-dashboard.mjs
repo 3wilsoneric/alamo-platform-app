@@ -48,10 +48,10 @@ const dashboardResponse = {
       { month: "2026-10", count: 95 }
     ],
     topIncidentCategories: [
-      { label: "Medication Refusal", count: 1168 },
-      { label: "AWOL/Elopement", count: 427 },
-      { label: "Other", count: 309 },
-      { label: "Substance Use", count: 198 }
+      { label: "Medication Refusal", count: 28 },
+      { label: "AWOL/Elopement", count: 20 },
+      { label: "Other", count: 17 },
+      { label: "Substance Use", count: 11 }
     ],
     medication: {
       month: "2026-10",
@@ -85,7 +85,11 @@ const dashboardResponse = {
         { referralId: 1, facilityId: "337", clientName: "Sean Bobier", status: "Awaiting admit", column: "decision", daysOpen: 9 },
         { referralId: 2, facilityId: "337", clientName: "Ben Randolph", status: "Assessment scheduled", column: "in_progress", daysOpen: 4 },
         { referralId: 3, facilityId: "337", clientName: "Georgette Moore", status: "Assessment scheduled", column: "in_progress", daysOpen: 3 },
-        { referralId: 4, facilityId: "337", clientName: "Jonah Wicker", status: "Clinical review", column: "in_progress", daysOpen: 2 }
+        { referralId: 4, facilityId: "337", clientName: "Jonah Wicker", status: "Clinical review", column: "in_progress", daysOpen: 2 },
+        { referralId: 5, facilityId: "337", clientName: "Deanna Bell", status: "Accepted", column: "decision", daysOpen: 12 },
+        { referralId: 6, facilityId: "337", clientName: "Mario Manzaro", status: "Under review", column: "decision", daysOpen: 7 },
+        { referralId: 7, facilityId: "337", clientName: "Iris Delgado", status: "Referral received", column: "received", daysOpen: 1 },
+        { referralId: 8, facilityId: "337", clientName: "Malcolm Reed", status: "Document review", column: "in_progress", daysOpen: 5 }
       ],
       recentReferrals: [],
       upcomingAssessments: [],
@@ -124,7 +128,7 @@ await withBrowserQa(async (browser) => {
   if (new Set(summaryTones).size !== 4) {
     throw new Error(`The operating summary must retain four distinct restrained tones: ${JSON.stringify(summaryTones)}`);
   }
-  if (await dashboard.locator('[data-executive-referral-status="true"]').count() !== dashboardResponse.dashboard.admissions.cards.length) {
+  if (await dashboard.locator('[data-executive-referral-status="true"]').count() !== Math.min(dashboardResponse.dashboard.admissions.cards.length, 4)) {
     throw new Error("The executive admissions component must surface Pipeline status language for each visible referral.");
   }
   const desktopMetrics = await page.evaluate(() => {
@@ -145,10 +149,32 @@ await withBrowserQa(async (browser) => {
   await page.screenshot({ path: `${screenshotDir}/desktop-1440.png`, fullPage: true });
 
   await summary.getByRole("button", { name: /^Census/ }).click();
+  const detailShell = page.locator("[data-executive-community-detail-modal]");
   const detailModal = page.locator('[data-executive-community-detail-modal="census"]');
   await detailModal.waitFor({ state: "visible" });
-  await detailModal.getByRole("button", { name: /Close Census detail/i }).click();
-  await detailModal.waitFor({ state: "hidden" });
+  await page.screenshot({ path: `${screenshotDir}/desktop-census-detail.png`, fullPage: false });
+  for (const nextView of ["Admissions", "Incidents", "Medications"]) {
+    await detailShell.getByRole("tab", { name: nextView }).click();
+    const nextKey = nextView.toLowerCase();
+    const nextModal = page.locator(`[data-executive-community-detail-modal="${nextKey}"]`);
+    await nextModal.waitFor({ state: "visible" });
+    await nextModal.locator(`[data-executive-detail-view="${nextKey}"]`).waitFor({ state: "visible" });
+    await page.waitForTimeout(200);
+    if (await nextModal.getByRole("tab", { selected: true }).count() !== 1) {
+      throw new Error(`The ${nextView} drill-down must have exactly one selected navigation tab.`);
+    }
+    if (nextKey === "admissions" && await nextModal.locator('[data-executive-referral-status="true"]').count() !== dashboardResponse.dashboard.admissions.cards.length) {
+      throw new Error("The admissions drill-down must carry Pipeline status language into every referral card.");
+    }
+    await page.screenshot({ path: `${screenshotDir}/desktop-${nextKey}-detail.png`, fullPage: false });
+  }
+  const activeDetailModal = page.locator('[data-executive-community-detail-modal="medications"]');
+  const detailCopy = await activeDetailModal.innerText();
+  if (/Governed monthly census|shown without portfolio|Client charts open the existing management review/i.test(detailCopy)) {
+    throw new Error("The drill-down reintroduced explanatory report copy.");
+  }
+  await activeDetailModal.getByRole("button", { name: /Close Medications detail/i }).click();
+  await detailShell.waitFor({ state: "hidden" });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -161,11 +187,23 @@ await withBrowserQa(async (browser) => {
     throw new Error(`The mobile dashboard is not viewport-safe: ${JSON.stringify(mobileMetrics)}`);
   }
   await page.screenshot({ path: `${screenshotDir}/mobile-390.png`, fullPage: false });
+  await summary.getByRole("button", { name: /^Active referrals/ }).click();
+  const mobileAdmissionsModal = page.locator('[data-executive-community-detail-modal="admissions"]');
+  await mobileAdmissionsModal.waitFor({ state: "visible" });
+  const mobileDetailMetrics = await page.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    dialogWidth: document.querySelector('[data-executive-community-detail-modal="admissions"]')?.getBoundingClientRect().width ?? 0
+  }));
+  if (mobileDetailMetrics.overflow > 2 || mobileDetailMetrics.dialogWidth > 390) {
+    throw new Error(`The mobile drill-down is not viewport-safe: ${JSON.stringify(mobileDetailMetrics)}`);
+  }
+  await page.screenshot({ path: `${screenshotDir}/mobile-admissions-detail.png`, fullPage: false });
+  await mobileAdmissionsModal.getByRole("button", { name: /Close Admissions detail/i }).click();
 
   if (consoleErrors.length || requestFailures.length) {
     throw new Error(JSON.stringify({ consoleErrors, requestFailures }));
   }
-  await writeFile(`${artifactDir}/latest.json`, JSON.stringify({ desktopMetrics, mobileMetrics }, null, 2));
+  await writeFile(`${artifactDir}/latest.json`, JSON.stringify({ desktopMetrics, mobileMetrics, mobileDetailMetrics }, null, 2));
   await context.close();
   console.log("Executive Director dashboard browser QA passed at 1440px and 390px.");
 });

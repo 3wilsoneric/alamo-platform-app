@@ -39,6 +39,13 @@ detail. The compact components reuse the Admissions Pipeline's restrained status
 colors and referral state language so the two surfaces feel related without
 turning the executive dashboard into a second workflow board.
 
+Dashboard drill-downs stay facility-scoped and open in one switchable workspace.
+Each begins with a compact measure strip and then exposes the underlying governed
+records: census periods, monthly incident volume and categories, medication
+administration totals, or the community's assessment, move-in, and referral
+charts. Referral cards retain the same stage and decision language used by the
+Admissions Pipeline and continue into the existing management chart.
+
 ## Access model
 
 The browser and API use the same facility role mapping:
