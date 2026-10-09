@@ -287,6 +287,43 @@ one Healthy/Running replica at 100 percent traffic, 4/4 public probes, current
 byte-identical browser assets, and `/sw.js` serving cache generation `v8`. No
 server, API, data, report, alert, email, or Pipeline state changed.
 
+### Browser release-current enforcement — 2026-10-08
+
+The application no longer registers a service worker or caches application
+bundles. The published `/sw.js` is now a retirement worker for legacy clients:
+it deletes only `alamo-static-*` Cache Storage entries, unregisters itself, and
+navigates controlled windows to a cache-busted current release. It has no fetch
+handler and cannot cache HTML, JavaScript, API responses, or PHI.
+
+- source commit: `f22e213`
+- source branch: `codex/compact-executive-dashboard`
+- ACR build: `cc6b`
+- image tag: `alamo-platform:legacy-recovery-f22e213`
+- image digest: `sha256:2be22aec101a59b014a1b5136f660e1f31707768db9c03cc114784ac8b372d5f`
+- active revision: `alamo-platform-prod-web--legacy-recovery-1008`
+- rollback digest: `sha256:4caa3693aa11157f7cd5d2d3e1915db08243368a7ca8cd17a3bbef5256e5e2d0`
+- active browser assets: `/assets/index-DgyuGtSb.js` and
+  `/assets/index-BJ2YsHCL.css`
+
+The hidden `/recover.html` fallback covers the browser edge case where a
+retired worker continues to control its already-open tab until that client is
+released. It fetches the public release shell without credentials, removes
+only Alamo's legacy worker/cache entries, replaces the tab URL with
+`/executive/dashboard`, and imports the current fingerprinted bundle with a
+cache-busting query. It does not read, store, or transmit platform data.
+Future releases remain network-current because the application has no
+controlling worker and the entry document is served with
+`no-cache, max-age=0, must-revalidate`.
+
+Desktop readiness, TypeScript, production build, and 390px/1440px Executive
+Director browser checks passed. The broader analyst suite reached its existing
+local Databricks-credential boundary after its preceding checks passed.
+Post-promotion verification confirmed one Healthy/Running replica at 100
+percent traffic, 4/4 public route probes, the current bundle in the entry
+document, the credential-free recovery bootstrap, the fetch-free retirement
+worker, and the anonymous Executive Director API still failing closed with
+`401`.
+
 ### Current Data Architecture explainer release — 2026-10-06
 
 The URL-only `/data-architecture` explainer now documents the production system
