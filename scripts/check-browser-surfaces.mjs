@@ -437,8 +437,8 @@ async function assertCommunityRowClickThrough(page) {
     if (!(await latestSurface.locator('[data-module-chart="census-trend"]').isVisible())) {
       throw new Error(`${communityName} profile did not render its census trend`);
     }
-    if (!(await latestSurface.getByRole("heading", { name: "Medication performance", exact: true }).isVisible())) {
-      throw new Error(`${communityName} profile did not render medication performance`);
+    if (!(await latestSurface.getByRole("heading", { name: "Medication administration", exact: true }).isVisible())) {
+      throw new Error(`${communityName} profile did not render medication administration`);
     }
     if (!(await latestSurface.getByRole("heading", { name: "Diagnosis mix", exact: true }).isVisible())) {
       throw new Error(`${communityName} profile did not render diagnosis mix`);

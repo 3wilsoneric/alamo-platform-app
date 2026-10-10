@@ -1,0 +1,205 @@
+/* Main Platform workspace materials. Keep these scoped to the existing routes;
+   the Executive Director workspace owns its separate document styles. */
+:root {
+  --platform-workspace-width: 1500px;
+  --platform-file-ink: #16283a;
+  --platform-file-rule: #d3d8dd;
+  --platform-file-paper: #fcfbf7;
+}
+
+[data-analytics-section-navigation="true"] [aria-current="page"] {
+  background: transparent;
+}
+
+[data-reports-page="true"] aside,
+[data-licensing-workspace="true"] aside {
+  border-right: 1px solid #d4dbd8;
+  padding-right: 20px;
+}
+
+[data-reports-page="true"] [data-analytics-report-option],
+[data-licensing-workspace="true"] aside li button {
+  min-height: 72px;
+}
+
+[data-reports-page="true"] [data-analytics-report-option][aria-pressed="true"],
+[data-licensing-workspace="true"] aside li button[aria-pressed="true"] {
+  border-left: 0;
+  background: #f2f5f2;
+  color: #173e35;
+}
+
+[data-licensing-workspace="true"] main[aria-label="Report reader"] {
+  min-height: 420px;
+  border: 1px solid #d7d7cc;
+  border-top: 4px solid #a7834c;
+  border-radius: 4px;
+  background: var(--platform-file-paper);
+  padding: clamp(16px, 2vw, 28px);
+  box-shadow: 0 8px 22px #48392216;
+}
+
+[data-admissions-overview="true"] > div,
+[data-workforce-overview="true"] > div {
+  max-width: var(--platform-workspace-width);
+}
+
+[data-workforce-overview="true"] nav[aria-label="Workforce pages"] button {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+/* The connected Admissions file keeps the familiar chart content, but the
+   shell is stock and paper rather than a floating white box. */
+[data-admissions-progress-modal="true"] [data-admissions-chart-folder="true"] {
+  border-color: #b79353;
+  background: url('/materials/manila-stock-v1.webp') repeat, #e6c68a;
+  background-size: 360px 360px, auto;
+  box-shadow: 0 22px 56px #172a3c52, inset 0 1px #fff6dd !important;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-folder-tab="true"] > :first-child {
+  border-color: #b79353;
+  background: url('/materials/manila-stock-v1.webp') repeat, #e6c68a;
+  background-size: 360px 360px, auto;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-paper="true"] {
+  border-color: #d7cbb7;
+  background: var(--platform-file-paper);
+  box-shadow: 0 3px 8px #44392226, inset 1px 0 #fff !important;
+}
+
+/* A community profile is a dashboard, not a file. Keep its reading surface
+   quiet and let each data domain carry its own restrained accent. */
+[data-california-community-profile] {
+  border: 1px solid #aebdc5 !important;
+  border-top: 5px solid #205576 !important;
+  border-radius: 11px !important;
+  padding: 0;
+  background: #fcfbf7 !important;
+  box-shadow: 0 24px 70px #091b2c40 !important;
+}
+
+[data-california-community-profile] > header,
+[data-california-community-profile] > div:last-child {
+  background: var(--platform-file-paper) !important;
+}
+
+[data-california-community-profile] > header {
+  border-bottom-color: #cbd4dc !important;
+  border-radius: 7px 7px 0 0;
+}
+
+[data-california-community-profile] > div:last-child {
+  border-radius: 0 0 7px 7px;
+}
+
+[data-california-community-profile] [data-community-modal-navigation="true"] {
+  border-top: 1px solid #d9dfe2;
+}
+
+[data-california-community-profile] [data-community-modal-tab][aria-current="page"] {
+  border-bottom-color: #164d7c !important;
+  color: #164d7c !important;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading {
+  --section-tone: #164d7c;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 24px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--section-tone);
+  padding-bottom: 8px;
+}
+
+[data-community-domain-section="incidents"] .community-overview-section-heading { --section-tone: #923621; }
+[data-community-domain-section="medications"] .community-overview-section-heading { --section-tone: #68214e; }
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading h3 {
+  margin: 0;
+  color: var(--section-tone);
+  font: 650 clamp(20px, 2vw, 25px)/1.2 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -0.035em;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading h3 span {
+  margin-left: 7px;
+  color: #65717d;
+  font: 500 14px/1.4 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-census-count {
+  margin-left: 9px;
+  color: #163954;
+  font-size: clamp(28px, 2.4vw, 35px);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading h3 small {
+  margin-left: 4px;
+  color: #536474;
+  font: 500 14px/1.2 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-census-period {
+  margin: 2px 0 0;
+  color: #536474;
+  font: 500 13px/1.4 "Helvetica Neue", Arial, sans-serif;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--section-tone);
+  font: 650 13px/1.3 "Helvetica Neue", Arial, sans-serif;
+  white-space: nowrap;
+  text-underline-offset: 3px;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading button:hover { text-decoration: underline; }
+[data-community-dashboard-surface="detail"] .community-overview-section-heading button:focus-visible {
+  outline: 2px solid var(--section-tone);
+  outline-offset: 4px;
+}
+
+@media (max-width: 1023px) {
+  [data-reports-page="true"] aside,
+  [data-licensing-workspace="true"] aside {
+    border-right: 0;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  [data-licensing-workspace="true"] main[aria-label="Report reader"] {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  [data-california-community-profile] {
+    border-width: 5px 0 0 !important;
+    border-radius: 0 !important;
+    padding: 0;
+  }
+
+  [data-community-dashboard-surface="detail"] .community-overview-section-heading h3 span {
+    display: block;
+    margin: 3px 0 0;
+  }
+}
+
+@media print {
+  [data-california-community-profile],
+  [data-licensing-workspace="true"] main[aria-label="Report reader"] {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

@@ -135,7 +135,8 @@ the main community profile's visual hierarchy while serving a separate,
 server-filtered contract: census, incidents, medication performance, and only
 that facility's referrals, assessments, move-ins, and pipeline cards. Community
 navigation is Overview, MARs, and Incidents; MARs and Incidents open their own
-full-page workspaces. New client is a persistent notification list that
+full-page workspaces. The searchable, paginated incident register lives in
+Incidents rather than being repeated below the daily overview. New client is a persistent notification list that
 opens the client folder from any view. Reading a folder does not dismiss its
 notification: eligibility follows the connected Pipeline status until admission
 or another terminal outcome. Visible dashboards refresh every minute and on

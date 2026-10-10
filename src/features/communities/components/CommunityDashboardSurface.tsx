@@ -55,12 +55,14 @@ function average(values: number[]) {
 function CommunityMedicationCompliance({
   facilityId,
   facilityName,
+  label,
   row,
   loading = false,
   showUnavailable = true
 }: {
   facilityId: string;
   facilityName: string;
+  label?: string;
   row: ReportsSummaryResponse["medicationCompliance"][number] | null;
   loading?: boolean;
   showUnavailable?: boolean;
@@ -69,7 +71,7 @@ function CommunityMedicationCompliance({
     if (loading) {
       return (
         <div data-community-medication-loading="true" role="status" className="flex items-center gap-2 border-y border-[#d9d9d9] py-6 text-[14px] text-[#595959]">
-          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#0f8b73]/20 border-t-[#0f8b73]" aria-hidden="true" />
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#68214e]/20 border-t-[#68214e]" aria-hidden="true" />
           Loading medication performance...
         </div>
       );
@@ -83,9 +85,10 @@ function CommunityMedicationCompliance({
 
   return (
     <MedicationComplianceModule
+      accentColor="#68214e"
       items={[{
         id: `${facilityId}-${row.month_bucket}`,
-        label: facilityName,
+        label: label ?? facilityName,
         compliancePct: row.compliance_pct,
         scheduled: row.total_scheduled,
         given: row.given,
@@ -370,6 +373,10 @@ export default function CommunityDashboardSurface({
   const latestIncidentLabel = model?.selectedIncidentMonth
     ? formatMonthLabel(model.selectedIncidentMonth, { fallback: model.selectedIncidentMonth, month: "long" })
     : null;
+  const priorCensusPoint = model?.censusPoints.at(-2);
+  const censusChange = model?.latestCensus && priorCensusPoint
+    ? Number(model.latestCensus.census) - priorCensusPoint.value
+    : null;
   const showRecentIncidentTriage = !category && !month && !residentId;
   const openCommunitySurface = (
     nextFocus: "census" | "incidents" | "medications" | "residents" | "search",
@@ -417,16 +424,11 @@ export default function CommunityDashboardSurface({
 
       {model && focus === "census" ? (
         <div className={compact ? "space-y-4" : "space-y-8"}>
-          <p className={`${compact ? "text-[15px] leading-6" : "text-[20px] leading-8"} max-w-[920px] font-serif text-[#333333]`}>
-            {model.latestCensus
-              ? `${facilityName}'s latest census is ${formatNumber(model.latestCensus.census)} for ${formatMonthLabel(model.latestCensus.month_bucket, { month: "long" })}.`
-              : `No monthly census points are loaded for ${facilityName}.`}
-          </p>
           <div>
             <h3 className={`${compact ? "mb-2 text-[20px]" : "mb-3 text-[24px]"} font-serif font-semibold tracking-[-0.03em]`}>
               Census trend
             </h3>
-            <CensusTrendModule points={model.censusPoints} height={compact ? 220 : 300} />
+            <CensusTrendModule points={model.censusPoints} height={compact ? 220 : 300} accentColor="#174f81" />
           </div>
           <div className="overflow-x-auto border-y border-[#111111]">
             <table className="w-full border-collapse text-left text-[13px]">
@@ -476,6 +478,7 @@ export default function CommunityDashboardSurface({
           <div>
             <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[#595959]">Latest categories</div>
             <IncidentCategoriesModule
+              accentColor="#923621"
               items={model.categoryItems}
               limit={10}
               activeCategory={model.selectedCategory}
@@ -628,58 +631,41 @@ export default function CommunityDashboardSurface({
 
       {model && focus === "detail" ? (
         <div className={compact ? "space-y-5" : "space-y-8"}>
-          <p className={`max-w-[980px] font-serif text-[#333333] ${compact ? "text-[16px] leading-6" : "text-[20px] leading-8"}`}>
-            {facilityName} currently has {formatNumber(model.residents.length)} {residentNoun(model.residents.length)}. Its latest census is {model.latestCensus ? formatNumber(model.latestCensus.census) : "not available"}, and it recorded {formatNumber(model.latestIncidentTotal)} incidents in {latestIncidentLabel ?? "the latest reporting month"}.
-            {model.latestCompliance ? ` Medication compliance was ${model.latestCompliance.compliance_pct.toFixed(1)}%.` : ""}
-          </p>
-          <div className="grid grid-cols-2 border-y border-[#111111] sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              { label: "Current residents", value: formatNumber(model.residents.length), focus: "residents" as const },
-              { label: "Latest census", value: model.latestCensus ? formatNumber(model.latestCensus.census) : "—", focus: "census" as const },
-              { label: "Latest incidents", value: formatNumber(model.latestIncidentTotal), focus: "incidents" as const },
-              { label: "Medication compliance", value: model.latestCompliance ? `${model.latestCompliance.compliance_pct.toFixed(1)}%` : "—", focus: "medications" as const },
-              { label: "Average age", value: model.averageAge ? model.averageAge.toFixed(1) : "—", focus: "residents" as const },
-              { label: "Average LOS", value: `${formatNumber(Math.round(model.averageLos))} days`, focus: "residents" as const }
-            ].map((item, index) => {
-              const className = `border-[#d9d9d9] text-left ${compact ? "px-2.5 py-3" : "px-3 py-4"} ${index % 2 ? "border-l" : ""} sm:border-l sm:first:border-l-0`;
-              const content = (
-                <>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">{item.label}</div>
-                  <div className={`${compact ? "mt-1.5 text-[20px]" : "mt-2 text-[24px]"} font-semibold tracking-[-0.04em] tabular-nums`}>{item.value}</div>
-                </>
-              );
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  data-community-kpi-drilldown={item.focus}
-                  onClick={() => openCommunitySurface(item.focus)}
-                  className={`${className} transition-colors hover:bg-[#f7fbf9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#0f8b73]`}
-                  aria-label={`View ${item.label.toLowerCase()} detail for ${facilityName}`}
-                >
-                  {content}
-                </button>
-              );
-            })}
-          </div>
-          <div>
-            <h3 className={`${compact ? "mb-2 text-[20px]" : "mb-3 text-[24px]"} font-serif font-semibold tracking-[-0.03em]`}>Census trend</h3>
-            <CensusTrendModule points={model.censusPoints} height={compact ? 220 : 300} />
+          <div data-community-domain-section="census">
+            <div className="community-overview-section-heading">
+              <div>
+                <h3>Census <strong className="community-overview-census-count">{model.latestCensus ? formatNumber(model.latestCensus.census) : "—"}</strong><small>residents</small></h3>
+                <p className="community-overview-census-period">
+                  {model.latestCensus ? formatMonthLabel(model.latestCensus.month_bucket, { month: "long" }) : "No census period"}
+                  {censusChange !== null && priorCensusPoint ? ` · ${censusChange > 0 ? "+" : ""}${formatNumber(censusChange)} vs ${priorCensusPoint.label}` : ""}
+                </p>
+              </div>
+              <button type="button" data-community-kpi-drilldown="census" onClick={() => openCommunitySurface("census")}>View census <span aria-hidden="true">→</span></button>
+            </div>
+            <CensusTrendModule points={model.censusPoints.slice(-12)} height={compact ? 220 : 300} showSummary={false} accentColor="#174f81" />
           </div>
           <div className={`grid min-w-0 lg:grid-cols-2 ${compact ? "gap-6" : "gap-8"}`}>
-            <div className="min-w-0">
-              <h3 className={`${compact ? "mb-2 text-[20px]" : "mb-3 text-[24px]"} font-serif font-semibold tracking-[-0.03em]`}>Latest incident categories</h3>
+            <div data-community-domain-section="incidents" className="min-w-0">
+              <div className="community-overview-section-heading">
+                <h3>Incidents <span>{latestIncidentLabel ? `${formatNumber(model.latestIncidentTotal)} · ${latestIncidentLabel}` : ""}</span></h3>
+                <button type="button" data-community-kpi-drilldown="incidents" onClick={() => openCommunitySurface("incidents")}>View incidents <span aria-hidden="true">→</span></button>
+              </div>
               <IncidentCategoriesModule
+                accentColor="#923621"
                 items={model.categoryItems}
                 limit={8}
                 onSelect={(nextCategory) => openCommunitySurface("incidents", { category: nextCategory })}
               />
             </div>
-            <div className="min-w-0">
-              <h3 className={`${compact ? "mb-2 text-[20px]" : "mb-3 text-[24px]"} font-serif font-semibold tracking-[-0.03em]`}>Medication performance</h3>
+            <div data-community-domain-section="medications" className="min-w-0">
+              <div className="community-overview-section-heading">
+                <h3>Medication administration</h3>
+                <button type="button" data-community-kpi-drilldown="medications" onClick={() => openCommunitySurface("medications")}>View medications <span aria-hidden="true">→</span></button>
+              </div>
               <CommunityMedicationCompliance
                 facilityId={facilityId}
                 facilityName={facilityName}
+                label="Completion"
                 row={model.latestCompliance}
                 loading={!reportsSummary && !reportsSummaryUnavailable}
               />
@@ -712,7 +698,10 @@ export default function CommunityDashboardSurface({
             />
           </div>
           <div>
-            <h3 className={`${compact ? "mb-2 text-[20px]" : "mb-3 text-[24px]"} font-serif font-semibold tracking-[-0.03em]`}>Longest-stay residents</h3>
+            <div className="community-overview-section-heading">
+              <h3>Longest-stay residents</h3>
+              <button type="button" data-community-kpi-drilldown="residents" onClick={() => openCommunitySurface("residents")}>View residents <span aria-hidden="true">→</span></button>
+            </div>
             <ResidentRosterModule
               residents={model.residentItems.slice(0, 10)}
               onSelect={(resident) => openCommunitySurface("search", { residentId: resident.id })}

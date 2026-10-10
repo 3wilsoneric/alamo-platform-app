@@ -13,13 +13,15 @@ interface MedicationComplianceModuleProps {
   variant?: "light" | "dark";
   onSelect?: (item: MedicationComplianceItem) => void;
   emptyLabel?: string;
+  accentColor?: string;
 }
 
 export function MedicationComplianceModule({
   items,
   variant = "light",
   onSelect,
-  emptyLabel = "Medication compliance data is not available for this selection."
+  emptyLabel = "Medication compliance data is not available for this selection.",
+  accentColor
 }: MedicationComplianceModuleProps) {
   const dark = variant === "dark";
   const safeItems = items.map((item) => ({
@@ -54,7 +56,7 @@ export function MedicationComplianceModule({
               </div>
             </div>
             <div className={`mt-2 h-1.5 overflow-hidden ${dark ? "bg-white/[0.08]" : "bg-[#d9d9d9]"}`}>
-              <div className="h-full bg-[#0f8b73]" style={{ width: `${safePct ?? 0}%` }} />
+              <div className={accentColor ? "h-full" : "h-full bg-[#0f8b73]"} style={{ width: `${safePct ?? 0}%`, ...(accentColor ? { backgroundColor: accentColor } : {}) }} />
             </div>
           </>
         );

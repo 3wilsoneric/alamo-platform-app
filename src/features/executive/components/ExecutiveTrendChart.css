@@ -52,9 +52,9 @@
 .executive-trend-chart__point[aria-pressed="true"] .executive-trend-chart__value { color: var(--executive-chart-accent); font-weight: 700; }
 .executive-trend-chart__month { position: absolute; top: calc(100% + 9px); display: grid; gap: 1px; min-width: 30px; text-align: center; transform: translateX(-50%); font-size: 10px; line-height: 1.25; white-space: nowrap; }
 .executive-trend-chart__month[data-selected="true"] { color: var(--executive-chart-accent); font-weight: 700; }
-.executive-trend-chart--compact { padding-top: 20px; padding-bottom: 32px; grid-template-columns: 30px minmax(0, 1fr); column-gap: 6px; font-size: 10px; }
-.executive-trend-chart--compact .executive-trend-chart__value { font-size: 10px; }
-.executive-trend-chart--compact .executive-trend-chart__month { font-size: 9px; top: calc(100% + 7px); }
+.executive-trend-chart--compact { padding-top: 22px; padding-bottom: 35px; grid-template-columns: 30px minmax(0, 1fr); column-gap: 6px; font-size: 11px; }
+.executive-trend-chart--compact .executive-trend-chart__value { font-size: 11px; }
+.executive-trend-chart--compact .executive-trend-chart__month { font-size: 11px; top: calc(100% + 7px); }
 .executive-trend-chart--empty { display: flex; justify-content: center; align-items: center; color: #6a7280; font-size: 13px; }
 
 @container executive-chart (max-width: 440px) {

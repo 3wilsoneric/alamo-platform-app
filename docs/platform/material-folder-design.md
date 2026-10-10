@@ -9,11 +9,12 @@
 
 ## Use this before changing the style
 
-The realistic **folder** is the primary reusable object. Preserve its shaped
-silhouette, attached tabs, manila material, inset paper, fine rules, and depth.
-It should work as a compact Pipeline referral, an open client file, a report,
-or a dashboard entry. The executive dashboard is one application of this
-language, not the boundary of the system.
+Use the realistic **folder** for an actual client or report file: a Pipeline
+referral, an open client chart, or a scanned LIC 624 under review. A folder
+represents a record someone can inspect or work on. Do not turn dashboard
+metrics, charts, filters, navigation, or live operational summaries into
+folding folders. Those need readable data panels with domain color and direct
+drilldowns. The executive dashboard is not a stack of documents.
 
 This is a code reference, not a new website, route, brand, or UI redesign.
 Do not create a component gallery or add explanatory copy to the product when
@@ -39,13 +40,18 @@ The baseline can be recovered without relying on a temporary worktree:
 git show a6863b2:src/features/executive/executiveCommunity.css
 ```
 
-| Source under `src/features/executive/` | What to reuse or inspect |
+| Source (under `src/features/executive/` unless stated) | What to reuse or inspect |
 | --- | --- |
-| `executiveCommunity.css` | Material tokens; overview folios; ledger covers; `.admissions-file*` folder geometry; mobile collapse |
+| `executiveCommunity.css` | Domain-colored dashboard panels; record-detail covers; `.admissions-file*` folder geometry; mobile collapse |
 | `components/ExecutiveCommunityDetailModal.tsx` | File sections, timeline, period tabs, scrollable records, inline vs dialog detail |
 | `pages/ExecutiveDirectorDashboardPage.tsx` | `DomainPanel`, overview composition, new-client entry point |
 | `components/ExecutiveTrendChart.tsx` and `.css` | Chart geometry, selected-period behavior, keyboard point navigation |
 | `executiveLicensing.css` | Manila cover, curved Reports/Upload/Review tabs, paper stack, forest actions |
+| `components/ExecutiveDirectorHeader.tsx` and `executiveHeader.css` | Official logo placement, desktop center navigation, two-row mobile header and its height contract |
+| `src/features/california/components/PlatformPageNavigation.tsx` | Main Platform shell's matching desktop active-rule navigation; its mobile menu remains a distinct compact pattern |
+| `src/platformWorkspace.css` | Main Platform-scoped report and Licensing reader, Admissions file, and community dashboard treatments; does not change Executive Director permissions or data |
+| `src/features/california/components/AnalyticsSectionNavigation.tsx` | Main Platform's Reports / Ask a question / Licensing secondary rail; same underline rhythm as primary navigation |
+| `src/features/communities/components/CommunityDashboardSurface.tsx` | Four linked domain panels in the community profile; the selected domain still opens its existing detail |
 | `pages/ExecutiveDirectorPage.tsx` | Visible and accessible tab labels, conditional Review tab, printed community/form context |
 | `components/Lic624ReviewWorkspace.tsx` and `lic624Review.css` | Editable document, section navigation, dirty/busy/save states |
 | `components/ExecutiveIncidentRegister.tsx` and `executiveIncidentRegister.css` | Search/filter/expand/paginate and mobile record rows |
@@ -57,8 +63,11 @@ boundaries, not existing exported components.
 
 ## Non-negotiable visual rules
 
-- A folder is not a generic rounded card with a folder icon. Its outer shape,
-  tab shoulders, paper edges, and contact shadows establish the object.
+- A folder is not a generic rounded card with a folder icon. Use its outer
+  shape, tab shoulders, paper edges, and depth only for a real file workflow.
+- Dashboards use flat, aligned domain panels. Distinguish Census, MAR, and
+  Incidents with blue, plum, and rust accents, not separate leather covers,
+  fake spines, paper stacks, or repeated category tabs.
 - Put texture and depth in the material layers. Keep text and controls flat,
   sharp, and selectable. Do not put a photograph of a UI behind live fields.
 - Use one visible outer object around a coherent task. Internal sections use
@@ -140,6 +149,16 @@ to WebP at quality 82 without changing its dimensions. Original:
 Generation prompt (built-in image tool):
 
 > Use case: photorealistic-natural. Asset type: seamless tileable material texture for a realistic manila file-folder web interface. Create a perfectly flat, orthographic macro scan of clean premium golden-buff manila cardstock. The entire square image is only the material, edge-to-edge. Fine short irregular paper fibers embedded in the stock, tiny natural flecks, subtle tooth and restrained mottling, tactile photorealism. Base color warm honey sand near #e6c68a with subtle ochre and cream variation, not orange, not gray. Even diffuse scanner lighting, low contrast, no directional shading, no vignette, no gradients. Seamless wrapping edges, no focal objects, no sheet edges, no folder shape, no creases, no stains, no tears, no printing, no text, no logos, no watermark. This will repeat at 360px square behind live HTML, so very fine texture, not coarse wallpaper.
+
+The Community census, MAR, and incident covers use
+`public/materials/bookbinding-leather-v1.webp`, a neutral 512px leather-grain
+tile generated with the built-in image tool. Tint the same tile separately
+through each domain's cover color using a solid color gradient with
+`background-blend-mode: multiply`; keep its image layer on the backing and
+decorative tab only. This retains crisp live labels, charts, and controls.
+The prompt specified a flat orthographic scan of fine-grain premium
+bookbinding leather, neutral grayscale, subtle irregular pores, even diffuse
+light, edge-to-edge tiling, and no objects, seams, text, UI, or vignette.
 
 ## Folder construction
 
@@ -286,23 +305,20 @@ shadows on backing/paper layers. Use actual font weights, not text shadows.
 Include `box-sizing: border-box` wherever dimensions assume padding is inside
 the specified height; do not depend on the host app's reset.
 
-## Compact folder, dashboard folio, and bound ledger
+## Files and data surfaces
 
 | Variant | Construction | Content limit |
 | --- | --- | --- |
 | Pipeline folder card | Small manila cover + attached identity tab + one paper inset | Identity, explicit workflow state, next useful fact; open the file. Do not bury board controls inside the open action. |
-| Dashboard folio | `12px` cover radius; `11px` left spine; `6px` inset; paper radius `5px 9px 9px 5px` | A primary measure plus useful context and an intentional drilldown. Not a paragraph of stats. |
-| Folio tab | Top `-25px`; height `27px`; radius `10px 15px 0 0`; border-box sizing | Short section label; not a second heading/description. |
-| Ledger/register | `14px` cover radius; padding `12px 14px 14px 35px`; `5px` spine at left `22px`; paper radius `8px`, inset `13px` | Period/section tabs, chart or summary, and records that share the selected context. |
-| Licensing file | `20px` left / `18px` right / `21px` bottom stock; `8px` side stock on phones; paper radius `5px 8px 9px 5px` | Reports / Upload / Review; community and LIC 624 are printed cover context, never a fourth tab. Existing digital form and original document access remain intact. |
+| Dashboard panel | Flat paper/white surface; domain-colored top rule and quiet tinted header | One useful measure or chart with a direct drilldown. No faux tab, spine, fold, or paper stack. |
+| Record detail | Domain-colored bounded reading surface; texture stays outside text | Period/section controls only when they select actual data. A chart modal is not automatically a file. |
+| Licensing file | `18px` left / `16px` right / `19px` bottom stock; `8px` side stock on phones; paper radius `5px 8px 9px 5px` | Reports / Upload / Review; community and LIC 624 are printed cover context, never a fourth tab. Existing digital form and original document access remain intact. |
 
-Dashboard cover shadow:
+Dashboard panel depth (use a single outer edge; do not imply stacked paper):
 
 ```css
 box-shadow:
-  inset 2px 0 4px #ffffff24,
-  0 8px 16px #172a3c16,
-  0 1px 2px #182d3a33;
+  0 8px 20px #172a3c16;
 ```
 
 Licensing paper edges:
@@ -365,11 +381,33 @@ MAR rings are optional desktop decoration: `34px × 10px` metallic ovals with
 `3px` borders at the paper seam. Do not add them to every file or let them
 cover a chart. The existing implementation hides them below `1200px`.
 
+## Header and workspace fit
+
+The authenticated Executive Director header retains the official Alamo Health
+Management wordmark at every width. Only its surrounding navigation changes:
+the desktop bar uses centered Community/Licensing links with a thin active
+rule, consistent with the main Platform navigation's active rule and `1500px`
+shell width; below `640px` the full wordmark and profile occupy the first row, with
+the two links in a second `46px` row. The mobile header is `99px` tall, so
+workspace scroll offsets and dialogs must use `--platform-header-height`
+instead of a hardcoded `60px`.
+
+Community places its identity, Overview/MARs/Incidents navigation, and new
+client notification on one ruled rail at desktop widths. On phones the
+identity and notification stay together, with the three view labels on the
+next line. The rail is navigation, not another folder tab or a second hero.
+Keep it aligned to the `1500px` workspace width and `32px` desktop gutters;
+place the first dashboard panel about `18px` below it. Licensing uses the same outer
+workspace width and starts its cover after `14px` of page padding. Its
+Reports/Upload/Review controls remain attached to the manila cover, not to
+the app bar. Full-screen mobile document dialogs begin below the visible
+header and consume only the remaining viewport height.
+
 ## Typography and density
 
 | Role | Baseline | Reuse rule |
 | --- | --- | --- |
-| App/community identity | UI font, `32px/1.1`, weight `650`, tracking `-.045em` | One compact identity; preserve the app shell |
+| App/community identity | UI font, `29px/1.1` desktop and `26px` mobile, weight `650`, tracking `-.045em` | One compact identity; preserve the official Alamo Health Management logo |
 | Client identity | Document font, `42px`, weight `600` | Keep the name prominent, wrap long names |
 | Document headings | Commonly `21-29px`, weight `600`, tracking `-.025em` | Use consistent levels within the file |
 | Primary figures | `27-39px` document font | Always attach units/context |
@@ -400,6 +438,9 @@ emoji, novelty fonts, or generated logos.
 - Selecting a period/category should change the corresponding context and
   records, not just highlight a dot. Preserve accessible labels and keyboard
   point navigation. Do not label snapshot history as live transactions.
+- In a community overview, attach the latest figure to its chart or record
+  list. Do not put a second row of KPI cards above sections that already show
+  those same figures. Give each section one direct link to its deeper view.
 - Searchable registers need explicit result counts, coverage, filters, and
   bounded pagination. Distinguish no records from no filter matches and from
   source failure. Never fabricate zero while loading.
@@ -442,7 +483,7 @@ emoji, novelty fonts, or generated logos.
 | Up to `1023px` | Licensing community/form context stacks above the tabs; review header separates the close control from file identity and actions. |
 | Below `960px` | Chart and context panels stack where needed. Recalculate fold position or remove it. |
 | Below `768px` | Licensing/register rows become stacked records. Hide tilted upload-document decoration. |
-| Below `640px` | Single reading column; no fold/spine hardware in the content flow; document dialogs fill `100dvh`. LIC 624 metadata uses three label/value rows, full-width filenames, and a separate upper-right close control. |
+| Below `640px` | Single reading column; no fold/spine hardware in the content flow; Community document dialogs fill the viewport below the `99px` app header. LIC 624 metadata uses three label/value rows, full-width filenames, and a separate upper-right close control. |
 | Chart container at/below `440px` | Reduce visible tick/point labels, not the data series; retain selected/focused values. |
 | Up to `420px` | Licensing tabs keep at least `14px` labels and hide only decorative icons. Upload-queue filenames span the row; status and actions sit underneath. |
 
@@ -464,8 +505,8 @@ insets around sticky actions. Respect reduced-motion preferences.
 2. Extract presentation pieces: cover, tabs, paper, file header, ruled rows,
    document sections, history rail. Prefer the real source over generated
    mockup text or the appearance of an older deployment.
-3. Preserve folder construction at both compact and open sizes. Use manila
-   for client files; retain the established domain family for ledgers.
+3. Preserve folder construction only for actual files. Use manila for client
+   and Licensing files. Use flat, domain-colored panels for overview data.
 4. Supply host-owned content and callbacks. Hide unavailable modules instead
    of filling empty columns with invented metrics, decorative copy, or false
    completion states.
@@ -476,8 +517,9 @@ insets around sticky actions. Respect reduced-motion preferences.
 
 Acceptance checks:
 
-- Existing top bar and official logo are unchanged.
-- A folder looks like a folder before any icon or label is read.
+- The official Alamo Health Management logo stays intact and visible in the top bar at every width; surrounding navigation remains compact and reachable.
+- A client or report folder looks like a folder before any icon or label is read;
+  overview cards do not look like files.
 - Selected tab meets the paper with no double border or floating gap.
 - Licensing exposes Reports / Upload / Review with matching accessible names;
   Review exists only with an open report. Community context never resembles

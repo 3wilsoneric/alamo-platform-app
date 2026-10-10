@@ -10,7 +10,6 @@ import { ProgressModal } from "../../admissions/components/PipelineBoard";
 import { ExecutiveCommunityDetailModal, ExecutiveCommunityWorkspace, type ExecutiveCommunityDetailView } from "../components/ExecutiveCommunityDetailModal";
 import { ExecutiveReferralStatusPill } from "../components/ExecutiveReferralStatusPill";
 import { ExecutiveTrendChart } from "../components/ExecutiveTrendChart";
-import { ExecutiveIncidentRegister } from "../components/ExecutiveIncidentRegister";
 import { formatImpendingAdmissionDate, impendingAdmissionCards } from "../components/executiveAdmissions";
 import { formatExecutiveDate, formatExecutiveNumber } from "../components/executiveDashboardFormatters";
 import { executiveIncidentCategoryPeriod } from "../components/executiveIncidentCategories";
@@ -181,6 +180,7 @@ export default function ExecutiveDirectorDashboardPage() {
 
   return (
     <section ref={communityRef} data-executive-community-dashboard="true" className="executive-director-community">
+      <div className="executive-community-chrome">
       <header className="executive-director-community__masthead">
         <div><h1>{facility?.shortName ?? "Community"}</h1>{facility?.state ? <span>{facility.state}</span> : null}</div>
         <p>{dashboard?.reportingMonth ? formatMonthLabel(dashboard.reportingMonth, { month: "long" }) : "Latest period"}{generatedAt ? ` · Updated ${formatExecutiveDate(generatedAt, true)}` : ""}</p>
@@ -211,12 +211,12 @@ export default function ExecutiveDirectorDashboardPage() {
           </section> : null}
         </div>
       </div>
+      </div>
       {error ? <div role="alert" className="executive-dashboard-message">{error}</div> : null}
       {loading && !response ? <div role="status" className="executive-dashboard-loading">Loading community dashboard…</div> : null}
       {!loading && dashboard?.status === "unavailable" ? <div role="status" className="executive-dashboard-message">Community measures are temporarily unavailable.</div> : null}
       <div id="executive-view-panel" role="tabpanel" aria-labelledby={`executive-tab-${view}`}>
         {dashboard && view === "overview" ? <CommunityOverview dashboard={dashboard} onOpenDetail={openDetail} /> : null}
-        {view === "overview" ? <div className="executive-all-incidents"><ExecutiveIncidentRegister key={facilityId} facilityId={facilityId} /></div> : null}
         {dashboard && facility && view !== "overview" ? <ExecutiveCommunityWorkspace key={view} facility={facility} dashboard={dashboard} view={view === "mars" ? "medications" : "incidents"} onBack={() => selectView("overview")} /> : null}
       </div>
       {dashboard && facility && detailView ? <ExecutiveCommunityDetailModal facility={facility} dashboard={dashboard} view={detailView} initialAdmissionId={admissionId} sourceNotice={detailView === "admissions" && admissionsStale ? ADMISSIONS_STALE_MESSAGE : null} onAdmissionSelectionChange={setAdmissionId} onClose={closeDetail} onOpenAdmissionCard={(card) => { setAdmissionId(card.referralId); setDetailView(null); setManagementId(card.referralId); }} /> : null}
@@ -243,23 +243,23 @@ function CommunityOverview({ dashboard, onOpenDetail }: {
   const categoryMaximum = Math.max(...categories.map((item) => item.count), 1);
 
   return <div data-daily-operating-summary="true" className="executive-dashboard-index">
-    <DomainPanel kind="census" label="Census" title="12-month census" icon={<UsersRound />} action="History" onOpen={() => onOpenDetail("census")}>
+    <DomainPanel kind="census" title="12-month census" icon={<UsersRound />} action="History" onOpen={() => onOpenDetail("census")}>
       <div className="executive-census-overview">
         <div className="executive-census-figure"><strong>{formatExecutiveNumber(census?.census)}</strong><span>residents</span><small>{formatExecutiveNumber(occupancy, "%")} occupied{limit ? ` · ${limit} operating limit` : ""}</small></div>
         <div className="executive-census-change"><span>{census ? formatMonthLabel(census.month, { month: "short" }) : "No period"}</span>{delta != null ? <strong>{delta > 0 ? "+" : ""}{delta} <small>vs {formatMonthLabel(priorCensus!.month, { month: "short" })}</small></strong> : null}</div>
       </div>
       <ExecutiveTrendChart points={dashboard.census.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.census }))} accent="#174f81" height={180} compact ariaLabel="Community census history" />
     </DomainPanel>
-    <DomainPanel kind="incidents" label="Incidents" title="Incident activity" icon={<ClipboardList />} action="Trend" onOpen={() => onOpenDetail("incidents")}>
+    <DomainPanel kind="incidents" title="Incident activity" icon={<ClipboardList />} action="View incidents" onOpen={() => onOpenDetail("incidents")}>
       <div className="executive-incident-overview">
-        <div><div className="executive-section-meta"><span>{incident ? formatMonthLabel(incident.month, { month: "long" }) : "Latest period"}{incidentIsMonthToDate ? " · to date" : ""}</span><strong>{formatExecutiveNumber(incident?.count)}</strong></div>
+        <div><div className="executive-section-meta"><span>{incident ? formatMonthLabel(incident.month, { month: "long" }) : "Latest period"}{incidentIsMonthToDate ? " · to date" : ""}</span><strong>{formatExecutiveNumber(incident?.count)} <small>incidents</small></strong></div>
           <ExecutiveTrendChart points={dashboard.incidentTrend.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.count }))} accent="#9b3826" height={145} compact ariaLabel="Community incident history" />
           {priorIncident ? <p className="executive-period-note">{formatMonthLabel(priorIncident.month, { month: "short" })}: {formatExecutiveNumber(priorIncident.count)} recorded in the full month.</p> : null}
         </div>
-        <div className="executive-category-index"><div className="executive-section-meta">{categoryPeriod.complete ? "Recorded categories" : `${categoryPeriod.recordCount} available records`}</div>{categories.length ? <ol>{categories.map((item) => <li key={item.label}><span>{item.label}</span><strong>{formatExecutiveNumber(item.count)}</strong><i><b style={{ width: `${item.count / categoryMaximum * 100}%` }} /></i></li>)}</ol> : <CompactEmpty>No category records available for this month.</CompactEmpty>}</div>
+        <div className="executive-category-index"><div className="executive-section-meta">{categoryPeriod.complete ? "Recorded categories" : incident?.count != null && categoryPeriod.recordCount <= incident.count ? `Category detail for ${categoryPeriod.recordCount} of ${formatExecutiveNumber(incident.count)} incidents` : `${categoryPeriod.recordCount} available records`}</div>{categories.length ? <ol>{categories.map((item) => <li key={item.label}><span>{item.label}</span><strong>{formatExecutiveNumber(item.count)}</strong><i><b style={{ width: `${item.count / categoryMaximum * 100}%` }} /></i></li>)}</ol> : <CompactEmpty>No category records available for this month.</CompactEmpty>}</div>
       </div>
     </DomainPanel>
-    <DomainPanel kind="medications" label="MAR" title="Medication administration" icon={<Pill />} action="Detail" onOpen={() => onOpenDetail("medications")}>
+    <DomainPanel kind="medications" title="Medication administration" icon={<Pill />} action="View MARs" onOpen={() => onOpenDetail("medications")}>
       {medication ? <>
         <div className="executive-medication-overview"><div><strong>{formatExecutiveNumber(medication.compliancePct, "%")}</strong><span>given</span></div><span>{formatMonthLabel(medication.month, { month: "long" })}</span></div>
         <div className="executive-medication-bar" aria-label={`${formatExecutiveNumber(medication.compliancePct, "%")} given`}><span style={{ width: `${Math.min(Math.max(medication.compliancePct ?? 0, 0), 100)}%` }} /></div>
@@ -270,9 +270,8 @@ function CommunityOverview({ dashboard, onOpenDetail }: {
   </div>;
 }
 
-function DomainPanel({ kind, label, title, icon, action, onOpen, children }: { kind: ExecutiveCommunityDetailView; label: string; title: string; icon: React.ReactNode; action: string; onOpen: () => void; children: React.ReactNode }) {
+function DomainPanel({ kind, title, icon, action, onOpen, children }: { kind: ExecutiveCommunityDetailView; title: string; icon: React.ReactNode; action: string; onOpen: () => void; children: React.ReactNode }) {
   return <article data-executive-dashboard-panel={kind} className={`executive-domain-card executive-domain-card--${kind}`}>
-    <span data-executive-panel-tab={kind} className="executive-domain-card__tab" aria-hidden="true">{label}</span>
     <div className="executive-domain-card__paper"><header data-executive-panel-header={kind}><h2><span>{icon}</span>{title}</h2><button type="button" onClick={onOpen} aria-label={action}>{kind === "admissions" ? "Open" : action}<ArrowRight aria-hidden="true" /></button></header><div data-executive-panel-body={kind}>{children}</div></div>
   </article>;
 }

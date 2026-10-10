@@ -264,10 +264,10 @@ export default function CaliforniaCommunityModal({
                     data-community-modal-tab={focus}
                     aria-current={active ? "page" : undefined}
                     onClick={() => openPrimaryView(focus)}
-                    className={`min-h-11 shrink-0 border-b-2 px-3 py-2 text-[12px] font-semibold transition-colors lg:min-h-0 lg:px-4 lg:text-[11px] ${
+                    className={`min-h-11 shrink-0 border-b-2 px-2.5 py-2 text-[13px] font-semibold transition-colors lg:px-4 ${
                       active
                         ? "border-[#0f8b73] text-[#111111]"
-                        : "border-transparent text-[#737373] hover:border-[#b3b3b3] hover:text-[#111111]"
+                        : "border-transparent text-[#737373] hover:text-[#164d7c]"
                     }`}
                   >
                     {label}

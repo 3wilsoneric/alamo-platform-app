@@ -10,6 +10,7 @@ interface IncidentCategoriesModuleProps {
   activeCategory?: string | null;
   onSelect?: (category: string) => void;
   emptyLabel?: string;
+  accentColor?: string;
 }
 
 export function IncidentCategoriesModule({
@@ -18,7 +19,8 @@ export function IncidentCategoriesModule({
   limit = 8,
   activeCategory = null,
   onSelect,
-  emptyLabel = "Incident categories are not available for this selection."
+  emptyLabel = "Incident categories are not available for this selection.",
+  accentColor
 }: IncidentCategoriesModuleProps) {
   const dark = variant === "dark";
   const visibleItems = items
@@ -63,8 +65,8 @@ export function IncidentCategoriesModule({
             </div>
             <div className={`mt-2 h-1.5 overflow-hidden ${dark ? "bg-white/[0.07]" : "bg-[#d9d9d9]"}`}>
               <div
-                className={`h-full ${dark ? "bg-[#6dd9a2]" : "bg-[#0f8b73]"}`}
-                style={{ width: `${Math.min(Math.max((item.count / maxValue) * 100, 5), 100)}%` }}
+                className={`h-full ${accentColor ? "" : dark ? "bg-[#6dd9a2]" : "bg-[#0f8b73]"}`}
+                style={{ width: `${Math.min(Math.max((item.count / maxValue) * 100, 5), 100)}%`, ...(accentColor ? { backgroundColor: accentColor } : {}) }}
               />
             </div>
           </>

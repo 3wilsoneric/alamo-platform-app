@@ -49,14 +49,14 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
 
   return (
     <header ref={headerRef} data-platform-header="true" className="sticky top-0 z-40 h-[var(--platform-header-height)] border-b border-[#dedfda] bg-white pt-[var(--platform-safe-top)] print:hidden">
-      <nav aria-label="Platform pages" data-platform-page-navigation="true" data-platform-page-current={active} className="flex h-[var(--platform-header-bar-height)] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      <nav aria-label="Platform pages" data-platform-page-navigation="true" data-platform-page-current={active} className="mx-auto flex h-[var(--platform-header-bar-height)] max-w-[1500px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link to={restricted ? "/admissions" : "/home"} aria-label={restricted ? "Admissions home" : "Back to California map"} aria-current={active === "home" ? "page" : undefined} data-platform-page-target="home" data-platform-page-side="left" data-california-carousel-back="true" className="flex min-h-11 min-w-0 items-center">
           <PlatformWordmark compact />
         </Link>
-        <div className="hidden items-center gap-1.5 md:flex" data-platform-primary-links="true">
-          <div className="flex h-10 items-center gap-1 rounded-xl border border-[#dfe3e0] bg-white p-1">
+        <div className="hidden h-full items-center gap-1.5 md:flex" data-platform-primary-links="true">
+          <div className="flex h-full items-stretch gap-1">
           {pages.filter((page) => page.id !== "home").map((page) => (
-            <Link key={page.id} to={page.href} aria-current={active === page.id ? "page" : undefined} data-platform-page-target={page.id} data-platform-page-side="right" data-california-hero-action={page.id} data-platform-page-active={active === page.id ? page.id : undefined} className={`inline-flex h-8 items-center rounded-lg border px-3.5 text-[14px] font-medium transition-[background-color,border-color,color] ${active === page.id ? "border-[#b8d8ca] bg-[#eaf5ef] text-[#086c57]" : "border-transparent text-[#282d2a] hover:border-[#d7dfda] hover:bg-[#f7f9f8] hover:text-[#086c57]"}`}>
+            <Link key={page.id} to={page.href} aria-current={active === page.id ? "page" : undefined} data-platform-page-target={page.id} data-platform-page-side="right" data-california-hero-action={page.id} data-platform-page-active={active === page.id ? page.id : undefined} className={`inline-flex min-h-11 items-center border-b-[3px] px-4 text-[14px] font-semibold transition-[background-color,border-color,color] ${active === page.id ? "border-[#087d64] text-[#086c57]" : "border-transparent text-[#56636b] hover:bg-[#f4f6f3] hover:text-[#132f33]"}`}>
               {page.label}
             </Link>
           ))}

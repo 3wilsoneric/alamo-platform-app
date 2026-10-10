@@ -10,6 +10,7 @@ import { getAuthenticationErrorMessage } from "../shared/auth-redirect-contract.
 import { PlatformWordmark } from "./shared/branding/PlatformWordmark";
 import { DesktopRuntime } from "./shared/desktop/DesktopRuntime";
 import "./styles.css";
+import "./platformWorkspace.css";
 
 async function bootstrap() {
   await initializeRedirectAuthentication(msalInstance);

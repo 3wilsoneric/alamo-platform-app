@@ -64,10 +64,10 @@ assert(
 assert(
     !reportsSource.includes("Deeper operating analysis.") &&
     !reportsSource.includes("6 report families") &&
-    reportsSource.includes("Choose an analysis to review.") &&
+    !reportsSource.includes("Choose an analysis to review.") &&
     !/>\s*Analytics\s*</.test(reportsSource) &&
     reportsSource.includes('aria-label="Analytics"'),
-  "Analytics must open directly into the streamlined picker without a redundant visible title"
+  "Analytics must open directly into the streamlined picker without redundant title or instructional copy"
 );
 assert(
   !reportsSource.includes("REPORT_FAMILIES") &&

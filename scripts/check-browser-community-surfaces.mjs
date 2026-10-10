@@ -191,8 +191,10 @@ async function assertSurface(moduleRoot, facility, mode) {
     if (!(await moduleRoot.locator('[data-community-dashboard-surface="detail"]').count())) failures.push("missing dedicated community overview surface");
     if (!(await moduleRoot.locator('[data-module-chart="census-trend"]').count())) failures.push("missing census trend chart");
     if (!(await moduleRoot.locator('[data-chart-point="census"]').count())) failures.push("community overview trend has no interactive points");
+    if ((await moduleRoot.locator('[data-chart-point="census"]').count()) > 12) failures.push("community overview trend shows more than 12 months");
     if (!phoneLayout && !(await revealCensusPointTooltip(moduleRoot))) failures.push("community overview point value is not visible on hover or focus");
-    if (!/Medication performance/i.test(text)) failures.push("missing medication performance");
+    if (!/Medication administration/i.test(text)) failures.push("missing medication administration");
+    if (await moduleRoot.locator('[data-community-overview-panels="true"]').count()) failures.push("duplicated overview card strip");
     if (!/Diagnosis mix/i.test(text)) failures.push("missing diagnosis mix");
     const diagnosisLayout = await moduleRoot.evaluate((root) => {
       const chart = root.querySelector('[data-module-chart="diagnosis-mix"]');
@@ -213,7 +215,11 @@ async function assertSurface(moduleRoot, facility, mode) {
     ) {
       failures.push(`diagnosis chart and legend are vertically misaligned: ${JSON.stringify(diagnosisLayout)}`);
     }
-    if (await moduleRoot.locator("[data-community-kpi-drilldown]").count() < 5) failures.push("summary figures are missing scoped drilldowns");
+    for (const focus of ["census", "incidents", "medications", "residents"]) {
+      if (!(await moduleRoot.locator(`[data-community-kpi-drilldown="${focus}"]`).count())) {
+        failures.push(`${focus} overview detail is missing its scoped drilldown`);
+      }
+    }
     for (const selector of [
       '[data-module-row="incident-category"]',
       '[data-module-row="diagnosis-mix"]',

@@ -167,16 +167,13 @@ export default function ReportsPage({
       data-reports-page="true"
       data-analytics-page="true"
       data-reports-embedded={embedded ? "true" : "false"}
-      className={`mx-auto min-w-0 w-full max-w-[1432px] bg-white pb-12 text-[#111111] ${
+      className={`mx-auto min-w-0 w-full max-w-[1500px] bg-white pb-12 text-[#16283a] ${
         embedded ? "min-h-full" : ""
       }`}
     >
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-8">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[260px_minmax(0,1fr)] xl:gap-8">
         <aside aria-label="Analytics" className="min-w-0">
-          <p className="text-[11px] leading-4 text-[#595959]">
-            Choose an analysis to review.
-          </p>
-          <label className="mt-2 block lg:hidden" htmlFor="mobile-report-choice">
+          <label className="block lg:hidden" htmlFor="mobile-report-choice">
             <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">
               Report
             </span>
@@ -199,7 +196,7 @@ export default function ReportsPage({
           <div
             ref={reportLibraryRef}
             data-analytics-report-library="true"
-            className="mt-3 hidden border-y border-[#111111] py-2 lg:block lg:overflow-visible lg:border-b-0 lg:py-0"
+            className="hidden border-t border-[#b9c8c2] lg:block lg:overflow-visible"
           >
             {reportDefinitions.map((report) => {
               const selected = report.id === selectedReportId;
@@ -210,14 +207,14 @@ export default function ReportsPage({
                   onClick={() => selectReport(report.id)}
                   aria-pressed={selected}
                   data-analytics-report-option={report.id}
-                  className={`grid min-w-[210px] snap-start grid-cols-[3px_minmax(0,1fr)] gap-3 border border-[#d9d9d9] py-3 pr-2 text-left transition-colors md:w-full md:min-w-0 md:border-x-0 md:border-t-0 ${
-                    selected ? "bg-[#f5f4ef]" : "hover:bg-[#fafafa]"
+                  className={`grid min-w-[210px] snap-start grid-cols-[3px_minmax(0,1fr)] gap-3 border-b border-[#d8dfdc] py-4 pr-2 text-left transition-colors md:w-full md:min-w-0 ${
+                    selected ? "bg-[#f3f5f2]" : "hover:bg-[#f8f9f7]"
                   }`}
                 >
                   <span className={selected ? "bg-[#0f8b73]" : "bg-transparent"} aria-hidden="true" />
                   <span>
                     <span className="block font-sans text-[14px] font-bold leading-5 tracking-[-0.025em]">{report.title}</span>
-                    <span className="mt-1 block text-[10px] leading-4 text-[#737373]">
+                    <span className="mt-1 block text-[12px] leading-4 text-[#67747a]">
                       {report.cadence} | {report.audience}
                     </span>
                   </span>
@@ -231,11 +228,8 @@ export default function ReportsPage({
           className="min-w-0"
           aria-busy={loadingData || loadingReport}
         >
-          <div className="mb-5 border-b border-[#d9d9d9] pb-4">
-            <p className="max-w-[780px] font-sans text-[13px] leading-5 text-[#3f3f3f]">
-              {selectedReport?.description ?? "Loading the governed analytics catalog."}
-            </p>
-            <div data-report-filters="true" className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
+          <div className="mb-5 border-b border-[#d3d9d5] pb-4">
+            <div data-report-filters="true" className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
               {supportsCommunityScope ? (
                 <label data-report-filter-field="community" className="block min-w-0 sm:min-w-[230px]">
                   <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">Community</span>

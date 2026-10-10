@@ -107,6 +107,7 @@ async function waitForIncidentRows(page, expected) {
 async function auditFullIncidentHistory(page, state) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${BASE_URL}/executive/dashboard`, { waitUntil: "domcontentloaded" });
+  await page.getByRole("tablist", { name: "Community views", exact: true }).getByRole("tab", { name: "Incidents", exact: true }).click();
   const register = incidentRegister(page);
   const search = register.getByRole("searchbox", { name: "Search incidents", exact: true });
   const category = register.getByRole("combobox", { name: "Category", exact: true });
@@ -237,9 +238,9 @@ async function auditFullIncidentHistory(page, state) {
   }
 
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`${BASE_URL}/executive/dashboard?facilityId=342`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/executive/dashboard?view=incidents&facilityId=342`, { waitUntil: "domcontentloaded" });
   await waitForIncidentRows(page, firstPage);
-  assert.equal(await page.locator('[data-executive-community-dashboard="true"] > header h1').innerText(), "San Pablo", "A URL facility override must not switch the authenticated community.");
+  assert.equal(await page.locator('[data-executive-community-dashboard="true"] .executive-director-community__masthead h1').innerText(), "San Pablo", "A URL facility override must not switch the authenticated community.");
   state.mode = "partial";
   await page.reload({ waitUntil: "domcontentloaded" });
   await waitForIncidentRows(page, firstPage);
@@ -288,7 +289,26 @@ async function auditTouchTargets(scope, label) {
 }
 
 async function auditHeader(page, label) {
-  await auditTouchTargets(page.locator('[data-executive-director-header="true"]'), `${label} header`);
+  const header = page.locator('[data-executive-director-header="true"]');
+  await auditTouchTargets(header, `${label} header`);
+  const fit = await header.evaluate((element) => {
+    const logo = element.querySelector('[data-platform-brand-logo="true"]');
+    const links = [...element.querySelectorAll('.executive-director-header__link')];
+    const profile = element.querySelector('[data-platform-user-identity="true"]');
+    const headerBox = element.getBoundingClientRect();
+    const logoBox = logo?.getBoundingClientRect();
+    const profileBox = profile?.getBoundingClientRect();
+    const linkBoxes = links.map((link) => { const box = link.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom }; });
+    return {
+      logoVisible: Boolean(logoBox && logoBox.width >= 140 && logoBox.height >= 20 && logoBox.left >= -1 && logoBox.right <= window.innerWidth + 1),
+      linksInside: linkBoxes.every((box) => box.left >= -1 && box.right <= window.innerWidth + 1 && box.top >= headerBox.top && box.bottom <= headerBox.bottom + 1),
+      profileInside: Boolean(profileBox && profileBox.right <= window.innerWidth + 1 && profileBox.bottom <= headerBox.bottom + 1),
+      height: headerBox.height,
+      linkBoxes
+    };
+  });
+  auditMeasurements.push({ label, headerFit: fit });
+  if (!fit.logoVisible || !fit.linksInside || !fit.profileInside) auditFindings.push({ label, issue: "The full Alamo logo, navigation, and profile must fit inside the header.", ...fit });
 }
 
 async function auditSelectedMonth(page, detail, name, label) {
@@ -566,8 +586,8 @@ const expectedImpendingCards = [1, 9, 10, 5].map((referralId) => dashboardRespon
 const detailWorkspaces = [
   { key: "census", trigger: "History", material: "ledger", identity: "[data-census-ledger='true']", close: /Close Census detail/i },
   { key: "admissions", material: "folder", identity: "[data-admissions-folder-shell='true']", close: /Close Admissions detail/i },
-  { key: "incidents", tab: "Incidents", view: "incidents", trigger: "Trend", material: "register", identity: "[data-incident-register='true']", close: "Back to overview" },
-  { key: "medications", tab: "MARs", view: "mars", trigger: "Detail", material: "binder", identity: "[data-mar-binder='true']", close: "Back to overview" }
+  { key: "incidents", tab: "Incidents", view: "incidents", trigger: "View incidents", material: "register", identity: "[data-incident-register='true']", close: "Back to overview" },
+  { key: "medications", tab: "MARs", view: "mars", trigger: "View MARs", material: "binder", identity: "[data-mar-binder='true']", close: "Back to overview" }
 ];
 
 function workspaceLocator(page, workspace) {
@@ -767,21 +787,20 @@ await withBrowserQa(async (browser) => {
   if (JSON.stringify(panelKinds) !== JSON.stringify(["census", "incidents", "medications"])) {
     throw new Error("The overview must contain only census, incident, and medication components.");
   }
-  if (await summary.locator("[data-executive-panel-tab]").count() !== 3) {
-    throw new Error("Each operating component must retain its tactile document tab.");
+  if (await summary.locator("[data-executive-panel-tab]").count()) {
+    throw new Error("Operating metrics must not be presented as file tabs.");
   }
   const panelVisuals = await summary.locator("[data-executive-dashboard-panel]").evaluateAll((panels) => panels.map((panel) => {
-    const style = window.getComputedStyle(panel);
+    const surface = window.getComputedStyle(panel);
     const heading = panel.querySelector("h2");
     const header = panel.querySelector("[data-executive-panel-header]");
     return {
-      backgroundColor: style.backgroundColor,
-      borderTopColor: style.borderTopColor,
+      borderTopColor: surface.borderTopColor,
       headingSize: heading ? Number.parseFloat(window.getComputedStyle(heading).fontSize) : 0,
       headerBackground: header ? window.getComputedStyle(header).backgroundImage : "none"
     };
   }));
-  if (new Set(panelVisuals.map((panel) => panel.backgroundColor)).size !== 3 || new Set(panelVisuals.map((panel) => panel.borderTopColor)).size !== 3) {
+  if (new Set(panelVisuals.map((panel) => panel.borderTopColor)).size !== 3) {
     throw new Error(`The three operating components must remain visually distinct: ${JSON.stringify(panelVisuals)}`);
   }
   if (panelVisuals.some((panel) => panel.headingSize < 18)) {

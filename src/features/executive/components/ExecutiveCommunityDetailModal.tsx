@@ -195,9 +195,9 @@ function CensusDetail({ facilityName, dashboard, onClose, closeButtonRef }: { fa
   function selectMonth(month: string) { setSelectedMonth(month); setMovementPage(0); }
   return (
     <div data-executive-detail-view="census" data-census-ledger="true" className="census-ledger">
+      <header className="census-ledger__header"><h1 id="executive-community-dialog-title"><span>{facilityName}</span><i aria-hidden="true" />Census ledger</h1><div className="census-ledger__book-meta"><span>{points[0]?.label} – {points.at(-1)?.label}</span><span>Operating limit <strong>{formatExecutiveNumber(operatingLimit)}</strong></span></div><button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close Census detail"><X aria-hidden="true" /></button></header>
+      <PeriodTabs months={dashboard.census.slice(-12).map((point) => point.month)} selectedMonth={selectedMonth} onSelect={selectMonth} label="Census month" className="census-ledger__tabs" panelId={periodPanelId} />
       <div className="census-ledger__sheet">
-        <header className="census-ledger__header"><h1 id="executive-community-dialog-title"><span>{facilityName}</span><i aria-hidden="true" />Census ledger</h1><div className="census-ledger__book-meta"><span>{points[0]?.label} – {points.at(-1)?.label}</span><span>Operating limit <strong>{formatExecutiveNumber(operatingLimit)}</strong></span></div><button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close Census detail"><X aria-hidden="true" /></button></header>
-        <PeriodTabs months={dashboard.census.slice(-12).map((point) => point.month)} selectedMonth={selectedMonth} onSelect={selectMonth} label="Census month" className="census-ledger__tabs" panelId={periodPanelId} />
         <div id={periodPanelId} role="tabpanel" aria-labelledby={selectedMonth ? `${periodPanelId}-${selectedMonth}` : undefined}>
         <div className="census-ledger__primary">
           <section className="material-panel census-ledger__chart"><h2>12-month census</h2><ExecutiveTrendChart points={points} height={255} accent="#0d4f8d" selectedId={selectedMonth} onSelect={selectMonth} ariaLabel="Monthly census history" unit="residents" referenceLine={operatingLimit == null ? null : { value: operatingLimit, label: `Operating limit ${formatExecutiveNumber(operatingLimit)}` }} /></section>
