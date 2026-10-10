@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, ChevronRight, Columns3, List, X } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Columns3, FileText, List, X } from "lucide-react";
 
 import type {
   AdmissionsBoardCard,
@@ -23,27 +23,6 @@ type ChartDataPoint =
 const NO_COMMUNITY = "none";
 const LIST_PREVIEW = 15;
 const MOBILE_LIST_PREVIEW = 6;
-
-const COLUMN_STYLE: Record<AdmissionsBoardColumnKey, { surface: string; border: string; accent: string; action: string }> = {
-  received: {
-    surface: "#eef7f3",
-    border: "#cde5d9",
-    accent: "#257653",
-    action: "#e8f4ee"
-  },
-  in_progress: {
-    surface: "#f0f3fc",
-    border: "#d4dcf5",
-    accent: "#365fc7",
-    action: "#edf1fc"
-  },
-  decision: {
-    surface: "#fcf3ed",
-    border: "#efd2bd",
-    accent: "#b65318",
-    action: "#fbefe5"
-  }
-};
 
 export default function PipelineBoard({
   pipeline,
@@ -140,13 +119,11 @@ export default function PipelineBoard({
           <div className="grid items-start gap-4 lg:grid-cols-3">
             {board.columns.map((column) => {
               const columnCards = cards.filter((card) => card.column === column.key);
-              const style = COLUMN_STYLE[column.key];
               return (
                 <section
                   key={column.key}
                   data-admissions-board-column={column.key}
                   className="min-w-0 overflow-hidden rounded-2xl border"
-                  style={{ backgroundColor: style.surface, borderColor: style.border }}
                 >
                   <header className="flex items-center justify-between gap-3 px-5 pb-4 pt-5">
                     <div className="flex min-w-0 items-center gap-2.5">
@@ -166,7 +143,7 @@ export default function PipelineBoard({
                       ))}
                     </ul>
                   ) : (
-                    <div className="mx-4 mb-4 rounded-xl border border-dashed bg-white/55 px-4 py-10 text-center text-[12px] text-[#69716c]" style={{ borderColor: style.border }}>
+                    <div className="mx-4 mb-4 rounded-xl border border-dashed bg-white/55 px-4 py-10 text-center text-[12px] text-[#69716c]">
                       No referrals here
                     </div>
                   )}
@@ -249,6 +226,10 @@ export function ProgressModal({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const [expandedDataPoint, setExpandedDataPoint] = useState<ChartDataPoint | null>(null);
+  const expandedDataPointRef = useRef<ChartDataPoint | null>(null);
+  const onCloseRef = useRef(onClose);
+  expandedDataPointRef.current = expandedDataPoint;
+  onCloseRef.current = onClose;
   const currentStage = PROGRESS_STAGES.findIndex((stage) => stage.key === card.column);
   const profile = card.managementProfile;
   const decisionTab = decisionTabFor(card);
@@ -258,12 +239,13 @@ export function ProgressModal({
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
+    const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (expandedDataPoint) setExpandedDataPoint(null);
-        else onClose();
+        if (expandedDataPointRef.current) setExpandedDataPoint(null);
+        else onCloseRef.current();
       }
       if (event.key === "Tab") {
         const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])") ?? [])]
@@ -284,8 +266,9 @@ export function ProgressModal({
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      if (returnFocus?.isConnected) returnFocus.focus();
     };
-  }, [expandedDataPoint, onClose]);
+  }, []);
 
   function toggleDataPoint(dataPoint: ChartDataPoint) {
     setExpandedDataPoint((current) => current === dataPoint ? null : dataPoint);
@@ -315,15 +298,10 @@ export function ProgressModal({
               data-admissions-chart-name-label="true"
               className="flex h-full w-full min-w-0 items-center rounded-[4px] border border-[#d7d0c1] bg-[#fffdfa] px-3.5 shadow-[0_1px_2px_rgba(58,47,24,0.08)] sm:px-5"
             >
-              <span id="admissions-progress-title" data-admissions-chart-tab-name="true" className="truncate text-[15px] font-semibold tracking-[-0.02em] text-[#202321] sm:text-[17px]">{card.clientName}</span>
+              <span data-admissions-chart-tab-name="true" className="truncate text-[15px] font-semibold tracking-[-0.02em] text-[#202321] sm:text-[17px]">Client file</span>
             </div>
           </div>
-          <div
-            data-admissions-decision-tab={decisionTab.state}
-            className={`flex h-12 shrink-0 items-center rounded-t-xl border border-b-0 px-3 text-[10px] font-bold uppercase tracking-[0.08em] shadow-[0_-3px_12px_rgba(49,40,18,0.08)] sm:h-14 sm:px-5 sm:text-[11px] ${decisionTab.className}`}
-          >
-            {decisionTab.label}
-          </div>
+          <span className="admissions-client-cover-reference">Referral #{card.referralId}</span>
         </div>
         <div
           data-admissions-chart-folder="true"
@@ -337,7 +315,7 @@ export function ProgressModal({
               ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              aria-label="Close management chart"
+              aria-label="Close client file"
               className="absolute right-3 top-3 z-20 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d3dad6] bg-white text-[#4e5752] shadow-sm transition hover:bg-[#eef3f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] sm:right-5 sm:top-4"
             >
               <X className="h-4 w-4" aria-hidden="true" />
@@ -345,14 +323,24 @@ export function ProgressModal({
 
             <div className="min-h-0 flex-1 overflow-y-auto">
               {sourceNotice ? <p role="status" className="border-b border-[#d8c5a0] bg-[#fbf4e5] py-3 pl-5 pr-16 text-sm text-[#79531c] sm:pl-8 sm:pr-20">{sourceNotice}</p> : null}
-              <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="border-b border-[#bfcac5] bg-[#edf5f1] py-5 pl-5 pr-16 sm:px-8 sm:pr-20">
-                <h3 id="admissions-chart-next-action" className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#517067]">Current management focus</h3>
-                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#183f34]">{card.nextAction || "Confirm the next workflow step"}</p>
+              <header className="admissions-client-document-header">
+                <div className="admissions-client-document-identity">
+                  <span className="admissions-client-document-icon" aria-hidden="true"><FileText size={22} strokeWidth={1.8} /></span>
+                  <div className="min-w-0">
+                    <span className="admissions-client-document-eyebrow">Admissions referral · {communityName(card)}</span>
+                    <h2 id="admissions-progress-title">{card.clientName}</h2>
+                  </div>
+                </div>
+                <span data-admissions-decision-tab={decisionTab.state} className="admissions-client-document-status">{card.status}</span>
+              </header>
+              <section data-admissions-chart-section="next-action" aria-labelledby="admissions-chart-next-action" className="admissions-client-next-action">
+                <h3 id="admissions-chart-next-action">Next step</h3>
+                <p>{card.nextAction || "No next step recorded"}</p>
               </section>
 
               <div className="mx-auto w-full max-w-[1000px]" data-admissions-chart-stream="true">
                 <section data-admissions-chart-section="admission-brief" aria-labelledby="admissions-chart-admission-brief">
-                  <ChartSectionHeader id="admissions-chart-admission-brief" title="Admission brief" detail="Select a row to see its source fields" />
+                  <ChartSectionHeader id="admissions-chart-admission-brief" number="01" title="Admission brief" />
                   <div className="divide-y divide-[#dfe5e1] border-b border-[#bfcac5] bg-[#fffefb]">
                     <ChartDisclosureRow
                       id="status"
@@ -362,11 +350,9 @@ export function ProgressModal({
                       onToggle={() => toggleDataPoint("status")}
                     >
                       <DataPointGrid>
-                        <DataPointFact label="Admissions category" value={decisionTab.label} />
                         <DataPointFact label="Board stage" value={PROGRESS_STAGES[currentStage]?.label ?? "In progress"} />
-                        <DataPointFact label="Management focus" value={card.nextAction || "Confirm the next workflow step"} wide />
+                        <DataPointFact label="Next step" value={card.nextAction || "No next step recorded"} wide />
                       </DataPointGrid>
-                      <DataPointNote>{statusCategoryExplanation(decisionTab.state)}</DataPointNote>
                     </ChartDisclosureRow>
                     <ChartDisclosureRow
                       id="placement"
@@ -420,7 +406,7 @@ export function ProgressModal({
                 </section>
 
                 <section data-admissions-chart-section="workflow" aria-labelledby="admissions-chart-workflow">
-                  <ChartSectionHeader id="admissions-chart-workflow" title="Workflow and readiness" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
+                  <ChartSectionHeader id="admissions-chart-workflow" number="02" title="Workflow and readiness" detail={`Stage ${currentStage + 1} of ${PROGRESS_STAGES.length}`} />
                   <div className="border-b border-[#d8dfdb] bg-[#f7faf8] px-5 py-6 sm:px-8 sm:py-7">
                     <div className="relative mx-auto max-w-[640px]">
                       <span aria-hidden="true" className="absolute left-[16.66%] right-[16.66%] top-4 h-px bg-[#c8d2cd]" />
@@ -502,6 +488,7 @@ export function ProgressModal({
                 <section data-admissions-chart-section="client-context" aria-labelledby="admissions-chart-client-context">
                   <ChartSectionHeader
                     id="admissions-chart-client-context"
+                    number="03"
                     title="Client context"
                     detail={profile.assessmentSigned ? "Verified from signed assessment" : "Current intake record"}
                   />
@@ -550,7 +537,7 @@ export function ProgressModal({
               </div>
 
               <div className="border-t border-[#cfd6d2] bg-[#f7f9f7] px-5 py-3 text-center text-[10px] leading-4 text-[#7f8783] sm:px-8">
-                Updated {formatUpdatedAt(generatedAt)} · Assessment detail appears only from the signed chart; intake fields retain their source status.
+                Pipeline updated {formatUpdatedAt(generatedAt)} · Signed assessment details are identified above.
               </div>
             </div>
 
@@ -560,13 +547,6 @@ export function ProgressModal({
     </div>,
     document.body
   );
-}
-
-function statusCategoryExplanation(state: string) {
-  if (state === "under-review") return "Pipeline explicitly marks this referral Under Review. The yellow category reflects that recorded decision state.";
-  if (state === "accept") return "Pipeline records an accepted referral moving toward admission. The green category reflects that source status.";
-  if (state === "deny") return "Pipeline records a declined or denied referral. The red category reflects that source status.";
-  return "Pipeline has not recorded Accept, Deny, or the explicit Under Review selection. This referral remains In progress.";
 }
 
 function ChartRow({
@@ -619,16 +599,18 @@ function ChartEmpty({ children }: { children: ReactNode }) {
 
 function ChartSectionHeader({
   id,
+  number,
   title,
   detail
 }: {
   id: string;
+  number: string;
   title: string;
   detail?: string | undefined;
 }) {
   return (
-    <div className="flex flex-col items-start gap-1 border-y border-[#aebbb5] bg-[#eaf1ee] px-5 py-3.5 text-[#244b41] sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 sm:px-8">
-      <h3 id={id} className="text-[13px] font-semibold tracking-[-0.01em] sm:text-[14px]">{title}</h3>
+    <div className="admissions-client-section-heading flex flex-col items-start gap-1 border-y border-[#aebbb5] bg-[#eaf1ee] px-5 py-3.5 text-[#244b41] sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 sm:px-8">
+      <div className="admissions-client-section-title"><span aria-hidden="true">{number}</span><h3 id={id} className="text-[13px] font-semibold tracking-[-0.01em] sm:text-[14px]">{title}</h3></div>
       {detail ? <span className="min-w-0 text-[10px] font-medium leading-4 text-[#617069] sm:truncate sm:text-right sm:text-[11px]">{detail}</span> : null}
     </div>
   );
@@ -693,10 +675,6 @@ function DataPointFact({ label, value, wide = false }: { label: string; value: s
   );
 }
 
-function DataPointNote({ children }: { children: ReactNode }) {
-  return <p className="mt-4 max-w-[760px] text-[12px] leading-5 text-[#5e6a65]" data-admissions-data-detail-note="true">{children}</p>;
-}
-
 function BoardCard({ card, onOpen }: { card: AdmissionsBoardCard; onOpen: () => void }) {
   const decision = decisionTabFor(card);
   const readiness = cardReadiness(card);
@@ -705,33 +683,28 @@ function BoardCard({ card, onOpen }: { card: AdmissionsBoardCard; onOpen: () => 
       type="button"
       onClick={onOpen}
       data-admissions-board-card={card.referralId}
-      aria-label={`${card.clientName}, referral ${card.referralId}, ${communityName(card)}, ${card.status}. View management briefing`}
-      className="group block w-full rounded-xl border border-[#dfe3e1] bg-white p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition hover:-translate-y-px hover:border-[#bfc9c3] hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
+      aria-label={`${card.clientName}, referral ${card.referralId}, ${communityName(card)}, ${card.status}. Open client file`}
+      className="admissions-referral-file group block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <span data-admissions-client-name="true" className="block break-words text-[15px] font-semibold tracking-[-0.02em] text-[#171918] lg:truncate">{card.clientName}</span>
-          <span className="mt-1 block break-words text-[11px] leading-4 text-[#69716c] lg:truncate">Referral #{card.referralId} · {communityName(card)}</span>
-        </div>
-        <span data-admissions-card-decision={decision.state} className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.06em] ${decision.className}`}>{decision.label}</span>
-      </div>
-
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 border-y border-[#edf0ee] lg:mt-4 lg:block lg:divide-y lg:divide-[#edf0ee]" data-admissions-card-facts="true">
-        <BoardCardFact label="Stage" value={card.status} />
-        <BoardCardFact label="Owner" value={card.owner || "Unassigned"} />
-        <BoardCardFact label="Timing" value={`${formatLongDays(card.daysOpen)} open · updated ${formatLastUpdate(card.daysSinceUpdate).toLowerCase()}`} />
-        <BoardCardFact label="Planned admission" value={formatPlannedDate(card.plannedAdmissionDate)} />
-      </dl>
-
-      <div className="mt-3 flex items-start justify-between gap-3">
-        <span data-admissions-card-readiness={readiness.tone} className={`min-w-0 text-[10px] font-semibold leading-4 ${readiness.className}`}>
-          {readiness.label}
+      <span className="admissions-referral-tab" aria-hidden="true">Client file</span>
+      <span className="admissions-referral-sheet">
+        <span className="admissions-referral-heading">
+          <span className="min-w-0">
+            <span data-admissions-client-name="true" className="admissions-referral-name">{card.clientName}</span>
+            <span className="admissions-referral-community">{communityName(card)}</span>
+          </span>
+          <span data-admissions-card-decision={decision.state} className={`admissions-referral-decision ${decision.className}`}>{card.status}</span>
         </span>
-        <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[#0f795f]">
-          Briefing
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        <span className="admissions-referral-next">{card.nextAction || readiness.label}</span>
+        <span className="admissions-referral-facts" data-admissions-card-facts="true">
+          <span data-admissions-card-fact="owner"><span>Owner</span><strong>{card.owner || "Unassigned"}</strong></span>
+          <span data-admissions-card-fact="planned-admission"><span>Planned admission</span><strong>{formatPlannedDate(card.plannedAdmissionDate)}</strong></span>
         </span>
-      </div>
+        <span className="admissions-referral-footer">
+          <span>#{card.referralId} · {formatLongDays(card.daysOpen)} open</span>
+          <span className="admissions-referral-open">Open file <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></span>
+        </span>
+      </span>
     </button>
   );
 }
@@ -794,7 +767,7 @@ function ReferralList({ cards, expanded, onToggle, onOpen }: { cards: Admissions
               <th className="px-4 py-4">Timing</th>
               <th className="px-4 py-4">Planned admission</th>
               <th className="px-4 py-4">Readiness</th>
-              <th className="px-4 py-4"><span className="sr-only">View management briefing</span></th>
+              <th className="px-4 py-4"><span className="sr-only">Open client file</span></th>
             </tr>
           </thead>
           <tbody>
@@ -815,8 +788,8 @@ function ReferralList({ cards, expanded, onToggle, onOpen }: { cards: Admissions
                 <td className="px-4 py-4">{formatPlannedDate(card.plannedAdmissionDate)}</td>
                 <td className={`px-4 py-4 text-[11px] font-semibold ${readiness.className}`}>{readiness.label}</td>
                 <td className="px-4 py-4 text-right">
-                  <button type="button" onClick={() => onOpen(card)} aria-label={`View management briefing for ${card.clientName}, referral ${card.referralId}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0f795f] hover:underline">
-                    Briefing <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <button type="button" onClick={() => onOpen(card)} aria-label={`Open client file for ${card.clientName}, referral ${card.referralId}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0f795f] hover:underline">
+                    Open file <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </td>
               </tr>
@@ -864,15 +837,6 @@ function CommunityPill({ active, onClick, children }: { active: boolean; onClick
 
 function communityName(card: AdmissionsBoardCard) {
   return card.facilityId ? card.community : "No community";
-}
-
-function BoardCardFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 py-2.5 lg:grid lg:grid-cols-[92px_minmax(0,1fr)] lg:gap-3 lg:py-2" data-admissions-card-fact={label.toLowerCase().replaceAll(" ", "-")}>
-      <dt className="text-[9px] font-medium uppercase tracking-[0.07em] text-[#7b837f]">{label}</dt>
-      <dd className="mt-1 min-w-0 break-words text-[11px] font-semibold leading-4 text-[#303532] lg:mt-0 lg:leading-5">{value}</dd>
-    </div>
-  );
 }
 
 function cardReadiness(card: AdmissionsBoardCard) {

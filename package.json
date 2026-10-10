@@ -100,6 +100,7 @@
     "check:california-home": "node scripts/check-california-home.mjs",
     "check:browser-california-home": "node scripts/check-browser-california-home.mjs",
     "check:browser-admissions": "node scripts/check-browser-admissions.mjs",
+    "check:browser-admissions-material": "node scripts/check-browser-admissions-material.mjs",
     "check:browser-california-carousel": "node scripts/check-browser-california-carousel.mjs",
     "check:production-smoke": "node scripts/check-production-smoke.mjs",
     "capture:production-auth": "node scripts/capture-production-auth-state.mjs",

@@ -52,7 +52,8 @@ await withBrowserQa(async (browser) => {
     unavailableBoard.waitFor({ state: "visible", timeout: 60_000 })
   ]);
 
-  if (await board.isVisible().catch(() => false)) {
+  const pipelineConnected = await board.isVisible().catch(() => false);
+  if (pipelineConnected) {
     const layoutToggle = page.locator('[data-admissions-layout-toggle="true"]');
     const boardButton = layoutToggle.getByRole("button", { name: "Board", exact: true });
     const listButton = layoutToggle.getByRole("button", { name: "List", exact: true });
@@ -69,11 +70,11 @@ await withBrowserQa(async (browser) => {
     }
     await boardButton.click();
 
-    const firstBriefingButton = page.getByRole("button", { name: /^Briefing/ }).first();
-    await firstBriefingButton.click();
+    const firstClientFile = page.locator('[data-admissions-board-card]').first();
+    await firstClientFile.click();
     const modal = page.locator('[data-admissions-progress-modal="true"]');
     await modal.waitFor({ state: "visible" });
-    await modal.getByRole("button", { name: "Close client chart" }).click();
+    await modal.getByRole("button", { name: "Close client file" }).click();
     await modal.waitFor({ state: "hidden" });
   }
   await page.screenshot({ path: `${screenshotDir}/desktop-admissions-pipeline.png`, fullPage: true });
@@ -190,6 +191,12 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-admissions-community-detail="true"]').count() !== 1
   ) {
     throw new Error("Community snapshot rows must open an inline operating drill-down.");
+  }
+  if (!pipelineConnected) {
+    const communityDetail = await page.locator('[data-admissions-community-detail="true"]').innerText();
+    if (!communityDetail.includes("Referral details are unavailable") || communityDetail.includes("No active referrals are assigned")) {
+      throw new Error("A disconnected Pipeline must not appear as zero active referrals in community detail.");
+    }
   }
   await page.screenshot({ path: `${screenshotDir}/desktop-admissions-briefing-dashboard.png`, fullPage: true });
 
@@ -329,7 +336,7 @@ await withBrowserQa(async (browser) => {
     await mobileModal.waitFor({ state: "visible" });
     const modalMetrics = await mobileModal.getByRole("dialog").evaluate((dialog) => {
       const bounds = dialog.getBoundingClientRect();
-      const close = dialog.querySelector('[aria-label="Close management chart"]');
+      const close = dialog.querySelector('[aria-label="Close client file"]');
       const closeBounds = close?.getBoundingClientRect();
       return {
         left: bounds.left,
@@ -356,7 +363,7 @@ await withBrowserQa(async (browser) => {
       throw new Error("Mobile client chart drill-down did not expand.");
     }
     await mobile.screenshot({ path: `${screenshotDir}/mobile-admissions-client-chart.png`, fullPage: false });
-    await mobileModal.getByRole("button", { name: "Close management chart" }).click();
+    await mobileModal.getByRole("button", { name: "Close client file" }).click();
     await mobileModal.waitFor({ state: "hidden" });
   }
 

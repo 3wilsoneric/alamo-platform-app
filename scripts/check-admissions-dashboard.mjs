@@ -453,3 +453,7 @@ assert.match(admissionsPageSource, /pipeline\.metrics\.activeReferrals/, "the ex
 assert.match(admissionsPageSource, /activeCards = pipeline\.board\.cards\.filter/, "the executive workload must exclude declined cards");
 
 console.log("admissions dashboard checks passed");
+
+// The synthetic, validated connected fixture is also used by the visual
+// browser check. It never enters the production bundle or served API.
+export { connected as connectedAdmissionsFixture };

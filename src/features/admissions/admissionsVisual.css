@@ -1,0 +1,754 @@
+/* Admissions shares the Platform's paper, ink, and domain colors. Only a
+   referral is a file; briefing and schedule remain dashboard surfaces. */
+[data-admissions-overview="true"] {
+  --admissions-ink: #16283a;
+  --admissions-muted: #65717d;
+  --admissions-paper: #fcfbf7;
+  --admissions-blue: #164d7c;
+  --admissions-rule: #d3d8dd;
+  background: #f2f4f3;
+  color: var(--admissions-ink);
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+[data-admissions-surface-navigation="true"] {
+  background: transparent;
+  border-color: #cbd4d7;
+}
+
+[data-admissions-executive-update="true"] {
+  border: 1px solid #d2d7d4;
+  border-left: 5px solid #a7834c;
+  border-radius: 6px;
+  background: var(--admissions-paper);
+  box-shadow: 0 8px 20px #172a3c12;
+}
+
+[data-admissions-executive-update="true"] > div {
+  border-color: #d8dcd8;
+}
+
+[data-admissions-briefing-source-notice="true"] {
+  border-radius: 5px;
+  box-shadow: 0 3px 10px #7051220d;
+}
+
+[data-admissions-briefing-navigation="true"] [role="tablist"] {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid #bfcbd2;
+  border-radius: 0;
+  background: transparent;
+}
+
+[data-admissions-briefing-navigation="true"] [role="tab"] {
+  justify-content: flex-start;
+  min-height: 62px;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #51616e;
+}
+
+[data-admissions-briefing-navigation="true"] [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--admissions-blue);
+  background: #e9f0f5;
+  color: #163f62;
+}
+
+[data-admissions-briefing-navigation="true"] [role="tab"]:hover {
+  background: #edf2f4;
+}
+
+[data-admissions-briefing-navigation="true"] [role="tab"] svg {
+  color: currentColor;
+}
+
+[data-admissions-dashboard-page="communities"] > section {
+  border: 1px solid #c4d2dc;
+  border-top: 5px solid var(--admissions-blue);
+  border-radius: 7px;
+  background: var(--admissions-paper);
+  box-shadow: 0 8px 20px #172a3c16;
+}
+
+[data-admissions-dashboard-page="communities"] > section > div:first-child {
+  border-color: #c9d5de;
+  background: linear-gradient(90deg, #e8f0f6, #fcfbf7 68%);
+}
+
+[data-admissions-dashboard-page="communities"] h3 {
+  color: #173f62;
+}
+
+[data-admissions-dashboard-page="communities"] [data-admissions-briefing-community] > button {
+  border-left: 4px solid transparent;
+}
+
+[data-admissions-dashboard-page="communities"] [data-admissions-briefing-community] > button:hover,
+[data-admissions-dashboard-page="communities"] [data-admissions-briefing-community] > button[aria-expanded="true"] {
+  border-left-color: #3e779e;
+  background: #eef4f8;
+}
+
+[data-admissions-dashboard-page="communities"] [data-admissions-community-census] strong,
+[data-admissions-dashboard-page="communities"] [data-admissions-community-upcoming-admits] strong {
+  color: #164d7c;
+}
+
+[data-admissions-dashboard-page="communities"] [data-admissions-community-referrals] strong {
+  color: #276e58;
+}
+
+[data-admissions-community-detail="true"] {
+  background: #f5f8fa;
+}
+
+[data-admissions-schedule="true"] {
+  border: 1px solid #c5d4df;
+  border-top: 5px solid var(--admissions-blue);
+  border-radius: 7px;
+  background: var(--admissions-paper);
+  box-shadow: 0 8px 20px #172a3c16;
+}
+
+[data-admissions-schedule="true"] > div:first-child {
+  background: linear-gradient(90deg, #e8f0f6, #fcfbf7 70%);
+}
+
+[data-admissions-schedule-week="true"] {
+  background-color: #e9f0f5;
+}
+
+[data-admissions-follow-up="true"] {
+  border-radius: 7px;
+  background: var(--admissions-paper);
+  box-shadow: 0 8px 20px #172a3c16;
+}
+
+/* Board lanes are working queues. Their colors denote stages, while the
+   client-file stock remains manila through every workflow decision. */
+[data-admissions-board-column] {
+  --admissions-lane: #237359;
+  border: 1px solid #c9d2d1;
+  border-top: 5px solid var(--admissions-lane);
+  border-radius: 7px;
+  background: #eaf1ee;
+  box-shadow: 0 8px 20px #172a3c13;
+}
+
+[data-admissions-board-column="in_progress"] {
+  --admissions-lane: #315f8c;
+  background: #eaf0f5;
+}
+
+[data-admissions-board-column="decision"] {
+  --admissions-lane: #9d5a2b;
+  background: #f3ede5;
+}
+
+[data-admissions-board-column] > header {
+  border-bottom: 1px solid #cbd2d0;
+  color: var(--admissions-ink);
+}
+
+[data-admissions-board-column] > header > div > span {
+  border: 1px solid #d3d8d5;
+  border-radius: 4px;
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.admissions-referral-file {
+  position: relative;
+  isolation: isolate;
+  padding: 23px 8px 8px;
+  color: var(--admissions-ink);
+  transition: transform 160ms ease;
+}
+
+.admissions-referral-file::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border: 1px solid #b79353;
+  border-radius: 7px 10px 9px 9px;
+  background: url('/materials/manila-stock-v1.webp') repeat, #e6c68a;
+  background-size: 360px 360px, auto;
+  box-shadow: 0 5px 14px #4d39271e, inset 1px 1px #fff4db;
+  clip-path: polygon(0 19px, 5% 19px, 8% 0, 50% 0, 54% 19px, 100% 19px, 100% 100%, 0 100%);
+  content: "";
+}
+
+.admissions-referral-file:hover {
+  transform: translateY(-2px);
+}
+
+.admissions-referral-tab {
+  position: absolute;
+  top: 2px;
+  left: 12%;
+  color: #63451e;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.admissions-referral-sheet {
+  display: block;
+  min-width: 0;
+  padding: 13px 14px 10px;
+  border: 1px solid #d7cbb7;
+  border-radius: 4px;
+  background: #fcfbf7;
+  box-shadow: 0 2px 5px #4a39211e, inset 1px 0 #fff;
+}
+
+.admissions-referral-heading,
+.admissions-referral-facts > span,
+.admissions-referral-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admissions-referral-name {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #15283b;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.13;
+}
+
+.admissions-referral-community {
+  display: block;
+  margin-top: 4px;
+  color: #66717b;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.admissions-referral-decision {
+  flex: 0 0 auto;
+  max-width: 48%;
+  padding: 5px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: .03em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+[data-admissions-board-column="received"] [data-admissions-card-decision="in-progress"] {
+  border-color: #145b43;
+  background: #197453;
+  color: #fff;
+}
+
+.admissions-referral-next {
+  display: block;
+  margin-top: 12px;
+  min-height: 36px;
+  color: #364950;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.admissions-referral-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 10px;
+  border-top: 1px solid #d7d8d5;
+}
+
+.admissions-referral-facts > span {
+  padding: 7px 0;
+  border-bottom: 1px solid #e4e5e1;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admissions-referral-facts > span > span {
+  color: #65717d;
+}
+
+.admissions-referral-facts strong {
+  max-width: 58%;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-weight: 600;
+}
+
+.admissions-referral-footer {
+  align-items: center;
+  padding-top: 10px;
+  color: #68757b;
+  font-size: 11px;
+}
+
+.admissions-referral-open {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+  color: #087d64;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+[data-admissions-progress-modal="true"] {
+  background: #12202cc2;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-name-tab="true"] {
+  flex: 0 1 auto;
+  width: min(36vw, 340px);
+  min-width: 210px;
+  background: url('/materials/manila-stock-v1.webp') repeat, #e6c68a;
+  background-size: 360px 360px, auto;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-name-label="true"] {
+  border-color: #d7cbb7;
+  background: #fcfbf7;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-tab-name="true"] {
+  color: #16283a;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 22px;
+  line-height: 1.08;
+  white-space: normal;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="next-action"] {
+  border-color: #d0d9d8;
+  background: #edf3f0;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="next-action"] p {
+  color: #173c34;
+  font-size: 17px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] {
+  display: grid;
+  max-width: none;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] > section {
+  min-width: 0;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="admission-brief"] {
+  border-right: 1px solid #d1d7d5;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="client-context"] {
+  grid-column: 1 / -1;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] > section > div:first-child {
+  border-top: 0;
+  border-bottom: 1px solid #c9d2d2;
+  background: #f3f5f3;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger] {
+  grid-template-columns: minmax(0, 1fr) 32px;
+  gap: 4px 12px;
+  min-height: 69px;
+  padding: 12px 20px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger] > span:nth-child(2) {
+  grid-column: 1;
+  margin-top: 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger] > span:last-child {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-detail-grid="true"] > div {
+  border-radius: 3px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] h3,
+[data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] h4 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 18px;
+}
+
+/* The open referral is a document, not a dashboard card. Match the restrained
+   LIC 624 reading sheet while retaining the Pipeline's real disclosures. */
+[data-admissions-progress-modal="true"] {
+  --client-ink: #16283a;
+  --client-muted: #65717d;
+  --client-rule: #c9ccc7;
+  --client-forest: #285544;
+  --client-paper: #fcfbf7;
+  background: #14202bc4;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-folder-tab="true"] {
+  max-width: calc(100% - 24px);
+  align-items: end;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-name-tab="true"] {
+  width: 230px;
+  min-width: 0;
+  height: 58px;
+  border-radius: 15px 19px 0 0;
+  padding: 3px 3px 0;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-name-label="true"] {
+  border-bottom: 0;
+  border-radius: 6px 9px 0 0;
+  box-shadow: inset 0 1px #fff;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-tab-name="true"] {
+  font-size: 21px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admissions-client-cover-reference {
+  min-width: 0;
+  padding: 0 7px 12px;
+  color: #5d452b;
+  font: 600 12px/1.25 "Helvetica Neue", Arial, sans-serif;
+  white-space: nowrap;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-folder="true"] {
+  position: relative;
+  border-radius: 8px 12px 17px 17px;
+  padding: 9px 13px 14px 17px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-folder="true"]::before {
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  bottom: 13px;
+  width: 4px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #a47c3f44, #fff0ceaa, #8d622d20);
+  content: "";
+  pointer-events: none;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-paper="true"] {
+  border-radius: 5px 8px 9px 5px;
+  color: var(--client-ink);
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+.admissions-client-document-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-width: 0;
+  padding: 25px 86px 23px 28px;
+  border-bottom: 1px solid #aab5af;
+  background: var(--client-paper);
+}
+
+.admissions-client-document-identity {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+}
+
+.admissions-client-document-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 43px;
+  height: 47px;
+  border: 1px solid #adb7b1;
+  background: #f2f0e7;
+  color: var(--client-forest);
+}
+
+.admissions-client-document-eyebrow {
+  display: block;
+  color: var(--client-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.admissions-client-document-header h2 {
+  margin-top: 3px;
+  color: var(--client-ink);
+  font: 600 clamp(27px, 3vw, 38px)/1.13 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+}
+
+.admissions-client-document-status {
+  flex: 0 0 auto;
+  max-width: 230px;
+  padding: 6px 10px;
+  border: 1px solid #aabfba;
+  border-radius: 3px;
+  background: #e9f0eb;
+  color: #285544;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  overflow-wrap: anywhere;
+}
+
+.admissions-client-document-status[data-admissions-decision-tab="in-progress"] {
+  border-color: #adbac9;
+  background: #e8edf3;
+  color: #355679;
+}
+
+.admissions-client-document-status[data-admissions-decision-tab="under-review"] {
+  border-color: #c9b88d;
+  background: #f4eedc;
+  color: #735719;
+}
+
+.admissions-client-document-status[data-admissions-decision-tab="deny"] {
+  border-color: #d1aaa1;
+  background: #f5e9e5;
+  color: #8f3932;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="next-action"] {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 12px 20px;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--client-rule);
+  background: #f1efe7;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="next-action"] h3 {
+  color: #526257;
+  font: 600 12px/1.4 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="next-action"] p {
+  margin: 0;
+  color: var(--client-ink);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] > section > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 65px;
+  padding: 14px 22px;
+  border-bottom-color: var(--client-rule);
+  background: #f5f3eb;
+}
+
+.admissions-client-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admissions-client-section-title > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 31px;
+  height: 31px;
+  border: 1px solid #b6c1b7;
+  color: var(--client-forest);
+  font: 600 14px/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] h3 {
+  color: var(--client-ink);
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] .admissions-client-section-heading > span {
+  color: var(--client-muted);
+  font-size: 12px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger] {
+  min-height: 72px;
+  padding: 14px 23px;
+  background: #fffefa;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger]:hover,
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger][aria-expanded="true"] {
+  background: #f5f3eb;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger] > span:first-child {
+  color: #52636d;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger] > span:nth-child(2) {
+  color: var(--client-ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-trigger] > span:last-child {
+  border-radius: 3px;
+  border-color: #bfc8c2;
+  color: var(--client-forest);
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-detail] {
+  border-top-color: var(--client-rule);
+  background: #f9f8f3;
+  padding: 10px 23px 15px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-detail-grid="true"] {
+  gap: 0 20px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-detail-grid="true"] > div {
+  padding: 11px 1px;
+  border: 0;
+  border-bottom: 1px solid #d9ddd7;
+  border-radius: 0;
+  background: transparent;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-detail-grid="true"] dt {
+  color: var(--client-muted);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-data-detail-grid="true"] dd {
+  color: var(--client-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-section="workflow"] > div:nth-child(2) {
+  background: #f7f6f0;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] {
+  background: #fffefa;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] > div {
+  padding: 22px 24px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] h4 {
+  color: var(--client-ink);
+  font-size: 20px;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] li,
+[data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] dd,
+[data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] p {
+  color: #34485a;
+  font-size: 14px;
+}
+
+@media (max-width: 639px) {
+  .admissions-client-cover-reference { display: none; }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-name-tab="true"] { width: 185px; height: 52px; }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-tab-name="true"] { font-size: 18px; }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-folder="true"] { padding: 7px 7px 9px; }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-folder="true"]::before { display: none; }
+  .admissions-client-document-header { align-items: flex-start; flex-direction: column; gap: 13px; padding: 19px 60px 19px 16px; }
+  .admissions-client-document-icon { flex-basis: 38px; height: 42px; }
+  .admissions-client-document-header h2 { font-size: 29px; }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-section="next-action"] { grid-template-columns: 1fr; gap: 3px; padding: 14px 16px; }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] > section > div:first-child { min-height: 59px; padding: 12px 15px; align-items: flex-start; }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] h3 { font-size: 20px; }
+  [data-admissions-progress-modal="true"] [data-admissions-data-trigger] { padding: 13px 16px; }
+  [data-admissions-progress-modal="true"] [data-admissions-data-detail] { padding-inline: 16px; }
+  [data-admissions-progress-modal="true"] [data-admissions-client-context-grid="true"] > div { padding: 20px 16px; }
+}
+
+@media (max-width: 639px) {
+  [data-admissions-briefing-navigation="true"] [role="tab"] {
+    min-height: 48px;
+    padding: 8px 9px;
+  }
+  .admissions-referral-file {
+    padding-top: 23px;
+  }
+  .admissions-referral-heading {
+    align-items: flex-start;
+  }
+  .admissions-referral-name {
+    font-size: 20px;
+  }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-tab-name="true"] {
+    font-size: 17px;
+  }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-name-tab="true"] {
+    width: min(53vw, 250px);
+    min-width: 0;
+  }
+}
+
+@media (max-width: 899px) {
+  [data-admissions-progress-modal="true"] [data-admissions-chart-stream="true"] {
+    display: block;
+  }
+  [data-admissions-progress-modal="true"] [data-admissions-chart-section="admission-brief"] {
+    border-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admissions-referral-file { transition: none; }
+  .admissions-referral-file:hover { transform: none; }
+}

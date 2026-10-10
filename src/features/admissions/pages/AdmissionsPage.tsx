@@ -14,6 +14,7 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 import { readStorageItem, writeStorageItem } from "../../../shared/storage/browserStorage";
 import PipelineBoard, { ProgressModal } from "../components/PipelineBoard";
+import "../admissionsVisual.css";
 import {
   buildAdmissionsMoveInSchedule,
   isAcceptedReferral,
@@ -361,7 +362,7 @@ function buildExecutiveUpdateLines(
       { text: `${update.total} active ${pluralize("referral", update.total)}`, strong: true },
       { text: update.acceptedClients.length ? ". Of those, " : "." },
       ...(update.acceptedClients.length ? [
-        { text: `${update.acceptedClients.length} have been accepted`, strong: true },
+        { text: `${update.acceptedClients.length} ${update.acceptedClients.length === 1 ? "has" : "have"} been accepted`, strong: true },
         { text: "." }
       ] : [])
     ]
@@ -426,8 +427,8 @@ function buildExecutiveUpdateLines(
     if (pastPlannedCount) {
       if (pendingCount) segments.push({ text: " " });
       segments.push(
-        { text: `${pastPlannedCount} past-dated ${pluralize("acceptance", pastPlannedCount)}`, strong: true },
-        { text: ` ${pastPlannedCount === 1 ? "needs" : "need"} move-in outcome confirmation.` }
+        { text: `${pastPlannedCount} accepted ${pluralize("client", pastPlannedCount)}`, strong: true },
+        { text: ` ${pastPlannedCount === 1 ? "has" : "have"} a past planned date without a recorded move-in outcome.` }
       );
     }
     lines.push({
@@ -436,26 +437,19 @@ function buildExecutiveUpdateLines(
       segments
     });
   }
-  if (update.busiest.length) {
-    const [leader, runnerUp] = update.busiest;
-    lines.push({
-      key: "pipeline:load",
-      group: "pipeline",
-      segments: [
-        { text: leader?.name ?? "The leading community", accent: true },
-        { text: " has the largest active workload" },
-        { text: ` with ${leader?.count ?? 0} ${pluralize("referral", leader?.count ?? 0)}` },
-        ...(runnerUp ? [{ text: ", followed by " }, { text: runnerUp.name, accent: true }, { text: ` with ${runnerUp.count}` }] : []),
-        { text: ". Pipeline status: " },
-        { text: `${update.received} new ${pluralize("referral", update.received)}`, strong: true },
-        { text: ", " },
-        { text: `${update.inProgress} in assessment or review`, strong: true },
-        { text: ", and " },
-        { text: `${update.decision} at decision`, strong: true },
-        { text: "." }
-      ]
-    });
-  }
+  lines.push({
+    key: "pipeline:distribution",
+    group: "pipeline",
+    segments: [
+      { text: "Across the pipeline: " },
+      { text: `${update.received} newly received`, strong: true },
+      { text: ", " },
+      { text: `${update.inProgress} in assessment or review`, strong: true },
+      { text: ", and " },
+      { text: `${update.decision} at decision`, strong: true },
+      { text: "." }
+    ]
+  });
   return lines;
 }
 
@@ -535,17 +529,7 @@ function buildAdmissionsExecutiveUpdate(pipeline: ConnectedAdmissionsPipeline) {
       }
       return left.name.localeCompare(right.name);
     });
-  const communityCounts = new Map<string, number>();
-  for (const card of activeCards) {
-    const community = card.facilityId ? card.community : "No community assigned";
-    communityCounts.set(community, (communityCounts.get(community) ?? 0) + 1);
-  }
-  const busiest = [...communityCounts.entries()]
-    .sort(([leftName, leftCount], [rightName, rightCount]) => rightCount - leftCount || leftName.localeCompare(rightName))
-    .slice(0, 3)
-    .map(([name, count]) => ({ name, count }));
-
-  return { total, received, inProgress, decision, acceptedClients, busiest };
+  return { total, received, inProgress, decision, acceptedClients };
 }
 
 function pluralize(noun: string, count: number) {
@@ -664,8 +648,8 @@ function AdmissionsBriefingDashboard({
           <strong className="block text-[13px] font-semibold sm:shrink-0 sm:text-[14px]">Partial admissions snapshot</strong>
           <p className="mt-1 text-[13px] leading-5 sm:mt-0 sm:text-[14px]">
             {unavailableCoverage.length
-              ? `${joinReadableList(unavailableCoverage)} ${unavailableCoverage.length === 1 ? "was" : "were"} not published and ${unavailableCoverage.length === 1 ? "is" : "are"} shown as unavailable. Census and connected Pipeline values remain available.`
-              : "The detailed admissions briefing feed is unavailable. Census and connected Pipeline values remain available."}
+              ? `${joinReadableList(unavailableCoverage)} ${unavailableCoverage.length === 1 ? "was" : "were"} not published and ${unavailableCoverage.length === 1 ? "is" : "are"} shown as unavailable. Census remains available${pipeline ? ", along with the connected Pipeline" : "; Pipeline is unavailable"}.`
+              : `The detailed admissions briefing feed is unavailable. Census remains available${pipeline ? ", along with the connected Pipeline" : "; Pipeline is unavailable"}.`}
           </p>
         </div>
       ) : null}
@@ -1029,7 +1013,7 @@ function BriefingCommunityDashboard({
       <div className="flex items-end justify-between gap-5 border-b border-[#202321] px-4 py-4 sm:px-6 sm:py-5">
         <div>
           <h3 id="admissions-community-dashboard-title" className="text-[27px] font-semibold leading-none tracking-[-0.045em] text-[#202321] sm:text-[32px]">Community snapshot</h3>
-          <p className="mt-2 text-[14px] leading-5 text-[#64615b] sm:text-[15px]">Current residents, upcoming admits, and new referrals.</p>
+          <p className="sr-only">Current residents, upcoming admits, and new referrals by community.</p>
         </div>
         <p className="shrink-0 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6a665e]"><strong className="block text-[34px] font-semibold leading-none tracking-[-0.055em] text-[#202321] sm:text-[40px]">{formatBriefingCount(briefing.totals.census)}</strong><span className="mt-1 block">residents</span></p>
       </div>
@@ -1042,7 +1026,7 @@ function BriefingCommunityDashboard({
       <div className="divide-y divide-[#e5e9e7]">
         {assignedCommunities.map((community) => {
           const expanded = expandedFacilityId === community.facilityId;
-          const communityCards = pipeline?.board.cards.filter((card) => card.facilityId === community.facilityId) ?? [];
+          const communityCards = pipeline?.board.cards.filter((card) => card.facilityId === community.facilityId && !isDeclinedReferral(card.status)) ?? [];
           const upcomingAdmits = moveInCoverage
             ? scheduledMoveIns.filter((item) => item.facilityId === community.facilityId).length
             : null;
@@ -1071,6 +1055,7 @@ function BriefingCommunityDashboard({
                 <CommunityAdmissionsDetail
                   community={community}
                   cards={communityCards}
+                  pipelineConnected={pipeline != null}
                   assessments={upcomingAssessments.filter((item) => item.facilityId === community.facilityId)}
                   moveIns={scheduledMoveIns.filter((item) => item.facilityId === community.facilityId)}
                   assessmentCoverage={briefing.coverage.assessments}
@@ -1094,6 +1079,7 @@ function BriefingCommunityDashboard({
 function CommunityAdmissionsDetail({
   community,
   cards,
+  pipelineConnected,
   assessments,
   moveIns,
   assessmentCoverage,
@@ -1102,17 +1088,13 @@ function CommunityAdmissionsDetail({
 }: {
   community: AdmissionsDashboardResponse["briefing"]["communities"][number];
   cards: AdmissionsBoardCard[];
+  pipelineConnected: boolean;
   assessments: AdmissionsDashboardResponse["briefing"]["upcomingAssessments"];
   moveIns: AdmissionsScheduleEvent[];
   assessmentCoverage: boolean;
   moveInCoverage: boolean;
   onOpenCard: (card: AdmissionsBoardCard) => void;
 }) {
-  const stageCounts = {
-    received: cards.filter((card) => card.column === "received").length,
-    inProgress: cards.filter((card) => card.column === "in_progress").length,
-    decision: cards.filter((card) => card.column === "decision").length
-  };
   const activity = [
     ...assessments.map((item) => ({ referralId: item.referralId, key: `assessment:${item.referralId}:${item.scheduledAt}`, kind: "Assessment", date: item.scheduledAt, clientName: item.clientName })),
     ...moveIns.map((item) => ({ referralId: item.referralId, key: item.key, kind: "Move-in", date: item.date, clientName: item.clientName }))
@@ -1126,12 +1108,9 @@ function CommunityAdmissionsDetail({
     <div data-admissions-community-detail="true" className="border-t border-[#cfc5b8] bg-[#f7f3eb] px-4 py-4 sm:px-6 sm:py-5">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] lg:divide-x lg:divide-[#d8cfc3]">
         <section aria-label={`${community.shortName} pipeline detail`} className="min-w-0 lg:pr-6">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h5 className="mr-2 text-[15px] font-semibold text-[#29483f]">Active pipeline</h5>
-            <CommunityMetric label="New" value={stageCounts.received} />
-            <CommunityMetric label="Assessment / review" value={stageCounts.inProgress} />
-            <CommunityMetric label="Decision" value={stageCounts.decision} />
-            {community.occupancyPct != null ? <CommunityMetric label="Occupied" value={`${community.occupancyPct}%`} /> : null}
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h5 className="text-[15px] font-semibold text-[#29483f]">Active referrals <span className="ml-1 tabular-nums text-[#365f79]">{pipelineConnected ? cards.length : "—"}</span></h5>
+            {community.occupancyPct != null ? <span className="text-[12px] text-[#646d71]">{community.occupancyPct}% occupied</span> : null}
           </div>
           {cards.length ? (
             <div className="mt-3 grid gap-x-6 border-t border-[#d8cfc3] sm:grid-cols-2">
@@ -1145,7 +1124,7 @@ function CommunityAdmissionsDetail({
                 </button>
               ))}
             </div>
-          ) : <p className="mt-3 border-t border-[#d8cfc3] py-3 text-[13px] text-[#69655e]">No active referrals are assigned to this community.</p>}
+          ) : <p className="mt-3 border-t border-[#d8cfc3] py-3 text-[13px] text-[#69655e]">{pipelineConnected ? "No active referrals are assigned to this community." : "Referral details are unavailable while Pipeline is disconnected."}</p>}
         </section>
 
         <section aria-label={`${community.shortName} upcoming activity`} className="min-w-0 border-t border-[#d8cfc3] pt-4 lg:border-t-0 lg:pl-6 lg:pt-0">
@@ -1177,10 +1156,6 @@ function CommunityAdmissionsDetail({
       </div>
     </div>
   );
-}
-
-function CommunityMetric({ label, value }: { label: string; value: string | number }) {
-  return <span className="text-[12px] text-[#656159]"><strong className="mr-1.5 text-[15px] font-semibold text-[#202321]">{value}</strong>{label}</span>;
 }
 
 function formatBriefingCount(value: number | null) {

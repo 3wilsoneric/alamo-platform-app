@@ -122,6 +122,13 @@ Command Center, Data Explorer, and other deep tools stay available through
 governed routes or analyst drilldowns, but do not occupy the primary phone
 header. Phone layouts must still render any direct route safely.
 
+The main Admissions Briefing is a blue-accented dashboard rather than a folder.
+Its community drill-down distinguishes a disconnected Pipeline from a real
+zero-referral result. The Pipeline board uses neutral stage lanes containing
+manila client files; each file shows the source status, destination, next step,
+owner, and planned date, then opens a two-column client detail on desktop or
+one reading column on phones. The official header remains unchanged.
+
 The URL-only `/data-architecture` route is a print-ready platform explainer. It
 maps the current production system in five chapters: live and bounded inputs,
 the governed Databricks-to-snapshot spine, Azure Container Apps delivery,
