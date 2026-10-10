@@ -55,6 +55,46 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Main Platform home and report reader correction — 2026-10-10
+
+The prior release materially changed the Executive Director context app but
+left the main Platform home looking almost unchanged. This correction keeps the
+California map and adds a connected community census index beside it, shows
+current census in the phone community list, gives the map a restrained
+blue-gray atlas background, and makes Analytics reports a paper reader with
+domain-colored document accents. The index opens the same community profiles
+and highlights their map markers. No dashboard counts are invented when the
+governed home response is unavailable.
+
+- source commit: `79e2c32` on `codex/compact-executive-dashboard`
+- ACR build: `cc6g`
+- image tag: `alamo-platform:main-platform-79e2c32`
+- image digest: `sha256:340a57c678058f8609d388962d2579c9034846127e829e1816d5f26c532c303c`
+- active revision: `alamo-platform-prod-web--main-platform-1010`
+- rollback digest: `sha256:c18adfc74b05b88c0a84a80c6732a0964ad4259d957fc99da182d214a473b445`
+- active browser assets: `/assets/index-B3AxUnyG.js` and
+  `/assets/index-Dy-cRijC.css`
+
+This frontend-only image inherits all 94 layers of the preceding production
+image unchanged and adds one `/app/dist` layer. The home browser suite passed
+map/index data parity, cross-highlighting, route/modal behavior, desktop and
+phone layouts; the full-reports browser suite passed all five report families
+and responsive layouts. Documentation, TypeScript, report contracts, 13/13
+browser-surface cases, and production build passed. The broad predeploy runner
+again stopped at the existing analyst community-history fixture missing
+July–September 2026 San Pablo periods, so this is not a passing full
+`check:ship`.
+
+After the new revision became Healthy/Running with one replica and 100%
+traffic, root, Home, Analytics, Executive Director, Admissions, and Chat entry
+documents matched the candidate byte-for-byte in identity, gzip, and Brotli
+(21/21); the JS, CSS, and material asset matched (3/3). The first request
+during revision activation still reached the preceding entry document; parity
+was repeated successfully after health became ready. Public smoke passed 4/4,
+and four anonymous Executive Director API probes returned `401` with
+`private, no-store`. No API/server, data, storage, OCR, email, or notification
+setting changed.
+
 ### Platform dashboard and document-navigation refinement — 2026-10-10
 
 The Executive Director community and Licensing views, plus the related
