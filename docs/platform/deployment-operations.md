@@ -55,6 +55,46 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Executive Director Licensing folder refinement — 2026-10-09
+
+The Executive Director Licensing workspace now uses the shared material-folder
+design reference: a quieter printed cover label, clearly separated Reports and
+Upload tabs, and a Review tab only while editing a report. Folder stock,
+typography, tab spacing, filename wrapping, and the upload/review controls were
+refined across desktop, tablet, phone, and zoom layouts. The existing report
+queue, original-file access, and editable LIC 624 form remain intact. This is a
+frontend-only release; no API, storage, OCR, mailbox, or notification setting
+was changed.
+
+- source commit: `6333b5f` on `codex/compact-executive-dashboard`
+- image tag: `alamo-platform:executive-lic-folder-6333b5f`
+- image digest: `sha256:759d9ab22bd3a7847768191a92654883f741cfd2225078a7db53fa38109459c2`
+- active revision: `alamo-platform-prod-web--licensing-folder-1009`
+- rollback digest: `sha256:4b3d7a966d927a3d40a701fbda6bb34324965faef995a0b5bf235a306d1854ec`
+- active browser assets: `/assets/index-DDGGL0-z.js` and
+  `/assets/index-1JBAcUl4.css`
+- material asset: `/materials/manila-stock-v1.webp`
+
+The candidate replaced only `/app/dist` in the exact preceding production
+image. Offline image inspection confirmed the same runtime configuration and
+byte-identical build assets. Documentation, TypeScript, Executive Director
+contracts, synthetic batch persistence/recovery, production build, and the
+Licensing browser suite passed. The browser suite exercised upload, review,
+original-file access, long filenames, keyboard tabs, unsaved drafts, and
+320/390/768/1440px plus 200%-equivalent layouts. The broad predeploy runner
+still stops in the pre-existing analyst community-history fixture because its
+July–September 2026 baseline periods are absent. Following the user's explicit
+request to release after that limitation was disclosed, this promotion used
+the focused Executive Director gate; it is not a passing full `check:ship`.
+
+Post-promotion checks confirmed one Healthy/Running replica and 100% traffic.
+Identity, gzip, and Brotli responses for `/executive/licensing`,
+`/executive/dashboard`, `/admissions`, and `/chat` matched the tested entry
+document byte-for-byte. Live JavaScript, CSS, and folder material also matched
+the candidate exactly. Four anonymous Executive Director API probes returned
+`401` with `private, no-store`. No report, review, incident, Pipeline record,
+or email was created or changed during verification.
+
 ### Executive Director workspace and bounded LIC 624 uploads — 2026-10-09
 
 The facility workspace now has Overview, MARs, and Incidents, a New client
