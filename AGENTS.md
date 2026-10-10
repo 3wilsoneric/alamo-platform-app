@@ -14,6 +14,7 @@ Use progressive disclosure:
 - Architecture: [docs/platform/architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md)
 - Integration platform strategy: [docs/platform/integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md)
 - Product surfaces: [docs/platform/product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md)
+- Folder and material styling: [docs/platform/material-folder-design.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/material-folder-design.md) — read before reusing the realistic folders, dashboard folios, ledgers, or Licensing styling in Platform or Pipeline.
 - Operator journeys: [docs/platform/user-journeys.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md)
 - AH Analyst system: [docs/platform/analyst-system.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/analyst-system.md)
 - Data publishing: [docs/platform/data-publishing.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/data-publishing.md)

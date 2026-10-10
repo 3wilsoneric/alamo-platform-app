@@ -48,6 +48,7 @@ const platformDocs = [
   "docs/platform/executive-director-workspace.md",
   "docs/platform/full-reporting.md",
   "docs/platform/integration-platform.md",
+  "docs/platform/material-folder-design.md",
   "docs/platform/product-surfaces.md",
   "docs/platform/repository-ownership.md",
   "docs/platform/ship-checklist.md",

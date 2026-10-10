@@ -15,6 +15,7 @@
   - [acquisition-parent-company-program.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/acquisition-parent-company-program.md)
   - [private-behavioral-health-acquisition-master-dossier.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-acquisition-master-dossier.md)
   - [product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md)
+  - [material-folder-design.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/material-folder-design.md)
   - [full-reporting.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/full-reporting.md)
   - [user-journeys.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md)
   - [analyst-system.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/analyst-system.md)
@@ -64,6 +65,7 @@ flowchart LR
 4. [acquisition-parent-company-program.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/acquisition-parent-company-program.md) for the private high-acuity behavioral-health parent-company research program.
 5. [private-behavioral-health-acquisition-master-dossier.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-acquisition-master-dossier.md) for the complete owner-facing acquisition context, verified evidence, company universe, state strategy, and next research work.
 6. [product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md) for the current routes and user-facing modules.
+   [material-folder-design.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/material-folder-design.md) for the reusable folder, paper, tab, and density rules.
 7. [user-journeys.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md) for the named operator journeys and scenario coverage.
 8. [full-reporting.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/full-reporting.md) for governed long-form reports, artifacts, and the reporting data roadmap.
 9. [analyst-system.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/analyst-system.md) for AH Analyst, deterministic tools, session state, and module rendering.

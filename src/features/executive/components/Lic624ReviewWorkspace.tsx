@@ -220,20 +220,20 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
         </div>
         <div className="lic624-review__header-actions">
           <div className="lic624-review__revision">
-            <span>Review revision</span>
+            <span>Revision</span>
             <strong>{submission.reviewRevision || "Original"}</strong>
           </div>
           {onOpenOriginal ? <button type="button" onClick={onOpenOriginal} className="lic624-review__button"><FileText size={17} aria-hidden="true" /> Original</button> : null}
-          <button type="button" disabled={Boolean(saving)} onClick={() => { if (!savingRef.current) onClose(); }} aria-label="Close digital form" className="lic624-review__close">
-            <X size={20} aria-hidden="true" />
-          </button>
         </div>
+        <button type="button" disabled={Boolean(saving)} onClick={() => { if (!savingRef.current) onClose(); }} aria-label="Close digital form" className="lic624-review__close">
+          <X size={20} aria-hidden="true" />
+        </button>
       </header>
 
       <div className="lic624-review__summary">
         <div>
           <span>Extraction</span>
-          <strong>{submission.extractionSummary?.extractedFieldCount ?? 0} populated fields</strong>
+          <strong>{submission.extractionSummary?.extractedFieldCount ?? 0} fields extracted</strong>
         </div>
         <div>
           <span>Required check</span>

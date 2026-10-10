@@ -1,38 +1,55 @@
-.executive-licensing { --lic-cover:#245448; --lic-edge:#12392f; --lic-ink:#193246; }
-.executive-licensing .executive-director-community__masthead > div > span { font-size:14px; letter-spacing:0; color:#63716c; font-weight:400; }
-.licensing-register { position:relative; margin-top:22px; padding:0 12px 13px 25px; border:1px solid var(--lic-edge); border-radius:12px; background:var(--ed-grain),linear-gradient(105deg,#133c33,#2e6255 55%,#214b40); box-shadow:inset 1px 1px 1px #ffffff4a,inset 9px 0 8px #071e1b55,0 8px 18px #213b3026; }
-.licensing-register::before { position:absolute; top:0; bottom:0; left:14px; width:4px; content:""; background:linear-gradient(90deg,#061e1860,#ffffff3b,#00000040); }
-.licensing-register__tabs { display:flex; align-items:end; gap:4px; min-height:66px; padding:10px 6px 0; }
-.licensing-register__tabs > button { display:flex; align-items:center; gap:9px; min-height:47px; padding:12px 22px; border:1px solid #ffffff35; border-bottom:0; border-radius:9px 12px 0 0; background:#143d3280; color:#f3f1e6; font-size:15px; font-weight:500; }
-.licensing-register__tabs > button[aria-selected="false"]:hover:not(:disabled) { background:#397364; }
+.executive-licensing {
+  --lic-cover:#e6c68a;
+  --lic-edge:#ab8146;
+  --lic-ink:#193246;
+  --lic-stock:url("/materials/manila-stock-v1.webp");
+  --lic-tab-shape:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 64' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M0 64C8 64 11 60 13 52L21 13C23 4 28 1 39 1H200C211 1 216 5 218 14L227 53C229 60 233 64 240 64Z'/%3E%3C/svg%3E");
+}
+.executive-director-community.executive-licensing { padding-top:25px; }
+.licensing-register { position:relative; isolation:isolate; padding:0 18px 21px 20px; }
+/* Cover, crease and page edges are separate from live controls and text. */
+.licensing-register::before { position:absolute; z-index:-3; top:35px; bottom:0; left:0; right:0; border:1px solid var(--lic-edge); border-radius:13px 13px 16px 16px; content:""; pointer-events:none; background:linear-gradient(110deg,#fff3ce55,transparent 35%,#89541718),var(--lic-stock),var(--lic-cover); background-size:auto,360px 360px,auto; box-shadow:inset 0 1px 1px #fff6df,inset 0 -2px 2px #9b682d55,0 3px 4px #503b2524,0 16px 24px -12px #47392463; }
+.licensing-register::after { position:absolute; z-index:-2; top:53px; bottom:15px; left:9px; width:4px; border-radius:3px; content:""; pointer-events:none; background:linear-gradient(90deg,#aa824449,#fbebc6bb,#835c2826,transparent); }
+.licensing-register__header { position:relative; z-index:2; display:flex; align-items:end; justify-content:space-between; min-height:68px; min-width:0; gap:24px; padding:0 7px; }
+.licensing-register__tabs { display:flex; flex:0 0 auto; align-items:end; min-width:0; gap:4px; padding:0 9px; }
+.licensing-register__tabs > button { position:relative; isolation:isolate; display:flex; align-items:center; justify-content:center; flex-shrink:0; gap:9px; min-height:52px; padding:12px 29px; border:0; border-radius:14px 14px 0 0; background:transparent; color:#584128; font-size:16px; font-weight:500; white-space:nowrap; }
+.licensing-register__tabs > button::before { position:absolute; z-index:-1; inset:0 -9px; content:""; pointer-events:none; background:linear-gradient(180deg,#fff2d65c,#ae702d14),var(--lic-stock),var(--lic-cover); background-size:auto,360px 360px,auto; mask:var(--lic-tab-shape) center/100% 100% no-repeat; filter:drop-shadow(0 -1px .5px #8e683f70); }
+.licensing-register__tabs > button[aria-selected="false"]:hover:not(:disabled) { color:#14372e; }
+.licensing-register__tabs > button[aria-selected="false"]:hover:not(:disabled)::before { background:linear-gradient(#fff6e28c,#fff5dc30),var(--lic-stock); background-size:auto,360px 360px; }
 .licensing-register__tabs > button:disabled { cursor:wait; opacity:.65; }
-.licensing-register__tabs > button[aria-selected="true"] { color:#14372e; background:var(--ed-grain),var(--ed-paper); border-color:#c6c5b9; }
-.licensing-register__tabs > button svg { width:18px; height:18px; }
-.licensing-register__tabs > button i { width:7px; height:7px; border-radius:50%; background:#b4822e; }
-.licensing-register__stamp { display:flex; align-items:baseline; gap:12px; margin:0 5px 17px auto; color:#eee9d9; font:600 17px var(--ed-serif); }
-.licensing-register__stamp small { font:400 11px var(--ed-sans); opacity:.8; }
-.licensing-register__paper { min-width:0; min-height:390px; background:var(--ed-grain),var(--ed-paper); border:1px solid #c6c5b9; border-radius:5px 7px 7px 5px; box-shadow:2px 3px 0 #dad6ca,4px 5px 0 #ffffff40,0 1px 5px #00000025; }
+.licensing-register__tabs > button[aria-selected="true"] { z-index:1; min-height:62px; color:#19372e; font-weight:600; }
+.licensing-register__tabs > button[aria-selected="true"]::before { background:var(--ed-grain),linear-gradient(#fffefb,var(--ed-paper)); }
+.licensing-register__tabs > button[aria-selected="true"]::after { position:absolute; content:""; height:4px; background:var(--ed-paper); bottom:-3px; left:-7px; right:-7px; }
+.licensing-register__tabs > button:focus-visible { outline:2px solid #23745c; outline-offset:-8px; }
+.licensing-register__tabs > button svg { width:18px; height:18px; flex-shrink:0; }
+.licensing-register__tabs > button i { flex-shrink:0; width:7px; height:7px; border-radius:50%; background:#b4822e; }
+.licensing-register__context { display:flex; flex:1 1 0; align-items:center; justify-content:flex-end; min-height:35px; min-width:0; gap:14px; padding:6px 10px 8px; color:#584128; }
+.licensing-register__context strong { min-width:0; color:#45351f; font:600 20px/1.3 var(--ed-serif); overflow-wrap:anywhere; text-wrap:pretty; }
+.licensing-register__context span { padding:4px 6px; border:1px solid #355e4970; border-radius:2px; color:#294c3c; background:#fff5dd45; font-size:11px; font-weight:600; letter-spacing:.05em; white-space:nowrap; }
+.licensing-register__paper { position:relative; min-width:0; background:var(--ed-grain),var(--ed-paper); border:1px solid #c6bca9; border-radius:5px 8px 9px 5px; box-shadow:0 -1px 1px #fffefb,inset 1px 0 #ffffff,0 1px 3px #59472d3d; }
+.licensing-register__paper::before,.licensing-register__paper::after { position:absolute; content:""; pointer-events:none; border:1px solid #b8aa91; border-radius:inherit; }
+.licensing-register__paper::before { z-index:-2; inset:7px -6px -7px 6px; background:#e8e1d2; box-shadow:0 3px 5px #4c351c38; }
+.licensing-register__paper::after { z-index:-1; inset:3px -3px -3px 3px; background:#f6f2e8; box-shadow:0 1px 1px #76644b30; }
 .licensing-register__paper [role="tabpanel"][hidden] { display:none !important; }
 .licensing-register__paper [role="tabpanel"] { min-width:0; }
-.licensing-reports__toolbar { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:24px 25px 18px; }
-.app-theme-root .licensing-reports__toolbar h2 { font-size:29px; margin:0; }
-.licensing-reports__toolbar p { margin-top:5px; font-size:13px; color:var(--ed-muted); }
-.licensing-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:8px 13px; border:1px solid #b6c1bd; border-radius:5px; background:#fffefa; color:#274339; font-size:13px; font-weight:500; white-space:nowrap; cursor:pointer; }
+.licensing-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:8px 13px; border:1px solid #b6c1bd; border-radius:5px; background:#fffefa; color:#274339; font-size:14px; font-weight:500; white-space:nowrap; cursor:pointer; }
 .licensing-button svg { width:16px; height:16px; }
 .licensing-button:hover { background:#edf1e9; border-color:#567468; }
 .licensing-button.is-primary { background:#275c4d; border-color:#154333; color:white; box-shadow:inset 0 1px 1px #ffffff25; }
 .licensing-button.is-primary:hover { background:#194c3c; }
 .licensing-button.is-review { border-color:#ad8545; color:#77521b; background:#fcf6e9; }
 .licensing-button:disabled,.licensing-button.is-disabled { opacity:.5; cursor:default; }
-.licensing-reports__filters { display:flex; gap:12px; padding:0 25px 20px; }
+.licensing-reports__filters { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:24px; }
+.licensing-reports__count { margin:0 0 0 auto; color:#647169; font-size:14px; white-space:nowrap; }
 .licensing-search { display:flex; align-items:center; gap:10px; width:min(100%,430px); padding:0 12px; min-height:44px; border:1px solid #b4c0bd; border-radius:5px; background:#fffefa; }
 .licensing-search svg { width:18px; height:18px; color:#688076; flex-shrink:0; }
 .licensing-search input { min-width:0; width:100%; padding:10px 0; background:transparent; border:0; font:400 15px var(--ed-sans); color:#193246; outline:none; }
 .licensing-search:focus-within { outline:2px solid #23745c; outline-offset:2px; }
 .licensing-reports__filters select { min-height:44px; min-width:170px; padding:8px 30px 8px 12px; border:1px solid #b4c0bd; border-radius:5px; background:#fffefa; color:#274339; font:400 14px var(--ed-sans); }
-.licensing-report-list__columns,.licensing-report-row { display:grid; grid-template-columns:minmax(220px,1fr) 125px 140px 245px; align-items:center; gap:18px; padding:17px 25px; }
-.licensing-report-list__columns { min-height:36px; padding-block:9px; background:#e7eae5; border-block:1px solid #c4cdc6; font-size:12px; font-weight:500; color:#4b6054; }
+.licensing-report-list__columns,.licensing-report-row { display:grid; grid-template-columns:minmax(220px,1fr) 125px 140px 245px; align-items:center; gap:18px; padding:17px 24px; }
+.licensing-report-list__columns { min-height:36px; padding-block:9px; background:#f0ede5; border-block:1px solid #d9d1c2; font-size:12px; font-weight:500; color:#586259; }
 .licensing-report-row { min-height:98px; border-bottom:1px solid #d6dbd4; background:#ffffff35; }
+.licensing-report-row:last-child { border-bottom:0; }
 .licensing-report-row:hover { background:#faf7ed; }
 .licensing-report-row__file { display:flex; align-items:center; min-width:0; gap:14px; }
 .licensing-report-row__file > svg { width:28px; height:34px; color:#40675a; flex-shrink:0; }
@@ -44,7 +61,7 @@
 .licensing-report-status.is-ready_to_file,.licensing-report-status.is-filed { border-color:#a6c3b4; background:#e7eee7; color:#255b43; }
 .licensing-report-status.is-ocr_required,.licensing-report-status.is-awaiting_form_definition { border-color:#bdc6d3; background:#e8edf3; color:#3f5877; }
 .licensing-report-status.is-failed { border-color:#d7b3a6; background:#f1e0d9; color:#8b3b27; }
-.licensing-report-row__actions { display:flex; justify-content:flex-end; gap:7px; }
+.licensing-report-row__actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
 .licensing-reports__footer { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:67px; padding:14px 25px; font-size:12px; color:#69756d; }
 .licensing-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; min-height:240px; padding:40px 20px; color:#69756d; text-align:center; }
 .licensing-empty > svg { width:32px; height:32px; color:#5b7c6d; }
@@ -80,37 +97,58 @@
 .licensing-selected-file > button > svg { width:18px; height:18px; }
 .licensing-upload__note { margin:18px 0 0; color:#6a7368; font-size:13px; line-height:1.6; }
 @media(max-width:1199px) {
+  .licensing-register__header { gap:18px; }
+  .licensing-register__tabs { padding-inline:3px; }
+  .licensing-register__tabs > button { padding-inline:19px; font-size:15px; gap:7px; }
+  .licensing-register__context { padding-inline:8px; gap:10px; }
+  .licensing-register__context strong { font-size:19px; }
   .licensing-report-list__columns,.licensing-report-row { grid-template-columns:minmax(190px,1fr) 115px 135px; gap:12px; }
   .licensing-report-list__columns > span:last-child { display:none; }
   .licensing-report-row__actions { grid-column:1/-1; justify-content:flex-end; }
   .licensing-upload { gap:28px; grid-template-columns:200px minmax(0,1fr); padding:28px; }
   .licensing-upload__document { padding:19px; min-height:315px; }
 }
+@media(min-width:768px) and (max-width:1023px) {
+  .licensing-register { padding-top:4px; }
+  .licensing-register::before { top:0; }
+  .licensing-register__header { flex-direction:column-reverse; align-items:stretch; gap:4px; }
+  .licensing-register__context { flex:none; justify-content:space-between; padding-bottom:4px; }
+  .licensing-reports__filters { padding-block:16px; }
+}
 @media(max-width:767px) {
-  .licensing-register { padding:0 7px 9px 14px; }
-  .licensing-register::before { left:7px; width:3px; }
-  .licensing-register__tabs { gap:3px; min-height:58px; padding:9px 0 0; }
-  .licensing-register__tabs > button { padding:11px 13px; font-size:14px; gap:6px; }
-  .licensing-register__stamp { display:none; }
+  .executive-director-community.executive-licensing { padding-top:16px; }
+  .licensing-register { padding:10px 8px 15px; }
+  .licensing-register::before { top:0; border-radius:10px; }
+  .licensing-register::after { display:none; }
+  .licensing-register__header { flex-direction:column-reverse; align-items:stretch; min-height:0; gap:0; padding:0 1px; }
+  .licensing-register__context { flex:none; justify-content:space-between; min-height:35px; padding:0 7px 8px; }
+  .licensing-register__context strong { font-size:18px; }
+  .licensing-register__context span { font-size:11px; padding:3px 5px; }
+  .licensing-register__tabs { padding:0 5px; }
+  .licensing-register__tabs > button { min-height:48px; padding:11px 15px; font-size:14px; gap:6px; }
+  .licensing-register__tabs > button[aria-selected="true"] { min-height:54px; }
+  .licensing-register__tabs > button::before { inset-inline:-5px; }
+  .licensing-register__tabs > button[aria-selected="true"]::after { inset-inline:-3px; }
+  .licensing-register__paper::before { inset:6px -3px -6px 3px; }
+  .licensing-register__paper::after { inset:3px -1px -3px 1px; }
   .licensing-report-list__columns { display:none; }
   .licensing-report-row { grid-template-columns:1fr auto; gap:10px; padding:18px; }
   .licensing-report-row__file { grid-column:1/-1; }
   .licensing-report-row__actions { grid-column:1/-1; justify-content:flex-start; margin-left:42px; }
   .licensing-report-row time { margin-left:42px; font-size:12px; }
-  .licensing-report-status { font-size:11px; }
+  .licensing-report-status { font-size:12px; }
   .licensing-upload { grid-template-columns:1fr; padding:22px; }
   .licensing-upload__document { display:none; }
-  .licensing-reports__toolbar { padding:20px 18px 15px; }
-  .licensing-reports__filters { padding:0 18px 18px; flex-wrap:wrap; }
+  .licensing-reports__filters { padding:16px; gap:10px; }
   .licensing-search { width:100%; }
   .licensing-search input,.licensing-reports__filters select { font-size:16px; }
-  .licensing-reports__filters select { flex:1; }
+  .licensing-reports__filters select { flex:1; min-width:0; }
+  .licensing-reports__count { font-size:13px; }
   .licensing-button { min-height:44px; }
 }
 @media(max-width:420px) {
-  .licensing-register__tabs > button { padding:11px 10px; font-size:13px; }
+  .licensing-register__tabs > button { padding:11px 10px; font-size:14px; white-space:nowrap; flex:1; }
   .licensing-register__tabs > button svg { display:none; }
-  .licensing-reports__toolbar { gap:10px; }
   .licensing-selected-file { flex-wrap:wrap; gap:9px; }
   .licensing-selected-file > .licensing-button { width:100%; }
   .licensing-report-row__actions { margin-left:0; }

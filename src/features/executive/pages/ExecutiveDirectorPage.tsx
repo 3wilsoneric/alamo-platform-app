@@ -301,21 +301,17 @@ export default function ExecutiveDirectorPage() {
   };
   const tabs = [
     { id: "reports" as const, label: "Reports", icon: FileText },
-    { id: "upload" as const, label: "Upload report", icon: Upload },
-    ...(activeSubmission ? [{ id: "review" as const, label: "Review form", icon: PencilLine }] : [])
+    { id: "upload" as const, label: "Upload", icon: Upload },
+    ...(activeSubmission ? [{ id: "review" as const, label: "Review", icon: PencilLine }] : [])
   ];
 
   return (
     <section ref={pageRef} data-executive-director-workspace="true" className="executive-director-community executive-licensing">
-      <header className="executive-director-community__masthead">
-        <div><h1>Licensing</h1><span>{bootstrap?.facility.shortName ?? "Your community"}</span></div>
-        <p>LIC 624 · Unusual Incident/Injury Report</p>
-      </header>
-      {loadError ? <p role="alert" className="licensing-message is-error">{loadError} <button type="button" disabled={loading} onClick={() => setBootstrapRefresh((revision) => revision + 1)}>Retry workspace</button></p> : null}
-      {reviewError ? <p role="alert" className="licensing-message is-error">{reviewError}</p> : null}
       <div className="licensing-register" data-licensing-register="true">
-        <div role="tablist" aria-label="Licensing views" className="licensing-register__tabs">
-          {tabs.map((tab, index) => <button key={tab.id} id={"licensing-tab-" + tab.id} role="tab" type="button" disabled={workspaceBusy} aria-selected={view === tab.id} aria-controls={"licensing-panel-" + tab.id} tabIndex={view === tab.id ? 0 : -1} onClick={() => selectView(tab.id)} onKeyDown={(event) => {
+        <header className="licensing-register__header">
+          <h1 className="sr-only">Licensing</h1>
+          <div role="tablist" aria-label="Licensing views" className="licensing-register__tabs">
+          {tabs.map((tab, index) => <button key={tab.id} id={"licensing-tab-" + tab.id} role="tab" type="button" disabled={workspaceBusy} aria-selected={view === tab.id} aria-controls={"licensing-panel-" + tab.id} aria-describedby={tab.id === "review" && reviewDirty ? "licensing-review-unsaved" : undefined} tabIndex={view === tab.id ? 0 : -1} onClick={() => selectView(tab.id)} onKeyDown={(event) => {
             if (workspaceBusy || operationRef.current) return;
             const offset = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
             if (!offset && event.key !== "Home" && event.key !== "End") return;
@@ -324,20 +320,21 @@ export default function ExecutiveDirectorPage() {
             if (!target) return;
             selectView(target.id);
             document.getElementById("licensing-tab-" + target.id)?.focus();
-          }}><tab.icon aria-hidden="true" />{tab.label}{tab.id === "review" && reviewDirty ? <i aria-label="Unsaved changes" /> : null}</button>)}
-          <span className="licensing-register__stamp">LIC 624 <small>Rev. {form?.revision ?? "4/99"}</small></span>
-        </div>
+          }}><tab.icon aria-hidden="true" />{tab.label}{tab.id === "review" && reviewDirty ? <i aria-hidden="true" /> : null}</button>)}
+          </div>
+          {reviewDirty ? <span id="licensing-review-unsaved" className="sr-only">Unsaved changes</span> : null}
+          <div className="licensing-register__context"><strong>{bootstrap?.facility.shortName ?? "Your community"}</strong><span>LIC 624</span></div>
+        </header>
         <div className="licensing-register__paper">
+          {loadError ? <p role="alert" className="licensing-message is-error">{loadError} <button type="button" disabled={loading} onClick={() => setBootstrapRefresh((revision) => revision + 1)}>Retry workspace</button></p> : null}
+          {reviewError ? <p role="alert" className="licensing-message is-error">{reviewError}</p> : null}
           <section id="licensing-panel-reports" role="tabpanel" aria-labelledby="licensing-tab-reports" hidden={view !== "reports"} data-executive-director-submissions="true">
-            <div className="licensing-reports__toolbar">
-              <div><h2>Reports</h2><p>{catalog ? catalog.summary.total + " submitted" : loading || catalogLoading ? "Loading reports…" : "Report library"}</p></div>
-              <button className="licensing-button is-primary" type="button" disabled={workspaceBusy} onClick={() => selectView("upload")}><Upload aria-hidden="true" />Upload report</button>
-            </div>
             <div className="licensing-reports__filters">
               <label className="licensing-search"><Search aria-hidden="true" /><input aria-label="Search reports" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search filename" /></label>
               <select aria-label="Report status" value={status} onChange={(event) => setStatus(event.target.value)}>
                 <option value="">All reports</option><option value="needs_review">Needs review</option><option value="ocr_required">OCR required</option><option value="ready_to_file">Ready to file</option><option value="filed">Filed</option><option value="failed">Processing failed</option><option value="awaiting_form_definition">Mapping required</option>
               </select>
+              {catalog ? <p className="licensing-reports__count">{catalog.filteredTotal} {catalog.filteredTotal === 1 ? "report" : "reports"}{query || status ? " matching" : ""}</p> : null}
             </div>
             {catalogError ? <p role="alert" className="licensing-message is-error">{catalogError} <button type="button" onClick={refreshCatalog}>Refresh reports</button></p> : null}
             <div className="licensing-report-list" aria-busy={catalogLoading}>
@@ -354,7 +351,7 @@ export default function ExecutiveDirectorPage() {
               </article>)}
               {!catalogLoading && !catalogError && !catalog?.submissions.length ? <div className="licensing-empty"><FileScan aria-hidden="true" /><h3>{query || status ? "No matching reports" : "No reports submitted yet"}</h3><p>{query || status ? "Try another filename or status." : "Upload a LIC 624 to start the record."}</p>{!query && !status ? <button className="licensing-button" type="button" disabled={workspaceBusy} onClick={() => selectView("upload")}>Upload report</button> : null}</div> : null}
             </div>
-            {catalog ? <footer className="licensing-reports__footer"><span>{catalog.submissions.length} of {catalog.filteredTotal} reports{query || status ? " matching filters" : ""}</span>{catalog.nextCursor ? <button className="licensing-button" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Loading" : "Load more reports"}</button> : null}</footer> : null}
+            {catalog?.nextCursor ? <footer className="licensing-reports__footer"><span>{catalog.submissions.length} of {catalog.filteredTotal} reports</span><button className="licensing-button" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Loading" : "Load more reports"}</button></footer> : null}
           </section>
           <section id="licensing-panel-upload" role="tabpanel" aria-labelledby="licensing-tab-upload" hidden={view !== "upload"}>
             <LicensingBulkUpload key={facilityId} batch={batch} revision={form?.revision ?? "4/99"} busy={workspaceBusy} ready={Boolean(bootstrap)} onUpload={(retryFailed) => void submit(retryFailed)} onReview={(submissionId) => void openSubmission(submissionId)} />

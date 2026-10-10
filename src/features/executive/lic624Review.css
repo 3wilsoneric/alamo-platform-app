@@ -16,25 +16,25 @@
 .lic624-review button { cursor: pointer; }
 .lic624-review button:disabled { cursor: not-allowed; opacity: .45; }
 .lic624-review :is(button, input[type="checkbox"]):focus-visible { outline: 2px solid var(--lic624-forest); outline-offset: 3px; }
-.lic624-review__header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 23px 28px 20px; border-bottom: 1px solid #9da9a6; }
+.lic624-review__header { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto 44px; align-items: center; gap: 20px; padding: 23px 28px 20px; border-bottom: 1px solid #9da9a6; }
 .lic624-review__identity { display: flex; align-items: flex-start; gap: 13px; min-width: 0; }
 .lic624-review__document-icon { display: grid; place-items: center; flex: 0 0 39px; height: 44px; border: 1px solid #adb7b1; background: #f2f0e7; color: var(--lic624-forest); }
 .lic624-review__eyebrow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.lic624-review__eyebrow > p { color: var(--lic624-muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .11em; }
-.lic624-review__status { padding: 2px 6px; border: 1px solid #c7b88c; border-radius: 2px; color: #796023; background: #f5efde; font-size: 10px; font-weight: 600; }
+.lic624-review__eyebrow > p { color: var(--lic624-muted); font-size: 12px; font-weight: 500; }
+.lic624-review__status { padding: 2px 6px; border: 1px solid #c7b88c; border-radius: 2px; color: #796023; background: #f5efde; font-size: 12px; font-weight: 500; }
 .lic624-review__status.is-reviewed { color: var(--lic624-forest); border-color: #adbdae; background: #edf0e7; }
 .lic624-review .lic624-review__header h2 { margin: 5px 0 0; font-size: 25px; line-height: 1.2; overflow-wrap: anywhere; }
 .lic624-review__preservation { margin-top: 6px; color: var(--lic624-muted); font-size: 12px; }
 .lic624-review__header-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 12px; }
 .lic624-review__revision { display: grid; gap: 2px; padding-right: 4px; text-align: right; }
-.lic624-review__revision > span { font-size: 10px; color: var(--lic624-muted); }
+.lic624-review__revision > span { font-size: 12px; color: var(--lic624-muted); }
 .lic624-review__revision > strong { font: 600 19px/1.2 var(--lic624-serif); }
 .lic624-review__close { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 auto; border: 1px solid #bfc5bf; border-radius: 3px; background: transparent; color: #526372; }
 .lic624-review__close:hover { background: #eeeae0; border-color: #7f9288; }
 .lic624-review__summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #f1efe7; border-bottom: 1px solid var(--lic624-rule); }
 .lic624-review__summary > div { display: grid; gap: 5px; padding: 14px 28px; }
 .lic624-review__summary > div + div { border-left: 1px solid var(--lic624-rule); }
-.lic624-review__summary span { color: var(--lic624-muted); font-size: 10px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; }
+.lic624-review__summary span { color: var(--lic624-muted); font-size: 12px; font-weight: 500; }
 .lic624-review__summary strong { font-size: 14px; font-weight: 600; }
 .lic624-review__section-nav { position: sticky; top: var(--platform-header-height, 60px); z-index: 11; border-bottom: 1px solid var(--lic624-rule); background: #f5f3eb; padding: 5px 28px; }
 .lic624-review__section-nav label { display: flex; align-items: center; gap: 12px; }
@@ -60,7 +60,7 @@
 .lic624-review__people { margin-top: 23px; padding-top: 18px; border-top: 1px solid var(--lic624-rule); }
 .lic624-review__subheading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .lic624-review__subheading h4 { font-size: 20px; }
-.lic624-review__button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px 14px; border: 1px solid #9eafa6; border-radius: 3px; background: #fffefb; color: var(--lic624-forest); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.lic624-review__button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px 14px; border: 1px solid #9eafa6; border-radius: 3px; background: #fffefb; color: var(--lic624-forest); font-size: 14px; font-weight: 500; white-space: nowrap; }
 .lic624-review__button > svg { flex-shrink: 0; }
 .lic624-review__button:hover:not(:disabled) { border-color: var(--lic624-forest); background: #eeeee5; }
 .lic624-review__button--primary { border-color: #234b3d; color: #fffdf7; background: var(--lic624-forest); }
@@ -89,22 +89,28 @@
 .lic624-review .lic624-review__success-text { color: #285c45; }
 
 @media (max-width: 1023px) {
-  .lic624-review__header { flex-wrap: wrap; gap: 15px; }
-  .lic624-review__header-actions { justify-content: flex-end; margin-left: auto; }
+  .lic624-review__header { grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; }
+  .lic624-review__identity { grid-column: 1; grid-row: 1; }
+  .lic624-review__close { grid-column: 2; grid-row: 1; align-self: start; }
+  .lic624-review__header-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  .lic624-review__revision { display: flex; align-items: baseline; gap: 7px; margin-right: auto; text-align: left; }
+  .lic624-review__revision > strong { font-size: 16px; }
   .lic624-review__footer-inner { align-items: stretch; flex-direction: column; gap: 10px; }
   .lic624-review__save-actions { justify-content: flex-end; }
 }
 @media (max-width: 639px) {
-  .lic624-review__header { padding: 13px 14px 11px; gap: 8px; }
+  .lic624-review__header { padding: 10px 14px 12px; gap: 10px; }
+  .lic624-review__identity { grid-column: 1 / -1; }
   .lic624-review__document-icon { display: none; }
-  .lic624-review .lic624-review__header h2 { font-size: 21px; line-height: 1.12; }
-  .lic624-review__preservation { margin-top: 5px; font-size: 11px; }
-  .lic624-review__header-actions { width: 100%; margin-left: 0; gap: 8px; }
-  .lic624-review__revision { display: flex; align-items: baseline; gap: 6px; margin-right: auto; text-align: left; }
-  .lic624-review__revision > strong { font-size: 16px; }
-  .lic624-review__summary > div { gap: 3px; padding: 9px 10px; }
-  .lic624-review__summary span { font-size: 9px; letter-spacing: .025em; }
-  .lic624-review__summary strong { font-size: 12px; line-height: 1.35; }
+  .lic624-review__eyebrow { min-height: 44px; padding-right: 48px; align-content: center; gap: 4px 8px; }
+  .lic624-review .lic624-review__header h2 { margin-top: 6px; font-size: 21px; line-height: 1.25; }
+  .lic624-review__preservation { margin-top: 5px; font-size: 12px; }
+  .lic624-review__header-actions { width: 100%; gap: 10px; }
+  .lic624-review__close { position: absolute; top: 10px; right: 14px; }
+  .lic624-review__summary { grid-template-columns: minmax(0, 1fr); padding: 8px 14px; gap: 5px; }
+  .lic624-review__summary > div { display: grid; grid-template-columns: 94px minmax(0, 1fr); align-items: baseline; gap: 8px; padding: 0; line-height: 1.4; }
+  .lic624-review__summary > div + div { border-left: 0; }
+  .lic624-review__summary strong { font-size: 13px; }
   .lic624-review__section-nav { padding: 4px 14px; }
   .lic624-review__section-nav label { gap: 10px; }
   .lic624-review__section-nav select { min-height: 44px; width: 100%; font-size: 16px; }
@@ -117,8 +123,8 @@
   .lic624-review__person { padding-inline: 12px; }
   .lic624-review__footer { padding: 8px 12px calc(9px + env(safe-area-inset-bottom, 0px)); }
   .lic624-review__footer-inner { gap: 6px; }
-  .lic624-review__save-status { font-size: 11px; line-height: 1.4; }
-  .lic624-review__save-actions { display: grid; grid-template-columns: .7fr 1fr 1.25fr; gap: 5px; }
-  .lic624-review__save-actions .lic624-review__button { padding: 7px 6px; font-size: 12px; }
+  .lic624-review__save-status { font-size: 12px; line-height: 1.4; }
+  .lic624-review__save-actions { display: grid; grid-template-columns: .7fr 1fr 1.35fr; gap: 6px; }
+  .lic624-review__save-actions .lic624-review__button { min-width: 0; padding: 7px 5px; font-size: 13px; }
   .lic624-review__save-actions .lic624-review__button > svg { display: none; }
 }

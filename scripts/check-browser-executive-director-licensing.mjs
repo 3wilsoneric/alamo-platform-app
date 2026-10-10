@@ -19,6 +19,8 @@ const API_PREFIX = "/api/platform/executive-director";
 const FIXTURE_TIME = "2026-10-09T16:00:00.000Z";
 const UPLOAD_NAME = "uploaded-incident-review.pdf";
 const REPORT_NAMES = ["community-incident-october-08.pdf", "community-follow-up-october-07.pdf", "scanned-report-awaiting-ocr.png"];
+const LONG_COMMUNITY_NAME = "Example Community for Residential Services and Assisted Living in Northern California";
+const LONG_REPORT_NAME = "community-incident-report-with-extended-follow-up-and-supporting-documentation-for-the-northern-california-residential-services-team-october-08-2026.pdf";
 const FORM = {
   ...LIC624_FORM_DEFINITION,
   incidentTypes: LIC624_INCIDENT_TYPE_FIELDS.map(({ key, label }) => ({ key, label })),
@@ -87,8 +89,8 @@ function summarizeSubmission({ sourceData: _source, draftData: _draft, reviewIss
   return summary;
 }
 
-function createFixtureState() {
-  const submissions = new Map(REPORT_NAMES.map((name, index) => {
+function createFixtureState({ facility = FACILITY, reportNames = REPORT_NAMES } = {}) {
+  const submissions = new Map(reportNames.map((name, index) => {
     const submission = createSubmission(index + 1, name, index === 2 ? "ocr_required" : "needs_review");
     return [submission.submissionId, submission];
   }));
@@ -96,7 +98,7 @@ function createFixtureState() {
     const submission = createSubmission(index, `additional-report-${String(index).padStart(2, "0")}.pdf`);
     submissions.set(submission.submissionId, submission);
   }
-  return { submissions, uploads: [], uploadPlans: new Map(), uploadAttempts: new Map(), activeUploads: 0, maxActiveUploads: 0, reviews: [], sources: [], listRequests: [], unexpectedRequests: [], catalogRevision: 1, bootstrapUnavailable: false, reviewGate: null, uploadGate: null, openGate: null };
+  return { facility, submissions, uploads: [], uploadPlans: new Map(), uploadAttempts: new Map(), activeUploads: 0, maxActiveUploads: 0, reviews: [], sources: [], listRequests: [], unexpectedRequests: [], catalogRevision: 1, bootstrapUnavailable: false, reviewGate: null, uploadGate: null, openGate: null };
 }
 
 function intakeSummary(submissions) {
@@ -134,7 +136,7 @@ async function installFixtures(context, state) {
       if (method === "GET" && url.pathname === `${API_PREFIX}/bootstrap`) {
         if (state.bootstrapUnavailable) return json({ error: "Fixture bootstrap temporarily unavailable." }, 503);
         return json({
-          version: "executive-director-workspace-v1", facility: FACILITY,
+          version: "executive-director-workspace-v1", facility: state.facility,
           dashboard: { status: "ready", generatedAt: FIXTURE_TIME, residents: 153, reportingMonth: "2026-10" },
           intake: { summary: intakeSummary(state.submissions), submissions: sortedSubmissions(state).map(summarizeSubmission) }, form: FORM
         });
@@ -212,7 +214,19 @@ async function installFixtures(context, state) {
 async function verifyView(page, name) {
   const tabs = page.getByRole("tablist", { name: "Licensing views", exact: true });
   assert.equal(await tabs.getByRole("tab", { name, exact: true }).getAttribute("aria-selected"), "true", `${name} must be the active Licensing view.`);
-  assert.equal(await tabs.locator('[role="tab"][aria-selected="true"]').count(), 1);
+  const states = await tabs.getByRole("tab").evaluateAll((elements) => elements.map((element) => {
+    const panel = document.getElementById(element.getAttribute("aria-controls"));
+    return { label: element.textContent.trim(), selected: element.getAttribute("aria-selected") === "true", tabIndex: element.tabIndex, panelId: panel?.id, panelRole: panel?.getAttribute("role"), panelLabelledBy: panel?.getAttribute("aria-labelledby"), tabId: element.id, panelVisible: Boolean(panel?.getClientRects().length) };
+  }));
+  assert.equal(states.filter(({ selected }) => selected).length, 1, "Exactly one Licensing tab must be selected.");
+  assert.equal(states.filter(({ tabIndex }) => tabIndex === 0).length, 1, "The Licensing tablist must have one keyboard tab stop.");
+  assert.equal(new Set(states.map(({ panelId }) => panelId)).size, states.length, "Each tab must control its own panel.");
+  for (const state of states) {
+    assert.equal(state.tabIndex, state.selected ? 0 : -1, `${state.label} must use roving keyboard focus.`);
+    assert.equal(state.panelRole, "tabpanel", `${state.label} must control a real tabpanel.`);
+    assert.equal(state.panelLabelledBy, state.tabId, `${state.label} must label its controlled panel.`);
+    assert.equal(state.panelVisible, state.selected, `${state.label} visibility must match its selection, while inactive draft panels stay mounted.`);
+  }
 }
 
 async function waitForReportNames(page, names) {
@@ -234,9 +248,64 @@ async function chooseDiscardResponse(page, action, accept) {
   await actionPromise;
 }
 
+async function verifyUnifiedHierarchy(page, label, view) {
+  const workspace = page.locator('[data-executive-director-workspace="true"]');
+  const register = workspace.locator('[data-licensing-register="true"]');
+  assert.equal(await workspace.getByRole("heading", { name: "Licensing", level: 1, exact: true }).count(), 1, `${label} ${view} must have one Licensing page identity.`);
+  assert.equal(await register.getByRole("heading", { name: "Licensing", level: 1, exact: true }).count(), 1, `${label} ${view} must keep its identity inside the continuous Licensing workspace, not above a second framed application.`);
+  assert.equal(await workspace.getByRole("tablist", { name: "Licensing views", exact: true }).count(), 1, `${label} ${view} must have one Licensing view switcher.`);
+  assert.equal(await workspace.getByRole("heading", { name: "Reports", exact: true }).count(), 0, `${label} ${view} must not repeat the selected Reports tab as a second section title.`);
+  await verifyView(page, (await register.locator('[role="tab"][aria-selected="true"]').textContent()).trim());
+  const hierarchy = await register.evaluate((element) => {
+    const rect = ({ left, right, top, bottom }) => ({ left, right, top, bottom });
+    const overlaps = (first, second) => Math.min(first.right, second.right) - Math.max(first.left, second.left) > 1 && Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top) > 1;
+    const bounds = element.getBoundingClientRect();
+    const paper = element.querySelector(".licensing-register__paper");
+    const search = element.querySelector('[aria-label="Search reports"]');
+    const context = element.querySelector(".licensing-register__context");
+    const contextBounds = context ? rect(context.getBoundingClientRect()) : null;
+    const tabs = [...element.querySelectorAll('[role="tablist"][aria-label="Licensing views"] [role="tab"]')].map((tab) => {
+      const text = [...tab.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+      const range = document.createRange();
+      range.selectNodeContents(text ?? tab);
+      const tabBounds = tab.getBoundingClientRect();
+      const textBounds = [...range.getClientRects()];
+      return {
+        label: tab.textContent.trim(), height: tabBounds.height, textLines: textBounds.length,
+        bounds: rect(tabBounds), textLeft: Math.min(...textBounds.map(({ left }) => left)), textRight: Math.max(...textBounds.map(({ right }) => right)),
+        textClipped: textBounds.some((bounds) => bounds.left < tabBounds.left - 1 || bounds.right > tabBounds.right + 1 || bounds.top < tabBounds.top - 1 || bounds.bottom > tabBounds.bottom + 1)
+      };
+    });
+    const labelGaps = tabs.slice(1).map((tab, index) => ({ between: [tabs[index].label, tab.label], pixels: tab.textLeft - tabs[index].textRight }));
+    return {
+      paperInset: paper ? paper.getBoundingClientRect().left - bounds.left : null,
+      reportSearchOffset: search?.getClientRects().length ? search.getBoundingClientRect().top - bounds.top : null,
+      headerBudget: window.innerWidth < 768 ? 225 : 150,
+      tabs, labelGaps, contextBounds,
+      contextOverlaps: contextBounds ? tabs.filter((tab) => overlaps(tab.bounds, contextBounds)).map(({ label }) => label) : []
+    };
+  });
+  // The folder silhouette, tab heights, and paper inset are design choices;
+  // protect readable labels and a compact workflow without freezing that style.
+  assert.ok(hierarchy.tabs.every(({ textLines, textClipped }) => textLines > 0 && !textClipped), `${label} ${view} must keep each tab label readable and unclipped: ${JSON.stringify(hierarchy.tabs)}.`);
+  assert.ok(hierarchy.labelGaps.every(({ pixels }) => pixels >= 15.5), `${label} ${view} must separate neighboring tab labels by at least 16px: ${JSON.stringify(hierarchy.labelGaps)}.`);
+  assert.ok(hierarchy.contextBounds, `${label} ${view} must retain its community context.`);
+  assert.deepEqual(hierarchy.contextOverlaps, [], `${label} ${view} tabs must not overlap the community context.`);
+  if (hierarchy.reportSearchOffset != null) {
+    assert.ok(hierarchy.reportSearchOffset <= hierarchy.headerBudget, `${label} Reports filters must remain within the compact header budget without duplicate title chrome: ${JSON.stringify(hierarchy)}.`);
+  }
+  const reports = workspace.locator('[data-executive-director-submissions="true"]');
+  if (await reports.isVisible() && await reports.locator("[data-licensing-report]").count()) {
+    assert.equal(await reports.getByRole("button", { name: "Upload report", exact: true }).count(), 0, `${label} populated Reports must use the Upload tab without a duplicate upload button.`);
+  }
+  return hierarchy;
+}
+
 async function measureAndCapture(page, label, view) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.screenshot({ path: `${screenshotDir}/${label}-${view}.png`, fullPage: false });
+  const hierarchy = await verifyUnifiedHierarchy(page, label, view);
   const metrics = await page.locator('[data-executive-director-workspace="true"]').evaluate((workspace) => ({
     viewport: window.innerWidth,
     documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -253,10 +322,91 @@ async function measureAndCapture(page, label, view) {
     return { name: (element.getAttribute("aria-label") || element.textContent || element.getAttribute("placeholder") || element.tagName).trim().slice(0, 85), width: Math.round(rect.width * 10) / 10, height: Math.round(rect.height * 10) / 10 };
   }));
   const smallTargets = controls.filter(({ width, height }) => width < 43.5 || height < 43.5);
-  auditMeasurements.push({ label, view, smallTargets, ...metrics });
+  auditMeasurements.push({ label, view, smallTargets, ...hierarchy, ...metrics });
   if (smallTargets.length) auditFindings.push({ label, view, issue: "Primary controls must provide at least a 44px touch target.", targets: smallTargets });
-  await page.screenshot({ path: `${screenshotDir}/${label}-${view}.png`, fullPage: false });
-  return { view, ...metrics };
+  return { view, ...hierarchy, ...metrics };
+}
+
+async function assertReadableText(locator, label) {
+  const metrics = await locator.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const lines = [...range.getClientRects()].filter(({ width, height }) => width > 0 && height > 0);
+    const clippingAncestors = [];
+    for (let current = element; current && current !== document.body; current = current.parentElement) {
+      const style = getComputedStyle(current);
+      if ([style.overflowX, style.overflowY].some((value) => value !== "visible")) clippingAncestors.push({ bounds: current.getBoundingClientRect(), clipX: style.overflowX !== "visible", clipY: style.overflowY !== "visible" });
+    }
+    // Serif glyphs may paint just outside their line box without being clipped.
+    // Vertical clipping must be checked against actual clipping ancestors.
+    const clippedLines = lines.filter((line) => line.left < bounds.left - 1 || line.right > bounds.right + 1 || clippingAncestors.some(({ bounds: clip, clipX, clipY }) => (clipX && (line.left < clip.left - 1 || line.right > clip.right + 1)) || (clipY && (line.top < clip.top - 1 || line.bottom > clip.bottom + 1))));
+    return { lines: lines.length, overflow: element.scrollWidth - element.clientWidth, bounds: { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom }, clippedLines: clippedLines.map(({ left, right, top, bottom }) => ({ left, right, top, bottom })) };
+  });
+  assert.ok(metrics.lines > 0 && metrics.overflow <= 2 && !metrics.clippedLines.length, `${label} must remain readable without truncation or clipping: ${JSON.stringify(metrics)}.`);
+  return metrics;
+}
+
+async function checkLongLicensingContent(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const state = createFixtureState({ facility: { ...FACILITY, shortName: LONG_COMMUNITY_NAME, communityName: LONG_COMMUNITY_NAME }, reportNames: [LONG_REPORT_NAME, ...REPORT_NAMES.slice(1)] });
+  await installFixtures(context, state);
+  const page = await context.newPage();
+  page.setDefaultTimeout(15_000);
+  const consoleErrors = [];
+  const requestFailures = [];
+  attachPageDiagnostics(page, { consoleErrors, requestFailures });
+  await page.goto(`${BASE_URL}/executive/licensing`, { waitUntil: "domcontentloaded" });
+  const workspace = page.locator('[data-executive-director-workspace="true"]');
+  const tabs = page.getByRole("tablist", { name: "Licensing views", exact: true });
+  const reports = page.locator('[data-executive-director-submissions="true"]');
+  const review = page.locator('[data-lic624-review-workspace="true"]');
+  const upload = workspace.locator(".licensing-bulk-upload");
+  const report = reports.locator('[data-licensing-report="00000000-0000-4000-8000-000000000001"]');
+  await report.getByRole("heading", { name: LONG_REPORT_NAME, exact: true }).waitFor({ state: "visible" });
+  assert.equal(await tabs.getByRole("tab", { name: "Review", exact: true }).count(), 0, "Review must stay contextual until a report is opened.");
+  await report.getByRole("button", { name: "Review form", exact: true }).click();
+  await review.getByRole("heading", { name: LONG_REPORT_NAME, exact: true }).waitFor({ state: "visible" });
+  await verifyView(page, "Review");
+  const telephone = review.getByRole("textbox", { name: /^Telephone/ });
+  await telephone.fill("510-555-0144");
+  const reviewTab = tabs.getByRole("tab", { name: "Review", exact: true });
+  assert.match(await reviewTab.getAttribute("aria-controls"), /^licensing-panel-review$/);
+  assert.equal(await reviewTab.evaluate((element) => (element.getAttribute("aria-describedby") ?? "").split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? "").join(" ").trim()), "Unsaved changes", "The dirty state must be described without changing the concise Review tab name.");
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
+  await upload.locator('input[type="file"]').setInputFiles({ name: LONG_REPORT_NAME, mimeType: "application/pdf", buffer: sourceBytes });
+
+  const viewportResults = [];
+  for (const viewport of [{ label: "compact-320", width: 320, height: 568 }, { label: "mobile-390", width: 390, height: 844 }, { label: "tablet-768", width: 768, height: 1024 }, { label: "zoom-200-equivalent-720", width: 720, height: 450 }]) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    const views = [];
+    for (const [name, key] of [["Reports", "reports"], ["Upload", "upload"], ["Review", "review"]]) {
+      await tabs.getByRole("tab", { name, exact: true }).click();
+      await verifyView(page, name);
+      const content = key === "reports" ? reports : key === "upload" ? upload : review;
+      const fileHeading = content.getByRole("heading", { name: LONG_REPORT_NAME, exact: true });
+      await fileHeading.waitFor({ state: "visible" });
+      const geometry = await measureAndCapture(page, `${viewport.label}-long-content`, key);
+      const communityText = await assertReadableText(workspace.locator(".licensing-register__context strong"), `${viewport.label} long community name`);
+      const filenameText = await assertReadableText(fileHeading, `${viewport.label} ${name} long filename`);
+      views.push({ ...geometry, communityText, filenameText });
+    }
+    await tabs.getByRole("tab", { name: "Reports", exact: true }).focus();
+    for (const [key, name] of [["End", "Review"], ["Home", "Reports"], ["ArrowRight", "Upload"], ["ArrowRight", "Review"]]) {
+      await page.keyboard.press(key);
+      await verifyView(page, name);
+      assert.equal(await tabs.locator('[role="tab"][aria-selected="true"]').evaluate((element) => document.activeElement === element), true, `${viewport.label} ${key} must move focus with tab selection.`);
+    }
+    assert.equal(await telephone.inputValue(), "510-555-0144", "Long-content tab navigation must preserve the unsaved review.");
+    viewportResults.push({ label: viewport.label, views });
+  }
+  assert.deepEqual(state.unexpectedRequests, [], "The layout stress test must not make unexpected or live mutation requests.");
+  assert.deepEqual(state.uploads, [], "Selecting a long filename must not upload it without an explicit submit.");
+  assert.deepEqual(state.reviews, [], "Layout and tab navigation must not save or discard the draft.");
+  assert.deepEqual(consoleErrors, []);
+  assert.deepEqual(requestFailures, []);
+  await context.close();
+  return { communityNameLength: LONG_COMMUNITY_NAME.length, filenameLength: LONG_REPORT_NAME.length, preservedDirtyReview: true, contextualReviewTab: true, viewportResults };
 }
 
 async function checkBatchFacilityReset(context, page) {
@@ -367,7 +517,7 @@ async function checkBatchIntake(browser) {
   const upload = page.locator(".licensing-bulk-upload");
   const picker = upload.locator('input[type="file"]');
   const entry = (name) => upload.locator("[data-licensing-batch-entry]").filter({ has: page.getByRole("heading", { name, exact: true }) });
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   assert.equal(await picker.getAttribute("multiple"), "");
 
   await picker.setInputFiles(Array.from({ length: 101 }, (_, index) => ({ name: `cap-fixture-${index}.pdf`, mimeType: "application/pdf", buffer: sourceBytes })));
@@ -430,7 +580,7 @@ async function checkBatchIntake(browser) {
   }
   await page.waitForFunction(() => document.querySelector('[data-licensing-upload-summary="true"]')?.textContent === "0 queued · 0 uploading · 2 received · 1 duplicate · 2 failed");
   await page.waitForFunction(() => document.activeElement?.matches('[data-licensing-upload-summary="true"]'));
-  await verifyView(page, "Upload report");
+  await verifyView(page, "Upload");
   assert.equal(state.uploads.length, 4);
   assert.equal(state.maxActiveUploads, 1);
   assert.equal(await entry(files[1].name).getByRole("button", { name: "Review form", exact: true }).count(), 0, "Scans must remain Awaiting OCR, not claim an extracted digital form.");
@@ -458,13 +608,13 @@ async function checkBatchIntake(browser) {
   const review = page.locator('[data-lic624-review-workspace="true"]');
   await review.getByRole("heading", { name: REPORT_NAMES[0], exact: true }).waitFor({ state: "visible" });
   assert.equal(await review.getByRole("textbox", { name: /^Telephone/ }).inputValue(), "510-555-0142");
-  assert.equal(await tabs.getByRole("tab", { name: "Review form", exact: true }).evaluate((element) => document.activeElement === element), true);
+  assert.equal(await tabs.getByRole("tab", { name: "Review", exact: true }).evaluate((element) => document.activeElement === element), true);
   await review.getByRole("textbox", { name: /^Telephone/ }).fill("510-555-0166");
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   await chooseDiscardResponse(page, () => entry(files[0].name).getByRole("button", { name: "Review form", exact: true }).click(), false);
-  await tabs.getByRole("tab", { name: /^Review form/ }).click();
+  await tabs.getByRole("tab", { name: "Review", exact: true }).click();
   assert.equal(await review.getByRole("textbox", { name: /^Telephone/ }).inputValue(), "510-555-0166");
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   await upload.getByRole("button", { name: "Clear batch", exact: true }).click();
   assert.equal(await upload.locator("[data-licensing-batch-entry]").count(), 0);
   await page.waitForFunction(() => document.activeElement?.matches('input[type="file"]'));
@@ -472,14 +622,14 @@ async function checkBatchIntake(browser) {
   await picker.setInputFiles(files[3]);
   await chooseDiscardResponse(page, () => upload.getByRole("button", { name: "Upload securely", exact: true }).click(), false);
   assert.equal(state.uploads.length, 5, "Canceling a batch that would replace the dirty form must make no request.");
-  await tabs.getByRole("tab", { name: /^Review form/ }).click();
+  await tabs.getByRole("tab", { name: "Review", exact: true }).click();
   assert.equal(await review.getByRole("textbox", { name: /^Telephone/ }).inputValue(), "510-555-0166");
   await review.getByRole("button", { name: "Reset", exact: true }).click();
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   const persisted = await page.evaluate(() => [localStorage, sessionStorage].flatMap((storage) => Object.keys(storage).map((key) => storage.getItem(key) ?? "")));
   for (const file of files) assert.equal(persisted.some((value) => value.includes(file.name)), false, "Batch filenames and report bytes must not persist in browser storage.");
   await page.reload({ waitUntil: "domcontentloaded" });
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   assert.equal(await upload.locator("[data-licensing-batch-entry]").count(), 0, "Reloading must discard the in-memory queue, not resurrect local report data.");
   assert.deepEqual(state.unexpectedRequests, []);
   assert.deepEqual(requestFailures, []);
@@ -509,25 +659,41 @@ await withBrowserQa(async (browser) => {
   await workspace.waitFor({ state: "visible" });
   await reports.getByText(REPORT_NAMES[0], { exact: true }).waitFor({ state: "visible" });
   assert.match(await workspace.getAttribute("class"), /executive-licensing/);
-  assert.deepEqual(await tabs.getByRole("tab").allTextContents(), ["Reports", "Upload report"]);
+  assert.deepEqual(await tabs.getByRole("tab").allTextContents(), ["Reports", "Upload"]);
   await verifyView(page, "Reports");
   await tabs.getByRole("tab", { name: "Reports", exact: true }).focus();
   await page.keyboard.press("ArrowRight");
-  await verifyView(page, "Upload report");
-  assert.equal(await tabs.getByRole("tab", { name: "Upload report", exact: true }).evaluate((element) => document.activeElement === element), true, "Keyboard tab navigation must move focus with selection.");
+  await verifyView(page, "Upload");
+  assert.equal(await tabs.getByRole("tab", { name: "Upload", exact: true }).evaluate((element) => document.activeElement === element), true, "Keyboard tab navigation must move focus with selection.");
   await page.keyboard.press("Home");
   await verifyView(page, "Reports");
   assert.equal(await tabs.locator('[role="tab"][tabindex="0"]').count(), 1);
   const viewportResults = [{ label: "desktop-1440", views: [await measureAndCapture(page, "desktop-1440", "reports")] }];
   const initialNames = sortedSubmissions(state).map((submission) => submission.originalFileName);
   await waitForReportNames(page, initialNames.slice(0, 25));
+  const reportCount = reports.locator(".licensing-reports__filters .licensing-reports__count");
+  assert.equal(await reportCount.count(), 1, "The report count belongs once in the shared search/status toolbar.");
+  assert.equal(await reportCount.textContent(), `${initialNames.length} reports`);
+  assert.equal(await reports.locator(".licensing-reports__footer").count(), 1, "Additional pages must retain their explicit Load more control.");
   await reports.getByRole("button", { name: "Load more reports", exact: true }).click();
   await waitForReportNames(page, initialNames);
   assert.equal(await reports.getByRole("button", { name: "Load more reports", exact: true }).count(), 0);
+  assert.equal(await reports.locator(".licensing-reports__footer").count(), 0, "Once all reports are loaded, an extra count-only footer must not duplicate the toolbar.");
+  assert.equal(await reportCount.textContent(), `${initialNames.length} reports`);
   const search = reports.getByRole("searchbox", { name: "Search reports", exact: true });
   const statusFilter = reports.getByRole("combobox", { name: "Report status", exact: true });
+  await search.fill("community-");
+  await waitForReportNames(page, REPORT_NAMES.slice(0, 2));
+  await workspace.locator(".licensing-register__context").getByText(FACILITY.shortName, { exact: true }).click();
+  assert.equal(await search.evaluate((element) => document.activeElement === element), false, "The presentation capture should use a real context click to leave the search field, not suppress keyboard focus styles.");
+  const folderBounds = await workspace.locator('[data-licensing-register="true"]').evaluate((element) => ({ top: element.getBoundingClientRect().top, bottom: element.getBoundingClientRect().bottom, viewportHeight: window.innerHeight }));
+  assert.ok(folderBounds.top >= 0 && folderBounds.bottom <= folderBounds.viewportHeight, "The small populated catalog must show the complete folder in its presentation screenshot.");
+  viewportResults[0].views.push(await measureAndCapture(page, "desktop-1440", "folder"));
+  await search.fill("");
+  await waitForReportNames(page, initialNames.slice(0, 25));
   await search.fill("follow-up");
   await waitForReportNames(page, [REPORT_NAMES[1]]);
+  assert.equal(await reportCount.textContent(), "1 report matching", "The single toolbar count must describe the current filtered result.");
   await search.fill("missing-report-name");
   await reports.getByRole("heading", { name: "No matching reports", exact: true }).waitFor({ state: "visible" });
   await search.fill("");
@@ -546,8 +712,8 @@ await withBrowserQa(async (browser) => {
   await waitForReportNames(page, initialNames.slice(0, 25));
   assert.deepEqual(state.listRequests.slice(-2).map(({ cursor, catalogRevision }) => ({ cursor, catalogRevision })), [{ cursor: "25", catalogRevision: 2 }, { cursor: null, catalogRevision: 2 }], "A changed catalog revision must refresh the first page instead of appending mismatched rows.");
 
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
-  await verifyView(page, "Upload report");
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
+  await verifyView(page, "Upload");
   const upload = page.locator(".licensing-bulk-upload");
   await upload.waitFor({ state: "visible" });
   await upload.locator('input[type="file"]').setInputFiles({ name: "unsupported.txt", mimeType: "text/plain", buffer: Buffer.from("Unsupported fixture") });
@@ -570,9 +736,9 @@ await withBrowserQa(async (browser) => {
     state.uploadGate = null;
   }
   await review.getByRole("heading", { name: UPLOAD_NAME, exact: true }).waitFor({ state: "visible" });
-  assert.deepEqual(await tabs.getByRole("tab").allTextContents(), ["Reports", "Upload report", "Review form"]);
-  await verifyView(page, "Review form");
-  assert.equal(await tabs.getByRole("tab", { name: "Review form", exact: true }).evaluate((element) => document.activeElement === element), true, "Completing an upload must focus the newly available Review form tab.");
+  assert.deepEqual(await tabs.getByRole("tab").allTextContents(), ["Reports", "Upload", "Review"]);
+  await verifyView(page, "Review");
+  assert.equal(await tabs.getByRole("tab", { name: "Review", exact: true }).evaluate((element) => document.activeElement === element), true, "Completing an upload must focus the newly available Review form tab.");
   assert.equal(state.uploads.length, 1);
   assert.equal(await review.getByRole("textbox", { name: /^Facility name/ }).inputValue(), "Alamo San Pablo");
   assert.equal(await review.getByRole("textbox", { name: /^What happened/ }).inputValue(), sourceData.eventNarrative);
@@ -595,6 +761,7 @@ await withBrowserQa(async (browser) => {
     assert.equal(await review.getByRole("button", { name: "Close digital form", exact: true }).isDisabled(), true);
     assert.equal(await review.getByRole("button", { name: "Reset", exact: true }).isDisabled(), true);
     assert.equal(await review.getByRole("button", { name: "Mark reviewed", exact: true }).isDisabled(), true);
+    await page.waitForFunction(() => [...document.querySelectorAll('[aria-label="Licensing views"] [role="tab"]')].every((element) => element.disabled));
     assert.equal(await tabs.getByRole("tab").evaluateAll((elements) => elements.every((element) => element.disabled)), true);
     await review.getByRole("button", { name: "Reset", exact: true }).evaluate((element) => element.click());
     await review.getByRole("button", { name: "Close digital form", exact: true }).evaluate((element) => element.click());
@@ -611,7 +778,7 @@ await withBrowserQa(async (browser) => {
   await workspace.getByRole("alert").filter({ hasText: "Wait for the current report action to finish before leaving Licensing." }).waitFor({ state: "hidden" });
   await review.getByRole("status").filter({ hasText: "Draft saved securely." }).waitFor({ state: "visible" });
   await tabs.getByRole("tab", { name: "Reports", exact: true }).click();
-  await tabs.getByRole("tab", { name: "Review form", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Review", exact: true }).click();
   assert.equal(await review.getByRole("status").filter({ hasText: "Draft saved securely." }).isVisible(), true, "The successful save message must survive the saved-data update and view navigation.");
   assert.equal(state.reviews.length, 1);
   assert.equal(state.reviews[0].confirm, false);
@@ -660,17 +827,17 @@ await withBrowserQa(async (browser) => {
   await secondReport.waitFor({ state: "visible" });
   await chooseDiscardResponse(page, () => secondReport.getByRole("button", { name: "Review form", exact: true }).click(), false);
   await verifyView(page, "Reports");
-  await tabs.getByRole("tab", { name: /^Review form/ }).click();
+  await tabs.getByRole("tab", { name: "Review", exact: true }).click();
   assert.equal(await telephone.inputValue(), "510-555-0111", "Canceling a report switch must preserve the unsaved draft.");
   await chooseDiscardResponse(page, () => review.getByRole("button", { name: "Close digital form", exact: true }).click(), false);
   await review.waitFor({ state: "visible" });
   assert.equal(await telephone.inputValue(), "510-555-0111", "Canceling form closure must preserve the unsaved draft.");
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   await upload.getByRole("button", { name: "Clear batch", exact: true }).click();
   await upload.locator('input[type="file"]').setInputFiles({ name: UPLOAD_NAME, mimeType: "application/pdf", buffer: sourceBytes });
   await chooseDiscardResponse(page, () => workspace.getByRole("button", { name: "Upload securely", exact: true }).click(), false);
   assert.equal(state.uploads.length, 1, "Canceling draft replacement must not upload another file.");
-  await tabs.getByRole("tab", { name: /^Review form/ }).click();
+  await tabs.getByRole("tab", { name: "Review", exact: true }).click();
   assert.equal(await telephone.inputValue(), "510-555-0111", "Changing tabs must preserve the mounted draft.");
   await tabs.getByRole("tab", { name: "Reports", exact: true }).click();
   let releaseOpen;
@@ -686,7 +853,7 @@ await withBrowserQa(async (browser) => {
     state.openGate = null;
   }
   await review.getByRole("heading", { name: REPORT_NAMES[1], exact: true }).waitFor({ state: "visible" });
-  assert.equal(await tabs.getByRole("tab", { name: "Review form", exact: true }).evaluate((element) => document.activeElement === element), true, "Opening a report must leave focus on its active Review form tab.");
+  assert.equal(await tabs.getByRole("tab", { name: "Review", exact: true }).evaluate((element) => document.activeElement === element), true, "Opening a report must leave focus on its active Review form tab.");
   assert.equal(await telephone.inputValue(), sourceData.facility.telephone);
   assert.equal(state.submissions.get(uploadedId).draftData.facility.telephone, "510-555-0199", "Discarding a local draft must not overwrite the saved review.");
   await tabs.getByRole("tab", { name: "Reports", exact: true }).click();
@@ -698,14 +865,14 @@ await withBrowserQa(async (browser) => {
   await tabs.getByRole("tab", { name: "Reports", exact: true }).click();
   await statusFilter.selectOption("");
   await waitForReportNames(page, sortedSubmissions(state).slice(0, 25).map((submission) => submission.originalFileName));
-  await tabs.getByRole("tab", { name: "Upload report", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   await workspace.getByRole("button", { name: "Remove selected file", exact: true }).click();
-  await tabs.getByRole("tab", { name: "Review form", exact: true }).click();
+  await tabs.getByRole("tab", { name: "Review", exact: true }).click();
 
   for (const viewport of [{ label: "tablet-768", width: 768, height: 1024 }, { label: "mobile-390", width: 390, height: 844 }, { label: "compact-320", width: 320, height: 568 }, { label: "zoom-200-equivalent-720", width: 720, height: 450 }]) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     const views = [];
-    for (const [name, key] of [["Reports", "reports"], ["Upload report", "upload"], ["Review form", "review"]]) {
+    for (const [name, key] of [["Reports", "reports"], ["Upload", "upload"], ["Review", "review"]]) {
       await tabs.getByRole("tab", { name, exact: true }).click();
       await verifyView(page, name);
       if (key === "review") await review.getByRole("heading", { name: UPLOAD_NAME, exact: true }).waitFor({ state: "visible" });
@@ -748,7 +915,7 @@ await withBrowserQa(async (browser) => {
   const availableReport = failurePage.locator('[data-licensing-report="00000000-0000-4000-8000-000000000001"]');
   await availableReport.getByRole("button", { name: "Review form", exact: true }).click();
   await failurePage.locator('[data-lic624-review-workspace="true"]').getByRole("heading", { name: REPORT_NAMES[0], exact: true }).waitFor({ state: "visible" });
-  await verifyView(failurePage, "Review form");
+  await verifyView(failurePage, "Review");
   assert.deepEqual(failureState.unexpectedRequests, []);
   assert.deepEqual(failureRequests, []);
   assert.deepEqual(failureConsoleErrors.filter((message) => !/^Failed to load resource: the server responded with a status of 503\b/.test(message)), []);
@@ -759,15 +926,16 @@ await withBrowserQa(async (browser) => {
   await recoveredBootstrap;
   await failurePage.getByRole("alert").filter({ hasText: "Fixture bootstrap temporarily unavailable." }).waitFor({ state: "hidden" });
   await failurePage.locator('[data-lic624-review-workspace="true"]').getByRole("heading", { name: REPORT_NAMES[0], exact: true }).waitFor({ state: "visible" });
-  await verifyView(failurePage, "Review form");
+  await verifyView(failurePage, "Review");
   assert.deepEqual(failureState.unexpectedRequests, []);
   assert.deepEqual(failureRequests, []);
   assert.deepEqual(failureConsoleErrors.filter((message) => !/^Failed to load resource: the server responded with a status of 503\b/.test(message)), []);
   await failureContext.close();
   const batchIntake = await checkBatchIntake(browser);
+  const longContent = await checkLongLicensingContent(browser);
   await writeFile(`${artifactDir}/formatting-audit.json`, JSON.stringify({ passed: auditFindings.length === 0, findings: auditFindings, measurements: auditMeasurements }, null, 2));
   assert.deepEqual(auditFindings, [], "Licensing formatting and keyboard audit must pass at every supported viewport.");
-  await writeFile(`${artifactDir}/latest.json`, JSON.stringify({ passed: true, fixtureOnly: true, uploads: state.uploads, batchIntake, reviewRequests: state.reviews.map(({ submissionId, expectedRevision, confirm }) => ({ submissionId, expectedRevision, confirm })), originalRequests: state.sources, catalogRequests: state.listRequests, dirtyGuard: { canceledReportSwitch: true, canceledClose: true, canceledUpload: true, canceledCommunityAndBrandNavigation: true, discardedDraftPreservedSavedReview: true }, pendingActions: { serializedUploadOpenAndSave: true, saveDisabledInputsCloseAndReset: true, blockedHeaderNavigation: true, asyncCompletionRestoredFocus: true }, resilience: { changedCatalogRevisionRefreshed: true, reviewOpenedWithoutBootstrap: true, bootstrapRetryRecovered: true, savedToastPersistedUntilNextEdit: true }, viewportResults }, null, 2));
+  await writeFile(`${artifactDir}/latest.json`, JSON.stringify({ passed: true, fixtureOnly: true, uploads: state.uploads, batchIntake, longContent, reviewRequests: state.reviews.map(({ submissionId, expectedRevision, confirm }) => ({ submissionId, expectedRevision, confirm })), originalRequests: state.sources, catalogRequests: state.listRequests, dirtyGuard: { canceledReportSwitch: true, canceledClose: true, canceledUpload: true, canceledCommunityAndBrandNavigation: true, discardedDraftPreservedSavedReview: true }, pendingActions: { serializedUploadOpenAndSave: true, saveDisabledInputsCloseAndReset: true, blockedHeaderNavigation: true, asyncCompletionRestoredFocus: true }, resilience: { changedCatalogRevisionRefreshed: true, reviewOpenedWithoutBootstrap: true, bootstrapRetryRecovered: true, savedToastPersistedUntilNextEdit: true }, viewportResults }, null, 2));
   await context.close();
-  console.log("Executive Director Licensing browser QA passed at 1440px, 768px, 390px, 320px, and a 200% zoom-equivalent viewport with fixture-only upload, review, original retrieval, catalog filters/pagination, and draft guards.");
+  console.log("Executive Director Licensing browser QA passed at 1440px, 768px, 390px, 320px, and a 200% zoom-equivalent viewport with fixture-only upload, review, original retrieval, catalog filters/pagination, draft guards, and long-content tab/keyboard checks.");
 });
