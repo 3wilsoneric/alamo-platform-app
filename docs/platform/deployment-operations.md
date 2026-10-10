@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-09
+- updated: 2026-10-10
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -54,6 +54,44 @@ the current image's user, environment, working directory, entrypoint, and
 command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
+
+### Platform dashboard and document-navigation refinement — 2026-10-10
+
+The Executive Director community and Licensing views, plus the related
+full-Platform report/navigation surfaces, now use the reviewed compact layout,
+material-folder treatment, and responsive spacing. This is a frontend-only
+release. It did not replace the API/server runtime or change storage, OCR,
+mailbox intake, report data, or notification settings.
+
+- source commit: `32ceffa` on `codex/compact-executive-dashboard`
+- ACR build: `cc6f`
+- image tag: `alamo-platform:platform-design-32ceffa`
+- image digest: `sha256:c18adfc74b05b88c0a84a80c6732a0964ad4259d957fc99da182d214a473b445`
+- active revision: `alamo-platform-prod-web--platform-design-1010`
+- rollback digest: `sha256:759d9ab22bd3a7847768191a92654883f741cfd2225078a7db53fa38109459c2`
+- active browser assets: `/assets/index-CMkJ0TrM.js` and
+  `/assets/index-K-Xux5vR.css`
+- material asset: `/materials/bookbinding-leather-v1.webp`
+
+The candidate inherited all 93 layers of the preceding production image
+unchanged and added one `/app/dist` layer. Documentation, TypeScript,
+dependency audit, Executive Director contracts, Licensing browser checks,
+browser-surface checks, community browser checks, and production build passed.
+The dashboard and full-reports browser suites reached their pass assertions at
+the tested desktop/mobile widths but hung during browser shutdown and were
+interrupted; they are not recorded as clean exits. The broad predeploy runner
+still stops at the existing analyst community-history fixture, which lacks the
+requested July–September 2026 San Pablo periods. This was a bounded
+frontend-only release, not a passing full `check:ship`.
+
+Post-promotion verification confirmed Healthy/Running, one replica, and 100%
+traffic. The root, Executive Director dashboard and Licensing, Admissions, and
+Chat routes returned the tested entry document byte-for-byte under identity,
+gzip, and Brotli (15/15 representations). The live JS, CSS, and material asset
+also matched the candidate (3/3); public smoke passed 4/4 probes. Four
+anonymous Executive Director API routes returned `401` with `private, no-store`.
+No report, review, incident, Pipeline record, or email was created or changed
+during verification.
 
 ### Executive Director Licensing folder refinement — 2026-10-09
 
