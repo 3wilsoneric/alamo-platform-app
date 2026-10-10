@@ -9,6 +9,7 @@ interface CaliforniaCommunityMapProps {
   dashboard: HomeDashboardResponse | null;
   dashboardUnavailable?: boolean;
   selectedFacilityId: string | null;
+  highlightedFacilityId?: string | null;
   onSelectCommunity: (facilityId: string) => void;
 }
 
@@ -46,6 +47,7 @@ export default function CaliforniaCommunityMap({
   dashboard,
   dashboardUnavailable = false,
   selectedFacilityId,
+  highlightedFacilityId = null,
   onSelectCommunity
 }: CaliforniaCommunityMapProps) {
   const [hoveredFacilityId, setHoveredFacilityId] = useState<string | null>(null);
@@ -80,13 +82,13 @@ export default function CaliforniaCommunityMap({
         </desc>
         <defs>
           <linearGradient id="california-paper-face" x1="12%" y1="0%" x2="88%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="52%" stopColor="#f7f9f8" />
-            <stop offset="100%" stopColor="#e9efed" />
+            <stop offset="0%" stopColor="#fffefb" />
+            <stop offset="52%" stopColor="#fafbf8" />
+            <stop offset="100%" stopColor="#e5edf0" />
           </linearGradient>
           <linearGradient id="california-edge-face" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e5ebe9" />
-            <stop offset="100%" stopColor="#aebbb7" />
+            <stop offset="0%" stopColor="#dce6e9" />
+            <stop offset="100%" stopColor="#9eb1ba" />
           </linearGradient>
           <filter
             id="california-neighbor-soft-focus"
@@ -135,8 +137,8 @@ export default function CaliforniaCommunityMap({
               key={state.id}
               data-california-neighbor-state={state.id}
               d={state.path}
-              fill="#ecefed"
-              stroke="#b5bfbb"
+              fill="#e5ebed"
+              stroke="#aebdc2"
               strokeWidth="1.1"
               vectorEffect="non-scaling-stroke"
             />
@@ -184,7 +186,7 @@ export default function CaliforniaCommunityMap({
         {communities.map((community) => {
           const isSelected = community.facilityId === selectedFacilityId;
           const isHovered = community.facilityId === hoveredFacilityId;
-          const isActive = isHovered || isSelected;
+          const isActive = isHovered || isSelected || community.facilityId === highlightedFacilityId;
           const metrics = dashboardByFacility.get(community.facilityId);
           const currentCensus = metrics?.currentCensus ?? null;
           const censusChangeValue = metrics?.censusChange ?? null;

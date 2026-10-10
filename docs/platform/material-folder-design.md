@@ -33,8 +33,9 @@ The Licensing construction below incorporates the October 9 local cardstock
 and navigation refinements: one continuous workspace, shaped working tabs,
 a printed community label, a visible manila cover, layered paper, and readable
 compact layouts. It supersedes the rejected thin green outline and the
-community label styled as a fourth tab. These refinements are not yet deployed.
-The baseline can be recovered without relying on a temporary worktree:
+community label styled as a fourth tab. The Licensing refinements shipped in
+the October 9 folder release. The baseline can be recovered without relying on
+a temporary worktree:
 
 ```sh
 git show a6863b2:src/features/executive/executiveCommunity.css

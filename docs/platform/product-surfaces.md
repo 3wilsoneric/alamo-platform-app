@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-10-06
+- updated: 2026-10-10
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -48,6 +48,11 @@ on phones:
 - the user starts at `/home`
 - five facility markers are projected from maintained city longitude/latitude coordinates;
   permanent leader lines keep the nearby Bay Area locations independently readable and clickable
+- a desktop community index beside the map exposes the same governed current census
+  and comparable-period change without requiring hover; its rows highlight the
+  corresponding marker and open the same profile. The phone community list
+  also shows current census, with unavailable data labeled rather than
+  substituted with zero
 - selecting a desktop marker or phone community row opens the comprehensive
   community profile; it is a compact desktop modal and a full-screen phone workspace
 - each profile combines census, incidents, medication performance, diagnosis mix,
@@ -63,7 +68,10 @@ on phones:
 - Resident Search opens already scoped to the selected community
 - **Analytics** opens the mounted governed workspace without replacing the
   California map; its internal **Reports** and **Ask a question** controls switch
-  between governed documents and the vertical analyst
+  between governed documents and the vertical analyst. The report library is a
+  compact index beside a single paper reader; census, incident, and medication
+  reports carry blue, rust, and plum document accents without turning metrics
+  into decorative folders
 - legacy `/questions` links redirect to the analyst at `/analytics/questions`
 
 ## Small-Screen Product Decision

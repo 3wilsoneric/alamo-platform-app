@@ -119,10 +119,25 @@ async function main() {
             "Portfolio census change does not reconcile to the five community changes."
           );
         }
+        const communityIndex = page.locator('[data-california-community-index="true"]');
+        await communityIndex.waitFor({ state: "visible", timeout: 5_000 });
+        if (await communityIndex.locator('[data-california-index-community]').count() !== ALAMO_FACILITIES.length) {
+          throw new Error("The main Platform home does not show every community in its census index.");
+        }
+        for (const expectedFacility of ALAMO_FACILITIES) {
+          const indexRow = communityIndex.locator(`[data-california-index-community="${expectedFacility.facilityId}"]`);
+          const matchingData = dashboard.communities.find((item) => String(item.facility_id) === expectedFacility.facilityId);
+          const rowText = (await indexRow.textContent()) ?? "";
+          if (matchingData?.currentCensus != null && !rowText.includes(Number(matchingData.currentCensus).toLocaleString())) {
+            throw new Error(`${expectedFacility.communityName} index census differs from the governed home response.`);
+          }
+        }
         await page.screenshot({
           path: `${screenshotDir}/desktop-home.png`,
           fullPage: true
         });
+        await communityIndex.locator('[data-california-index-community="337"]').hover();
+        await page.locator('[data-california-community-metrics="337"]').waitFor({ state: "visible", timeout: 3_000 });
       }
       await marker.hover();
       await page

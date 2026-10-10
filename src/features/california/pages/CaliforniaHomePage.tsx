@@ -8,6 +8,7 @@ import {
   type HomeDashboardResponse
 } from "../../../shared/api/platformData";
 import CaliforniaCommunityMap from "../components/CaliforniaCommunityMap";
+import CaliforniaCommunityIndex from "../components/CaliforniaCommunityIndex";
 import MobileCommunityHome from "../components/MobileCommunityHome";
 import CaliforniaCommunityModal from "../components/CaliforniaCommunityModal";
 import AnalyticsSectionNavigation, {
@@ -41,6 +42,7 @@ export default function CaliforniaHomePage() {
   );
   const [mapDashboard, setMapDashboard] = useState<HomeDashboardResponse | null>(readCachedHomeDashboard);
   const [mapDashboardUnavailable, setMapDashboardUnavailable] = useState(false);
+  const [highlightedFacilityId, setHighlightedFacilityId] = useState<string | null>(null);
   const communityPathMatch = location.pathname.match(/^\/home\/community\/([^/]+)$/);
   const encodedPathFacilityId = communityPathMatch?.[1];
   const pathFacilityId = encodedPathFacilityId
@@ -152,6 +154,8 @@ export default function CaliforniaHomePage() {
           <div className="h-full lg:hidden">
             <MobileCommunityHome
               communities={CALIFORNIA_COMMUNITIES}
+              dashboard={mapDashboard}
+              unavailable={mapDashboardUnavailable}
               onSelectCommunity={openCommunity}
             />
           </div>
@@ -165,9 +169,18 @@ export default function CaliforniaHomePage() {
                 dashboard={mapDashboard}
                 dashboardUnavailable={mapDashboardUnavailable}
                 selectedFacilityId={selectedFacilityId}
+                highlightedFacilityId={highlightedFacilityId}
                 onSelectCommunity={openCommunity}
               />
             </div>
+            <CaliforniaCommunityIndex
+              communities={CALIFORNIA_COMMUNITIES}
+              dashboard={mapDashboard}
+              unavailable={mapDashboardUnavailable}
+              highlightedFacilityId={highlightedFacilityId}
+              onHighlight={setHighlightedFacilityId}
+              onSelectCommunity={openCommunity}
+            />
           </div>
         </section>
 
