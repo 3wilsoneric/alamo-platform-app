@@ -55,6 +55,40 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Executive Director mobile detail and Licensing intake refinement — 2026-10-10
+
+The Executive Director census, incident, and medication detail workspaces now
+use a full-month picker on narrow screens in place of a clipped horizontal tab
+strip. The full incident register keeps search visible while its category and
+date filters collapse behind a phone-sized control. Licensing intake describes
+file selection rather than drag-and-drop on touch layouts. This release
+replaced only `/app/dist`; server/API, source data, storage, OCR, mailbox, and
+notification settings were unchanged.
+
+- source commit: `358a983` on `codex/compact-executive-dashboard`
+- ACR build: `cc6k`
+- image tag: `alamo-platform:mobile-358a983`
+- image digest: `sha256:a9038cdb6b30a58a63e624f72033242daaa63124233170153b7f523ffbabc1cc`
+- active revision: `alamo-platform-prod-web--mobile-358a983`
+- rollback digest: `sha256:b94e4e94987c75e2a6902c763f37618adc3cd6ecf9482ec41c5ca43a04f32246`
+- active browser assets: `/assets/index-BfPkMCIX.js` and
+  `/assets/index-BbLx6HAs.css`
+
+Documentation, TypeScript, Executive Director and Licensing contracts, 72
+platform mobile route/viewport checks, the focused Executive Director and
+Licensing browser suites at 320–1440px and 200%-equivalent zoom, dependency
+audit, and production build passed. The broad `check:analyst` gate remains
+blocked by the pre-existing San Pablo community-history fixture missing
+July–September 2026 periods; this is not a passing full `check:ship`.
+
+The candidate inherited the preceding runtime configuration and 97 filesystem
+layers unchanged, adding one `/app/dist` layer. Its HTML, JavaScript, CSS,
+gzip, and Brotli bytes matched the locally tested build before promotion. The
+new revision became Healthy with one replica and 100% traffic. Public routes,
+assets, and access boundaries passed 28 live parity checks; production smoke
+passed 4/4. A signed-in visual smoke pass was unavailable because no active
+Platform browser session or saved production auth state was present.
+
 ### Inline Licensing report and Executive Director navigation — 2026-10-10
 
 The full archived state Licensing report now reads inside the main Platform
