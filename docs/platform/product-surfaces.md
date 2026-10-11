@@ -149,8 +149,10 @@ the community dashboard instead of the general Platform. The dashboard adapts
 the main community profile's visual hierarchy while serving a separate,
 server-filtered contract: census, incidents, medication performance, and only
 that facility's referrals, assessments, move-ins, and pipeline cards. Community
-navigation is Overview, MARs, and Incidents; MARs and Incidents open their own
-full-page workspaces. The searchable, paginated incident register lives in
+overview links directly to full-page MARs and Incidents workspaces instead of
+repeating those destinations as header tabs. Existing `?view=mars` and
+`?view=incidents` links still open the corresponding workspace. The searchable,
+paginated incident register lives in
 Incidents rather than being repeated below the daily overview. New client is a persistent notification list that
 opens the client folder from any view. Reading a folder does not dismiss its
 notification: eligibility follows the connected Pipeline status until admission

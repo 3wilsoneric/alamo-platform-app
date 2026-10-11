@@ -107,7 +107,7 @@ async function waitForIncidentRows(page, expected) {
 async function auditFullIncidentHistory(page, state) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${BASE_URL}/executive/dashboard`, { waitUntil: "domcontentloaded" });
-  await page.getByRole("tablist", { name: "Community views", exact: true }).getByRole("tab", { name: "Incidents", exact: true }).click();
+  await page.locator('[data-daily-operating-summary="true"]').getByRole("button", { name: "View incidents", exact: true }).click();
   const register = incidentRegister(page);
   const search = register.getByRole("searchbox", { name: "Search incidents", exact: true });
   const category = register.getByRole("combobox", { name: "Category", exact: true });
@@ -595,12 +595,10 @@ function workspaceLocator(page, workspace) {
 }
 
 async function verifySelectedCommunityView(page, name, view) {
-  const tabs = page.getByRole("tablist", { name: "Community views", exact: true });
-  if (await tabs.getByRole("tab", { name, exact: true }).getAttribute("aria-selected") !== "true" || await tabs.locator('[role="tab"][aria-selected="true"]').count() !== 1) {
-    throw new Error(`The ${name} community tab must be the only selected view.`);
-  }
   const actualView = new URL(page.url()).searchParams.get("view") ?? "overview";
-  if (actualView !== view) throw new Error(`The ${name} community tab must retain view=${view} in its URL, received ${page.url()}.`);
+  if (actualView !== view) throw new Error(`The ${name} community view must retain view=${view} in its URL, received ${page.url()}.`);
+  const renderedView = await page.locator('[data-executive-current-view]').getAttribute('data-executive-current-view');
+  if (renderedView !== view) throw new Error(`The ${name} community view did not render the matching workspace.`);
 }
 
 async function verifyNotifications(page, expectedCards) {
@@ -666,6 +664,11 @@ async function closeWorkspace(page, detail, workspace) {
   await detail.getByRole("button", { name: workspace.close, exact: typeof workspace.close === "string" }).click();
   await detail.waitFor({ state: "hidden" });
   await verifySelectedCommunityView(page, "Overview", "overview");
+  if (workspace.view) {
+    const trigger = page.locator('[data-daily-operating-summary="true"]').getByRole("button", { name: workspace.trigger, exact: true });
+    await trigger.waitFor({ state: "visible" });
+    await page.waitForFunction((label) => document.activeElement?.getAttribute("aria-label") === label, workspace.trigger);
+  }
 }
 
 async function measureWorkspace(page, workspace) {
@@ -764,19 +767,14 @@ await withBrowserQa(async (browser) => {
   const dashboard = page.locator('[data-executive-community-dashboard="true"]');
   const summary = page.locator('[data-daily-operating-summary="true"]');
   await summary.waitFor({ state: "visible" });
-  const communityTabs = page.getByRole("tablist", { name: "Community views", exact: true });
-  if (JSON.stringify(await communityTabs.getByRole("tab").allTextContents()) !== JSON.stringify(["Overview", "MARs", "Incidents"])) {
-    throw new Error("The community navigation must expose Overview, MARs, and Incidents in order.");
+  if (await page.getByRole("tablist", { name: "Community views", exact: true }).count()) {
+    throw new Error("The dashboard must not repeat its MARs and Incidents drilldowns as header tabs.");
   }
   await verifySelectedCommunityView(page, "Overview", "overview");
-  await communityTabs.getByRole("tab", { name: "Overview", exact: true }).focus();
-  await page.keyboard.press("ArrowRight");
-  await verifySelectedCommunityView(page, "MARs", "mars");
-  if (!await communityTabs.getByRole("tab", { name: "MARs", exact: true }).evaluate((element) => document.activeElement === element)) throw new Error("Community arrow navigation must move focus with selection.");
-  await page.keyboard.press("End");
-  await verifySelectedCommunityView(page, "Incidents", "incidents");
-  await page.keyboard.press("Home");
-  await verifySelectedCommunityView(page, "Overview", "overview");
+  if (await summary.getByRole("button", { name: "View MARs", exact: true }).count() !== 1 ||
+      await summary.getByRole("button", { name: "View incidents", exact: true }).count() !== 1) {
+    throw new Error("The overview must retain direct MARs and Incidents drilldowns.");
+  }
   await summary.waitFor({ state: "visible" });
 
   const forbiddenCopy = /A current view of resident census|Community briefing|Select any area to open|How to read this|What is next/i;
@@ -902,17 +900,19 @@ await withBrowserQa(async (browser) => {
     await closeWorkspace(page, detailModal, workspace);
   }
 
-  await communityTabs.getByRole("tab", { name: "MARs", exact: true }).click();
+  await summary.getByRole("button", { name: "View MARs", exact: true }).click();
   await page.locator('[data-executive-community-workspace="medications"]').waitFor({ state: "visible" });
   await verifySelectedCommunityView(page, "MARs", "mars");
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.locator('[data-executive-community-workspace="medications"]').waitFor({ state: "visible" });
   await verifySelectedCommunityView(page, "MARs", "mars");
-  if (await summary.count()) throw new Error("Reloading the MARs tab must not fall back to the overview.");
+  if (await summary.count()) throw new Error("Reloading the MARs workspace must not fall back to the overview.");
   await page.goto(`${BASE_URL}/executive/dashboard?view=incidents`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-executive-community-workspace="incidents"]').waitFor({ state: "visible" });
   await verifySelectedCommunityView(page, "Incidents", "incidents");
-  await communityTabs.getByRole("tab", { name: "MARs", exact: true }).click();
+  await page.getByRole("button", { name: "Back to overview", exact: true }).click();
+  await summary.waitFor({ state: "visible" });
+  await summary.getByRole("button", { name: "View MARs", exact: true }).click();
   await page.locator('[data-executive-community-workspace="medications"]').waitFor({ state: "visible" });
   const reopenedNotifications = await verifyNotifications(page, expectedImpendingCards);
   await reopenedNotifications.getByRole("button", { name: /Nakya Hobbs/ }).click();
@@ -934,7 +934,7 @@ await withBrowserQa(async (browser) => {
     throw new Error("An unchanged dashboard refresh must preserve focus on the selected management chart control.");
   }
   await page.screenshot({ path: `${screenshotDir}/desktop-meet-client-profile.png`, fullPage: false });
-  await clientProfile.getByRole("button", { name: "Close management chart" }).click();
+  await clientProfile.getByRole("button", { name: "Close client file" }).click();
   await clientProfile.waitFor({ state: "hidden" });
   await meetClientModal.waitFor({ state: "visible" });
   if (await meetClientModal.getByRole("tab", { name: "Nakya Hobbs", exact: true }).getAttribute("aria-selected") !== "true") {
@@ -946,7 +946,7 @@ await withBrowserQa(async (browser) => {
   if (!/Carlos Vivanco/.test(await clientProfile.innerText()) || /Nakya Hobbs/.test(await clientProfile.innerText())) {
     throw new Error("Switching folder tabs must update the client opened in the full management chart.");
   }
-  await clientProfile.getByRole("button", { name: "Close management chart" }).click();
+  await clientProfile.getByRole("button", { name: "Close client file" }).click();
   await clientProfile.waitFor({ state: "hidden" });
   await meetClientModal.waitFor({ state: "visible" });
   if (await meetClientModal.getByRole("tab", { name: "Carlos Vivanco", exact: true }).getAttribute("aria-selected") !== "true") {
@@ -997,7 +997,7 @@ await withBrowserQa(async (browser) => {
   await meetClientModal.getByRole("button", { name: "Open full management chart" }).click();
   await clientProfile.waitFor({ state: "visible" });
   await clientProfile.getByRole("status").filter({ hasText: "Updates unavailable. Showing the last connected Pipeline data." }).waitFor({ state: "visible" });
-  await clientProfile.getByRole("button", { name: "Close management chart" }).click();
+  await clientProfile.getByRole("button", { name: "Close client file" }).click();
   await clientProfile.waitFor({ state: "hidden" });
   await meetClientModal.waitFor({ state: "visible" });
   await meetClientModal.getByRole("button", { name: /Close admissions detail/i }).click();
@@ -1022,7 +1022,7 @@ await withBrowserQa(async (browser) => {
   await meetClientModal.waitFor({ state: "visible" });
   await meetClientModal.getByRole("button", { name: /Close admissions detail/i }).click();
   await meetClientModal.waitFor({ state: "hidden" });
-  await communityTabs.getByRole("tab", { name: "Overview", exact: true }).click();
+  await page.getByRole("button", { name: "Back to overview", exact: true }).click();
   await summary.waitFor({ state: "visible" });
   await verifySelectedCommunityView(page, "Overview", "overview");
 

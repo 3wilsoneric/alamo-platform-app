@@ -39,9 +39,18 @@ export default function ExecutiveDirectorDashboardPage() {
   const notificationRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
   const notificationPopoverRef = useRef<HTMLElement>(null);
+  const previousViewRef = useRef(view);
 
   useEffect(() => {
     communityRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    const previousView = previousViewRef.current;
+    previousViewRef.current = view;
+    if (view !== "overview" || previousView === "overview") return;
+    const panel = previousView === "mars" ? "medications" : "incidents";
+    const frame = globalThis.requestAnimationFrame(() => {
+      communityRef.current?.querySelector<HTMLButtonElement>(`[data-executive-panel-header="${panel}"] button`)?.focus();
+    });
+    return () => globalThis.cancelAnimationFrame(frame);
   }, [view]);
 
   useEffect(() => {
@@ -186,18 +195,6 @@ export default function ExecutiveDirectorDashboardPage() {
         <p>{dashboard?.reportingMonth ? formatMonthLabel(dashboard.reportingMonth, { month: "long" }) : "Latest period"}{generatedAt ? ` · Updated ${formatExecutiveDate(generatedAt, true)}` : ""}</p>
       </header>
       <div className="executive-community-toolbar">
-        <div role="tablist" aria-label="Community views" className="executive-community-tabs">
-          {([{ id: "overview", label: "Overview" }, { id: "mars", label: "MARs" }, { id: "incidents", label: "Incidents" }] as const).map((item, index, items) => <button key={item.id} id={`executive-tab-${item.id}`} type="button" role="tab" aria-selected={view === item.id} aria-controls="executive-view-panel" tabIndex={view === item.id ? 0 : -1} onClick={() => selectView(item.id)} onKeyDown={(event) => {
-            const offset = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-            if (!offset && event.key !== "Home" && event.key !== "End") return;
-            event.preventDefault();
-            const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (index + offset + items.length) % items.length;
-            const next = items[nextIndex];
-            if (!next) return;
-            selectView(next.id);
-            document.getElementById(`executive-tab-${next.id}`)?.focus();
-          }}>{item.label}</button>)}
-        </div>
         <div className="executive-client-notifications" ref={notificationRef}>
           <button ref={notificationButtonRef} data-executive-meet-client-trigger="true" className="executive-client-notifications__trigger" type="button" aria-label="New client notifications" aria-expanded={notificationsOpen} aria-controls="executive-client-notifications" onClick={() => setNotificationsOpen((open) => !open)}>
             <Bell aria-hidden="true" /><span>New client</span>{admissions?.status === "connected" && clients.length > 0 ? <b data-executive-notification-count="true">{clients.length}</b> : null}
@@ -215,7 +212,7 @@ export default function ExecutiveDirectorDashboardPage() {
       {error ? <div role="alert" className="executive-dashboard-message">{error}</div> : null}
       {loading && !response ? <div role="status" className="executive-dashboard-loading">Loading community dashboard…</div> : null}
       {!loading && dashboard?.status === "unavailable" ? <div role="status" className="executive-dashboard-message">Community measures are temporarily unavailable.</div> : null}
-      <div id="executive-view-panel" role="tabpanel" aria-labelledby={`executive-tab-${view}`}>
+      <div id="executive-view-panel" data-executive-current-view={view}>
         {dashboard && view === "overview" ? <CommunityOverview dashboard={dashboard} onOpenDetail={openDetail} /> : null}
         {dashboard && facility && view !== "overview" ? <ExecutiveCommunityWorkspace key={view} facility={facility} dashboard={dashboard} view={view === "mars" ? "medications" : "incidents"} onBack={() => selectView("overview")} /> : null}
       </div>

@@ -394,10 +394,10 @@ the two links in a second `46px` row. The mobile header is `99px` tall, so
 workspace scroll offsets and dialogs must use `--platform-header-height`
 instead of a hardcoded `60px`.
 
-Community places its identity, Overview/MARs/Incidents navigation, and new
-client notification on one ruled rail at desktop widths. On phones the
-identity and notification stay together, with the three view labels on the
-next line. The rail is navigation, not another folder tab or a second hero.
+Community places its identity and new-client notification on one ruled rail.
+MARs and Incidents open from their overview panels into full-page workspaces;
+there is no duplicate view-tab strip. On phones the identity and notification
+stay together. The rail is not another folder tab or a second hero.
 Keep it aligned to the `1500px` workspace width and `32px` desktop gutters;
 place the first dashboard panel about `18px` below it. Licensing uses the same outer
 workspace width and starts its cover after `14px` of page padding. Its
