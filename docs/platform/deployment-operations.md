@@ -55,6 +55,41 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Inline Licensing report and Executive Director navigation — 2026-10-10
+
+The full archived state Licensing report now reads inside the main Platform
+report reader, while state-source and original-text download links remain
+available. The Executive Director community dashboard opens directly on its
+overview without the redundant Overview/MARs/Incidents header tabs. Its
+incident and MAR panels open their distinct inline detail workspaces, and
+direct `?view=incidents` and `?view=mars` links remain supported. This release
+replaced only `/app/dist`; server/API, source data, storage, OCR, mailbox,
+and notification settings were unchanged.
+
+- source commits: `ef4047b` and `d8e2745` on `codex/compact-executive-dashboard`
+- ACR build: `cc6j`
+- image tag: `alamo-platform:reader-nav-d8e2745`
+- image digest: `sha256:b94e4e94987c75e2a6902c763f37618adc3cd6ecf9482ec41c5ca43a04f32246`
+- active revision: `alamo-platform-prod-web--reader-nav-1010`
+- rollback digest: `sha256:c8fa38cb943908df98d69e5bbd2359daa9daac89f43b59672ecc77fddc3b84d4`
+- active browser assets: `/assets/index-B9DqlELj.js` and
+  `/assets/index-DbrVrsXV.css`
+
+Documentation, TypeScript, Licensing contracts, Executive Director contracts,
+desktop/mobile/zoom browser suites, dependency audit, and production build
+passed. The broad `check:analyst` gate still stops at the pre-existing San
+Pablo community-history fixture missing July–September 2026 periods; this is
+not a passing full `check:ship`. The candidate preserved the preceding image's
+runtime configuration, added one `/app/dist` layer, and matched the locally
+tested HTML, gzip, Brotli, JS, and CSS byte-for-byte.
+
+The promoted revision became Healthy with one replica and 100% traffic. Eight
+public route entry documents matched the candidate under identity, gzip, and
+Brotli (24/24); JS and CSS matched (2/2). Production smoke passed 4/4. In a
+signed-in production browser, the tab-free Executive Director overview loaded,
+its incident and MAR panel buttons opened the separate live workspaces, and a
+selected Licensing report displayed its full archived text inline.
+
 ### Admissions client file and dashboard styling — 2026-10-10
 
 The Admissions Briefing, Pipeline cards, and referral client file now share
