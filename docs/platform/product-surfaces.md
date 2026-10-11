@@ -471,13 +471,12 @@ Ask a question, with no top-level or community-profile navigation item. The
 legacy `/licensing` route preserves query parameters when redirecting to the
 new route. Other accounts return to Analytics before any Licensing data mounts.
 
-The page presents readable briefs with allegations, state finding excerpts,
-cited deficiencies, correction plans, and other recorded follow-up. Each
-excerpt retains its source page. Repeated state-form headers, signatures, and
-numbered gutters are removed from the clean narrative; the original text stays
-available in a disclosure and download. Unclear citation fields are flagged for
-source review. Mixed findings remain explicit, and historical deadlines do not
-imply current overdue work.
+The page presents a short report summary followed by the complete archived
+state-report text in the same reader pane. The display removes recognized
+numbered form gutters but does not alter the stored evidence; the complete text
+remains downloadable, and the state facility record remains linked. There is no
+locally archived PDF or facsimile. The summary is derived from the archived
+text, and historical deadlines do not imply current overdue work.
 
 The interface has one search box and an Updates notice. Search understands a
 small explicit vocabulary of communities, findings, citation/correction terms,

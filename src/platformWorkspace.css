@@ -155,6 +155,44 @@
   box-shadow: 0 8px 22px #48392216;
 }
 
+.licensing-report-document {
+  max-width: 900px;
+  min-width: 0;
+  border: 1px solid #d6dbd6;
+  border-top: 3px solid #a7834c;
+  background: #fffefa;
+}
+
+.licensing-report-document__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 14px clamp(16px, 2vw, 26px);
+  border-bottom: 1px solid #d6dbd6;
+}
+
+.licensing-report-document__header h3 {
+  margin: 0;
+  color: #193246;
+  font: 600 21px/1.25 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+.licensing-report-document__header span {
+  color: #64716c;
+  font: 500 12px/1.5 "Helvetica Neue", Arial, sans-serif;
+}
+
+.licensing-report-document__body {
+  min-width: 0;
+  padding: 20px clamp(16px, 2vw, 26px) 28px;
+  color: #273633;
+  font: 400 15px/1.75 "Helvetica Neue", Arial, sans-serif;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 [data-admissions-overview="true"] > div,
 [data-workforce-overview="true"] > div {
   max-width: var(--platform-workspace-width);

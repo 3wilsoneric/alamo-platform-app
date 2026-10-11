@@ -17,7 +17,7 @@ const outcomeMeaning: Record<string, string> = {
   Inconclusive: "The report uses the state's earlier term for insufficient evidence.",
   "Mixed findings": "This document contains different findings. Read the allegations and finding excerpts together; a single finding does not apply to every allegation.",
   Pending: "The report records a pending finding.",
-  "Not stated": "An explicit complaint finding was not captured in the archived text. Open the original record below for the complete determination.",
+  "Not stated": "An explicit complaint finding was not captured in the archived text. Read the report below and check the state source for the determination.",
   "Not applicable": ""
 };
 
@@ -38,18 +38,12 @@ export default function LicensingReportReader({ report, community, onBack }: {
   if (insights.findings[0]?.text && !summarySentences.some((sentence) => sentence.includes(insights.findings[0]!.text))) {
     summarySentences.push(insights.findings[0].text);
   }
-  if (!summarySentences.length) summarySentences.push("Open the original state record below for the complete report.");
+  if (!summarySentences.length) summarySentences.push("Read the archived report text below.");
   const summaryText = summarySentences.join(" ");
+  const archivedText = useMemo(() => licensingTextForDisplay(report.text), [report.text]);
 
   function originalTextUrl() {
-    return URL.createObjectURL(new Blob([licensingTextForDisplay(report.text)], { type: "text/plain;charset=utf-8" }));
-  }
-
-  function openText() {
-    const url = originalTextUrl();
-    const anchor = document.createElement("a");
-    anchor.href = url; anchor.target = "_blank"; anchor.rel = "noopener noreferrer";
-    anchor.click(); globalThis.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return URL.createObjectURL(new Blob([archivedText], { type: "text/plain;charset=utf-8" }));
   }
 
   function downloadText() {
@@ -70,10 +64,15 @@ export default function LicensingReportReader({ report, community, onBack }: {
       <p className="mt-2 text-[14px] leading-7 text-[#3b403d] sm:text-[15px]">{summaryText}</p>
     </section>
     <div className="mt-6 flex max-w-[900px] flex-col gap-2 sm:flex-row sm:flex-wrap">
-      <a href={report.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0f8b73] px-4 text-[13px] font-semibold text-white">Open state record <ExternalLink size={14} /></a>
-      <button type="button" onClick={openText} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#cdd6d1] bg-white px-4 text-[13px] font-semibold text-[#315b54]">Open original text <ExternalLink size={14} /></button>
+      <a href={report.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0f8b73] px-4 text-[13px] font-semibold text-white">Open state source <ExternalLink size={14} /></a>
       <button type="button" onClick={downloadText} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#cdd6d1] bg-white px-4 text-[13px] font-semibold text-[#315b54]"><Download size={14} /> Download original text</button>
     </div>
-    <p className="mt-5 text-[10px] leading-5 text-[#737373]">Archived {licensingDate(report.retrievedAt)} from the California state licensing record.</p>
+    <section className="licensing-report-document mt-6" aria-labelledby="licensing-report-text-heading" data-licensing-source-text="true">
+      <header className="licensing-report-document__header">
+        <h3 id="licensing-report-text-heading">Report text</h3>
+        <span>Archived {licensingDate(report.retrievedAt)}</span>
+      </header>
+      <div className="licensing-report-document__body">{archivedText}</div>
+    </section>
   </article>;
 }
