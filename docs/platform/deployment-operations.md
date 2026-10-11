@@ -55,6 +55,36 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Admissions client file and dashboard styling — 2026-10-10
+
+The Admissions Briefing, Pipeline cards, and referral client file now share
+the reviewed document styling with Licensing. The client file keeps live
+Pipeline fields and disclosures rather than introducing illustrative content.
+This release replaced only the frontend bundle; no API/server, data, storage,
+OCR, mailbox, or notification setting changed.
+
+- source commit: `b23812b` on `codex/compact-executive-dashboard`
+- ACR build: `cc6h`
+- image tag: `alamo-platform:admissions-b23812b`
+- image digest: `sha256:c8fa38cb943908df98d69e5bbd2359daa9daac89f43b59672ecc77fddc3b84d4`
+- active revision: `alamo-platform-prod-web--admissions-file-1010`
+- rollback digest: `sha256:340a57c678058f8609d388962d2579c9034846127e829e1816d5f26c532c303c`
+- active browser assets: `/assets/index-64NtRLSi.js` and
+  `/assets/index-C_pSndLd.css`
+- material asset: `/materials/manila-stock-v1.webp`
+
+Documentation, TypeScript, build, dependency, focused Admissions browser,
+access, and dashboard checks passed. The broader `check:analyst` gate still
+stops at the existing San Pablo community-history fixture missing requested
+July–September 2026 periods; this is not a passing full `check:ship`.
+The candidate image preserved the preceding runtime configuration and added
+only the validated `/app/dist` layer. After the revision became Healthy/Running
+at 100% traffic, seven public route entry documents matched the candidate in
+identity, gzip, and Brotli (21/21), and the JS, CSS, and manila asset matched
+(3/3). Public smoke passed 4/4. A signed-in production browser opened the
+Admissions Pipeline and a real referral client file, confirming the new
+layout with live data.
+
 ### Main Platform home and report reader correction — 2026-10-10
 
 The prior release materially changed the Executive Director context app but
