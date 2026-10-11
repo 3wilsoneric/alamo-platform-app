@@ -48,7 +48,7 @@ export default function LicensingBulkUpload({ batch, revision, busy, ready, onUp
     <div className="licensing-upload__body">
       <header><h2>LIC 624 intake</h2><p>Upload originals, then check and edit each extracted form.</p></header>
       <div data-executive-director-upload="true" className={`licensing-dropzone${dragging ? " is-dragging" : ""}${batch.entries.length ? " licensing-dropzone--compact" : ""}`} onDragEnter={(event) => { event.preventDefault(); if (!busy) setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); addFiles(Array.from(event.dataTransfer.files)); }}>
-        <Upload aria-hidden="true" /><h3>Drop your reports here</h3><p>PDF, JPG, or PNG · 20 MB each · Up to {MAX_LICENSING_BATCH_FILES} files per batch</p>
+        <Upload aria-hidden="true" /><h3><span className="licensing-dropzone__desktop-label">Drop your reports here</span><span className="licensing-dropzone__mobile-label">Choose reports to upload</span></h3><p>PDF, JPG, or PNG · 20 MB each · Up to {MAX_LICENSING_BATCH_FILES} files per batch</p>
         <label htmlFor={inputId} className={`licensing-button${busy || batch.entries.length >= MAX_LICENSING_BATCH_FILES ? " is-disabled" : ""}`}>{batch.entries.length ? "Add files" : "Choose files"}</label>
         <input ref={inputRef} id={inputId} type="file" multiple accept="application/pdf,image/jpeg,image/png" className="sr-only" disabled={busy || batch.entries.length >= MAX_LICENSING_BATCH_FILES} onChange={(event) => { addFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
       </div>

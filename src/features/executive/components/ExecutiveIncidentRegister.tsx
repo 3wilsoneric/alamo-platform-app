@@ -47,6 +47,7 @@ function IncidentRegisterContent({ facilityId, onTotal, focusFilter }: RegisterP
   const headingId = useId();
   const rowPrefix = useId();
   const [filters, setFilters] = useState<IncidentFilters>(EMPTY_FILTERS);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [cursors, setCursors] = useState<Array<string | null>>([null]);
   const [page, setPage] = useState(0);
   const [retry, setRetry] = useState(0);
@@ -74,6 +75,7 @@ function IncidentRegisterContent({ facilityId, onTotal, focusFilter }: RegisterP
   useEffect(() => {
     if (!focusFilter) return;
     setFilters({ query: "", category: focusFilter.category ?? "", from: focusFilter.from, to: focusFilter.to });
+    if (focusFilter.category || focusFilter.from || focusFilter.to) setMobileFiltersOpen(true);
     setPage(0);
     setCursors([null]);
     setExpandedId(null);
@@ -140,12 +142,13 @@ function IncidentRegisterContent({ facilityId, onTotal, focusFilter }: RegisterP
         </dl>
       </header>
 
-      <form className="executive-incident-register__filters" role="search" aria-label="Search all incidents" onSubmit={(event) => event.preventDefault()}>
-        <label className="executive-incident-register__search"><span>Search incidents</span><div><Search aria-hidden="true" /><input ref={searchRef} type="search" aria-label="Search incidents" value={filters.query} onChange={(event) => updateFilters({ ...filters, query: event.target.value })} placeholder="Resident, category, location or details" />{filters.query ? <button type="button" aria-label="Clear incident search" onClick={() => { updateFilters({ ...filters, query: "" }); searchRef.current?.focus(); }}><X aria-hidden="true" /></button> : null}</div></label>
-        <label><span>Category</span><select value={filters.category} onChange={(event) => updateFilters({ ...filters, category: event.target.value })}><option value="">All categories</option>{filters.category && !catalog?.categories.some((item) => item.label === filters.category) ? <option value={filters.category}>{filters.category}</option> : null}{catalog?.categories.map((item) => <option key={item.label} value={item.label}>{item.label} ({formatExecutiveNumber(item.count)})</option>)}</select></label>
-        <label><span>From date</span><input type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => updateFilters({ ...filters, from: event.target.value })} /></label>
-        <label><span>To date</span><input type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => updateFilters({ ...filters, to: event.target.value })} /></label>
-        <button className="executive-incident-register__reset" type="button" disabled={!hasFilters} onClick={() => updateFilters(EMPTY_FILTERS)}>Reset filters</button>
+      <form className={`executive-incident-register__filters${mobileFiltersOpen ? " is-open" : ""}`} role="search" aria-label="Search all incidents" onSubmit={(event) => event.preventDefault()}>
+        <label className="executive-incident-register__search"><span>Search incidents</span><div><Search aria-hidden="true" /><input ref={searchRef} type="search" aria-label="Search incidents" value={filters.query} onChange={(event) => updateFilters({ ...filters, query: event.target.value })} placeholder="Name or keyword" />{filters.query ? <button type="button" aria-label="Clear incident search" onClick={() => { updateFilters({ ...filters, query: "" }); searchRef.current?.focus(); }}><X aria-hidden="true" /></button> : null}</div></label>
+        <button className="executive-incident-register__advanced-toggle" type="button" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen((open) => !open)}>Filters{filters.category || filters.from || filters.to ? " · Active" : ""}<ChevronDown aria-hidden="true" /></button>
+        <label className="executive-incident-register__advanced executive-incident-register__category-filter"><span>Category</span><select value={filters.category} onChange={(event) => updateFilters({ ...filters, category: event.target.value })}><option value="">All categories</option>{filters.category && !catalog?.categories.some((item) => item.label === filters.category) ? <option value={filters.category}>{filters.category}</option> : null}{catalog?.categories.map((item) => <option key={item.label} value={item.label}>{item.label} ({formatExecutiveNumber(item.count)})</option>)}</select></label>
+        <label className="executive-incident-register__advanced"><span>From date</span><input type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => updateFilters({ ...filters, from: event.target.value })} /></label>
+        <label className="executive-incident-register__advanced"><span>To date</span><input type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => updateFilters({ ...filters, to: event.target.value })} /></label>
+        <button className="executive-incident-register__reset executive-incident-register__advanced" type="button" disabled={!hasFilters} onClick={() => updateFilters(EMPTY_FILTERS)}>Reset filters</button>
       </form>
 
       {catalog ? <div className="executive-incident-register__coverage" data-executive-incident-coverage={catalog.coverage.status}>

@@ -27,6 +27,7 @@
 .executive-incident-register__counts dt { font-size: 11px; color: var(--incident-register-muted); }
 .executive-incident-register__counts dd { color: var(--incident-register-accent); font: 600 25px/1.1 var(--ed-serif, Georgia, serif); font-variant-numeric: tabular-nums; }
 .executive-incident-register__filters { display: grid; grid-template-columns: minmax(220px, 2fr) minmax(150px, 1.2fr) minmax(135px, 1fr) minmax(135px, 1fr) auto; align-items: end; gap: 12px; padding: 17px 19px; background: #f4f0e8; border-bottom: 1px solid var(--incident-register-rule); }
+.executive-incident-register__advanced-toggle { display: none; }
 .executive-incident-register__filters > label { display: grid; min-width: 0; gap: 5px; }
 .executive-incident-register__filters label > span { font-size: 12px; color: #4e5d69; font-weight: 500; }
 .executive-incident-register__filters :is(input, select) { min-width: 0; max-width: 100%; width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid #b8b2a7; border-radius: 3px; background: #fffefb; color: var(--incident-register-ink); font-size: 16px; }
@@ -89,7 +90,12 @@
   .executive-incident-register__counts { gap: 13px 22px; }
   .executive-incident-register__counts dd { font-size: 25px; }
   .executive-incident-register__filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; padding: 14px; }
-  .executive-incident-register__filters > label:nth-child(2) { grid-column: span 2; }
+  .executive-incident-register__search { grid-column: 1 / -1; }
+  .executive-incident-register__advanced-toggle { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid #b8b2a7; border-radius: 3px; background: #fffdf7; color: #85422c; font-size: 14px; font-weight: 600; text-align: left; }
+  .executive-incident-register__advanced-toggle svg { width: 18px; height: 18px; transition: transform 120ms; }
+  .executive-incident-register__advanced-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .executive-incident-register__filters:not(.is-open) > .executive-incident-register__advanced { display: none; }
+  .executive-incident-register__category-filter { grid-column: 1 / -1; }
   .executive-incident-register__filters :is(input, select) { padding-inline: 8px; }
   .executive-incident-register__search input { padding-left: 34px; padding-right: 43px; }
   .executive-incident-register__reset { grid-column: span 2; }

@@ -146,7 +146,14 @@ function PeriodTabs({ months, selectedMonth, onSelect, label, className, panelId
   panelId: string;
 }) {
   const stripRef = useSelectedTabVisibility(selectedMonth);
-  return <div ref={stripRef} className={`${className} material-period-tabs`} role="tablist" aria-label={label}>
+  return <>
+    <label className="material-period-picker">
+      <span>Month</span>
+      <select value={selectedMonth ?? ""} aria-label={label} aria-controls={panelId} onChange={(event) => onSelect(event.target.value)}>
+        {months.map((month) => <option key={month} value={month}>{formatMonthLabel(month, { fallback: month, month: "long" })}</option>)}
+      </select>
+    </label>
+    <div ref={stripRef} className={`${className} material-period-tabs`} role="tablist" aria-label={label}>
     {months.map((month, index) => <button
       key={month}
       id={`${panelId}-${month}`}
@@ -170,7 +177,8 @@ function PeriodTabs({ months, selectedMonth, onSelect, label, className, panelId
         stripRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus({ preventScroll: true });
       }}
     >{formatMonthLabel(month, { fallback: month, month: "short" })}</button>)}
-  </div>;
+    </div>
+  </>;
 }
 
 function CensusDetail({ facilityName, dashboard, onClose, closeButtonRef }: { facilityName: string; dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"]; onClose: () => void; closeButtonRef: React.RefObject<HTMLButtonElement | null> }) {

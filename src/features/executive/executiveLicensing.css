@@ -86,6 +86,7 @@
 .licensing-dropzone.is-dragging { background:#e7eee0; border-color:#246446; outline:3px solid #a8bfa050; }
 .licensing-dropzone > svg { width:28px; height:28px; color:#396b52; }
 .licensing-dropzone h3 { font:600 23px var(--ed-serif); color:#294334; }
+.licensing-dropzone__mobile-label { display:none; }
 .licensing-dropzone p { color:#70796d; font-size:13px; }
 .licensing-dropzone:focus-within .licensing-button { outline:2px solid #23745c; outline-offset:3px; }
 .licensing-selected-file { display:flex; align-items:center; gap:13px; margin-top:18px; padding:13px; border:1px solid #c5cbbb; border-radius:5px; background:#fffef9; }
@@ -139,6 +140,8 @@
   .licensing-report-status { font-size:12px; }
   .licensing-upload { grid-template-columns:1fr; padding:22px; }
   .licensing-upload__document { display:none; }
+  .licensing-dropzone__desktop-label { display:none; }
+  .licensing-dropzone__mobile-label { display:inline; }
   .licensing-reports__filters { padding:16px; gap:10px; }
   .licensing-search { width:100%; }
   .licensing-search input,.licensing-reports__filters select { font-size:16px; }

@@ -204,8 +204,17 @@ async function auditFullIncidentHistory(page, state) {
   const viewportResults = [];
   for (const viewport of [{ label: "desktop-1440", width: 1440, height: 900 }, { label: "mobile-390", width: 390, height: 844 }, { label: "compact-320", width: 320, height: 568 }]) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    if (!await reset.isDisabled()) await reset.click();
+    if (viewport.width >= 640 && !await reset.isDisabled()) await reset.click();
     await waitForIncidentRows(page, firstPage);
+    if (viewport.width < 640) {
+      const toggle = register.getByRole("button", { name: "Filters", exact: true });
+      assert.equal(await toggle.isVisible(), true, "Phone history keeps advanced filters behind one clear control.");
+      assert.equal(await category.isVisible(), false, "Phone history should show records before advanced filters.");
+      await toggle.click();
+      assert.equal(await category.isVisible(), true, "The phone filter control must reveal category and date filters.");
+      await toggle.click();
+      assert.equal(await category.isVisible(), false, "Phone filters must collapse without changing the result set.");
+    }
     await register.evaluate((element) => element.scrollIntoView({ block: "start", behavior: "instant" }));
     await settleLayout(page);
     await page.screenshot({ path: `${screenshotDir}/${viewport.label}-all-incidents.png`, fullPage: false });
@@ -312,6 +321,19 @@ async function auditHeader(page, label) {
 }
 
 async function auditSelectedMonth(page, detail, name, label) {
+  if ((await page.viewportSize())?.width <= 639) {
+    const picker = detail.getByRole("combobox", { name, exact: true });
+    if (!await picker.count()) return;
+    const options = await picker.locator("option").evaluateAll((elements) => elements.map((element) => element.value));
+    const current = await picker.inputValue();
+    if (!await picker.isVisible() || options.length < 2 || !options.includes(current)) auditFindings.push({ label, issue: "Phone month picker must show the selected period and all available months.", current, options });
+    const previous = options[Math.max(0, options.indexOf(current) - 1)];
+    await picker.selectOption(previous);
+    if (await picker.inputValue() !== previous) auditFindings.push({ label, issue: "Phone month picker must switch to an earlier period." });
+    await picker.selectOption(current);
+    auditMeasurements.push({ label, monthPicker: { selected: current, choices: options.length } });
+    return;
+  }
   const tablist = detail.getByRole("tablist", { name, exact: true });
   if (!await tablist.count()) return;
   const state = await tablist.evaluate((element) => {

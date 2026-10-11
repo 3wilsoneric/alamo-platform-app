@@ -168,6 +168,7 @@
 .census-ledger__book-meta strong { margin-left:20px; color:#164e82; font:600 25px var(--ed-serif); }
 .census-ledger__header button,.incident-register__book-tabs button,.mar-binder__context button,.admissions-file__close { display:grid; flex:0 0 auto; width:44px; height:44px; place-items:center; background:transparent !important; color:inherit; border:0; }
 .material-period-tabs { display:flex; overflow-x:auto; scrollbar-width:thin; margin-bottom:0; border:1px solid #bec6ce; border-bottom:0; border-radius:6px 6px 0 0; background:#d9dfe4; }
+.material-period-picker { display:none; }
 .material-period-tabs button { min-height:44px; min-width:83px; flex:1; white-space:nowrap; padding:9px 10px; border-right:1px solid #cbd1d6; color:#354d65; font-size:12px; background:linear-gradient(#f9f9f6,#e5e8e9); }
 .material-period-tabs button[aria-selected="true"] { background:linear-gradient(#ffffff14,#00000012),var(--doc-tone); color:white; }
 .census-ledger__primary { display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:12px; }
@@ -395,7 +396,10 @@
   .census-ledger__header h1::before { position:absolute; z-index:-1; inset:0 -12px; content:""; pointer-events:none; background:var(--ed-grain),var(--ed-paper); mask:var(--ed-tab-shape) center/100% 100% no-repeat; }
   .census-ledger__header h1 i { height:24px; }
   .census-ledger__header button,.incident-register__book-tabs button,.mar-binder__context button { width:44px; height:44px; }
-  .material-period-tabs button { min-height:44px; }
+  .material-period-tabs { display:none; }
+  .material-period-picker { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:56px; padding:6px 12px; border-bottom:1px solid #c8c9c5; background:var(--ed-grain),#f5f2eb; color:#344d60; font-size:13px; font-weight:600; }
+  .material-period-picker select { width:min(100%,190px); min-width:0; min-height:44px; padding:8px 30px 8px 11px; border:1px solid #aeb9bd; border-radius:5px; background:#fffefa; color:var(--ed-ink); font:600 16px var(--ed-sans); }
+  .material-period-picker select:focus-visible { outline:2px solid var(--doc-tone,#164d7c); outline-offset:2px; }
   .census-ledger__chart { padding:10px 8px; }
   .census-ledger__chart h2 { font-size:20px; }
   .census-ledger__reconciliation > div { grid-template-columns:1fr 1fr; gap:8px; }
