@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-10
+- updated: 2026-10-12
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -54,6 +54,51 @@ the current image's user, environment, working directory, entrypoint, and
 command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
+
+### Portfolio incident history — 2026-10-12
+
+The main Platform now has `/incidents/history`, reached from Incident Center,
+with a searchable, sortable record list and facility, year, type, category,
+date, and derived-priority filters. Its provisional priority rule is High for
+recorded sentinel events or emergency-services notification, Medium for injury,
+Low only when all three inputs explicitly say No, and Unknown otherwise. It is
+not a clinical or licensing severity grade. Executive Director access remains
+facility-scoped. The page identifies incomplete historical coverage instead of
+presenting the available records as an all-time total. LIC 624 uploads are not
+included in this register.
+
+- source commit: `9fe37f6` on `codex/compact-executive-dashboard`
+- ACR build: `cc6m`
+- image tag: `alamo-platform:incident-history-9fe37f6`
+- image digest: `sha256:031790d22e0b126f8172fef4667a131cb5bb3c9596f4709ad2b00425e6867084`
+- active revision: `alamo-platform-prod-web--incident-history-1012`
+- rollback digest: `sha256:a9038cdb6b30a58a63e624f72033242daaa63124233170153b7f523ffbabc1cc`
+- active browser assets: `/assets/index-chCHzB_1.js` and
+  `/assets/index-DDghh2CP.css`
+
+The release used `deploy/Dockerfile.incident-history-release` to overlay the
+tested browser bundle and only the incident-history server modules onto the
+exact prior production image. It patches the single API route into the proven
+production adapter; it does not ship unrelated unreleased API routes. The
+candidate preserved the preceding runtime configuration, and its local route
+and access-control checks passed before promotion. Documentation, dependency,
+TypeScript, build, platform API, Executive Director, incident-history browser,
+and responsive access checks passed. The formal broad ship gate remains blocked
+by the pre-existing analyst fixture missing San Pablo July–September 2026
+months. The user explicitly approved this focused release; it is not a passing
+full `check:ship`.
+
+The new revision became Healthy with one replica and 100% traffic. The live
+incident-history HTML, JavaScript, and CSS matched the tested build; gzip and
+Brotli HTML responses were available. Anonymous incident-history and Executive
+Director API requests returned 401 with private, no-store caching. Production
+smoke passed 4/4. A signed-in production visual/data check was unavailable for
+this release. The fallback incident register currently has 14,966 individual
+records against 22,488 published monthly incidents, with available individual
+records beginning 2025-04-01 and ending 2026-10-11. Local Databricks read-only
+queries for the full governed view were denied SELECT permission, so do not
+describe this as complete history until live permissions and coverage are
+verified.
 
 ### Executive Director mobile detail and Licensing intake refinement — 2026-10-10
 
