@@ -5,13 +5,15 @@ import { ALAMO_EXECUTIVE_DIRECTOR_ROLES } from "../shared/executive-director-acc
 import { assertExecutiveDirectorAccess, resolveExecutiveDirectorFacility } from "../server/executive-director-access.mjs";
 import { buildExecutiveDirectorIncidentsResponse, getExecutiveDirectorIncidents, normalizeExecutiveIncidentOptions } from "../server/executive-director-incidents.mjs";
 import { buildExecutiveIncidentLiveSql } from "../server/executive-director-incidents-live.mjs";
+import { getPlatformIncidentHistory } from "../server/platform-incident-history.mjs";
 
 const rows = [
   ...Array.from({ length: 75 }, (_, index) => ({
     id: `incident-${String(index).padStart(3, "0")}`, facility_id: "344", resident_id: `resident-${index}`,
     client_name: `Test resident ${index}`, incident_date: `2026-${String(10 - Math.floor(index / 25)).padStart(2, "0")}-${String(28 - index % 25).padStart(2, "0")}`,
-    category: index % 2 ? "Fall" : "Other", email_body: "Synthetic incident", assistance_given: "Synthetic response",
-    injury_occurred: "unknown", police_called: "yes"
+    category: index % 2 ? "Fall" : "Other", incident_type: index % 2 ? "Physical fall" : "Other event", email_body: "Synthetic incident", assistance_given: "Synthetic response",
+    injury_occurred: index === 1 ? "yes" : index === 2 ? "no" : "unknown",
+    police_called: index === 1 || index === 2 ? "no" : "yes", sentinel_event: index === 2 ? "no" : "unknown"
   })),
   { id: "historic", facility_id: "344", incident_date: "2020-01-02", category: "Historical", email_body: "unique-old-offpage-search" },
   { id: "undated", facility_id: "344", received_at: "2026-10-01T12:00:00Z", category: "Uncategorized" },
@@ -42,6 +44,9 @@ assert.equal(first.coverage.startDate, "2020-01-02");
 assert.equal(first.coverage.reportedTotal, 76);
 assert.equal(first.incidents[0].injuryOccurred, null);
 assert.equal(first.incidents[0].emergencyServicesNotified, true);
+assert.equal(first.incidents[0].priority, "high");
+assert.equal(first.incidents.find((row) => row.id === "incident-001")?.priority, "medium");
+assert.equal(first.incidents.find((row) => row.id === "incident-002")?.priority, "low");
 assert.equal("policeCalled" in first.incidents[0], false);
 assert.equal(JSON.stringify(first).includes("Foreign category"), false);
 const everyId = new Set(first.incidents.map((row) => row.id));
@@ -63,6 +68,25 @@ const historic = buildExecutiveDirectorIncidentsResponse(snapshot, { ...options,
 assert.deepEqual(historic.incidents.map((row) => row.id), ["historic"]);
 assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, query: "undated" }).incidents[0].date, null);
 assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, query: "undated", from: "2020-01-01" }).matchingIncidents, 0);
+assert.deepEqual(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, year: "undated" }).incidents.map((row) => row.id), ["undated"]);
+assert.deepEqual(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, priority: "medium" }).incidents.map((row) => row.id), ["incident-001"]);
+assert.deepEqual(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, priority: "low" }).incidents.map((row) => row.id), ["incident-002"]);
+assert.deepEqual(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, incidentType: "Physical fall", year: "2026" }).incidents.every((row) => row.incidentType === "Physical fall" && row.date.startsWith("2026")), true);
+assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, sort: "priority_desc" }).incidents[0].priority, "high");
+assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, sort: "date_asc" }).incidents[0].id, "historic");
+const portfolio = buildExecutiveDirectorIncidentsResponse(snapshot, { facilityId: "all", sort: "community_asc" }, { allowPortfolio: true });
+assert.equal(portfolio.totalIncidents, 78);
+assert.equal(portfolio.coverage.status, "partial");
+assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { facilityId: "all", query: "Cross-community" }, { allowPortfolio: true }).incidents[0].id, "private-other-community");
+const sameIdDifferentFacility = buildExecutiveDirectorIncidentsResponse(snapshotFor([rows[0], { ...rows[0], facility_id: "337" }]), { facilityId: "all" }, { allowPortfolio: true });
+assert.equal(sameIdDifferentFacility.totalIncidents, 2, "A source ID shared by two communities must not collapse distinct records.");
+assert.deepEqual(sameIdDifferentFacility.incidents.map((row) => row.facilityId), ["337", "344"], "Cross-community page ordering needs a stable facility tie-breaker.");
+assert.throws(() => normalizeExecutiveIncidentOptions({ facilityId: "all" }), (error) => error.statusCode === 400);
+const portfolioEndpoint = await getPlatformIncidentHistory(new URL("http://localhost/api/platform/incidents/history?facilityId=all&year=2020"), { query: async () => { throw new Error("offline"); }, readSnapshot: async () => snapshot });
+assert.equal(portfolioEndpoint.matchingIncidents, 1);
+assert.equal(portfolioEndpoint.coverage.status, "partial");
+await assert.rejects(() => getPlatformIncidentHistory(new URL("http://localhost/api/platform/incidents/history?facilityId=999")), (error) => error.statusCode === 400);
+assert.throws(() => getPlatformIncidentHistory(new URL("http://localhost/api/platform/incidents/history?unknown=1")), (error) => error.statusCode === 400);
 assert.equal(buildExecutiveDirectorIncidentsResponse(snapshotFor([]), options).totalIncidents, 0);
 assert.equal(buildExecutiveDirectorIncidentsResponse(snapshotFor([]), options).status, "ready");
 assert.equal(buildExecutiveDirectorIncidentsResponse({}, options).totalIncidents, null);
@@ -70,12 +94,12 @@ assert.equal(buildExecutiveDirectorIncidentsResponse({}, options).status, "unava
 
 for (const invalid of [
   { facilityId: "999" }, { query: "x".repeat(161) }, { query: "line\nbreak" }, { query: 2 },
-  { category: "x".repeat(161) }, { from: "2026-02-30" }, { to: "invalid" },
+  { category: "x".repeat(161) }, { incidentType: "x".repeat(161) }, { priority: "critical" }, { year: "202A" }, { sort: "nonsense" }, { from: "2026-02-30" }, { to: "invalid" },
   { from: "2026-10-09", to: "2026-10-08" }, { limit: "2x" }, { limit: 0 }, { limit: 101 }, { limit: -1 }, { limit: 1.5 },
   { cursor: "not-a-cursor" }, { cursor: Buffer.from(JSON.stringify([1, "a".repeat(64), -2])).toString("base64url") },
   { cursor: Buffer.from(JSON.stringify([2, "a".repeat(64), "b".repeat(64), 2_147_483_648])).toString("base64url") }
 ]) assert.throws(() => normalizeExecutiveIncidentOptions({ ...options, ...invalid }), (error) => error.statusCode === 400);
-for (const changed of [{ facilityId: "337" }, { query: "fall" }, { category: "Fall" }, { to: "2026-10-01" }]) {
+for (const changed of [{ facilityId: "337" }, { query: "fall" }, { category: "Fall" }, { incidentType: "Physical fall" }, { priority: "high" }, { year: "2020" }, { sort: "date_asc" }, { to: "2026-10-01" }]) {
   assert.throws(() => buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, ...changed, cursor: first.nextCursor }), (error) => error.statusCode === 409);
 }
 assert.throws(() => buildExecutiveDirectorIncidentsResponse(snapshotFor(rows.slice(1)), { ...options, cursor: first.nextCursor }), (error) => error.statusCode === 409);
@@ -97,6 +121,8 @@ function liveFixture(sql, revisionValue = revision, total = 77) {
   return [
     { kind: "summary", payload: JSON.stringify({ total, matching: total, start_date: total ? "2020-01-02" : null, end_date: total ? "2026-10-28" : null, revision: revisionValue }) },
     ...(total ? [{ kind: "category", payload: JSON.stringify({ label: "Other", count: total }) }] : []),
+    ...(total ? [{ kind: "type", payload: JSON.stringify({ label: "Not recorded", count: total }) }] : []),
+    ...(total ? [{ kind: "year", payload: JSON.stringify({ label: "2026", count: total }) }] : []),
     ...Array.from({ length: Math.min(requested, Math.max(0, total - offset)) }, (_, index) => ({ kind: "incident", payload: JSON.stringify({ id: `live-${offset + index}`, facility_id: "344", incident_date: "2026-10-01", category: "Other", emergency_services_notified: "no", page_order: offset + index + 1 }) })).reverse()
   ];
 }
@@ -114,6 +140,12 @@ const liveSecond = await getExecutiveDirectorIncidents({ ...options, cursor: liv
 assert.equal(liveSecond.incidents[0].id, "live-25");
 assert.equal(liveSecond.incidents.length, 25);
 assert.match(generatedSql[0], /FROM alamohealth\.gold\.v_incidents i/);
+const portfolioSql = buildExecutiveIncidentLiveSql(normalizeExecutiveIncidentOptions({ facilityId: "all", priority: "high", year: "2026", sort: "priority_desc" }, { allowPortfolio: true }));
+assert.match(portfolioSql, /cast\(i\.Facility AS string\) IN \(/);
+assert.match(portfolioSql, /priority = decode\(unhex/);
+assert.match(portfolioSql, /year\(incident_date\) = 2026/);
+assert.match(portfolioSql, /WHEN 'high' THEN 0/);
+assert.match(portfolioSql, /facility_id ASC, id ASC/);
 assert.match(generatedSql[0], /LEFT JOIN resident_names r ON cast\(i\.Facility AS string\) = r\.facility_id AND cast\(i\.Res_Number AS string\) = r\.resident_id/);
 assert.equal((generatedSql[0].match(/= decode\(unhex\('333434'\)/g) ?? []).length, 2, "Both incident and resident-name queries must be scoped.");
 assert.doesNotMatch(generatedSql[0], /add_months|LIMIT (50|250|15000)\b|WHERE i\.Incident_Date_parsed IS NOT NULL/);
@@ -184,6 +216,11 @@ if (process.argv.includes("--live-sql-fixture")) {
   assert.equal(warehouseOld.incidents[0].id, "fixture-070");
   const warehouseForeign = await getExecutiveDirectorIncidents({ ...options, query: "foreign-community-secret" }, { query: fixtureQuery, readSnapshot: noFallback });
   assert.equal(warehouseForeign.matchingIncidents, 0);
+  const warehousePortfolio = await getExecutiveDirectorIncidents({ facilityId: "all", priority: "high", sort: "priority_desc" }, { query: fixtureQuery, readSnapshot: noFallback, allowPortfolio: true });
+  assert.equal(warehousePortfolio.coverage.status, "complete");
+  assert.equal(warehousePortfolio.totalIncidents, 80);
+  assert.equal(warehousePortfolio.matchingIncidents, 80);
+  assert.equal(warehousePortfolio.incidents.every((row) => row.priority === "high"), true);
   const warehouseUndated = await getExecutiveDirectorIncidents({ ...options, query: "fixture-076" }, { query: fixtureQuery, readSnapshot: noFallback });
   assert.equal(warehouseUndated.matchingIncidents, 1);
   assert.equal(warehouseUndated.incidents[0].date, null);

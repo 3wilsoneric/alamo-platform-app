@@ -272,6 +272,7 @@ export function fetchExecutiveDirectorCommunityDashboard(
 
 export interface ExecutiveDirectorIncident {
   id: string;
+  facilityId: string;
   residentId: string | null;
   residentName: string;
   date: string | null;
@@ -285,6 +286,7 @@ export interface ExecutiveDirectorIncident {
   injuryOccurred: boolean | null;
   emergencyServicesNotified: boolean | null;
   sentinelEvent: boolean | null;
+  priority: "high" | "medium" | "low" | "unknown";
 }
 
 export interface ExecutiveDirectorIncidentRegister {
@@ -297,6 +299,8 @@ export interface ExecutiveDirectorIncidentRegister {
   matchingIncidents: number | null;
   incidents: ExecutiveDirectorIncident[];
   categories: Array<{ label: string; count: number }>;
+  types: Array<{ label: string; count: number }>;
+  years: Array<{ label: string; count: number }>;
   nextCursor: string | null;
   coverage: {
     status: "complete" | "partial" | "unavailable";
@@ -308,22 +312,40 @@ export interface ExecutiveDirectorIncidentRegister {
   freshness: { stale: boolean; warning: string | null };
 }
 
-export function fetchExecutiveDirectorIncidents(
-  facilityId: string,
-  options: { query?: string; category?: string; from?: string; to?: string; cursor?: string } = {},
-  signal?: AbortSignal
-) {
+type IncidentRegisterOptions = { query?: string; category?: string; incidentType?: string; priority?: string; year?: string; sort?: string; from?: string; to?: string; cursor?: string };
+
+function fetchIncidentRegister(path: string, facilityId: string, options: IncidentRegisterOptions, signal?: AbortSignal) {
   const params = new URLSearchParams({ facilityId, limit: "25" });
   if (options.query) params.set("q", options.query);
   if (options.category) params.set("category", options.category);
+  if (options.incidentType) params.set("type", options.incidentType);
+  if (options.priority) params.set("priority", options.priority);
+  if (options.year) params.set("year", options.year);
+  if (options.sort) params.set("sort", options.sort);
   if (options.from) params.set("from", options.from);
   if (options.to) params.set("to", options.to);
   if (options.cursor) params.set("cursor", options.cursor);
   return fetchWithApiAuth<ExecutiveDirectorIncidentRegister>(
-    `/api/platform/executive-director/incidents?${params.toString()}`,
+    `${path}?${params.toString()}`,
     signal ? { signal } : {},
     { consume: (response) => readApiJson<ExecutiveDirectorIncidentRegister>(response) }
   );
+}
+
+export function fetchPlatformIncidentHistory(
+  facilityId: string,
+  options: IncidentRegisterOptions = {},
+  signal?: AbortSignal
+) {
+  return fetchIncidentRegister("/api/platform/incidents/history", facilityId, options, signal);
+}
+
+export function fetchExecutiveDirectorIncidents(
+  facilityId: string,
+  options: IncidentRegisterOptions = {},
+  signal?: AbortSignal
+) {
+  return fetchIncidentRegister("/api/platform/executive-director/incidents", facilityId, options, signal);
 }
 
 export interface ExecutiveDirectorSubmissionCatalog {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowDown,
@@ -692,12 +693,13 @@ export default function IncidentCenterPage({
       <div className="mx-auto flex min-h-0 w-full max-w-[1520px] flex-1 flex-col">
         {!embedded ? (
           <div className="border-b border-white/[0.08] px-1 pb-4">
-            <div className="flex items-start gap-4">
+            <div className="flex items-center justify-between gap-4">
               <div className="inline-flex items-center gap-2.5">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
                   Incident Center
                 </div>
               </div>
+              <Link to="/incidents/history" className="inline-flex min-h-11 items-center rounded-full border border-white/30 px-4 text-[13px] font-semibold text-white hover:border-white hover:bg-white/10">Search full history <ChevronRight size={17} aria-hidden="true" /></Link>
             </div>
           </div>
         ) : null}
@@ -705,8 +707,9 @@ export default function IncidentCenterPage({
         <div className="flex min-h-0 flex-1 flex-col">
           {embedded ? (
             <div className="border-b border-[#111111] pb-3">
-              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">
-                Recent incident triage
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">Recent incident triage</div>
+                <Link to={`/incidents/history${facilityId ? `?facilityId=${encodeURIComponent(facilityId)}` : ""}`} className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-[#8a3927] hover:underline">Search full history <ChevronRight size={16} aria-hidden="true" /></Link>
               </div>
               <h3 className="mt-1 font-serif text-[22px] font-semibold tracking-[-0.03em]">
                 Latest two loaded incident days

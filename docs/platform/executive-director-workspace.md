@@ -3,7 +3,7 @@
 - purpose: define the facility-scoped Executive Director dashboard and licensing-report intake workflow
 - status: active implementation plan and security contract
 - owners: product, operations, engineering, compliance
-- updated: 2026-10-09
+- updated: 2026-10-12
 - tags: executive-director, licensing, intake, ocr, role-access, azure
 - labels: platform-handbook, implementation-plan, security-boundary
 - related files:
@@ -62,6 +62,17 @@ The API derives allowed facilities from token claims. A facility identifier
 sent by the browser is never accepted as authority. The verified Platform
 owner may open the route for product review, but this does not weaken the
 Executive Director role boundary.
+
+The incident register's year, type, category, date, and derived-priority
+filters run server-side against that authorized facility. Its provisional
+priority is not an official severity grade: High requires a recorded sentinel
+event or emergency-services notification, Medium a recorded injury, Low three
+explicit No values, and Unknown covers missing flags. The portfolio-wide
+`/incidents/history` route and API remain unavailable to Executive Director-only
+identities. Live history is complete for the connected incident source; if it
+fails, the published snapshot is shown as partial with separate available and
+aggregate counts. LIC 624 uploads are not incident records until separately
+reviewed and linked in a future workflow.
 
 ## Workflow
 

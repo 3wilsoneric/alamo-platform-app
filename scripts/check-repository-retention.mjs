@@ -87,6 +87,7 @@ const approvedWorkflowFiles = new Set([
   "databricks/workflows/daily_snapshot_refresh.json"
 ]);
 const approvedDeploymentOverlayFiles = new Set([
+  "deploy/Dockerfile.incident-history-release",
   "deploy/patch-chat-entry.mjs",
   "deploy/inject-iphone-head.mjs",
   "deploy/iphone-polish.css",

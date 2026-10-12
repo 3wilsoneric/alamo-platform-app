@@ -1,4 +1,5 @@
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
+import { getPlatformIncidentHistory } from "./platform-incident-history.mjs";
 import { assertLicensingAccess } from "./licensing-access.mjs";
 import http from "node:http";
 import {
@@ -379,6 +380,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    if (requestUrl.pathname === "/api/platform/incidents/history") {
+      sendJson(res, 200, await getPlatformIncidentHistory(requestUrl));
+      return;
+    }
     if (requestUrl.pathname === "/api/platform/licensing/updates") {
       assertLicensingAccess(authContext);
       sendJson(res, 200, await getLicensingUpdates());

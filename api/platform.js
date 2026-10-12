@@ -54,12 +54,14 @@ import {
 
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
 import { assertLicensingAccess } from "../server/licensing-access.mjs";
+import { getPlatformIncidentHistory } from "../server/platform-incident-history.mjs";
 import {
   handleExecutiveDirectorApiRequest,
   isExecutiveDirectorApiPath
 } from "../server/executive-director-api.mjs";
 
 const PLATFORM_GET_ROUTES = Object.freeze({
+  "/api/platform/incidents/history": ({ requestUrl }) => getPlatformIncidentHistory(requestUrl),
   "/api/platform/licensing": ({ requestUrl, authContext }) => {
     assertLicensingAccess(authContext);
     return getLicensingLibrary(requestUrl);

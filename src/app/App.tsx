@@ -6,6 +6,7 @@ import AppErrorBoundary from "../shared/ui/AppErrorBoundary";
 import AppHomePage from "../features/communities/pages/AppHomePage";
 import CommunitiesPage from "../features/communities/pages/CommunitiesPage";
 import IncidentCenterPage from "../features/incidents/pages/IncidentCenterPage";
+import IncidentHistoryPage from "../features/incidents/pages/IncidentHistoryPage";
 import CommandCenterPage from "../features/command-center/pages/CommandCenterPage";
 import GlossaryPage from "../features/glossary/pages/GlossaryPage";
 import DataExplorerPage from "../features/explorer/pages/DataExplorerPage";
@@ -71,6 +72,7 @@ export default function App() {
           element={withRouteBoundary(<CommunitiesPage />)}
         />
         <Route path="/incidents" element={withRouteBoundary(<IncidentCenterPage />)} />
+        <Route path="/incidents/history" element={withRouteBoundary(<IncidentHistoryPage />)} />
         <Route path="/admissions" element={withRouteBoundary(<AdmissionsPage />)} />
         <Route path="/workforce" element={withRouteBoundary(<WorkforcePage />)} />
         <Route path="/executive" element={<Navigate to="/executive/dashboard" replace />} />

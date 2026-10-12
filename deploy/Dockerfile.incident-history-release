@@ -1,0 +1,16 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a9038cdb6b30a58a63e624f72033242daaa63124233170153b7f523ffbabc1cc
+FROM ${BASE_IMAGE}
+
+# Keep the proven production runtime. Only the incident API, its shared source,
+# and the reviewed browser bundle change. The live production platform API has
+# fewer acquisition routes than this branch, so patch that exact file in place
+# rather than copying api/platform.js and unintentionally releasing those routes.
+USER root
+WORKDIR /app
+RUN rm -rf /app/dist
+COPY dist ./dist
+COPY server/executive-director-api.mjs server/executive-director-incidents.mjs server/executive-director-incidents-live.mjs server/platform-incident-history.mjs ./server/
+COPY shared/incident-priority.mjs ./shared/incident-priority.mjs
+RUN node -e 'const fs = require("node:fs"); const crypto = require("node:crypto"); const file = "/app/api/platform.js"; let source = fs.readFileSync(file, "utf8"); const actual = crypto.createHash("sha256").update(source).digest("hex"); if (actual !== "bdb4e9b6c9ef6e0da9cfdc5cfe7c8c8d8e93fa2f6e55f17feb381e818db73c14") throw new Error("Production Platform API base differs from reviewed image"); function insert(anchor, addition) { if (source.split(anchor).length !== 2) throw new Error("Production API anchor is not unique: " + anchor); source = source.replace(anchor, anchor + "\n" + addition); } insert("import { assertLicensingAccess } from \"../server/licensing-access.mjs\";", "import { getPlatformIncidentHistory } from \"../server/platform-incident-history.mjs\";"); insert("const PLATFORM_GET_ROUTES = Object.freeze({", "  \"/api/platform/incidents/history\": ({ requestUrl }) => getPlatformIncidentHistory(requestUrl),"); fs.writeFileSync(file, source);'
+RUN chown -R node:node /app/dist /app/api/platform.js /app/server/executive-director-api.mjs /app/server/executive-director-incidents.mjs /app/server/executive-director-incidents-live.mjs /app/server/platform-incident-history.mjs /app/shared/incident-priority.mjs
+USER node

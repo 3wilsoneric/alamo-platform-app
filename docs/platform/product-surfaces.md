@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-10-10
+- updated: 2026-10-12
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -187,7 +187,7 @@ email, or the indexed report store required for the historical backfill.
 
 Overview and the Incidents workspace also expose an All incidents register.
 The register starts with all available history, supports server-side text,
-category, and inclusive date filters, and returns 25 records per page with
+category, recorded incident type, occurred-year, derived-priority, and inclusive date filters, and returns 25 records per page with
 expandable recorded details. Chart-month and category selections filter the
 same register; Reset filters returns to all history. Every request enforces
 the signed-in director's facility before reading records. Its dedicated
@@ -198,6 +198,19 @@ from published aggregate totals; it never claims an all-time total. Live pages
 do not silently switch to snapshot records, and changed data requires a page
 restart. LIC 624 uploads remain separate documents and are not merged into
 incident totals or automatically linked to these records.
+
+The main Platform's `/incidents/history` route opens the same governed register
+across the five Alamo communities, reachable from the recent Incident Center.
+It adds a community filter and shows community on each record. The ordinary
+Platform API permits portfolio scope; the Executive Director endpoint never
+accepts `all` and still resolves facility access from the signed-in role. Both
+routes support newest/oldest, type, category, and derived-priority sorting.
+Derived priority is provisional operational grouping, not source severity:
+High means recorded sentinel event or emergency-services notification, Medium
+means recorded injury, Low requires all three explicit No values, and Unknown
+catches missing/ambiguous flags. A connected live source is labeled complete
+only for that source; a bounded published-snapshot fallback is clearly partial.
+Neither view includes LIC 624 upload counts.
 
 `/admissions` is the aggregate Admissions overview inside Alamo. It opens on a
 Briefing, with Pipeline as the second page-level view. Briefing keeps the
