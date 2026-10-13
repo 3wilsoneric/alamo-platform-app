@@ -261,7 +261,8 @@ export default function ProtectedAppShell() {
 
   if (
     executiveDirectorAccess.restrictedToExecutive &&
-    !isExecutiveDirectorExperience
+    !isExecutiveDirectorExperience &&
+    !isPresentation
   ) {
     return <ExecutiveDirectorZoneRedirect />;
   }
@@ -278,7 +279,8 @@ export default function ProtectedAppShell() {
   if (
     admissionsAccess.restrictedToAdmissions &&
     !isAdmissionsExperience &&
-    !isPipelineHandoff
+    !isPipelineHandoff &&
+    !isPresentation
   ) {
     return <AdmissionsZoneRedirect />;
   }

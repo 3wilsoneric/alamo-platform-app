@@ -246,7 +246,11 @@ The analyst remains a vertical chat/module workspace:
 
 `/presentation` displays the supplied 28-slide Alamo Data Strategy deck in a
 full-window 16:9 desktop viewer. A presentation button beside the desktop account
-control appears only after an authorized access check. The phone menu has no shortcut.
+control in both the main and Executive Director headers appears only after an
+authorized access check. An explicitly authorized presentation account can
+enter `/presentation` even if its normal workspace is otherwise zone-restricted;
+the slide and route APIs retain their separate server-side access checks. The
+phone menu has no shortcut.
 It requests browser full screen on click; browsers without that API retain the
 full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
 navigate. F toggles full screen, S toggles speaker notes, and Close returns to

@@ -20,6 +20,14 @@ await withBrowserQa(async (browser) => {
   await page.getByRole("button", { name: /full screen/i }).waitFor({ state: "visible" });
   assert.equal(new URL(page.url()).pathname, "/presentation");
 
+  await page.goto(`${BASE_URL}/executive/dashboard`, { waitUntil: "domcontentloaded" });
+  const executiveShortcut = page.locator('[data-executive-director-header="true"]').getByRole("button", { name: "Open presentation" });
+  await executiveShortcut.waitFor({ state: "visible" });
+  await executiveShortcut.click();
+  await page.getByRole("button", { name: "Close presentation" }).click();
+  await page.locator('[data-executive-director-header="true"]').waitFor({ state: "visible" });
+  assert.equal(new URL(page.url()).pathname, "/executive/dashboard", "Closing the deck must return to the Executive Director route.");
+
   for (const [slide, route, label] of destinations) {
     await page.goto(`${BASE_URL}/presentation#${slide}`, { waitUntil: "domcontentloaded" });
     const link = page.getByRole("link", { name: `${label} (opens in a new tab)` });
