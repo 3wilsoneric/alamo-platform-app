@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import type { WorkforceOpenPosition, WorkforceSummary } from "../../../shared/types/platformSnapshot";
 import { readStorageItem, writeStorageItem } from "../../../shared/storage/browserStorage";
@@ -167,38 +167,32 @@ function BriefingUpdate({ lines }: { lines: Line[] }) {
   }, [animate, total]);
 
   let offset = 0;
+  const visibleLines = lines.flatMap((line, index) => {
+    const lineLength = length(line);
+    const visible = Math.max(0, Math.min(lineLength, revealed - offset));
+    const streaming = typing && visible < lineLength && (visible > 0 || index === 0);
+    offset += lineLength;
+    return visible > 0 || streaming ? [{ ...line, visible, streaming }] : [];
+  });
+  const [summary, ...details] = visibleLines;
+
+  const renderLine = (line: (typeof visibleLines)[number]) => (
+    <>
+      {reveal(line.segments, line.visible)}
+      {line.streaming ? <span className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
+    </>
+  );
+
   return (
     <section
       data-workforce-executive-update="true"
       aria-label="Workforce briefing"
       aria-busy={typing}
-      className="mb-6 max-w-[1120px] rounded-[16px] bg-[#f4f7f5] px-4 py-4 text-[#46504b] sm:px-5 sm:py-5"
+      className="mb-6 w-full rounded-[24px] border border-[#e2ded4] bg-[linear-gradient(135deg,#faf6ef_0%,#f2f7f5_58%,#f5f3f8_100%)] px-5 py-5 text-[#46504b] shadow-[0_10px_30px_rgba(65,59,48,0.05)] sm:px-8 sm:py-7 lg:px-10 lg:py-8"
     >
-      <div className="flex items-start gap-3.5">
-        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#dcebe5] text-[#176d51] sm:h-9 sm:w-9">
-          <Sparkles className="h-4 w-4" aria-hidden="true" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex min-h-8 items-center gap-2">
-            <span className="text-[12px] font-semibold text-[#263c35] sm:text-[13px]">Briefing</span>
-            <span className="text-[10px] text-[#7a847f]" aria-hidden="true">{typing ? "Composing…" : "Current update"}</span>
-          </div>
-          <div className="mt-2.5 space-y-2 text-[13px] leading-6 sm:text-[14px] sm:leading-7">
-            {lines.map((line) => {
-              const lineLength = length(line);
-              const visible = Math.max(0, Math.min(lineLength, revealed - offset));
-              const streaming = typing && visible > 0 && visible < lineLength;
-              offset += lineLength;
-              if (visible === 0) return null;
-              return (
-                <p key={line.key} data-workforce-executive-line={line.key}>
-                  {reveal(line.segments, visible)}
-                  {streaming ? <span className="ml-0.5 inline-block animate-pulse font-semibold text-[#0f8b73]" aria-hidden="true">▍</span> : null}
-                </p>
-              );
-            })}
-          </div>
-        </div>
+      {summary ? <p data-workforce-executive-line={summary.key} className="max-w-[1280px] text-[18px] leading-7 tracking-[-0.018em] text-[#3f4b46] sm:text-[21px] sm:leading-8">{renderLine(summary)}</p> : null}
+      <div className="mt-5 max-w-[1320px] space-y-3 border-t border-[#d6e2dc] pt-5 text-[15px] leading-7 text-[#52605a] sm:text-[16px]">
+        {details.map((line) => <p key={line.key} data-workforce-executive-line={line.key}>{renderLine(line)}</p>)}
       </div>
     </section>
   );
@@ -229,19 +223,19 @@ function ActionList({
       <div className={`flex items-center justify-between gap-4 px-4 py-4 sm:px-5 ${treatment.surface}`}>
         <div>
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f7974]">{kicker}</p>
-          <h3 className="mt-1 text-[17px] font-semibold tracking-[-0.025em] text-[#263c35]">{title}</h3>
+          <h3 className="mt-1 text-[18px] font-semibold tracking-[-0.025em] text-[#263c35]">{title}</h3>
         </div>
         <span className={`inline-flex min-w-9 items-center justify-center rounded-full px-2.5 py-1.5 text-[12px] font-semibold tabular-nums ${treatment.count}`}>{items.length}</span>
       </div>
       {items.length ? (
-        <ul className="max-h-[420px] space-y-2 overflow-y-auto p-3 sm:p-4">
+        <ul className="space-y-2 p-3 sm:p-4">
           {items.map((item) => {
             const body = (
               <>
                 <span className={`inline-flex w-fit whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[10px] font-semibold ${treatment.chip}`}>{item.chip}</span>
                 <span className="min-w-0">
-                  <span className="block truncate text-[11px] font-semibold text-[#263c35]">{item.primary}</span>
-                  <span className="mt-1 block text-[9px] leading-4 text-[#7a817d]">{item.secondary}</span>
+                  <span className="block text-[13px] font-semibold leading-5 text-[#263c35]">{item.primary}</span>
+                  <span className="mt-1 block text-[11px] leading-4 text-[#7a817d]">{item.secondary}</span>
                 </span>
                 {item.href ? <ArrowRight className="h-3.5 w-3.5 text-[#0f795f] transition-transform group-hover:translate-x-0.5" aria-hidden="true" /> : <span />}
               </>

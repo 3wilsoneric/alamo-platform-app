@@ -68,6 +68,7 @@
     "check:presentation": "node scripts/check-presentation.mjs",
     "check:presentation:release": "PRESENTATION_CONTENT_REQUIRED=true node scripts/check-presentation.mjs",
     "check:browser-presentation": "node scripts/check-browser-presentation.mjs",
+    "check:browser-workforce-demo": "node scripts/check-browser-workforce-demo.mjs",
     "presentation:prepare-release": "node scripts/prepare-presentation-release.mjs",
     "check:workforce-dashboard": "node scripts/check-workforce-dashboard.mjs",
     "check:regression-replays": "node scripts/check-regression-replays.mjs",

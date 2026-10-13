@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
+import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import PresentationShortcut from "../../presentation/PresentationShortcut";
 
 const PLATFORM_PAGES = [
@@ -23,7 +24,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
       : pathname === "/" || pathname.startsWith("/home") || pathname.startsWith("/communities") ? "home" : "";
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
-  const canViewOwnerWorkspace = usePlatformOwnerAccess();
+  const canViewOwnerWorkspace = usePlatformOwnerAccess() || (import.meta.env.DEV && isE2EAuthBypassEnabled);
   const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace);
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);

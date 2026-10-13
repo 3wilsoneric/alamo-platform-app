@@ -16,6 +16,7 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 import { StaffingMap } from "../components/StaffingMap";
 import WorkforceBriefing from "../components/WorkforceBriefing";
+import { demoWorkforce } from "../demoWorkforce";
 
 type ConnectedWorkforce = Extract<WorkforceSummary, { status: "connected" }>;
 type ColumnKey = "sourcing" | "interviewing" | "hiring";
@@ -64,16 +65,26 @@ function WorkforceOverview() {
 
   const workforce = dashboard?.workforce;
   const connected = workforce?.status === "connected" ? workforce : null;
+  const demo = import.meta.env.DEV && !connected;
+  const displayed = connected ?? (demo ? demoWorkforce : null);
 
   return (
     <div
       data-workforce-overview="true"
-      className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-white px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
+      className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-[#fbfaf7] px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
     >
       <div className="mx-auto w-full max-w-[1540px] pt-4 sm:pt-6">
         <h1 className="sr-only">Workforce</h1>
-        {connected ? (
-          <WorkforceSurfaces workforce={connected} />
+        {displayed ? (
+          <>
+            {demo ? (
+              <div data-workforce-demo="true" role="status" className="mb-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-[#d9c89e] bg-[#fff8e9] px-4 py-3 text-[12px] leading-5 text-[#71582b]">
+                <strong className="text-[13px]">Demo data</strong>
+                <span>Fictional staffing and hiring examples. This local preview is not connected to Alamo Workforce or Paylocity.</span>
+              </div>
+            ) : null}
+            <WorkforceSurfaces workforce={displayed} />
+          </>
         ) : loading ? (
           <p role="status" className="py-16 text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-[#737b77]">Loading workforce</p>
         ) : (
@@ -100,18 +111,18 @@ type Surface = "board" | "briefing";
 /** Same two-surface layout as Admissions: a briefing and the working board, addressable by ?view=. */
 function WorkforceSurfaces({ workforce }: { workforce: ConnectedWorkforce }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const surface: Surface = searchParams.get("view") === "briefing" ? "briefing" : "board";
+  const surface: Surface = searchParams.get("view") === "board" ? "board" : "briefing";
 
   function show(next: Surface) {
     const params = new URLSearchParams(searchParams);
-    if (next === "briefing") params.set("view", "briefing");
+    if (next === "board") params.set("view", "board");
     else params.delete("view");
     setSearchParams(params, { replace: false });
   }
 
   return (
     <>
-      <nav aria-label="Workforce pages" className="mb-5 border-b border-[#d9dfdb]">
+      <nav aria-label="Workforce pages" className="mb-5 border-b border-[#d9dfdb] bg-[#fbfaf7]">
         <div role="tablist" className="flex items-end gap-7">
           {(["briefing", "board"] as const).map((item) => (
             <button
@@ -120,7 +131,7 @@ function WorkforceSurfaces({ workforce }: { workforce: ConnectedWorkforce }) {
               role="tab"
               aria-selected={surface === item}
               onClick={() => show(item)}
-              className={`-mb-px min-h-11 border-b-2 px-0.5 text-[13px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${surface === item ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
+              className={`-mb-px min-h-12 border-b-2 px-0.5 text-[15px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73] ${surface === item ? "border-[#0f8b73] font-semibold text-[#163f36]" : "border-transparent font-medium text-[#69716c] hover:border-[#b8c6bf] hover:text-[#303532]"}`}
             >
               {item === "briefing" ? "Briefing" : "Hiring board"}
             </button>

@@ -22,8 +22,8 @@ To open it to leadership, remove `ownerOnly` from the navigation entry, the
 page redirect, and the API assertion together. It follows the Admissions board pattern: every element says what
 to do next and links to the place to do it.
 
-- two surfaces, like Admissions: **Briefing** (`/workforce?view=briefing`) and
-  **Hiring board** (default)
+- two surfaces, like Admissions: **Briefing** (default) and **Hiring board**
+  (`/workforce?view=board`)
 - the briefing opens with a three-sentence update typed out once per session
   (open seats and who is in offer and clearance, the longest-waiting role with
   no candidates, and scheduling blocks plus credentials expiring soon), then
@@ -42,6 +42,12 @@ to do next and links to the place to do it.
 The page shows no headline statistics or trend lines. It carries counts and job
 titles only, never staff or applicant names, emails, or employee numbers. It
 does not iframe the Workforce app.
+
+Local Vite development shows a clearly labeled fictional Workforce fixture when
+the aggregate feed is disconnected. This makes the briefing, hiring board,
+filters, and mobile layout usable for design review without implying that the
+counts came from HR. The fixture has no links into Workforce and is excluded
+from production builds. The owner-only access boundary remains in place.
 
 ## Workforce summary contract
 
