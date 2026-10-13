@@ -55,6 +55,43 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Licensing upload and analyst-gate repair — 2026-10-13
+
+The Executive Director Licensing folder keeps the Alamo Health header and
+realistic file treatment, but the Upload view no longer shows a decorative
+LIC 624 document alongside the actual drop zone. Its tab is simply `Upload`,
+with one clear `Upload incident reports` heading. The private desktop
+presentation and server runtime from the preceding production release remain
+unchanged.
+
+- source merge commit: `f02a9e5` on `codex/licensing-gate-release-20261013`
+- ACR build: `cc6n`
+- image tag: `alamo-platform:licensing-gate-f02a9e5`
+- image digest: `sha256:1096d419d1705f517fdffccb98572c4ae06fb75fc5a4f656dfa84e961b87cd13`
+- active revision: `alamo-platform-prod-web--licensing-ui-1013`
+- rollback digest: `sha256:e3d3b33871272b2ba5058c5e9cf534a1cfbfefe582476873a98170f2bb09f189`
+- active browser assets: `/assets/index-BOygJL_n.js` and
+  `/assets/index-B95HeeUQ.css`
+
+The local analyst snapshot contains January–June 2026 monthly rows, not
+July–September. The previously failing analyst tests were corrected to check
+loaded periods and to retain explicit `not_loaded` assertions for later ones;
+this does not publish or imply newer data. The merged candidate passed all 27
+predeployment ship stages. The frontend-only image replaced `/app/dist` on the
+exact preceding presentation digest; the private presentation package and
+server module were verified present in the candidate image. The new revision
+became Healthy and Running with one replica and 100% traffic. Live root,
+Admissions, and chat HTML, compressed HTML, JavaScript, and CSS matched the
+tested build. Production smoke passed 4/4. A signed-in Chrome session reloaded
+the new Executive Director Licensing view and verified the Reports and Upload
+tabs, the actual upload drop zone, and the removal of the decorative document.
+
+The formal postdeployment `check:ship` remains unverified: its required
+Playwright signed-in stage fails before navigation because this checkout has no
+`.auth/alamo-production-storage-state.json`. A non-required invocation skips
+that stage; it is not a pass. Provision a dedicated authorized test session
+and rerun the required signed-in smoke, guided questions, and full ship gate.
+
 ### Portfolio incident history — 2026-10-12
 
 The main Platform now has `/incidents/history`, reached from Incident Center,
