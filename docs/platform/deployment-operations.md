@@ -55,6 +55,40 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Private presentation replacement — 2026-10-13
+
+The authorized `/presentation` viewer now serves the supplied 28-slide Alamo
+Data Strategy deck in place of the previous 23-slide package. Slide HTML,
+images, ordering, and speaker notes were copied from the supplied ZIP without
+rewriting the presentation. The existing private, self-hosted fonts were
+retained so the new deck renders without fetching Google Fonts. The deck stays
+in the Git-ignored `server/presentations/alamo-data-strategy` directory and is
+not published as a static asset; the existing exact-identity authorization and
+private, no-store API responses remain unchanged.
+
+- source ZIP SHA-256: `292040105186b599b3a72d7b5499e2e49557fbf0e5a471d015dd71f8ee8e1d1a`
+- source commit: `8593462` on `codex/licensing-gate-release-20261013`
+- ACR build: `cc6q`
+- image tag: `alamo-platform:presentation-v2-8593462`
+- image digest: `sha256:8a84fa5cd9cfed6eab6be6a1034dd62a73b2ae43beb4207833a5f98b93fb1c7f`
+- active revision: `alamo-platform-prod-web--presentation-v2-1013`
+- rollback digest: `sha256:1096d419d1705f517fdffccb98572c4ae06fb75fc5a4f656dfa84e961b87cd13`
+
+`Dockerfile.presentation-content-release` added only the private deck directory
+to the exact preceding production image. `/app/dist/index.html`,
+`/app/api/platform.js`, and `/app/server/presentation.mjs` were byte-identical
+between the old and new images. The package passed its 28-slide manifest,
+asset, notes, tenant-boundary, and authorization checks. All 28 slides were
+rendered at 1920 × 1080 with no clipped text or missing images. The full
+predeployment ship gate passed 27/27 stages. The new Azure revision became
+Healthy and Running with one replica and 100% traffic; production smoke passed
+4/4. In a signed-in Chrome session, the live viewer showed slide 1 of 28,
+keyboard navigation reached slide 28, and speaker notes opened. Anonymous
+presentation and asset API requests returned 401 with private, no-store
+caching. The formal postdeployment `check:ship` was not run because this
+checkout still lacks the required signed-in Playwright storage state; its
+predeployment equivalent and the live signed-in viewer check passed.
+
 ### Licensing upload and analyst-gate repair — 2026-10-13
 
 The Executive Director Licensing folder keeps the Alamo Health header and
