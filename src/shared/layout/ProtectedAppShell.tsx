@@ -38,6 +38,7 @@ export default function ProtectedAppShell() {
   const isAdmissionsExperience = isAdmissionsPath(location.pathname);
   const isExecutiveDirectorExperience = isExecutiveDirectorPath(location.pathname);
   const isPipelineHandoff = location.pathname === "/pipeline";
+  const isPresentation = location.pathname === "/presentation";
   const isStandaloneEditorial =
     location.pathname === "/outreach" || location.pathname === "/fiftystate";
   const isLicensingExperience = location.pathname === "/licensing" || location.pathname === "/analytics/licensing";
@@ -68,6 +69,7 @@ export default function ProtectedAppShell() {
     isExecutiveDirectorExperience ||
     isPipelineHandoff ||
     isLicensingExperience ||
+    isPresentation ||
     admissionsAccess.restrictedToAdmissions ||
     executiveDirectorAccess.restrictedToExecutive;
   const accountKey = isE2EAuthBypassEnabled
@@ -289,6 +291,8 @@ export default function ProtectedAppShell() {
       />
     );
   }
+
+  if (isPresentation) return <Outlet key={accountKey} />;
 
   return (
     <div className="app-theme-root relative min-h-screen overflow-x-clip bg-white text-[#241f18]">

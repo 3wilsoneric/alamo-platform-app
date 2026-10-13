@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-12
+- updated: 2026-10-13
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -99,6 +99,43 @@ records beginning 2025-04-01 and ending 2026-10-11. Local Databricks read-only
 queries for the full governed view were denied SELECT permission, so do not
 describe this as complete history until live permissions and coverage are
 verified.
+### Private desktop presentation — 2026-10-13
+
+The desktop Platform header now has an authorized presentation shortcut into a
+full-window 23-slide viewer with browser full screen, slide selection, keyboard
+navigation, and optional speaker notes. The phone menu has no shortcut. Eric's
+exact tenant object ID is enabled; Andrew remains disabled until his exact
+identity is configured. No administrator role, name match, service principal,
+or production development bypass can grant access. Slides, images, and bundled
+fonts are delivered only through authenticated, private/no-store API requests.
+
+- source commit: `28f6214` on `codex/platform-presentation-release`
+- image tag: `alamo-platform:presentation-28f6214`
+- image digest: `sha256:e3d3b33871272b2ba5058c5e9cf534a1cfbfefe582476873a98170f2bb09f189`
+- active revision: `alamo-platform-prod-web--presentation-28f6214`
+- rollback digest: `sha256:031790d22e0b126f8172fef4667a131cb5bb3c9596f4709ad2b00425e6867084`
+- active browser assets: `/assets/index-BxFIKohb.js` and
+  `/assets/index-7U5CU34O.css`
+
+The release starts from the exact production source and image, retaining the
+existing incident-history and executive changes. It adds the viewer, three
+presentation routes to the exact production API adapter, and its private asset
+package; the remaining runtime and configuration are preserved. The repository
+is public, so presentation content is Git-ignored and was not uploaded to
+GitHub. Recover the private package, including font licenses, from
+`/app/server/presentations/alamo-data-strategy` in this authenticated Azure
+registry image. Anonymous registry pulls are disabled.
+
+Documentation, dependency checks, both TypeScript gates, lint, desktop browser
+review, and presentation authorization/content checks passed. The latter also
+passed inside the actual container using signed test tokens. Live checks found
+one healthy ready replica at 100% traffic, 4/4 production smoke probes, identical
+entry documents in identity/gzip/Brotli, exact deployed browser asset hashes,
+401/no-store responses from anonymous deck/image API requests, and no deck
+content at public static paths. Full pre/post ship gates remain blocked by
+missing local Databricks credentials; they are not reported as passing. A live
+signed-in visual check requires the user's Microsoft session, which was not
+available in the verification browser or Azure CLI.
 
 ### Executive Director mobile detail and Licensing intake refinement — 2026-10-10
 
