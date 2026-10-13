@@ -354,7 +354,7 @@ export default function ExecutiveDirectorPage() {
             {catalog?.nextCursor ? <footer className="licensing-reports__footer"><span>{catalog.submissions.length} of {catalog.filteredTotal} reports</span><button className="licensing-button" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Loading" : "Load more reports"}</button></footer> : null}
           </section>
           <section id="licensing-panel-upload" role="tabpanel" aria-labelledby="licensing-tab-upload" hidden={view !== "upload"}>
-            <LicensingBulkUpload key={facilityId} batch={batch} revision={form?.revision ?? "4/99"} busy={workspaceBusy} ready={Boolean(bootstrap)} onUpload={(retryFailed) => void submit(retryFailed)} onReview={(submissionId) => void openSubmission(submissionId)} />
+            <LicensingBulkUpload key={facilityId} batch={batch} busy={workspaceBusy} ready={Boolean(bootstrap)} onUpload={(retryFailed) => void submit(retryFailed)} onReview={(submissionId) => void openSubmission(submissionId)} />
           </section>
           {activeSubmission && form ? <section id="licensing-panel-review" role="tabpanel" aria-labelledby="licensing-tab-review" hidden={view !== "review"} inert={Boolean(openingSubmissionId) || uploading} aria-busy={Boolean(openingSubmissionId) || uploading}>
             <Lic624ReviewWorkspace submission={activeSubmission} form={form} onClose={closeReview} onSave={saveReview} onDirtyChange={setReviewDirty} onBusyChange={setReviewBusy} onOpenOriginal={() => void openOriginal(activeSubmission)} />

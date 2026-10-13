@@ -1,11 +1,10 @@
-import { CheckCircle2, CopyCheck, FileScan, FileText, LoaderCircle, PencilLine, RotateCcw, ShieldCheck, Upload, X } from "lucide-react";
+import { CheckCircle2, CopyCheck, FileText, LoaderCircle, PencilLine, RotateCcw, ShieldCheck, Upload, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { MAX_LICENSING_BATCH_FILES, type LicensingUploadBatch, type LicensingUploadEntry } from "./useLicensingUploadBatch";
 import "../licensingBulkUpload.css";
 
 interface Props {
   batch: LicensingUploadBatch;
-  revision: string;
   busy: boolean;
   ready: boolean;
   onUpload: (retryFailed: boolean) => void;
@@ -25,7 +24,7 @@ function receiptLabel(entry: LicensingUploadEntry) {
   return entry.receipt ? "Extraction failed" : null;
 }
 
-export default function LicensingBulkUpload({ batch, revision, busy, ready, onUpload, onReview }: Props) {
+export default function LicensingBulkUpload({ batch, busy, ready, onUpload, onReview }: Props) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const summaryRef = useRef<HTMLParagraphElement>(null);
@@ -44,9 +43,8 @@ export default function LicensingBulkUpload({ batch, revision, busy, ready, onUp
   const clear = () => { batch.clear(); if (inputRef.current) inputRef.current.value = ""; focusPicker(); };
 
   return <div data-licensing-bulk-upload="true" className="licensing-upload licensing-bulk-upload">
-    <aside className="licensing-upload__document" aria-hidden="true"><div className="licensing-upload__document-code">LIC 624<span>Rev. {revision}</span></div><FileScan /><h2>Unusual Incident<br />/ Injury Report</h2><div className="licensing-upload__document-rule" /><span>Original reports</span></aside>
     <div className="licensing-upload__body">
-      <header><h2>LIC 624 intake</h2><p>Upload originals, then check and edit each extracted form.</p></header>
+      <header><h2>Upload incident reports</h2><p>Add the original files for review.</p></header>
       <div data-executive-director-upload="true" className={`licensing-dropzone${dragging ? " is-dragging" : ""}${batch.entries.length ? " licensing-dropzone--compact" : ""}`} onDragEnter={(event) => { event.preventDefault(); if (!busy) setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); addFiles(Array.from(event.dataTransfer.files)); }}>
         <Upload aria-hidden="true" /><h3><span className="licensing-dropzone__desktop-label">Drop your reports here</span><span className="licensing-dropzone__mobile-label">Choose reports to upload</span></h3><p>PDF, JPG, or PNG · 20 MB each · Up to {MAX_LICENSING_BATCH_FILES} files per batch</p>
         <label htmlFor={inputId} className={`licensing-button${busy || batch.entries.length >= MAX_LICENSING_BATCH_FILES ? " is-disabled" : ""}`}>{batch.entries.length ? "Add files" : "Choose files"}</label>

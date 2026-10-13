@@ -355,7 +355,7 @@ assert.match(shell, /executiveDirectorAccess\.restrictedToExecutive/);
 assert.match(shell, /window\.location\.replace\("\/executive\/dashboard"\)/);
 assert.match(page, /<LicensingBulkUpload/);
 assert.match(batchUpload, /data-executive-director-upload="true"/);
-assert.match(batchUpload, /LIC 624 intake/);
+assert.match(batchUpload, /Upload incident reports/);
 assert.match(page, /Review form/);
 assert.match(dashboardPage, /data-executive-community-dashboard="true"/);
 assert.match(dashboardPage, /data-daily-operating-summary="true"/);

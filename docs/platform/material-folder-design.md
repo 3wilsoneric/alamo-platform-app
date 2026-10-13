@@ -366,10 +366,14 @@ single-line, retain at least `14px` type and `10px` inline padding, and hide
 decorative icons instead of shrinking or hiding labels.
 
 Community and LIC 624 are a printed label on the cover: no tab mask, raised
-shoulders, or inactive-tab affordance. At widths up to `1023px`, this label
-stacks above the working tabs; on wider screens it sits to their right. Long
-community names wrap within their own area. Keep an accessible page heading
-even when the top navigation makes a second visible title unnecessary.
+shoulders, badge border, or inactive-tab affordance. Keep the community and
+form identifier adjacent as one quiet folio line; do not push them to opposite
+ends of the cover. At widths up to `1023px`, this label stacks above the
+working tabs; on wider screens it sits to their right. Long community names
+wrap within their own area. Keyboard focus on a tab underlines its label rather
+than drawing a rectangular outline across the shaped stock. Keep an accessible
+page heading even when the top navigation makes a second visible title
+unnecessary.
 
 On phones, the review header gives the filename the full reading width and
 keeps the close control separately at the upper right. Extraction, required
@@ -484,7 +488,7 @@ emoji, novelty fonts, or generated logos.
 | Below `1200px` | Baseline folder becomes two columns with history below; MAR rings disappear. |
 | Up to `1023px` | Licensing community/form context stacks above the tabs; review header separates the close control from file identity and actions. |
 | Below `960px` | Chart and context panels stack where needed. Recalculate fold position or remove it. |
-| Below `768px` | Licensing/register rows become stacked records. Hide tilted upload-document decoration. |
+| Below `768px` | Licensing/register rows become stacked records. The upload form remains a single reading column at every width. |
 | Below `640px` | Single reading column; no fold/spine hardware in the content flow; Community document dialogs fill the viewport below the `99px` app header. LIC 624 metadata uses three label/value rows, full-width filenames, and a separate upper-right close control. |
 | Chart container at/below `440px` | Reduce visible tick/point labels, not the data series; retain selected/focused values. |
 | Up to `420px` | Licensing tabs keep at least `14px` labels and hide only decorative icons. Upload-queue filenames span the row; status and actions sit underneath. |
