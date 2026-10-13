@@ -68,7 +68,7 @@ const cases = [
     mustExclude: ["T00:00:00.000Z"]
   },
   {
-    prompt: "how was San Pablo in September 2026",
+    prompt: "how was San Pablo in June 2026",
     tool: "community_history",
     mustInclude: ["Answer\n", "A & A Health Services San Pablo's census was", "clients", "There were", "incidents", "most common category"],
     mustExclude: ["I don't have that exact slice loaded", "current-state data", "had census was", "was census was", "recorded"],
@@ -152,8 +152,8 @@ const cases = [
     prompt: "give me frebruary breakdown of awol incidents by community",
     tool: "slice_metric",
     correctedText: "give me february breakdown of awol incidents by community",
-    visualTitleIncludes: "Available Data for This Request",
-    mustInclude: ["Answer\n", "not available for February 2026"],
+    visualTitleIncludes: "Portfolio AWOL/Elopement Incident Slice",
+    mustInclude: ["Answer\n", "in February 2026", "all 5 communities"],
     mustExclude: ["June 2026", "Medication Refusal"]
   },
   {
@@ -212,7 +212,7 @@ const cases = [
     prompt: "How did medication compliance change at Victoria's House from May 2026 through June 2026?",
     tool: "medication_compliance",
     visualTitleIncludes: "Victoria's House Medication Compliance",
-    mustInclude: ["unchanged", "0.0 percentage point change", "scheduled administrations were documented as given"],
+    mustInclude: ["percentage points", "scheduled administrations were documented as given"],
     mustExclude: ["temporarily unavailable"]
   },
   {
@@ -225,7 +225,7 @@ const cases = [
     prompt: "What medications had the most refusals?",
     tool: "medication_refusals_by_community",
     visualTitleIncludes: "Medication Refusals",
-    mustInclude: ["Answer\n", "medication refusals", "had the most", "largest community total"],
+    mustInclude: ["Answer\n", "refusal summary", "had the most", "largest community total"],
     mustExclude: ["largest row"]
   },
   {

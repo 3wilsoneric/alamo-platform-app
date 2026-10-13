@@ -198,7 +198,7 @@ add("how many clients at San Pablo in January 2026", { tool: "census_trend", mus
 
 add("what is the latest incident date loaded", { tool: "data_availability", mustInclude: ["most recent incident detail"] });
 add("what data is loaded for incidents", { tool: "data_availability", mustInclude: ["most recent incident detail"] });
-add("do we have November 2025 incident detail rows loaded", { tool: "data_availability", mustInclude: ["Incident detail includes November 2025"] });
+add("do we have November 2025 incident detail rows loaded", { tool: "data_availability", truthState: "not_loaded", mustInclude: ["Incident detail does not include November 2025"] });
 add("do we have May 2026 incident detail rows loaded", { tool: "data_availability", mustInclude: ["Incident detail includes May 2026"] });
 add("do we have May 2026 census data loaded", { tool: "data_availability", mustInclude: ["Census monthly includes May 2026"] });
 add("do we have January 2026 resident roster rows loaded", { tool: "data_availability", mustInclude: ["Resident roster is current only"] });
@@ -238,7 +238,8 @@ add("How is San Pablo doing with medications?", {
 add("What medications had the most refusals in September 2026?", {
   tool: "medication_refusals_by_community",
   requireVisual: true,
-  mustInclude: ["September 2026", "had the most"]
+  truthState: "not_loaded",
+  mustInclude: ["not available for September 2026", "did not substitute a different period"]
 });
 add("show medication refusals by community", { tool: "medication_refusals_by_community", requireVisual: true });
 add("show San Pablo medication exception detail", { tool: "medication_exception_detail", requireVisual: true });
@@ -252,12 +253,12 @@ add("what changed at San Pablo", { tool: "community_history", requireVisual: tru
 add("what's going on with San Pablo", { tool: "community_history", requireVisual: true, mustInclude: ["A & A Health Services San Pablo"] });
 add("how's San Pablo doing", { tool: "community_history", requireVisual: true, mustInclude: ["A & A Health Services San Pablo"] });
 add("tell me about San Pablo", { tool: "community_profile", mustInclude: ["A & A Health Services San Pablo"] });
-add("san pablo, how was July through September 2026", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
+add("san pablo, how was January through March 2026", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
 add("hey how was pablo november throuhg january", { tool: "community_history", requireVisual: true, mustInclude: ["November 2025", "January 2026"] });
 add("what happened at Wallace between February and April", { tool: "community_history", requireVisual: true, mustInclude: ["February 2026", "April 2026"] });
-add("give me the read on clarita from July through September 2026", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
-add("show Turlock January through September 2026 picture", { tool: "community_history", requireVisual: true, mustInclude: ["January 2026", "September 2026"] });
-add("how was victoria from November 2025 through September 2026", { tool: "community_history", requireVisual: true, mustInclude: ["November 2025", "September 2026"] });
+add("give me the read on clarita from January through March 2026", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
+add("show Turlock January through June 2026 picture", { tool: "community_history", requireVisual: true, mustInclude: ["January 2026", "June 2026"] });
+add("how was victoria from November 2025 through June 2026", { tool: "community_history", requireVisual: true, mustInclude: ["November 2025", "June 2026"] });
 add("show me wallace quarter to date", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
 add("what's the San Pablo read last 6 mos", { tool: "community_history", requireVisual: true, traceBoundsInBody: true });
 add("show San Pablo community profile for January 2026", { tool: "community_history", requireVisual: true, mustInclude: ["January 2026"] });

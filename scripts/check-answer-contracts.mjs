@@ -363,7 +363,7 @@ assert(awolEvents.visual?.valueLabel === "Incidents", "AWOL incident count did n
 assert(!/unique resident/i.test(textOf(awolEvents)), "AWOL incident count incorrectly answered unique residents", awolEvents);
 
 const awolClientsLastMonth = await checkedTool({
-  content: "how many clients went AWOL in August 2026",
+  content: "how many clients went AWOL in May 2026",
   sessionId: newSession("awol-clients-last-month")
 }, "AWOL clients last month");
 assertValid(awolClientsLastMonth, "AWOL clients last month");
@@ -374,7 +374,7 @@ assert(/[\d,]+ unique residents/i.test(textOf(awolClientsLastMonth)), "AWOL clie
 assert(/unique residents (?:were )?involved (?:in|across) [\d,]+ .*incidents/i.test(textOf(awolClientsLastMonth)), "AWOL clients last month exposed unclear grain wording", awolClientsLastMonth);
 
 const awolEventsLastMonth = await checkedTool({
-  content: "total AWOL events in August 2026",
+  content: "total AWOL events in May 2026",
   sessionId: newSession("awol-events-last-month")
 }, "AWOL events last month");
 assertValid(awolEventsLastMonth, "AWOL events last month");
@@ -549,7 +549,7 @@ assert(!/AWOL\/Elopement detail|May through June/i.test(textOf(broadReset)), "Br
 
 const communityHistorySession = newSession("community-history");
 const sanPabloLastThreeMonths = await checkedTool({
-  content: "san pablo, how was July through September 2026",
+  content: "san pablo, how was January through March 2026",
   sessionId: communityHistorySession
 }, "Community history last-three-months");
 assertValid(sanPabloLastThreeMonths, "Community history last-three-months");
@@ -586,31 +586,31 @@ const broadCommunityHistoryPrompts = [
     includes: ["February 2026", "April 2026"]
   },
   {
-    content: "give me the read on clarita from July through September 2026",
+    content: "give me the read on clarita from January through March 2026",
     facilityId: "345",
-    period: "2026-07, 2026-08, 2026-09",
+    period: "2026-01, 2026-02, 2026-03",
     includeTraceBounds: true
   },
   {
-    content: "show Turlock January through September 2026 picture",
+    content: "show Turlock January through June 2026 picture",
     facilityId: "344",
     periodStart: "2026-01",
     includeTraceBounds: true
   },
   {
-    content: "how was victoria from November 2025 through September 2026",
+    content: "how was victoria from November 2025 through June 2026",
     facilityId: "342",
     periodStart: "2025-11",
     includeTraceBounds: true
   },
   {
-    content: "what happened at Wallace between July and September 2026",
+    content: "what happened at Wallace between January and March 2026",
     facilityId: "343",
-    period: "2026-07, 2026-08, 2026-09",
+    period: "2026-01, 2026-02, 2026-03",
     includeTraceBounds: true
   },
   {
-    content: "what's the San Pablo read from April through September 2026",
+    content: "what's the San Pablo read from January through June 2026",
     facilityId: "337",
     periodCount: 6,
     includeTraceBounds: true

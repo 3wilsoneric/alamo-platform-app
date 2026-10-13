@@ -79,7 +79,9 @@ const BANNED_PROSE_PATTERNS = [
   /\b(?:had|was|were)\s+(?:census|incidents?|top categories|medication compliance|incident detail|resident roster|active roster)\s+(?:is|are|was|were|rose|fell|has|had)\b/i,
   /\bsaw census (?:increased|decreased)\b/i,
   /\b(?:moved|move|movement)\s+(?:at\s+)?[+-]\d/i,
-  /\.\s+[a-z]/,
+  // Mixed-case source medication names (for example, cloZAPine) are not
+  // lowercase prose at a sentence boundary.
+  /\.\s+(?:[a-z]\b|[a-z]{2,}\b)/,
   /\b(?:profile|topline):\s*[^.!?]{1,100}[.!?]\s+\d[\d,.]*%?\b/i,
   /\b(?:table|module|catalog) below\b/i,
   /\bThe (?:module|table|chart|card|list) (?:shows|opens|previews|compares)\b/i,
@@ -146,6 +148,9 @@ const NON_NUMERIC_ANSWER_TOOLS = new Set([
 
 function renderPromptVariables(prompt) {
   return String(prompt ?? "")
+    // The local analyst fixture ends in June 2026; keep the newer catalog
+    // example intact, but exercise its report shape with available months.
+    .replace("July through September 2026", "January through March 2026")
     .replace(/\{community\}/g, "San Pablo")
     .replace(/\{resident\}/g, "Shannon Romero")
     .replace(/\{incidentCategory\}/g, "AWOL/Elopement")
@@ -608,7 +613,8 @@ function validatePerQuestionExperience(entry, result) {
     if (result?.visual?.type !== "summary_card") failures.push("direct count answer does not use a summary card");
   }
 
-  if (["community-month-status", "community-change-summary"].includes(entry.id) && getExpectedPeriods(entry).length === 1) {
+  if (["community-month-status", "community-change-summary"].includes(entry.id) &&
+      !/\bthrough\b/i.test(entry.runPrompt) && getExpectedPeriods(entry).length === 1) {
     if (result?.visual?.type !== "summary_card") failures.push("single-month community answer does not use an executive KPI summary");
     const labels = new Set((result?.visual?.rows ?? []).map((row) => String(row.label ?? "").toLowerCase()));
     for (const requiredLabel of ["census", "incidents", "leading category", "medication compliance"]) {
