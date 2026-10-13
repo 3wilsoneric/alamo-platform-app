@@ -88,11 +88,13 @@ const [app, navigation, platformApi, devApi, pageSource, briefingSource, staffin
 ]);
 const page = [pageSource, briefingSource, staffingSource].join("\n");
 assert.match(app, /path="\/workforce"/);
-// Owner-only until Workforce is connected to live HR data: nav, page, and both API hosts.
+// The live feed remains owner-only; the separately labeled fixture may be shown to Andrew.
 assert.match(navigation, /id: "workforce", label: "Workforce", href: "\/workforce", ownerOnly: true/);
 assert.match(platformApi, /"\/api\/platform\/workforce-dashboard": \(\{ authContext \}\) => \{\s+assertPlatformKnowledgeOwner\(authContext\);\s+return getWorkforceDashboardData\(\);/);
 assert.match(devApi, /"\/api\/platform\/workforce-dashboard"\) \{\s+assertPlatformKnowledgeOwner\(authContext\);/);
-assert.match(pageSource, /if \(!isOwner && !isE2EAuthBypassEnabled\) return <Navigate to="\/home" replace \/>/);
+assert.match(pageSource, /return <WorkforceOverview allowLiveFeed=\{isOwner && !deployedDemo\} \/>/);
+assert.match(pageSource, /if \(!isOwner && !isE2EAuthBypassEnabled && !demoAccess.allowed\) return <Navigate to="\/home" replace \/>/);
+assert.match(pageSource, /if \(!allowLiveFeed\) return;/);
 for (const surface of ["Briefing", "Expiring in 30 days", "Offers and clearance", "No candidates yet", "Needs candidates", "Interviewing", "Ready to hire", "Staffing by community", "Filter by community", "Filter by role"]) {
   assert.ok(page.includes(surface), `Workforce page shows ${surface}`);
 }

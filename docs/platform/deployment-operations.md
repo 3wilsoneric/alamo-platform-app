@@ -46,6 +46,29 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### Fictional Workforce demo — 2026-10-13
+
+The browser-only Workforce demo is deployed with `VITE_WORKFORCE_DEMO=true`.
+It always uses labeled fictional counts and roles; it never requests the live
+Workforce dashboard API. The owner and Andrew's exact presentation-authorized
+account may open `/workforce`. Andrew's Executive Director header links to the
+demo, while the HR API remains owner-only. The real Workforce feed and
+Paylocity integration are not connected by this release.
+
+- ACR build: `cc6v`
+- image digest: `sha256:8991ed82bb0a10e9ee3afd14db1460f2681bd922b5724b544db0ed924e895480`
+- active revision: `alamo-platform-prod-web--workforce-demo-1013`
+- rollback digest: `sha256:435aedccd2f6208d061013bfb9f9e1f87c1b478379810fbccc957432d7938d0a`
+- active browser assets: `/assets/index-PZcFUVpd.js` and `/assets/index-D8Zcsa20.css`
+
+Focused Workforce, access-contract, desktop/mobile, docs, type, and build
+checks passed. The live revision became Running/Healthy with one replica;
+identity, gzip, and Brotli entry documents reference the new assets, while
+anonymous Workforce and presentation access APIs return 401. The full platform
+gate was started but intentionally stopped after the focused release because
+the user requested immediate deployment; it did not report a failure. Andrew's
+signed-in view still requires verification in his own Microsoft session.
+
 Repeated frontend overlays eventually approach the registry's image-depth
 ceiling. When that happens, use `Dockerfile.frontend-rebase` once with the exact
 current production digest as `BASE_IMAGE`. It copies the proven runtime

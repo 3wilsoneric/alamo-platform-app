@@ -14,12 +14,13 @@ spreadsheet or Paylocity data that feeds them.
 
 ## Alamo Workforce overview
 
-`/workforce` is owner-only until Workforce is connected to live HR data: the
-navigation item is hidden from other accounts, the page redirects them home,
-and `/api/platform/workforce-dashboard` answers 404 through
-`assertPlatformKnowledgeOwner`, the same gate as the other owner workspaces.
-To open it to leadership, remove `ownerOnly` from the navigation entry, the
-page redirect, and the API assertion together. It follows the Admissions board pattern: every element says what
+The live `/api/platform/workforce-dashboard` feed remains owner-only through
+`assertPlatformKnowledgeOwner`. A separate build-flagged fictional demo can be
+opened by the owner and Andrew's exact account after the server verifies its
+existing presentation permission. The demo never calls the live Workforce API
+and cannot link into the Workforce app. Other accounts are redirected home.
+This does not grant Andrew any live HR or other owner-workspace access.
+The page follows the Admissions board pattern: every element says what
 to do next and links to the place to do it.
 
 - two surfaces, like Admissions: **Briefing** (default) and **Hiring board**
@@ -44,10 +45,11 @@ titles only, never staff or applicant names, emails, or employee numbers. It
 does not iframe the Workforce app.
 
 Local Vite development shows a clearly labeled fictional Workforce fixture when
-the aggregate feed is disconnected. This makes the briefing, hiring board,
-filters, and mobile layout usable for design review without implying that the
-counts came from HR. The fixture has no links into Workforce and is excluded
-from production builds. The owner-only access boundary remains in place.
+the aggregate feed is disconnected. A production build with
+`VITE_WORKFORCE_DEMO=true` always shows only that fixture and skips the live
+feed request. It makes the briefing, hiring board, filters, and mobile layout
+usable for review without implying the counts came from HR. The fixture has no
+links into Workforce. Production builds without this flag exclude the fixture.
 
 ## Workforce summary contract
 

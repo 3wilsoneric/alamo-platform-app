@@ -4,6 +4,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
+import { usePresentationAccess } from "../../presentation/usePresentationAccess";
 
 import {
   fetchWorkforceDashboard,
@@ -38,19 +39,25 @@ const COLUMN_STYLE: Record<ColumnKey, { surface: string; border: string; accent:
 const PHASE_PIP = ["#b9dccf", "#4f9f86", "#1d5e4b"] as const;
 const STALE_DAYS = 14;
 
-// Owner-only until Workforce is connected to live HR data; the API enforces the same rule.
+const deployedDemo = import.meta.env.VITE_WORKFORCE_DEMO === "true";
+
+// Andrew may see only the fictional demo; the live HR API stays owner-only.
 export default function WorkforcePage() {
   const isOwner = usePlatformOwnerAccess();
-  if (!isOwner && !isE2EAuthBypassEnabled) return <Navigate to="/home" replace />;
-  return <WorkforceOverview />;
+  const demoAccess = usePresentationAccess();
+  if (!isOwner && !isE2EAuthBypassEnabled && !deployedDemo) return <Navigate to="/home" replace />;
+  if (!isOwner && !isE2EAuthBypassEnabled && demoAccess.pending) return <p role="status" className="p-8">Checking Workforce demo access…</p>;
+  if (!isOwner && !isE2EAuthBypassEnabled && !demoAccess.allowed) return <Navigate to="/home" replace />;
+  return <WorkforceOverview allowLiveFeed={isOwner && !deployedDemo} />;
 }
 
-function WorkforceOverview() {
-  const [dashboard, setDashboard] = useState<WorkforceDashboardResponse | null>(readCachedWorkforceDashboard);
-  const [loading, setLoading] = useState(!dashboard);
+function WorkforceOverview({ allowLiveFeed }: { allowLiveFeed: boolean }) {
+  const [dashboard, setDashboard] = useState<WorkforceDashboardResponse | null>(() => allowLiveFeed ? readCachedWorkforceDashboard() : null);
+  const [loading, setLoading] = useState(allowLiveFeed && !dashboard);
   const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
+    if (!allowLiveFeed) return;
     const controller = new AbortController();
     fetchWorkforceDashboard(controller.signal)
       .then((value) => setDashboard(value))
@@ -61,12 +68,12 @@ function WorkforceOverview() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [allowLiveFeed]);
 
   const workforce = dashboard?.workforce;
   const connected = workforce?.status === "connected" ? workforce : null;
-  const demo = import.meta.env.DEV && !connected;
-  const displayed = connected ?? (demo ? demoWorkforce : null);
+  const demo = deployedDemo || (import.meta.env.DEV && !connected);
+  const displayed = demo ? demoWorkforce : connected;
 
   return (
     <div
@@ -80,7 +87,7 @@ function WorkforceOverview() {
             {demo ? (
               <div data-workforce-demo="true" role="status" className="mb-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-[#d9c89e] bg-[#fff8e9] px-4 py-3 text-[12px] leading-5 text-[#71582b]">
                 <strong className="text-[13px]">Demo data</strong>
-                <span>Fictional staffing and hiring examples. This local preview is not connected to Alamo Workforce or Paylocity.</span>
+                <span>Fictional staffing and hiring examples. This demo is not connected to Alamo Workforce or Paylocity.</span>
               </div>
             ) : null}
             <WorkforceSurfaces workforce={displayed} />

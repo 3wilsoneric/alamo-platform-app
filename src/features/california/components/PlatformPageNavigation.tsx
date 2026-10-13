@@ -6,6 +6,7 @@ import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity"
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import PresentationShortcut from "../../presentation/PresentationShortcut";
+import { usePresentationAccess } from "../../presentation/usePresentationAccess";
 
 const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
@@ -25,7 +26,8 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const canViewOwnerWorkspace = usePlatformOwnerAccess() || (import.meta.env.DEV && isE2EAuthBypassEnabled);
-  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace);
+  const { allowed: canViewDemo } = usePresentationAccess();
+  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "workforce" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo));
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {

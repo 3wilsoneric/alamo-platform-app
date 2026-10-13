@@ -39,6 +39,7 @@ export default function ProtectedAppShell() {
   const isExecutiveDirectorExperience = isExecutiveDirectorPath(location.pathname);
   const isPipelineHandoff = location.pathname === "/pipeline";
   const isPresentation = location.pathname === "/presentation";
+  const isDeployedWorkforceDemo = import.meta.env.VITE_WORKFORCE_DEMO === "true" && location.pathname === "/workforce";
   const isStandaloneEditorial =
     location.pathname === "/outreach" || location.pathname === "/fiftystate";
   const isLicensingExperience = location.pathname === "/licensing" || location.pathname === "/analytics/licensing";
@@ -70,6 +71,7 @@ export default function ProtectedAppShell() {
     isPipelineHandoff ||
     isLicensingExperience ||
     isPresentation ||
+    isDeployedWorkforceDemo ||
     admissionsAccess.restrictedToAdmissions ||
     executiveDirectorAccess.restrictedToExecutive;
   const accountKey = isE2EAuthBypassEnabled
@@ -262,7 +264,8 @@ export default function ProtectedAppShell() {
   if (
     executiveDirectorAccess.restrictedToExecutive &&
     !isExecutiveDirectorExperience &&
-    !isPresentation
+    !isPresentation &&
+    !isDeployedWorkforceDemo
   ) {
     return <ExecutiveDirectorZoneRedirect />;
   }
@@ -298,7 +301,7 @@ export default function ProtectedAppShell() {
 
   return (
     <div className="app-theme-root relative min-h-screen overflow-x-clip bg-white text-[#241f18]">
-      {isExecutiveDirectorExperience
+      {isExecutiveDirectorExperience || (isDeployedWorkforceDemo && executiveDirectorAccess.restrictedToExecutive)
         ? <ExecutiveDirectorHeader />
         : <PlatformPageNavigation restricted={admissionsAccess.restrictedToAdmissions} />}
       {!online || staleDataAt ? (
