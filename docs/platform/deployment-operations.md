@@ -55,6 +55,57 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Presentation live links and Andrew access — 2026-10-13
+
+The private 28-slide deck now shows a contextual **Open** link on its four
+Platform/Pipeline screenshot slides. Each link opens the real destination in a
+new tab from the viewer controls; slides remain inert, and destination route
+authorization is unchanged. The existing presentation button requests browser
+full screen in the main and Executive Director headers, and the viewer retains
+its explicit full-screen toggle. An Executive Director account with separate
+presentation authorization may enter `/presentation` without being redirected
+back to its normal workspace. Three point-of-care screenshot slides also carry
+the local Alamo Point of Care text
+correction from the preceding presentation edit.
+
+The viewer bundle and Git-ignored private deck were overlaid on the exact
+preceding production image using `Dockerfile.presentation-experience-release`.
+The LIC 624 native-draft frontend and server changes were merged into the
+release source first, then preserved in the base image. Andrew Dominici's
+existing Platform tenant object ID was configured in
+`PLATFORM_PRESENTATION_ANDREW_OBJECT_ID`; this grants only presentation access,
+not Community, Workforce, or Pipeline privileges.
+
+- source merge commit: `a62492c` on `codex/licensing-gate-release-20261013`
+- ACR build: `cc6s`
+- image tag: `alamo-platform:presentation-live-a62492c`
+- image digest: `sha256:a5a6c629138267711d85ebc151d933f4e061428f2aa670d55b8d66a94c8cb249`
+- first revision: `alamo-platform-prod-web--presentation-links-1013` (superseded)
+- preceding production digest: `sha256:3602c45fb00a60beb68b3ee36ca0f9dc741b0259ddb3e3150e934a4bf0a7d6d1`
+
+A follow-up browser-only overlay fixed the Executive Director header shortcut
+and its route guard without changing the private deck, server, or Andrew's
+environment setting:
+
+- source commit: `4d333b3` on `codex/licensing-gate-release-20261013`
+- ACR build: `cc6t`
+- image tag: `alamo-platform:presentation-access-4d333b3`
+- active image digest: `sha256:7d61c46b35654a0f4146309fd13cbf511f322eefe8d16055950072a294d54768`
+- active revision: `alamo-platform-prod-web--presentation-access-1013`
+- immediate rollback digest: `sha256:a5a6c629138267711d85ebc151d933f4e061428f2aa670d55b8d66a94c8cb249`
+
+The final 112-layer image retains all 111 layers of the first presentation
+release, which retained all 109 preceding production layers. The final revision
+became Healthy/Running with one replica and 100% traffic. Production served the
+new fingerprinted browser bundle at `/presentation`; anonymous deck
+API access still returned 401 with private/no-store headers. Presentation
+authorization, 28-slide content validation, browser desktop/mobile controls,
+the Executive Director header/route browser flow, native LIC 624 browser
+workflow, Executive Director viewport suite, full merged analyst suite,
+typecheck, docs/retention, and build passed. Andrew's signed-in view still
+requires verification with Andrew's own Microsoft session; a fresh test tab
+correctly reached sign-in and could not impersonate his account.
+
 ### Native LIC 624 drafts — 2026-10-13
 
 Licensing Reports now includes **New LIC 624**, which creates a blank,
