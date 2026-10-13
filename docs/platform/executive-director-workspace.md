@@ -91,9 +91,9 @@ an interrupted manifest/catalog write, without replacing later edits. Local
 review writes serialize per report; Azure writes retain ETag concurrency checks.
 Changing a reviewed native report returns it to Draft until reviewed again.
 
-This implements native entry and review locally. It does not add official-PDF
+Native entry and review deployed on October 13 as
+`alamo-platform-prod-web--lic624-native-1013`. This does not add official-PDF
 generation, incident creation/linking, automatic filing, OCR, or mail intake.
-Production deployment is a separate release step.
 
 October 13 verification passed the native persistence/API checks and a browser
 walkthrough against the real local API using disposable synthetic records:
@@ -101,8 +101,12 @@ creation, retry after a lost response, draft save, reload/reopen, canceled
 replacement of unsaved work, confirmation, and 1440/390/320px layouts. Existing
 upload/review browser checks also passed at 320–1440px and 200%-equivalent zoom.
 Documentation, both TypeScript checks, the full analyst suite using the
-maintained local snapshot, and the production build passed. This evidence does
-not claim Azure write-path or signed-in production verification.
+maintained local snapshot, and the production build passed. All 27 predeployment
+stages passed, followed by healthy production and 4/4 smoke probes. A signed-in
+live check created a blank San Pablo report, saved revision 1 to Azure, reloaded,
+filtered Drafts, and reopened the saved form. Review confirmation remained
+disabled for the incomplete report. The blank draft is available for the demo.
+The formal automated signed-in suite still requires a saved Playwright session.
 
 ## Upload workflow
 
