@@ -47,10 +47,10 @@ try {
   let deck = null;
   if (hasContent) {
     deck = await getPresentation(member(eric));
-    assert.equal(deck.slides.length, 23);
-    assert.equal(new Set(deck.slides.map((slide) => slide.id)).size, 23);
+    assert.equal(deck.slides.length, 28);
+    assert.equal(new Set(deck.slides.map((slide) => slide.id)).size, 28);
     assert.equal(deck.slides[0].id, "cover");
-    assert.equal(deck.slides.at(-1).id, "close");
+    assert.equal(deck.slides.at(-1).id, "endstate");
     for (const slide of deck.slides) {
       assert.doesNotMatch(slide.html, /<aside|<script|src="\.\./i);
       assert.ok(slide.notes.trim(), `${slide.id} must retain its speaker notes`);
@@ -106,7 +106,7 @@ try {
   process.env.PLATFORM_PRESENTATION_ANDREW_OBJECT_ID = andrew;
   if (deck) for (const path of paths) assert.equal((await request(path, { tid: tenant, oid: andrew, scp: "access_as_user" })).statusCode, 200);
   assert.deepEqual((await request("/api/platform/presentation/access", { tid: tenant, oid: andrew, scp: "access_as_user" })).body, { allowed: true });
-  console.log(`Presentation authorization checks passed: signed tokens, explicit Andrew configuration, tenant isolation, and production bypass rejection. ${deck ? "All 23 private slides and assets validated." : "Private content absent; content checks require the release package."}`);
+  console.log(`Presentation authorization checks passed: signed tokens, explicit Andrew configuration, tenant isolation, and production bypass rejection. ${deck ? `All ${deck.slides.length} private slides and assets validated.` : "Private content absent; content checks require the release package."}`);
 } finally {
   globalThis.fetch = originalFetch;
   for (const key of environmentKeys) {

@@ -22,6 +22,7 @@ const rootFiles = new Set([
   "Dockerfile.licensing-job",
   "Dockerfile.iphone-overlay",
   "Dockerfile.mobile-experience-overlay",
+  "Dockerfile.presentation-content-release",
   "README.md",
   "eslint.config.js",
   "index.html",
