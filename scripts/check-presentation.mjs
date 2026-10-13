@@ -47,10 +47,10 @@ try {
   let deck = null;
   if (hasContent) {
     deck = await getPresentation(member(eric));
-    assert.equal(deck.slides.length, 28);
-    assert.equal(new Set(deck.slides.map((slide) => slide.id)).size, 28);
+    assert.equal(deck.slides.length, 16);
+    assert.equal(new Set(deck.slides.map((slide) => slide.id)).size, 16);
     assert.equal(deck.slides[0].id, "cover");
-    assert.equal(deck.slides.at(-1).id, "endstate");
+    assert.equal(deck.slides.at(-1).id, "epic-plan");
     for (const slide of deck.slides) {
       assert.doesNotMatch(slide.html, /<aside|<script|src="\.\./i);
       assert.ok(slide.notes.trim(), `${slide.id} must retain its speaker notes`);

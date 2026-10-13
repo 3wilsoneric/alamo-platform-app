@@ -55,7 +55,24 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
-### Presentation live links and Andrew access — 2026-10-13
+### Presentation v3 replacement — 2026-10-13
+
+The supplied 16-slide HTML deck replaced the private slide package on
+2026-10-13. The viewer opens `/home` from the Platform slide and
+`/executive/dashboard` from the Executive Director slide; the Pipeline slide
+retains its referrals link. Links open in a new tab and do not bypass the
+destination's authorization. All slides passed fixed-canvas fit and browser
+navigation checks before promotion. The local fictional Workforce preview was
+added only after this image was built and was not deployed.
+
+- source ZIP SHA-256: `935a69e9ac2e6a4ab2d7bb3b64e484a03b1567bb578ab1b59e0a85f80255ae3b`
+- ACR build: `cc6u`
+- image digest: `sha256:435aedccd2f6208d061013bfb9f9e1f87c1b478379810fbccc957432d7938d0a`
+- active revision: `alamo-platform-prod-web--presentation-v3-1013`
+- rollback digest: `sha256:7d61c46b35654a0f4146309fd13cbf511f322eefe8d16055950072a294d54768`
+- post-promotion: Running, Healthy, one replica; `/presentation` served the new browser bundle and anonymous deck API remained 401. Signed-in production slide inspection was unavailable in the fresh browser session because it required Microsoft sign-in.
+
+### Earlier presentation live links and Andrew access — 2026-10-13
 
 The private 28-slide deck now shows a contextual **Open** link on its four
 Platform/Pipeline screenshot slides. Each link opens the real destination in a
