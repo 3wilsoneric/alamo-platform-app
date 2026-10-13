@@ -237,6 +237,39 @@ The analyst remains a vertical chat/module workspace:
 - deterministic modules appear in the thread
 - users can still deep-link to route surfaces when useful
 
+## Private Presentation
+
+`/presentation` displays the supplied 23-slide Alamo Data Strategy deck in a
+full-window 16:9 desktop viewer. A presentation button beside the desktop account
+control appears only after an authorized access check. The phone menu has no shortcut.
+It requests browser full screen on click; browsers without that API retain the
+full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
+navigate. F toggles full screen, S toggles speaker notes, and Close returns to
+the originating Platform page. Slide hashes support direct links.
+
+The deck, images, and self-hosted fonts are private server files, excluded from
+Git because the source repository is public. Import the private package locally
+and ship it only inside the authenticated Azure registry image. Every request
+to `/api/platform/presentation`, `/access`, or `/asset` first uses the existing
+Entra API authentication boundary. Content requests additionally require Eric's
+pinned tenant object ID or Andrew's explicitly configured identity via
+`PLATFORM_PRESENTATION_ANDREW_OBJECT_ID` (preferred) or
+`PLATFORM_PRESENTATION_ANDREW_EMAIL`. An object ID disables the email fallback.
+Without Andrew's configuration, only Eric is authorized. Admin roles and service
+principals do not grant access. Nonmembers receive generic 404 responses and all
+responses are private/no-store. Explicit development bypass is local-only and
+cannot authorize production or Vercel preview requests.
+
+The viewer loads assets into memory after authorization and isolates each slide
+in a script-free sandbox. Notes are hidden by default. Preserve the original
+deck and font licenses under `server/presentations/alamo-data-strategy`; do not
+move these assets into `public`, `src`, or `dist`. Vercel includes this private
+directory in the API function bundle. An Azure release must include the new
+server module and private asset directory alongside the frontend/API updates,
+and configure Andrew before enabling his access. Run `npm run check:presentation`
+to verify permission boundaries; `npm run check:presentation:release` also
+requires and validates the private package before it can be released.
+
 ## Home Workspace
 
 Live file:

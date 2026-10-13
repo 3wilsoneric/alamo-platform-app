@@ -14,3 +14,6 @@ __pycache__/
 *.pyc
 vercel-production-snapshot.env
 .env.local
+
+# Confidential presentation payload is packaged privately for Azure, never GitHub.
+server/presentations/

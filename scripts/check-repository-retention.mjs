@@ -197,6 +197,7 @@ function ownershipClass(file) {
   if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js)$/.test(file)) return "static browser asset";
   if (/^api\/.+\.js$/.test(file)) return "Vercel API";
   if (/^server\/.+\.mjs$/.test(file)) return "server domain";
+  if (/^server\/presentations\/alamo-data-strategy\/(?:deck\.json|fonts\.json|slides\/[a-z0-9-]+\.html|images\/[a-z0-9-]+\.png|fonts\/[a-zA-Z0-9-]+\.(?:ttf|woff2|txt))$/.test(file)) return "private presentation assets";
   if (/^shared\/.+\.(?:mjs|d\.mts)$/.test(file)) return "shared contract";
   if (["scripts/licensing/collect.py", "scripts/licensing/check_collect.py", "scripts/licensing/restore.py"].includes(file)) return "verification and operations";
   if (/^scripts\/.+\.(?:mjs|json|ps1)$/.test(file)) return "verification and operations";

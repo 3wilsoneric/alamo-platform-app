@@ -29,6 +29,7 @@ unreachable code are deleted rather than archived in the app repository.
 | Static browser assets | approved images, manifest, offline shell, and service worker in `public/**` | frontend and product | Shipped branding and installable-browser assets that are served directly. |
 | Vercel API | `api/**` | backend | Production HTTP boundaries consumed by the browser or operations. |
 | Server domain | `server/**` | backend and data platform | Snapshot access, deterministic analysis, validation, and local API behavior. |
+| Private presentation assets | `server/presentations/alamo-data-strategy/**` | product and backend | Git-ignored private slide HTML, images, fonts and licenses; packaged locally into the private Azure image and delivered only by the presentation-authorized API. |
 | Shared contracts | `shared/**` | frontend and backend | Runtime-neutral intent, session, module, metric, period, and display contracts. |
 | Data publishing | `databricks/notebooks/**`, `databricks/workflows/**` | data platform | Governed ElderMark transformation, QA, tool context, and snapshot publication. |
 | Verification | `scripts/**` | engineering and QA | Package-invoked checks, browser journeys, artifact generation, and shared QA helpers. |

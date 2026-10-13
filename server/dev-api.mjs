@@ -65,6 +65,7 @@ import {
   validateAcquisitionResearchRequest
 } from "./acquisition-research.mjs";
 import { getApiSessionOwnerKey, requireApiUser } from "./api-auth.mjs";
+import { getPresentation, getPresentationAsset, hasPresentationAccess } from "./presentation.mjs";
 import { readValidatedJsonRequest } from "./http-body.mjs";
 import { appendResponseVaryHeader, applyProtectedApiHeaders } from "./http-response.mjs";
 import { getIncidentFeedResponse, isLiveIncidentFeedRequest } from "./incident-feed.mjs";
@@ -387,6 +388,18 @@ const server = http.createServer(async (req, res) => {
     if (requestUrl.pathname === "/api/platform/licensing/updates") {
       assertLicensingAccess(authContext);
       sendJson(res, 200, await getLicensingUpdates());
+      return;
+    }
+    if (requestUrl.pathname === "/api/platform/presentation/access") {
+      sendJson(res, 200, { allowed: hasPresentationAccess(authContext, { remoteAddress: req.socket.remoteAddress }) });
+      return;
+    }
+    if (requestUrl.pathname === "/api/platform/presentation") {
+      sendJson(res, 200, await getPresentation(authContext, { remoteAddress: req.socket.remoteAddress }));
+      return;
+    }
+    if (requestUrl.pathname === "/api/platform/presentation/asset") {
+      sendJson(res, 200, await getPresentationAsset(requestUrl, authContext, { remoteAddress: req.socket.remoteAddress }));
       return;
     }
     if (requestUrl.pathname === "/api/platform/licensing" || requestUrl.pathname === "/api/platform/licensing/report") {

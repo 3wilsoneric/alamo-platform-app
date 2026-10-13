@@ -18,6 +18,7 @@ import {
   getPlatformKnowledgeSearchResponse
 } from "../server/platform-knowledge-api.mjs";
 import { assertPlatformKnowledgeOwner } from "../server/platform-knowledge-access.mjs";
+import { getPresentation, getPresentationAsset, hasPresentationAccess } from "../server/presentation.mjs";
 import {
   calculateAcquisitionValuation,
   getAcquisitionIntelligenceOverviewResponse,
@@ -62,6 +63,9 @@ import {
 
 const PLATFORM_GET_ROUTES = Object.freeze({
   "/api/platform/incidents/history": ({ requestUrl }) => getPlatformIncidentHistory(requestUrl),
+  "/api/platform/presentation/access": ({ req, authContext }) => ({ allowed: hasPresentationAccess(authContext, { remoteAddress: req.socket?.remoteAddress }) }),
+  "/api/platform/presentation": ({ req, authContext }) => getPresentation(authContext, { remoteAddress: req.socket?.remoteAddress }),
+  "/api/platform/presentation/asset": ({ req, requestUrl, authContext }) => getPresentationAsset(requestUrl, authContext, { remoteAddress: req.socket?.remoteAddress }),
   "/api/platform/licensing": ({ requestUrl, authContext }) => {
     assertLicensingAccess(authContext);
     return getLicensingLibrary(requestUrl);

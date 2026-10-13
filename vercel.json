@@ -2,7 +2,7 @@
   "functions": {
     "api/*.js": {
       "excludeFiles": "generated/**",
-      "includeFiles": "src/features/fiftystate/data/stateTargetingData.ts"
+      "includeFiles": "{src/features/fiftystate/data/stateTargetingData.ts,server/presentations/alamo-data-strategy/**}"
     }
   },
   "redirects": [
