@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Maximize, Minimize, StickyNote, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Maximize, Minimize, StickyNote, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { loadPresentation } from "./presentationApi";
+import { presentationLinks } from "./presentationLinks";
 import "./presentation.css";
 
 type LoadedDeck = Awaited<ReturnType<typeof loadPresentation>>;
@@ -18,6 +19,7 @@ export default function PresentationPage() {
   const location = useLocation();
   const current = Math.max(0, deck?.slides.findIndex((slide) => `#${slide.id}` === location.hash) ?? 0);
   const slide = deck?.slides[current];
+  const liveLink = slide ? presentationLinks[slide.id] : undefined;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -56,7 +58,7 @@ export default function PresentationPage() {
   useEffect(() => {
     const syncFullscreen = () => setFullscreen(Boolean(document.fullscreenElement));
     const onKey = (event: KeyboardEvent) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.target instanceof HTMLSelectElement || event.target instanceof HTMLButtonElement && [" ", "Enter"].includes(event.key)) return;
+      if (event.altKey || event.ctrlKey || event.metaKey || event.target instanceof HTMLSelectElement || event.target instanceof HTMLAnchorElement && [" ", "Enter"].includes(event.key) || event.target instanceof HTMLButtonElement && [" ", "Enter"].includes(event.key)) return;
       if (["ArrowRight", "PageDown", " "].includes(event.key)) go(current + 1);
       else if (["ArrowLeft", "PageUp"].includes(event.key)) go(current - 1);
       else if (event.key === "Home") go(0);
@@ -93,6 +95,7 @@ export default function PresentationPage() {
           <footer className="presentation-controls">
             <button type="button" onClick={close} aria-label="Close presentation" title="Back to Platform"><X size={20} /></button>
             <span className="presentation-title">{deck.title}</span>
+            {liveLink ? <a className="presentation-live-link" href={liveLink.href} target="_blank" rel="noopener noreferrer" aria-label={`${liveLink.label} (opens in a new tab)`} title={`${liveLink.label} in a new tab`}><span className="presentation-live-link__desktop" aria-hidden="true">{liveLink.label}</span><span className="presentation-live-link__mobile" aria-hidden="true">Open page</span><ExternalLink size={17} aria-hidden="true" /></a> : null}
             <div className="presentation-paging">
               <button type="button" disabled={current === 0} onClick={() => go(current - 1)} aria-label="Previous slide"><ChevronLeft size={22} /></button>
               <label><span className="sr-only">Go to slide</span><select value={current} onChange={(event) => go(Number(event.target.value))}>{deck.slides.map((item, index) => <option key={item.id} value={index}>{index + 1} / {deck.slides.length} · {item.title}</option>)}</select><span aria-hidden="true">{current + 1} / {deck.slides.length}</span></label>

@@ -67,6 +67,7 @@
     "check:admissions-dashboard": "node scripts/check-admissions-dashboard.mjs && node scripts/check-admissions-schedule.mjs",
     "check:presentation": "node scripts/check-presentation.mjs",
     "check:presentation:release": "PRESENTATION_CONTENT_REQUIRED=true node scripts/check-presentation.mjs",
+    "check:browser-presentation": "node scripts/check-browser-presentation.mjs",
     "presentation:prepare-release": "node scripts/prepare-presentation-release.mjs",
     "check:workforce-dashboard": "node scripts/check-workforce-dashboard.mjs",
     "check:regression-replays": "node scripts/check-regression-replays.mjs",

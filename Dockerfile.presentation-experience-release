@@ -1,0 +1,7 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Overlay only the verified viewer bundle and the private slide package onto
+# the exact current production image. Preserve the server, API, and data runtime.
+COPY --chown=node:node dist /app/dist
+COPY --chown=node:node server/presentations/alamo-data-strategy /app/server/presentations/alamo-data-strategy

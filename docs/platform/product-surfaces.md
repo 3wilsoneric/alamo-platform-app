@@ -245,7 +245,13 @@ control appears only after an authorized access check. The phone menu has no sho
 It requests browser full screen on click; browsers without that API retain the
 full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
 navigate. F toggles full screen, S toggles speaker notes, and Close returns to
-the originating Platform page. Slide hashes support direct links.
+the originating Platform page. Slide hashes support direct links. Screenshot
+slides for the Community dashboard, admissions file, Pipeline assessment, and
+Workforce have an **Open** link in the viewer controls. It opens the live route
+in a separate tab without replacing the deck; the destination still enforces
+its own existing access rules. The admissions screenshot opens the Community
+dashboard, where its client notification can be selected, rather than claiming
+a deep link to an already-open client file.
 
 The deck, images, and self-hosted fonts are private server files, excluded from
 Git because the source repository is public. Import the private package locally
