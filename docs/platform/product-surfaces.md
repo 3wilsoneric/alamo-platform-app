@@ -244,7 +244,7 @@ The analyst remains a vertical chat/module workspace:
 
 ## Private Presentation
 
-`/presentation` displays the supplied 23-slide Alamo Data Strategy deck in a
+`/presentation` displays the supplied 28-slide Alamo Data Strategy deck in a
 full-window 16:9 desktop viewer. A presentation button beside the desktop account
 control appears only after an authorized access check. The phone menu has no shortcut.
 It requests browser full screen on click; browsers without that API retain the
