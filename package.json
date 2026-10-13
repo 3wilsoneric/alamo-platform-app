@@ -63,7 +63,7 @@
     "check:executive-director": "node scripts/check-executive-director-workspace.mjs",
     "check:browser-executive-director": "node scripts/check-browser-executive-director-dashboard.mjs",
     "check:browser-incident-history": "node scripts/check-browser-incident-history.mjs",
-    "check:browser-executive-licensing": "node scripts/check-browser-executive-director-licensing.mjs",
+    "check:browser-executive-licensing": "node scripts/check-browser-executive-director-licensing.mjs && npm run check:browser-lic624-native",
     "check:admissions-dashboard": "node scripts/check-admissions-dashboard.mjs && node scripts/check-admissions-schedule.mjs",
     "check:presentation": "node scripts/check-presentation.mjs",
     "check:presentation:release": "PRESENTATION_CONTENT_REQUIRED=true node scripts/check-presentation.mjs",
@@ -151,7 +151,8 @@
     "check:licensing-job": "node scripts/check-licensing-job.mjs && PYTHONDONTWRITEBYTECODE=1 python3 scripts/licensing/check_collect.py",
     "licensing:deploy-alert-workflow": "node scripts/deploy-licensing-alert-workflow.mjs",
     "licensing:deploy-job": "node scripts/deploy-licensing-job.mjs",
-    "licensing:prepare-job": "node scripts/prepare-licensing-job.mjs"
+    "licensing:prepare-job": "node scripts/prepare-licensing-job.mjs",
+    "check:browser-lic624-native": "node scripts/check-browser-lic624-native.mjs"
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",

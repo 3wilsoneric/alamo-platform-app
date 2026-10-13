@@ -1,10 +1,11 @@
 import { useMsal } from "@azure/msal-react";
-import { ExternalLink, FileScan, FileText, LoaderCircle, PencilLine, Search, Upload } from "lucide-react";
+import { ExternalLink, FileScan, FileText, LoaderCircle, PencilLine, Plus, Search, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { getAccountExecutiveDirectorAccess } from "../../../shared/auth/executiveDirectorAccess";
 import {
   fetchExecutiveDirectorBootstrap,
+  createExecutiveDirectorLicensingReport,
   fetchExecutiveDirectorSubmission,
   fetchExecutiveDirectorSubmissions,
   fetchExecutiveDirectorSubmissionSource,
@@ -25,7 +26,7 @@ import "../executiveLicensing.css";
 const DEFAULT_PREVIEW_FACILITY_ID = "337";
 const PENDING_NAVIGATION_MESSAGE = "Wait for the current report action to finish before leaving Licensing.";
 type LicensingView = "reports" | "upload" | "review";
-type LicensingOperation = { kind: "upload" | "open" | "save"; controller: AbortController };
+type LicensingOperation = { kind: "create" | "upload" | "open" | "save"; controller: AbortController };
 
 function formatFileSize(bytes: number) {
   return bytes >= 1024 * 1024 ? (bytes / (1024 * 1024)).toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
@@ -35,6 +36,7 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 function statusLabel(status: ExecutiveDirectorSubmission["status"]) {
+  if (status === "draft") return "Draft";
   if (status === "awaiting_form_definition") return "Mapping required";
   if (status === "ocr_required") return "OCR required";
   if (status === "needs_review") return "Needs review";
@@ -52,6 +54,7 @@ export default function ExecutiveDirectorPage() {
   const pageRef = useRef<HTMLElement>(null);
   const workspaceController = useRef<AbortController | null>(null);
   const operationRef = useRef<LicensingOperation | null>(null);
+  const creationIdRef = useRef<string | null>(null);
   const sourceRequestRef = useRef<AbortController | null>(null);
   const focusViewRef = useRef<LicensingView | null>(null);
   const listGeneration = useRef(0);
@@ -70,19 +73,21 @@ export default function ExecutiveDirectorPage() {
   const [status, setStatus] = useState("");
   const [catalogRefresh, setCatalogRefresh] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [activeSubmission, setActiveSubmission] = useState<ExecutiveDirectorSubmissionDetail | null>(null);
   const [openingSubmissionId, setOpeningSubmissionId] = useState<string | null>(null);
   const [openingSourceId, setOpeningSourceId] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewDirty, setReviewDirty] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
-  const workspaceBusy = uploading || Boolean(openingSubmissionId) || reviewBusy;
+  const workspaceBusy = creating || uploading || Boolean(openingSubmissionId) || reviewBusy;
   const refreshCatalog = useCallback(() => setCatalogRefresh((revision) => revision + 1), []);
 
   useEffect(() => {
     const controller = new AbortController();
     workspaceController.current = controller;
     operationRef.current = null;
+    creationIdRef.current = null;
     sourceRequestRef.current = null;
     focusViewRef.current = null;
     setBootstrap(null);
@@ -94,6 +99,7 @@ export default function ExecutiveDirectorPage() {
     setReviewBusy(false);
     setReviewError(null);
     setUploading(false);
+    setCreating(false);
     setOpeningSubmissionId(null);
     setOpeningSourceId(null);
     setView("reports");
@@ -202,6 +208,32 @@ export default function ExecutiveDirectorPage() {
     focusViewRef.current = "reports";
     selectView("reports");
   };
+  const createReport = async () => {
+    const controller = workspaceController.current;
+    if (!controller || controller.signal.aborted || !bootstrap || !mayReplaceReview()) return;
+    const operation: LicensingOperation = { kind: "create", controller };
+    operationRef.current = operation;
+    // Keep this ID on an uncertain response: retry recovers the same durable draft.
+    creationIdRef.current ??= crypto.randomUUID();
+    setCreating(true);
+    setReviewError(null);
+    try {
+      const result = await createExecutiveDirectorLicensingReport(facilityId, creationIdRef.current, controller.signal);
+      if (controller.signal.aborted) return;
+      creationIdRef.current = null;
+      setForm(result.form);
+      setActiveSubmission(result.submission);
+      setReviewDirty(false);
+      focusViewRef.current = "review";
+      setView("review");
+      refreshCatalog();
+    } catch (error) {
+      if (!controller.signal.aborted) setReviewError(error instanceof Error ? error.message : "The new report could not be started. Try again.");
+    } finally {
+      if (operationRef.current === operation) operationRef.current = null;
+      if (!controller.signal.aborted) setCreating(false);
+    }
+  };
   const submit = async (retryFailed: boolean) => {
     const controller = workspaceController.current;
     if (!controller || controller.signal.aborted || !mayReplaceReview()) return;
@@ -240,7 +272,7 @@ export default function ExecutiveDirectorPage() {
     try {
       const result = await fetchExecutiveDirectorSubmission(facilityId, submissionId, controller.signal);
       if (controller.signal.aborted) return;
-      if (!result.submission.draftData || !result.submission.sourceData) throw new Error("This report requires extraction before the digital form is available.");
+      if (!result.submission.draftData || (!result.submission.sourceData && result.submission.origin !== "native")) throw new Error("This report requires extraction before the digital form is available.");
       setForm(result.form);
       setActiveSubmission(result.submission);
       setReviewDirty(false);
@@ -330,34 +362,35 @@ export default function ExecutiveDirectorPage() {
           {reviewError ? <p role="alert" className="licensing-message is-error">{reviewError}</p> : null}
           <section id="licensing-panel-reports" role="tabpanel" aria-labelledby="licensing-tab-reports" hidden={view !== "reports"} data-executive-director-submissions="true">
             <div className="licensing-reports__filters">
-              <label className="licensing-search"><Search aria-hidden="true" /><input aria-label="Search reports" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search filename" /></label>
+              <button className="licensing-button is-primary licensing-new-report" type="button" disabled={workspaceBusy || loading || !bootstrap} onClick={() => void createReport()}>{creating ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Plus aria-hidden="true" />}{creating ? "Starting report" : "New LIC 624"}</button>
+              <label className="licensing-search"><Search aria-hidden="true" /><input aria-label="Search reports" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search reports" /></label>
               <select aria-label="Report status" value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="">All reports</option><option value="needs_review">Needs review</option><option value="ocr_required">OCR required</option><option value="ready_to_file">Ready to file</option><option value="filed">Filed</option><option value="failed">Processing failed</option><option value="awaiting_form_definition">Mapping required</option>
+                <option value="">All reports</option><option value="draft">Drafts</option><option value="needs_review">Needs review</option><option value="ocr_required">OCR required</option><option value="ready_to_file">Ready to file</option><option value="filed">Filed</option><option value="failed">Processing failed</option><option value="awaiting_form_definition">Mapping required</option>
               </select>
               {catalog ? <p className="licensing-reports__count">{catalog.filteredTotal} {catalog.filteredTotal === 1 ? "report" : "reports"}{query || status ? " matching" : ""}</p> : null}
             </div>
             {catalogError ? <p role="alert" className="licensing-message is-error">{catalogError} <button type="button" onClick={refreshCatalog}>Refresh reports</button></p> : null}
             <div className="licensing-report-list" aria-busy={catalogLoading}>
-              <div className="licensing-report-list__columns" aria-hidden="true"><span>Original report</span><span>Uploaded</span><span>Status</span><span>Open</span></div>
+              <div className="licensing-report-list__columns" aria-hidden="true"><span>Report</span><span>Created</span><span>Status</span><span>Open</span></div>
               {catalogLoading ? <p role="status" className="licensing-empty"><LoaderCircle className="animate-spin" aria-hidden="true" />Loading reports…</p> : null}
               {!catalogLoading && catalog?.submissions.map((submission) => <article data-licensing-report={submission.submissionId} key={submission.submissionId} className="licensing-report-row">
-                <div className="licensing-report-row__file"><FileText aria-hidden="true" /><div><h3>{submission.originalFileName}</h3><p>{formatFileSize(submission.byteLength)}{submission.extractionSummary?.method === "pdf_acroform" ? " · " + submission.extractionSummary.extractedFieldCount + " fields extracted" : ""}</p></div></div>
+                <div className="licensing-report-row__file"><FileText aria-hidden="true" /><div><h3>{submission.originalFileName}</h3><p>{submission.origin === "native" ? "Created in app" : formatFileSize(submission.byteLength)}{submission.extractionSummary?.method === "pdf_acroform" ? " · " + submission.extractionSummary.extractedFieldCount + " fields extracted" : ""}</p></div></div>
                 <time dateTime={submission.createdAt}>{formatDate(submission.createdAt)}</time>
                 <span className={"licensing-report-status is-" + submission.status}>{statusLabel(submission.status)}</span>
                 <div className="licensing-report-row__actions">
-                  <button className="licensing-button" type="button" disabled={Boolean(openingSourceId)} onClick={() => void openOriginal(submission)}><ExternalLink aria-hidden="true" />{openingSourceId === submission.submissionId ? "Opening" : "Original"}</button>
-                  {submission.extractionSummary?.method === "pdf_acroform" ? <button className="licensing-button is-review" type="button" disabled={workspaceBusy || loading} onClick={() => void openSubmission(submission.submissionId)}><PencilLine aria-hidden="true" />{openingSubmissionId === submission.submissionId ? "Opening" : submission.status === "ready_to_file" ? "Open form" : "Review form"}</button> : null}
+                  {submission.origin !== "native" ? <button className="licensing-button" type="button" disabled={Boolean(openingSourceId)} onClick={() => void openOriginal(submission)}><ExternalLink aria-hidden="true" />{openingSourceId === submission.submissionId ? "Opening" : "Original"}</button> : null}
+                  {submission.origin === "native" || submission.extractionSummary?.method === "pdf_acroform" ? <button className="licensing-button is-review" type="button" disabled={workspaceBusy || loading} onClick={() => void openSubmission(submission.submissionId)}><PencilLine aria-hidden="true" />{openingSubmissionId === submission.submissionId ? "Opening" : submission.origin === "native" || submission.status === "ready_to_file" ? "Open form" : "Review form"}</button> : null}
                 </div>
               </article>)}
-              {!catalogLoading && !catalogError && !catalog?.submissions.length ? <div className="licensing-empty"><FileScan aria-hidden="true" /><h3>{query || status ? "No matching reports" : "No reports submitted yet"}</h3><p>{query || status ? "Try another filename or status." : "Upload a LIC 624 to start the record."}</p>{!query && !status ? <button className="licensing-button" type="button" disabled={workspaceBusy} onClick={() => selectView("upload")}>Upload report</button> : null}</div> : null}
+              {!catalogLoading && !catalogError && !catalog?.submissions.length ? <div className="licensing-empty"><FileScan aria-hidden="true" /><h3>{query || status ? "No matching reports" : "No reports yet"}</h3><p>{query || status ? "Try another report name or status." : "Start a new LIC 624 above, or upload an existing report."}</p>{!query && !status ? <button className="licensing-button" type="button" disabled={workspaceBusy} onClick={() => selectView("upload")}>Upload report</button> : null}</div> : null}
             </div>
             {catalog?.nextCursor ? <footer className="licensing-reports__footer"><span>{catalog.submissions.length} of {catalog.filteredTotal} reports</span><button className="licensing-button" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Loading" : "Load more reports"}</button></footer> : null}
           </section>
           <section id="licensing-panel-upload" role="tabpanel" aria-labelledby="licensing-tab-upload" hidden={view !== "upload"}>
             <LicensingBulkUpload key={facilityId} batch={batch} busy={workspaceBusy} ready={Boolean(bootstrap)} onUpload={(retryFailed) => void submit(retryFailed)} onReview={(submissionId) => void openSubmission(submissionId)} />
           </section>
-          {activeSubmission && form ? <section id="licensing-panel-review" role="tabpanel" aria-labelledby="licensing-tab-review" hidden={view !== "review"} inert={Boolean(openingSubmissionId) || uploading} aria-busy={Boolean(openingSubmissionId) || uploading}>
-            <Lic624ReviewWorkspace submission={activeSubmission} form={form} onClose={closeReview} onSave={saveReview} onDirtyChange={setReviewDirty} onBusyChange={setReviewBusy} onOpenOriginal={() => void openOriginal(activeSubmission)} />
+          {activeSubmission && form ? <section id="licensing-panel-review" role="tabpanel" aria-labelledby="licensing-tab-review" hidden={view !== "review"} inert={Boolean(openingSubmissionId) || uploading || creating} aria-busy={Boolean(openingSubmissionId) || uploading || creating}>
+            <Lic624ReviewWorkspace submission={activeSubmission} form={form} onClose={closeReview} onSave={saveReview} onDirtyChange={setReviewDirty} onBusyChange={setReviewBusy} {...(activeSubmission.origin !== "native" ? { onOpenOriginal: () => void openOriginal(activeSubmission) } : {})} />
           </section> : null}
         </div>
       </div>

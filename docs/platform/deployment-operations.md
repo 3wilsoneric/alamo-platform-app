@@ -55,6 +55,49 @@ command. Before promotion, compare the resulting image configuration with the
 source image and confirm the flattened layer count. Resume ordinary
 `Dockerfile.frontend-release` overlays after that rebase release.
 
+### Native LIC 624 drafts — 2026-10-13
+
+Licensing Reports now includes **New LIC 624**, which creates a blank,
+facility-scoped report and opens the existing five-section editor. Staff can
+save incomplete drafts, reload and reopen them, and confirm review only after
+the required-field checks pass. Upload remains the entry point for existing
+files. Native records have no fabricated uploaded original or extraction.
+
+- implementation commit: `eaac672` on `codex/lic624-native-report`
+- release recipe commit: `0aab74a`; reconciled source: `6c7be8a`
+- ACR build: `cc6r`
+- image tag: `alamo-platform:lic624-native-0aab74a-v2`
+- image digest: `sha256:3602c45fb00a60beb68b3ee36ca0f9dc741b0259ddb3e3150e934a4bf0a7d6d1`
+- active revision: `alamo-platform-prod-web--lic624-native-1013`
+- rollback digest: `sha256:8a84fa5cd9cfed6eab6be6a1034dd62a73b2ae43beb4207833a5f98b93fb1c7f`
+- active browser assets: `/assets/index-2UVv3rqe.js` and
+  `/assets/index-CrEkWIvk.css`
+
+`deploy/Dockerfile.lic624-native-release` overlays the browser bundle and three
+native-draft server modules on the exact preceding production image. The
+candidate was rebuilt after the presentation release landed, preserving its
+28-slide package, API adapter, runtime configuration, and access controls.
+All 27 predeployment stages passed. The browser stage was resumed after fixing
+the isolated checkout's missing governed-data read configuration. The final
+build was byte-identical to the staged bundle. Native creation, save/reopen,
+confirmation, scope checks, concurrent writes, and interrupted-request recovery
+also passed inside the actual registry image using disposable local storage
+with network access disabled.
+
+The revision became Healthy and Running with one replica and 100% traffic.
+Production smoke passed 4/4. Nineteen live checks verified the root, Admissions,
+chat, and Licensing entry documents in identity/gzip/Brotli, exact browser asset
+hashes, and anonymous 401/private/no-store boundaries, including draft creation.
+A signed-in production check created one blank San Pablo draft, saved revision
+1, reloaded the page, filtered Drafts, and reopened that saved revision in the
+same editor. No incident facts, signatures, review confirmation, or filing were
+added; the blank draft remains available for the demo. The formal postdeployment
+`check:ship` remains unverified because this checkout has no saved Playwright
+sign-in state. The live signed-in check used the existing browser session.
+
+This release does not add official-PDF generation, OCR, mailbox intake,
+automatic filing, or incident-record creation/linking.
+
 ### Private presentation replacement — 2026-10-13
 
 The authorized `/presentation` viewer now serves the supplied 28-slide Alamo

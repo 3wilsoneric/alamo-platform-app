@@ -42,6 +42,7 @@
 .licensing-button:disabled,.licensing-button.is-disabled { opacity:.5; cursor:default; }
 .licensing-reports__filters { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:24px; }
 .licensing-reports__count { margin:0 0 0 auto; color:#647169; font-size:14px; white-space:nowrap; }
+.licensing-report-status.is-draft { color:#36566d; background:#edf3f6; }
 .licensing-search { display:flex; align-items:center; gap:10px; width:min(100%,430px); padding:0 12px; min-height:44px; border:1px solid #b4c0bd; border-radius:5px; background:#fffefa; }
 .licensing-search svg { width:18px; height:18px; color:#688076; flex-shrink:0; }
 .licensing-search input { min-width:0; width:100%; padding:10px 0; background:transparent; border:0; font:400 15px var(--ed-sans); color:#193246; outline:none; }
@@ -134,6 +135,7 @@
   .licensing-dropzone__desktop-label { display:none; }
   .licensing-dropzone__mobile-label { display:inline; }
   .licensing-reports__filters { padding:16px; gap:10px; }
+  .licensing-new-report { width:100%; }
   .licensing-search { width:100%; }
   .licensing-search input,.licensing-reports__filters select { font-size:16px; }
   .licensing-reports__filters select { flex:1; min-width:0; }
