@@ -3,7 +3,7 @@
 - purpose: define the facility-scoped Executive Director dashboard and licensing-report intake workflow
 - status: active implementation plan and security contract
 - owners: product, operations, engineering, compliance
-- updated: 2026-10-12
+- updated: 2026-10-13
 - tags: executive-director, licensing, intake, ocr, role-access, azure
 - labels: platform-handbook, implementation-plan, security-boundary
 - related files:
@@ -74,7 +74,37 @@ fails, the published snapshot is shown as partial with separate available and
 aggregate counts. LIC 624 uploads are not incident records until separately
 reviewed and linked in a future workflow.
 
-## Workflow
+## Native reports
+
+**New LIC 624** in Reports opens the existing digital form without uploading a
+file. It creates a facility-scoped draft with only the known community name and
+city/state filled in. Staff enter the report, save incomplete drafts, reopen
+them from Reports (including the Drafts filter), and mark reviewed only after
+the existing required-field checks pass. The folder, five-section editor,
+navigation, dirty-change guards, and review controls remain the same.
+
+Native records have `origin: native` and `draft` status, no uploaded original,
+no extraction result, and no fabricated file/checksum. The private creation
+record is immutable; draft saves and confirmations use the existing versioned
+review audit. A retried creation ID recovers the same report, including after
+an interrupted manifest/catalog write, without replacing later edits. Local
+review writes serialize per report; Azure writes retain ETag concurrency checks.
+Changing a reviewed native report returns it to Draft until reviewed again.
+
+This implements native entry and review locally. It does not add official-PDF
+generation, incident creation/linking, automatic filing, OCR, or mail intake.
+Production deployment is a separate release step.
+
+October 13 verification passed the native persistence/API checks and a browser
+walkthrough against the real local API using disposable synthetic records:
+creation, retry after a lost response, draft save, reload/reopen, canceled
+replacement of unsaved work, confirmation, and 1440/390/320px layouts. Existing
+upload/review browser checks also passed at 320–1440px and 200%-equivalent zoom.
+Documentation, both TypeScript checks, the full analyst suite using the
+maintained local snapshot, and the production build passed. This evidence does
+not claim Azure write-path or signed-in production verification.
+
+## Upload workflow
 
 1. **Receive:** accept a single PDF, JPG, or PNG up to 20 MB.
 2. **Preserve:** validate the signature, calculate a checksum, store the exact

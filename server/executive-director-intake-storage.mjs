@@ -9,6 +9,7 @@ import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { extractLic624Report, summarizeLic624Extraction } from "./lic624-extraction.mjs";
 import { createAzureIntakeObjectStore, createLocalIntakeObjectStore } from "./executive-director-intake-objects.mjs";
 import { persistIdempotentIntakeUpload } from "./executive-director-intake-receipts.mjs";
+import { persistNativeLic624Draft } from "./lic624-native.mjs";
 import { withLocalIntakeCatalogLock } from "./executive-director-intake-lock.mjs";
 import {
   assertLic624SubmissionId,
@@ -538,12 +539,32 @@ export function toExecutiveDirectorSubmissionDetail(manifest) {
   };
 }
 
+export async function createExecutiveDirectorNativeReport({ facilityId, creationId, authContext }, { afterPersist = async (_stage, _record) => {} } = {}) {
+  return persistNativeLic624Draft({ facilityId, creationId, actor: reviewIdentity(authContext) }, {
+    objects: shouldUseAzure() ? createAzureIntakeObjectStore(getAzureContainer()) : createLocalIntakeObjectStore(localRoot(), STORAGE_ROOT),
+    async assertCapacity(manifest) {
+      serializeCatalog(withCatalogRecord(await ensureCatalog(facilityId), manifest));
+    },
+    async indexManifest(manifest) {
+      await ensureCatalog(facilityId);
+      return mutateCatalog(facilityId, (catalog) => withCatalogRecord(catalog, manifest));
+    },
+    afterPersist
+  });
+}
+
 export async function getExecutiveDirectorIntakeSubmission(facilityId, submissionId) {
   const { manifest } = await findStoredManifest(facilityId, submissionId);
   return manifest;
 }
 
-export async function saveExecutiveDirectorIntakeReview({
+export async function saveExecutiveDirectorIntakeReview(request) {
+  if (shouldUseAzure()) return saveIntakeReview(request);
+  const submissionId = assertLic624SubmissionId(request.submissionId);
+  return withLocalIntakeCatalogLock(path.join(localRoot(), ".review-locks", request.facilityId), submissionId, () => saveIntakeReview(request));
+}
+
+async function saveIntakeReview({
   facilityId,
   submissionId,
   expectedRevision,
@@ -558,7 +579,7 @@ export async function saveExecutiveDirectorIntakeReview({
   if (currentRevision !== expectedRevision) {
     throw createHttpError(409, "lic624_review_conflict", "This review changed in another session. Reload it before saving again.");
   }
-  if (stored.manifest.extraction?.method !== "pdf_acroform" || !stored.manifest.extraction?.data) {
+  if (stored.manifest.origin !== "native" && (stored.manifest.extraction?.method !== "pdf_acroform" || !stored.manifest.extraction?.data)) {
     throw createHttpError(409, "lic624_review_unavailable", "This report requires OCR before its fields can be reviewed.");
   }
 
@@ -582,7 +603,7 @@ export async function saveExecutiveDirectorIntakeReview({
   };
   const manifest = {
     ...stored.manifest,
-    status: confirm ? "ready_to_file" : "needs_review",
+    status: confirm ? "ready_to_file" : stored.manifest.origin === "native" ? "draft" : "needs_review",
     review,
     reviewRevision: revision,
     reviewedAt: confirm ? updatedAt : null
@@ -592,6 +613,7 @@ export async function saveExecutiveDirectorIntakeReview({
     submissionId,
     facilityId,
     sourceSha256: manifest.sha256,
+    origin: manifest.origin ?? "upload",
     revision,
     status: manifest.status,
     updatedAt,
@@ -612,6 +634,7 @@ export function toExecutiveDirectorSubmissionSummary(manifest) {
   }
   return {
     submissionId: manifest.submissionId,
+    origin: manifest.origin ?? "upload",
     facilityId: manifest.facilityId,
     originalFileName: manifest.originalFileName,
     contentType: manifest.contentType,
@@ -628,6 +651,7 @@ export function toExecutiveDirectorSubmissionSummary(manifest) {
 function summarizeCatalogRecords(records) {
   return {
     total: records.length,
+    drafts: records.filter((item) => item.status === "draft").length,
     ocrRequired: records.filter((item) => item.status === "ocr_required").length,
     needsReview: records.filter((item) => item.status === "needs_review").length,
     readyToFile: records.filter((item) => item.status === "ready_to_file").length,
@@ -692,7 +716,7 @@ export async function queryExecutiveDirectorIntakeSubmissions({
   const pageCursor = decodePageCursor(cursor);
   const normalizedStatus = String(status ?? "").trim().toLowerCase();
   const normalizedQuery = String(query ?? "").trim().toLowerCase().slice(0, 120);
-  const allowedStatuses = new Set(["awaiting_form_definition", "ocr_required", "needs_review", "ready_to_file", "filed", "failed"]);
+  const allowedStatuses = new Set(["draft", "awaiting_form_definition", "ocr_required", "needs_review", "ready_to_file", "filed", "failed"]);
   if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
     throw createHttpError(400, "licensing_status_invalid", "Choose a valid licensing queue status.");
   }
@@ -749,6 +773,9 @@ async function resolveSourceObject(stored) {
 
 export async function getExecutiveDirectorIntakeSource(facilityId, submissionId) {
   const stored = await findStoredManifest(facilityId, submissionId);
+  if (stored.manifest.origin === "native") {
+    throw createHttpError(404, "licensing_source_not_found", "This report was created in the app and has no uploaded original.");
+  }
   const sourceObject = await resolveSourceObject(stored);
   if (!sourceObject) {
     throw createHttpError(404, "licensing_source_not_found", "The original licensing report was not found.");

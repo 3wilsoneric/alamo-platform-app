@@ -107,7 +107,8 @@ function Section({ number, title, note, children }: { number: string; title: str
 
 export default function Lic624ReviewWorkspace({ submission, form, onClose, onSave, onDirtyChange, onBusyChange, onOpenOriginal }: Lic624ReviewWorkspaceProps) {
   const savedData = submission.draftData;
-  const sourceData = submission.sourceData;
+  const native = submission.origin === "native";
+  const sourceData = submission.sourceData ?? (native ? savedData : null);
   const [draft, setDraft] = useState<Lic624ReviewData | null>(savedData ? copyData(savedData) : null);
   const [saving, setSaving] = useState<"draft" | "confirm" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -211,17 +212,17 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
             <div className="lic624-review__eyebrow">
               <p>Digital LIC 624</p>
               <span className={`lic624-review__status${submission.status === "ready_to_file" ? " is-reviewed" : ""}`}>
-                {submission.status === "ready_to_file" ? "Reviewed" : "Check extraction"}
+                {submission.status === "ready_to_file" ? "Reviewed" : native ? "Draft" : "Check extraction"}
               </span>
             </div>
             <h2>{submission.originalFileName}</h2>
-            <p className="lic624-review__preservation">The uploaded original stays unchanged.</p>
+            <p className="lic624-review__preservation">{native ? "Created in app. Save your work as a draft before leaving." : "The uploaded original stays unchanged."}</p>
           </div>
         </div>
         <div className="lic624-review__header-actions">
           <div className="lic624-review__revision">
             <span>Revision</span>
-            <strong>{submission.reviewRevision || "Original"}</strong>
+            <strong>{submission.reviewRevision || (native ? "New draft" : "Original")}</strong>
           </div>
           {onOpenOriginal ? <button type="button" onClick={onOpenOriginal} className="lic624-review__button"><FileText size={17} aria-hidden="true" /> Original</button> : null}
         </div>
@@ -232,8 +233,8 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
 
       <div className="lic624-review__summary">
         <div>
-          <span>Extraction</span>
-          <strong>{submission.extractionSummary?.extractedFieldCount ?? 0} fields extracted</strong>
+          <span>{native ? "Report" : "Extraction"}</span>
+          <strong>{native ? "Created in app" : `${submission.extractionSummary?.extractedFieldCount ?? 0} fields extracted`}</strong>
         </div>
         <div>
           <span>Required check</span>
@@ -241,7 +242,7 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
         </div>
         <div>
           <span>Review state</span>
-          <strong>{unsaved ? "Unsaved changes" : changedFromSource ? "Edits saved" : "Matches extraction"}</strong>
+          <strong>{unsaved ? "Unsaved changes" : native ? "Saved" : changedFromSource ? "Edits saved" : "Matches extraction"}</strong>
         </div>
       </div>
 
@@ -316,7 +317,7 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
           </div>
         </Section>
 
-        <Section number="02" title="Incident details" note="Select the incident category and verify the report narrative against the uploaded original.">
+        <Section number="02" title="Incident details" note={native ? "Select the incident category and describe what happened." : "Select the incident category and verify the report narrative against the uploaded original."}>
           <Field label="Incident type" required asGroup changed={changed(draft.incidentTypes, sourceData.incidentTypes)}>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {form.incidentTypes.map((option) => {
@@ -372,7 +373,7 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
           </div>
         </Section>
 
-        <Section number="05" title="Submit and confirm" note="Save at any time. Mark reviewed only after required fields match the original report.">
+        <Section number="05" title="Submit and confirm" note={native ? "Save at any time. Check all required fields before marking the report reviewed." : "Save at any time. Mark reviewed only after required fields match the original report."}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Submitted by" required changed={changed(draft.submission.submittedBy, sourceData.submission.submittedBy)}><input className={INPUT_CLASS} value={draft.submission.submittedBy} onChange={(event) => updateSubmission("submittedBy", event.target.value)} /></Field>
             <Field label="Submitted date" required changed={changed(draft.submission.submittedDate, sourceData.submission.submittedDate)}><input className={INPUT_CLASS} value={draft.submission.submittedDate} onChange={(event) => updateSubmission("submittedDate", event.target.value)} placeholder="MM/DD/YYYY" /></Field>

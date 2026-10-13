@@ -11,6 +11,7 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 
 export type ExecutiveDirectorIntakeStatus =
+  | "draft"
   | "awaiting_form_definition"
   | "ocr_required"
   | "needs_review"
@@ -20,11 +21,12 @@ export type ExecutiveDirectorIntakeStatus =
 
 export interface ExecutiveDirectorSubmission {
   submissionId: string;
+  origin?: "native" | "upload";
   facilityId: string;
   originalFileName: string;
-  contentType: string;
+  contentType: string | null;
   byteLength: number;
-  sha256: string;
+  sha256: string | null;
   createdAt: string;
   status: ExecutiveDirectorIntakeStatus;
   extractionSummary: {
@@ -126,6 +128,7 @@ export interface ExecutiveDirectorBootstrap {
   intake: {
     summary: {
       total: number;
+      drafts?: number;
       ocrRequired: number;
       needsReview: number;
       readyToFile: number;
@@ -380,6 +383,19 @@ export interface ExecutiveDirectorUploadResponse {
   submission: ExecutiveDirectorSubmissionDetail;
   form: Lic624FormContract;
   duplicate?: boolean;
+}
+
+export function createExecutiveDirectorLicensingReport(facilityId: string, creationId: string, signal?: AbortSignal) {
+  return fetchWithApiAuth<ExecutiveDirectorUploadResponse>(
+    "/api/platform/executive-director/licensing-intake/drafts",
+    {
+      method: "POST",
+      body: JSON.stringify({ creationId }),
+      ...(signal ? { signal } : {}),
+      headers: { "Content-Type": "application/json", "X-Facility-Id": facilityId }
+    },
+    { consume: (response) => readApiJson<ExecutiveDirectorUploadResponse>(response) }
+  );
 }
 
 export function uploadExecutiveDirectorLicensingReport(

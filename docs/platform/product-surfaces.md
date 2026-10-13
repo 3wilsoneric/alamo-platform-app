@@ -165,6 +165,11 @@ status filters, and cursor pagination. The existing digital LIC 624 stays
 mounted across tab changes to preserve unsaved edits; replacing or closing an
 edited form asks for confirmation. Normal Community/brand navigation also
 confirms dirty reviews, and pending report actions lock editing and replacement.
+Reports also has **New LIC 624**, which creates a native draft and opens that
+same editor without a file upload. Native drafts can be saved incomplete,
+reopened, filtered by Drafts, and marked reviewed after the required checks.
+They are labeled Created in app and have no Original-file action. Native entry
+does not generate an official PDF, file the report, or create an incident.
 Browser reload/close uses `beforeunload`; browser Back is not blocked by the
 current BrowserRouter. The long review form has section jumps and a compact
 mobile action footer. Month and client tabs support arrow/Home/End navigation,

@@ -397,4 +397,5 @@ assert.match(plan, /Nothing is sorted or filed|no automatic addition/i);
 
 await import("./check-executive-director-incidents.mjs");
 await import("./check-executive-director-batch-intake.mjs");
+await import("./check-lic624-native.mjs");
 console.log("executive director workspace checks passed");

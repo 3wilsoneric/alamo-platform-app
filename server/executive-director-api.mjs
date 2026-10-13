@@ -6,6 +6,7 @@ import {
 } from "./executive-director-access.mjs";
 import {
   createExecutiveDirectorIntakeSubmission,
+  createExecutiveDirectorNativeReport,
   getExecutiveDirectorIntakeOverview,
   getExecutiveDirectorIntakeSource,
   getExecutiveDirectorIntakeSubmission,
@@ -18,6 +19,7 @@ import {
   validateLic624ReviewRequest
 } from "./lic624-review.mjs";
 import { readValidatedJsonRequest } from "./http-body.mjs";
+import { validateLic624CreateRequest } from "./lic624-native.mjs";
 import { createHttpError, getApiError, getRequestUrl } from "./http-errors.mjs";
 import { applyProtectedApiHeaders } from "./http-response.mjs";
 import {
@@ -211,6 +213,18 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
       const submission = await getExecutiveDirectorIntakeSubmission(facilityId, submissionId);
       res.status(200).json({
         version: "executive-director-licensing-review-v1",
+        submission: toExecutiveDirectorSubmissionDetail(submission),
+        form: getLic624FormContract()
+      });
+      return;
+    }
+
+    if (req.method === "POST" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake/drafts`) {
+      const facilityId = resolveExecutiveDirectorFacility(access, getHeader(req, "x-facility-id"));
+      const request = await readValidatedJsonRequest(req, validateLic624CreateRequest, 1024);
+      const submission = await createExecutiveDirectorNativeReport({ facilityId, ...request, authContext });
+      res.status(submission.duplicate ? 200 : 201).json({
+        version: "executive-director-licensing-intake-v1",
         submission: toExecutiveDirectorSubmissionDetail(submission),
         form: getLic624FormContract()
       });
