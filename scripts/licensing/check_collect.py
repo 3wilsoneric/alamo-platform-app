@@ -4,10 +4,11 @@ import unittest
 import tempfile
 import tarfile
 import io
+import json
 from pathlib import Path
 from unittest.mock import patch
 from contextlib import redirect_stdout
-from collect import run, FACILITIES
+from collect import run, FACILITIES, API, collect_facility, reuse_cached_report, save_blob, digest, canonical
 from restore import restore
 from collect import SCHEMA, apply_records, complaint_rows, parse_report, record, validate_index
 
@@ -71,10 +72,81 @@ class CollectorChecks(unittest.TestCase):
 
 
 class CloudRestoreChecks(unittest.TestCase):
+    def test_unchanged_report_reuses_verified_evidence_without_report_request(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            number = FACILITIES[0][0]
+            document_id = "a" * 32
+            report = {"FACILITYNUMBER": number, "CONTROLNUMBER": "control-1",
+                      "REPORTTITLE": "FACILITY EVALUATION REPORT", "REPORTTYPE": "Inspection",
+                      "REPORTDATE": "10/12/2026",
+                      "REPORTPAGE": f"http://www.fakeout.gov/WebReports/FASWebReportDisplay.nsf/0/{document_id}?OpenDocument"}
+            html_path = save_blob(root, b"previously verified report HTML", "html")
+            text = b"previously verified report text"
+            text_path = save_blob(root, text, "txt")
+            payload = {**report, "source_document_id": document_id, "html_title": "Report",
+                       "report_date": "2026-10-12", "text_sha256": digest(text),
+                       "unresolved_link_refs": []}
+            prior = {"payload": payload, "fingerprint": digest(canonical(payload).encode()),
+                     "raw_path": html_path, "text_path": text_path,
+                     "fetched_at": "2026-10-12T16:00:00+00:00"}
+            class IndexOnlyFetcher:
+                def __init__(self):
+                    self.root = root
+                    self.calls = []
+                    self.probe_calls = []
+
+                def probe_report(self, url):
+                    self.probe_calls.append(url)
+                    return None
+
+                def get(self, url, extension):
+                    self.calls.append(url)
+                    if url == API + f"FacilityDetail/{number}":
+                        body = {"FacilityDetail": {"FACILITYNUMBER": number, "FACILITYNAME": "Test facility",
+                                                   "STATUS": "Licensed", "CMPCOUNT": 0, "COMPLAINTARRAY": None}}
+                    elif url == API + f"FacilityReports/{number}":
+                        body = {"COUNT": 1, "REPORTARRAY": [report]}
+                    else:
+                        raise AssertionError("Unchanged report body was fetched again")
+                    raw = json.dumps(body).encode()
+                    return raw, save_blob(root, raw, extension), "2026-10-14T16:00:00+00:00"
+            fetcher = IndexOnlyFetcher()
+            rows, summary = collect_facility(fetcher, number, "San Pablo", "337", {document_id: prior})
+            self.assertEqual(len(fetcher.calls), 4)
+            self.assertEqual(len(fetcher.probe_calls), 1)
+            self.assertEqual(summary["reused_report_count"], 1)
+            self.assertEqual(summary["fetched_report_count"], 0)
+            self.assertEqual(summary["report_body_audit"], "deferred")
+            self.assertEqual(rows[-1]["text"], text.decode())
+            self.assertEqual(rows[-1]["fetched_at"], prior["fetched_at"])
+            self.assertIsNone(reuse_cached_report(root, prior, {**report, "REPORTDATE": "10/13/2026"}, "source"))
+            (root / text_path).write_bytes(b"tampered")
+            with self.assertRaisesRegex(ValueError, "hash mismatch"):
+                reuse_cached_report(root, prior, report, "source")
+            (root / text_path).write_bytes(text)
+            live_html = ("<html><head><title>Report</title></head><body>"
+                         "FACILITY EVALUATION REPORT Facility Number: 079201030 "
+                         "Report Date: 10/12/2026 control-1 "
+                         + "Clinical findings reviewed. " * 20 + "</body></html>").encode()
+            class ResponsiveFetcher(IndexOnlyFetcher):
+                def probe_report(self, url):
+                    self.probe_calls.append(url)
+                    return live_html, save_blob(root, live_html, "html"), "2026-10-14T16:00:00+00:00"
+            responsive = ResponsiveFetcher()
+            refreshed, audited = collect_facility(responsive, number, "San Pablo", "337", {document_id: prior})
+            self.assertEqual(audited["report_body_audit"], "complete")
+            self.assertEqual(audited["fetched_report_count"], 1)
+            self.assertEqual(refreshed[-1]["fetched_at"], "2026-10-14T16:00:00+00:00")
+            self.assertNotEqual(refreshed[-1]["fingerprint"], prior["fingerprint"])
+            report["REPORTDATE"] = "10/13/2026"
+            with self.assertRaisesRegex(AssertionError, "Unchanged report body"):
+                collect_facility(IndexOnlyFetcher(), number, "San Pablo", "337", {document_id: prior})
+
     def test_partial_run_never_advances_comparison_history(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            def collect(_fetch, number, _community, _platform):
+            def collect(_fetch, number, _community, _platform, _cached):
                 if number == FACILITIES[-1][0]:
                     raise ValueError("Source unavailable")
                 row = record("report", "a", {"text": "new"}, "raw.html", "https://example.test", "now")

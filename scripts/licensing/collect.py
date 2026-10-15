@@ -16,6 +16,7 @@ import time
 import uuid
 
 API = "https://www.ccld.dss.ca.gov/transparencyapi/api/"
+DERIVED_REPORT_FIELDS = {"source_document_id", "html_title", "report_date", "text_sha256", "unresolved_link_refs"}
 FACILITIES = [
     ("079201030", "San Pablo", "337"),
     ("197610805", "Santa Clarita", "345"),
@@ -187,6 +188,23 @@ class Fetcher:
         path = save_blob(self.root, raw, extension)
         return raw, path, now()
 
+    def probe_report(self, url):
+        if not url.startswith(API):
+            raise ValueError("Only the observed public CCLD API is permitted")
+        time.sleep(max(0, self.delay - (time.monotonic() - self.last)))
+        try:
+            result = subprocess.run([
+                "curl", "--fail", "--silent", "--show-error", "--proto", "=https",
+                "--connect-timeout", "5", "--max-time", "8", "--max-filesize", "20971520", url,
+            ], capture_output=True, timeout=12)
+        except subprocess.TimeoutExpired:
+            self.last = time.monotonic()
+            return None
+        self.last = time.monotonic()
+        if result.returncode:
+            return None
+        return result.stdout, save_blob(self.root, result.stdout, "html"), now()
+
 
 def record(kind, entity_id, payload, raw_path, source_url, fetched_at, text_path=None):
     return {"kind": kind, "entity_id": entity_id,
@@ -195,7 +213,42 @@ def record(kind, entity_id, payload, raw_path, source_url, fetched_at, text_path
             "source_url": source_url, "fetched_at": fetched_at}
 
 
-def collect_facility(fetch, number, community, platform_id):
+def cached_reports(db, root, number):
+    rows = db.execute("""SELECT c.entity_id,c.fingerprint,c.payload_json,c.raw_path,c.text_path,
+        (SELECT MAX(o.fetched_at) FROM observations o WHERE o.facility_number=c.facility_number
+         AND o.kind='report' AND o.entity_id=c.entity_id AND o.fingerprint=c.fingerprint) AS fetched_at
+        FROM current_records c WHERE c.facility_number=? AND c.kind='report'""", (number,))
+    return {row[0]: {"fingerprint": row[1], "payload": json.loads(row[2]),
+                     "raw_path": row[3], "text_path": row[4], "fetched_at": row[5]} for row in rows}
+
+
+def reuse_cached_report(root, prior, report, url):
+    if not prior:
+        return None
+    payload = prior["payload"]
+    source_fields = {key: value for key, value in payload.items() if key not in DERIVED_REPORT_FIELDS}
+    if source_fields != report or payload.get("source_document_id") != source_id(report):
+        return None
+    evidence = {}
+    for kind, extension in (("raw_path", "html"), ("text_path", "txt")):
+        relative = prior.get(kind)
+        if not isinstance(relative, str) or not re.fullmatch(rf"artifacts/[a-f0-9]{{64}}\.{extension}", relative):
+            raise ValueError("Cached report evidence path is invalid")
+        raw = (root / relative).read_bytes()
+        if digest(raw) != Path(relative).stem:
+            raise ValueError("Cached report evidence hash mismatch")
+        evidence[kind] = raw
+    if digest(evidence["text_path"]) != payload.get("text_sha256"):
+        raise ValueError("Cached report text hash mismatch")
+    text = evidence["text_path"].decode("utf-8", errors="strict")
+    if not prior.get("fetched_at") or digest(canonical(payload).encode()) != prior["fingerprint"]:
+        raise ValueError("Cached report provenance is incomplete")
+    return {"kind": "report", "entity_id": source_id(report), "fingerprint": prior["fingerprint"],
+            "payload": payload, "raw_path": prior["raw_path"], "text_path": prior["text_path"],
+            "source_url": url, "fetched_at": prior["fetched_at"], "text": text}
+
+
+def collect_facility(fetch, number, community, platform_id, prior_reports=None):
     detail_url = API + "FacilityDetail/" + number
     raw, detail_path, fetched = fetch.get(detail_url, "json")
     detail = json.loads(raw)
@@ -214,17 +267,40 @@ def collect_facility(fetch, number, community, platform_id):
     index_url = API + "FacilityReports/" + number
     raw_index, index_path, _ = fetch.get(index_url, "json")
     reports = validate_index(json.loads(raw_index), number)
+    probed = {}
+    verify_bodies = False
+    if prior_reports:
+        for index, report in enumerate(reports):
+            if (prior_reports.get(source_id(report)) and
+                    {key: value for key, value in prior_reports[source_id(report)]["payload"].items()
+                     if key not in DERIVED_REPORT_FIELDS} == report):
+                url = API + f"FacilityReports?facNum={number}&inx={index}"
+                sampled = fetch.probe_report(url)
+                if sampled:
+                    parse_report(sampled[0], report)
+                    probed[index] = sampled
+                    verify_bodies = True
+                else:
+                    print(f"{community}: report-body audit deferred; reusing hash-verified documents", flush=True)
+                break
+    reused = 0
     for index, report in enumerate(reports):
         url = API + f"FacilityReports?facNum={number}&inx={index}"
-        html, html_path, observed = fetch.get(url, "html")
-        text, html_title, links = parse_report(html, report)
-        text_path = save_blob(fetch.root, text.encode(), "txt")
-        # Index is a retrieval locator only. REPORTPAGE's host is a placeholder;
-        # retain it as source metadata but never fetch it or use it as a hyperlink.
-        payload = {**report, "source_document_id": source_id(report), "html_title": html_title,
-                   "report_date": iso_date(report["REPORTDATE"]),
-                   "text_sha256": digest(text.encode()), "unresolved_link_refs": links}
-        rows.append({**record("report", source_id(report), payload, html_path, url, observed, text_path), "text": text})
+        prior = (prior_reports or {}).get(source_id(report))
+        cached = reuse_cached_report(fetch.root, prior, report, url)
+        if cached and not verify_bodies:
+            rows.append(cached)
+            reused += 1
+        else:
+            html, html_path, observed = probed.pop(index) if index in probed else fetch.get(url, "html")
+            text, html_title, links = parse_report(html, report)
+            text_path = save_blob(fetch.root, text.encode(), "txt")
+            # Index is a retrieval locator only. REPORTPAGE's host is a placeholder;
+            # retain it as source metadata but never fetch it or use it as a hyperlink.
+            payload = {**report, "source_document_id": source_id(report), "html_title": html_title,
+                       "report_date": iso_date(report["REPORTDATE"]),
+                       "text_sha256": digest(text.encode()), "unresolved_link_refs": links}
+            rows.append({**record("report", source_id(report), payload, html_path, url, observed, text_path), "text": text})
         if (index + 1) % 10 == 0 or index + 1 == len(reports):
             print(f"{community}: archived {index + 1}/{len(reports)} reports", flush=True)
     # Detect index changes while downloading; never commit a mixed inventory.
@@ -238,7 +314,9 @@ def collect_facility(fetch, number, community, platform_id):
     dates = sorted(iso_date(d) for d in dates)
     summary = {"community": community, "facility_number": number, "platform_facility_id": platform_id,
                "licensed_name": profile["FACILITYNAME"], "license_status": profile["STATUS"],
-               "report_count": len(reports), "complaint_count": len(complaints),
+               "report_count": len(reports), "reused_report_count": reused,
+               "fetched_report_count": len(reports) - reused, "complaint_count": len(complaints),
+               "report_body_audit": "deferred" if reused else "complete",
                "report_types": dict(collections.Counter(r["REPORTTYPE"] for r in reports)),
                "oldest_report": dates[0] if dates else None, "latest_report": dates[-1] if dates else None,
                "profile_last_visit": profile.get("LASTVISITDATE"), "inventory_path": index_path,
@@ -301,7 +379,8 @@ def run(root, delay):
         summaries, exports, collected = [], [], []
         for number, community, platform_id in FACILITIES:
             try:
-                rows, summary = collect_facility(fetch, number, community, platform_id)
+                rows, summary = collect_facility(fetch, number, community, platform_id,
+                                                 cached_reports(db, root, number))
                 collected.append((number, rows, summary))
                 summary["status"] = "complete"
                 exports.extend({"facility_number": number, "community": community,

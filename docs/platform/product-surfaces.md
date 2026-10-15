@@ -567,6 +567,14 @@ the library bundle to `alamo-platform-snapshots/licensing/library-v1.json` in
 same private `licensing/` prefix. Publishing uses the existing Azure CLI sign-in
 and conditional writes to reject stale/concurrent replacement. Collection
 failures retain the last complete reports and publish a failed-check notice.
+Each collection rechecks the official facility profile and complete report
+inventory. If a report's source ID and every inventory field are unchanged, the
+collector may reuse its archived HTML and text only after verifying both
+artifact hashes, the text hash, and the record fingerprint. It preserves the
+original report-body retrieval time. A short body probe triggers a full body
+audit when the state report endpoint is responsive; otherwise the audit is
+marked deferred. A new or changed report must be retrieved and parsed live, or
+the scan fails without replacing the last complete library.
 
 Baseline records do not generate alerts; new, revised, removed, and reappearing
 records do. The page refreshes Updates once per minute. `--refresh-feed-only`
