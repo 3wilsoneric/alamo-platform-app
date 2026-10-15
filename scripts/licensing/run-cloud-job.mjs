@@ -9,6 +9,7 @@ import { LICENSING_BLOB_PATH, LICENSING_MAX_BYTES } from "../../server/licensing
 import { licensingContainer, readBlob } from "./cloud-storage.mjs";
 import { withLicensingLease } from "./cloud-storage.mjs";
 import { LICENSING_SCHEDULE, isLicensingScheduledTime } from "./job-schedule.mjs";
+import { formatLicensingProcessError } from "./process-error.mjs";
 import { deliverPendingLicensingNotifications, queueLicensingChangeNotification } from "./update-notifications.mjs";
 
 const exec = promisify(execFile);
@@ -76,6 +77,6 @@ try {
     console.log(JSON.stringify({ ...result, notifications: [...recoveredNotifications, ...deliveredNotifications] }));
   }
 } catch (error) {
-  console.error(`Licensing cloud check failed: ${error.message}`);
+  console.error(`Licensing cloud check failed: ${formatLicensingProcessError(error)}`);
   process.exitCode = 1;
 }

@@ -4,6 +4,7 @@ import { readFile, writeFile, rename, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { LICENSING_SCHEDULE } from "./licensing/job-schedule.mjs";
+import { formatLicensingProcessError } from "./licensing/process-error.mjs";
 import { LICENSING_COMMUNITIES } from "../shared/licensing-contracts.mjs";
 
 const exec = promisify(execFile);
@@ -19,7 +20,9 @@ if (!replay) {
   } catch (error) {
     failure = true;
     await mkdir(destination, { recursive: true });
-    await writeFile(path.join(destination, "last-check-error.log"), String(error instanceof Error ? error.message : error).slice(0, 8000));
+    const detail = formatLicensingProcessError(error);
+    await writeFile(path.join(destination, "last-check-error.log"), detail);
+    console.error(`Licensing collection/import failed: ${detail}`);
   }
 }
 const python = `import sqlite3,json,sys

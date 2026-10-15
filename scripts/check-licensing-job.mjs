@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { LICENSING_SCHEDULE, isLicensingScheduledTime } from "./licensing/job-schedule.mjs";
 import { withLicensingLease, readBlob } from "./licensing/cloud-storage.mjs";
+import { formatLicensingProcessError } from "./licensing/process-error.mjs";
 import { validateLicensingUpdates } from "../shared/licensing-contracts.mjs";
 import {
   buildLicensingChangeEmail,
@@ -18,6 +19,14 @@ for (const value of ["2026-09-28T16:00:00Z", "2026-09-30T16:00:00Z", "2026-11-02
 for (const value of ["2026-09-28T17:00:00Z", "2026-11-02T16:00:00Z", "2026-09-29T16:00:00Z", "2026-10-01T16:00:00Z"]) {
   assert.ok(!isLicensingScheduledTime(new Date(value)), `Wrong slot must skip: ${value}`);
 }
+const collectorError = Object.assign(new Error("Command failed: python3 scripts/licensing/collect.py"), {
+  stdout: "San Pablo: FAILED: curl returned non-zero exit status 28.\n",
+  stderr: ""
+});
+assert.match(formatLicensingProcessError(collectorError), /San Pablo: FAILED: curl returned non-zero exit status 28/);
+assert.doesNotMatch(formatLicensingProcessError(Object.assign(new Error("failed"), {
+  stdout: "report body must not be logged\nSanta Clarita: FAILED: source timeout\n"
+})), /report body must not be logged/);
 let held = false;
 let releases = 0;
 const client = { getBlobLeaseClient: () => ({ leaseId: "lease-test",
