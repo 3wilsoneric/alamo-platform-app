@@ -65,6 +65,25 @@ Do not restore the preceding section's enabled state during a redeployment.
 If future delivery is approved, use a fresh cutoff unless the user explicitly
 asks to send the backlog.
 
+- source: `8e50054`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7v`
+- web image: `sha256:c5d92d466d065b0c6f12307223d3d2e1af644725242f1fab1ae15001efd0ef28`
+- revision: `alamo-platform-prod-web--agent-skills-1016`
+- preceding web image: `sha256:38f114944f49b9d1326f6da914f5feaa21be7624932d7484fa0d72e99aae1dd0`
+- browser assets: `/assets/index-OzBLv6cD.js`, `/assets/index-DtZiCD2T.css`
+
+Typecheck, docs, unused-code, full analyst checks, Licensing contracts/job
+checks, responsive browser checks at four widths, and the production build
+passed. The browser check verifies the general Agent identity, the active
+Licensing skill, preserved report links through the old route, automatic report
+modules, and failed-check handling. The earlier full live ship-gate limitation
+recorded below remains separate from these passing scoped checks.
+Production is Healthy/Running. Twenty-three route/asset/auth checks passed,
+and Eric's signed-in session followed the legacy URL to `/analytics/agent`,
+showing Agent, Active skill: Licensing, and the automatic 95-report results.
+The job update completed successfully with delivery false; its Monday/Wednesday
+cron remains unchanged, and the Logic App remains Disabled.
+
 ### Licensing agent, readable reports, and change emails — 2026-10-16
 
 Licensing now opens with a green agent work summary and the latest report
