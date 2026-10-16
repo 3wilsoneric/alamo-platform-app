@@ -244,7 +244,7 @@ The analyst remains a vertical chat/module workspace:
 
 ## Private Presentation
 
-`/presentation` displays the supplied 28-slide Alamo Data Strategy deck in a
+`/presentation` displays the supplied 16-slide Alamo Data Strategy deck in a
 full-window 16:9 desktop viewer. The presentation shortcut is temporarily removed
 from both the main and Executive Director headers; authorized users can still
 open the direct `/presentation` link. An explicitly authorized presentation account can
