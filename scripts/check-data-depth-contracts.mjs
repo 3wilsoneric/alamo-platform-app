@@ -540,6 +540,24 @@ function assertCensusTransformContracts() {
     /"Res_Unit_History":\s*\["Start_Date",\s*"End_Date"\]/,
     "unit history transform should not reference nonexistent Start_Date/End_Date fields"
   );
+  const toolViewSource = readFileSync("databricks/notebooks/tool_context_views.py", "utf8");
+  const unitHistoryView = toolViewSource.match(/def create_resident_unit_history_view\(\)[\s\S]*?\n\ndef /)?.[0] ?? "";
+  assert.ok(unitHistoryView, "expected resident unit history gold view");
+  assert.match(
+    unitHistoryView,
+    /start_expr\s*=\s*sql_date\("u",\s*columns,\s*\["Move_In",\s*"Physical_Move_In_Date"\]\)/,
+    "unit history view should use ElderMark move-in dates"
+  );
+  assert.match(
+    unitHistoryView,
+    /end_expr\s*=\s*sql_date\("u",\s*columns,\s*\["Move_Out",\s*"Physical_Move_Out_Date"\]\)/,
+    "unit history view should use ElderMark move-out dates"
+  );
+  assert.doesNotMatch(
+    unitHistoryView,
+    /start_expr\s*=\s*sql_date\([^\n]*Start_Date|end_expr\s*=\s*sql_date\([^\n]*End_Date/,
+    "unit history view must not regress to absent start/end columns"
+  );
   assert.match(
     transformSource,
     /def validate_silver_table_readable\(table_name: str\)[\s\S]*?spark\.table\(fqn\)\.limit\(1\)\.collect\(\)/,

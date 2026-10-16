@@ -745,8 +745,10 @@ def create_resident_unit_history_view() -> None:
     facility_expr = sql_value("u", columns, ["Facility", "facility", "__FACILITY_ID"])
     resident_expr = sql_value("u", columns, ["Res_Number", "Resident_Number", "Resident_ID", "Client_ID"])
     unit_expr = sql_value("u", columns, ["Unit_Number", "Unit", "Room", "Room_Number", "Bed", "Unit_ID"])
-    start_expr = sql_date("u", columns, ["Start_Date", "Effective_Date", "Move_In_Date"])
-    end_expr = sql_date("u", columns, ["End_Date", "Move_Out_Date"])
+    # ElderMark Res_Unit_History records occupancy with Move_In / Move_Out.
+    # Physical dates are an optional fallback; Create_Date is not an occupancy date.
+    start_expr = sql_date("u", columns, ["Move_In", "Physical_Move_In_Date"])
+    end_expr = sql_date("u", columns, ["Move_Out", "Physical_Move_Out_Date"])
 
     create_view(
         "v_tool_resident_unit_history",
