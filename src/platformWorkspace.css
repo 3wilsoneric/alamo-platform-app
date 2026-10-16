@@ -255,7 +255,7 @@
 .agent-work-card { padding: clamp(20px, 3vw, 30px); border-radius: 12px; background: #087d64; color: white; }
 .agent-work-card__identity { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .agent-work-card__identity h1 { font: 600 20px/1.4 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.02em; }
-.agent-work-card__identity > span { margin-left: auto; border: 1px solid #ffffff60; border-radius: 20px; padding: 4px 10px; color: #e3f6ee; font-size: 11px; }
+.agent-work-card__mode { margin-left: auto; border: 1px solid #ffffff60; border-radius: 20px; padding: 4px 10px; color: #e3f6ee; font-size: 11px; }
 .agent-work-card__skill { display: flex; align-items: center; gap: 10px; margin-top: 20px; font-size: 16px; font-weight: 600; }
 .agent-work-card__skill > span { font-size: 11px; font-weight: 400; color: #d2e9df; }
 .agent-work-card__status { margin-top: 22px; font-size: 23px; font-weight: 600; line-height: 1.4; }

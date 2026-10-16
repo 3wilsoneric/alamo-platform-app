@@ -2,7 +2,7 @@ import { useMsal } from "@azure/msal-react";
 import type { EveryAgentOverview } from "../../../../shared/everyagent-contracts.mjs";
 
 export function EveryAgentOrb({ small = false }: { small?: boolean }) {
-  return <span className={`everyagent-orb${small ? " everyagent-orb--small" : ""}`} aria-hidden="true"><span /><span /><span /></span>;
+  return <span className={`everyagent-orb${small ? " everyagent-orb--small" : ""}`} aria-hidden="true"><img src="/brand/everyagent-alamo-v1.webp" alt="" width={512} height={512} draggable={false} /></span>;
 }
 
 export function useAgentGreeting() {

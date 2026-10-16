@@ -3,7 +3,7 @@
 - purpose: implementation details for reusing the realistic folder, paper, ledger, and dashboard styling across Pipeline and Alamo Platform
 - status: active design reference; extracted values plus explicitly identified reuse rules, not a completed shared component library
 - owners: product, frontend
-- updated: 2026-10-09
+- updated: 2026-10-16
 - tags: design, folders, pipeline, dashboard, typography, materials, responsive
 - labels: platform-handbook, implementation-reference
 
@@ -23,6 +23,23 @@ applying it. Keep the existing Alamo Health Management logo and top navigation.
 Read the relevant source below and the host application's own agent map before
 implementing. Reuse presentation across products; do not import one product's
 clinical transactions, authorization, or runtime into another.
+
+## EveryAgent assistant mark
+
+The approved EveryAgent mark is `public/brand/everyagent-alamo-v1.webp`: the
+original combined Alamo head-and-tree and emerald glass orb. Use it through
+`EveryAgentOrb` in the briefing, embedded launcher, companion header, and
+Licensing skill header. The main Alamo Health Management wordmark stays intact.
+The later brighter color variant was not selected.
+
+The built-in image-generation tool produced the approved transparent PNG from
+the existing Alamo head mark and a faithful render of the former CSS orb.
+The deployed derivative is 512 pixels square, WebP quality 92 with alpha. Its
+transparent margins are accounted for in the component's image sizing.
+
+Generation prompt:
+
+> Use case: compositing / logo-brand exploration. Create ONE cohesive new EveryAgent assistant icon combining the two supplied logos. Image 1 is the Alamo brand identity reference: a simple right-facing human head outline, the back of the head becoming a branching tree with small green leaves. Image 2 is the current EveryAgent material and form reference: a softly glowing emerald sphere with delicate orbital lines. Preserve the recognizable Alamo right-facing forehead/nose/chin silhouette and leaf/tree crown, but reinterpret them as a modern premium 3D emerald-and-jade glass sculpture integrated into the rounded EveryAgent orb. The head/tree should feel built into the volume, with a clean sculpted profile and a restrained arrangement of dimensional leaves, not a flat sticker applied to a sphere. Let the softly rounded orb body and very subtle orbital curves unify the mark. Calm intelligent assistant personality, warm and organic, contemporary and minimal. Deep forest green, translucent emerald, gentle mint highlights. Soft studio light from the upper left, convincing bevels, depth, polished satin glass with controlled reflections; no chrome, no plastic toy look. Strong clear silhouette that can work as a small app launcher. Front-facing graphic composition with only enough perspective to show depth. Center the single icon with generous transparent margins. Transparent background with preserved alpha. No lettering, no wordmark, no labels, no comparison layout, no robot face, no eyes, no scenery, no floor, no watermark. Preview concept only.
 
 ## Source anchors
 

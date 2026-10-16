@@ -12,12 +12,9 @@
 .everyagent-live:before{content:"";width:5px;height:5px;flex:none;border-radius:50%;background:currentColor}
 .everyagent-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:76px;padding-top:48px}
 .everyagent-presence{padding-top:12px;align-self:start;position:sticky;top:32px}
-.everyagent-orb{display:block;position:relative;width:144px;height:144px;margin:0 auto;border-radius:50%;isolation:isolate;background:radial-gradient(circle at 33% 26%,#b6f4c9 0, #64caa5 11%,#16886b 30%,#075b4b 56%,#032e29 83%);box-shadow:inset -10px -15px 28px #002b2a80,inset 4px 4px 14px #c6ffe655,0 14px 38px #0e745920}
-.everyagent-orb:before{content:"";position:absolute;inset:13%;border:1px solid #d2ffe070;border-radius:50%;transform:rotate(-28deg) scaleX(.66);box-shadow:0 0 12px #aaffd526,inset 0 0 12px #aaffd526}
-.everyagent-orb>span{position:absolute;inset:22% 8%;border-radius:50%;border:1px solid #bdffd04d;transform:rotate(-32deg)}
-.everyagent-orb>span:nth-child(2){inset:7% 34%;transform:rotate(38deg);border-color:#beffe038}
-.everyagent-orb>span:nth-child(3){inset:48% 25%;border:0;background:#d4ffe1;box-shadow:0 0 14px 2px #8bf9bdc0;transform:rotate(-32deg);opacity:.65}
-.everyagent-orb--small{width:32px;height:32px;margin:0;flex:none;box-shadow:inset -3px -3px 7px #002b2a80,0 0 10px #54e6b21f}
+.everyagent-orb{display:block;position:relative;width:144px;height:144px;margin:0 auto;flex:none}
+.everyagent-orb>img{position:absolute;width:128%;height:128%;max-width:none;inset:-14%;object-fit:contain;pointer-events:none}
+.everyagent-orb--small{width:32px;height:32px;margin:0}
 .everyagent-presence-caption{text-align:center;font-size:12px;color:#688175;margin:24px 0 38px}
 .everyagent-eyebrow{font-family:"Helvetica Neue",Arial,sans-serif;font-size:10px!important;line-height:1.5;font-weight:650;letter-spacing:1.3px;text-transform:uppercase;color:#6b8174!important}
 .everyagent-skill-links>a{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 0;border-bottom:1px solid var(--ea-rule);color:#285646}
