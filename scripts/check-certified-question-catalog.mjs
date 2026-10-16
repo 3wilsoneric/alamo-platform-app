@@ -103,6 +103,7 @@ const hiddenMenuFamilies = new Set([
   "resident-change-summary",
   "resident-incident-history",
   "resident-risk-summary",
+  "medication-refusal-detail",
   "community-topline",
   "data-slice-catalog"
 ]);

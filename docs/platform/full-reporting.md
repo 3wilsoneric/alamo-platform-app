@@ -49,7 +49,7 @@ for release.
 | Effectiveness evidence report (hidden until complete) | Portfolio or community, tailored to one supported audience | Latest or census/incident/medication overlap | In-development evidence case retained outside navigation until required external outcomes are governed and complete |
 | Census and resident flow | Portfolio or community | Every loaded census month | Selected-month census, a recent 12-month trend, full-history annual census context, and monthly and annual resident flow when loaded |
 | Incident report | Portfolio or community | Every loaded incident month | Historical incident trend, category concentration, one aggregated row per community, and severity indicators only when detail reconciles to the aggregate |
-| Medication performance report | Portfolio or community | Every loaded medication month | A weighted monthly completion trend, one selected-month community table, period-aligned refusals, and current resident medication burden when complete |
+| Medication performance report | Portfolio or community | Every loaded medication month | A weighted monthly completion trend, one selected-month community table, and current resident medication burden when complete |
 | Resident population | Portfolio or community | Current state only | Current profile coverage, source diagnosis labels, age, aggregate length-of-stay measures when complete, and community comparisons with governed census kept separate from profile counts |
 
 Do not add a second portfolio summary, a fixed-date alias, or a one-off report
@@ -111,7 +111,11 @@ was used.
 Current capacity and operating limits are point-in-time reference data. They
 appear only on latest reports and must never be backfilled into historical
 periods. Medication completion is weighted from scheduled and given counts.
-Medication refusal concentration is aligned to the selected report month.
+Routine medication-refusal reports are not counted as incidents. The incident
+category policy groups former aggressive-behavior and substance-use labels as
+Other; mixed refusal/AWOL events remain AWOL/Elopement. Original source records
+remain unchanged for audit. MAR completion retains scheduled, given, and
+not-given administration counts without a refusal leaderboard.
 Portfolio census, incident, and medication trend lines use the latest contiguous
 months with an identical reporting-community set. The census annual table keeps
 all loaded history, identifies community coverage, and marks first-to-last

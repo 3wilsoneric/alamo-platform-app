@@ -838,13 +838,9 @@ const historicalMedication = compileFullReportFromContext(
   { reportId: "medications", facilityId: "337", period: "2026-06" },
   inputs
 );
-const historicalRefusals = historicalMedication.sections
-  .find((section) => section.id === "refusal-concentration")
-  ?.blocks.find((block) => block.type === "bar_list")?.items ?? [];
 assert(
-  historicalRefusals.some((item) => item.label === "Medication A" && item.value === 6) &&
-    !historicalRefusals.some((item) => item.label === "Current-only fallback"),
-  "medication refusals must align to the selected period"
+  !historicalMedication.sections.some((section) => section.id === "refusal-concentration"),
+  "medication reports must not show a refusal leaderboard"
 );
 const medicationRows = historicalMedication.sections
   .find((section) => section.id === "administration-detail")

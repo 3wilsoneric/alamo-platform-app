@@ -52,6 +52,13 @@ Narrative report and briefing generation are intentionally not part of this
 workflow; AH Analyst synthesizes only after deterministic tool evidence is
 available.
 
+The governed incident source keeps original silver records for audit, then
+excludes routine medication-refusal reports from incident counts and detail.
+Mixed refusal/AWOL records remain AWOL/Elopement. Former aggressive-behavior
+and substance-use incident categories publish as Other. This policy is applied
+in the gold incident view before monthly totals, detail, and app snapshots are
+assembled; MAR administration counts remain a separate data product.
+
 Long-form reports do not require another Databricks output. The application
 compiler freezes and assembles the already-published governed snapshot into a
 versioned report document. Databricks remains responsible for the accuracy,

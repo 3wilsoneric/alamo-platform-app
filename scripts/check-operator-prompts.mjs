@@ -19,10 +19,9 @@ const months = [
 
 const categories = [
   ["AWOL", "AWOL/Elopement"],
-  ["Medication Refusal", "Medication Refusal"],
   ["Medical Emergency", "Medical Emergency"],
-  ["Substance Use", "Substance Use"],
-  ["Aggressive Behavior", "Aggressive Behavior"]
+  ["Fall", "Fall"],
+  ["Other", "Other"]
 ];
 
 const exactResidents = [

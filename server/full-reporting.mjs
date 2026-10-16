@@ -157,42 +157,6 @@ function weightedCompliance(rows) {
   };
 }
 
-function refusalItemsForPeriod(summary, facilityId, period, limit = 12) {
-  const monthlyRows = toolContextRows(
-    summary,
-    "marMonthlyByCommunityMedication",
-    "mar_monthly_by_community_medication"
-  ).filter(
-    (row) =>
-      (!facilityId || text(row.facility_id) === facilityId) &&
-      (!period || text(row.month_bucket) === period)
-  );
-
-  if (monthlyRows.length) {
-    const totals = new Map();
-    monthlyRows.forEach((row) => {
-      const label = text(row.medication_name) || "Unspecified medication";
-      totals.set(label, (totals.get(label) ?? 0) + number(row.refusal_count));
-    });
-    return [...totals.entries()]
-      .map(([label, value]) => ({ label, value, displayValue: integer(value) }))
-      .filter((item) => item.value > 0)
-      .sort((left, right) => right.value - left.value || left.label.localeCompare(right.label))
-      .slice(0, limit);
-  }
-
-  if (period) return [];
-  return [...(summary.refusalByMedication ?? [])]
-    .filter((row) => !facilityId || text(row.facility_id) === facilityId)
-    .sort((left, right) => number(right.refusals) - number(left.refusals))
-    .slice(0, limit)
-    .map((row) => ({
-      label: text(row.medication) || "Unspecified medication",
-      value: number(row.refusals),
-      displayValue: integer(row.refusals)
-    }));
-}
-
 function facilityNameById(communities) {
   const names = new Map(
     ALAMO_FACILITIES.map((facility) => [facility.facilityId, facility.shortName])
@@ -1020,7 +984,6 @@ function buildCommunityReport(context) {
   const communityResidents = population.residents;
   const averageAge = population.averageAge;
   const averageStay = population.averageStay;
-  const refusals = refusalItemsForPeriod(summary, facilityId, complianceRows.period, 8);
   const documentation = (request.period ? [] : documentationRows(summary))
     .filter((row) => text(row.facility_id) === facilityId)
     .sort((left, right) => number(right.days_since_last_note) - number(left.days_since_last_note));
@@ -1234,7 +1197,6 @@ function buildCommunityReport(context) {
               { label: "Compliance", value: percent(compliance.compliance_pct) }
             ]
           }] : []),
-          ...(refusals.length ? [barList(refusals)] : [])
         ]
       },
       ...(documentationSummary ? [{
@@ -1299,7 +1261,6 @@ function buildCommunityReport(context) {
       evidence("resident_profile", communityResidents, "Operational placeholder profiles excluded"),
       evidence("medication_compliance_monthly", complianceRows.rows),
       ...(flowRows.rows.length ? [evidence("resident_flow_monthly_by_community", flowSourceRows)] : []),
-      ...(refusals.length ? [evidence("mar_monthly_by_community_medication", refusals)] : []),
       ...(documentation.length ? [evidence("documentation_status", documentation)] : []),
       ...(burden ? [evidence("mar_resident_summary", burden.rows)] : []),
       ...(currentCapacity ? [
@@ -2101,12 +2062,6 @@ function buildFocusedReport(context) {
         displayValue: percent(monthWeighted.percentage)
       };
     });
-    const refusalItems = refusalItemsForPeriod(
-      summary,
-      request.facilityId,
-      compliance.period,
-      12
-    );
     const burden = request.period
       ? null
       : medicationBurden(summary, request.facilityId, scopeRows);
@@ -2192,11 +2147,6 @@ function buildFocusedReport(context) {
               }))
           )]
         },
-        ...(refusalItems.length ? [{
-          id: "refusal-concentration",
-          title: "Refusal concentration",
-          blocks: [barList(refusalItems)]
-        }] : []),
         ...(burden ? [{
           id: "current-medication-burden",
           title: "Current resident medication burden",
@@ -2230,7 +2180,6 @@ function buildFocusedReport(context) {
       ],
       sources: [
         evidence("medication_compliance_monthly", complianceSourceRows),
-        ...(refusalItems.length ? [evidence("mar_monthly_by_community_medication", refusalItems)] : []),
         ...(burden ? [evidence("mar_resident_summary", burden.rows)] : [])
       ]
     });

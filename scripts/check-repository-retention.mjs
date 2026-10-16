@@ -90,6 +90,7 @@ const approvedWorkflowFiles = new Set([
 ]);
 const approvedDeploymentOverlayFiles = new Set([
   "deploy/Dockerfile.incident-history-release",
+  "deploy/Dockerfile.incident-taxonomy-release",
   "deploy/Dockerfile.lic624-native-release",
   "deploy/patch-chat-entry.mjs",
   "deploy/inject-iphone-head.mjs",

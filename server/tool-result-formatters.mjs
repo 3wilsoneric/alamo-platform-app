@@ -23,8 +23,7 @@ export function formatIncidentCategoryFilterLabel(categoryFilter) {
   if (!categoryFilter) return null;
   const normalized = String(categoryFilter).toLowerCase().replace(/[^a-z0-9\s/]/g, " ").replace(/\s+/g, " ").trim();
   if (normalized === "awol") return "AWOL/Elopement";
-  if (normalized === "substance") return "Substance Use";
-  if (normalized === "aggressive") return "Aggressive Behavior";
+  if (normalized === "substance" || normalized === "aggressive" || normalized === "other") return "Other";
   if (normalized === "medication refusal") return "Medication Refusal";
   return String(categoryFilter).replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

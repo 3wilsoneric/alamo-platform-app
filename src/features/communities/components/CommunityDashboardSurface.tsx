@@ -588,39 +588,6 @@ export default function CommunityDashboardSurface({
             loading={!reportsSummary && !reportsSummaryUnavailable}
             showUnavailable={false}
           />
-          <div>
-            <h3 className={`${compact ? "mb-2 text-[20px]" : "mb-3 text-[24px]"} font-serif font-semibold tracking-[-0.03em]`}>
-              Most refused medications
-            </h3>
-            {model.topRefusals.length ? (
-              <div className="overflow-x-auto border-y border-[#111111]">
-                <table className="w-full border-collapse text-left text-[13px]">
-                  <thead className="border-b border-[#111111] text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">
-                    <tr>
-                      <th className="px-0 py-2.5">Medication</th>
-                      <th className="px-4 py-2.5 text-right">Refusals</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#d9d9d9]">
-                    {model.topRefusals.map((row) => (
-                      <tr key={row.medication}>
-                        <td className="px-0 py-2.5 font-medium">{row.medication}</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums">{formatNumber(row.refusals)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : !reportsSummary && !reportsSummaryUnavailable ? (
-              <div role="status" className="border-y border-[#d9d9d9] py-6 text-[14px] text-[#595959]">
-                Loading medication detail...
-              </div>
-            ) : (
-              <div className="border-y border-[#d9d9d9] py-6 text-[14px] text-[#595959]">
-                No medication refusal rows are available for this community.
-              </div>
-            )}
-          </div>
           {model.documentationGapCount ? (
             <p className="border-l-2 border-[#0f8b73] pl-4 text-[13px] leading-6 text-[#595959]">
               {formatNumber(model.documentationGapCount)} {residentNoun(model.documentationGapCount)} {model.documentationGapCount === 1 ? "appears" : "appear"} in the current documentation-gap feed.
@@ -669,19 +636,6 @@ export default function CommunityDashboardSurface({
                 row={model.latestCompliance}
                 loading={!reportsSummary && !reportsSummaryUnavailable}
               />
-              {model.topRefusals.length ? (
-                <div className="mt-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">Most refused medications</div>
-                  <ul className="mt-2 divide-y divide-[#d9d9d9] border-y border-[#d9d9d9]">
-                    {model.topRefusals.map((row) => (
-                      <li key={row.medication} className="flex items-center justify-between gap-4 py-2.5 text-[13px]">
-                        <span className="min-w-0 truncate font-medium">{row.medication}</span>
-                        <span className="shrink-0 tabular-nums text-[#595959]">{formatNumber(row.refusals)} refusals</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
               {model.documentationGapCount ? (
                 <p className="mt-3 text-[12px] leading-5 text-[#595959]">
                   {formatNumber(model.documentationGapCount)} {residentNoun(model.documentationGapCount)} {model.documentationGapCount === 1 ? "appears" : "appear"} in the current documentation-gap feed.

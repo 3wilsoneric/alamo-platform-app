@@ -56,10 +56,9 @@ const months = [
 
 const incidentCategories = [
   "AWOL/Elopement",
-  "Medication Refusal",
   "Medical Emergency",
-  "Substance Use",
-  "Aggressive Behavior"
+  "Fall",
+  "Other"
 ];
 
 const fixedRegressionCases = [

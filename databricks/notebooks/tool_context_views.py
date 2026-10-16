@@ -151,17 +151,39 @@ def refresh_incident_source_view() -> None:
         raise RuntimeError(f"Required silver table {source}.res_incident is missing or unreadable")
 
     incident_date_expr = sql_date("i", columns, ["Incident_Date"])
+    incident_type = "lower(trim(coalesce(cast(i.Type_of_Incident as string), '')))"
+    incident_category = "lower(trim(coalesce(cast(i.Incident_Category as string), '')))"
+    # Preserve the original report in silver, but do not count routine medication
+    # non-administration as an incident. A combined AWOL record remains an AWOL.
+    mixed_awol = f"{incident_type} = 'medication refusal/awol'"
+    medication_only = f"""(
+      {incident_category} = 'medication refusal'
+      OR {incident_type} rlike 'medication refusal|refusal of meds|missed meds|pocketing meds|medication non.complian|non.complian.*medication|refused meds'
+    ) AND NOT ({mixed_awol})"""
+    # Historical silver rows still carry the former categories. Normalize them
+    # in the governed view so every snapshot and live incident reader agrees.
+    other_category = f"""(
+      {incident_category} IN ('aggressive behavior', 'substance use', 'substance abuse')
+      OR {incident_type} rlike 'aggress|agress|altercation|substance|smok|vap|drug|alcohol|lighter|cannabis|paraphernalia'
+    )"""
     create_view(
         "v_incidents",
         f"""
         SELECT
-          i.*,
+          i.* EXCEPT (Incident_Category, Type_of_Incident),
+          CASE WHEN {mixed_awol} THEN 'AWOL/Elopement'
+               WHEN {other_category} THEN 'Other'
+               ELSE i.Incident_Category END AS Incident_Category,
+          CASE WHEN {mixed_awol} THEN 'AWOL/Elopement'
+               WHEN {other_category} THEN 'Other'
+               ELSE i.Type_of_Incident END AS Type_of_Incident,
           c.Name AS Facility_Name,
           {incident_date_expr} AS Incident_Date_parsed
         FROM {source}.res_incident i
         LEFT JOIN {source}.companies c
           ON cast(i.Facility AS string) = cast(c.Code AS string)
         WHERE cast(i.Facility AS string) IN ('337', '342', '343', '344', '345')
+          AND NOT ({medication_only})
         """,
         schema_evolution=True,
     )

@@ -54,11 +54,9 @@ const INCIDENT_CATEGORY_VARIABLE = {
   placeholder: "Choose incident type",
   options: [
     { label: "AWOL / Elopement", value: "AWOL/Elopement" },
-    { label: "Medication Refusal", value: "Medication Refusal" },
     { label: "Medical Emergency", value: "Medical Emergency" },
-    { label: "Aggressive Behavior", value: "Aggressive Behavior" },
-    { label: "Substance Use", value: "Substance Use" },
-    { label: "Fall", value: "Fall" }
+    { label: "Fall", value: "Fall" },
+    { label: "Other", value: "Other" }
   ]
 };
 
@@ -67,7 +65,6 @@ const MEDICATION_DETAIL_VARIABLE = {
   label: "Medication detail",
   placeholder: "Choose detail",
   options: [
-    { label: "Medication refusals", value: "medication refusal detail" },
     { label: "Not-given administrations", value: "not-given medication detail" },
     { label: "Late administrations", value: "late medication administrations" },
     { label: "Held medications", value: "held medication detail" },
@@ -914,7 +911,6 @@ export const CERTIFIED_QUESTION_MENU = Object.freeze([
   { familyId: "resident-current-medications", variantIndex: 0, category: "Medications" },
   { familyId: "medication-compliance-history", variantIndex: 0, category: "Medications" },
   { familyId: "medication-current-orders", variantIndex: 0, category: "Medications" },
-  { familyId: "medication-refusal-detail", variantIndex: 0, category: "Medications" },
   { familyId: "medication-exception-detail", variantIndex: 0, category: "Medications" },
   { familyId: "medication-watch", variantIndex: 0, category: "Medications" }
 ].map((entry) => Object.freeze(entry)));

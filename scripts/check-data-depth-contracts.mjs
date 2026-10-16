@@ -971,6 +971,27 @@ function assertCensusTransformContracts() {
 
 assertCensusTransformContracts();
 
+function assertIncidentCategoryPolicy() {
+  const transform = readFileSync("databricks/notebooks/eldermark_staged_transform.py", "utf8");
+  const views = readFileSync("databricks/notebooks/tool_context_views.py", "utf8");
+  const questions = readFileSync("shared/certified-analyst-questions.mjs", "utf8");
+  const community = readFileSync("src/features/communities/components/CommunityDashboardSurface.tsx", "utf8");
+  const sourceView = views.match(/def refresh_incident_source_view\(\)[\s\S]*?\n\ndef refresh_mar_source_view/)?.[0] ?? "";
+  const categoryVariable = questions.match(/const INCIDENT_CATEGORY_VARIABLE = \{[\s\S]*?\n\};/)?.[0] ?? "";
+  assert.match(transform, /"Aggressive Behavior": "Other"/);
+  assert.match(transform, /"Unknown Substance": "Other"/);
+  assert.match(transform, /"Medication Refusal\/AWOL": "AWOL\/Elopement"/);
+  assert.match(sourceView, /i\.\* EXCEPT \(Incident_Category, Type_of_Incident\)/);
+  assert.match(sourceView, /AND NOT \(\{medication_only\}\)/);
+  assert.match(sourceView, /'aggressive behavior', 'substance use', 'substance abuse'/);
+  assert.match(sourceView, /WHEN \{other_category\} THEN 'Other'/);
+  assert.match(categoryVariable, /label: "Other", value: "Other"/);
+  assert.doesNotMatch(categoryVariable, /Medication Refusal|Aggressive Behavior|Substance Use/);
+  assert.doesNotMatch(community, /Most refused medications|No medication refusal rows/);
+}
+
+assertIncidentCategoryPolicy();
+
 function flattenActions(result) {
   return (result?.actions ?? []).map((action) => [
     action.label,

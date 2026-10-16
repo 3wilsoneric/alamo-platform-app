@@ -16,8 +16,8 @@ export function createIncidentCategoryTools({ normalizeText }) {
     const text = normalizeText(content);
     if (/\b(awol|elopement|eloped)\b/.test(text)) return "awol";
     if (/\b(medication refusal|med refusal|refusal|refused meds?)\b/.test(text)) return "medication refusal";
-    if (/\b(substance|drug|alcohol)\b/.test(text)) return "substance";
-    if (/\b(aggressive|aggression|behavior)\b/.test(text)) return "aggressive";
+    if (/\b(substance|drug|alcohol|aggressive|aggression)\b/.test(text)) return "other";
+    if (/\bother\b/.test(text)) return "other";
     if (/\b(fall|falls)\b/.test(text)) return "fall";
     const discoveredCategory = [...new Set(rows.map((row) => row.category ?? row.incident_type).filter(Boolean))]
       .map((category) => ({ category, normalized: normalizeText(category) }))
@@ -41,8 +41,7 @@ export function createIncidentCategoryTools({ normalizeText }) {
       const classification = normalizeText(row.category || row.incident_category || row.incident_type || row.type || "");
       if (categoryFilter === "awol") return /\b(awol|elopement|eloped)\b/.test(classification);
       if (categoryFilter === "medication refusal") return classification.includes("medication refusal");
-      if (categoryFilter === "substance") return classification.includes("substance");
-      if (categoryFilter === "aggressive") return classification.includes("aggressive");
+      if (categoryFilter === "other") return classification === "other";
       if (categoryFilter === "fall") return /\bfalls?\b/.test(classification);
       return classification.includes(categoryFilter);
     });
