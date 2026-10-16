@@ -22,7 +22,7 @@ full-page phone menu begins below that complete header rather than beneath the
 browser status area.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
-Betty Dominici, Raj Thandi, and Eric Wilson also see Agent in that row. No
+Betty Dominici, Raj Thandi, and Eric Wilson also see EveryAgent in that row. No
 other account, including a platform administrator, receives Licensing access.
 The owner-only Outreach workspace remains available by its direct route but is
 absent from shared desktop and mobile navigation; the workspace and its APIs
@@ -528,14 +528,22 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 
 ## Licensing Reports
 
-`/analytics/agent` is the shared Agent workspace. Licensing is its first
-connected skill, a read-only library of the four-community CCLD baseline
-for Betty Dominici, Raj Thandi, and Eric. It lives inside Analytics beside Reports and
-Ask a question, with no top-level or community-profile navigation item. The
-legacy `/licensing` and `/analytics/licensing` routes preserve query parameters when redirecting to the
-new route. Other accounts return to Analytics before any Licensing data mounts.
+`/analytics/agent` is the EveryAgent work surface, also reachable through
+`/everyagent` and a shared-header entry for its three pilot users. It opens on
+personal monitoring responsibilities, source status, recent results, review
+actions, and persisted check history. Each user can pause their own monitoring
+and narrow Licensing community scope. Shared collection continues independently.
+Eric also receives a read-only Admissions watch skill over the protected Pipeline
+summary. Sources that are unavailable or not connected are labeled explicitly.
+The workspace has no prompt-first intake and displays that email delivery is off.
 
-The Agent tab opens with a green general Agent work summary and an explicit
+Licensing remains a read-only library of the four-community CCLD baseline for
+Betty Dominici, Raj Thandi, and Eric. `?skill=licensing` opens its existing rich
+module. The legacy `/licensing` and `/analytics/licensing` routes preserve query
+parameters and add the Licensing skill when redirecting. Other accounts return
+to Analytics before any Licensing or EveryAgent data mounts.
+
+The Licensing skill opens with a green EveryAgent work summary and an explicit
 “Active skill: Licensing” label. The latest report module appears immediately. It shows the real last-check status, archived report
 count, community count, and automatic check schedule. Failed or unavailable
 checks are labeled; the UI never animates a fictitious scan. A secondary

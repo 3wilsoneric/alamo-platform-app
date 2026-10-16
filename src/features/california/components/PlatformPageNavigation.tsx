@@ -6,6 +6,7 @@ import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity"
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { usePresentationAccess } from "../../presentation/usePresentationAccess";
+import { useLicensingAccess } from "../../../shared/auth/licensingAccess";
 
 const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
@@ -16,7 +17,7 @@ const PLATFORM_PAGES = [
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
   const { pathname } = useLocation();
-  const active = pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" || pathname === "/licensing"
+  const active = pathname === "/analytics/agent" || pathname === "/everyagent" ? "everyagent" : pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" || pathname === "/licensing"
     ? "analytics"
     : pathname.startsWith("/admissions") ? "admissions"
       : pathname.startsWith("/workforce") ? "workforce"
@@ -25,8 +26,10 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const canViewOwnerWorkspace = usePlatformOwnerAccess() || (import.meta.env.DEV && isE2EAuthBypassEnabled);
+  const canUseEveryAgent = useLicensingAccess();
   const { allowed: canViewDemo } = usePresentationAccess();
-  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "workforce" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo));
+  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : [...PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "workforce" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo)),
+    ...(canUseEveryAgent ? [{ id: "everyagent", label: "EveryAgent", href: "/analytics/agent" }] : [])];
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {

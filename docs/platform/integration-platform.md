@@ -243,6 +243,56 @@ disabled until a separate payload, QA, rollback, cost, and approval review.
 
 ## Current Limitations
 
+### EveryAgent first application-spanning slice — 2026-10-16
+
+EveryAgent is the shared work surface, with registered skills and personal
+standing responsibilities. The first implemented capabilities are the Platform
+Licensing library and the independently deployed Pipeline application's existing
+protected admissions-summary API. `shared/everyagent-catalog.mjs` declares each
+skill's version, application, capability, scope, schedule, output route, and
+permitted read/review actions. Adding a capability requires a real adapter and
+verification; an application name or navigation link alone is not a connection.
+
+The pilot preserves the verified tenant/object-ID allowlist for Eric, Raj, and
+Betty. Each receives a personal Licensing responsibility and can narrow its
+community scope, pause monitoring, resume, and mark results reviewed. Only Eric
+receives Admissions watch in this first slice. Its adapter projects aggregate
+counts from the existing Pipeline summary; referral identities, clinical detail,
+and packets do not enter EveryAgent state. This does not expand either source
+application's access or expose new Pipeline commands.
+
+`server/everyagent-service.mjs` checks grants on every request and publication.
+The worker reads each due source once for all subscribers, holds an expiring
+durable lease, compares content fingerprints, and rechecks assignment versions
+before publishing. A pause or scope change during a read cancels that publication.
+Initial collections establish a completed baseline; later changes create review
+items. Failed/stale sources remain explicit and cannot be converted to zero or
+erase prior results. Duplicate checks preserve review receipts. The source
+collector's Monday/Wednesday cadence remains separate from EveryAgent's
+15-minute checks of published sources.
+
+Production persistence is an ETag-protected `everyagent/state-v1.json` Blob in
+the existing private Alamo container, using the runtime managed identity. There
+is no local-file fallback in production. The always-on web runtime wakes every
+minute when `EVERYAGENT_WORKER_ENABLED=true`; durable due times and a two-minute
+lease coordinate replicas and recover interrupted checks. Development uses an
+ignored atomic local file. Recent runs are bounded to 300 entries; completed work
+older than 90 days is pruned, while unresolved review items are retained within
+a hard 2,000-item store limit that fails visibly instead of deleting pending work.
+
+Evidence nodes and explicit community/report/source and application/module
+relationships travel with work items. These are scoped source references, not a
+general company graph, inferred clinical facts, or approved knowledge assertions.
+General skill authoring, team assignments, dynamic entitlement administration,
+shared company-graph persistence, and AlamoHealth capabilities remain subsequent
+slices. Knowledge's owner-only boundary is unchanged. Email is disabled and the
+EveryAgent command contract exposes no send or source-application write action.
+
+`check:everyagent` covers scope/identity isolation, CAS and concurrent leases,
+restart recovery, pause races, duplicate suppression, review persistence,
+source failure/recovery, and aggregate-only Pipeline memory. Responsive browser
+checks exercise the worker-first UI, configuration, review receipts, and history.
+
 The current repository is not yet a drop-in integration product. It contains
 working assumptions that are specific to Alamo Health and ElderMark, including:
 

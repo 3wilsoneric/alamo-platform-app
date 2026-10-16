@@ -40,7 +40,7 @@ export default function AnalyticsSectionNavigation({
         {canViewLicensing ? <SectionButton
           section="agent"
           active={active === "agent"}
-          label="Agent"
+          label="EveryAgent"
           onClick={() => onNavigate("agent")}
         /> : null}
       </div>

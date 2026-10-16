@@ -41,7 +41,9 @@ function withRouteBoundary(node: ReactNode) {
 
 function LegacyLicensingRedirect() {
   const location = useLocation();
-  return <Navigate to={`/analytics/agent${location.search}${location.hash}`} replace />;
+  const params = new URLSearchParams(location.search);
+  if (location.pathname !== "/everyagent") params.set("skill", "licensing");
+  return <Navigate to={`/analytics/agent${params.size ? `?${params}` : ""}${location.hash}`} replace />;
 }
 
 function LegacyOutreachRedirect() {
@@ -86,6 +88,7 @@ export default function App() {
         <Route path="/explorer/:kind" element={withRouteBoundary(<DataExplorerPage />)} />
         <Route path="/command-center" element={withRouteBoundary(<CommandCenterPage />)} />
         <Route path="/analytics/agent" element={withRouteBoundary(<AgentPage />)} />
+        <Route path="/everyagent" element={<LegacyLicensingRedirect />} />
         <Route path="/analytics/licensing" element={<LegacyLicensingRedirect />} />
         <Route path="/licensing" element={<LegacyLicensingRedirect />} />
         <Route path="/outreach" element={withRouteBoundary(<OutreachPage />)} />

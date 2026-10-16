@@ -98,8 +98,8 @@ await withBrowserQa(async (browser) => {
     await page.getByText("Latest check complete", { exact: true }).waitFor();
     await page.getByRole("region", { name: "Licensing answer" }).waitFor();
     assert.equal(new URL(page.url()).pathname, "/analytics/agent", "old Licensing route must redirect to the Agent workspace");
-    assert.equal(await page.getByRole("heading", { name: "Agent", exact: true }).count(), 1);
-    assert.match(await page.getByRole("region", { name: "Agent work", exact: true }).innerText(), /Active skill\s+Licensing/);
+    assert.equal(await page.getByRole("heading", { name: "EveryAgent", exact: true }).count(), 1);
+    assert.match(await page.getByRole("region", { name: "EveryAgent work", exact: true }).innerText(), /Active skill\s+Licensing/);
     const list = await measure(page);
     assert.ok(list.overflow <= 1, `${viewport.width}px list overflowed by ${list.overflow}px`);
     assert.equal(list.searchWidth, 0, "search must stay secondary to the agent output");
@@ -155,7 +155,7 @@ await withBrowserQa(async (browser) => {
     assert.match(await sourceText.innerText(), /ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/, `${viewport.width}px reader truncated long source text`);
     assert.ok((await measure(page)).overflow <= 1, "formatted report text must wrap");
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-text-390.png"), fullPage: false });
-    await page.getByRole("button", { name: "Back to agent" }).click();
+    await page.getByRole("button", { name: "Back to reports" }).click();
     await page.getByRole("region", { name: "Licensing answer" }).waitFor();
     assert.match(await page.getByRole("region", { name: "Licensing answer" }).innerText(), /3 latest state reports/);
     results.push({ viewport, list, reader, panel: panelBox });
@@ -185,7 +185,7 @@ await withBrowserQa(async (browser) => {
   await desktop.getByRole("region", { name: "Report summary" }).waitFor();
   await desktop.getByRole("button", { name: "Read report text", exact: true }).click();
   await desktop.screenshot({ path: path.join(output, "licensing-text-1440.png"), fullPage: false });
-  await desktop.getByRole("button", { name: "Back to agent" }).click();
+  await desktop.getByRole("button", { name: "Back to reports" }).click();
   await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();
   await desktop.getByRole("combobox", { name: "Licensing community" }).selectOption("344");
   await desktop.getByRole("button", { name: "Cited deficiencies", exact: true }).click();
@@ -213,7 +213,7 @@ await withBrowserQa(async (browser) => {
   await desktop.route("**/api/platform/licensing/updates", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...updates, status: "failed" }) }));
   await desktop.goto(`${BASE_URL}/analytics/licensing`);
   await desktop.getByText("Latest check needs attention", { exact: true }).waitFor();
-  assert.match(await desktop.getByRole("region", { name: "Agent work", exact: true }).innerText(), /last complete report collection/);
+  assert.match(await desktop.getByRole("region", { name: "EveryAgent work", exact: true }).innerText(), /last complete report collection/);
   await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   await desktopContext.close();
   await writeFile(path.join(output, "latest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), passed: true, results }, null, 2));

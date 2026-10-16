@@ -1,4 +1,5 @@
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
+import { handleEveryAgentRequest } from "./everyagent-api.mjs";
 import { getPlatformIncidentHistory } from "./platform-incident-history.mjs";
 import { assertLicensingAccess } from "./licensing-access.mjs";
 import http from "node:http";
@@ -187,6 +188,11 @@ const server = http.createServer(async (req, res) => {
 
   if (isExecutiveDirectorApiPath(requestUrl.pathname)) {
     await handleExecutiveDirectorApiRequest(req, createVercelResponseAdapter(res));
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/platform/everyagent" || requestUrl.pathname.startsWith("/api/platform/everyagent/")) {
+    await handleEveryAgentRequest(req, createVercelResponseAdapter(res));
     return;
   }
 
