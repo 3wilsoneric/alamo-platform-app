@@ -6,12 +6,24 @@ import { LICENSING_COMMUNITIES, licensingTextForDisplay, validateLicensingLibrar
 import { queryLicensingLibrary, validateLicensingBaseline, validateLicensingBundle } from "../server/licensing-library.mjs";
 import { usesLicensingAzureStorage } from "../server/licensing-storage.mjs";
 import { analyzeLicensingReport } from "../shared/licensing-analysis.mjs";
+import { licensingReadingBlocks, licensingReadingPages } from "../shared/licensing-reading-view.mjs";
 import { hasLicensingAccess } from "../shared/licensing-access.mjs";
 import { assertLicensingAccess } from "../server/licensing-access.mjs";
 
 const communities = LICENSING_COMMUNITIES.map((c) => ({ ...c,
   licensedName: `${c.name} licensed facility`, licenseStatus: "Licensed", reportCount: 1, complaintCount: 0,
   sourceUrl: `https://www.ccld.dss.ca.gov/carefacilitysearch/FacDetail/${c.licenseNumber}` }));
+const longNarrative = "The analyst reviewed records and interviewed staff about the visit. ".repeat(16).trim();
+const readable = licensingReadingBlocks(longNarrative);
+assert.ok(readable.length > 1, "long narrative must be split into readable paragraphs");
+assert.equal(readable.map(block => block.text).join(" "), longNarrative, "paragraph formatting must preserve source wording");
+assert.ok(readable.every(block => block.text.length <= 600));
+assert.deepEqual(licensingReadingBlocks("{Cont.on 809C}"), []);
+assert.equal(licensingReadingBlocks("The inspection continued on Friday.")[0].text, "The inspection continued on Friday.", "a substantive continuation is not a form instruction");
+assert.equal(licensingReadingBlocks("Findings recorded. (Continue on LIC9099C...)")[0].text, "Findings recorded.");
+assert.equal(licensingReadingBlocks("Allegation: Staff did not keep records.")[0].kind, "heading");
+assert.equal(licensingReadingBlocks("• Records were reviewed.")[0].kind, "list-item");
+assert.deepEqual(licensingReadingPages([{ page: 1, text: "First page." }, { page: 3, text: "Third page." }]).map(page => page.page), [1, 3], "source page numbers must survive omitted boilerplate pages");
 const reports = communities.map((c, index) => {
   const text = index === 0 ? "Resident rights and medication records were reviewed." : "Annual inspection narrative.";
   return { id: `${c.licenseNumber}-${String(index).padStart(32, "0")}`, facilityId: c.facilityId,

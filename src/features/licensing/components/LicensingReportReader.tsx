@@ -1,9 +1,9 @@
 import { useMemo, useRef } from "react";
-import { ArrowLeft, Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink } from "lucide-react";
 import type { LicensingReport } from "../../../../shared/licensing-contracts.mjs";
-import { licensingTextForDisplay } from "../../../../shared/licensing-contracts.mjs";
 import { analyzeLicensingReport } from "../../../../shared/licensing-analysis.mjs";
 import type { LicensingEvidence } from "../../../../shared/licensing-analysis.mjs";
+import { licensingReadingPages } from "../../../../shared/licensing-reading-view.mjs";
 
 export function licensingDate(value: string) {
   return new Date(value.length === 10 ? `${value}T12:00:00Z` : value).toLocaleDateString("en-GB", {
@@ -23,12 +23,12 @@ const outcomeMeaning: Record<string, string> = {
 };
 
 function EvidenceList({ items, limit = 3, onSource }: {
-  items: LicensingEvidence[]; limit?: number; onSource: () => void;
+  items: LicensingEvidence[]; limit?: number; onSource: (page?: number | null) => void;
 }) {
   function rows(evidence: LicensingEvidence[]) {
     return <ul className="space-y-3">{evidence.map((item, index) => <li key={`${item.page}-${index}`} className="border-l-2 border-[#dbe6e1] pl-4">
       <p>{item.text}</p>
-      <button type="button" onClick={onSource} className="min-h-11 text-[12px] font-medium text-[#287261] underline underline-offset-4">{item.page ? `Source · page ${item.page}` : "Source text"}</button>
+      <button type="button" onClick={() => onSource(item.page)} className="min-h-11 text-[12px] font-medium text-[#287261] underline underline-offset-4">{item.page ? `Source · page ${item.page}` : "Source text"}</button>
     </li>)}</ul>;
   }
   return <>{rows(items.slice(0, limit))}{items.length > limit && <details className="mt-3">
@@ -37,19 +37,19 @@ function EvidenceList({ items, limit = 3, onSource }: {
   </details>}</>;
 }
 
-export default function LicensingReportReader({ report, community, onBack }: {
-  report: LicensingReport; community: string; onBack: () => void;
+export default function LicensingReportReader({ report, community }: {
+  report: LicensingReport; community: string;
 }) {
   const insights = useMemo(() => analyzeLicensingReport(report), [report]);
   const { summary } = insights;
-  const archivedText = useMemo(() => licensingTextForDisplay(report.text), [report.text]);
-  const sourceRef = useRef<HTMLDetailsElement>(null);
+  const readingPages = useMemo(() => licensingReadingPages(insights.narratives), [insights]);
+  const sourceRef = useRef<HTMLElement>(null);
 
-  function openSource() {
+  function openSource(page?: number | null) {
     if (!sourceRef.current) return;
-    sourceRef.current.open = true;
-    sourceRef.current.scrollIntoView({ block: "start", behavior: "auto" });
-    sourceRef.current.querySelector("summary")?.focus();
+    const target = sourceRef.current.querySelector<HTMLElement>(`[data-source-page="${page}"]`) ?? sourceRef.current;
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: "start", behavior: "auto" });
   }
 
   function downloadText() {
@@ -59,7 +59,6 @@ export default function LicensingReportReader({ report, community, onBack }: {
     anchor.click(); globalThis.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   return <article data-licensing-reader={report.id} className="min-w-0 bg-white font-sans text-[#111111]">
-    <button type="button" onClick={onBack} className="mb-4 inline-flex min-h-11 items-center gap-2 text-[13px] font-medium text-[#333333] hover:text-[#0f8b73] lg:hidden"><ArrowLeft size={16} /> Back to reports</button>
     <header className="max-w-[900px]">
       <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#0f8b73]">{community} · {report.reportType}</p>
       <h2 className="mt-2 break-words !font-sans text-[30px] font-bold leading-[1.08] tracking-[-0.045em] sm:text-[36px]">{report.reportType} report</h2>
@@ -76,6 +75,7 @@ export default function LicensingReportReader({ report, community, onBack }: {
       {summary.reviewNeeded && <p className="mt-2 text-sm leading-6 text-[#735b33]">Some details could not be reliably separated from the state form. Review the original alongside this brief.</p>}
     </section>
     <div className="mt-5 flex max-w-[900px] flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <button type="button" onClick={() => openSource()} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#cdd6d1] px-4 text-[13px] font-semibold text-[#315b54]">Read report text</button>
       <a href={report.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0f8b73] px-4 text-[13px] font-semibold text-white">Open original on state site <ExternalLink size={14} /></a>
       <button type="button" onClick={downloadText} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#cdd6d1] bg-white px-4 text-[13px] font-semibold text-[#315b54]"><Download size={14} /> Download original text</button>
     </div>
@@ -106,9 +106,21 @@ export default function LicensingReportReader({ report, community, onBack }: {
       </section>}
       {insights.followUps.length > 0 && <section aria-label="Follow-up recorded"><h3>Follow-up recorded</h3><EvidenceList items={insights.followUps} onSource={openSource} /></section>}
     </div>
-    <details ref={sourceRef} className="licensing-report-document mt-8 scroll-mt-32" data-licensing-source-text="true">
-      <summary className="cursor-pointer px-5 py-4 text-[16px] font-semibold text-[#315b54]">Read complete original text <span className="mt-1 block text-[12px] font-normal text-[#68716b]">Archived {licensingDate(report.retrievedAt)} · Form line numbers removed for reading</span></summary>
-      <div className="licensing-report-document__body border-t border-[#d6dbd6]">{archivedText}</div>
-    </details>
+    <section ref={sourceRef} tabIndex={-1} aria-label="Report text" className="licensing-report-document mt-8 scroll-mt-32" data-licensing-source-text="true">
+      <header className="licensing-report-document__header">
+        <h3>Report text</h3>
+        <p>The state’s narrative, formatted for reading. Form headers, signatures, and standard notices are available in the original.</p>
+      </header>
+      <div className="licensing-report-document__body">
+        {readingPages.length ? readingPages.map(({ page, blocks }) => <section key={page ?? "unpaged"} data-source-page={page ?? "unpaged"} tabIndex={-1} className="licensing-report-page scroll-mt-32" aria-label={page ? `Narrative from page ${page}` : "Report narrative"}>
+          <h4>{page ? `Page ${page}` : "Report narrative"}</h4>
+          <div className="licensing-report-prose">{blocks.map((block, index) => block.kind === "heading"
+            ? <h5 key={index}>{block.text}</h5>
+            : block.kind === "list-item" ? <ul key={index}><li>{block.text}</li></ul>
+              : <p key={index}>{block.text}</p>)}</div>
+        </section>) : <p>The narrative could not be separated reliably from this form. Open the state source or download the original text to read the report.</p>}
+      </div>
+      <footer className="licensing-report-document__footer">Archived {licensingDate(report.retrievedAt)} · <button type="button" onClick={downloadText}>Download complete original text</button></footer>
+    </section>
   </article>;
 }

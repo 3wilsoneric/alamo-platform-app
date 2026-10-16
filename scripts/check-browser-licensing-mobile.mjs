@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { BASE_URL, withBrowserQa } from "./browser-qa-utils.mjs";
+import { queryLicensingLibrary } from "../server/licensing-library.mjs";
 import { analyzeLicensingReport } from "../shared/licensing-analysis.mjs";
 
 const output = path.join(process.cwd(), "generated/browser-licensing-mobile");
@@ -42,7 +43,7 @@ const library = {
 const reportById = new Map(reports.map((report, index) => [report.id, {
   ...report,
   text: index === 0
-    ? '<meta name="robots" content="noindex">\nCOMPLAINT INVESTIGATION REPORT\n1\n2\n3\n4\nALLEGATION(S):\nMedication administration records were not consistently documented.\nINVESTIGATION FINDINGS:\nSubstantiated\nThe department reviewed records and interviewed staff. The allegation was substantiated because medication documentation required corrective follow-up.\nPage: 1 of 2\nDEFICIENCY INFORMATION FOR THIS PAGE:\nType B\nSection Cited\n80075(b)\nDeficient Practice Statement\nBased on record review, medication records were incomplete.\nPOC Due Date: 08/26/2026\nPlan of Correction\nAdministrator will train staff and submit the completed records.\nFailure to correct\nPage: 2 of 2\nThis deliberately long source line verifies wrapping: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.'
+    ? '<meta name="robots" content="noindex">\nCOMPLAINT INVESTIGATION REPORT\n1\n2\n3\n4\nALLEGATION(S):\nMedication administration records were not consistently documented.\nINVESTIGATION FINDINGS:\nSubstantiated\nThe department reviewed records and interviewed staff. The allegation was substantiated because medication documentation required corrective follow-up.\nThis deliberately long source line verifies wrapping: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.\nPage: 1 of 2\nDEFICIENCY INFORMATION FOR THIS PAGE:\nType B\nSection Cited\n80075(b)\nDeficient Practice Statement\nBased on record review, medication records were incomplete.\nPOC Due Date: 08/26/2026\nPlan of Correction\nAdministrator will train staff and submit the completed records.\nFailure to correct\nPage: 2 of 2\nThis deliberately long source line verifies wrapping: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.'
     : "FACILITY EVALUATION REPORT\nNARRATIVE\nThe department completed a routine inspection and recorded no deficiencies.\nPage: 1 of 1"
 }]));
 for (const report of reports) report.analysis = analyzeLicensingReport(reportById.get(report.id)).summary;
@@ -56,7 +57,7 @@ const updates = {
 async function installApiFixtures(page) {
   await page.route("**/api/platform/licensing**", async (route) => {
     const url = new URL(route.request().url());
-    let payload = library;
+    let payload = queryLicensingLibrary({ ...library, reports: [...reportById.values()] }, url);
     if (url.pathname.endsWith("/updates")) payload = updates;
     else if (url.pathname.endsWith("/report")) payload = reportById.get(url.searchParams.get("id")) ?? null;
     await route.fulfill({ status: payload ? 200 : 404, contentType: "application/json", body: JSON.stringify(payload ?? { error: "not_found" }) });
@@ -96,7 +97,9 @@ await withBrowserQa(async (browser) => {
     await page.locator('[data-licensing-workspace="true"]').waitFor({ state: "visible" });
     const list = await measure(page);
     assert.ok(list.overflow <= 1, `${viewport.width}px list overflowed by ${list.overflow}px`);
-    assert.ok(list.searchWidth >= viewport.width - 34, `${viewport.width}px search was cramped`);
+    assert.ok(list.searchWidth >= viewport.width - 34, `${viewport.width}px question input was cramped`);
+    assert.equal(await page.locator("article[data-licensing-reader]").count(), 0, "agent must not automatically open a report");
+    assert.equal(await page.getByRole("button", { name: "Licensing agent", exact: true }).getAttribute("aria-expanded"), "true");
     assert.ok(list.workspaceWidth >= viewport.width - 34, `${viewport.width}px workspace was cramped`);
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-list-390.png"), fullPage: false });
 
@@ -109,7 +112,11 @@ await withBrowserQa(async (browser) => {
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-updates-390.png"), fullPage: false });
     await page.getByRole("button", { name: "Close state updates" }).click();
 
-    await page.getByRole("button", { name: /San Pablo/i }).click();
+    await page.getByRole("button", { name: "What do the latest state reports say?" }).click();
+    await page.getByRole("region", { name: "Licensing answer" }).waitFor();
+    assert.match(await page.getByRole("region", { name: "Licensing answer" }).innerText(), /3 latest state reports/);
+    if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-answer-390.png"), fullPage: false });
+    await page.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
     await page.locator("article[data-licensing-reader]").waitFor({ state: "visible" });
     const reader = await measure(page);
     assert.ok(reader.overflow <= 1, `${viewport.width}px reader overflowed by ${reader.overflow}px`);
@@ -125,22 +132,28 @@ await withBrowserQa(async (browser) => {
     assert.doesNotMatch(corrections, /overdue/i);
     const sourceText = page.locator('[data-licensing-source-text="true"]');
     assert.equal(await sourceText.count(), 1, `${viewport.width}px reader did not embed the archived report`);
-    assert.equal(await sourceText.getAttribute("open"), null, "the brief should open before the full form text");
-    assert.equal(await page.getByRole("button", { name: "Download original text" }).count(), 1, `${viewport.width}px reader lost the download action`);
+    assert.equal(await sourceText.locator(".licensing-report-prose p").count(), 2, "report narrative must render as separate paragraphs");
+    assert.equal(await sourceText.locator("pre").count(), 0, "report text must not be a preformatted dump");
+    assert.doesNotMatch(await sourceText.innerText(), /COMPLAINT INVESTIGATION REPORT|Section Cited|noindex/);
+    assert.equal(await page.getByRole("button", { name: "Download original text", exact: true }).count(), 1, `${viewport.width}px reader lost the download action`);
     assert.equal(reader.undersized.length, 0, `${viewport.width}px exposed undersized reader controls: ${reader.undersized.join(", ")}`);
     if (viewport.width === 390) {
       await page.screenshot({ path: path.join(output, "licensing-reader-390.png"), fullPage: false });
       const downloadPromise = page.waitForEvent("download");
-      await page.getByRole("button", { name: "Download original text" }).click();
+      await page.getByRole("button", { name: "Download original text", exact: true }).click();
       const download = await downloadPromise;
       assert.match(download.suggestedFilename(), /^CCLD-079201030-2026-08-12-\d{8}\.txt$/, "original text download used an unexpected filename");
       assert.equal(await readFile(await download.path(), "utf8"), reportById.get(reports[0].id).text, "download must preserve the original bytes including form gutters");
     }
     await page.getByRole("button", { name: "Source · page 1" }).first().click();
-    assert.notEqual(await sourceText.getAttribute("open"), null, "source reference must open the archived form");
+    assert.equal(await page.locator('[data-source-page="1"]').evaluate(element => element === document.activeElement), true, "source reference must focus its narrative page");
     assert.match(await sourceText.innerText(), /documentation required corrective follow-up/, `${viewport.width}px reader omitted the report body`);
     assert.match(await sourceText.innerText(), /ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/, `${viewport.width}px reader truncated long source text`);
-    assert.ok((await measure(page)).overflow <= 1, "expanded original text must wrap");
+    assert.ok((await measure(page)).overflow <= 1, "formatted report text must wrap");
+    if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-text-390.png"), fullPage: false });
+    await page.getByRole("button", { name: "Back to licensing answer" }).click();
+    await page.getByRole("region", { name: "Licensing answer" }).waitFor();
+    assert.match(page.url(), /question=latest/);
     results.push({ viewport, list, reader, panel: panelBox });
     await context.close();
   }
@@ -149,42 +162,44 @@ await withBrowserQa(async (browser) => {
   await installApiFixtures(desktop);
   await desktop.goto(`${BASE_URL}/analytics/licensing`, { waitUntil: "domcontentloaded" });
   await desktop.locator('[data-licensing-workspace="true"]').waitFor({ state: "visible" });
-  const desktopLayout = await desktop.evaluate(() => {
-    const aside = document.querySelector('[data-licensing-workspace="true"] aside');
-    const selectedReport = aside?.querySelector('[aria-pressed="true"]');
-    const reader = document.querySelector('[data-licensing-workspace="true"] [aria-label="Report reader"]');
-    const page = document.querySelector('[data-licensing-page="true"]');
-    const analyticsLink = document.querySelector('[data-platform-page-target="analytics"]');
-    const licensingLink = document.querySelector('[data-analytics-section-target="licensing"]');
-    return {
-      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      asideWidth: Math.round(aside?.getBoundingClientRect().width ?? 0),
-      readerWidth: Math.round(reader?.getBoundingClientRect().width ?? 0),
-      pageBackground: page ? getComputedStyle(page).backgroundColor : null,
-      asideBackground: aside ? getComputedStyle(aside).backgroundColor : null,
-      selectedReportBackground: selectedReport ? getComputedStyle(selectedReport).backgroundColor : null,
-      readerBackground: reader ? getComputedStyle(reader).backgroundColor : null,
-      analyticsCurrent: analyticsLink?.getAttribute("aria-current"),
-      licensingCurrent: licensingLink?.getAttribute("aria-current")
-    };
-  });
-  assert.ok(desktopLayout.overflow <= 1, `desktop licensing overflowed by ${desktopLayout.overflow}px`);
-  assert.ok(desktopLayout.asideWidth >= 240, "desktop report rail was too narrow to scan");
-  assert.ok(desktopLayout.readerWidth > desktopLayout.asideWidth, "desktop report reader did not retain the primary width");
-  assert.equal(desktopLayout.pageBackground, "rgb(255, 255, 255)", "licensing canvas did not retain the requested white foundation");
-  assert.notEqual(desktopLayout.selectedReportBackground, desktopLayout.readerBackground, "selected report did not separate from the reader");
-  assert.equal(desktopLayout.analyticsCurrent, "page", "primary Analytics navigation was not active");
-  assert.equal(desktopLayout.licensingCurrent, "page", "Licensing navigation was not active");
-  await desktop.locator('[data-licensing-source-text="true"]').waitFor({ state: "visible" });
-  assert.match(await desktop.getByRole("region", { name: "Report summary" }).innerText(), /Substantiated complaint finding/);
-  await desktop.screenshot({ path: path.join(output, "licensing-desktop-1440.png"), fullPage: false });
-  await desktop.getByRole("button", { name: /Santa Clarita/i }).click();
-  await desktop.locator('article[data-licensing-reader]').waitFor({ state: "visible" });
-  await desktop.getByText("Read complete original text", { exact: false }).click();
-  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection and recorded no deficiencies/, "selecting another report did not replace the inline document");
-  assert.doesNotMatch(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /COMPLAINT INVESTIGATION REPORT/, "previous report text remained in the reader");
+  const desktopLayout = await desktop.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    agentColor: getComputedStyle(document.querySelector('.licensing-agent__trigger')).backgroundColor,
+    licensingCurrent: document.querySelector('[data-analytics-section-target="licensing"]')?.getAttribute('aria-current')
+  }));
+  assert.ok(desktopLayout.overflow <= 1);
+  assert.equal(desktopLayout.agentColor, "rgb(8, 125, 100)", "agent entry should be green");
+  assert.equal(desktopLayout.licensingCurrent, "page");
+  await desktop.screenshot({ path: path.join(output, "licensing-agent-1440.png"), fullPage: false });
+  await desktop.getByRole("button", { name: "What deficiencies did the state cite?" }).click();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
+  assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 1, "citation question must filter by evidence");
+  await desktop.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
+  await desktop.getByRole("region", { name: "Report summary" }).waitFor();
+  await desktop.getByRole("button", { name: "Read report text", exact: true }).click();
+  await desktop.screenshot({ path: path.join(output, "licensing-text-1440.png"), fullPage: false });
+  await desktop.getByRole("button", { name: "Back to licensing answer" }).click();
+  await desktop.getByRole("button", { name: "Licensing agent", exact: true }).click();
+  await desktop.getByRole("combobox", { name: "Licensing community" }).selectOption("344");
+  await desktop.getByRole("button", { name: "What deficiencies did the state cite?" }).click();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
+  assert.match(await desktop.getByRole("region", { name: "Licensing answer" }).innerText(), /couldn’t find a matching report/);
+  assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 0);
+  await desktop.getByRole("button", { name: "Licensing agent", exact: true }).click();
+  await desktop.getByRole("combobox", { name: "Licensing community" }).selectOption("");
+  await desktop.getByRole("textbox", { name: "Ask about licensing reports" }).fill("Santa Clarita");
+  await desktop.getByRole("button", { name: "Find licensing reports" }).click();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
+  assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 1);
+  await desktop.getByRole("button", { name: /Santa Clarita.*Complaint/ }).click();
+  await desktop.getByRole("region", { name: "Report summary" }).waitFor();
+  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection and recorded no deficiencies/);
+  assert.doesNotMatch(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /medication documentation/, "previous report text remained in the reader");
+  await desktop.reload();
+  await desktop.getByRole("region", { name: "Report summary" }).waitFor();
+  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection/, "report deep link must survive reload");
   results.push({ viewport: { width: 1440, height: 900 }, desktop: desktopLayout });
   await desktopContext.close();
   await writeFile(path.join(output, "latest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), passed: true, results }, null, 2));
-  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px with navigation, list, updates sheet, inline report reader, and original-record actions.");
+  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px with green agent entry, evidence-filtered answer modules, drilldowns, readable text, and original-record actions.");
 });

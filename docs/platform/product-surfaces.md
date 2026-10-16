@@ -534,10 +534,24 @@ Ask a question, with no top-level or community-profile navigation item. The
 legacy `/licensing` route preserves query parameters when redirecting to the
 new route. Other accounts return to Analytics before any Licensing data mounts.
 
-The reader opens with a formatted brief: the state finding, topics, reported
+The tab opens with a green Licensing agent entry, following the question-first
+Analytics flow. Suggested questions surface a source-grounded report module for
+latest reports (up to eight), substantiated complaint findings, cited
+deficiencies, recorded correction plans, or the full library. A community
+selection scopes the query. The module reports its date range and historical
+evidence counts, then drills into an individual report. Back preserves the
+question and scope; report links remain directly addressable. It uses the
+existing authenticated library and deterministic question filters, not a new
+LLM runtime.
+
+The individual reader opens with a formatted brief: the state finding, topics, reported
 concerns, finding excerpts, and cited deficiencies with their correction plans.
-Source page references open the complete archived text; citation excerpts and
-the complete form are available through disclosures. Missing extraction is
+Source references jump to their narrative page. Report text is an always-open
+reading view with page markers, explicit source headings, bullets, and spaced
+paragraphs capped at sentence boundaries. Repeated form headers, signature
+fields, standard notices, and continuation instructions are omitted from that
+reading view; the complete original remains available by download. Citation
+excerpts remain available through disclosures. Missing extraction is
 labeled, mixed complaint findings stay distinct, and historical correction
 deadlines do not imply current overdue work. Report-list entries show the
 finding headline and topics instead of a truncated generic form title.
@@ -549,11 +563,11 @@ a stable document link. There is no locally archived PDF or facsimile. Display
 formatting removes recognized numbered form gutters; the original-text download
 preserves the stored text byte for byte. Briefs derive only from that evidence.
 
-The interface has one search box and an Updates notice. Search understands a
+The agent also offers a report-finding box and an Updates notice. Search understands a
 small explicit vocabulary of communities, findings, citation/correction terms,
 years, and remaining text terms. It retrieves reports; it is not an unrestricted
-AI question-answer service. There are no statistics panels or filter menus.
-Report selection and search remain addressable in the URL.
+AI question-answer service. It does not infer current compliance from archived findings. Question, community,
+report selection, and search remain addressable in the URL.
 
 The authenticated `/api/platform/licensing`, `/api/platform/licensing/report`,
 and `/api/platform/licensing/updates` endpoints independently enforce the same
@@ -604,8 +618,6 @@ storage prefix, retries unsent envelopes on a later execution, and never places
 report text or resident information in the message. Delivery uses the existing
 connected Office 365 Outlook account through the private
 `alamo-platform-licensing-alerts` Logic App; its signed callback URL is resolved
-from Key Vault and is absent from source and browser code. The page uses a
-compact breadcrumb/Updates row above search, without a visible page title or
-subtitle. On phones, Updates opens as a bounded modal sheet, report browsing and
-reading are separate views, long state text wraps without horizontal overflow,
+from Key Vault and is absent from source and browser code. The page uses a compact context/Updates row above the green agent entry. On phones, Updates opens as a bounded modal sheet, answer modules and
+report reading are separate views, long state text wraps without horizontal overflow,
 and source/download actions become full-width tap targets.
