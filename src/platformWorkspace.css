@@ -252,14 +252,21 @@
 }
 
 .licensing-agent { max-width: 900px; margin: 0 auto; }
+.licensing-agent__worker { padding: clamp(20px, 3vw, 30px); border-radius: 12px; background: #087d64; color: white; }
+.licensing-agent__identity { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.licensing-agent__identity h1 { font: 600 20px/1.4 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.02em; }
+.licensing-agent__identity > span { margin-left: auto; border: 1px solid #ffffff60; border-radius: 20px; padding: 4px 10px; color: #e3f6ee; font-size: 11px; }
+.licensing-agent__status { margin-top: 22px; font-size: 23px; font-weight: 600; line-height: 1.4; }
+.licensing-agent__worker > p + p { margin-top: 8px; color: #e1f2eb; font-size: 14px; line-height: 1.7; }
+.licensing-agent__work { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #ffffff40; }
+.licensing-agent__work dt { color: #d2e9df; font-size: 12px; }
+.licensing-agent__work dd { margin-top: 6px; font-size: 14px; line-height: 1.6; font-weight: 500; }
 .licensing-agent__trigger {
-  display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 20px;
-  border-radius: 10px; background: #087d64; color: white; font-size: 16px; font-weight: 600;
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 0; margin-top: 10px;
+  color: #287261; font-size: 13px; font-weight: 600;
 }
-.licensing-agent__trigger:hover { background: #086451; }
-.licensing-agent__questions { padding: 28px 0 8px; }
-.licensing-agent__questions h1 { font: 600 clamp(25px, 4vw, 32px)/1.25 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.035em; color: #203b31; }
-.licensing-agent__questions > p { margin-top: 12px; font-size: 16px; line-height: 1.7; color: #617168; }
+.licensing-agent__trigger:hover { color: #153c2e; }
+.licensing-agent__questions { padding: 4px 0 8px; }
 .licensing-agent__scope { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 24px 0 16px; font-size: 13px; font-weight: 600; color: #576960; }
 .licensing-agent__scope select { min-height: 44px; max-width: 100%; padding: 8px 32px 8px 12px; border: 1px solid #c9d7d0; border-radius: 6px; background: white; font-size: 16px; color: #244e3f; }
 .licensing-agent__suggestions { border-top: 1px solid #dbe4de; }

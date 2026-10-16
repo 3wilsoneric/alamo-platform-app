@@ -534,8 +534,11 @@ Ask a question, with no top-level or community-profile navigation item. The
 legacy `/licensing` route preserves query parameters when redirecting to the
 new route. Other accounts return to Analytics before any Licensing data mounts.
 
-The tab opens with a green Licensing agent entry, following the question-first
-Analytics flow. Suggested questions surface a source-grounded report module for
+The tab opens with a green Licensing agent work summary and immediately surfaces
+the latest report module. It shows the real last-check status, archived report
+count, community count, and automatic check schedule. Failed or unavailable
+checks are labeled; the UI never animates a fictitious scan. A secondary
+Explore reports control provides community selection and evidence views for
 latest reports (up to eight), substantiated complaint findings, cited
 deficiencies, recorded correction plans, or the full library. A community
 selection scopes the query. The module reports its date range and historical
@@ -563,7 +566,7 @@ a stable document link. There is no locally archived PDF or facsimile. Display
 formatting removes recognized numbered form gutters; the original-text download
 preserves the stored text byte for byte. Briefs derive only from that evidence.
 
-The agent also offers a report-finding box and an Updates notice. Search understands a
+The secondary exploration panel also offers a report-finding box and an Updates notice. Search understands a
 small explicit vocabulary of communities, findings, citation/correction terms,
 years, and remaining text terms. It retrieves reports; it is not an unrestricted
 AI question-answer service. It does not infer current compliance from archived findings. Question, community,

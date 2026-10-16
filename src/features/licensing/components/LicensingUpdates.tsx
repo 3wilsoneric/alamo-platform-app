@@ -1,19 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Bell, X } from "lucide-react";
 import type { LicensingUpdates as Updates } from "../../../../shared/licensing-contracts.mjs";
-import { fetchLicensingUpdates } from "../licensingApi";
 import { licensingDate } from "./LicensingReportReader";
 
-export default function LicensingUpdates({ onSelect }: { onSelect: (id: string) => void }) {
-  const [feed, setFeed] = useState<Updates | null>(null);
-  const [failed, setFailed] = useState(false);
+export default function LicensingUpdates({ onSelect, feed, failed }: { onSelect: (id: string) => void; feed: Updates | null; failed: boolean }) {
   const [open, setOpen] = useState(false);
-  useEffect(() => {
-    const controller = new AbortController();
-    const refresh = () => { void fetchLicensingUpdates(controller.signal).then((data) => { setFeed(data); setFailed(false); }).catch(() => { if (!controller.signal.aborted) setFailed(true); }); };
-    refresh(); const timer = globalThis.setInterval(refresh, 60_000);
-    return () => { controller.abort(); globalThis.clearInterval(timer); };
-  }, []);
   const updateCount = feed?.alerts.length ?? 0;
   return <div className="relative shrink-0">
     <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#cbdad1] bg-white px-3 text-[13px] font-medium text-[#315c4c] shadow-[0_2px_8px_rgba(38,74,58,0.05)] transition-colors hover:bg-[#f4f8f5]"><Bell size={16} aria-hidden="true" /> <span>Updates</span>{updateCount ? <span aria-label={`${updateCount} licensing updates`} className="grid min-h-5 min-w-5 place-items-center rounded-full bg-[#dceee6] px-1 text-[11px] font-semibold text-[#176b52]">{updateCount}</span> : null}{(failed || feed?.status === "failed") && <span aria-label="Update check needs review" className="h-2 w-2 rounded-full bg-[#b57a3a]" />}</button>

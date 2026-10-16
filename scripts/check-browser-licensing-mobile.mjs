@@ -95,11 +95,13 @@ await withBrowserQa(async (browser) => {
     await installApiFixtures(page);
     await page.goto(`${BASE_URL}/analytics/licensing`, { waitUntil: "domcontentloaded" });
     await page.locator('[data-licensing-workspace="true"]').waitFor({ state: "visible" });
+    await page.getByText("Latest check complete", { exact: true }).waitFor();
+    await page.getByRole("region", { name: "Licensing answer" }).waitFor();
     const list = await measure(page);
     assert.ok(list.overflow <= 1, `${viewport.width}px list overflowed by ${list.overflow}px`);
-    assert.ok(list.searchWidth >= viewport.width - 34, `${viewport.width}px question input was cramped`);
+    assert.equal(list.searchWidth, 0, "search must stay secondary to the agent output");
     assert.equal(await page.locator("article[data-licensing-reader]").count(), 0, "agent must not automatically open a report");
-    assert.equal(await page.getByRole("button", { name: "Licensing agent", exact: true }).getAttribute("aria-expanded"), "true");
+    assert.equal(await page.getByRole("button", { name: "Explore reports", exact: true }).getAttribute("aria-expanded"), "false");
     assert.ok(list.workspaceWidth >= viewport.width - 34, `${viewport.width}px workspace was cramped`);
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-list-390.png"), fullPage: false });
 
@@ -112,7 +114,6 @@ await withBrowserQa(async (browser) => {
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-updates-390.png"), fullPage: false });
     await page.getByRole("button", { name: "Close state updates" }).click();
 
-    await page.getByRole("button", { name: "What do the latest state reports say?" }).click();
     await page.getByRole("region", { name: "Licensing answer" }).waitFor();
     assert.match(await page.getByRole("region", { name: "Licensing answer" }).innerText(), /3 latest state reports/);
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-answer-390.png"), fullPage: false });
@@ -153,7 +154,7 @@ await withBrowserQa(async (browser) => {
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-text-390.png"), fullPage: false });
     await page.getByRole("button", { name: "Back to licensing answer" }).click();
     await page.getByRole("region", { name: "Licensing answer" }).waitFor();
-    assert.match(page.url(), /question=latest/);
+    assert.match(await page.getByRole("region", { name: "Licensing answer" }).innerText(), /3 latest state reports/);
     results.push({ viewport, list, reader, panel: panelBox });
     await context.close();
   }
@@ -162,16 +163,19 @@ await withBrowserQa(async (browser) => {
   await installApiFixtures(desktop);
   await desktop.goto(`${BASE_URL}/analytics/licensing`, { waitUntil: "domcontentloaded" });
   await desktop.locator('[data-licensing-workspace="true"]').waitFor({ state: "visible" });
+  await desktop.getByText("Latest check complete", { exact: true }).waitFor();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   const desktopLayout = await desktop.evaluate(() => ({
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    agentColor: getComputedStyle(document.querySelector('.licensing-agent__trigger')).backgroundColor,
+    agentColor: getComputedStyle(document.querySelector('.licensing-agent__worker')).backgroundColor,
     licensingCurrent: document.querySelector('[data-analytics-section-target="licensing"]')?.getAttribute('aria-current')
   }));
   assert.ok(desktopLayout.overflow <= 1);
   assert.equal(desktopLayout.agentColor, "rgb(8, 125, 100)", "agent entry should be green");
   assert.equal(desktopLayout.licensingCurrent, "page");
   await desktop.screenshot({ path: path.join(output, "licensing-agent-1440.png"), fullPage: false });
-  await desktop.getByRole("button", { name: "What deficiencies did the state cite?" }).click();
+  await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();
+  await desktop.getByRole("button", { name: "Cited deficiencies", exact: true }).click();
   await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 1, "citation question must filter by evidence");
   await desktop.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
@@ -179,13 +183,13 @@ await withBrowserQa(async (browser) => {
   await desktop.getByRole("button", { name: "Read report text", exact: true }).click();
   await desktop.screenshot({ path: path.join(output, "licensing-text-1440.png"), fullPage: false });
   await desktop.getByRole("button", { name: "Back to licensing answer" }).click();
-  await desktop.getByRole("button", { name: "Licensing agent", exact: true }).click();
+  await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();
   await desktop.getByRole("combobox", { name: "Licensing community" }).selectOption("344");
-  await desktop.getByRole("button", { name: "What deficiencies did the state cite?" }).click();
+  await desktop.getByRole("button", { name: "Cited deficiencies", exact: true }).click();
   await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   assert.match(await desktop.getByRole("region", { name: "Licensing answer" }).innerText(), /couldn’t find a matching report/);
   assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 0);
-  await desktop.getByRole("button", { name: "Licensing agent", exact: true }).click();
+  await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();
   await desktop.getByRole("combobox", { name: "Licensing community" }).selectOption("");
   await desktop.getByRole("textbox", { name: "Ask about licensing reports" }).fill("Santa Clarita");
   await desktop.getByRole("button", { name: "Find licensing reports" }).click();
@@ -199,7 +203,12 @@ await withBrowserQa(async (browser) => {
   await desktop.getByRole("region", { name: "Report summary" }).waitFor();
   assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection/, "report deep link must survive reload");
   results.push({ viewport: { width: 1440, height: 900 }, desktop: desktopLayout });
+  await desktop.route("**/api/platform/licensing/updates", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...updates, status: "failed" }) }));
+  await desktop.goto(`${BASE_URL}/analytics/licensing`);
+  await desktop.getByText("Latest check needs attention", { exact: true }).waitFor();
+  assert.match(await desktop.getByRole("region", { name: "Licensing agent", exact: true }).innerText(), /last complete report collection/);
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   await desktopContext.close();
   await writeFile(path.join(output, "latest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), passed: true, results }, null, 2));
-  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px with green agent entry, evidence-filtered answer modules, drilldowns, readable text, and original-record actions.");
+  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px with automatic agent status, evidence-filtered answer modules, drilldowns, readable text, and original-record actions.");
 });
