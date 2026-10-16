@@ -1,7 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
-import PresentationShortcut from "../../presentation/PresentationShortcut";
 import { usePresentationAccess } from "../../presentation/usePresentationAccess";
 import "../executiveHeader.css";
 
@@ -24,7 +23,6 @@ export function ExecutiveDirectorHeader() {
           </div>
         </div>
         <div className="executive-director-header__account-actions">
-          <span className="executive-director-header__presentation"><PresentationShortcut /></span>
           <PlatformUserIdentity nameSide="bottom" className="executive-director-header__identity min-h-11 min-w-11 justify-center" />
         </div>
       </nav>

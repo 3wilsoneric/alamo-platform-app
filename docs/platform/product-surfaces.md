@@ -245,14 +245,14 @@ The analyst remains a vertical chat/module workspace:
 ## Private Presentation
 
 `/presentation` displays the supplied 28-slide Alamo Data Strategy deck in a
-full-window 16:9 desktop viewer. A presentation button beside the desktop account
-control in both the main and Executive Director headers appears only after an
-authorized access check. An explicitly authorized presentation account can
+full-window 16:9 desktop viewer. The presentation shortcut is temporarily removed
+from both the main and Executive Director headers; authorized users can still
+open the direct `/presentation` link. An explicitly authorized presentation account can
 enter `/presentation` even if its normal workspace is otherwise zone-restricted;
 the slide and route APIs retain their separate server-side access checks. The
 phone menu has no shortcut.
-It requests browser full screen on click; browsers without that API retain the
-full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
+The viewer's full-screen control requests browser full screen; browsers without
+that API retain the full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
 navigate. F toggles full screen, S toggles speaker notes, and Close returns to
 the originating Platform page. Slide hashes support direct links. Screenshot
 slides for the Community dashboard, admissions file, Pipeline assessment, and
