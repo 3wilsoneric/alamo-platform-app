@@ -46,6 +46,42 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### EveryAgent preview restricted to Eric — 2026-10-16
+
+EveryAgent is now enabled only for Eric Wilson's verified tenant-local object
+ID. The same grant policy gates the navigation, launcher/provider, workspace,
+API reads and commands, and worker assignments. Existing Raj/Betty assignments
+and history are retained but no longer run or publish. They keep standalone
+Licensing reports at `/analytics/licensing`, with Licensing navigation and no
+EveryAgent identity or launcher. The original combined logo remains selected
+for Eric. Email delivery remains disabled.
+
+- source: `d6b608e`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc81`
+- image: `sha256:e486661ea96b398bd43f8608c1f1f2d208e57d7661b3c252ea9aeea511703805`
+- revision: `alamo-platform-prod-web--everyagent-private-d6b608e`
+- preceding image: `sha256:e28ffec58d67f5bebc513634a889956c508cecea19e1aa3bbeaef97f7c4de1c3`
+- browser assets: `/assets/index-dPWoKmQF.js`, `/assets/index-Bw0pVmX2.css`
+
+This release overlays only the browser bundle and `shared/everyagent-catalog.mjs`
+onto the exact preceding production image. Rollbacks must retain this access
+restriction; the preceding image grants EveryAgent to all three prior pilots.
+No data migration, email activation, or integration permission change occurs.
+
+Docs, TypeScript, the full analyst gate, build, and responsive browser checks
+passed. Signed local test tokens verify Raj/Betty receive 404 from EveryAgent
+while retaining Licensing. Service checks cover denied commands and ignored
+legacy worker assignments. Browser fixtures exercise the real grant policies:
+both prior pilots retain report drilldowns without agent navigation or API
+requests; unlisted accounts are redirected. The exact release container also
+passed the owner/denied-account service checks and 28 route, compression,
+asset, logo, and anonymous-API checks. Production passed those same 28 HTTP
+checks, and Eric's signed-in session retained his introduction, first logo,
+and both skills. Azure reports the restricted revision Healthy/Running with
+one replica and 100% traffic; the preceding revision is no longer active.
+The worker flag remains `true`, the Licensing Logic App is Disabled, and the
+scheduled job's notification flag is still `false`.
+
 ### Original Alamo / EveryAgent mark — 2026-10-16
 
 The original combined head-and-leaves emerald orb is deployed as
