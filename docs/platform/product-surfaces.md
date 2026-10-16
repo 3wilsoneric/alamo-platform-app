@@ -530,12 +530,28 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 
 `/analytics/agent` is the EveryAgent work surface, also reachable through
 `/everyagent` and a shared-header entry for its three pilot users. It opens on
-personal monitoring responsibilities, source status, recent results, review
-actions, and persisted check history. Each user can pause their own monitoring
+an assistant introduction and a readable personal briefing. A green orb and
+compact skill links establish one general EveryAgent; findings and their original
+sources lead the page. Monitoring controls sit behind “Manage my skills,” with
+review actions and persisted check history retained. Each user can pause their own monitoring
 and narrow Licensing community scope. Shared collection continues independently.
 Eric also receives a read-only Admissions watch skill over the protected Pipeline
 summary. Sources that are unavailable or not connected are labeled explicitly.
 The workspace has no prompt-first intake and displays that email delivery is off.
+
+For the same pilot accounts, a persistent green EveryAgent launcher is embedded
+in the authenticated Platform shell. It opens a keyboard-accessible dialog with
+an introduction, the current page name, up to two recent findings (unreviewed
+work first), skill links, and the full briefing. “Ask a question” opens the
+existing question workspace; this release does not add conversational planning
+or read arbitrary page content. The greeting uses the signed-in profile when
+available. A dismissible first introduction is scoped to that account’s browser
+session; no report or work content is stored there. One account-keyed provider
+shares polling and mutation state across the page and companion, retains results
+on failures, and stops polling while the document is hidden. Restricted admissions,
+executive-only accounts, executive pages, and presentation mode do not mount the
+companion. The feature is currently embedded in Platform; Pipeline remains a
+connected skill rather than a second host for this UI.
 
 Licensing remains a read-only library of the four-community CCLD baseline for
 Betty Dominici, Raj Thandi, and Eric. `?skill=licensing` opens its existing rich

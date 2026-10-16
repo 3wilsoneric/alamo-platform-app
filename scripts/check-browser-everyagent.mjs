@@ -31,26 +31,41 @@ try {
       const context = await browser.newContext({ viewport: { width, height: width === 1440 ? 1000 : 844 } });
       const page = await context.newPage();
       const errors = [];
+      let sourceUnavailable = false;
       page.on("pageerror", error => errors.push(error.message));
       await page.route("**/api/platform/everyagent", async route => {
+        if (sourceUnavailable) return route.fulfill({ status: 503, json: { error: "Unavailable" } });
         const request = route.request();
         const view = request.method() === "POST" ? await service.command(auth, request.postDataJSON()) : await service.overview(auth);
         await route.fulfill({ json: { ...view, workerEnabled: true } });
       });
       await page.goto(`${BASE_URL}/everyagent`, { waitUntil: "domcontentloaded" });
-      await page.getByRole("heading", { name: "EveryAgent", exact: true }).waitFor();
-      await page.getByRole("heading", { name: "Watch admissions activity" }).waitFor();
+      await page.getByRole("heading", { name: "I’m EveryAgent.", exact: true }).waitFor();
+      await page.getByRole("link", { name: /Admissions watch/ }).first().waitFor();
       assert.equal(new URL(page.url()).pathname, "/analytics/agent");
-      assert.equal(await page.getByText("Email delivery is off.", { exact: false }).count(), 1);
+      assert.equal(await page.getByRole("region", { name: "EveryAgent workspace" }).getByText("Email delivery is off.", { exact: false }).count(), 1);
       assert.equal(await page.getByRole("textbox").count(), 0, "work should appear without a prompt");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       assert(overflow <= 1, `${width}px layout overflowed by ${overflow}px`);
       await page.screenshot({ path: path.join(output, `everyagent-${width}.png`), fullPage: true });
+      await page.getByRole("button", { name: "Open EveryAgent", exact: true }).click();
+      const companion = page.getByRole("dialog", { name: "I’m EveryAgent." });
+      await companion.waitFor();
+      await companion.getByText("With you in your briefing", { exact: true }).waitFor();
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Close EveryAgent");
+      assert(await companion.getByRole("article").count() > 0, "embedded assistant should surface actual work");
+      assert.equal(await page.evaluate(() => { const dialog = document.querySelector("dialog"); return dialog.scrollWidth <= dialog.clientWidth + 1; }), true);
+      await page.screenshot({ path: path.join(output, `everyagent-companion-${width}.png`), fullPage: true });
+      await page.keyboard.press("Escape");
+      await companion.waitFor({ state: "hidden" });
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Open EveryAgent");
       if (width === 1440) {
+        await page.getByRole("button", { name: "Manage my skills" }).click();
         const watch = page.getByRole("article", { name: "Watch state licensing reports" });
         await watch.getByRole("button", { name: "Pause", exact: true }).click();
         await watch.getByRole("button", { name: "Resume", exact: true }).waitFor();
         await page.reload();
+        await page.getByRole("button", { name: "Manage my skills" }).click();
         await watch.getByRole("button", { name: "Resume", exact: true }).waitFor();
         await watch.getByRole("button", { name: "Resume", exact: true }).click();
         await watch.getByRole("button", { name: "Pause", exact: true }).waitFor();
@@ -66,10 +81,25 @@ try {
         await page.getByText(/^Reviewed /).first().waitFor();
         await page.getByText("Check history", { exact: true }).click();
         assert(await page.locator(".everyagent-history li").count() > 0);
+        sourceUnavailable = true;
+        await page.getByRole("button", { name: "Refresh EveryAgent" }).click();
+        await page.getByRole("alert").getByText(/couldn’t refresh/).waitFor();
+        assert(await page.getByRole("article").count() > 0, "source failure must retain previous briefing");
+        sourceUnavailable = false;
+        await page.getByRole("button", { name: "Try again" }).click();
+        await page.getByRole("alert").waitFor({ state: "hidden" });
       }
+      await page.getByRole("button", { name: "Open EveryAgent", exact: true }).click();
+      await companion.getByRole("link", { name: "Ask a question", exact: true }).click();
+      await companion.waitFor({ state: "hidden" });
+      assert.equal(new URL(page.url()).pathname, "/analytics/questions");
+      await page.getByRole("button", { name: "Open EveryAgent", exact: true }).click();
+      await companion.getByText("With you in Ask a question", { exact: true }).waitFor();
+      await companion.getByRole("button", { name: "Close EveryAgent" }).click();
+      assert.equal(await page.getByRole("button", { name: "Dismiss EveryAgent introduction" }).count(), 0, "introduction should stay dismissed for this account session");
       assert.deepEqual(errors, []);
       await context.close();
     }
-    console.log("EveryAgent browser checks passed at 320, 390 and 1440px: automatic work, two applications, persisted pause/scope/review, history, no overflow or runtime errors.");
+    console.log("EveryAgent browser checks passed at 320, 390 and 1440px: introduction, embedded briefing, page context, keyboard focus, source recovery, persisted pause/scope/review, history, no overflow or runtime errors.");
   });
 } finally { await rm(directory, { recursive: true, force: true }); }
