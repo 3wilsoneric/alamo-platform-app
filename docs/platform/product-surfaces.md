@@ -529,17 +529,25 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 ## Licensing Reports
 
 `/analytics/licensing` is a read-only library of the four-community CCLD baseline
-for Betty Dominici and Raj Thandi. It lives inside Analytics beside Reports and
+for Betty Dominici, Raj Thandi, and Eric. It lives inside Analytics beside Reports and
 Ask a question, with no top-level or community-profile navigation item. The
 legacy `/licensing` route preserves query parameters when redirecting to the
 new route. Other accounts return to Analytics before any Licensing data mounts.
 
-The page presents a short report summary followed by the complete archived
-state-report text in the same reader pane. The display removes recognized
-numbered form gutters but does not alter the stored evidence; the complete text
-remains downloadable, and the state facility record remains linked. There is no
-locally archived PDF or facsimile. The summary is derived from the archived
-text, and historical deadlines do not imply current overdue work.
+The reader opens with a formatted brief: the state finding, topics, reported
+concerns, finding excerpts, and cited deficiencies with their correction plans.
+Source page references open the complete archived text; citation excerpts and
+the complete form are available through disclosures. Missing extraction is
+labeled, mixed complaint findings stay distinct, and historical correction
+deadlines do not imply current overdue work. Report-list entries show the
+finding headline and topics instead of a truncated generic form title.
+
+The original-source action links to the stable state facility record and names
+the report date and complaint number to locate in its report list. The state's
+per-report API uses a changing inventory index, so that URL is not persisted as
+a stable document link. There is no locally archived PDF or facsimile. Display
+formatting removes recognized numbered form gutters; the original-text download
+preserves the stored text byte for byte. Briefs derive only from that evidence.
 
 The interface has one search box and an Updates notice. Search understands a
 small explicit vocabulary of communities, findings, citation/correction terms,
@@ -549,7 +557,7 @@ Report selection and search remain addressable in the URL.
 
 The authenticated `/api/platform/licensing`, `/api/platform/licensing/report`,
 and `/api/platform/licensing/updates` endpoints independently enforce the same
-two tenant-local Entra object IDs before reading any records. Signed-in
+three tenant-local Entra object IDs before reading any records. Signed-in
 nonmembers receive a generic 404; names, email claims, administrator roles, app
 tokens, and development bypasses cannot grant access. Anonymous requests remain
 401. The endpoints read a validated, atomic library
@@ -586,7 +594,11 @@ moving the collector to a different machine.
 The Azure Container Apps job runs Mondays and Wednesdays at 9 a.m. Pacific and publishes
 updates to the live page without this Mac or Codex. After a complete collection
 publishes atomically, changes from that run are also queued for email to Raj
-Thandi and Betty Dominici. No-change runs do not send mail. The job persists a
+Thandi and Betty Dominici. Messages name the community and change, include the
+report date when present, and link directly to its brief and original-source
+actions. Facility-level changes link to Licensing Updates. No-change runs do
+not send mail. Delivery requires an explicit activation timestamp; older queued
+notices remain archived and are skipped. The job persists a
 private pending envelope and an immutable sent receipt under the Licensing
 storage prefix, retries unsent envelopes on a later execution, and never places
 report text or resident information in the message. Delivery uses the existing

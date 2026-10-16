@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { BASE_URL, withBrowserQa } from "./browser-qa-utils.mjs";
+import { analyzeLicensingReport } from "../shared/licensing-analysis.mjs";
 
 const output = path.join(process.cwd(), "generated/browser-licensing-mobile");
 const communities = [
@@ -41,9 +42,10 @@ const library = {
 const reportById = new Map(reports.map((report, index) => [report.id, {
   ...report,
   text: index === 0
-    ? "COMPLAINT INVESTIGATION REPORT\n\nALLEGATION: Medication administration records were not consistently documented.\n\nThe department reviewed records, interviewed staff, and found that documentation required corrective follow-up. The licensee submitted a plan of correction.\n\nThis deliberately long source line verifies that mobile layouts wrap identifiers and narrative text without creating horizontal scrolling: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789."
-    : "FACILITY EVALUATION REPORT\n\nThe department completed a routine inspection and recorded no deficiencies."
+    ? '<meta name="robots" content="noindex">\nCOMPLAINT INVESTIGATION REPORT\n1\n2\n3\n4\nALLEGATION(S):\nMedication administration records were not consistently documented.\nINVESTIGATION FINDINGS:\nSubstantiated\nThe department reviewed records and interviewed staff. The allegation was substantiated because medication documentation required corrective follow-up.\nPage: 1 of 2\nDEFICIENCY INFORMATION FOR THIS PAGE:\nType B\nSection Cited\n80075(b)\nDeficient Practice Statement\nBased on record review, medication records were incomplete.\nPOC Due Date: 08/26/2026\nPlan of Correction\nAdministrator will train staff and submit the completed records.\nFailure to correct\nPage: 2 of 2\nThis deliberately long source line verifies wrapping: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.'
+    : "FACILITY EVALUATION REPORT\nNARRATIVE\nThe department completed a routine inspection and recorded no deficiencies.\nPage: 1 of 1"
 }]));
+for (const report of reports) report.analysis = analyzeLicensingReport(reportById.get(report.id)).summary;
 const updates = {
   version: "licensing-updates-v1", status: "complete", lastChecked: "2026-10-05T16:02:23.460Z",
   lastSuccessful: library.collectedAt,
@@ -113,11 +115,17 @@ await withBrowserQa(async (browser) => {
     assert.ok(reader.overflow <= 1, `${viewport.width}px reader overflowed by ${reader.overflow}px`);
     const readerTitleBox = await page.locator("article[data-licensing-reader] h2").boundingBox();
     assert.ok(readerTitleBox && readerTitleBox.y >= 0 && readerTitleBox.y < viewport.height, `${viewport.width}px reader did not return to its title`);
-    assert.equal(await page.getByRole("link", { name: "Open state source" }).count(), 1, `${viewport.width}px reader lost the state source action`);
+    assert.equal(await page.getByRole("link", { name: "Open original on state site" }).getAttribute("href"), communities[0].sourceUrl, `${viewport.width}px reader lost the stable state source action`);
+    assert.match(await page.getByRole("region", { name: "Report summary" }).innerText(), /Substantiated complaint finding/);
+    assert.match(await page.getByRole("region", { name: "Reported concerns" }).innerText(), /Medication administration records/);
+    assert.match(await page.getByRole("region", { name: "State findings" }).innerText(), /documentation required corrective follow-up/);
+    const corrections = await page.getByRole("region", { name: "Deficiencies and correction plans" }).innerText();
+    assert.match(corrections, /Administrator will train staff/);
+    assert.match(corrections, /26 August 2026/);
+    assert.doesNotMatch(corrections, /overdue/i);
     const sourceText = page.locator('[data-licensing-source-text="true"]');
     assert.equal(await sourceText.count(), 1, `${viewport.width}px reader did not embed the archived report`);
-    assert.match(await sourceText.innerText(), /documentation required corrective follow-up/, `${viewport.width}px reader omitted the report body`);
-    assert.match(await sourceText.innerText(), /ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/, `${viewport.width}px reader truncated long source text`);
+    assert.equal(await sourceText.getAttribute("open"), null, "the brief should open before the full form text");
     assert.equal(await page.getByRole("button", { name: "Download original text" }).count(), 1, `${viewport.width}px reader lost the download action`);
     assert.equal(reader.undersized.length, 0, `${viewport.width}px exposed undersized reader controls: ${reader.undersized.join(", ")}`);
     if (viewport.width === 390) {
@@ -126,7 +134,13 @@ await withBrowserQa(async (browser) => {
       await page.getByRole("button", { name: "Download original text" }).click();
       const download = await downloadPromise;
       assert.match(download.suggestedFilename(), /^CCLD-079201030-2026-08-12-\d{8}\.txt$/, "original text download used an unexpected filename");
+      assert.equal(await readFile(await download.path(), "utf8"), reportById.get(reports[0].id).text, "download must preserve the original bytes including form gutters");
     }
+    await page.getByRole("button", { name: "Source · page 1" }).first().click();
+    assert.notEqual(await sourceText.getAttribute("open"), null, "source reference must open the archived form");
+    assert.match(await sourceText.innerText(), /documentation required corrective follow-up/, `${viewport.width}px reader omitted the report body`);
+    assert.match(await sourceText.innerText(), /ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/, `${viewport.width}px reader truncated long source text`);
+    assert.ok((await measure(page)).overflow <= 1, "expanded original text must wrap");
     results.push({ viewport, list, reader, panel: panelBox });
     await context.close();
   }
@@ -162,10 +176,11 @@ await withBrowserQa(async (browser) => {
   assert.equal(desktopLayout.analyticsCurrent, "page", "primary Analytics navigation was not active");
   assert.equal(desktopLayout.licensingCurrent, "page", "Licensing navigation was not active");
   await desktop.locator('[data-licensing-source-text="true"]').waitFor({ state: "visible" });
-  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /COMPLAINT INVESTIGATION REPORT/, "desktop reader omitted the archived report");
+  assert.match(await desktop.getByRole("region", { name: "Report summary" }).innerText(), /Substantiated complaint finding/);
   await desktop.screenshot({ path: path.join(output, "licensing-desktop-1440.png"), fullPage: false });
   await desktop.getByRole("button", { name: /Santa Clarita/i }).click();
   await desktop.locator('article[data-licensing-reader]').waitFor({ state: "visible" });
+  await desktop.getByText("Read complete original text", { exact: false }).click();
   assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection and recorded no deficiencies/, "selecting another report did not replace the inline document");
   assert.doesNotMatch(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /COMPLAINT INVESTIGATION REPORT/, "previous report text remained in the reader");
   results.push({ viewport: { width: 1440, height: 900 }, desktop: desktopLayout });

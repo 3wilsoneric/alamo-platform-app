@@ -88,7 +88,8 @@ function LicensingWorkspace() {
               <span className={r.id === selectedId ? "bg-[#0f8b73]" : "bg-transparent"} aria-hidden="true" />
               <span><span className="flex items-start justify-between gap-2"><span className="min-w-0 text-[14px] font-bold leading-5 tracking-[-0.025em] text-[#111111]">{library.communities.find((c) => c.facilityId === r.facilityId)?.name}</span><span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.09em] text-[#66736d]">{r.reportType}</span></span>
               <span className="mt-1 block text-[12px] leading-4 text-[#67747a]">{licensingDate(r.reportDate)}</span>
-              <span className="mt-1.5 block truncate text-[12px] leading-5 text-[#3f3f3f]">{r.title}</span></span>
+              <span className="mt-1.5 block text-[14px] leading-5 text-[#3f3f3f]">{r.analysis?.headline ?? r.title}</span>
+              {!!r.analysis?.topics.length && <span className="mt-1 block text-[12px] leading-5 text-[#66736d]">{r.analysis.topics.slice(0, 2).join(" · ")}</span>}</span>
             </button></li>)}</ul>
             {!library.reports.length && <p className="border-b border-[#d9d9d9] py-7 text-[13px] leading-6 text-[#595959]">No matching reports. Try a community name, topic, finding, or year.</p>}
             </div>

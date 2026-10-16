@@ -11,6 +11,14 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const definition = JSON.parse(await readFile(path.join(root, "scripts/azure/licensing-job.json"), "utf8"));
 const container = definition.properties.template.containers[0];
 container.image = image;
+if (process.argv.includes("--enable-notifications")) {
+  const notBefore = process.argv.find((arg) => arg.startsWith("--notifications-not-before="))?.split("=")[1];
+  if (!notBefore || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(notBefore) || !Number.isFinite(Date.parse(notBefore))) {
+    throw new Error("Pass --notifications-not-before=<UTC timestamp> to activate alerts without sending the old queue.");
+  }
+  container.env.find((entry) => entry.name === "LICENSING_ALERT_NOTIFICATIONS_ENABLED").value = "true";
+  container.env.push({ name: "LICENSING_ALERT_NOT_BEFORE", value: notBefore });
+}
 if (process.argv.includes("--manual")) {
   definition.properties.configuration.triggerType = "Manual";
   definition.properties.configuration.manualTriggerConfig = { parallelism: 1, replicaCompletionCount: 1 };

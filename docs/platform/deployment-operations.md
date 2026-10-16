@@ -2164,13 +2164,15 @@ callback URL in Key Vault as `licensing-alert-webhook-url`. The job resolves
 that secret through its existing user-assigned identity and never includes the
 URL in its image or source. Recipients are locked to
 `raj@aaahealthservices.com` and `betty@aaahealthservices.com` in both code and
-the workflow definition. Delivery is currently launch-gated: the Logic App is
-disabled and the job sets `LICENSING_ALERT_NOTIFICATIONS_ENABLED=false` so the
-scheduled collector continues to queue changes without sending them. Launch
-requires reauthorizing the Office 365 connection, enabling the Logic App, and
-changing that job setting to exactly `true`; complete all three in one verified
-release. A pending envelope must be reviewed before launch because enabling
-delivery will retry it.
+the workflow definition. Templates default to disabled delivery. Activation
+uses `licensing:deploy-alert-workflow -- --enable` and the job deploy script's
+`--enable-notifications --notifications-not-before=<UTC timestamp>` options.
+The Office 365 connection must be Connected. The job requires both
+`LICENSING_ALERT_NOTIFICATIONS_ENABLED=true` and `LICENSING_ALERT_NOT_BEFORE`;
+queued runs before that timestamp are skipped without deleting their evidence.
+Retain the activation timestamp on subsequent job deployments. The v2 email
+includes report dates and direct brief links; v1 envelopes remain readable for
+explicitly included older runs. No report body or resident details enter email.
 
 The twice-weekly schedule is Monday and Wednesday at 9 a.m.
 America/Los_Angeles. Azure evaluates

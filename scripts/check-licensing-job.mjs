@@ -67,6 +67,13 @@ assert.match(email.html, /Santa Clarita &lt;test&gt;/);
 assert.match(email.html, /Updated facility profile &amp; owner/);
 assert.doesNotMatch(email.html, /Santa Clarita <test>/);
 assert.equal(email.idempotencyKey, `licensing:${notificationInput.runId}`);
+assert.match(email.html, /scheduled California licensing check/);
+const reportNotice = { ...notificationInput, alerts: [{ ...notificationInput.alerts[0], reportId: `079201030-${"a".repeat(32)}`, reportDate: "2026-10-01" }] };
+const linkedEmail = buildLicensingChangeEmail(reportNotice);
+assert.match(linkedEmail.html, /licensing\?report=079201030-a{32}/);
+assert.match(linkedEmail.html, /Report dated Oct 1, 2026/);
+assert.throws(() => buildLicensingChangeEmail({ ...reportNotice, alerts: [{ ...reportNotice.alerts[0], reportId: '" onclick="bad' }] }), /report ID/);
+assert.throws(() => buildLicensingChangeEmail({ ...reportNotice, alerts: [{ ...reportNotice.alerts[0], reportDate: "2026-02-30" }] }), /report date/);
 assert.equal(licensingAlertDeliveryEnabled(), false, "Delivery must fail closed without an explicit enable flag");
 assert.equal(licensingAlertDeliveryEnabled("false"), false);
 assert.equal(licensingAlertDeliveryEnabled("true"), true);
@@ -98,8 +105,15 @@ assert.equal((await queueLicensingChangeNotification(notificationContainer, noti
 const paused = await deliverPendingLicensingNotifications(notificationContainer);
 assert.deepEqual(paused, [{ status: "paused", pendingCount: 1 }]);
 let deliveryCalls = 0;
+await assert.rejects(deliverPendingLicensingNotifications(notificationContainer, { enabled: true, notBefore: "" }), /explicit UTC start time/);
+const oldQueue = await deliverPendingLicensingNotifications(notificationContainer, {
+  enabled: true, notBefore: "2026-10-16T00:00:00Z",
+  fetchImpl: async () => { throw new Error("Activating alerts must not send the historical queue."); }
+});
+assert.equal(oldQueue[0].status, "before_start");
 const delivery = await deliverPendingLicensingNotifications(notificationContainer, {
   enabled: true,
+  notBefore: "2026-10-05T00:00:00Z",
   webhookUrl: "https://prod-00.westus.logic.azure.com/workflows/test/triggers/manual/paths/invoke?sig=test",
   fetchImpl: async (_url, request) => {
     deliveryCalls += 1;
@@ -113,6 +127,7 @@ assert.equal(delivery[0].status, "sent");
 assert.equal(deliveryCalls, 1);
 const repeated = await deliverPendingLicensingNotifications(notificationContainer, {
   enabled: true,
+  notBefore: "2026-10-05T00:00:00Z",
   webhookUrl: "https://prod-00.westus.logic.azure.com/workflows/test/triggers/manual/paths/invoke?sig=test",
   fetchImpl: async () => { throw new Error("A sent notification must not be delivered twice."); }
 });
@@ -121,9 +136,20 @@ assert.equal(deliveryCalls, 1);
 blobs.delete(`licensing/notifications/sent/${notificationInput.runId}.json`);
 await assert.rejects(deliverPendingLicensingNotifications({ ...notificationContainer, listBlobsFlat: async function* () { yield { name: "licensing/notifications/pending/20261005T160021Z-2fb72799.json" }; } }, {
   enabled: true,
+  notBefore: "2026-10-05T00:00:00Z",
   webhookUrl: "http://example.com/insecure",
   fetchImpl: async () => ({ ok: true, status: 200, body: null })
 }), /Azure Logic Apps HTTPS/);
+// Previously queued v1 envelopes still validate when deliberately included.
+const legacyEmail = buildLicensingChangeEmail({ ...notificationInput, version: "licensing-change-email-v1" });
+assert.match(legacyEmail.html, /weekly California licensing check/);
+blobs.set(`licensing/notifications/pending/${notificationInput.runId}.json`, Buffer.from(JSON.stringify(legacyEmail)));
+const legacyDelivery = await deliverPendingLicensingNotifications(notificationContainer, {
+  enabled: true, notBefore: "2026-10-05T00:00:00Z",
+  webhookUrl: "https://prod-00.westus.logic.azure.com/workflows/test/triggers/manual/paths/invoke?sig=test",
+  fetchImpl: async () => ({ ok: true, status: 200, body: null })
+});
+assert.equal(legacyDelivery[0].status, "sent");
 
 const workflow = JSON.parse(await readFile(new URL("./azure/licensing-alert-workflow.json", import.meta.url), "utf8"));
 assert.equal(workflow.properties.state, "Disabled");

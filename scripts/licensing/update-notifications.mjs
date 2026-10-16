@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { readBlob, uploadImmutable } from "./cloud-storage.mjs";
 
-const NOTIFICATION_VERSION = "licensing-change-email-v1";
+const NOTIFICATION_VERSION = "licensing-change-email-v2";
+const LEGACY_VERSION = "licensing-change-email-v1";
 const PENDING_PREFIX = "licensing/notifications/pending/";
 const SENT_PREFIX = "licensing/notifications/sent/";
 const MAX_NOTIFICATION_BYTES = 64 * 1024;
@@ -49,11 +50,14 @@ function validatedAlerts(value) {
     const title = String(alert?.title ?? "").trim().slice(0, 200);
     const at = String(alert?.at ?? "");
     if (!community || !title || !Number.isFinite(Date.parse(at))) throw new Error("Invalid licensing notification alert.");
+    if (alert.reportId != null && !/^\d{9}-[a-f0-9]{32}$/.test(alert.reportId)) throw new Error("Invalid licensing notification report ID.");
+    if (alert.reportDate != null && (!/^\d{4}-\d{2}-\d{2}$/.test(alert.reportDate) || !Number.isFinite(Date.parse(alert.reportDate)) || new Date(alert.reportDate).toISOString().slice(0, 10) !== alert.reportDate)) throw new Error("Invalid licensing notification report date.");
     return { community, title, at, reportId: alert.reportId ?? null, reportDate: alert.reportDate ?? null };
   });
 }
 
-export function buildLicensingChangeEmail({ runId, alerts, checkedAt }) {
+export function buildLicensingChangeEmail({ runId, alerts, checkedAt, version = NOTIFICATION_VERSION }) {
+  if (![NOTIFICATION_VERSION, LEGACY_VERSION].includes(version)) throw new Error("Invalid licensing notification version.");
   const safeRunId = validatedRunId(runId);
   const safeAlerts = validatedAlerts(alerts);
   const timestamp = String(checkedAt ?? safeAlerts[0].at);
@@ -62,16 +66,19 @@ export function buildLicensingChangeEmail({ runId, alerts, checkedAt }) {
   const subject = safeAlerts.length === 1
     ? `Licensing update: ${communities[0]}`
     : `Licensing updates: ${safeAlerts.length} changes across ${communities.length} communities`;
-  const rows = safeAlerts.map((alert) => `<li style="margin:0 0 12px"><strong>${escapeHtml(alert.community)}</strong><br>${escapeHtml(alert.title)}</li>`).join("");
+  const rows = safeAlerts.map((alert) => {
+    const detail = version === LEGACY_VERSION ? "" : `${alert.reportDate ? `<br>Report dated ${escapeHtml(new Date(`${alert.reportDate}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium" }))}` : ""}<br><a href="https://www.alamoplatform.com/analytics/licensing${alert.reportId ? `?report=${encodeURIComponent(alert.reportId)}` : ""}" style="color:#0f795f">${alert.reportId ? "Read report summary and original" : "Review licensing updates"}</a>`;
+    return `<li style="margin:0 0 ${version === LEGACY_VERSION ? "12" : "16"}px"><strong>${escapeHtml(alert.community)}</strong><br>${escapeHtml(alert.title)}${detail}</li>`;
+  }).join("");
   const html = `<div style="font-family:Arial,sans-serif;color:#233c33;line-height:1.55;max-width:680px">
 <h1 style="font-size:22px;margin:0 0 12px">Licensing records changed</h1>
-<p style="margin:0 0 18px">The weekly California licensing check found ${safeAlerts.length} ${safeAlerts.length === 1 ? "change" : "changes"}.</p>
+<p style="margin:0 0 18px">The ${version === LEGACY_VERSION ? "weekly" : "scheduled"} California licensing check found ${safeAlerts.length} ${safeAlerts.length === 1 ? "change" : "changes"}.</p>
 <ul style="padding-left:22px;margin:0 0 20px">${rows}</ul>
 <p style="margin:0 0 18px"><a href="https://www.alamoplatform.com/analytics/licensing" style="color:#0f795f;font-weight:600">Review Licensing in Alamo Platform</a></p>
 <p style="font-size:12px;color:#68756f;margin:0">Checked ${escapeHtml(new Date(timestamp).toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" }))} Pacific. Automated notice ${escapeHtml(safeRunId)}.</p>
 </div>`;
   return {
-    version: NOTIFICATION_VERSION,
+    version,
     runId: safeRunId,
     idempotencyKey: `licensing:${safeRunId}`,
     to: [...LICENSING_ALERT_RECIPIENTS],
@@ -98,24 +105,33 @@ async function sentReceiptExists(container, runId) {
 
 export async function deliverPendingLicensingNotifications(container, {
   enabled = licensingAlertDeliveryEnabled(),
+  notBefore = process.env.LICENSING_ALERT_NOT_BEFORE,
   fetchImpl = fetch,
   webhookUrl
 } = {}) {
   const pending = [];
   for await (const blob of container.listBlobsFlat({ prefix: PENDING_PREFIX })) pending.push(blob.name);
   if (!enabled) return pending.length ? [{ status: "paused", pendingCount: pending.length }] : [];
+  if (!notBefore || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(notBefore) || !Number.isFinite(Date.parse(notBefore))) {
+    throw new Error("LICENSING_ALERT_NOT_BEFORE must be an explicit UTC start time before enabling delivery.");
+  }
+  const firstRun = new Date(notBefore).toISOString().replaceAll(/[-:]/g, "").slice(0, 15) + "Z";
   const results = [];
   for (const name of pending.sort()) {
     const runId = validatedRunId(name.slice(PENDING_PREFIX.length, -".json".length));
+    if (runId.slice(0, 16) < firstRun) {
+      results.push({ status: "before_start", runId });
+      continue;
+    }
     if (await sentReceiptExists(container, runId)) {
       results.push({ status: "already_sent", runId });
       continue;
     }
     const source = await readBlob(container.getBlockBlobClient(name), MAX_NOTIFICATION_BYTES);
     const envelope = JSON.parse(source.bytes.toString("utf8"));
-    const expected = buildLicensingChangeEmail({ runId: envelope.runId, alerts: envelope.alerts ?? [], checkedAt: envelope.checkedAt });
+    const expected = buildLicensingChangeEmail({ runId: envelope.runId, alerts: envelope.alerts ?? [], checkedAt: envelope.checkedAt, version: envelope.version });
     // Pending objects contain rendered content rather than raw source alerts.
-    if (envelope.version !== NOTIFICATION_VERSION || envelope.runId !== runId || envelope.idempotencyKey !== expected.idempotencyKey ||
+    if (![NOTIFICATION_VERSION, LEGACY_VERSION].includes(envelope.version) || envelope.runId !== runId || envelope.idempotencyKey !== expected.idempotencyKey ||
       JSON.stringify(envelope.to) !== JSON.stringify(LICENSING_ALERT_RECIPIENTS) || envelope.subject !== expected.subject || envelope.html !== expected.html ||
       envelope.alertCount !== expected.alertCount || JSON.stringify(envelope.communities) !== JSON.stringify(expected.communities)) {
       throw new Error("Invalid queued licensing notification.");
@@ -132,7 +148,7 @@ export async function deliverPendingLicensingNotifications(container, {
       throw new Error(`Licensing notification delivery failed with HTTP ${response.status}.`);
     }
     await response.body?.cancel().catch(() => undefined);
-    const receipt = Buffer.from(JSON.stringify({ version: NOTIFICATION_VERSION, runId, sentAt: new Date().toISOString(),
+    const receipt = Buffer.from(JSON.stringify({ version: envelope.version, runId, sentAt: new Date().toISOString(),
       alertCount: envelope.alertCount, recipients: LICENSING_ALERT_RECIPIENTS,
       sha256: createHash("sha256").update(source.bytes).digest("hex") }));
     await uploadImmutable(container.getBlockBlobClient(`${SENT_PREFIX}${runId}.json`), receipt, "application/json");
