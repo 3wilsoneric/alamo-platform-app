@@ -3,15 +3,20 @@ const sentences = new Intl.Segmenter("en", { granularity: "sentence" });
 const continuation = /(?:\s*[({*]*\s*(?:report\s+)?cont(?:inue[ds]?)?\.?\s*(?:on|from)\s+(?:the\s+)?(?:next\s+page(?:,?\s*LIC\s*[\d -]+[A-Z]?)?|(?:LIC\s*)?\d{3,4}[- ]?[A-Z])\s*[.\s)}*]*)$/i;
 
 export function licensingReadingBlocks(text) {
-  const cleaned = text.trim().replace(continuation, "").trim();
+  let cleaned = text.trim().replace(continuation, "").trim();
   if (!cleaned) return [];
-  if (/^(?:allegation\s*\d*|investigation finding)\s*:/i.test(cleaned)
+  const sourceLabel = cleaned.match(/^((?:allegation\s*\d*|investigation finding)\s*:)\s*/i);
+  if ((sourceLabel && cleaned.length < 220)
     || (cleaned.length < 100 && /^[A-Z][A-Z\s/&(),–-]+:?$/.test(cleaned))) {
     return [{ kind: "heading", text: cleaned }];
   }
   const bullet = cleaned.match(/^[•●▪]\s*(.+)$/s);
   if (bullet) return [{ kind: "list-item", text: bullet[1] }];
   const blocks = []; let paragraph = "";
+  if (sourceLabel) {
+    blocks.push({ kind: "heading", text: sourceLabel[1] });
+    cleaned = cleaned.slice(sourceLabel[0].length);
+  }
   // Break only at sentence boundaries; never paraphrase or truncate a sentence.
   for (const { segment } of sentences.segment(cleaned)) {
     const sentence = segment.trim();
