@@ -22,7 +22,7 @@ full-page phone menu begins below that complete header rather than beneath the
 browser status area.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
-Betty Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
+Betty Dominici, Raj Thandi, and Eric Wilson also see Agent in that row. No
 other account, including a platform administrator, receives Licensing access.
 The owner-only Outreach workspace remains available by its direct route but is
 absent from shared desktop and mobile navigation; the workspace and its APIs
@@ -528,14 +528,15 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 
 ## Licensing Reports
 
-`/analytics/licensing` is a read-only library of the four-community CCLD baseline
+`/analytics/agent` is the shared Agent workspace. Licensing is its first
+connected skill, a read-only library of the four-community CCLD baseline
 for Betty Dominici, Raj Thandi, and Eric. It lives inside Analytics beside Reports and
 Ask a question, with no top-level or community-profile navigation item. The
-legacy `/licensing` route preserves query parameters when redirecting to the
+legacy `/licensing` and `/analytics/licensing` routes preserve query parameters when redirecting to the
 new route. Other accounts return to Analytics before any Licensing data mounts.
 
-The tab opens with a green Licensing agent work summary and immediately surfaces
-the latest report module. It shows the real last-check status, archived report
+The Agent tab opens with a green general Agent work summary and an explicit
+“Active skill: Licensing” label. The latest report module appears immediately. It shows the real last-check status, archived report
 count, community count, and automatic check schedule. Failed or unavailable
 checks are labeled; the UI never animates a fictitious scan. A secondary
 Explore reports control provides community selection and evidence views for
@@ -609,9 +610,11 @@ rebuilds the feed without fetching CCLD. Original ledger and evidence remain in
 moving the collector to a different machine.
 
 The Azure Container Apps job runs Mondays and Wednesdays at 9 a.m. Pacific and publishes
-updates to the live page without this Mac or Codex. After a complete collection
-publishes atomically, changes from that run are also queued for email to Raj
-Thandi and Betty Dominici. Messages name the community and change, include the
+updates to the live page without this Mac or Codex. **Email delivery is paused
+at the user’s request.** The job notification flag is false and the alert Logic
+App is Disabled. Do not enable either without a new explicit user instruction.
+After a complete collection publishes atomically, changes may still be queued
+for later review; the prepared recipients remain Raj Thandi and Betty Dominici. Messages name the community and change, include the
 report date when present, and link directly to its brief and original-source
 actions. Facility-level changes link to Licensing Updates. No-change runs do
 not send mail. Delivery requires an explicit activation timestamp; older queued

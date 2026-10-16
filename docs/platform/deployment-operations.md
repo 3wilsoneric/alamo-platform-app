@@ -46,6 +46,25 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### Agent workspace with Licensing skill; email delivery paused — 2026-10-16
+
+The user clarified that the product is one general Agent with connected skills.
+The navigation and workspace are now Agent, with Licensing explicitly labeled
+as the active skill. The shared Agent work card renders the existing licensing
+collector status and report modules. It does not introduce an unconnected chat
+or claim additional skills. Existing licensing deep links redirect to
+`/analytics/agent` with query parameters intact, and the same three-account
+access boundary applies before the skill mounts.
+
+**Email delivery is paused until a new explicit user request.** The production
+Logic App `alamo-platform-licensing-alerts` is Disabled, and the scheduled job's
+`LICENSING_ALERT_NOTIFICATIONS_ENABLED` is the string `false`. State collection
+and in-app updates continue. There were no Logic App executions after the
+previous activation; the last listed attempts were failed runs on October 6.
+Do not restore the preceding section's enabled state during a redeployment.
+If future delivery is approved, use a fresh cutoff unless the user explicitly
+asks to send the backlog.
+
 ### Licensing agent, readable reports, and change emails — 2026-10-16
 
 Licensing now opens with a green agent work summary and the latest report
@@ -2251,7 +2270,10 @@ uses `licensing:deploy-alert-workflow -- --enable` and the job deploy script's
 The Office 365 connection must be Connected. The job requires both
 `LICENSING_ALERT_NOTIFICATIONS_ENABLED=true` and `LICENSING_ALERT_NOT_BEFORE`;
 queued runs before that timestamp are skipped without deleting their evidence.
-Retain the activation timestamp on subsequent job deployments. The v2 email
+Email delivery was paused by the user on October 16: the job flag is false and
+the Logic App is Disabled. Keep both disabled until explicit authorization to
+resume. If later approved, choose a new activation timestamp so this pause does
+not silently release old notices. The v2 email
 includes report dates and direct brief links; v1 envelopes remain readable for
 explicitly included older runs. No report body or resident details enter email.
 

@@ -52,7 +52,7 @@ git show a6863b2:src/features/executive/executiveCommunity.css
 | `src/features/california/components/PlatformPageNavigation.tsx` | Main Platform shell's matching desktop active-rule navigation; its mobile menu remains a distinct compact pattern |
 | `src/platformWorkspace.css` | Main Platform-scoped report and Licensing reader, Admissions file, and community dashboard treatments; does not change Executive Director permissions or data |
 | `src/features/admissions/admissionsVisual.css` | Main Admissions briefing paper/blue dashboard treatment, neutral stage lanes, and the manila referral-file card; keep this distinct from the client detail folder |
-| `src/features/california/components/AnalyticsSectionNavigation.tsx` | Main Platform's Reports / Ask a question / Licensing secondary rail; same underline rhythm as primary navigation |
+| `src/features/california/components/AnalyticsSectionNavigation.tsx` | Main Platform's Reports / Ask a question / Agent secondary rail; same underline rhythm as primary navigation |
 | `src/features/communities/components/CommunityDashboardSurface.tsx` | Four linked domain panels in the community profile; the selected domain still opens its existing detail |
 | `pages/ExecutiveDirectorPage.tsx` | Visible and accessible tab labels, conditional Review tab, printed community/form context |
 | `components/Lic624ReviewWorkspace.tsx` and `lic624Review.css` | Editable document, section navigation, dirty/busy/save states |

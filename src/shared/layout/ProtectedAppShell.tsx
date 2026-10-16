@@ -42,7 +42,7 @@ export default function ProtectedAppShell() {
   const isDeployedWorkforceDemo = import.meta.env.VITE_WORKFORCE_DEMO === "true" && location.pathname === "/workforce";
   const isStandaloneEditorial =
     location.pathname === "/outreach" || location.pathname === "/fiftystate";
-  const isLicensingExperience = location.pathname === "/licensing" || location.pathname === "/analytics/licensing";
+  const isAgentExperience = ["/analytics/agent", "/licensing", "/analytics/licensing"].includes(location.pathname);
   const isCaliforniaExperience =
     location.pathname === "/" ||
     location.pathname === "/questions" ||
@@ -69,7 +69,7 @@ export default function ProtectedAppShell() {
     isAdmissionsExperience ||
     isExecutiveDirectorExperience ||
     isPipelineHandoff ||
-    isLicensingExperience ||
+    isAgentExperience ||
     isPresentation ||
     isDeployedWorkforceDemo ||
     admissionsAccess.restrictedToAdmissions ||

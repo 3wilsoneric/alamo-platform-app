@@ -1,6 +1,6 @@
 import { useLicensingAccess } from "../../../shared/auth/licensingAccess";
 
-export type AnalyticsSection = "reports" | "questions" | "licensing";
+export type AnalyticsSection = "reports" | "questions" | "agent";
 
 export default function AnalyticsSectionNavigation({
   active,
@@ -38,10 +38,10 @@ export default function AnalyticsSectionNavigation({
           onClick={() => onNavigate("questions")}
         />
         {canViewLicensing ? <SectionButton
-          section="licensing"
-          active={active === "licensing"}
-          label="Licensing"
-          onClick={() => onNavigate("licensing")}
+          section="agent"
+          active={active === "agent"}
+          label="Agent"
+          onClick={() => onNavigate("agent")}
         /> : null}
       </div>
     </nav>

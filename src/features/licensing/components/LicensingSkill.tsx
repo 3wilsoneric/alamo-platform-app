@@ -1,10 +1,11 @@
-import { ArrowRight, ChevronDown, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import type { LicensingLibrary, LicensingUpdates } from "../../../../shared/licensing-contracts.mjs";
 import { licensingQuestions } from "../licensingQuestions";
 import { licensingDate } from "./LicensingReportReader";
+import AgentWorkCard from "../../agent/components/AgentWorkCard";
 
-export default function LicensingAgent({ library, community, feed, failed, onAsk }: {
+export default function LicensingSkill({ library, community, feed, failed, onAsk }: {
   library: LicensingLibrary; community: string; feed: LicensingUpdates | null; failed: boolean;
   onAsk: (question: string, community: string, q?: string) => void;
 }) {
@@ -13,13 +14,15 @@ export default function LicensingAgent({ library, community, feed, failed, onAsk
   function ask(question: string, q?: string) { onAsk(question, scope, q); setExpanded(false); }
   const needsReview = failed || feed?.status === "failed";
   const status = needsReview ? "Latest check needs attention" : feed?.status === "complete" ? "Latest check complete" : feed ? "Waiting for the first check" : "Loading check status…";
-  return <section aria-label="Licensing agent" data-licensing-agent="true" className="licensing-agent">
-    <div className="licensing-agent__worker">
-      <div className="licensing-agent__identity"><ShieldCheck size={24} aria-hidden="true" /><h1>Licensing agent</h1><span>{library.monitoring === "platform_scheduled" ? "Scheduled monitoring" : "Archived reports"}</span></div>
-      <p className="licensing-agent__status" role={needsReview ? "alert" : "status"}>{status}</p>
-      <p>{needsReview ? "The last complete report collection is still available below." : "State reports collected, organized, and ready to review."}</p>
-      <dl className="licensing-agent__work"><div><dt>State reports</dt><dd>{library.totalReports} archived · {library.communities.length} communities</dd></div><div><dt>Last check</dt><dd>{feed?.lastChecked ? licensingDate(feed.lastChecked) : "Not available"}</dd></div><div><dt>Automatic checks</dt><dd>{feed?.schedule ? "Mon & Wed · 9 a.m. Pacific" : "Schedule not available"}</dd></div></dl>
-    </div>
+  return <section aria-label="Licensing skill" data-agent-skill="licensing" className="licensing-agent">
+    <AgentWorkCard skill="Licensing" status={status} needsAttention={needsReview}
+      mode={library.monitoring === "platform_scheduled" ? "Scheduled monitoring" : "Archived reports"}
+      summary={needsReview ? "The last complete report collection is still available below." : "State reports collected, organized, and ready to review."}
+      facts={[
+        { label: "State reports", value: `${library.totalReports} archived · ${library.communities.length} communities` },
+        { label: "Last check", value: feed?.lastChecked ? licensingDate(feed.lastChecked) : "Not available" },
+        { label: "Automatic checks", value: feed?.schedule ? "Mon & Wed · 9 a.m. Pacific" : "Schedule not available" }
+      ]} />
     <button type="button" className="licensing-agent__trigger" aria-expanded={expanded} aria-controls="licensing-agent-questions" onClick={() => setExpanded(!expanded)}>
       <span>Explore reports</span><ChevronDown size={16} aria-hidden="true" className={expanded ? "rotate-180" : ""} />
     </button>
