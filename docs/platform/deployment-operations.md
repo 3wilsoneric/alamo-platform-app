@@ -58,6 +58,7 @@ removed from the Community and medication-performance reports.
 
 - source commit: `2071023` on `codex/licensing-gate-release-20261013`
 - Databricks one-time view/QA/audit/snapshot run: `521292136360406` (all four tasks succeeded)
+- scheduled notebook paths updated: `eldermark_staged_transform` and `tool_context_views` (the `.py` view alias used by the one-time run was updated too)
 - ACR build: `cc7n`
 - image digest: `sha256:4624f6a2be1f4f25f937e4b97cbff0d4bcb157e0f768a9a3c0236cbc768d6669`
 - active revision: `alamo-platform-prod-web--incident-taxonomy-1016`
