@@ -5,7 +5,7 @@ const NOTIFICATION_VERSION = "licensing-change-email-v2";
 const LEGACY_VERSION = "licensing-change-email-v1";
 const PENDING_PREFIX = "licensing/notifications/pending/";
 const SENT_PREFIX = "licensing/notifications/sent/";
-const MAX_NOTIFICATION_BYTES = 64 * 1024;
+const MAX_NOTIFICATION_BYTES = 512 * 1024;
 const MAX_ALERTS = 100;
 
 export const LICENSING_ALERT_RECIPIENTS = Object.freeze([
@@ -95,6 +95,7 @@ export async function queueLicensingChangeNotification(container, input) {
   if (!input.alerts?.length) return { status: "skipped", reason: "No licensing changes." };
   const envelope = buildLicensingChangeEmail(input);
   const bytes = Buffer.from(JSON.stringify(envelope));
+  if (bytes.length > MAX_NOTIFICATION_BYTES) throw new Error("Licensing notification exceeds its size limit.");
   await uploadImmutable(container.getBlockBlobClient(`${PENDING_PREFIX}${envelope.runId}.json`), bytes, "application/json");
   return { status: "queued", runId: envelope.runId, alertCount: envelope.alertCount };
 }

@@ -150,6 +150,18 @@ const legacyDelivery = await deliverPendingLicensingNotifications(notificationCo
   fetchImpl: async () => ({ ok: true, status: 200, body: null })
 });
 assert.equal(legacyDelivery[0].status, "sent");
+// A complete 100-change batch must fit even with escaped text and report links.
+const largeBatch = { ...reportNotice, runId: "20261016T180000Z-aaaaaaaa", alerts: Array.from({ length: 100 }, () => ({ ...reportNotice.alerts[0], community: "&".repeat(150), title: "<".repeat(200) })) };
+await queueLicensingChangeNotification(notificationContainer, largeBatch);
+const batchDelivery = await deliverPendingLicensingNotifications(notificationContainer, {
+  enabled: true, notBefore: "2026-10-16T18:00:00Z",
+  webhookUrl: "https://prod-00.westus.logic.azure.com/workflows/test/triggers/manual/paths/invoke?sig=test",
+  fetchImpl: async (_url, request) => {
+    assert.equal(JSON.parse(request.body).alertCount, 100);
+    return { ok: true, status: 200, body: null };
+  }
+});
+assert.equal(batchDelivery.find((result) => result.runId === largeBatch.runId).status, "sent");
 
 const workflow = JSON.parse(await readFile(new URL("./azure/licensing-alert-workflow.json", import.meta.url), "utf8"));
 assert.equal(workflow.properties.state, "Disabled");
