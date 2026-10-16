@@ -20,8 +20,8 @@ export default function EveryAgentResponsibility({ skill, responsibility, busy, 
   return <article className="everyagent-responsibility" aria-label={skill.responsibility}>
     <div className="everyagent-row"><span className="everyagent-eyebrow">{skill.applicationName}</span>
       <span className={responsibility.issue ? "everyagent-status everyagent-status--attention" : "everyagent-status"}>{responsibility.paused ? "Paused" : responsibility.issue ? "Needs attention" : "Watching"}</span></div>
-    <h3>{skill.responsibility}</h3><p>{skill.description}</p>
-    <p className="everyagent-scope">{skill.scope === "organization" ? "Organization summary · your workspace" : `${responsibility.communityIds.length} communities · your workspace`}</p>
+    <h3>{skill.title}</h3>
+    <p className="everyagent-scope">{skill.scope === "organization" ? "Organization summary" : `${responsibility.communityIds.length} communities`}</p>
     <p className="everyagent-cadence">{skill.cadence}</p>
     <dl><div><dt>Last checked</dt><dd>{agentTime(responsibility.lastChecked)}</dd></div>
       <div><dt>Source updated</dt><dd>{agentTime(responsibility.sourceCheckedAt)}</dd></div></dl>

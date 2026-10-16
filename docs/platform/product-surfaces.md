@@ -28,6 +28,11 @@ assignments. Betty Dominici and Raj Thandi instead see Licensing in that row,
 opening the existing report library at `/analytics/licensing` without the agent
 identity or launcher. They retain their previous Licensing API access. No other
 account, including a platform administrator, receives Licensing access.
+EveryAgent opens directly to updates, source links, and review controls. The
+small orb opens the same work from other pages. There is no welcome hero,
+introduction, tagline, explanatory subtitle, or first-visit pop-up. Skill
+settings and notification status sit behind Manage skills. Functional report
+titles and source labels remain visible so users can identify the work.
 The owner-only Outreach workspace remains available by its direct route but is
 absent from shared desktop and mobile navigation; the workspace and its APIs
 remain hidden from every other account.

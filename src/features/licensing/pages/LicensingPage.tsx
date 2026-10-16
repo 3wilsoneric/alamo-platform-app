@@ -68,7 +68,7 @@ export default function LicensingWorkspace({ agentMode = false }: { agentMode?: 
     <section aria-label="Licensing reports" data-licensing-page="true" className="mx-auto min-h-[calc(100dvh-var(--platform-header-height)-58px)] min-w-0 w-full max-w-[1100px] bg-white px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-4 font-sans text-[#16283a] sm:px-6 lg:px-8">
       <header className="mb-6 flex min-h-11 items-center justify-between gap-3 border-b border-[#d9d9d9] pb-3">
         {selectedId ? <button type="button" onClick={() => { setParams(previous => { const next = new URLSearchParams(previous); next.delete("report"); next.set("skill", "licensing"); return next; }); }} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[#287261]"><ArrowLeft size={16} aria-hidden="true" /> Back to reports</button>
-          : <p className="text-sm text-[#68716b]">{agentMode ? "Skills / Licensing" : "Licensing"}</p>}
+          : <p className="text-sm text-[#68716b]">Licensing</p>}
         <LicensingUpdates onSelect={id => setParams({ report: id })} feed={feed} failed={failed} />
       </header>
       {error ? <div role="alert" className="py-8"><p>{error}</p><button type="button" onClick={() => setAttempt(n => n + 1)} className="mt-4 min-h-11 underline">Try again</button><button type="button" className="ml-5 min-h-11 underline" onClick={() => setParams({})}>Back to reports</button></div>

@@ -13,7 +13,7 @@ export default function AgentPage() {
   return <>
     <AnalyticsSectionNavigation active="agent" onNavigate={section => navigate(section === "reports" ? "/analytics" : `/analytics/${section}`)} />
     {["skill", "report", "question", "q", "community"].some(key => params.has(key)) ? <>
-      <Link to="/analytics/agent" className="mx-auto block min-h-11 w-full max-w-[1100px] px-4 pt-4 text-sm text-[#087d64] sm:px-6">← EveryAgent work</Link>
+      <Link to="/analytics/agent" className="mx-auto block min-h-11 w-full max-w-[1100px] px-4 pt-4 text-sm text-[#087d64] sm:px-6">← Updates</Link>
       <LicensingWorkspace agentMode />
     </> : <EveryAgentWorkspace key={getApiAuthCachePartition()} />}
   </>;

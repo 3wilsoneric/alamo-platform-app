@@ -65,7 +65,7 @@ export function useEveryAgent() {
 
 export function agentStatus(data: EveryAgentOverview | null, error: string | null) {
   if (error) return "Connection interrupted";
-  if (!data) return "Getting your briefing";
+  if (!data) return "Loading updates";
   if (!data.workerEnabled) return "Monitoring offline";
   if (data.working) return "Checking sources";
   if (data.responsibilities.length && data.responsibilities.every(item => item.paused)) return "Monitoring paused";

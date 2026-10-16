@@ -98,8 +98,8 @@ await withBrowserQa(async (browser) => {
     await page.getByText("Latest check complete", { exact: true }).waitFor();
     await page.getByRole("region", { name: "Licensing answer" }).waitFor();
     assert.equal(new URL(page.url()).pathname, "/analytics/agent", "old Licensing route must redirect to the Agent workspace");
-    assert.equal(await page.getByRole("heading", { name: "EveryAgent", exact: true }).count(), 1);
-    assert.match(await page.getByRole("region", { name: "EveryAgent work", exact: true }).innerText(), /Active skill\s+Licensing/);
+    assert.equal(await page.getByRole("heading", { name: "EveryAgent", exact: true }).count(), 0);
+    assert.doesNotMatch(await page.getByRole("region", { name: "EveryAgent work", exact: true }).innerText(), /Active skill|State reports collected, organized/);
     const list = await measure(page);
     assert.ok(list.overflow <= 1, `${viewport.width}px list overflowed by ${list.overflow}px`);
     assert.equal(list.searchWidth, 0, "search must stay secondary to the agent output");
@@ -174,7 +174,7 @@ await withBrowserQa(async (browser) => {
     licensingCurrent: document.querySelector('[data-analytics-section-target="agent"]')?.getAttribute('aria-current')
   }));
   assert.ok(desktopLayout.overflow <= 1);
-  assert.equal(desktopLayout.agentColor, "rgb(8, 125, 100)", "agent entry should be green");
+  assert.equal(desktopLayout.agentColor, "rgba(0, 0, 0, 0)", "helper status should not be a promotional banner");
   assert.equal(desktopLayout.licensingCurrent, "page");
   await desktop.screenshot({ path: path.join(output, "licensing-agent-1440.png"), fullPage: false });
   await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();

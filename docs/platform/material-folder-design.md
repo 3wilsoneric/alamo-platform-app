@@ -28,8 +28,11 @@ clinical transactions, authorization, or runtime into another.
 
 The approved EveryAgent mark is `public/brand/everyagent-alamo-v1.webp`: the
 original combined Alamo head-and-tree and emerald glass orb. Use it through
-`EveryAgentOrb` in the briefing, embedded launcher, companion header, and
-Licensing skill header. The main Alamo Health Management wordmark stays intact.
+`EveryAgentOrb` as a small mark in the updates toolbar, embedded launcher, and
+companion header. Do not use a large hero mark, welcome message, tagline, or
+onboarding pop-up. The helper starts with actual work and controls; Licensing
+shows a compact collection status rather than an EveryAgent title card.
+The main Alamo Health Management wordmark stays intact.
 The later brighter color variant was not selected.
 
 The built-in image-generation tool produced the approved transparent PNG from
