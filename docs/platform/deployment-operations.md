@@ -46,6 +46,40 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### Embedded EveryAgent introduction and briefing — 2026-10-16
+
+EveryAgent now introduces itself, greets the signed-in user, and leads with
+source-linked findings. Skill controls are behind “Manage my skills.” A persistent
+green launcher opens the same work in a compact dialog from permitted Platform
+pages, with the current page name, recent findings, skill links, and access to
+the existing question workspace. No new conversational planner or application
+permissions were introduced. Email remains disabled.
+
+- source: `f96108e`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7y`
+- image: `sha256:46e520d30bbf34b5012a8c59028593282b476a554a3f048cfbbc93a61177bea0`
+- revision: `alamo-platform-prod-web--everyagent-ui-f96108e`
+- preceding image / rollback: `sha256:c826df7073d656b51d66c266b985e7bd0a4247d2df3b8ffe044c3cc0c4e7afa9`
+- browser assets: `/assets/index-CP98q5fh.js`, `/assets/index-BsNoGC8I.css`
+
+The initial overlay build (`cc7x`) hit the image-depth limit at 125 source layers.
+The successful build uses the existing `Dockerfile.frontend-rebase` against that
+exact live digest. The local candidate has three filesystem layers; its runtime
+configuration and hashes of 24,019 backend, dependency, and runtime files match
+the source image. Only the browser bundle changes. The worker setting stays
+`true`, its private Blob state is preserved, the Licensing Logic App remains
+Disabled, and the job's notification flag remains `false`.
+
+Docs, the full analyst gate, TypeScript, and production build passed. EveryAgent
+browser checks passed at 320/390/1440 pixels, covering introduction, embedded
+findings, page context, Escape/focus restoration, source failure/recovery, and
+persisted pause/scope/review. Licensing reader regression checks passed at
+320/390/430/1440 pixels. The candidate and production each passed 27 route,
+entry/asset parity, compression, and anonymous API checks. Azure reports the
+new revision Healthy/Running with one replica. Eric's signed-in session showed
+the personal introduction and real existing work. These checks do not replace
+the previously documented full live ship-gate limitation.
+
 ### EveryAgent responsibilities across Platform and Pipeline — 2026-10-16
 
 EveryAgent is deployed at `/analytics/agent`, with `/everyagent` as an alias and
