@@ -26,7 +26,7 @@ const missions = [
       {
         prompt: "Show the current incident snapshot for this month.",
         expect: [/latest available incident month/i, /Portfolio Incident Category Breakdown/i],
-        surface: /Medication Refusal|AWOL\/Elopement/i
+        surface: /Medical Emergency|Fall|Other|AWOL\/Elopement/i
       },
       {
         prompt: "Can you show me the Resident Search module?",
