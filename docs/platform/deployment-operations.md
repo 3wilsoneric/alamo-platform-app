@@ -46,6 +46,59 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### Licensing agent, readable reports, and change emails — 2026-10-16
+
+Licensing now opens with a green agent work summary and the latest report
+module already populated. Its status comes from the scheduled collector's
+actual last-check record; failed checks remain visible. Explore reports is a
+secondary control for community-scoped findings, citations, correction plans,
+and text retrieval. Report drilldowns retain their URL and return context.
+The report body uses source headings, paragraph spacing, sentence-boundary
+breaks, and page markers; original wording and the complete raw-text download
+remain intact. The official-source link uses the stable facility record and
+identifies the report date/control number to select.
+
+- source: `b3c3aba`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7u`
+- web image: `sha256:38f114944f49b9d1326f6da914f5feaa21be7624932d7484fa0d72e99aae1dd0`
+- web revision: `alamo-platform-prod-web--licensing-worker-1016`
+- preceding brief-only revision/image: `alamo-platform-prod-web--licensing-briefs-1016`, `sha256:3c4881cbebe85f61a2bd597d08e3ce6a71d00017c4bbc4e16059fad7c8b0fbc7`
+- browser assets: `/assets/index-6esYPSyh.js`, `/assets/index-u5UgfaAt.css`
+- worker image: `sha256:96987c75e617f25a6d768cd43314da944493b8dbd44098c5f0f34cd6f84c43c3` (ACR `cc7q`)
+- notifications activated after: `2026-10-16T19:12:51Z`
+
+The existing Monday/Wednesday 9 a.m. Pacific job now emails Raj and Betty when
+new source changes publish. The Office 365 workflow is Enabled and its signed
+callback remains in Key Vault. Email contains change metadata and links to the
+report brief, with no report narrative or resident details. Versioned envelopes
+and sent receipts support retries. The activation cutoff leaves the two old
+queued notices archived without delivering them. Manual verification execution
+`alamo-platform-licensing-check-d4rpica` succeeded; its log recorded an
+outside-schedule skip and `before_start` for both old notices. No test email was
+sent. Preserve the activation timestamp and notification enable flag when
+redeploying the scheduled job.
+
+Validation: Licensing contracts, job/email tests, docs, typecheck, analyst
+checks, production build, and 320/390/430/1440-pixel Licensing browser checks
+passed. Browser coverage includes automatic results, failed-check truth,
+community filtering, empty results, drilldown/back/reload, source-page focus,
+wrapping, and an unchanged original download. All 95 archived reports produced
+readable narratives; real complaint and inspection pages were inspected.
+Earlier broad browser regressions passed after aligning stale expectations
+with the deployed medication and navigation labels. The full live ship gate
+is not certified: the runtime incident report-shape audit still fails on
+pre-existing taxonomy/comparison-data expectations, and automated signed-in
+smoke has no saved auth state. This scoped release does not change that runtime
+or published incident data.
+
+Production verification: the named revision is Healthy/Running with one
+replica. Twenty public checks passed across entry/asset parity, identity/gzip/
+Brotli responses, and all three anonymous Licensing API denials. Eric's existing
+signed-in session showed the automatic 95-report/four-community worker view,
+eight latest report summaries, a readable Turlock narrative with original page
+numbers, and the official facility link. Citation exploration returned eleven
+matching reports with thirteen citations and eleven recorded correction plans.
+
 ### Presentation shortcut removal — 2026-10-16
 
 The presentation icon is temporarily removed from both the main Platform and
