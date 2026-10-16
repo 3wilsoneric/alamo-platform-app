@@ -46,6 +46,65 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### EveryAgent responsibilities across Platform and Pipeline — 2026-10-16
+
+EveryAgent is deployed at `/analytics/agent`, with `/everyagent` as an alias and
+an entry in the shared Platform navigation for the existing three pilot users.
+Its first two registered skills use the real Licensing library and the existing
+protected Pipeline admissions-summary integration. Eric receives both skills;
+Raj and Betty retain Licensing. Personal pause/resume, community monitoring
+scope, review receipts, recent runs, source references, and explicit evidence
+relationships persist in the private Azure Blob `everyagent/state-v1.json`.
+No source-application commands, outbound notifications, or clinical writes are
+exposed. Email remains disabled in both the Licensing job and its Logic App.
+
+- source: `cbc7292`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7w`
+- web image: `sha256:c826df7073d656b51d66c266b985e7bd0a4247d2df3b8ffe044c3cc0c4e7afa9`
+- revision: `alamo-platform-prod-web--everyagent-cbc7292`
+- preceding web image: `sha256:c5d92d466d065b0c6f12307223d3d2e1af644725242f1fab1ae15001efd0ef28`
+- browser assets: `/assets/index-BRqtPndE.js`, `/assets/index-ZjZNtUtd.css`
+- runtime setting: `EVERYAGENT_WORKER_ENABLED` is the string `true`
+- persistence verified: Blob created at `2026-10-16T22:33:17Z`, 38,938 bytes
+
+The shared worker wakes each minute in the always-on web runtime and checks due
+responsibilities every 15 minutes. An expiring Blob-backed lease coordinates
+replicas. Source reads are shared across subscribers; assignment grants, scope,
+version, and pause state are checked again before results are published. First
+collections create completed baselines; subsequent content changes create review
+items. Existing state collection stays on its Monday/Wednesday schedule. The
+worker does not need an open browser or a saved user token.
+
+The release overlays only the EveryAgent modules, a bounded insertion into the
+actual live API router, and the reviewed browser bundle. The preparation command
+is `everyagent:prepare-release` with `EVERYAGENT_BASE_IMAGE` set to the exact live
+digest. Azure CLI's normal `containerapp update` successfully applied the image
+and worker setting; raw PATCH requests from CLI-expanded template output were
+rejected because that output includes unsupported/read-only fields such as
+`imageType` and `customMetricsSettings`. Do not replay those rejected bodies.
+
+Full analyst checks, docs, TypeScript, lint, unused-code/duplicate checks, and
+production build passed. EveryAgent tests cover identity and community scope,
+concurrent leases, restart recovery, duplicate suppression, review persistence,
+pause races, failed sources, older unresolved work, and aggregate-only Pipeline
+memory. Responsive EveryAgent checks passed at 320/390/1440 pixels; the existing
+Licensing skill passed at 320/390/430/1440 pixels. The candidate container passed
+20 route/compression/auth checks. Production passed the existing 23 entry/asset/
+Licensing-auth checks plus the EveryAgent alias and anonymous GET/POST denials.
+
+The new revision is Healthy/Running, has one replica, and receives 100% of traffic.
+Eric's signed-in session showed both real completed checks, the 95-report
+Licensing baseline, the current Pipeline aggregate summary, and persisted check
+history. Opening Licensing preserved its report modules and returned to
+EveryAgent. The Logic App is still Disabled and the job delivery flag is still
+the string `false`; no email was sent. The previously documented full live
+ship-gate limitation remains separate from these passing release checks.
+
+Rollback points the web app to the preceding image digest. That image ignores
+the EveryAgent worker flag; retain the private state Blob for recovery. General
+skill authoring, team assignment administration, the full shared knowledge graph,
+and AlamoHealth adapters are not part of this first release.
+
 ### Agent workspace with Licensing skill; email delivery paused — 2026-10-16
 
 The user clarified that the product is one general Agent with connected skills.
