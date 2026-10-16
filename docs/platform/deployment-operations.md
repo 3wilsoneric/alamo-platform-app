@@ -46,6 +46,34 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### Presentation shortcut removal — 2026-10-16
+
+The presentation icon is temporarily removed from both the main Platform and
+Executive Director headers. The authenticated `/presentation` direct link,
+viewer controls, private deck, and Eric/Andrew access rules remain available.
+This frontend-only release preserves the incident taxonomy release's runtime
+and keeps `VITE_WORKFORCE_DEMO=true`.
+
+- source commit: `374e411` on `codex/hide-presentation-shortcut`
+- image digest: `sha256:66af35e63a6c372a6db6664b5d67e93abdb52ad61c42bb7c550576111dedfafd`
+- revision: `alamo-platform-prod-web--hide-presentation-374e411`
+- rollback digest: `sha256:4624f6a2be1f4f25f937e4b97cbff0d4bcb157e0f768a9a3c0236cbc768d6669`
+- browser entry assets: `/assets/index-D3Y8Ia8M.js` and `/assets/index-0KRl1n-B.css`
+
+The candidate's root, admissions, chat, and presentation entries match the
+release build across identity, gzip, and Brotli. The runtime image configuration
+is identical to its base, and anonymous presentation API access returns 401 with
+private/no-store caching. Docs, TypeScript, build, and presentation authorization
+checks passed, including validation of the current 16-slide private package.
+The live revision is Healthy/Running with one replica and 100% traffic; all four
+production smoke probes passed. Signed-in browser verification confirmed both
+headers omit the icon and the direct presentation link still loads all 16 slides.
+Executive Director, Workforce, and auth-redirect contract checks also passed.
+The full analyst gate stopped at an unrelated existing query-intent expectation:
+`find medication refusal incidents ever` expected `Medication Refusal` but
+received `null` after the preceding incident-taxonomy release. This release does
+not change query intent, taxonomy, or server behavior.
+
 ### Incident taxonomy release — 2026-10-16
 
 Routine medication-refusal reports no longer enter governed incident totals or
