@@ -5,8 +5,9 @@ import { licensingQuestions } from "../licensingQuestions";
 import { licensingDate } from "./LicensingReportReader";
 import AgentWorkCard from "../../agent/components/AgentWorkCard";
 
-export default function LicensingSkill({ library, community, feed, failed, onAsk }: {
+export default function LicensingSkill({ library, community, feed, failed, onAsk, agentMode }: {
   library: LicensingLibrary; community: string; feed: LicensingUpdates | null; failed: boolean;
+  agentMode: boolean;
   onAsk: (question: string, community: string, q?: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -15,7 +16,7 @@ export default function LicensingSkill({ library, community, feed, failed, onAsk
   const needsReview = failed || feed?.status === "failed";
   const status = needsReview ? "Latest check needs attention" : feed?.status === "complete" ? "Latest check complete" : feed ? "Waiting for the first check" : "Loading check status…";
   return <section aria-label="Licensing skill" data-agent-skill="licensing" className="licensing-agent">
-    <AgentWorkCard skill="Licensing" status={status} needsAttention={needsReview}
+    <AgentWorkCard skill="Licensing" status={status} needsAttention={needsReview} agentMode={agentMode}
       mode={library.monitoring === "platform_scheduled" ? "Scheduled monitoring" : "Archived reports"}
       summary={needsReview ? "The last complete report collection is still available below." : "State reports collected, organized, and ready to review."}
       facts={[

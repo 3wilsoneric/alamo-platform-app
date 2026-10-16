@@ -2,11 +2,9 @@ import { LICENSING_COMMUNITIES } from "./licensing-contracts.mjs";
 import { hasLicensingAccess } from "./licensing-access.mjs";
 
 export const EVERYAGENT_TENANT = "d72d9036-cff8-4f5f-a6fa-d698f621d420";
-// Explicit pilot grants. Worker authorization is resolved from this same policy,
+// Eric-only preview. Worker authorization is resolved from this same policy,
 // never from stored browser tokens, email addresses, or client-supplied roles.
 export const EVERYAGENT_USERS = Object.freeze([
-  "424b21d4-605a-43a6-8dff-2a89a846e698",
-  "75099b5b-5f7d-437f-8e3b-181f1fea1653",
   "f73371d5-d2b4-48b4-a32b-1edc7c88869f"
 ]);
 
@@ -25,7 +23,6 @@ export const EVERYAGENT_SKILLS = Object.freeze([
 ]);
 
 export function everyAgentSkillsFor(claims) {
-  if (!hasLicensingAccess(claims)) return [];
-  return EVERYAGENT_SKILLS.filter(skill => skill.id === "licensing" ||
-    String(claims.oid).toLowerCase() === EVERYAGENT_USERS[2]);
+  if (!hasLicensingAccess(claims) || !EVERYAGENT_USERS.includes(String(claims.oid).toLowerCase())) return [];
+  return [...EVERYAGENT_SKILLS];
 }

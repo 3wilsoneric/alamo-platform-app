@@ -31,7 +31,7 @@ import {
   PLATFORM_DATA_REFRESH_EVENT
 } from "../api/platformData";
 import { writeStorageItem } from "../storage/browserStorage";
-import { useLicensingAccess } from "../auth/licensingAccess";
+import { useEveryAgentAccess } from "../auth/everyAgentAccess";
 import { getApiAuthCachePartition } from "../api/authenticatedFetch";
 import { EveryAgentProvider } from "../../features/agent/EveryAgentContext";
 import EveryAgentCompanion from "../../features/agent/components/EveryAgentCompanion";
@@ -69,7 +69,7 @@ export default function ProtectedAppShell() {
     isE2EAuthBypassEnabled
   );
   const hasPlatformOwnerAccess = usePlatformOwnerAccess();
-  const hasEveryAgentAccess = useLicensingAccess();
+  const hasEveryAgentAccess = useEveryAgentAccess();
   const skipWorkspacePreparation =
     isAdmissionsExperience ||
     isExecutiveDirectorExperience ||

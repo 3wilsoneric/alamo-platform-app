@@ -46,6 +46,28 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### Original Alamo / EveryAgent mark — 2026-10-16
+
+The original combined head-and-leaves emerald orb is deployed as
+`/brand/everyagent-alamo-v1.webp` in the briefing, embedded launcher, companion
+header, and Licensing skill. The approved asset and generation provenance are
+recorded in [material-folder-design.md](material-folder-design.md).
+
+- source: `8b2b9ba`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc80`
+- image: `sha256:e28ffec58d67f5bebc513634a889956c508cecea19e1aa3bbeaef97f7c4de1c3`
+- revision: `alamo-platform-prod-web--everyagent-logo-8b2b9ba`
+- preceding image: `sha256:46e520d30bbf34b5012a8c59028593282b476a554a3f048cfbbc93a61177bea0`
+- browser assets: `/assets/index-6jD-fc75.js`, `/assets/index-Bw0pVmX2.css`
+
+Docs, TypeScript, the full analyst gate, production build, and responsive
+EveryAgent/Licensing checks passed. Both candidate and production passed 28
+route, compression, asset, logo-byte, and anonymous-API checks. The revision is
+Healthy/Running; the signed-in production view loaded the selected first logo.
+The worker remains enabled and email delivery remains disabled. This release
+predates the subsequent Eric-only rollout restriction; do not restore its
+broader access policy when rolling back presentation changes.
+
 ### Embedded EveryAgent introduction and briefing — 2026-10-16
 
 EveryAgent now introduces itself, greets the signed-in user, and leads with

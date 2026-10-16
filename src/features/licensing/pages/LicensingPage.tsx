@@ -9,7 +9,7 @@ import LicensingSkill from "../components/LicensingSkill";
 import LicensingReportModule from "../components/LicensingReportModule";
 import { licensingQuestionQuery, licensingQuestions } from "../licensingQuestions";
 import { useLicensingUpdates } from "../useLicensingUpdates";
-export default function LicensingWorkspace() {
+export default function LicensingWorkspace({ agentMode = false }: { agentMode?: boolean }) {
   const [params, setParams] = useSearchParams();
   const community = params.get("community") ?? "";
   const q = params.get("q") ?? "";
@@ -68,17 +68,17 @@ export default function LicensingWorkspace() {
     <section aria-label="Licensing reports" data-licensing-page="true" className="mx-auto min-h-[calc(100dvh-var(--platform-header-height)-58px)] min-w-0 w-full max-w-[1100px] bg-white px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-4 font-sans text-[#16283a] sm:px-6 lg:px-8">
       <header className="mb-6 flex min-h-11 items-center justify-between gap-3 border-b border-[#d9d9d9] pb-3">
         {selectedId ? <button type="button" onClick={() => { setParams(previous => { const next = new URLSearchParams(previous); next.delete("report"); next.set("skill", "licensing"); return next; }); }} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[#287261]"><ArrowLeft size={16} aria-hidden="true" /> Back to reports</button>
-          : <p className="text-sm text-[#68716b]">Skills / Licensing</p>}
+          : <p className="text-sm text-[#68716b]">{agentMode ? "Skills / Licensing" : "Licensing"}</p>}
         <LicensingUpdates onSelect={id => setParams({ report: id })} feed={feed} failed={failed} />
       </header>
-      {error ? <div role="alert" className="py-8"><p>{error}</p><button type="button" onClick={() => setAttempt(n => n + 1)} className="mt-4 min-h-11 underline">Try again</button><button type="button" className="ml-5 min-h-11 underline" onClick={() => setParams({})}>EveryAgent</button></div>
+      {error ? <div role="alert" className="py-8"><p>{error}</p><button type="button" onClick={() => setAttempt(n => n + 1)} className="mt-4 min-h-11 underline">Try again</button><button type="button" className="ml-5 min-h-11 underline" onClick={() => setParams({})}>Back to reports</button></div>
         : !library ? <p role="status" className="py-12 text-sm">Reading state reports…</p> : <div data-licensing-workspace="true" className="min-w-0">
           {selectedId ? <main key={selectedId} aria-label="Report reader" aria-busy={Boolean(!shownReport && !reportError)}>
             {reportError?.id === selectedId ? <div role="alert" className="p-7"><p>{reportError.message}</p><button type="button" className="mt-4 min-h-11 underline" onClick={() => setAttempt(n => n + 1)}>Retry report</button></div>
               : shownReport ? <LicensingReportReader report={shownReport} community={library.communities.find(c => c.facilityId === shownReport.facilityId)?.name ?? ""} />
                 : <p role="status" className="p-7 text-sm text-[#617568]">Loading report…</p>}
           </main> : <>
-            <LicensingSkill key={`${question}-${q}-${community}`} library={library} community={community} feed={feed} failed={failed} onAsk={ask} />
+            <LicensingSkill key={`${question}-${q}-${community}`} library={library} community={community} feed={feed} failed={failed} onAsk={ask} agentMode={agentMode} />
             {question && <LicensingReportModule key={`${question}-${q}-${community}`} library={library} question={question} q={q} community={community} onSelect={selectReport} />}
           </>}
         </div>}

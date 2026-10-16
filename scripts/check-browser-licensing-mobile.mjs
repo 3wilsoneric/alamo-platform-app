@@ -216,6 +216,54 @@ await withBrowserQa(async (browser) => {
   assert.match(await desktop.getByRole("region", { name: "EveryAgent work", exact: true }).innerText(), /last complete report collection/);
   await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   await desktopContext.close();
+  // Supply account claims at the auth-hook boundary while retaining the real
+  // shared grant policies and all route, navigation, and provider components.
+  for (const [oid, width, licensed] of [
+    ["424b21d4-605a-43a6-8dff-2a89a846e698", 390, true],
+    ["75099b5b-5f7d-437f-8e3b-181f1fea1653", 1440, true],
+    ["unlisted-account", 390, false]
+  ]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await context.newPage();
+    const claims = JSON.stringify({ tid: "d72d9036-cff8-4f5f-a6fa-d698f621d420", oid });
+    await page.route("**/src/shared/auth/everyAgentAccess.ts*", route => route.fulfill({ contentType: "application/javascript",
+      body: `import { everyAgentSkillsFor } from '/shared/everyagent-catalog.mjs'; export function useEveryAgentAccess() { return everyAgentSkillsFor(${claims}).length > 0; }` }));
+    await page.route("**/src/shared/auth/licensingAccess.ts*", route => route.fulfill({ contentType: "application/javascript",
+      body: `import { hasLicensingAccess } from '/shared/licensing-access.mjs'; export function useLicensingAccess() { return hasLicensingAccess(${claims}); }` }));
+    let agentRequests = 0;
+    page.on("request", request => { if (new URL(request.url()).pathname === "/api/platform/everyagent") agentRequests++; });
+    await installApiFixtures(page);
+    for (const route of ["/everyagent", "/analytics/agent", "/analytics/agent?skill=licensing"]) {
+      await page.goto(`${BASE_URL}${route}`);
+      await page.waitForURL(url => url.pathname === "/analytics");
+      assert.equal(await page.getByRole("button", { name: "Open EveryAgent" }).count(), 0);
+      assert.equal(await page.getByRole("link", { name: "EveryAgent", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: "EveryAgent", exact: true }).count(), 0);
+    }
+    await page.goto(`${BASE_URL}/analytics/licensing`);
+    if (licensed) {
+      await page.getByRole("heading", { name: "Licensing", exact: true }).waitFor();
+      await page.getByRole("region", { name: "Licensing answer" }).waitFor();
+      assert.equal(new URL(page.url()).pathname, "/analytics/licensing");
+      assert.equal(await page.locator(".everyagent-orb").count(), 0);
+      assert.doesNotMatch(await page.locator("body").innerText(), /EveryAgent/);
+      await page.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
+      await page.getByRole("region", { name: "Report summary" }).waitFor();
+      await page.reload();
+      await page.getByRole("region", { name: "Report summary" }).waitFor();
+      await page.getByRole("button", { name: "Back to reports" }).click();
+      await page.getByRole("heading", { name: "Licensing", exact: true }).waitFor();
+      await page.screenshot({ path: path.join(output, `licensing-without-everyagent-${width}.png`), fullPage: false });
+    } else {
+      await page.waitForURL(url => url.pathname === "/analytics");
+    }
+    if (width < 768) {
+      await page.getByRole("button", { name: "Open navigation" }).click();
+      assert.equal(await page.getByRole("navigation", { name: "Mobile platform pages" }).getByRole("link", { name: "EveryAgent" }).count(), 0);
+    }
+    assert.equal(agentRequests, 0, "excluded accounts must never mount the EveryAgent provider or request its API");
+    await context.close();
+  }
   await writeFile(path.join(output, "latest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), passed: true, results }, null, 2));
-  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px with automatic agent status, evidence-filtered answer modules, drilldowns, readable text, and original-record actions.");
+  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px; Raj and Betty retain reports without EveryAgent, unlisted accounts are denied, and excluded accounts never request the EveryAgent API.");
 });

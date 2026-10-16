@@ -210,6 +210,11 @@ try {
     assert.equal(result.statusCode, 400, "Betty, Raj, and Eric must reach the report loader after authenticated authorization");
     assert.equal(result.body.code, "licensing_report_invalid");
   }
+  for (const oid of licensedUsers.slice(0, 2)) {
+    const result = await licensingApiResponse("/api/platform/everyagent", { tid: tenantId, oid, scp: "access_as_user" });
+    assert.equal(result.statusCode, 404, "Raj and Betty retain Licensing but cannot reach EveryAgent");
+    assert.equal(result.body.error, "Not found.");
+  }
 } finally {
   globalThis.fetch = originalFetch;
   for (const key of environmentKeys) {

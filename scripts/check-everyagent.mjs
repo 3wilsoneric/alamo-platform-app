@@ -6,13 +6,15 @@ import { createEveryAgentPersistence } from "../server/everyagent-persistence.mj
 import { createEveryAgentStore } from "../server/everyagent-store.mjs";
 import { createEveryAgentService } from "../server/everyagent-service.mjs";
 import { createEveryAgentAdapters } from "../server/everyagent-adapters.mjs";
-import { EVERYAGENT_TENANT, EVERYAGENT_USERS } from "../shared/everyagent-catalog.mjs";
+import { EVERYAGENT_TENANT, EVERYAGENT_USERS, everyAgentSkillsFor } from "../shared/everyagent-catalog.mjs";
+import { hasLicensingAccess } from "../shared/licensing-access.mjs";
 
 const directory = await mkdtemp(path.join(os.tmpdir(), "everyagent-check-"));
 const localPath = path.join(directory, "state.json");
 const auth = id => ({ authenticated: true, mode: "entra-delegated", claims: { tid: EVERYAGENT_TENANT, oid: id } });
-const owner = auth(EVERYAGENT_USERS[2]);
-const teammate = auth(EVERYAGENT_USERS[0]);
+const owner = auth(EVERYAGENT_USERS[0]);
+const formerPilots = ["424b21d4-605a-43a6-8dff-2a89a846e698", "75099b5b-5f7d-437f-8e3b-181f1fea1653"].map(auth);
+const teammate = formerPilots[0];
 let clock = Date.now();
 const now = () => clock;
 let hash = "a".repeat(64);
@@ -36,11 +38,19 @@ const makeStore = () => createEveryAgentStore(createEveryAgentPersistence({ loca
 const service = createEveryAgentService({ store: makeStore(), adapters, now });
 const rejects = (promise, status) => assert.rejects(promise, error => error.statusCode === status);
 try {
-  for (const invalid of [auth("not-allowed"), { ...owner, claims: { ...owner.claims, tid: "wrong-tenant" } }, { ...owner, mode: "entra-application" }, { authenticated: false }]) {
+  assert.deepEqual(EVERYAGENT_USERS, ["f73371d5-d2b4-48b4-a32b-1edc7c88869f"], "only Eric receives EveryAgent assignments");
+  for (const former of formerPilots) {
+    assert(hasLicensingAccess(former.claims), "standalone Licensing access remains intact");
+    assert.deepEqual(everyAgentSkillsFor(former.claims), []);
+    await rejects(service.command(former, { action: "configure", skillId: "licensing", communityIds: ["337"], paused: false, expectedVersion: 0 }), 404);
+  }
+  for (const invalid of [...formerPilots, auth("not-allowed"), { ...auth("admin"), claims: { tid: EVERYAGENT_TENANT, oid: "admin", roles: ["Alamo.Admissions.Admin"], email: "ericwilsonalamo@outlook.com" } }, { ...owner, claims: { ...owner.claims, tid: "wrong-tenant" } }, { ...owner, mode: "entra-application" }, { authenticated: false }]) {
     await rejects(service.overview(invalid), 404);
   }
   assert.equal((await service.overview(owner)).skills.length, 2);
-  assert.equal((await service.overview(teammate)).skills.length, 1);
+  const legacyAssignment = (await service.overview(owner)).responsibilities.find(item => item.skillId === "licensing");
+  const legacyAssignments = formerPilots.map(former => ({ ...legacyAssignment, userId: former.claims.oid, cursor: null }));
+  await makeStore().update(state => { state.assignments.push(...structuredClone(legacyAssignments)); return true; });
   await Promise.all([service.tick(), createEveryAgentService({ store: makeStore(), adapters, now }).tick()]);
   assert.equal(reads, 1, "one leased collection shared across subscribers");
   let view = await service.overview(owner);
@@ -48,6 +58,7 @@ try {
   assert(view.work.every(item => item.status === "completed"), "backlog is a baseline, not a flood of new alerts");
   assert.equal(view.emailEnabled, false);
   assert.equal((await makeStore().read()).value.assignments.length, 4);
+  assert((await makeStore().read()).value.work.every(item => item.userId === owner.claims.oid), "revoked pilot assignments cannot publish work");
   assert(!JSON.stringify((await makeStore().read()).value).includes("PRIVATE_REFERRAL"), "Pipeline projection excludes referral data");
   assert.equal(view.work.find(item => item.skillId === "licensing").relationships[0].relation, "has_report");
   clock += 16 * 60_000;
@@ -88,13 +99,14 @@ try {
   await service.command(owner, { action: "configure", skillId: "licensing", paused: true, communityIds: ["345"], expectedVersion: 2 });
   release(); await run;
   assert.equal((await service.overview(owner)).responsibilities.find(item => item.skillId === "licensing").lastChecked, null, "pause during read cancels publication");
+  await service.command(owner, { action: "configure", skillId: "licensing", paused: false, communityIds: ["337"], expectedVersion: 3 });
   clock += 16 * 60_000;
   sourceStatus = "failed"; pipelineStatus = "unavailable";
   await service.tick();
   view = await service.overview(owner);
   assert.equal(view.responsibilities.find(item => item.skillId === "admissions-watch").connection, "unavailable");
   assert(view.work.some(item => item.skillId === "admissions-watch"), "source failure retains prior results");
-  assert.equal((await service.overview(teammate)).responsibilities[0].connection, "unavailable");
+  assert.equal(view.responsibilities.find(item => item.skillId === "licensing").connection, "unavailable");
   sourceStatus = "complete"; pipelineStatus = "connected";
   clock += 16 * 60_000;
   await makeStore().update(state => { state.lease = { token: "crashed-worker", expiresAt: clock + 1000 }; return true; });
@@ -102,12 +114,15 @@ try {
   await service.tick(); assert.equal(reads, before);
   clock += 1001;
   await service.tick(); assert.equal(reads, before + 1, "expired lease resumes work after crash");
-  assert.equal((await service.overview(teammate)).responsibilities[0].connection, "connected");
+  assert.equal((await service.overview(owner)).responsibilities.find(item => item.skillId === "licensing").connection, "connected");
+  const finalState = (await makeStore().read()).value;
+  assert.deepEqual(finalState.assignments.filter(item => item.userId !== owner.claims.oid), legacyAssignments, "stored revoked assignments stay untouched across worker ticks");
+  assert(finalState.runs.every(item => item.userId === owner.claims.oid), "worker never runs for revoked pilots");
   await makeStore().update(state => {
     const item = state.work.find(work => work.userId === owner.claims.oid && work.skillId === "admissions-watch");
     for (let index = 0; index < 160; index++) state.work.push({ ...item, id: index.toString(16).padStart(32, "0"), status: "needs_review" });
     return true;
   });
   assert((await service.overview(owner)).work.filter(item => item.status === "needs_review").length >= 160, "older unresolved work must remain reachable");
-  console.log("EveryAgent checks passed: two applications, identity/scope isolation, shared collection, CAS/leases, restart recovery, pause races, review persistence, source failures, evidence links, no email actions.");
+  console.log("EveryAgent checks passed: Eric-only grants, revoked pilot API/worker denial, preserved Licensing access, two applications, scope isolation, CAS/leases, restart recovery, pause races, review persistence, source failures, no email actions.");
 } finally { await rm(directory, { recursive: true, force: true }); }

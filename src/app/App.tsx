@@ -19,6 +19,8 @@ import PresentationPage from "../features/presentation/PresentationPage";
 import OwnerChatPage from "../features/home/pages/OwnerChatPage";
 
 import AgentPage from "../features/agent/pages/AgentPage";
+import LicensingRoute from "../features/licensing/pages/LicensingRoute";
+import { useEveryAgentAccess } from "../shared/auth/everyAgentAccess";
 import ExecutiveDirectorPage from "../features/executive/pages/ExecutiveDirectorPage";
 import ExecutiveDirectorDashboardPage from "../features/executive/pages/ExecutiveDirectorDashboardPage";
 
@@ -41,6 +43,8 @@ function withRouteBoundary(node: ReactNode) {
 
 function LegacyLicensingRedirect() {
   const location = useLocation();
+  const canUseEveryAgent = useEveryAgentAccess();
+  if (location.pathname !== "/everyagent" && !canUseEveryAgent) return <LicensingRoute />;
   const params = new URLSearchParams(location.search);
   if (location.pathname !== "/everyagent") params.set("skill", "licensing");
   return <Navigate to={`/analytics/agent${params.size ? `?${params}` : ""}${location.hash}`} replace />;

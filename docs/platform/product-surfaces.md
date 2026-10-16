@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-10-12
+- updated: 2026-10-16
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -22,8 +22,12 @@ full-page phone menu begins below that complete header rather than beneath the
 browser status area.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
-Betty Dominici, Raj Thandi, and Eric Wilson also see EveryAgent in that row. No
-other account, including a platform administrator, receives Licensing access.
+EveryAgent is an Eric Wilson-only preview: only his verified tenant-local object
+ID receives its navigation, embedded launcher, workspace, API access, and worker
+assignments. Betty Dominici and Raj Thandi instead see Licensing in that row,
+opening the existing report library at `/analytics/licensing` without the agent
+identity or launcher. They retain their previous Licensing API access. No other
+account, including a platform administrator, receives Licensing access.
 The owner-only Outreach workspace remains available by its direct route but is
 absent from shared desktop and mobile navigation; the workspace and its APIs
 remain hidden from every other account.

@@ -11,7 +11,7 @@ import { EVERYAGENT_TENANT, EVERYAGENT_USERS } from "../shared/everyagent-catalo
 const output = path.resolve("generated/browser-everyagent");
 await mkdir(output, { recursive: true });
 const directory = await mkdtemp(path.join(os.tmpdir(), "everyagent-browser-"));
-const auth = { authenticated: true, mode: "entra-delegated", claims: { tid: EVERYAGENT_TENANT, oid: EVERYAGENT_USERS[2] } };
+const auth = { authenticated: true, mode: "entra-delegated", claims: { tid: EVERYAGENT_TENANT, oid: EVERYAGENT_USERS[0] } };
 let time = Date.now();
 let fingerprint = "one";
 const result = (skill) => ({ connection: "connected", issue: null, sourceCheckedAt: new Date(time).toISOString(), entries: [{
