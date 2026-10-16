@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-13
+- updated: 2026-10-16
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -45,6 +45,35 @@ indexes or compressed representations retained from an older overlay from
 serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
+
+### Incident taxonomy release — 2026-10-16
+
+Routine medication-refusal reports no longer enter governed incident totals or
+detail. Mixed refusal/AWOL records remain AWOL/Elopement; former
+aggressive-behavior and substance-use categories publish as Other. Original
+silver records remain intact for audit, and MAR administration counts are
+unchanged. The Community dashboard, incident register, full reports, and guided
+question choices use the refreshed categories; refusal leaderboards were
+removed from the Community and medication-performance reports.
+
+- source commit: `2071023` on `codex/licensing-gate-release-20261013`
+- Databricks one-time view/QA/audit/snapshot run: `521292136360406` (all four tasks succeeded)
+- ACR build: `cc7n`
+- image digest: `sha256:4624f6a2be1f4f25f937e4b97cbff0d4bcb157e0f768a9a3c0236cbc768d6669`
+- active revision: `alamo-platform-prod-web--incident-taxonomy-1016`
+- rollback digest: `sha256:8991ed82bb0a10e9ee3afd14db1460f2681bd922b5724b544db0ed924e895480`
+- browser entry assets: `/assets/index-Dl0OAAnL.js` and `/assets/index-D8Zcsa20.css`
+
+The full analyst gate, docs, typecheck, build, incident-history browser check,
+Executive Director viewport check, and 72 mobile route/viewport checks passed.
+The production revision is Healthy/Running with one replica. Identity, gzip,
+and Brotli entries serve the new browser bundle; anonymous incident-history
+access remains 401. Signed-in verification showed 339 October incidents across
+the portfolio, with Other, Medical Emergency, and Fall in the current incident
+report; San Pablo's register showed 104 October incidents and no retired
+category options. The all-history register still explicitly marks its published
+snapshot as partial when live history is unavailable; this release does not
+expand historical coverage.
 
 ### Fictional Workforce demo — 2026-10-13
 
