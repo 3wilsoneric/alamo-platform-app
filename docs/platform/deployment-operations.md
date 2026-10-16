@@ -46,6 +46,40 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### EveryAgent opens directly to the work — 2026-10-16
+
+The helper has no welcome hero, greeting, product heading, explanatory subtitle,
+tagline, or first-visit pop-up. Its workspace starts with a small status toolbar,
+skill links, and the existing updates. The icon-only launcher opens actual work
+and source links immediately. Licensing uses a compact collection status instead
+of an EveryAgent title card; standalone Licensing for Raj and Betty keeps its
+existing presentation. Functional report titles, filters, source links, review
+actions, history, and skill settings remain available.
+
+- source: `39c3327`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc82`
+- image: `sha256:5586eb10d975d085167ca7133406311e30ee228a0d1ce28b59f26b167dd083c9`
+- revision: `alamo-platform-prod-web--everyagent-helper-39c3327`
+- preceding image / rollback: `sha256:e486661ea96b398bd43f8608c1f1f2d208e57d7661b3c252ea9aeea511703805`
+- browser assets: `/assets/index-BA3VPLyw.js`, `/assets/index-BK0NXO1R.css`
+
+The release replaces only `/app/dist` over the exact Eric-only production
+image. The candidate's catalog still grants EveryAgent only to Eric and
+preserves Raj/Betty's standalone Licensing permissions. No server, worker,
+notification, or data configuration changes are included.
+
+Docs, TypeScript, the full analyst gate, and the production build passed.
+EveryAgent browser checks at 320/390/1440 pixels verify work appears within
+the first screen, compact marks, absence of introductory copy and pop-ups,
+keyboard focus, source recovery, and persisted pause/scope/review/history.
+Licensing checks at 320/390/430/1440 pixels cover compact helper status,
+readable reports, sources, and retained account exclusions. The candidate and
+production each passed 28 entry, asset, logo-byte, compression, and anonymous-API
+checks. The revision is Healthy/Running with one replica and 100% traffic.
+Eric's signed-in production workspace and companion both open directly to
+existing work with the small original mark and no introductory copy. The
+Licensing Logic App remains Disabled and its job notification flag is `false`.
+
 ### EveryAgent preview restricted to Eric — 2026-10-16
 
 EveryAgent is now enabled only for Eric Wilson's verified tenant-local object
