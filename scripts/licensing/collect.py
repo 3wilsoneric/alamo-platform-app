@@ -268,7 +268,6 @@ def collect_facility(fetch, number, community, platform_id, prior_reports=None):
     raw_index, index_path, _ = fetch.get(index_url, "json")
     reports = validate_index(json.loads(raw_index), number)
     probed = {}
-    verify_bodies = False
     if prior_reports:
         for index, report in enumerate(reports):
             if (prior_reports.get(source_id(report)) and
@@ -279,16 +278,16 @@ def collect_facility(fetch, number, community, platform_id, prior_reports=None):
                 if sampled:
                     parse_report(sampled[0], report)
                     probed[index] = sampled
-                    verify_bodies = True
                 else:
                     print(f"{community}: report-body audit deferred; reusing hash-verified documents", flush=True)
                 break
+    sampled_audit = bool(probed)
     reused = 0
     for index, report in enumerate(reports):
         url = API + f"FacilityReports?facNum={number}&inx={index}"
         prior = (prior_reports or {}).get(source_id(report))
         cached = reuse_cached_report(fetch.root, prior, report, url)
-        if cached and not verify_bodies:
+        if cached and index not in probed:
             rows.append(cached)
             reused += 1
         else:
@@ -303,20 +302,22 @@ def collect_facility(fetch, number, community, platform_id, prior_reports=None):
             rows.append({**record("report", source_id(report), payload, html_path, url, observed, text_path), "text": text})
         if (index + 1) % 10 == 0 or index + 1 == len(reports):
             print(f"{community}: archived {index + 1}/{len(reports)} reports", flush=True)
-    # Detect index changes while downloading; never commit a mixed inventory.
-    after, _, _ = fetch.get(index_url, "json")
-    if canonical(json.loads(after)) != canonical(json.loads(raw_index)):
-        raise ValueError("Report inventory changed mid-run; retry facility")
-    after_detail, _, _ = fetch.get(detail_url, "json")
-    if canonical(json.loads(after_detail)) != canonical(detail):
-        raise ValueError("Facility profile changed mid-run; retry facility")
+    # A reuse-only pass has no intervening body downloads. Live retrieval can
+    # cross an inventory change, so verify both source views again in that case.
+    if reused != len(reports):
+        after, _, _ = fetch.get(index_url, "json")
+        if canonical(json.loads(after)) != canonical(json.loads(raw_index)):
+            raise ValueError("Report inventory changed mid-run; retry facility")
+        after_detail, _, _ = fetch.get(detail_url, "json")
+        if canonical(json.loads(after_detail)) != canonical(detail):
+            raise ValueError("Facility profile changed mid-run; retry facility")
     dates = sorted(r["REPORTDATE"] for r in reports)
     dates = sorted(iso_date(d) for d in dates)
     summary = {"community": community, "facility_number": number, "platform_facility_id": platform_id,
                "licensed_name": profile["FACILITYNAME"], "license_status": profile["STATUS"],
                "report_count": len(reports), "reused_report_count": reused,
                "fetched_report_count": len(reports) - reused, "complaint_count": len(complaints),
-               "report_body_audit": "deferred" if reused else "complete",
+               "report_body_audit": "complete" if not reused else "sampled" if sampled_audit else "deferred",
                "report_types": dict(collections.Counter(r["REPORTTYPE"] for r in reports)),
                "oldest_report": dates[0] if dates else None, "latest_report": dates[-1] if dates else None,
                "profile_last_visit": profile.get("LASTVISITDATE"), "inventory_path": index_path,

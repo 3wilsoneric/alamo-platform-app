@@ -113,7 +113,7 @@ class CloudRestoreChecks(unittest.TestCase):
                     return raw, save_blob(root, raw, extension), "2026-10-14T16:00:00+00:00"
             fetcher = IndexOnlyFetcher()
             rows, summary = collect_facility(fetcher, number, "San Pablo", "337", {document_id: prior})
-            self.assertEqual(len(fetcher.calls), 4)
+            self.assertEqual(len(fetcher.calls), 2)
             self.assertEqual(len(fetcher.probe_calls), 1)
             self.assertEqual(summary["reused_report_count"], 1)
             self.assertEqual(summary["fetched_report_count"], 0)
@@ -139,6 +139,26 @@ class CloudRestoreChecks(unittest.TestCase):
             self.assertEqual(audited["fetched_report_count"], 1)
             self.assertEqual(refreshed[-1]["fetched_at"], "2026-10-14T16:00:00+00:00")
             self.assertNotEqual(refreshed[-1]["fingerprint"], prior["fingerprint"])
+            second_id = "b" * 32
+            second_report = {**report, "REPORTPAGE": report["REPORTPAGE"].replace(document_id, second_id)}
+            second_payload = {**payload, **second_report, "source_document_id": second_id}
+            second_prior = {**prior, "payload": second_payload,
+                            "fingerprint": digest(canonical(second_payload).encode())}
+            class TwoReportFetcher(ResponsiveFetcher):
+                def get(self, url, extension):
+                    if url == API + f"FacilityReports/{number}":
+                        self.calls.append(url)
+                        raw = json.dumps({"COUNT": 2, "REPORTARRAY": [report, second_report]}).encode()
+                        return raw, save_blob(root, raw, extension), "2026-10-14T16:00:00+00:00"
+                    return super().get(url, extension)
+            two_report_fetcher = TwoReportFetcher()
+            two_rows, sampled = collect_facility(two_report_fetcher, number, "San Pablo", "337",
+                                                 {document_id: prior, second_id: second_prior})
+            self.assertEqual(len(two_report_fetcher.calls), 4)
+            self.assertEqual(sampled["report_body_audit"], "sampled")
+            self.assertEqual(sampled["fetched_report_count"], 1)
+            self.assertEqual(sampled["reused_report_count"], 1)
+            self.assertEqual(two_rows[-1]["fetched_at"], prior["fetched_at"])
             report["REPORTDATE"] = "10/13/2026"
             with self.assertRaisesRegex(AssertionError, "Unchanged report body"):
                 collect_facility(IndexOnlyFetcher(), number, "San Pablo", "337", {document_id: prior})
