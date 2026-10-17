@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-16
+- updated: 2026-10-17
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -33,6 +33,27 @@ analytics choice controls, and their HTML references.
 Neither overlay rebuilds the browser bundle or server. Rollback is an Azure
 Container App image update to the recorded preceding digest, not a Vercel
 promotion.
+
+### Medication administrations given presentation — 2026-10-17
+
+- source: `403b1eb864662a1bb7abbba1bdcf9739a40f27aa` (merged onto the
+  `2d11635644caf4689fd23356bb07935655418eab` production source)
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:e2140b3e368b7af2c279c66297c3f3450086037d87104de1aae66a2d03a82bea`
+- active revision: `alamo-platform-prod-web--medication-given-403b1eb`
+- rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a117b996e48b90c393e1cd54c244dab2d8300c483721cc760862db761e6cb111`
+
+This overlay replaced the browser bundle and changed server/shared medication
+presentation modules while retaining the current Azure image's other runtime
+modules and configuration. The bundle was built with `VITE_WORKFORCE_DEMO=true`
+to retain Andrew's demo. The segmented predeploy checks, full analyst suite,
+17/17 live-data MAR browser surfaces, Workforce dashboard contract, and
+production smoke passed. The candidate image's key module and asset hashes
+matched the local build. The new revision was Healthy with one replica and
+100% traffic; signed-in production verification confirmed the San Pablo
+dashboard and MAR view show only administrations recorded as given. Root,
+Admissions, and Chat entry bytes matched the build under identity, gzip, and
+Brotli responses. The single all-in-one predeploy command was not rerun after
+its individual stages passed.
 
 Source-level browser changes use `Dockerfile.frontend-release`. Build the Vite
 bundle locally, pass the exact current production image digest as `BASE_IMAGE`,
