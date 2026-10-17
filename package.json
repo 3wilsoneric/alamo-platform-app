@@ -156,7 +156,8 @@
     "check:browser-lic624-native": "node scripts/check-browser-lic624-native.mjs",
     "check:everyagent": "node scripts/check-everyagent.mjs",
     "check:browser-everyagent": "node scripts/check-browser-everyagent.mjs",
-    "everyagent:prepare-release": "node scripts/prepare-everyagent-release.mjs"
+    "everyagent:prepare-release": "node scripts/prepare-everyagent-release.mjs",
+    "medication:prepare-release": "node scripts/prepare-medication-given-release.mjs"
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",
