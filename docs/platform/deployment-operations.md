@@ -46,6 +46,30 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### AlamoAgent name — 2026-10-16
+
+The private embedded helper is now named AlamoAgent in navigation, tooltips,
+accessible control names, settings, and browser error copy. It retains the
+original Alamo orb, compact work-first layout, Eric-only grant, and disabled
+email delivery. Existing routes, API contracts, stored assignments, and asset
+names remain stable. This is a browser-bundle-only release.
+
+- source: `2d11635`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc83`
+- image: `sha256:a117b996e48b90c393e1cd54c244dab2d8300c483721cc760862db761e6cb111`
+- revision: `alamo-platform-prod-web--alamoagent-2d11635`
+- preceding image / rollback: `sha256:5586eb10d975d085167ca7133406311e30ee228a0d1ce28b59f26b167dd083c9`
+- browser assets: `/assets/index-A3T4VVga.js`, `/assets/index-BK0NXO1R.css`
+
+Docs, TypeScript, the full analyst gate, production build, and responsive agent
+and Licensing browser checks passed. The exact candidate retains the Eric-only
+catalog and Raj/Betty's standalone Licensing grants. Candidate and production
+each passed 28 entry, asset, logo-byte, compression, and anonymous-API checks.
+The new revision is Healthy/Running with one replica and 100% traffic. Eric's
+signed-in production navigation, workspace, launcher, and companion use the new
+name and retain existing work. The Licensing Logic App remains Disabled and its
+scheduled job notification flag is `false`.
+
 ### EveryAgent opens directly to the work — 2026-10-16
 
 The helper has no welcome hero, greeting, product heading, explanatory subtitle,
