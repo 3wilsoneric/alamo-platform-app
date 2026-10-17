@@ -109,8 +109,6 @@ const integrationCases = [
   ["show Santa Clarita age mix", "resident_demographics", "resident-demographics", "simple-bars"],
   ["show San Pablo medication profile", "medication_profile", "medication-profile", "topline-summary"],
   ["show portfolio medication compliance", "medication_compliance", "medication-compliance", "data-table"],
-  ["show portfolio medication refusals by community", "medication_refusals_by_community", "medication-refusals", "simple-bars"],
-  ["show portfolio medication exceptions", "medication_exception_detail", "medication-exceptions", "data-table", true],
   ["compare census trends across communities over the last six months", "community_time_series", "community-time-series", "multi-series-line"],
   ["show an incident heatmap by community from April through September 2026", "community_time_series", "community-time-series", "period-heatmap", true],
   ["Portfolio community profile", "community_profile", "community-profile", "topline-summary"]

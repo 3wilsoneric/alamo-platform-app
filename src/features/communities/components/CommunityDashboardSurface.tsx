@@ -336,10 +336,6 @@ export default function CommunityDashboardSurface({
       .filter((row) => String(row.facility_id) === String(facilityId))
       .sort((left, right) => left.month_bucket.localeCompare(right.month_bucket));
     const latestCompliance = complianceRows.at(-1) ?? null;
-    const topRefusals = (reportsSummary?.refusalByMedication ?? [])
-      .filter((row) => String(row.facility_id) === String(facilityId))
-      .sort((left, right) => Number(right.refusals || 0) - Number(left.refusals || 0))
-      .slice(0, 5);
     const documentationGapCount = (reportsSummary?.documentationGaps ?? [])
       .filter((row) => String(row.facility_id) === String(facilityId))
       .length;
@@ -362,7 +358,6 @@ export default function CommunityDashboardSurface({
       selectedResidentId,
       selectedResidentName: residentName,
       latestCompliance,
-      topRefusals,
       documentationGapCount,
       averageAge: average(residents.map((resident) => Number(resident.age)).filter(Number.isFinite)),
       averageLos: average(residents.map((resident) => Number(resident.los_days)).filter(Number.isFinite))
@@ -577,7 +572,7 @@ export default function CommunityDashboardSurface({
         <div className={compact ? "space-y-4" : "space-y-8"}>
           <p className={`${compact ? "text-[15px] leading-6" : "text-[20px] leading-8"} max-w-[920px] font-serif text-[#333333]`}>
             {model.latestCompliance
-              ? `${facilityName}'s medication compliance was ${model.latestCompliance.compliance_pct.toFixed(1)}% in ${formatMonthLabel(model.latestCompliance.month_bucket, { month: "long" })}.`
+              ? `${formatNumber(model.latestCompliance.given)} medication administrations were recorded as given at ${facilityName} in ${formatMonthLabel(model.latestCompliance.month_bucket, { month: "long" })}.`
               : reportsSummaryUnavailable
                 ? `Medication performance is not available for ${facilityName}.`
                 : `Loading medication performance for ${facilityName}.`}
@@ -633,7 +628,7 @@ export default function CommunityDashboardSurface({
               <CommunityMedicationCompliance
                 facilityId={facilityId}
                 facilityName={facilityName}
-                label="Completion"
+                label="Given"
                 row={model.latestCompliance}
                 loading={!reportsSummary && !reportsSummaryUnavailable}
               />

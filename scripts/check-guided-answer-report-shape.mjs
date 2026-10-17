@@ -136,7 +136,7 @@ const POPULAR_ROUTE_DEPTH_REQUIREMENTS = Object.freeze({
   "incident-current-snapshot:0": { minWords: 30, minVisualRows: 5 },
   "incident-category-breakdown:0": { minWords: 30, minVisualRows: 5 },
   "resident-search:0": { minWords: 12, minVisualRows: 0 },
-  "medication-profile:0": { minWords: 28, minVisualRows: 3 }
+  "medication-profile:0": { minWords: 10, minVisualRows: 1 }
 });
 
 const NON_NUMERIC_ANSWER_TOOLS = new Set([
@@ -420,7 +420,7 @@ function validateFamilyContract(entry, result) {
     if (!/\btop incident categor/i.test(answer) && !hasVisualColumn(result, "Top incident categories")) {
       failures.push("community operating answer missing category context");
     }
-    if (!/\bmedication compliance\b/i.test(answer) && !hasVisualColumn(result, "Medication compliance")) {
+    if (!/\badministrations (?:were )?given\b/i.test(answer) && !hasVisualColumn(result, "Administrations given")) {
       failures.push("community operating answer missing medication context");
     }
   }
@@ -469,7 +469,7 @@ function validateFamilyContract(entry, result) {
   }
 
   if (entry.id === "data-availability" && /\bhow current is (?:the )?data\b/i.test(entry.runPrompt)) {
-    if (!/\bincident detail\b/i.test(answer) || !/\bcensus\b/i.test(answer) || !/\bmedication compliance\b/i.test(answer)) {
+    if (!/\bincident detail\b/i.test(answer) || !/\bcensus\b/i.test(answer) || !/\badministrations given\b/i.test(answer)) {
       failures.push("broad freshness answer does not summarize incident, census, and medication coverage");
     }
     if (!/\bcurrent[- ]only\b/i.test(answer) || !/\b(?:not populated|not available|unavailable)\b/i.test(answer)) {
@@ -477,34 +477,17 @@ function validateFamilyContract(entry, result) {
     }
   }
 
-  if (entry.id === "medication-profile" && !/\bcompliance\b/i.test(haystack)) {
-    failures.push("medication profile missing compliance context");
-  }
-  if (entry.id === "medication-profile" && result?.summary?.refusalCoverage === "legacy_cumulative") {
-    const visibleAnswer = `${answer} ${(result?.structuredAnswer?.facts ?? []).join(" ")}`;
-    if (!/\bmonthly refusal counts? (?:are|is) not available\b/i.test(visibleAnswer)) {
-      failures.push("medication profile does not identify the unavailable monthly refusal measure");
-    }
-    if (/\b(?:separate cumulative|cumulative summary reports|legacy)\b/i.test(answer)) {
-      failures.push("medication profile leads with a cumulative refusal caveat instead of the monthly compliance read");
-    }
+  if (entry.id === "medication-profile" && !/\badministrations given\b/i.test(haystack)) {
+    failures.push("medication profile missing administrations-given context");
   }
 
-  if (entry.id === "medication-compliance" && !/\bwere documented as given\b/i.test(answer)) {
+  if (entry.id === "medication-compliance" && !/\badministrations given\b/i.test(answer)) {
     failures.push("medication compliance answer omits the documented-given numerator");
   }
 
-  if (entry.id === "medication-refusal-detail" && !String(result?.trace?.period ?? "").trim()) {
-    if (!/\bcumulative refusal totals\b/i.test(answer) || !/\bno monthly period\b/i.test(answer)) {
-      failures.push("legacy refusal answer does not state its cumulative, non-monthly boundary");
-    }
-    if (!/\brefusal summary includes [\d,]+ cumulative refusals\b/i.test(answer) || !/\b\d+\.\d%/.test(answer)) {
-      failures.push("refusal answer omits the total denominator or leading share");
-    }
-  }
-
-  if (entry.id === "medication-exception-detail" && !allowedUnavailable && !result?.artifact?.content) {
-    failures.push("medication exception detail missing exact-row artifact");
+  if (["medication-refusal-detail", "medication-exception-detail"].includes(entry.id) &&
+      !/\badministrations given\b/i.test(answer) && !allowedUnavailable) {
+    failures.push("legacy medication route did not use the given-administration presentation");
   }
 
   if (entry.id === "resident-risk-summary") {
@@ -617,7 +600,7 @@ function validatePerQuestionExperience(entry, result) {
       !/\bthrough\b/i.test(entry.runPrompt) && getExpectedPeriods(entry).length === 1) {
     if (result?.visual?.type !== "summary_card") failures.push("single-month community answer does not use an executive KPI summary");
     const labels = new Set((result?.visual?.rows ?? []).map((row) => String(row.label ?? "").toLowerCase()));
-    for (const requiredLabel of ["census", "incidents", "leading category", "medication compliance"]) {
+    for (const requiredLabel of ["census", "incidents", "leading category", "administrations given"]) {
       if (!labels.has(requiredLabel)) failures.push(`single-month community summary is missing ${requiredLabel}`);
     }
   }
@@ -672,7 +655,7 @@ function validatePerQuestionExperience(entry, result) {
   }
 
   if (/\b(profile|operating|comparison|trend|movement|history|availability|summary)\b/i.test(entry.answerStyle) &&
-      result?.tool !== "surface_module" && wordTotal < 14) {
+      result?.tool !== "surface_module" && !entry.id.startsWith("medication-") && wordTotal < 14) {
     failures.push(`narrative answer is underdeveloped for its answer style (${wordTotal} words)`);
   }
   if (wordTotal > 110) failures.push(`lead answer is too long for the full-screen result hierarchy (${wordTotal} words)`);

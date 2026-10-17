@@ -1,9 +1,10 @@
 import { runCopilotTool } from "../server/copilot-tools.mjs";
 import { getCommunitiesDashboardData, getReportsSummaryData } from "../server/platform-data.mjs";
-import { platformModuleRegistry } from "../shared/platform-module-registry.mjs";
+import { getPlatformModuleManifest } from "../shared/platform-module-registry.mjs";
 
-const surfaceModuleCount = platformModuleRegistry.filter((module) => module.kind === "surface").length;
-const analysisModuleCount = platformModuleRegistry.filter((module) => module.kind === "analysis").length;
+const visibleModules = getPlatformModuleManifest();
+const surfaceModuleCount = visibleModules.filter((module) => module.kind === "surface").length;
+const analysisModuleCount = visibleModules.filter((module) => module.kind === "analysis").length;
 
 const cases = [
   {
@@ -340,7 +341,7 @@ const cases = [
     prompt: "list every medication compliance row for May 2026",
     tool: "detail_list",
     period: "2026-05",
-    textIncludes: "There are 5 portfolio medication compliance entries for May 2026",
+    textIncludes: "There are 5 portfolio monthly administration summaries for May 2026",
     visualType: "table",
     minimumRows: 5,
     artifact: true

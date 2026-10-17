@@ -1054,15 +1054,15 @@ async function selectGuidedQuestion(page, prompt, selection = {}) {
   await nextButton.locator('[data-certified-question-submit="true"]').click({ timeout: 10_000 });
 }
 
-async function maybeCompleteResidentSearch(page, prompt) {
-  const residentMatch = String(prompt ?? "").match(/\b(Shannon Romero|Tuesday Woo|Brian Hinz)\b/i);
-  if (!residentMatch) return;
+async function maybeCompleteResidentSearch(page, prompt, residentName = null) {
+  const matchedName = residentName ?? String(prompt ?? "").match(/\b(Shannon Romero|Tuesday Woo|Brian Hinz)\b/i)?.[1];
+  if (!matchedName) return;
 
   const search = page.getByLabel(/Search residents/i).last();
   if (!(await search.isVisible().catch(() => false))) return;
-  await search.fill(residentMatch[1]);
+  await search.fill(matchedName);
   await delay(150);
-  await page.getByRole("button", { name: new RegExp(residentMatch[1], "i") }).first().click({ timeout: 8_000 }).catch(() => {});
+  await page.getByRole("button", { name: new RegExp(matchedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }).first().click({ timeout: 8_000 }).catch(() => {});
 }
 
 export async function submitQuestion(page, prompt, selection = {}) {
@@ -1090,7 +1090,7 @@ export async function ask(page, prompt, turnIndex = 1, selection = {}) {
   await delay(250);
   const pendingCanvas = await measureCanvas(page);
   await waitForThinkingToFinish(page);
-  await maybeCompleteResidentSearch(page, prompt);
+  await maybeCompleteResidentSearch(page, prompt, selection.residentName);
   await delay(250);
   const finalCanvas = await measureCanvas(page);
 

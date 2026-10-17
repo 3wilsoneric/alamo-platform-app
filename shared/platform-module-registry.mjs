@@ -188,8 +188,8 @@ const analysisModuleDefinitions = [
   ["resident-demographics", "Resident Demographics", "resident_demographics", "bar_chart", ["resident demographics", "age mix"]],
   ["length-of-stay", "Length of Stay", "length_of_stay_mix", "donut_chart", ["length of stay", "los mix", "resident tenure"]],
   ["medication-profile", "Medication Profile", "medication_profile", "summary_card", ["medication profile", "medication picture", "meds overview"]],
-  ["medication-watch", "Medication Watch", "medication_watch", "table", ["medication watch", "resident mar watchlist", "medication attention", "who needs medication attention", "top medication residents", "med refusal drivers"]],
-  ["medication-compliance", "Medication Compliance", "medication_compliance", "table", ["medication compliance", "emar compliance"]],
+  ["medication-watch", "Administrations by Resident", "medication_watch", "table", ["medication watch", "resident mar watchlist", "medication attention", "who needs medication attention", "top medication residents", "administrations by resident"]],
+  ["medication-compliance", "Administrations Given", "medication_compliance", "table", ["medication compliance", "emar compliance", "administrations given"]],
   ["medication-current-orders", "Current Medication Orders", "medication_orders_current", "table", ["current medication orders", "active medication orders", "current meds by community", "active meds by community"]],
   ["medication-refusals", "Medication Refusals", "medication_refusals_by_community", "bar_chart", ["medication refusals", "refused medications"]],
   ["medication-exceptions", "Medication Exception Detail", "medication_exception_detail", "table", ["medication exceptions", "mar exceptions", "not given meds", "missed meds", "held meds", "late meds", "prn detail"]],
@@ -220,6 +220,14 @@ const analysisModules = analysisModuleDefinitions.map(([id, title, tool, visualT
 }));
 
 export const platformModuleRegistry = Object.freeze([...surfaceModules, ...analysisModules]);
+const retiredPresentationModuleIds = new Set([
+  "medication-refusals",
+  "medication-refusal-detail",
+  "medication-exceptions",
+  "medication-late-admins",
+  "medication-held-admins",
+  "medication-prn-detail"
+]);
 
 function normalize(value) {
   return String(value ?? "")
@@ -231,11 +239,11 @@ function normalize(value) {
 }
 
 export function getPlatformModule(id) {
-  return platformModuleRegistry.find((module) => module.id === id) ?? null;
+  return retiredPresentationModuleIds.has(id) ? null : platformModuleRegistry.find((module) => module.id === id) ?? null;
 }
 
 export function getPlatformModuleByTool(tool) {
-  return platformModuleRegistry.find((module) => module.kind === "analysis" && module.tool === tool) ?? null;
+  return platformModuleRegistry.find((module) => !retiredPresentationModuleIds.has(module.id) && module.kind === "analysis" && module.tool === tool) ?? null;
 }
 
 export function getPlatformModuleByCanvasId(canvasId, focus = null) {
@@ -275,7 +283,7 @@ export function resolvePlatformModuleRequest(content, { kind = null } = {}) {
   const text = normalize(content);
   if (!text) return null;
   const candidates = platformModuleRegistry
-    .filter((module) => !kind || module.kind === kind)
+    .filter((module) => !retiredPresentationModuleIds.has(module.id) && (!kind || module.kind === kind))
     .map((module) => {
       const matches = module.aliases
         .map((alias) => normalize(alias))
@@ -289,20 +297,22 @@ export function resolvePlatformModuleRequest(content, { kind = null } = {}) {
 }
 
 export function getPlatformModuleManifest() {
-  return platformModuleRegistry.map(({ id, kind, family, title, aliases, scopes, data, capabilities, tool, visualType, canvasId, focus }) => ({
-    id,
-    kind,
-    family,
-    title,
-    aliases,
-    scopes,
-    data,
-    capabilities,
-    tool: tool ?? null,
-    visualType: visualType ?? null,
-    canvasId: canvasId ?? null,
-    focus: focus ?? null
-  }));
+  return platformModuleRegistry
+    .filter((module) => !retiredPresentationModuleIds.has(module.id))
+    .map(({ id, kind, family, title, aliases, scopes, data, capabilities, tool, visualType, canvasId, focus }) => ({
+      id,
+      kind,
+      family,
+      title,
+      aliases,
+      scopes,
+      data,
+      capabilities,
+      tool: tool ?? null,
+      visualType: visualType ?? null,
+      canvasId: canvasId ?? null,
+      focus: focus ?? null
+    }));
 }
 
 export function getRelevantPlatformModules(content, limit = 8) {
@@ -320,6 +330,7 @@ export function getRelevantPlatformModules(content, limit = 8) {
   const families = new Set(familySignals.filter(([, pattern]) => pattern.test(text)).map(([family]) => family));
 
   return platformModuleRegistry
+    .filter((module) => !retiredPresentationModuleIds.has(module.id))
     .map((module) => {
       const aliasScore = module.aliases.reduce((score, alias) => {
         const normalizedAlias = normalize(alias);

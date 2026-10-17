@@ -223,8 +223,8 @@ export default function CommandCenterPage({ embedded = false }: { embedded?: boo
         status: snapshot?.historicalAggregateReady ? "Ready" : "Missing",
         detail: snapshot
           ? snapshot.historicalAggregateReady
-            ? `${snapshot.incidentMonthlyRows.toLocaleString()} monthly incident rows · ${snapshot.medicationComplianceRows.toLocaleString()} monthly medication-compliance rows`
-            : `Active snapshot has ${snapshot.incidentMonthlyRows ?? 0} monthly incident rows and ${snapshot.medicationComplianceRows ?? 0} monthly medication-compliance rows. Re-run tool_context_views, analyst_context_qa, and snapshot_publish.`
+            ? `${snapshot.incidentMonthlyRows.toLocaleString()} monthly incident rows · ${snapshot.medicationComplianceRows.toLocaleString()} monthly MAR rows`
+            : `Active snapshot has ${snapshot.incidentMonthlyRows ?? 0} monthly incident rows and ${snapshot.medicationComplianceRows ?? 0} monthly MAR rows. Re-run tool_context_views, analyst_context_qa, and snapshot_publish.`
           : "No snapshot diagnostics are available.",
         healthy: Boolean(snapshot?.historicalAggregateReady),
         icon: snapshot?.historicalAggregateReady ? CheckCircle2 : AlertTriangle

@@ -42,11 +42,6 @@ function formatDateValue(value: unknown) {
   return formatDisplayDate(value);
 }
 
-function formatPercent(value: unknown) {
-  const number = numberValue(value);
-  return number == null ? displayValue(value) : `${number.toFixed(1)}%`;
-}
-
 function residentKey(row: ResidentRow, index = 0) {
   return String(row.id ?? `${row.community_name ?? "community"}-${row.resident_name ?? "resident"}-${index}`);
 }
@@ -330,27 +325,12 @@ function selectedResidentFacts(resident: ResidentRow) {
   ].filter((value) => value && value !== "—").join(" · ") || "—";
 
   const medicationSummaryAvailable = [
-    resident.active_medication_count,
-    resident.mar_compliance_pct_30d,
-    resident.mar_not_given_30d,
-    resident.mar_refusals_30d,
+    resident.mar_given_30d,
     resident.last_mar_recorded_date
   ].some((value) => value != null && value !== "");
   const medicationFacts: Array<[string, unknown, boolean?]> = medicationSummaryAvailable
     ? [
-        ["Active medications", formatNumber(resident.active_medication_count)],
-        ["Active psychotropics", formatNumber(resident.active_psychotropic_count)],
-        ["Active narcotics", formatNumber(resident.active_narcotic_count)],
-        ["Active PRNs", formatNumber(resident.active_prn_count)],
-        ["MAR compliance, 30 days", formatPercent(resident.mar_compliance_pct_30d)],
-        ["Scheduled, 30 days", formatNumber(resident.mar_scheduled_30d)],
         ["Given, 30 days", formatNumber(resident.mar_given_30d)],
-        ["Not given, 30 days", formatNumber(resident.mar_not_given_30d)],
-        ["Refusals, 7 days", formatNumber(resident.mar_refusals_7d)],
-        ["Refusals, 30 days", formatNumber(resident.mar_refusals_30d)],
-        ["Refusals, 90 days", formatNumber(resident.mar_refusals_90d)],
-        ["PRN given, 30 days", formatNumber(resident.mar_prn_given_30d)],
-        ["PRN follow-up, 30 days", formatNumber(resident.mar_prn_followup_30d)],
         ["Last MAR record", formatDateValue(resident.last_mar_recorded_date)]
       ]
     : [["Medication summary", "Not published in this resident directory", true]];

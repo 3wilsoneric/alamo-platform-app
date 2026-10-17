@@ -41,14 +41,16 @@ const resolutionCases = [
   ["census search", "analysis", "resident-search"],
   ["resident search", "analysis", "resident-search"],
   ["resident profile", "analysis", "resident-profile"],
-  ["who refused meds", "analysis", "medication-refusal-detail"],
-  ["late medication administrations", "analysis", "medication-late-admins"],
+  ["who refused meds", "analysis", null],
+  ["late medication administrations", "analysis", null],
+  ["prn medication detail", "analysis", null],
+  ["administrations given", "analysis", "medication-compliance"],
   ["resident mar profile", "analysis", "resident-medication-profile"]
 ];
 
 for (const [prompt, kind, expectedId] of resolutionCases) {
   const resolved = resolvePlatformModuleRequest(prompt, { kind });
-  if (resolved?.id !== expectedId) failures.push(`${prompt}: expected ${expectedId}, received ${resolved?.id ?? "none"}`);
+  if ((resolved?.id ?? null) !== expectedId) failures.push(`${prompt}: expected ${expectedId}, received ${resolved?.id ?? "none"}`);
 }
 
 const routeCases = [

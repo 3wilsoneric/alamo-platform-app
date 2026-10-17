@@ -255,10 +255,8 @@ function CommunityOverview({ facilityId, dashboard, onOpenDetail, onOpenIncident
     </DomainPanel>
     <DomainPanel kind="medications" title="Medication administration" icon={<Pill />} action="View MARs" onOpen={() => onOpenDetail("medications")}>
       {medication ? <>
-        <div className="executive-medication-overview"><div><strong>{formatExecutiveNumber(medication.compliancePct, "%")}</strong><span>given</span></div><span>{formatMonthLabel(medication.month, { month: "long" })}</span></div>
-        <div className="executive-medication-bar" aria-label={`${formatExecutiveNumber(medication.compliancePct, "%")} given`}><span style={{ width: `${Math.min(Math.max(medication.compliancePct ?? 0, 0), 100)}%` }} /></div>
-        <dl className="executive-medication-totals"><MedicationSummaryRow label="Scheduled" value={medication.scheduled} /><MedicationSummaryRow label="Given" value={medication.given} /><MedicationSummaryRow label="Not given" value={medication.notGiven} /></dl>
-        <p className="executive-period-note">{formatExecutiveNumber(medication.given)} of {formatExecutiveNumber(medication.scheduled)} scheduled administrations were given.</p>
+        <div className="executive-medication-overview"><div><strong>{formatExecutiveNumber(medication.given)}</strong><span>administrations given</span></div><span>{formatMonthLabel(medication.month, { month: "long" })}</span></div>
+        <p className="executive-period-note">Recorded medication administrations given in {formatMonthLabel(medication.month, { month: "long" })}.</p>
       </> : <CompactEmpty>Medication totals unavailable.</CompactEmpty>}
     </DomainPanel>
   </div>;
@@ -268,9 +266,6 @@ function DomainPanel({ kind, title, icon, action, onOpen, children }: { kind: Ex
   return <article data-executive-dashboard-panel={kind} className={`executive-domain-card executive-domain-card--${kind}`}>
     <div className="executive-domain-card__paper"><header data-executive-panel-header={kind}><h2><span>{icon}</span>{title}</h2><button type="button" onClick={onOpen} aria-label={action}>{kind === "admissions" ? "Open" : action}<ArrowRight aria-hidden="true" /></button></header><div data-executive-panel-body={kind}>{children}</div></div>
   </article>;
-}
-function MedicationSummaryRow({ label, value }: { label: string; value: number | null }) {
-  return <div><dt>{label}</dt><dd>{formatExecutiveNumber(value)}</dd></div>;
 }
 function CompactEmpty({ children }: { children: React.ReactNode }) {
   return <p className="executive-inline-empty">{children}</p>;

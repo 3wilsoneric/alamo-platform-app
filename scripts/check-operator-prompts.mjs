@@ -231,19 +231,17 @@ add("How is San Pablo doing with medications?", {
   tool: "medication_profile",
   mustInclude: [
     "A & A Health Services San Pablo",
-    "scheduled administrations",
+    "administrations given",
   ],
 });
 add("What medications had the most refusals in September 2026?", {
-  tool: "medication_refusals_by_community",
-  requireVisual: true,
-  truthState: "not_loaded",
-  mustInclude: ["not available for September 2026", "did not substitute a different period"]
+  tool: "clarification",
+  truthState: "plan_rejected",
+  mustInclude: ["Ask for administrations given by community, resident, or month"]
 });
-add("show medication refusals by community", { tool: "medication_refusals_by_community", requireVisual: true });
-add("show San Pablo medication exception detail", { tool: "medication_exception_detail", requireVisual: true });
-add("who refused meds recently", { tool: "medication_exception_detail", requireVisual: true });
-add("list PRN medication exceptions", { tool: "medication_exception_detail", requireVisual: true });
+add("show administrations given by community", { tool: "medication_compliance", requireVisual: true });
+add("show San Pablo medication exception detail", { tool: "clarification", truthState: "plan_rejected" });
+add("list PRN medication exceptions", { tool: "clarification", truthState: "plan_rejected" });
 add("show documentation gaps", { tool: "documentation_gaps", requireVisual: true });
 add("show all diagnoses", { tool: "diagnosis_mix", requireVisual: true });
 add("show resident demographics", { tool: "resident_demographics", requireVisual: true });

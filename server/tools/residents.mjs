@@ -613,10 +613,9 @@ export function createResidentTools(dependencies) {
     const hasDocumentationStatus = resident.last_note_date || resident.days_since_last_note != null;
     const hasMarSummary =
       resident.last_mar_recorded_date ||
-      resident.mar_compliance_pct_30d != null ||
+      resident.mar_given_30d != null ||
       Number(resident.active_medication_count || 0) > 0 ||
-      Number(resident.mar_scheduled_30d || 0) > 0 ||
-      Number(resident.mar_refusals_90d || 0) > 0;
+      Number(resident.mar_given_30d || 0) > 0;
     const incidentRollup = {
       total: hasIncidentRollup ? Number(resident.incident_count_all_time || 0) : details.length,
       days30: hasIncidentRollup ? Number(resident.incident_count_30d || 0) : countRecentIncidentDetails(details, 30),
@@ -642,14 +641,7 @@ export function createResidentTools(dependencies) {
       ["Active psychotropics", hasMarSummary ? formatNumber(resident.active_psychotropic_count || 0) : "—"],
       ["Active narcotics", hasMarSummary ? formatNumber(resident.active_narcotic_count || 0) : "—"],
       ["Active PRNs", hasMarSummary ? formatNumber(resident.active_prn_count || 0) : "—"],
-      ["MAR compliance, 30 days", hasMarSummary && resident.mar_compliance_pct_30d != null ? formatPercent(resident.mar_compliance_pct_30d) : "—"],
-      ["MAR scheduled, 30 days", hasMarSummary ? formatNumber(resident.mar_scheduled_30d || 0) : "—"],
-      ["MAR not given, 30 days", hasMarSummary ? formatNumber(resident.mar_not_given_30d || 0) : "—"],
-      ["MAR refusals, 7 days", hasMarSummary ? formatNumber(resident.mar_refusals_7d || 0) : "—"],
-      ["MAR refusals, 30 days", hasMarSummary ? formatNumber(resident.mar_refusals_30d || 0) : "—"],
-      ["MAR refusals, 90 days", hasMarSummary ? formatNumber(resident.mar_refusals_90d || 0) : "—"],
-      ["PRN given, 30 days", hasMarSummary ? formatNumber(resident.mar_prn_given_30d || 0) : "—"],
-      ["PRN follow-up, 30 days", hasMarSummary ? formatNumber(resident.mar_prn_followup_30d || 0) : "—"],
+      ["MAR given, 30 days", hasMarSummary ? formatNumber(resident.mar_given_30d || 0) : "—"],
       ["Last MAR record", hasMarSummary && resident.last_mar_recorded_date ? formatDateLabel(resident.last_mar_recorded_date) : "—"],
       [`Incidents, ${incidentHistoryLabel}`, formatNumber(incidentRollup.total)],
       ["Incidents, 30 days", formatNumber(incidentRollup.days30)],
@@ -679,7 +671,7 @@ export function createResidentTools(dependencies) {
         `Physician: ${displayValue(resident.physician)}. Diet: ${displayValue(resident.diet)}.`,
         `Incident rollup (${incidentHistoryLabel}): ${formatNumber(incidentRollup.total)} total; ${formatNumber(incidentRollup.days30)} in 30 days; ${formatNumber(incidentRollup.days90)} in 90 days; ${formatNumber(incidentRollup.days180)} in 180 days.${incidentRollup.lastDate ? ` Last incident: ${displayValue(incidentRollup.lastCategory)} on ${formatDateLabel(incidentRollup.lastDate)}.` : ""}`,
         hasMarSummary
-          ? `MAR summary: ${resident.mar_compliance_pct_30d == null ? "30-day compliance not calculated" : `${formatPercent(resident.mar_compliance_pct_30d)} 30-day compliance`}. ${formatNumber(resident.active_medication_count || 0)} active medications and ${formatNumber(resident.mar_refusals_30d || 0)} refusals were recorded in 30 days. The latest MAR record is ${resident.last_mar_recorded_date ? formatDateLabel(resident.last_mar_recorded_date) : "not dated"}.`
+          ? `MAR summary: ${formatNumber(resident.mar_given_30d || 0)} administrations were recorded as given in 30 days. The latest MAR record is ${resident.last_mar_recorded_date ? formatDateLabel(resident.last_mar_recorded_date) : "not dated"}.`
           : "Resident-level MAR summary is unavailable.",
         medicationPresentation.summary,
         hasDocumentationStatus

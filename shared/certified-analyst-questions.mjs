@@ -172,7 +172,7 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
   {
     id: "community-month-status",
     title: "Community operating picture",
-    description: "Monthly community operating detail with census, incidents, categories, and medication compliance.",
+    description: "Monthly community operating detail with census, incidents, categories, and administrations given.",
     preferredTool: "community_history",
     answerStyle: "community-month-brief",
     cacheFamily: "community:month-status",
@@ -258,12 +258,12 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
   {
     id: "generic-detail-list",
     title: "Exact data detail list",
-    description: "Exact loaded detail for census, residents, medications, refusals, or documentation.",
+    description: "Exact loaded detail for census, residents, administrations given, or documentation.",
     preferredTool: "detail_list",
     answerStyle: "exact-row-list",
     cacheFamily: "data:detail-list",
     variables: [MONTH_VARIABLE],
-    examples: ["Can you list all census records for {month}?", "Can you show every medication compliance record?", "Can you list the documentation gap detail?", "Can you show the resident roster detail?", "Can you show every census detail record?"],
+    examples: ["Can you list all census records for {month}?", "Can you show every medication administration summary?", "Can you list the documentation gap detail?", "Can you show the resident roster detail?", "Can you show every census detail record?"],
     match: (text) => /\b(list|every|detail|rows?)\b/.test(text) &&
       /\b(census|occupancy|residents?|roster|medication|meds|emar|compliance|refusals?|documentation|doc gap|note gap)\b/.test(text) &&
       !/\b(incident|incidents|awol|elopement|risk|watchlist|watch list|attention|needs attention)\b/.test(text) &&
@@ -501,7 +501,7 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
   {
     id: "resident-current-medications",
     title: "Resident medication summary",
-    description: "Current medication counts, 30-day MAR compliance, exceptions, and the latest MAR record for a selected resident.",
+    description: "Current medication orders, administrations given over 30 days, and the latest MAR record for a selected resident.",
     preferredTool: "resident_lookup",
     answerStyle: "profile-card",
     cacheFamily: "residents:current-medications",
@@ -722,8 +722,8 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
   },
   {
     id: "medication-exception-detail",
-    title: "Medication exception detail",
-    description: "Exact MAR exception detail for refusals, not-given administrations, late administrations, held meds, and PRN-related detail.",
+    title: "Medication administrations given",
+    description: "Recorded administrations given in the available MAR period.",
     preferredTool: "medication_exception_detail",
     answerStyle: "medication-exception-detail-rows",
     cacheFamily: "medications:exceptions",
@@ -734,19 +734,15 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
       "Which medication administrations were late?",
       "Can you show not-given medication detail?"
     ],
-    match: (text) => /\b(medication|medications|meds|emar|mar|refusal|refusals|refused|not given|missed|held|late|prn)\b/.test(text) &&
-      /\b(exception|exceptions|detail|details|list|every|all|rows?|who|resident|residents|client|clients|reason|reasons|result|results|effectiveness|follow up|recent|last 90|not given|missed|held|late|administration|administrations)\b/.test(text) &&
-      !(/\b(watch|watchlist|watch list|attention|risk|problem|problems|issue|issues|top residents?|top clients?|drivers?|who needs|highest|most)\b/.test(text) &&
-        !/\b(which medication|what medication|what medications|top refused medications|top refused meds|by medication)\b/.test(text)) &&
-      !(/\b(count|how many|number of|total)\b/.test(text) && /\b(residents?|clients?|people)\b/.test(text) && /\bmedication refusal\b/.test(text)) &&
-      !(/\b(compliance|scheduled)\b/.test(text) && !/\b(exception|exceptions|not given|missed|held|late|prn|refusal|refusals|refused)\b/.test(text)) &&
-      !(/\b(by community|by facility|breakdown)\b/.test(text) && /\b(refusal|refusals|refused|not given)\b/.test(text)) &&
-      !(/\b(top|largest|most|breakdown|by community|which medication|what medication|what medications)\b/.test(text) && /\b(refusal|refusals|refused)\b/.test(text))
+    match: (text) => /\b(medication|medications|meds|emar|mar)\b/.test(text) &&
+      !/\b(active|current|orders?|by resident|resident mar|watch|watchlist|by community|by facility|breakdown)\b/.test(text) &&
+      /\b(exception|exceptions|refusal|refusals|refused|not[ -]given|missed|held|late|prn)\b/.test(text) &&
+      /\b(detail|details|list|every|all|rows?|reason|reasons|recent|last 90|exception|exceptions|not[ -]given|missed|held|late|prn)\b/.test(text)
   },
   {
     id: "medication-refusal-detail",
-    title: "Medication refusal detail",
-    description: "Medication refusal counts by community, resident, or medication.",
+    title: "Medication administrations given",
+    description: "Recorded administrations given by community and month.",
     preferredTool: "medication_refusals_by_community",
     answerStyle: "medication-refusal-summary",
     cacheFamily: "medications:refusals",
@@ -761,27 +757,27 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
   },
   {
     id: "medication-watch",
-    title: "Medication watch",
-    description: "Resident-level MAR watchlist ranked by refusals, not-given administrations, low compliance, and PRN activity.",
+    title: "Administrations by resident",
+    description: "Resident-level MAR administrations given in the last 30 days.",
     preferredTool: "medication_watch",
     answerStyle: "medication-watch-summary",
     cacheFamily: "medications:watch",
     variables: [COMMUNITY_VARIABLE],
     examples: [
-      "Show the resident medication watchlist for {community}.",
-      "Show which residents are on the medication watchlist.",
-      "Show the top residents for medication refusals.",
-      "Show the resident MAR watchlist."
+      "Show administrations given by resident for {community}.",
+      "Show medication administrations given by resident.",
+      "Show the resident MAR administration summary.",
+      "Show medication administrations given by resident for {community}."
     ],
-    match: (text) => /\b(medication|medications|meds|emar|mar|refusal|refusals|not given|prn)\b/.test(text) &&
-      (/\b(watch|watchlist|watch list|attention|risk|problem|problems|issue|issues|top residents?|top clients?|drivers?|who needs)\b/.test(text) ||
+    match: (text) => /\b(medication|medications|meds|emar|mar|administrations?)\b/.test(text) &&
+      (/\b(by resident|resident mar|watch|watchlist|watch list|attention|risk|problem|problems|issue|issues|top residents?|top clients?|drivers?|who needs)\b/.test(text) ||
         /\b(residents?|clients?|people)\b.*\b(highest|most)\b/.test(text)) &&
       !/\b(which medication|what medication|what medications|top refused medications|top refused meds|by medication)\b/.test(text)
   },
   {
     id: "medication-profile",
     title: "Medication profile",
-    description: "Medication compliance, refusals, and documentation signals for a community or portfolio.",
+    description: "Medication administrations given for a community or portfolio.",
     preferredTool: "medication_profile",
     answerStyle: "medication-operating-summary",
     cacheFamily: "medications:profile",
@@ -797,28 +793,36 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
   },
   {
     id: "medication-compliance",
-    title: "Medication compliance",
-    description: "Medication compliance by community and month.",
+    title: "Medication administrations given",
+    description: "Recorded administrations given by community and month.",
     preferredTool: "medication_compliance",
     answerStyle: "compliance-summary",
     cacheFamily: "medications:compliance",
-    examples: ["What is medication compliance this month?", "What is eMAR compliance by community?", "What is scheduled medication compliance?", "How was medication compliance by community this month?"],
+    examples: [
+      "How many medication administrations were given this month?",
+      "Show administrations given by community.",
+      "Show the medication administrations given this month.",
+      "How many medication administrations were given across the portfolio?",
+      "Show administrations given for each community.",
+      "Show the latest medication administrations given."
+    ],
     match: (text) => /\b(compliance|given|scheduled|emar)\b/.test(text) && /\b(medication|meds|emar|compliance|given|scheduled)\b/.test(text)
   },
   {
     id: "medication-compliance-history",
-    title: "Medication compliance history",
-    description: "Monthly medication compliance history for a community across a selected period.",
+    title: "Administration history",
+    description: "Monthly administrations given for a community across a selected period.",
     preferredTool: "medication_compliance",
     answerStyle: "compliance-trend-summary",
     cacheFamily: "medications:compliance-history",
     variables: [COMMUNITY_VARIABLE, START_MONTH_VARIABLE, END_MONTH_VARIABLE],
     examples: [
-      "How did medication compliance change at {community} from {startMonth} through {endMonth}?",
-      "Show the medication compliance trend for {community} from {startMonth} through {endMonth}.",
-      "Compare monthly medication compliance at {community} from {startMonth} through {endMonth}.",
-      "Show {community}'s medication compliance history from {startMonth} through {endMonth}.",
-      "How consistent was medication compliance at {community} from {startMonth} through {endMonth}?"
+      "Show administrations given at {community} from {startMonth} through {endMonth}.",
+      "Show the medication administrations given trend for {community} from {startMonth} through {endMonth}.",
+      "Compare administrations given at {community} between {startMonth} and {endMonth}.",
+      "Compare medication administrations given at {community} from {startMonth} to {endMonth}.",
+      "Chart medication administrations given for {community} from {startMonth} through {endMonth}.",
+      "Show monthly administrations given for {community} from {startMonth} through {endMonth}."
     ],
     match: (text, context = {}) => /\b(compliance|given|scheduled|emar)\b/.test(text) &&
       /\b(change|changed|trend|history|compare|comparison|consistent|from|through|between|over time)\b/.test(text) &&
@@ -854,32 +858,34 @@ export const CERTIFIED_ANALYST_QUESTIONS = [
 ];
 
 export function getCertifiedQuestionRoutes() {
-  return CERTIFIED_ANALYST_QUESTIONS.flatMap((question) => {
-    const prompts = [question.displayPrompt, ...(question.examples ?? [])]
-      .map((prompt) => String(prompt ?? "").trim())
-      .filter(Boolean)
-      .filter((prompt, index, values) => (
-        values.findIndex((value) => value.toLowerCase() === prompt.toLowerCase()) === index
-      ));
-    const routePrompts = prompts.length ? prompts : [question.title];
+  return CERTIFIED_ANALYST_QUESTIONS
+    .filter((question) => !["medication-exception-detail", "medication-refusal-detail"].includes(question.id))
+    .flatMap((question) => {
+      const prompts = [question.displayPrompt, ...(question.examples ?? [])]
+        .map((prompt) => String(prompt ?? "").trim())
+        .filter(Boolean)
+        .filter((prompt, index, values) => (
+          values.findIndex((value) => value.toLowerCase() === prompt.toLowerCase()) === index
+        ));
+      const routePrompts = prompts.length ? prompts : [question.title];
 
-    return routePrompts.map((prompt, variantIndex) => {
-      const usesDisplayRunPrompt = Boolean(
-        question.displayPrompt &&
-        prompt === question.displayPrompt &&
-        question.runPrompt
-      );
-      return Object.freeze({
-        id: `${question.id}:${variantIndex}`,
-        familyId: question.id,
-        variantIndex,
-        prompt,
-        runPrompt: usesDisplayRunPrompt ? question.runPrompt : prompt,
-        expectedTool: usesDisplayRunPrompt ? "surface_module" : question.preferredTool,
-        question
+      return routePrompts.map((prompt, variantIndex) => {
+        const usesDisplayRunPrompt = Boolean(
+          question.displayPrompt &&
+          prompt === question.displayPrompt &&
+          question.runPrompt
+        );
+        return Object.freeze({
+          id: `${question.id}:${variantIndex}`,
+          familyId: question.id,
+          variantIndex,
+          prompt,
+          runPrompt: usesDisplayRunPrompt ? question.runPrompt : prompt,
+          expectedTool: usesDisplayRunPrompt ? "surface_module" : question.preferredTool,
+          question
+        });
       });
     });
-  });
 }
 
 export const CERTIFIED_QUESTION_MENU = Object.freeze([
@@ -911,7 +917,6 @@ export const CERTIFIED_QUESTION_MENU = Object.freeze([
   { familyId: "resident-current-medications", variantIndex: 0, category: "Medications" },
   { familyId: "medication-compliance-history", variantIndex: 0, category: "Medications" },
   { familyId: "medication-current-orders", variantIndex: 0, category: "Medications" },
-  { familyId: "medication-exception-detail", variantIndex: 0, category: "Medications" },
   { familyId: "medication-watch", variantIndex: 0, category: "Medications" }
 ].map((entry) => Object.freeze(entry)));
 
@@ -1177,20 +1182,16 @@ export function buildCertifiedFollowUps(result = {}, frame = {}, content = "") {
 
   if (tool === "medication_profile") {
     return [
-      toolAction("Show resident medication watchlist", `show the resident medication watchlist for ${priorPromptScope}`, "medication-watch")
+      toolAction("Show administrations by resident", `show administrations given by resident for ${priorPromptScope}`, "medication-watch")
     ];
   }
 
   if (tool === "medication_compliance") {
-    return [
-      toolAction("Show most-refused medications", `show which medications were refused most at ${priorPromptScope} in ${latestPeriod}`, "medication-refusal-detail")
-    ];
+    return [];
   }
 
   if (tool === "medication_refusals_by_community") {
-    return [
-      toolAction("Show exact refusal records", `show medication refusal detail for ${priorPromptScope} from the last 90 days`, "medication-exception-detail")
-    ];
+    return [];
   }
 
   if (tool === "medication_exception_detail") {
@@ -1200,9 +1201,7 @@ export function buildCertifiedFollowUps(result = {}, frame = {}, content = "") {
   }
 
   if (tool === "medication_watch") {
-    return [
-      toolAction("Show exact refusal records", `show medication refusal detail for ${priorPromptScope} from the last 90 days`, "medication-exception-detail")
-    ];
+    return [];
   }
 
   if (tool === "community_compare") {
@@ -1236,7 +1235,7 @@ export function buildCertifiedCacheRequests({ facilities = [], months = [] } = {
     `compare portfolio incidents for ${priorMonth} vs ${latestMonth} by category`,
     "which residents are driving incidents",
     "which residents need attention",
-    "medication refusals by community",
+    "medication administrations given by community",
     "how are meds looking",
     "diagnosis mix by community",
     "length of stay by community",

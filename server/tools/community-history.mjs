@@ -141,7 +141,7 @@ export function createCommunityHistoryTools(dependencies) {
       const incidentTotal = sum(monthIncidentRows, (row) => row.incident_count);
       const previousIncidentTotal = previousIncidentTotalFor(month);
       const topCategories = sumIncidentCountsByKey(monthIncidentRows, (row) => row.category).slice(0, 3);
-      const compliance = calculateWeightedCompliance(monthComplianceRows).compliancePct;
+      const given = monthComplianceRows.length ? calculateWeightedCompliance(monthComplianceRows).given : null;
 
       return {
         month,
@@ -150,7 +150,7 @@ export function createCommunityHistoryTools(dependencies) {
         incidentTotal,
         incidentDelta: previousIncidentTotal == null ? null : incidentTotal - previousIncidentTotal,
         topCategories,
-        compliance
+        given
       };
     });
     const lines = [
@@ -169,14 +169,14 @@ export function createCommunityHistoryTools(dependencies) {
         const incidentSentence = `Incidents totaled ${formatNumber(row.incidentTotal)}${movementClause(row.incidentDelta)}.`;
         const context = [
           row.topCategories.length ? `Leading categories were ${formatTopCategories(row.topCategories)}` : null,
-          Number.isFinite(row.compliance) ? `medication compliance was ${row.compliance.toFixed(1)}%` : null
+          Number.isFinite(row.given) ? `${formatNumber(row.given)} medication administrations were given` : null
         ].filter(Boolean);
         const contextSentence = context.length ? `${context.join(", and ")}.` : "";
         return `- ${formatMonthLabel(row.month)}: ${censusSentence} ${incidentSentence}${contextSentence ? ` ${contextSentence}` : ""}`;
       })
     ].filter(Boolean);
     const singleMonth = historyRows.length === 1 ? historyRows[0] : null;
-    const visualColumns = ["Month", "Census", "Census change", "Incidents", "Incident change", "Top incident categories", "Medication compliance"];
+    const visualColumns = ["Month", "Census", "Census change", "Incidents", "Incident change", "Top incident categories", "Administrations given"];
     const tableRows = historyRows.map((row) => ({
       label: formatMonthLabel(row.month),
       value: Number(row.incidentTotal || row.census || 0),
@@ -189,7 +189,7 @@ export function createCommunityHistoryTools(dependencies) {
         row.topCategories.length
           ? row.topCategories.map(([category, count]) => `${category} (${formatNumber(count)})`).join(", ")
           : "—",
-        Number.isFinite(row.compliance) ? `${row.compliance.toFixed(1)}%` : "—"
+        Number.isFinite(row.given) ? formatNumber(row.given) : "—"
       ]
     }));
     const visualRows = singleMonth
@@ -222,11 +222,11 @@ export function createCommunityHistoryTools(dependencies) {
             ]
           },
           {
-            label: "Medication compliance",
-            value: Number(singleMonth.compliance || 0),
+            label: "Administrations given",
+            value: Number(singleMonth.given || 0),
             cells: [
-              "Medication compliance",
-              Number.isFinite(singleMonth.compliance) ? `${singleMonth.compliance.toFixed(1)}%` : "—",
+              "Administrations given",
+              Number.isFinite(singleMonth.given) ? formatNumber(singleMonth.given) : "—",
               formatMonthLabel(singleMonth.month)
             ]
           }

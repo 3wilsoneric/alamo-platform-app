@@ -30,8 +30,8 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
   }),
   "community-month-status": contract({
     allowedVisualTypes: ["summary_card", "table"],
-    requiredColumns: ["Month", "Census", "Incidents", "Top incident categories", "Medication compliance"],
-    requiredAnswerTerms: [["census", "client"], ["incident"], ["medication compliance"]]
+    requiredColumns: ["Month", "Census", "Incidents", "Top incident categories", "Administrations given"],
+    requiredAnswerTerms: [["census", "client"], ["incident"]]
   }),
   "incident-freshness-troubleshoot": contract({
     allowedTruthStates: ["valid_rows", "stale"],
@@ -59,7 +59,7 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
   }),
   "generic-detail-list": contract({
     allowedVisualTypes: ["table"],
-    requiredAnswerTerms: [["record", "entry", "resident", "medication", "documentation", "census"]],
+    requiredAnswerTerms: [["record", "entry", "resident", "medication", "administration", "documentation", "census"]],
     requiresArtifact: true,
     maxActions: 1
   }),
@@ -179,8 +179,8 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
   }),
   "community-change-summary": contract({
     allowedVisualTypes: ["summary_card", "table"],
-    requiredColumns: ["Month", "Census", "Census change", "Incidents", "Incident change", "Top incident categories", "Medication compliance"],
-    requiredAnswerTerms: [["census", "client"], ["incident"], ["medication compliance"]]
+    requiredColumns: ["Month", "Census", "Census change", "Incidents", "Incident change", "Top incident categories", "Administrations given"],
+    requiredAnswerTerms: [["census", "client"], ["incident"]]
   }),
   "community-comparison": contract({
     allowedVisualTypes: ["comparison_chart", "table"],
@@ -189,17 +189,8 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
   }),
   "medication-exception-detail": contract({
     allowedTruthStates: ["valid_rows", "verified_zero", "not_loaded"],
-    allowedVisualTypes: ["table"],
-    requiredAnswerTerms: [[
-      "MAR exception",
-      "medication exception",
-      "medication refusal",
-      "late medication administration",
-      "held or on-hold medication",
-      "PRN medication",
-      "not-given medication"
-    ]],
-    requiresArtifactWhenValid: true
+    allowedVisualTypes: ["table", "line_chart"],
+    requiredAnswerTerms: [["administrations given"]]
   }),
   "medication-current-orders": contract({
     allowedTruthStates: ["valid_rows", "not_loaded"],
@@ -211,29 +202,25 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
   }),
   "medication-refusal-detail": contract({
     allowedTruthStates: ["valid_rows", "verified_zero", "not_loaded"],
-    allowedVisualTypes: ["bar_chart", "table"],
-    requiredAnswerTerms: [["refusal"]]
+    allowedVisualTypes: ["table", "line_chart"],
+    requiredAnswerTerms: [["administrations given"]]
   }),
   "medication-watch": contract({
     allowedTruthStates: ["valid_rows", "not_loaded"],
     allowedVisualTypes: ["table", "ranked_list"],
-    requiredAnswerTerms: [["medication watch", "resident-level MAR"]]
+    requiredAnswerTerms: [["administrations given", "resident summaries"]]
   }),
   "medication-profile": contract({
     allowedVisualTypes: ["summary_card", "table"],
-    requiredAnswerTerms: [["compliance"], ["scheduled administration"], ["documented as given"]]
+    requiredAnswerTerms: [["administrations given"]]
   }),
   "medication-compliance": contract({
-    allowedVisualTypes: ["table", "bar_chart"],
-    requiredAnswerTerms: [["compliance"], ["scheduled administration"], ["documented as given"]]
+    allowedVisualTypes: ["table", "line_chart"],
+    requiredAnswerTerms: [["administrations given"]]
   }),
   "medication-compliance-history": contract({
     allowedVisualTypes: ["line_chart"],
-    requiredAnswerTerms: [
-      ["compliance"],
-      ["increased", "decreased", "unchanged", "rose", "fell"],
-      ["percentage point", "percentage points"]
-    ]
+    requiredAnswerTerms: [["administrations given"]]
   }),
   "data-slice-catalog": contract({
     allowedVisualTypes: ["table"],

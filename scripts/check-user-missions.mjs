@@ -297,12 +297,12 @@ const missions = [
     id: "medication-to-incident-cross-check",
     name: "Medication To Incident Cross-Check",
     endGoal: "Start with San Pablo medication signal, preserve community context for compliance follow-up, then pivot into incidents and resident composition.",
-    targetEvidence: "Medication profile, compliance follow-up, refusal breakdown, incident comparison, diagnosis mix, and San Pablo incident surface all resolve without context drift.",
+    targetEvidence: "Medication profile and administrations-given follow-up resolve, retired breakdowns are declined, and incident comparison, diagnosis mix, and San Pablo incident surface remain available.",
     turns: [
       turn("How is San Pablo doing with medications?", {
         tools: ["medication_profile"],
         facilityId: "337",
-        textIncludes: ["A & A Health Services San Pablo", "Compliance"],
+        textIncludes: ["A & A Health Services San Pablo", "administrations given"],
         critical: true
       }),
       turn("Show me its compliance for the latest month.", {
@@ -314,9 +314,9 @@ const missions = [
         critical: true
       }),
       turn("What medications had the most refusals?", {
-        tools: ["medication_refusals_by_community", "ad_hoc_medication_chart"],
-        textIncludes: ["refus"],
-        visualType: "bar_chart",
+        tools: ["clarification"],
+        truthState: "plan_rejected",
+        textIncludes: ["Ask for administrations given by community, resident, or month"],
         critical: true
       }),
       turn("show San Pablo medication compliance", {

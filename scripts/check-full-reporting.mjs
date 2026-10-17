@@ -450,9 +450,9 @@ const overview = compileFullReportFromContext({ reportId: "overview" }, inputs);
 assert(overview.title === "Overview", "the report library must open on one live overview");
 assert(
   overview.metrics.some(
-    (metric) => metric.label === "Medication completion" && metric.value === "96.1%"
+    (metric) => metric.label === "Administrations given" && metric.value === "1,730"
   ),
-  "portfolio medication completion must be weighted by scheduled administrations"
+  "portfolio report must show administrations recorded as given"
 );
 const overviewOperatingSection = overview.sections.find(
   (section) => section.id === "community-operating-position"
@@ -596,7 +596,7 @@ const unavailableEffectiveness = compileFullReportFromContext(
 for (const metricLabel of [
   "Census",
   "Incidents per 100 census",
-  "Medication compliance",
+  "Administrations given",
   "Internal return admissions"
 ]) {
   assert(
@@ -846,8 +846,8 @@ const medicationRows = historicalMedication.sections
   .find((section) => section.id === "administration-detail")
   ?.blocks.find((block) => block.type === "table")?.rows;
 assert(
-  medicationRows?.[0]?.notGiven === "45",
-  "medication completion gaps must equal scheduled minus given"
+  medicationRows?.[0]?.given === "855" && !Object.hasOwn(medicationRows[0], "notGiven"),
+  "medication detail must show only administrations given"
 );
 assert(
   historicalMedication.sections.some(
@@ -863,9 +863,9 @@ assert(
 );
 const currentMedication = compileFullReportFromContext({ reportId: "medications" }, inputs);
 assert(
-  currentMedication.sections.some((section) => section.id === "current-medication-burden") &&
-    currentMedication.evidence.sources.some((source) => source.slice === "mar_resident_summary"),
-  "current medication reports must include governed resident burden measures"
+  !currentMedication.sections.some((section) => section.id === "current-medication-burden") &&
+    !currentMedication.evidence.sources.some((source) => source.slice === "mar_resident_summary"),
+  "medication reports must avoid unrelated resident burden measures"
 );
 assert(
   currentMedication.sections.some(
@@ -874,24 +874,6 @@ assert(
   ) &&
     !currentMedication.sections.some((section) => section.id === "compliance-comparison"),
   "medication reports must pair one monthly trend with one selected-month community table"
-);
-const incompleteMedicationInputs = structuredClone(inputs);
-incompleteMedicationInputs.summary.toolContext.marResidentSummary = marResidentSummary.map((row) => ({
-  ...row,
-  compliance_pct_30d: null
-}));
-const incompleteMedicationBurdenTable = compileFullReportFromContext(
-  { reportId: "medications" },
-  incompleteMedicationInputs
-).sections
-  .find((section) => section.id === "current-medication-burden")
-  ?.blocks.find((block) => block.type === "table");
-assert(
-  incompleteMedicationBurdenTable &&
-    !incompleteMedicationBurdenTable.columns.some(
-      (column) => column.label === "Average resident compliance"
-    ),
-  "medication burden tables must omit optional columns with no governed values"
 );
 const changingMedicationCoverageInputs = structuredClone(inputs);
 changingMedicationCoverageInputs.summary.medicationCompliance.push({

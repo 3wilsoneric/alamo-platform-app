@@ -168,19 +168,21 @@ export function createAnswerFormattingTools({
         const rowFor = (name) => rows.find((row) => normalizeText(row.cells?.[0] ?? row.label) === normalizeText(name));
         const incidentDetail = rowFor("Incident detail")?.cells ?? [];
         const census = rowFor("Census monthly")?.cells ?? [];
-        const medication = rowFor("Medication compliance")?.cells ?? [];
-        const missingMar = ["MAR monthly", "MAR resident summary", "MAR exceptions"]
+        const medication = rowFor("Administrations given")?.cells ?? [];
+        const missingMar = ["MAR monthly", "MAR resident summary"]
           .filter((name) => parseDisplayNumber(rowFor(name)?.cells?.[2]) === 0);
         const historicalParts = [
           incidentDetail[3] && incidentDetail[4] ? `incident detail from ${incidentDetail[3]} through ${incidentDetail[4]}` : null,
-          census[3] && census[4] ? `monthly census from ${census[3]} through ${census[4]}` : null,
-          medication[3] && medication[4] ? `medication compliance from ${medication[3]} through ${medication[4]}` : null
+          census[3] && census[4] ? `monthly census from ${census[3]} through ${census[4]}` : null
         ].filter(Boolean);
+        const administrationCoverage = medication[3] && medication[4]
+          ? `Administrations given cover ${medication[3]} through ${medication[4]}, while resident roster and documentation are current-only.`
+          : "Resident roster and documentation are current-only.";
         const marBoundary = missingMar.length
           ? ` ${formatNaturalList(missingMar)} ${missingMar.length === 1 ? "is" : "are"} not populated, so resident-level medication analysis is limited.`
           : " No published data area is currently unavailable.";
         const loadedDatasetCount = rows.filter((row) => (parseDisplayNumber(row.cells?.[2]) ?? 0) > 0).length;
-        return `${loadedDatasetCount} of ${rows.length} published data areas are populated. Historical coverage includes ${formatNaturalList(historicalParts)}. Resident roster and documentation are current-only.${marBoundary}`;
+        return `${loadedDatasetCount} of ${rows.length} published data areas are populated. Historical coverage includes ${formatNaturalList(historicalParts)}. ${administrationCoverage}${marBoundary}`;
       }
 
       const focus = rows.find((row) => !/^requested period\s*·/i.test(String(row?.cells?.[0] ?? row?.label ?? ""))) ?? rows[0];
@@ -579,7 +581,6 @@ export function createAnswerFormattingTools({
           ? `There were ${incidents} incidents that month${incidentMovement ? `, ${incidentMovement}` : ""}.`
           : null;
         const category = first[5] && first[5] !== "—" ? first[5] : null;
-        const compliance = first[6] && first[6] !== "—" ? first[6] : null;
         const leadingCategory = category?.match(/^(.+?)\s*\(([\d,]+)\)/);
         const leadingShare = leadingCategory && incidents
           ? formatOneDecimal((parseDisplayNumber(leadingCategory[2]) ?? 0) / (parseDisplayNumber(incidents) || 1) * 100)
@@ -587,11 +588,9 @@ export function createAnswerFormattingTools({
         const categoryPhrase = leadingCategory
           ? `${leadingCategory[1]} was the most common category, with ${leadingCategory[2]} incidents${leadingShare ? ` (${leadingShare}% of the total)` : ""}.`
           : category;
-        const complianceSentence = compliance ? `Medication compliance was ${compliance}.` : null;
         const operatingParagraph = [censusSentence, incidentSentence].filter(Boolean).join(" ");
         const clinicalParagraph = [
-          categoryPhrase ? categoryPhrase.replace(/\.$/, "") + "." : null,
-          complianceSentence
+          categoryPhrase ? categoryPhrase.replace(/\.$/, "") + "." : null
         ].filter(Boolean).join(" ");
         return [operatingParagraph, clinicalParagraph].filter(Boolean).join("\n\n") || `${label} is summarized for ${period}.`;
       }
@@ -619,14 +618,8 @@ export function createAnswerFormattingTools({
           ? `Across ${period}, ${label}'s ${censusChange ?? incidentChange}. ${periodCountPhrase} recorded ${formatNumber(incidentTotal)} incidents in total.`
           : `${label} recorded ${formatNumber(incidentTotal)} incidents across ${period}.`;
       const latestCategory = last[5] && last[5] !== "—" ? last[5] : null;
-      const latestCompliance = last[6] && last[6] !== "—" ? last[6] : null;
-      const latestLeadingCategory = latestCategory?.match(/^(.+?)\s*\(([\d,]+)\)/);
-      const latestSentence = latestLeadingCategory && latestCompliance
-        ? `In ${formatMonthLabel(last[0]) ?? "the latest month"}, ${latestLeadingCategory[1]} was the leading incident category with ${latestLeadingCategory[2]} incidents, and medication compliance was ${latestCompliance}.`
-        : latestCategory
+      const latestSentence = latestCategory
           ? `In ${last[0] ?? "the latest month"}, the leading incident categories were ${latestCategory}.`
-          : latestCompliance
-            ? `In ${last[0] ?? "the latest month"}, medication compliance was ${latestCompliance}.`
             : null;
       return [periodSentence, latestSentence].filter(Boolean).join("\n\n");
     }
@@ -757,16 +750,12 @@ export function createAnswerFormattingTools({
       const unit = valueFor(["unit"]);
       if (/\b(medication|medications|meds|emar|mar)\b/.test(text)) {
         const activeMeds = valueFor(["active medications"]);
-        const compliance = valueFor(["mar compliance, 30 days"]);
-        const notGiven = valueFor(["mar not given, 30 days"]);
-        const refusals30 = valueFor(["mar refusals, 30 days"]);
+        const given30 = valueFor(["mar given, 30 days", "given, 30 days"]);
         const lastMar = valueFor(["last mar record"]);
         const location = community ? `${community}${unit && unit !== "—" ? `, unit ${unit}` : ""}` : "the current roster";
         const marParts = [
           activeMeds && activeMeds !== "—" ? `${activeMeds} active medications` : null,
-          compliance && compliance !== "—" ? `${compliance} 30-day MAR compliance` : null,
-          notGiven && notGiven !== "—" ? `${notGiven} not given in 30 days` : null,
-          refusals30 && refusals30 !== "—" ? `${refusals30} refusals in 30 days` : null,
+          given30 && given30 !== "—" ? `${given30} administrations given in 30 days` : null,
           lastMar && lastMar !== "—" ? `last MAR record ${lastMar}` : null
         ].filter(Boolean);
         return marParts.length
@@ -901,164 +890,40 @@ export function createAnswerFormattingTools({
       return `${title || "Documentation gaps"} found ${formatNumber(rowCount)} documentation item${Number(rowCount) === 1 ? "" : "s"} that need review.`;
     }
 
-    if (result.tool === "medication_profile") {
-      const summaryRows = result.visual?.rows ?? [];
-      if (hasVisualColumn(result, "Community") && hasVisualColumn(result, "Compliance")) {
-        const ranked = [...summaryRows].sort((left, right) => Number(left.value || 0) - Number(right.value || 0));
-        const lowest = ranked[0];
-        const highest = ranked.at(-1);
-        const scheduled = summaryRows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Scheduled")) ?? 0), 0);
-        const given = summaryRows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Given")) ?? 0), 0);
-        const notGiven = summaryRows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Not given")) ?? 0), 0);
-        const notGivenShare = scheduled ? formatOneDecimal(notGiven / scheduled * 100) : null;
-        const period = formatTracePeriodRange(result.trace?.period) ?? "the latest available month";
-        const relativeLatest = isRelativeLatestIntent(text) || (result.certifiedQuestion?.id === "medication-profile" && !hasExplicitMonthIntent(text));
-        const periodLead = relativeLatest ? `${period} is the latest available medication month. Compliance` : `${period} medication compliance`;
-        return `${periodLead} ranged from ${visualCell(result, lowest, "Compliance")} at ${lowest?.label} to ${visualCell(result, highest, "Compliance")} at ${highest?.label}. Of ${formatNumber(scheduled)} scheduled administrations, ${formatNumber(given)} were documented as given and ${formatNumber(notGiven)} were not given${notGivenShare ? ` (${notGivenShare}%)` : ""}.`;
+    if (["medication_profile", "medication_refusals_by_community", "medication_compliance", "medication_exception_detail"].includes(result.tool)) {
+      if (["summary_not_shown", "not_loaded", "plan_rejected"].includes(result.truthState ?? result.trace?.truthState)) {
+        return firstMeaningfulTextLine(result.text);
       }
-      const valueFor = (label) => {
-        const row = summaryRows.find((entry) => normalizeText(entry.label) === normalizeText(label));
-        return row?.cells?.[1] ?? null;
-      };
-      const scope = result.trace?.communityName ?? result.visual?.title?.replace(/\s+Medication Profile$/i, "") ?? "Portfolio";
-      const compliance = valueFor("Compliance");
-      const scheduled = valueFor("Scheduled");
-      const given = valueFor("Given") ?? (result.summary?.given != null ? formatNumber(result.summary.given) : null);
-      const notGiven = valueFor("Not given");
-      const period = formatTracePeriodRange(result.trace?.period);
-      const relativeLatest = isRelativeLatestIntent(text) || (result.certifiedQuestion?.id === "medication-profile" && !hasExplicitMonthIntent(text));
-      const scopeSubject = normalizeText(scope) === "portfolio"
-        ? "The portfolio"
-        : scope;
-      const latestMonthSentence = period && relativeLatest ? `${period} is the latest available medication month.` : null;
-      const summarySentence = compliance
-        ? `${scopeSubject} documented ${compliance} medication compliance${period && !relativeLatest ? ` in ${period}` : ""}.`
-        : scheduled
-          ? `${scope} had ${scheduled} scheduled medication administrations${period ? ` in ${period}` : ""}.`
-          : null;
-      const notGivenValue = parseDisplayNumber(notGiven);
-      const scheduledValue = parseDisplayNumber(scheduled);
-      const notGivenRate = notGivenValue !== null && scheduledValue
-        ? formatOneDecimal(notGivenValue / scheduledValue * 100)
-        : null;
-      const exceptionSentence = notGiven != null
-        ? `${scheduled ? `Of ${scheduled} scheduled administrations, ` : ""}${given ? `${given} were documented as given and ` : ""}${notGiven} ${String(notGiven) === "1" ? "was" : "were"} not given${notGivenRate ? ` (${notGivenRate}%)` : ""}.`
-        : null;
-      return [latestMonthSentence, summarySentence, exceptionSentence].filter(Boolean).join(" ") || firstMeaningfulTextLine(result.text);
+      const period = formatTracePeriodRange(result.trace?.period) ?? result.visual?.subtitle ?? "the latest available period";
+      const scope = result.trace?.communityName ?? result.visual?.title?.replace(/\s+(Medication Profile|Administrations Given)$/i, "") ?? "Portfolio";
+      if (result.visual?.type === "line_chart" && rows.length > 1) {
+        const first = rows[0];
+        const last = rows.at(-1);
+        const firstGiven = parseDisplayNumber(visualCell(result, first, "Given")) ?? Number(first.value ?? 0);
+        const lastGiven = parseDisplayNumber(visualCell(result, last, "Given")) ?? Number(last.value ?? 0);
+        const difference = lastGiven - firstGiven;
+        const movement = difference === 0 ? "held steady" : `${difference > 0 ? "increased" : "decreased"} by ${formatNumber(Math.abs(difference))}`;
+        return `${scope} recorded ${formatNumber(firstGiven)} administrations given in ${first.label} and ${formatNumber(lastGiven)} in ${last.label}; the count ${movement} from the first month to the last.`;
+      }
+      const given = result.summary?.given ?? rows.reduce(
+        (total, row) => total + (parseDisplayNumber(visualCell(result, row, "Given")) ?? 0),
+        0
+      );
+      const latest = result.analysisFrame?.periods?.length ? "" : " (latest available month)";
+      return `${scope} recorded ${formatNumber(given)} medication administrations given in ${period}${latest}.`;
     }
 
     if (result.tool === "medication_watch") {
-      const title = result.visual?.title || firstMeaningfulTextLine(result.text) || "Medication watch";
+      const title = result.visual?.title || "Medication administrations by resident";
       if ((result.truthState ?? result.trace?.truthState) === "not_loaded") {
-        return `${title} needs resident-level MAR summaries, and those are not published in the current data bundle. The supported path for now is community medication compliance and refusal totals, which show site-level performance but not the resident follow-up list.`;
+        return `${title}: administrations given by resident are not available because resident-level MAR summaries are not published in the current data bundle.`;
       }
       const rowCount = result.trace?.rowCount ?? result.visual?.originalRowCount ?? result.visual?.rows?.length ?? 0;
       const top = rows[0];
-      if (!top) return `${title}: no current resident medication watch items matched this scope.`;
-      const cells = top.cells ?? [];
-      const resident = cells[0] ?? top.label;
-      const signal = cells[3] ?? "MAR summary available";
-      const compliance = cells[4] ? `${cells[4]} compliance` : null;
-      const detail = formatNaturalList([signal, compliance].filter(Boolean));
-      return `${title}: ${resident} is the top medication watch item. The review includes ${formatNumber(rowCount)} resident medication summar${Number(rowCount) === 1 ? "y" : "ies"}, and the leading signal is ${detail}.`;
-    }
-
-    if (result.tool === "medication_refusals_by_community") {
-      const medicationLine = String(result.text ?? "")
-        .split("\n")
-        .map((line) => line.trim())
-        .find((line) => /^most refused medications:/i.test(line));
-      const communityLine = String(result.text ?? "")
-        .split("\n")
-        .map((line) => line.trim())
-        .find((line) => /^(?:by community|community totals):/i.test(line));
-      const medicationMatch = medicationLine?.match(/^most refused medications:\s*([^()]+?)\s*\(([\d,]+)\)/i);
-      const communityMatch = communityLine?.match(/^(?:by community|community totals):\s*([^()]+?)\s*\(([\d,]+)\)/i);
-      if (medicationMatch?.[1] && medicationMatch?.[2] && communityMatch?.[1] && communityMatch?.[2]) {
-        const total = (result.visual?.rows ?? []).reduce((sum, row) => sum + (Number(row.value) || 0), 0);
-        const medicationCount = parseDisplayNumber(medicationMatch[2]) ?? 0;
-        const communityCount = parseDisplayNumber(communityMatch[2]) ?? 0;
-        const medicationShare = total ? formatOneDecimal(medicationCount / total * 100) : null;
-        const communityShare = total ? formatOneDecimal(communityCount / total * 100) : null;
-        const period = formatTracePeriodRange(result.trace?.period);
-        if (period && result.trace?.communityName) {
-          return `In ${period}, ${result.trace.communityName} recorded ${formatNumber(total)} medication refusals. ${medicationMatch[1].trim()} had the most at ${medicationMatch[2]}${medicationShare ? ` (${medicationShare}%)` : ""}.`;
-        }
-        if (period) {
-          return `In ${period}, the portfolio recorded ${formatNumber(total)} medication refusals. ${medicationMatch[1].trim()} had the most at ${medicationMatch[2]}${medicationShare ? ` (${medicationShare}%)` : ""}, and ${communityMatch[1].trim()} had the largest community total at ${communityMatch[2]}${communityShare ? ` (${communityShare}%)` : ""}.`;
-        }
-        return `The refusal summary includes ${formatNumber(total)} cumulative refusals. ${medicationMatch[1].trim()} had the most at ${medicationMatch[2]}${medicationShare ? ` (${medicationShare}%)` : ""}, and ${communityMatch[1].trim()} had the largest community total at ${communityMatch[2]}${communityShare ? ` (${communityShare}%)` : ""}. These cumulative refusal totals have no monthly period and should not be read as current-month counts.`;
-      }
-      return [medicationLine, communityLine].filter(Boolean).join(" ");
-    }
-
-    if (result.tool === "medication_compliance" && rows.length) {
-      const isComplianceHistory = result.certifiedQuestion?.id === "medication-compliance-history";
-      if (isComplianceHistory && result.trace?.communityName) {
-        // Medication history rows are emitted in chronological order. Keep
-        // that order rather than alphabetically sorting display month labels.
-        const chronological = [...rows];
-        const first = chronological[0];
-        const last = chronological.at(-1);
-        const firstValue = Number(first?.value ?? 0);
-        const lastValue = Number(last?.value ?? 0);
-        const change = lastValue - firstValue;
-        const firstMonth = visualCell(result, first, "Month") ?? first?.label ?? "the first month";
-        const lastMonth = visualCell(result, last, "Month") ?? last?.label ?? "the last month";
-        const scheduled = rows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Scheduled")) ?? 0), 0);
-        const given = rows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Given")) ?? 0), 0);
-        const movement = Math.abs(change) < 0.05
-          ? `was unchanged at ${formatOneDecimal(lastValue)}% from ${firstMonth} through ${lastMonth}, a 0.0 percentage point change`
-          : `${change > 0 ? "increased" : "decreased"} by ${formatOneDecimal(Math.abs(change))} percentage points, from ${formatOneDecimal(firstValue)}% in ${firstMonth} to ${formatOneDecimal(lastValue)}% in ${lastMonth}`;
-        return `${result.trace.communityName} medication compliance ${movement}. Across the period, ${formatNumber(given)} of ${formatNumber(scheduled)} scheduled administrations were documented as given.`;
-      }
-      const sorted = [...rows].sort((left, right) => Number(left.value || 0) - Number(right.value || 0));
-      const lowest = sorted[0];
-      const highest = sorted.at(-1);
-      const period = formatTracePeriodRange(result.trace?.period) ?? result.visual?.subtitle;
-      const lowestCompliance = lowest?.cells?.at(-1) ?? (lowest?.value != null ? `${Number(lowest.value).toFixed(1)}%` : null);
-      const highestCompliance = highest?.cells?.at(-1) ?? (highest?.value != null ? `${Number(highest.value).toFixed(1)}%` : null);
-      if (lowest?.label && highest?.label) {
-        const scheduled = rows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Scheduled")) ?? 0), 0);
-        const given = rows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Given")) ?? 0), 0);
-        const weightedCompliance = scheduled ? formatOneDecimal(given / scheduled * 100) : null;
-        const largestNotGiven = [...rows].sort((left, right) => (parseDisplayNumber(visualCell(result, right, "Not given")) ?? 0) - (parseDisplayNumber(visualCell(result, left, "Not given")) ?? 0))[0];
-        if (result.trace?.communityName) {
-          const notGiven = rows.reduce((total, row) => total + (parseDisplayNumber(visualCell(result, row, "Not given")) ?? 0), 0);
-          const notGivenShare = scheduled ? formatOneDecimal(notGiven / scheduled * 100) : null;
-          return `${result.trace.communityName} medication compliance was ${weightedCompliance ?? lowestCompliance} in ${period || "the latest available month"}. Of ${formatNumber(scheduled)} scheduled administrations, ${formatNumber(given)} were documented as given and ${formatNumber(notGiven)} were not given${notGivenShare ? ` (${notGivenShare}%)` : ""}.`;
-        }
-        const largestNotGivenPeriod = visualCell(result, largestNotGiven, "Month");
-        const relativeLatest = isRelativeLatestIntent(text) || (result.certifiedQuestion?.id === "medication-compliance" && !hasExplicitMonthIntent(text));
-        const periodLead = period && relativeLatest
-          ? `${period} is the latest available medication month. Portfolio compliance`
-          : period
-            ? `${period} portfolio medication compliance`
-            : "Portfolio medication compliance";
-        return `${periodLead}${weightedCompliance ? ` was ${weightedCompliance}%: ${formatNumber(given)} of ${formatNumber(scheduled)} scheduled administrations were documented as given` : " is unavailable"}. Community results ranged from ${lowestCompliance} at ${lowest.label} to ${highestCompliance} at ${highest.label}. ${largestNotGiven.label} had the largest not-given count at ${visualCell(result, largestNotGiven, "Not given")}${largestNotGivenPeriod ? ` in ${largestNotGivenPeriod}` : ""}.`;
-      }
-      return `${period ? `${period} medication compliance` : "Medication compliance"} is summarized below.`;
-    }
-
-    if (result.tool === "medication_exception_detail") {
-      const rowCount = result.trace?.rowCount ?? result.visual?.originalRowCount ?? result.visual?.rows?.length ?? 0;
-      const note = String(result.trace?.note ?? "");
-      const kind = note.match(/kind=([^;]+)/i)?.[1]?.trim();
-      const scope = result.trace?.communityName ?? result.visual?.title?.split(" · ")?.[0] ?? "Portfolio";
-      const period = formatTracePeriodRange(result.trace?.period) ?? "the available period";
-      const noun = kind === "refusal"
-        ? "medication refusal records"
-        : kind === "late"
-          ? "late medication administrations"
-          : kind === "held"
-            ? "held or on-hold medication records"
-            : kind === "prn"
-              ? "PRN medication records"
-              : "MAR exception records";
-      if ((result.truthState ?? result.trace?.truthState) === "not_loaded") {
-        return `MAR exception detail is not published for ${scope} during ${period}. Community medication compliance and refusal totals are the supported path for now, but they do not include resident names, administration times, or exception reasons.`;
-      }
-      return `${scope} had ${formatNumber(rowCount)} matching ${noun} for ${period}.`;
+      if (!top) return `${title}: no current resident MAR summaries matched this scope.`;
+      const resident = top.cells?.[0] ?? top.label;
+      const given = top.cells?.[4] ?? "0";
+      return `${title}: ${formatNumber(rowCount)} resident summaries are available. ${resident} had ${given} administrations given in the last 30 days.`;
     }
 
     if (result.tool === "medication_orders_current") {

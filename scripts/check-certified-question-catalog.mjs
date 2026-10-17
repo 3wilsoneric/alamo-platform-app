@@ -5,7 +5,7 @@ import {
   matchCertifiedQuestion
 } from "../shared/certified-analyst-questions.mjs";
 
-const TARGET_EXAMPLE_COUNT = 200;
+const TARGET_EXAMPLE_COUNT = 203;
 const MIN_EXAMPLES_PER_FAMILY = 4;
 const MAX_QUESTION_LENGTH = 140;
 
@@ -104,6 +104,7 @@ const hiddenMenuFamilies = new Set([
   "resident-incident-history",
   "resident-risk-summary",
   "medication-refusal-detail",
+  "medication-exception-detail",
   "community-topline",
   "data-slice-catalog"
 ]);

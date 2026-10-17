@@ -1,6 +1,8 @@
-import { runCopilotTool } from "../server/copilot-tools.mjs";
+import { runCopilotTool, runRelevantCopilotTools } from "../server/copilot-tools.mjs";
 import { getReportsSummaryData } from "../server/platform-data.mjs";
 import { planAdHocModule } from "../shared/ad-hoc-module-spec.mjs";
+import { getPlatformModuleManifest } from "../shared/platform-module-registry.mjs";
+import { rankAnalysisSlicesForQuery } from "../shared/analysis-slice-catalog.mjs";
 import { createMedicationExceptionTools } from "../server/tools/medications.mjs";
 import { createMedicationOrderTools } from "../server/tools/medication-orders.mjs";
 import { buildResidentMedicationPresentation } from "../server/tools/resident-medications.mjs";
@@ -43,17 +45,17 @@ const cases = [
     tool: "medication_profile",
     visualType: "summary_card",
     visualTitleIncludes: "A & A Health Services San Pablo Medication Profile",
-    mustInclude: ["Answer\n", "medication compliance", "scheduled administrations"],
+    mustInclude: ["Answer\n", "medication administrations given"],
     mustExclude: ["Portfolio medication profile", "largest row", "Source:"],
-    requireVisualRowsWhenReady: 5
+    requireVisualRowsWhenReady: 1
   },
   {
     prompt: "who needs medication attention at San Pablo?",
     tool: "medication_watch",
     visualType: "table",
-    visualTitleIncludes: "A & A Health Services San Pablo Medication Watch",
+    visualTitleIncludes: "A & A Health Services San Pablo Administrations by Resident",
     expectedModuleId: "medication-watch",
-    mustInclude: ["Answer\n", "Medication Watch", "top medication watch"],
+    mustInclude: ["Answer\n", "administrations given"],
     mustExclude: ["Source:", "largest row"],
     requireVisualRowsWhenReady: 1,
     requiresMarReady: true
@@ -63,46 +65,28 @@ const cases = [
     tool: "medication_compliance",
     visualType: "line_chart",
     periodIncludes: ["2026-05", "2026-06"],
-    mustInclude: ["Answer\n", "May 2026 and June 2026", "Medication compliance uses scheduled administrations"],
+    mustInclude: ["Answer\n", "May 2026", "June 2026", "administrations given"],
     mustExclude: ["current-state data", "historical slice unavailable", "largest row"]
   },
   {
     prompt: "What medications had the most refusals at San Pablo in June 2026?",
-    tool: "medication_refusals_by_community",
-    visualTitleIncludes: "A & A Health Services San Pablo Medication Refusals",
-    periodIncludes: ["2026-06"],
-    mustInclude: ["Answer\n", "had the most"],
-    mustExclude: ["current-state data", "historical slice unavailable", "largest row"],
-    requiresMarReady: true
+    tool: "clarification",
+    expectedTruthState: "plan_rejected"
   },
   {
     prompt: "show San Pablo medication refusal detail in June 2026",
-    tool: "medication_exception_detail",
-    visualType: "table",
-    periodIncludes: ["2026-06"],
-    mustInclude: ["Answer\n", "matching medication refusal records"],
-    unavailableMustInclude: ["not available for June 2026", "available range", "I did not substitute a different period"],
-    mustExclude: ["current-state data", "historical slice unavailable", "largest row", "Source:"],
-    requiresMarReady: true,
-    requiresToolContextVersion: 8
+    tool: "clarification",
+    expectedTruthState: "plan_rejected"
   },
   {
     prompt: "show late medication administrations",
-    tool: "medication_exception_detail",
-    visualType: "table",
-    mustInclude: ["Answer\n", "late medication administrations"],
-    mustExclude: ["Source:", "largest row"],
-    requiresMarReady: true,
-    requiresToolContextVersion: 8
+    tool: "clarification",
+    expectedTruthState: "plan_rejected"
   },
   {
     prompt: "show PRN medication detail",
-    tool: "medication_exception_detail",
-    visualType: "table",
-    mustInclude: ["Answer\n", "PRN"],
-    mustExclude: ["Source:", "largest row"],
-    requiresMarReady: true,
-    requiresToolContextVersion: 8
+    tool: "clarification",
+    expectedTruthState: "plan_rejected"
   },
   {
     prompt: "show Shannon Romero medication profile",
@@ -276,8 +260,7 @@ function runSyntheticLoadedMarContract() {
   if (result.visual?.type !== "table" || (result.visual?.rows?.length ?? 0) !== 1) failures.push("synthetic MAR exception detail: expected one table row");
   if (!String(result.text ?? "").includes("1 refusal medication record")) failures.push("synthetic MAR exception detail: missing loaded refusal-record answer text");
   const moduleSpec = planAdHocModule("show San Pablo medication refusal detail in June 2026", result);
-  if (moduleSpec?.moduleId !== "medication-exceptions") failures.push(`synthetic MAR exception detail: expected medication-exceptions module, received ${moduleSpec?.moduleId ?? "none"}`);
-  if (moduleSpec?.templateId !== "data-table") failures.push(`synthetic MAR exception detail: expected data-table template, received ${moduleSpec?.templateId ?? "none"}`);
+  if (moduleSpec) failures.push("synthetic MAR exception detail: retired source-only rows must not create a presentation module");
 }
 
 function runSyntheticCurrentMedicationOrdersContract() {
@@ -398,6 +381,15 @@ for (const testCase of cases) {
   if (!result.runtimeSchema?.valid) {
     failures.push(`${testCase.prompt}: runtime schema invalid ${JSON.stringify(result.runtimeSchema?.errors ?? [])}`);
   }
+  if (testCase.expectedTruthState) {
+    if (result.truthState !== testCase.expectedTruthState) {
+      failures.push(`${testCase.prompt}: expected ${testCase.expectedTruthState}, received ${result.truthState ?? "none"}`);
+    }
+    if (result.artifact || /medication refusal|refused meds?/i.test(text)) {
+      failures.push(`${testCase.prompt}: retired category was displayed or exported`);
+    }
+    continue;
+  }
   if (result.planValidation && result.planValidation.valid !== true) {
     failures.push(`${testCase.prompt}: plan validation failed ${JSON.stringify(result.planValidation.errors ?? [])}`);
   }
@@ -459,6 +451,24 @@ for (const testCase of cases) {
   if ((result.actions ?? []).length > 2) {
     failures.push(`${testCase.prompt}: returned too many actions`);
   }
+}
+
+const retiredAssisted = await runRelevantCopilotTools({ content: "show medication refusals by community" });
+if (retiredAssisted.length !== 1 || retiredAssisted[0]?.tool !== "clarification" || retiredAssisted[0]?.visual) {
+  failures.push("AI-assisted route exposed a retired medication breakdown");
+}
+const givenAssisted = await runRelevantCopilotTools({ content: "show administrations given by community" });
+if (!givenAssisted.some((result) => result.tool === "medication_compliance") ||
+  givenAssisted.some((result) => ["incident_breakdown", "incident_detail_list", "medication_exception_detail"].includes(result.tool))) {
+  failures.push("AI-assisted given-administrations route mixed unrelated data");
+}
+if (getPlatformModuleManifest().some((module) => /refusal|exception|late medication|held medication/i.test(module.title))) {
+  failures.push("visible module catalog includes a retired medication breakdown");
+}
+if (rankAnalysisSlicesForQuery("list MAR exception rows by resident").some(({ slice }) =>
+  ["medication_refusal_summary", "mar_exception_detail_90d", "mar_prn_effectiveness_90d"].includes(slice.id)
+)) {
+  failures.push("slice discovery includes a retired medication breakdown");
 }
 
 if (failures.length) {

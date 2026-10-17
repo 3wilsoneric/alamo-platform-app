@@ -36,7 +36,7 @@ const rankCases = [
   ["pivot San Pablo incidents by category for June 2026", "incident_monthly_by_community_category"],
   ["group census by month for San Pablo from March through June 2026", "census_monthly_by_community"],
   ["slice medication compliance by community for June 2026", "medication_compliance_monthly"],
-  ["list MAR exception rows by resident", "mar_exception_detail_90d"],
+  ["slice administrations given by resident", "mar_resident_summary"],
   ["slice documentation gaps by resident", "documentation_status"],
   ["group resident incidents by resident", "resident_incident_summary"],
   ["slice resident medication summary by resident", "mar_resident_summary"],
@@ -60,6 +60,9 @@ for (const [prompt, expectedSlice] of rankCases) {
     }))
   });
 }
+
+const retiredRank = rankAnalysisSlicesForQuery("list MAR exception rows by resident");
+assert(!retiredRank.some(({ slice }) => slice.id === "mar_exception_detail_90d"), "retired MAR detail slice was discoverable");
 
 const routeCases = [
   {

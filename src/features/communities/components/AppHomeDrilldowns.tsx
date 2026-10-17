@@ -17,16 +17,6 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-function formatPercent(value: number) {
-  if (!Number.isFinite(value)) return "—";
-  return `${value.toFixed(1)}%`;
-}
-
-function getPercentWidth(value: number) {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(Math.min(value, 100), 0);
-}
-
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-[#ddd4c8] bg-white/72 px-3 py-3">
@@ -97,28 +87,26 @@ export function MedicationComplianceDrilldownModal({
     not_given: number;
     compliance_pct: number;
   } | null;
-  series: Array<{ monthLabel: string; compliancePct: number; totalScheduled: number; notGiven: number }>;
+  series: Array<{ monthLabel: string; given: number }>;
   onClose: () => void;
 }) {
   if (!open) return null;
 
   return (
     <ReportingDrilldownShell
-      eyebrow="Medication Watch"
-      title={`${facilityName} Compliance Detail`}
-      subtitle="This view stays inside medication reporting and uses the real compliance rows already loaded in the reporting snapshot."
+      eyebrow="Medication administration"
+      title={`${facilityName} administrations given`}
+      subtitle="Recorded administrations given from the reporting snapshot."
       onClose={onClose}
     >
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2">
         <DetailStat label="Reporting Month" value={latestMonthLabel} />
-        <DetailStat label="Compliance" value={latestRow ? formatPercent(latestRow.compliance_pct) : "—"} />
-        <DetailStat label="Scheduled" value={latestRow ? formatNumber(latestRow.total_scheduled) : "—"} />
-        <DetailStat label="Not Given" value={latestRow ? formatNumber(latestRow.not_given) : "—"} />
+        <DetailStat label="Given" value={latestRow ? formatNumber(latestRow.given) : "—"} />
       </div>
 
       <div className="mt-4 rounded-[22px] border border-[#ddd4c8] bg-white/70 p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7c664c]">
-          Six-month compliance history
+          Six-month administration history
         </div>
         <div className="mt-3 space-y-2">
           {series.map((row) => (
@@ -129,19 +117,9 @@ export function MedicationComplianceDrilldownModal({
                     {row.monthLabel}
                   </div>
                   <div className="mt-1 text-[18px] font-semibold tracking-[-0.03em] text-[#201a14]">
-                    {formatPercent(row.compliancePct)}
+                    {formatNumber(row.given)} given
                   </div>
                 </div>
-                <div className="text-right text-[12px] leading-6 text-[#736657]">
-                  <div>Scheduled {formatNumber(row.totalScheduled)}</div>
-                  <div>Not given {formatNumber(row.notGiven)}</div>
-                </div>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#ece5db]">
-                <div
-                  className="h-full rounded-full bg-[#0f8b73]"
-                  style={{ width: `${getPercentWidth(row.compliancePct)}%` }}
-                />
               </div>
             </div>
           ))}

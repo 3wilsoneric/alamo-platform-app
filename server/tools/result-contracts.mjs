@@ -336,15 +336,7 @@ export function createStructuredToolResultRenderer({
     }
 
     if (contract.id === "medication") {
-      if (result?.tool === "medication_profile") return null;
-      if (result?.tool === "medication_exception_detail") {
-        return "MAR exception detail includes refusal, not-given, late, held, and PRN-related records when those records are available.";
-      }
-      if (result?.tool === "medication_orders_current") return null;
-      if (result?.tool === "medication_refusals_by_community") {
-        return null;
-      }
-      return "Medication compliance uses scheduled administrations as the denominator when MAR data is available.";
+      return null;
     }
 
     if (contract.id === "availability") {
@@ -461,7 +453,7 @@ export function createStructuredToolResultRenderer({
       facts = facts.filter((fact) => !/^Discharges are not populated\b/i.test(fact));
     }
 
-    if (["medication_refusals_by_community", "operating_snapshot"].includes(result?.tool)) {
+    if (["medication_refusals_by_community", "medication_compliance", "medication_exception_detail", "operating_snapshot"].includes(result?.tool)) {
       facts = [];
     }
 
@@ -473,9 +465,6 @@ export function createStructuredToolResultRenderer({
 
     if (result?.tool === "medication_profile") {
       facts = facts.filter((fact) => !/^The published given and not-given totals\b/i.test(fact));
-      if (result?.summary?.refusalCoverage === "legacy_cumulative") {
-        facts = ["Monthly refusal counts are not available for this period."];
-      }
     }
 
     if (result?.tool === "module_catalog") {
@@ -507,7 +496,7 @@ export function createStructuredToolResultRenderer({
     if (facts.length === 0 && !result?.safeRefusal) {
       const truthState = String(result?.truthState ?? result?.trace?.truthState ?? "").trim();
       if (result?.tool === "medication_watch" && truthState === "not_loaded") {
-        facts.push("Medication watch requires resident-level MAR summary data in the active snapshot.");
+        facts.push("Administrations by resident require resident-level MAR summary data in the active snapshot.");
       } else if (truthState === "not_loaded" && !/\b(no substitute data|did not run a replacement|no replacement query)\b/i.test(answer)) {
         facts.push("The requested slice is unavailable in the active snapshot. No substitute data was used.");
       } else if (truthState === "plan_rejected") {

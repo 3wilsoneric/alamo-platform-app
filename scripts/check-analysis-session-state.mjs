@@ -290,7 +290,7 @@ assert(String(sanPabloMedicationProfile.trace?.facilityId) === "337", "medicatio
 const sanPabloMedicationCompliance = await runCopilotTool({ content: "Show me its compliance for the latest month.", sessionId: medicationSessionId });
 assert(String(sanPabloMedicationCompliance.trace?.facilityId) === "337", "possessive medication follow-up lost community scope", sanPabloMedicationCompliance);
 const sanPabloMedicationRefusals = await runCopilotTool({ content: "What medications had the most refusals?", sessionId: medicationSessionId });
-assert(String(sanPabloMedicationRefusals.trace?.facilityId) === "337", "same-domain medication follow-up lost community scope", sanPabloMedicationRefusals);
+assert(sanPabloMedicationRefusals.tool === "clarification" && sanPabloMedicationRefusals.truthState === "plan_rejected", "retired medication breakdown was not rejected", sanPabloMedicationRefusals);
 
 const refinementSessionId = `analysis-refinement-check-${Date.now()}`;
 const trend = await runCopilotTool({ content: "compare census trends across communities from January through June 2026", sessionId: refinementSessionId });

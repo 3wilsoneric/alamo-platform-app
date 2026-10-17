@@ -103,10 +103,10 @@ const SOURCE_LANES: SourceLane[] = [
     kicker: "Medication operations",
     title: "MAR / eMAR",
     description:
-      "Medication orders and administration records are transformed into compliance, exception, refusal, held, pending, duplicate, and PRN evidence.",
+      "Medication orders and administration records are transformed into governed administration evidence.",
     items: [
       "Current orders and medication profiles",
-      "Administrations, outcomes, and compliance",
+      "Administrations given and orders",
       "Bounded exception and PRN detail windows",
     ],
     note: "Medication questions use the loaded MAR period; unavailable detail is never converted to zero.",
@@ -240,7 +240,7 @@ const CAPABILITIES: Capability[] = [
     status: "live",
     title: "Medication operations",
     source: "MAR gold views + snapshot",
-    available: "Orders, administrations, compliance, refusals, held and pending outcomes, duplicates, exceptions, and PRN detail.",
+    available: "Orders and administrations given, with source records retained for authorized audit workflows.",
     boundary: "Each answer is restricted to the loaded medication period and supported row grain.",
   },
   {

@@ -2,7 +2,6 @@ export function createMetricSliceTools({
   average,
   buildIncidentCategoryComparisonTool,
   buildUnavailablePeriodResult,
-  calculateWeightedCompliance,
   countBySum,
   filterByFacility,
   filterIncidentsByCategory,
@@ -17,7 +16,6 @@ export function createMetricSliceTools({
   getIncidentCategoryFilter,
   getIncidentRows,
   getMedicationComplianceRows,
-  getMedicationRefusalRows,
   getPortfolioFallbackScopes,
   getRequestedMonthBuckets,
   getResidentRows,
@@ -36,7 +34,7 @@ export function createMetricSliceTools({
     if (/\b(census|occupancy|headcount|population|resident count)\b/.test(text)) return "census";
     if (/\b(incident|incidents|awol|elopement)\b/.test(text)) return "incidents";
     if (isAdmissionIntent(content)) return "residents";
-    if (/\b(compliance|given|scheduled)\b/.test(text) && /\b(medication|meds|emar)\b/.test(text)) return "medication_compliance";
+    if (/\b(administration|administrations)\b/.test(text) || (/\b(compliance|given|scheduled)\b/.test(text) && /\b(medication|meds|emar|mar)\b/.test(text))) return "medication_compliance";
     if (/\b(refusal|refusals|refused|not given)\b/.test(text)) return "medication_refusals";
     if (/\b(documentation|doc gap|note gap|last note|care note)\b/.test(text)) return "documentation";
     if (/\b(age|ages|demographic|demographics)\b/.test(text)) return "age";
@@ -72,6 +70,15 @@ export function createMetricSliceTools({
   function buildSliceMetricTool(content, communities, reportsSummary) {
     const facility = findFacility(content, communities);
     const metric = getMetricIntent(content);
+    if (metric === "medication_refusals") {
+      return {
+        handled: true,
+        tool: "slice_metric",
+        truthState: "plan_rejected",
+        text: "That breakdown is not available in this view. Ask for administrations given by community or month.",
+        trace: makeTrace({ tool: "slice_metric", dataSource: "current presentation policy", rowCount: 0, truthState: "plan_rejected" })
+      };
+    }
     const group = getGroupIntent(content, metric);
     const label = facility?.community_name ?? "Portfolio";
     let rows = [];
@@ -205,24 +212,13 @@ export function createMetricSliceTools({
       grouped = (group === "month" && !wantsAllRows(content) ? sortedGroups.slice(-12) : sortedGroups)
         .map(([key, keyRows]) => [
           group === "month" ? formatMonthLabel(key) : key,
-          calculateWeightedCompliance(keyRows).compliancePct ?? 0
+          sum(keyRows, (row) => row.total_given ?? row.given ?? 0)
         ]);
-      title = `${label} Medication Compliance`;
+      title = `${label} Administrations Given`;
       subtitle = group === "month" ? "By month" : `${formatMonthLabel(latest)} by community`;
-      columns = [group === "month" ? "Month" : "Community", "Compliance %"];
-      valueLabel = "Compliance %";
-      dataSource = "medication compliance monthly records";
-    } else if (metric === "medication_refusals") {
-      rows = filterByFacility(getMedicationRefusalRows(reportsSummary), facility);
-      const groupKey = group === "medication" || facility
-        ? (row) => row.medication || "Unspecified"
-        : (row) => getFacilityNameById(communities, row.facility_id);
-      grouped = countBySum(rows, groupKey, (row) => row.refusals);
-      title = `${label} Medication Refusals`;
-      subtitle = group === "medication" || facility ? "By medication" : "By community";
-      columns = [group === "medication" || facility ? "Medication" : "Community", "Refusals"];
-      valueLabel = "Refusals";
-      dataSource = "medication refusal summary records";
+      columns = [group === "month" ? "Month" : "Community", "Given"];
+      valueLabel = "Given";
+      dataSource = "monthly MAR administration records";
     } else if (metric === "documentation") {
       rows = filterByFacility(getDocumentationRows(reportsSummary), facility);
       if (group === "resident" || facility) {
@@ -296,6 +292,15 @@ export function createMetricSliceTools({
 
   function buildComparePeriodsTool(content, communities, reportsSummary) {
     const normalizedContent = normalizeText(content);
+    if (getMetricIntent(content) === "medication_refusals") {
+      return {
+        handled: true,
+        tool: "compare_periods",
+        truthState: "plan_rejected",
+        text: "That breakdown is not available in this view. Ask to compare administrations given between two months.",
+        trace: makeTrace({ tool: "compare_periods", dataSource: "current presentation policy", rowCount: 0, truthState: "plan_rejected" })
+      };
+    }
     if (/\b(incident|incidents)\b/.test(normalizedContent) && /\b(category|categories|type|types|breakdown)\b/.test(normalizedContent)) {
       return buildIncidentCategoryComparisonTool(content, communities, reportsSummary);
     }
@@ -352,20 +357,20 @@ export function createMetricSliceTools({
     const valueForMonth = (month) => {
       const rows = sourceRows.filter((row) => row.month_bucket === month);
       if (metric === "census") return sum(rows, (row) => row.census);
-      if (metric === "medication_compliance") return calculateWeightedCompliance(rows).compliancePct ?? 0;
+      if (metric === "medication_compliance") return sum(rows, (row) => row.total_given ?? row.given ?? 0);
       return sum(rows, (row) => row.incident_count);
     };
     const leftValue = valueForMonth(leftMonth);
     const rightValue = valueForMonth(rightMonth);
     const delta = rightValue - leftValue;
-    const valueLabel = metric === "census" ? "Census" : metric === "medication_compliance" ? "Compliance %" : "Incidents";
+    const valueLabel = metric === "census" ? "Census" : metric === "medication_compliance" ? "Administrations given" : "Incidents";
 
     return {
       handled: true,
       tool: "compare_periods",
       text: [
         `${label} ${valueLabel.toLowerCase()} comparison`,
-        `${formatMonthLabel(leftMonth)}: ${Number(leftValue).toFixed(metric === "medication_compliance" ? 1 : 0)}. ${formatMonthLabel(rightMonth)}: ${Number(rightValue).toFixed(metric === "medication_compliance" ? 1 : 0)} (${formatSigned(delta)}).`
+        `${formatMonthLabel(leftMonth)}: ${formatNumber(leftValue)}. ${formatMonthLabel(rightMonth)}: ${formatNumber(rightValue)} (${formatSigned(delta)}).`
       ].join("\n"),
       trace: makeTrace({
         tool: "compare_periods",

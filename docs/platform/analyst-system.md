@@ -136,10 +136,10 @@ rendered HTML plus an idempotency key and must deduplicate repeated keys.
 The weekly runner composes the same registered question routes used in the
 interactive workspace. It does not run arbitrary prompts.
 
-- executive: operating snapshot, community comparison, current incidents, and medication compliance
-- operations: census movement, incident rate, current incidents, and medication compliance
-- clinical: medication compliance, diagnosis mix, and current incidents
-- community leader: community status, incident categories, and medication compliance history for that community
+- executive: operating snapshot, community comparison, current incidents, and administrations given
+- operations: census movement, incident rate, current incidents, and administrations given
+- clinical: administrations given, diagnosis mix, and current incidents
+- community leader: community status, incident categories, and administrations given by month for that community
 
 Each audience is isolated. A failed plan is recorded without preventing the
 other plans from completing. Missing recipients cause a safe skip. Scheduled
@@ -195,9 +195,8 @@ Certified rails improve repeatability for:
 - incident breakdowns, detail lists, exports, comparisons, rates
 - census trends, movement, and drop history
 - resident profiles/search
-- medication compliance/refusals/profile
-- resident MAR profile and medication exception detail
-- medication watchlists for resident-level MAR attention signals
+- medication profile and administrations given by community or month
+- resident MAR profile and administrations given by resident
 - community operating summaries
 
 Every visible menu question has a stable route ID. The route fixes the question
@@ -340,7 +339,8 @@ Rules for slice discovery:
 - explicit `slice`, `pivot`, `group by`, `group X by Y`, `break out`, or custom field prompts can use `slice_discovery`
 - known visual modules such as heatmaps stay on their dedicated tools
 - plain category/community breakdown prompts stay on `slice_metric`
-- loaded slices include incident detail history, incident monthly category rows, census monthly rows, governed MAR monthly rows, complete bounded MAR exception and PRN detail, current medication orders, resident MAR summary, resident incident rollups, enriched resident profile, documentation status, medication refusal summary, and community operating summary
+- discoverable slices include incident detail history, incident monthly category rows, census monthly rows, governed administrations-given rows, current medication orders, resident administrations-given summary, resident incident rollups, enriched resident profile, documentation status, and community operating summary
+- source MAR exception and PRN rows remain in the governed snapshot for authorized audit use, but Analyst does not suggest or render them as ordinary medication analytics
 - detail-style slice results preview a bounded table in-chat while preserving the full exact row set as a CSV artifact with row-set provenance
 - missing resident incident rollups can be derived from incident detail history; missing resident MAR summaries may fall back to enriched resident rows without inventing MAR counts
 - every result still goes through execution-plan validation, truth state, schema validation, and answer formatting

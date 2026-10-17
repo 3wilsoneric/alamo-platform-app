@@ -111,21 +111,24 @@ const visualCases = [
     name: "Incident category breakdown visual",
     kind: "visual",
     prompt: "What is the incident category breakdown for JC Wallace in June 2026?",
-    expect: [/JC Wallace House/i, /Incident Category Breakdown/i, /Jun|June 2026/i, /Medical Emergency|AWOL\/Elopement|Medication Refusal/i],
+    expect: [/JC Wallace House/i, /Incident Category Breakdown/i, /Jun|June 2026/i, /Medical Emergency|AWOL\/Elopement/i],
+    reject: [/Medication Refusal|Aggressive Behavior|Substance Use/i],
     requireVisualStructure: true
   },
   {
     name: "Historical community incident visual",
     kind: "visual",
     prompt: "What were San Pablo incident categories in January 2026?",
-    expect: [/A & A Health Services San Pablo/i, /Jan|January 2026/i, /Medication Refusal|AWOL\/Elopement/i],
+    expect: [/A & A Health Services San Pablo/i, /Jan|January 2026/i, /AWOL\/Elopement/i],
+    reject: [/Medication Refusal|Aggressive Behavior|Substance Use/i],
     requireVisualStructure: true
   },
   {
     name: "Incident category comparison visual",
     kind: "visual",
     prompt: "How did San Pablo incidents compare from May to June by category?",
-    expect: [/A & A Health Services San Pablo/i, /May 2026/i, /Jun|June 2026/i, /Medication Refusal|AWOL\/Elopement/i],
+    expect: [/A & A Health Services San Pablo/i, /May 2026/i, /Jun|June 2026/i, /AWOL\/Elopement/i],
+    reject: [/Medication Refusal|Aggressive Behavior|Substance Use/i],
     requireVisualStructure: true
   },
   {
@@ -151,45 +154,43 @@ const marVisualCases = [
     selection: { questionId: "medication-profile" },
     expect: [
       /A & A Health Services San Pablo Medication Profile/i,
-      /Compliance/i,
-      /Scheduled/i,
-      /Not given/i,
-      /Resident summaries/i,
-      /Medication exceptions/i
-    ]
+      /Given/i,
+      /Recorded administrations/i
+    ],
+    reject: [/Not given/i, /Medication exceptions/i]
   },
   {
-    name: "MAR medication watch module",
+    name: "MAR administrations by resident module",
     kind: "visual",
-    prompt: "Show the resident medication watchlist for San Pablo.",
-    selection: { questionId: "medication-watch", searchText: "medication watch" },
+    prompt: "Show administrations given by resident for San Pablo.",
+    selection: { questionId: "medication-watch", searchText: "administrations by resident" },
     expect: [
-      /A & A Health Services San Pablo Medication Watch/i,
-      /watch item/i,
-      /refusals in 30 days|not given in 30 days|compliance/i
+      /A & A Health Services San Pablo Administrations by Resident/i,
+      /Given, 30 days/i
     ],
+    reject: [/refusals in 30 days|not given in 30 days|compliance/i],
     requireVisualStructure: true
   },
   {
-    name: "MAR refusal detail module",
+    name: "MAR administrations by community module",
     kind: "visual",
-    prompt: "show San Pablo medication refusal detail in June 2026",
-    selection: { questionId: "medication-refusal-detail" },
+    prompt: "Show administrations given by community.",
+    selection: { questionId: "medication-compliance" },
     expect: [
-      /A & A Health Services San Pablo Medication Refusals/i,
-      /Top refused medications/i,
-      /Refusals/i
+      /Portfolio Administrations Given/i,
+      /Given/i
     ],
+    reject: [/Top refused medications|Refusals|Not given/i],
     requireVisualStructure: true
   },
   {
     name: "Resident medication profile card",
     kind: "visual",
     prompt: "review a current resident's medication summary",
-    selection: { questionId: "resident-current-medications" },
+    selection: { questionId: "resident-current-medications", searchText: "Review a resident's medication summary" },
     expect: [
-      /Active medications|Medication summary/i,
-      /MAR compliance, 30 days|Not published in this resident directory/i
+      /Resident #/i,
+      /Given, 30 days|Not published in this resident directory/i
     ]
   }
 ];
@@ -552,6 +553,7 @@ async function main() {
       const medicationCase = allCases.find((testCase) => testCase.name === "Resident medication profile card");
       if (medicationCase) {
         medicationCase.prompt = `review ${profile.name}'s medication summary`;
+        medicationCase.selection = { ...medicationCase.selection, residentName: profile.name };
         medicationCase.expect = [exactTextPattern(profile.name), exactTextPattern(profile.community), ...medicationCase.expect];
       }
     }
