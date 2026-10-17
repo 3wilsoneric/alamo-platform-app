@@ -234,7 +234,9 @@ await withBrowserQa(async (browser) => {
 
       const routeFailures = loadFailure ? [`Route did not settle: ${loadFailure}`] : await routeContracts(page, route, viewport);
       const layout = await inspectMobileLayout(page);
-      if (layout.pathname !== route.pathname) routeFailures.push(`Expected ${route.pathname}, rendered ${layout.pathname}`);
+      // The owner opens Licensing as an Agent skill; the legacy deep link redirects there.
+      const expectedPathname = route.name === "licensing" ? "/analytics/agent" : route.pathname;
+      if (layout.pathname !== expectedPathname) routeFailures.push(`Expected ${expectedPathname}, rendered ${layout.pathname}`);
       if (layout.rootOverflow > 2 || layout.bodyOverflow > 2) routeFailures.push(`Document overflowed by ${layout.rootOverflow}px root / ${layout.bodyOverflow}px body`);
       if (layout.clippedControls.length) routeFailures.push(`Clipped controls: ${JSON.stringify(layout.clippedControls)}`);
       if (layout.zoomRiskInputs.length) routeFailures.push(`Sub-16px form controls: ${JSON.stringify(layout.zoomRiskInputs)}`);
