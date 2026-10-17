@@ -275,7 +275,7 @@ const questionMarathonCases = [
     expect: {
       tools: ["medication_profile"],
       facilityId: "337",
-      textIncludes: ["A & A Health Services San Pablo", "Compliance"]
+      textIncludes: ["A & A Health Services San Pablo", "administrations given"]
     }
   },
   {
@@ -289,11 +289,11 @@ const questionMarathonCases = [
     }
   },
   {
-    prompt: "What medications had the most refusals?",
+    prompt: "Show portfolio medication administrations given by community.",
     expect: {
-      tools: ["medication_refusals_by_community", "ad_hoc_medication_chart"],
-      textIncludes: ["refus"],
-      visualType: "bar_chart"
+      tools: ["medication_compliance"],
+      textIncludes: ["given"],
+      visualType: "table"
     }
   },
   {

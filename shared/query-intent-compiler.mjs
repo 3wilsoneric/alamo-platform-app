@@ -315,6 +315,7 @@ export function selectToolForFrame(frame, fallbackTool = null) {
     ) &&
     !/\b(how many|count|total|number of|list|every|all|rows?|export|download|csv)\b/i.test(sourcePrompt);
   if (communityOperatingHistoryPrompt) return "community_history";
+  if (/\b(administrations? (?:given )?by resident|resident mar administration summary)\b/i.test(sourcePrompt)) return "medication_watch";
   if (frame.metric === "census" && (frame.calculation === "data_quality" || isCensusQualityIntent(normalizedPrompt) || isWeeklyCensusIntent(normalizedPrompt))) return "slice_discovery";
   if (frame.metric === "residents" && frame.calculation === "resident_flow" && isMonthlyResidentFlowIntent(normalizedPrompt)) return "slice_discovery";
   if (["census", "incidents"].includes(frame.metric) && ["heatmap", "multi_series"].includes(frame.presentation)) return "community_time_series";
@@ -336,10 +337,7 @@ export function selectToolForFrame(frame, fallbackTool = null) {
     ) &&
     !/\b(how many|count|total|number of|list|every|all|rows?|export|download|csv)\b/i.test(sourcePrompt);
   if (!frame.metric && frame.facilityId && (periods.length || broadCommunityHistoryPrompt)) return "community_history";
-  const medicationExceptionDetailIntent = /\b(exception|exceptions|not given|missed|held|late|prn)\b/i.test(sourcePrompt) ||
-    (/\b(refusal|refusals|refused|medication|medications|meds|emar|mar)\b/i.test(sourcePrompt) &&
-      /\b(detail|details|list|every|all|rows?|who|resident|residents|client|clients|reason|reasons|recent|last 90)\b/i.test(sourcePrompt) &&
-      !/\b(compliance|scheduled)\b/i.test(sourcePrompt));
+  const medicationExceptionDetailIntent = /\b(exception|exceptions|refusal|refusals|refused|not[ -]given|missed|held|late|prn)\b/i.test(sourcePrompt);
   const medicationWatchIntent = /\b(medication|medications|meds|emar|mar|refusal|refusals|not given|prn)\b/i.test(sourcePrompt) &&
     /\b(watch|watchlist|watch list|attention|risk|problem|problems|issue|issues|top residents?|top clients?|drivers?|who needs|highest|most)\b/i.test(sourcePrompt) &&
     !/\b(which medication|what medication|what medications|top refused medications|top refused meds|by medication)\b/i.test(sourcePrompt);

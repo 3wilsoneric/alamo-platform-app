@@ -1,3 +1,5 @@
+import { isRetiredMedicationBreakdownRequest } from "../../shared/medication-presentation-policy.mjs";
+
 export function isAdmissionIntent(content, normalizeText = defaultNormalizeText) {
   const text = normalizeText(content);
   return /\b(admissions?|admitted|admits?|admit|intakes?|move[\s-]?ins?|move[\s-]?in|new residents?|new clients?)\b/.test(text);
@@ -128,21 +130,7 @@ export function createDatasetRowNormalizer({
           month_bucket: normalizeMonthBucket(firstPresent(row, ["month_bucket", "reporting_month", "month"])),
           facility_id: firstPresent(row, ["facility_id", "Facility", "facility"]),
           community_name: communityName,
-          total_scheduled: Number(firstPresent(row, ["total_scheduled", "scheduled", "scheduled_count"]) || 0),
-          total_given: Number(firstPresent(row, ["total_given", "given", "given_count"]) || 0),
-          compliance_pct: Number(firstPresent(row, ["compliance_pct", "compliance", "compliance_rate"]) || 0)
-        };
-      }
-
-      if (dataset === "refusals") {
-        return {
-          month_bucket: normalizeMonthBucket(firstPresent(row, ["month_bucket", "reporting_month", "month"])),
-          facility_id: firstPresent(row, ["facility_id", "Facility", "facility"]),
-          community_name: communityName,
-          medication: firstPresent(row, ["medication", "medication_name", "drug_name"]),
-          total_scheduled: Number(firstPresent(row, ["total_scheduled", "scheduled", "scheduled_count"]) || 0),
-          refusals: Number(firstPresent(row, ["refusals", "refusal_count", "refused"]) || 0),
-          refusal_pct: Number(firstPresent(row, ["refusal_pct", "refusal_rate"]) || 0)
+          total_given: Number(firstPresent(row, ["total_given", "given", "given_count"]) || 0)
         };
       }
 
@@ -216,7 +204,6 @@ export function createGenericDetailListTools({
     if (isAdmissionIntent(content, normalizeText)) return "admissions";
     if (/\b(resident|residents|roster|age|los|length of stay|diagnosis|payor|physician)\b/.test(text)) return "residents";
     if (/\b(census|occupancy|headcount|population)\b/.test(text)) return "census";
-    if (/\b(refusal|refused)\b/.test(text)) return "refusals";
     if (/\b(medication|meds|emar|compliance)\b/.test(text)) return "medicationCompliance";
     if (/\b(documentation|note gap|doc gap)\b/.test(text)) return "documentationGaps";
     return "summary";
@@ -244,7 +231,6 @@ export function createGenericDetailListTools({
     }
     if (dataset === "census") return filterByFacility(enrichRowsWithFacilityName(communities.census, communities), facility);
     if (dataset === "medicationCompliance") return filterByFacility(reportsSummary.medicationCompliance, facility);
-    if (dataset === "refusals") return filterByFacility(enrichRowsWithFacilityName(reportsSummary.refusalByMedication, communities), facility);
     if (dataset === "documentationGaps") return filterByFacility(reportsSummary.documentationGaps, facility);
     return communities.facilities.map((facilityRow) => ({
       facility_id: facilityRow.facility_id,
@@ -285,6 +271,15 @@ export function createGenericDetailListTools({
   }
 
   function buildExportTool(content, communities, reportsSummary) {
+    if (isRetiredMedicationBreakdownRequest(content)) {
+      return {
+        handled: true,
+        tool: "export_csv",
+        truthState: "plan_rejected",
+        text: "That breakdown is not available for export. Ask for administrations given by community or month.",
+        trace: makeTrace({ tool: "export_csv", dataSource: "current presentation policy", rowCount: 0, truthState: "plan_rejected" })
+      };
+    }
     const selection = selectDatasetRows(content, communities, reportsSummary);
     const { dataset, facility, rows, requestedMonths, missingMonths, categoryFilter, categoryLabel, availableMonths, portfolioAvailableMonths, rowSetId } = selection;
     const aggregateCategoryTotal = dataset === "incidents" && categoryFilter && requestedMonths.length
@@ -316,7 +311,14 @@ export function createGenericDetailListTools({
         trace: makeTrace({ tool: "export_csv", dataSource: "incident export grain validation", rowCount: rows.length, facility, period: requestedMonths.join(", "), note: categoryLabel ? `category=${categoryLabel}; grain mismatch` : "grain mismatch", truthState: "plan_rejected" })
       };
     }
-    const csv = rowsToCsv(rows);
+    const exportRows = dataset === "medicationCompliance"
+      ? rows.map((row) => ({
+          month: row.month_bucket,
+          community: row.community_name,
+          administrations_given: row.total_given
+        }))
+      : rows;
+    const csv = rowsToCsv(exportRows);
     const label = facility?.community_name ?? "portfolio";
     const datasetLabel = dataset === "admissions" || (dataset === "residents" && isAdmissionIntent(content, normalizeText))
       ? "admission"
@@ -326,10 +328,8 @@ export function createGenericDetailListTools({
           ? "resident"
           : dataset === "documentationGaps"
             ? "documentation"
-            : dataset === "refusals"
-              ? "medication refusal"
-              : dataset === "compliance"
-                ? "medication compliance"
+            : dataset === "medicationCompliance"
+              ? "administrations given"
                 : dataset;
     const scopeSlug = [label, datasetLabel, categoryFilter === "awol" ? "awol-elopement" : categoryFilter, requestedMonths.join("-")].filter(Boolean).join("-").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const filename = `${scopeSlug}.csv`;
@@ -345,6 +345,15 @@ export function createGenericDetailListTools({
   }
 
   function buildDetailListTool(content, communities, reportsSummary) {
+    if (isRetiredMedicationBreakdownRequest(content)) {
+      return {
+        handled: true,
+        tool: "detail_list",
+        truthState: "plan_rejected",
+        text: "That breakdown is not available in this view. Ask for administrations given by community or month.",
+        trace: makeTrace({ tool: "detail_list", dataSource: "current presentation policy", rowCount: 0, truthState: "plan_rejected" })
+      };
+    }
     const selection = selectDatasetRows(content, communities, reportsSummary);
     const { dataset, facility, rows, requestedMonths, missingMonths, availableMonths, portfolioAvailableMonths, rowSetId } = selection;
     const label = facility?.community_name ?? "Portfolio";
@@ -377,26 +386,24 @@ export function createGenericDetailListTools({
         cells: (row) => [formatDateLabel(row.admit_date), row.community_name, row.resident_name, formatDateLabel(row.discharge_date), row.episode_status, row.discharge_reason ?? row.discharge_destination]
       },
       census: { title: "Census Detail", columns: ["Month", "Community", "Census"], cells: (row) => [formatMonthLabel(row.month_bucket), row.community_name, row.census] },
-      medicationCompliance: { title: "Medication Compliance Detail", columns: ["Month", "Community", "Scheduled", "Given", "Compliance %"], cells: (row) => [formatMonthLabel(row.month_bucket), row.community_name, row.total_scheduled, row.total_given, row.compliance_pct] },
-      refusals: { title: "Medication Refusal Detail", columns: ["Month", "Community", "Medication", "Scheduled", "Refusals", "Refusal %"], cells: (row) => [formatMonthLabel(row.month_bucket), row.community_name, row.medication, row.total_scheduled, row.refusals, row.refusal_pct] },
+      medicationCompliance: { title: "Administrations Given Detail", columns: ["Month", "Community", "Given"], cells: (row) => [formatMonthLabel(row.month_bucket), row.community_name, row.total_given] },
       documentationGaps: { title: "Documentation Gap Detail", columns: ["Community", "Resident", "Last note", "Days since last note"], cells: (row) => [row.community_name, row.resident_name, formatDateLabel(row.last_note_date), row.days_since_last_note] },
       summary: { title: "Community Summary Detail", columns: ["Community", "Residents"], cells: (row) => [row.community_name, row.total_residents] }
     };
     const presentation = presentations[dataset] ?? presentations.summary;
     const visualRows = rows.map((row, index) => ({
       label: String(admissionIntent ? (row.resident_name ?? `Row ${index + 1}`) : (presentation.cells(row)[1] ?? presentation.cells(row)[0] ?? `Row ${index + 1}`)),
-      value: 0,
+      value: dataset === "medicationCompliance" ? Number(row.total_given || 0) : 0,
       cells: presentation.cells(row).map(displayValue)
     }));
     const periodLabel = requestedMonths.length ? requestedMonths.map(formatMonthLabel).join(" and ") : "available data";
-    const detailLabel = admissionIntent ? "admissions" : dataset;
+    const detailLabel = admissionIntent ? "admissions" : dataset === "medicationCompliance" ? "administrations-given" : dataset;
     const filename = `${label}-${detailLabel}-${requestedMonths.join("-") || "current"}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const scopeLabel = facility?.community_name ?? "portfolio";
     const subjectLabels = {
       residents: "resident roster entries",
       census: "census entries",
-      medicationCompliance: "medication compliance entries",
-      refusals: "medication refusal entries",
+      medicationCompliance: "monthly administration summaries",
       documentationGaps: "documentation gap entries",
       summary: "community summary entries"
     };
@@ -417,7 +424,7 @@ export function createGenericDetailListTools({
         period: requestedMonths.join(", ") || null,
         note: admissionIntent ? `dataset=resident_episode_history; dateField=admit_date; rowSetId=${rowSetId}` : `dataset=${dataset}; rowSetId=${rowSetId}`
       }),
-      visual: rows.length ? makePreviewTableVisual({ title: `${label} ${presentation.title}`, subtitle: `${periodLabel} · ${rows.length.toLocaleString("en-US")} entries`, valueLabel: "Entries", columns: presentation.columns, rows: visualRows, totalRows: rows.length }) : undefined,
+      visual: rows.length ? makePreviewTableVisual({ title: `${label} ${presentation.title}`, subtitle: `${periodLabel} · ${rows.length.toLocaleString("en-US")} entries`, valueLabel: dataset === "medicationCompliance" ? "Given" : "Entries", columns: presentation.columns, rows: visualRows, totalRows: rows.length }) : undefined,
       artifact: rows.length ? { type: "csv", filename: `${filename}.csv`, mimeType: "text/csv", content: rowsToCsv(rows), rowSetId, rowCount: rows.length } : undefined,
       provenance: { rowSetId, rowCount: rows.length, dataset },
       actions: []

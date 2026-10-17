@@ -165,7 +165,7 @@ export function getMedicationComplianceModuleItems(visual: CopilotToolVisual): M
       label: String(getVisualCell(visual, cells, ["community", "facility"]) ?? row.label),
       compliancePct: parseChartNumber(getVisualCell(visual, cells, ["compliance"]) ?? row.value),
       scheduled: parseChartNumber(getVisualCell(visual, cells, ["scheduled"])) || null,
-      given: parseChartNumber(getVisualCell(visual, cells, ["given"])) || null,
+      given: parseChartNumber(getVisualCell(visual, cells, ["given"])),
       notGiven: parseChartNumber(getVisualCell(visual, cells, ["not given"])) || null,
       period: String(getVisualCell(visual, cells, ["month", "period"]) ?? "") || null
     };
@@ -193,11 +193,7 @@ export function getMedicationWatchModuleItems(visual: CopilotToolVisual): Medica
       community: String(getVisualCell(visual, cells, ["community", "facility"]) ?? "") || null,
       unit: String(getVisualCell(visual, cells, ["unit"]) ?? "") || null,
       signal: String(getVisualCell(visual, cells, ["signal"]) ?? row.meta ?? "MAR summary loaded"),
-      compliance: String(getVisualCell(visual, cells, ["compliance"]) ?? "") || null,
-      notGiven30: getChartNumber(getVisualCell(visual, cells, ["not given"])),
-      refusals30: getChartNumber(getVisualCell(visual, cells, ["refusal"])),
-      prn30: getChartNumber(getVisualCell(visual, cells, ["prn"])),
-      activeMeds: getChartNumber(getVisualCell(visual, cells, ["active meds", "meds"])),
+      given30: getChartNumber(getVisualCell(visual, cells, ["given"])),
       lastMar: String(getVisualCell(visual, cells, ["last mar"]) ?? "") || null
     };
   });

@@ -2,12 +2,13 @@ import { runCopilotTool } from "../server/copilot-tools.mjs";
 import { formatIncidentPeriodLabel } from "../server/tools/platform-overview.mjs";
 import { createStructuredToolResultRenderer } from "../server/tools/result-contracts.mjs";
 import { enforceAnswerInvariants } from "../server/tools/result-safety.mjs";
-import { platformModuleRegistry } from "../shared/platform-module-registry.mjs";
+import { getPlatformModuleManifest } from "../shared/platform-module-registry.mjs";
 import { getReportingDateKey } from "../shared/reporting-date.mjs";
 
-const surfaceModuleCount = platformModuleRegistry.filter((module) => module.kind === "surface").length;
-const analysisModuleCount = platformModuleRegistry.filter((module) => module.kind === "analysis").length;
-const totalModuleCount = platformModuleRegistry.length;
+const visibleModules = getPlatformModuleManifest();
+const surfaceModuleCount = visibleModules.filter((module) => module.kind === "surface").length;
+const analysisModuleCount = visibleModules.filter((module) => module.kind === "analysis").length;
+const totalModuleCount = visibleModules.length;
 
 const cases = [
   {
@@ -204,36 +205,34 @@ const cases = [
   {
     prompt: "show medication compliance in May and June",
     tool: "medication_compliance",
-    visualTitleIncludes: "Medication Compliance",
-    mustInclude: ["Answer\n", "May 2026 and June 2026", "were documented as given", "Medication compliance uses scheduled administrations"],
-    mustExclude: ["largest row"]
+    visualTitleIncludes: "Administrations Given",
+    mustInclude: ["Answer\n", "May 2026", "June 2026", "administrations given"],
+    mustExclude: ["largest row", "not given", "refusal"]
   },
   {
     prompt: "How did medication compliance change at Victoria's House from May 2026 through June 2026?",
     tool: "medication_compliance",
-    visualTitleIncludes: "Victoria's House Medication Compliance",
-    mustInclude: ["percentage points", "scheduled administrations were documented as given"],
-    mustExclude: ["temporarily unavailable"]
+    visualTitleIncludes: "Victoria's House Administrations Given",
+    mustInclude: ["administrations given"],
+    mustExclude: ["temporarily unavailable", "percentage points", "not given"]
   },
   {
     prompt: "How is San Pablo doing with medications?",
     tool: "medication_profile",
-    mustInclude: ["A & A Health Services San Pablo documented", "medication compliance", "scheduled administrations", "were documented as given"],
-    mustExclude: ["Portfolio medication profile", "separate cumulative summary", "has no monthly period"]
+    mustInclude: ["A & A Health Services San Pablo recorded", "medication administrations given"],
+    mustExclude: ["Portfolio medication profile", "not given", "refusal"]
   },
   {
     prompt: "What medications had the most refusals?",
-    tool: "medication_refusals_by_community",
-    visualTitleIncludes: "Medication Refusals",
-    mustInclude: ["Answer\n", "refusal summary", "had the most", "largest community total"],
-    mustExclude: ["largest row"]
+    tool: "clarification",
+    mustInclude: ["Ask for administrations given by community, resident, or month"],
+    mustExclude: ["largest row", "refusal"]
   },
   {
     prompt: "show San Pablo medication exception detail",
-    tool: "medication_exception_detail",
-    visualTitleIncludes: "detail",
-    mustInclude: ["Answer\n", "exception"],
-    mustExclude: ["largest row", "Source:"]
+    tool: "clarification",
+    mustInclude: ["Ask for administrations given by community, resident, or month"],
+    mustExclude: ["largest row", "Source:", "exception"]
   },
   {
     prompt: "Between April and May 2026, which community had the largest increase in incidents per 100 residents?",
@@ -615,7 +614,7 @@ const sessionCases = [
     ]
   },
   {
-    name: "community medication follow-up keeps San Pablo scope",
+    name: "community medication follow-up keeps San Pablo scope and rejects retired breakdown",
     steps: [
       {
         prompt: "How is San Pablo doing with medications?",
@@ -629,8 +628,7 @@ const sessionCases = [
       },
       {
         prompt: "What medications had the most refusals?",
-        tool: "medication_refusals_by_community",
-        facilityId: "337"
+        tool: "clarification"
       }
     ]
   },
@@ -666,7 +664,7 @@ for (const sessionCase of sessionCases) {
     if (!result.runtimeSchema?.valid) {
       failures.push(`${sessionCase.name} step ${index + 1}: missing or invalid runtime schema`);
     }
-    if (!result.turnTrace?.turnId) {
+    if (step.tool !== "clarification" && !result.turnTrace?.turnId) {
       failures.push(`${sessionCase.name} step ${index + 1}: missing analyst turn trace`);
     }
 

@@ -186,6 +186,7 @@ export function validateAdHocModuleSpec(spec) {
 
 export function planAdHocModule(content, toolResult, options = {}) {
   if (!toolResult?.handled || !toolResult.visual) return null;
+  if (["medication_exception_detail", "medication_refusals_by_community"].includes(toolResult.tool)) return null;
   const registeredModule = getPlatformModuleByTool(toolResult.tool);
   const registeredTemplate = registeredModule?.visualType && toolResult.visual.type === "bar_chart"
     ? visualizationTemplateRegistry.find((template) => template.visualType === registeredModule.visualType)

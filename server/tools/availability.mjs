@@ -37,11 +37,9 @@ export function createAvailabilityTools(dependencies) {
     getDocumentationRows,
     getIncidentDetailRows,
     getIncidentRows,
-    getMarExceptionRows,
     getMarMonthlyRows,
     getMarResidentSummaryRows,
     getMedicationComplianceRows,
-    getMedicationRefusalRows,
     getResidentRows,
     isIncidentFreshnessIntent,
     makeTrace,
@@ -165,11 +163,9 @@ export function createAvailabilityTools(dependencies) {
     const incidentDetailRows = getIncidentDetailRows(communities, reportsSummary);
     const residentRows = getResidentRows(communities, reportsSummary);
     const complianceRows = getMedicationComplianceRows(reportsSummary);
-    const refusalRows = getMedicationRefusalRows(reportsSummary);
     const documentationRows = getDocumentationRows(reportsSummary);
     const marMonthlyRows = getMarMonthlyRows(reportsSummary);
     const marResidentRows = getMarResidentSummaryRows(reportsSummary);
-    const marExceptionRows = getMarExceptionRows(reportsSummary);
     const periodRange = (rows) => {
       const periods = uniqueSorted(rows.map((row) => normalizeMonthBucket(firstPresent(row, ["month_bucket", "reporting_month", "month"]))));
       return {
@@ -187,11 +183,9 @@ export function createAvailabilityTools(dependencies) {
       ["Incident monthly", "community × category × month", incidentRows.length, periodRange(incidentRows).earliest, periodRange(incidentRows).latest],
       ["Census monthly", "community × month", censusRows.length, periodRange(censusRows).earliest, periodRange(censusRows).latest],
       ["Resident roster", "current resident", residentRows.length, null, communities.generated_at ?? null],
-      ["Medication compliance", "community × month", complianceRows.length, periodRange(complianceRows).earliest, periodRange(complianceRows).latest],
-      ["Medication refusals", "medication summary", refusalRows.length, periodRange(refusalRows).earliest, periodRange(refusalRows).latest],
+      ["Administrations given", "community × month", complianceRows.length, periodRange(complianceRows).earliest, periodRange(complianceRows).latest],
       ["MAR monthly", "community × medication × month", marMonthlyRows.length, periodRange(marMonthlyRows).earliest, periodRange(marMonthlyRows).latest],
       ["MAR resident summary", "current resident medication", marResidentRows.length, null, reportsSummary.generated_at ?? communities.generated_at ?? null],
-      ["MAR exceptions", "90-day medication exception detail", marExceptionRows.length, periodRange(marExceptionRows).earliest, periodRange(marExceptionRows).latest],
       ["Documentation gaps", "current resident status", documentationRows.length, null, reportsSummary.generated_at ?? communities.generated_at ?? null]
     ].map(([dataset, grain, rowCount, earliest, latest]) => ({
       dataset,
@@ -214,7 +208,7 @@ export function createAvailabilityTools(dependencies) {
       if (/\b(census|occupancy|headcount|population)\b/.test(coverageFocusText)) return ["Census monthly"];
       if (/\b(resident|residents|client|clients|roster)\b/.test(coverageFocusText)) return ["Resident roster"];
       if (/\b(documentation|doc gap|doc gaps|notes?)\b/.test(coverageFocusText)) return ["Documentation gaps"];
-      if (/\b(medication|meds|compliance|refusal|refusals|not given)\b/.test(coverageFocusText)) return ["Medication compliance", "Medication refusals"];
+      if (/\b(medication|meds|administrations?|given)\b/.test(coverageFocusText)) return ["Administrations given"];
       return [];
     })();
     const displayedCoverageRows = focusedDatasetNames.length
@@ -233,10 +227,8 @@ export function createAvailabilityTools(dependencies) {
       ["Incident detail", incidentDetailPeriods],
       ["Incident monthly", periodsForRows(incidentRows)],
       ["Census monthly", periodsForRows(censusRows)],
-      ["Medication compliance", periodsForRows(complianceRows)],
-      ["Medication refusals", periodsForRows(refusalRows)],
-      ["MAR monthly", periodsForRows(marMonthlyRows)],
-      ["MAR exceptions", periodsForRows(marExceptionRows)]
+      ["Administrations given", periodsForRows(complianceRows)],
+      ["MAR monthly", periodsForRows(marMonthlyRows)]
     ]);
     const allKnownPeriods = uniqueSorted([...periodsByDataset.values()].flat());
     const requestedMonths = parseRequestedMonthBuckets(content, allKnownPeriods);

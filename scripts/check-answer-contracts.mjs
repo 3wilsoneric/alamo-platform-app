@@ -505,16 +505,10 @@ const allMedicationRefusalHistory = await checkedTool({
   content: "find medication refusal incidents ever",
   sessionId: newSession("all-medication-refusal-history")
 }, "All medication refusal incident history");
-assertValid(allMedicationRefusalHistory, "All medication refusal incident history");
-assert(allMedicationRefusalHistory.tool === "incident_detail_list", "Medication refusal incident search selected wrong tool", allMedicationRefusalHistory);
-assert(/Medication Refusal/i.test(textOf(allMedicationRefusalHistory)), "Medication refusal incident search lost the category", allMedicationRefusalHistory);
-if (allMedicationRefusalHistory.truthState === "plan_rejected") {
-  assert(/does not match|grain mismatch/i.test(`${textOf(allMedicationRefusalHistory)} ${allMedicationRefusalHistory.trace?.note ?? ""}`), "Medication refusal incident search did not explain its fail-closed grain mismatch", allMedicationRefusalHistory);
-  assert(!allMedicationRefusalHistory.artifact, "Medication refusal incident search exported rows after a grain mismatch", allMedicationRefusalHistory.artifact);
-} else {
-  assert((allMedicationRefusalHistory.artifact?.rowCount ?? 0) > 0, "Medication refusal incident search did not return loaded history rows", allMedicationRefusalHistory.artifact);
-}
-assert(String(allMedicationRefusalHistory.trace?.period ?? "").split(",").length >= 3, "Medication refusal incident search did not include multiple loaded periods", allMedicationRefusalHistory.trace);
+assert(allMedicationRefusalHistory.tool === "clarification", "Retired incident category search did not stop", allMedicationRefusalHistory);
+assert(allMedicationRefusalHistory.truthState === "plan_rejected", "Retired incident category search did not fail closed", allMedicationRefusalHistory);
+assert(!allMedicationRefusalHistory.artifact, "Retired incident category search exposed unrelated rows", allMedicationRefusalHistory.artifact);
+assert(!/medication refusal|refused meds?/i.test(textOf(allMedicationRefusalHistory)), "Retired incident category search repeated the old label", allMedicationRefusalHistory);
 
 const residentRosterDetail = await checkedTool({
   content: "list every resident row",
@@ -997,12 +991,9 @@ const medicationSpecificRefusals = await checkedTool({
   content: "AHS Turlock OP LLC Eliquis refusals",
   sessionId: newSession("medication-specific-refusals")
 }, "Medication-specific refusal filter");
-assert(medicationSpecificRefusals.tool === "medication_refusals_by_community", "Medication-specific refusal selected wrong tool", medicationSpecificRefusals);
-assert(/Eliquis/i.test(String(medicationSpecificRefusals.trace?.note ?? "") + textOf(medicationSpecificRefusals)), "Medication-specific refusal did not preserve requested medication", medicationSpecificRefusals);
-assert(!/Nystatin|Miconazole|Polyethylene Glycol POWD/i.test(textOf(medicationSpecificRefusals)), "Medication-specific refusal fell back to unrelated top medications", medicationSpecificRefusals);
-if ((medicationSpecificRefusals.trace?.rowCount ?? 0) === 0) {
-  assert(["summary_not_shown", "verified_zero", "not_loaded"].includes(medicationSpecificRefusals.truthState ?? medicationSpecificRefusals.trace?.truthState), "Medication-specific zero-row result did not explain whether absence was proven", medicationSpecificRefusals);
-}
+assert(medicationSpecificRefusals.tool === "clarification" && medicationSpecificRefusals.truthState === "plan_rejected", "Retired medication breakdown was not rejected", medicationSpecificRefusals);
+assert(/administrations given by community, resident, or month/i.test(textOf(medicationSpecificRefusals)), "Retired medication breakdown did not offer the available view", medicationSpecificRefusals);
+assert(!/Eliquis|Nystatin|Miconazole|Polyethylene Glycol POWD/i.test(textOf(medicationSpecificRefusals)), "Retired medication breakdown exposed medication-level details", medicationSpecificRefusals);
 
 const unavailableCommunityScope = await checkedTool({
   content: "show Santa Clarita census trend for November 2024",

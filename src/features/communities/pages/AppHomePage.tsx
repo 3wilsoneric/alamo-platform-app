@@ -42,11 +42,6 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-function formatPercent(value: number) {
-  if (!Number.isFinite(value)) return "—";
-  return `${value.toFixed(1)}%`;
-}
-
 const formatMonthLabel = (value?: string) => formatSharedMonthLabel(value, { fallback: "—", month: "long" });
 
 function openCommunityProfile(facilityId: string, communityName: string) {
@@ -155,7 +150,9 @@ export default function AppHomePage() {
   const medicationWatch = useMemo(() => {
     if (!reportsSummary) {
       return {
-        complianceLeaders: [] as Array<{ facilityId: string; facilityName: string; compliancePct: number }>
+        givenLeaders: [] as Array<{ facilityId: string; facilityName: string; given: number }>,
+        givenTotal: 0,
+        month: null as string | null
       };
     }
 
@@ -163,18 +160,21 @@ export default function AppHomePage() {
       .sort()
       .at(-1);
 
-    const complianceLeaders = reportsSummary.medicationCompliance
+    const currentRows = reportsSummary.medicationCompliance
       .filter((row) => row.month_bucket === latestComplianceMonth)
-      .sort((left, right) => left.compliance_pct - right.compliance_pct)
+      .sort((left, right) => right.given - left.given);
+    const givenLeaders = currentRows
       .slice(0, 5)
       .map((row) => ({
         facilityId: row.facility_id,
         facilityName: row.facility_name,
-        compliancePct: row.compliance_pct
+        given: row.given
       }));
 
     return {
-      complianceLeaders
+      givenLeaders,
+      givenTotal: currentRows.reduce((total, row) => total + row.given, 0),
+      month: latestComplianceMonth ?? null
     };
   }, [reportsSummary]);
 
@@ -355,9 +355,7 @@ export default function AppHomePage() {
       latestRow,
       series: series.map((row) => ({
         monthLabel: formatMonthLabel(row.month_bucket),
-        compliancePct: row.compliance_pct,
-        totalScheduled: row.total_scheduled,
-        notGiven: row.not_given
+        given: row.given
       }))
     };
   }, [reportsSummary, selectedComplianceFacilityId]);
@@ -437,19 +435,21 @@ export default function AppHomePage() {
       },
       {
         navLabel: "Operations",
-        title: `${formatPercent(dashboard.reporting.averageCompliance)} medication compliance across the latest reporting set.`,
-        body: `${formatNumber(dashboard.reporting.refusalSignalCount)} refusal signals are in the reporting feed. Medication and diagnosis rows open the detail we have today.`,
+        title: `${formatNumber(medicationWatch.givenTotal)} medication administrations given across the latest reporting set.`,
+        body: `The medication view shows recorded administrations given${medicationWatch.month ? ` in ${formatMonthLabel(medicationWatch.month)}` : ""}. Medication and diagnosis rows open the detail we have today.`,
         content: (
           <div className="grid gap-3 lg:grid-cols-2">
-            <SliderDataCard title="Lowest medication compliance">
+            <SliderDataCard title="Medication administrations given">
               <MedicationComplianceModule
-                items={medicationWatch.complianceLeaders.map((item) => ({
+                items={medicationWatch.givenLeaders.map((item) => ({
                   id: item.facilityId,
                   label: item.facilityName,
-                  compliancePct: item.compliancePct
+                  compliancePct: 0,
+                  given: item.given,
+                  period: medicationWatch.month ? formatMonthLabel(medicationWatch.month) : null
                 }))}
                 onSelect={(item) => setSelectedComplianceFacilityId(item.id)}
-                emptyLabel="Medication compliance rows are not available yet."
+                emptyLabel="Medication administration rows are not available yet."
               />
             </SliderDataCard>
             <SliderDataCard title="Diagnosis mix">

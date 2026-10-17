@@ -404,14 +404,6 @@ function medicationBurdenItems(burden, includeResidents = false) {
     ...(burden.averagePsychotropics == null ? [] : [{
       label: "Average psychotropics",
       value: decimalFormatter.format(burden.averagePsychotropics)
-    }]),
-    ...(burden.averageResidentCompliance == null ? [] : [{
-      label: "Average resident compliance",
-      value: percent(burden.averageResidentCompliance)
-    }]),
-    ...(burden.prnFollowupPercentage == null ? [] : [{
-      label: "PRN follow-up within 30 days",
-      value: percent(burden.prnFollowupPercentage)
     }])
   ];
 }
@@ -532,10 +524,6 @@ function internalReadmissionSummary(rows, facilityId, asOfTimestamp) {
         percentage: window.eligible ? window.readmitted / window.eligible * 100 : null
       }))
     : null;
-}
-
-function scheduledNotCompleted(row) {
-  return Math.max(0, number(row?.total_scheduled) - number(row?.given));
 }
 
 function documentationAge(row) {
@@ -754,7 +742,7 @@ function buildOverviewReport(context) {
       { key: "open", label: "Open to limit" }
     ] : []),
     ...(hasIncidentData ? [{ key: "incidents", label: "Incidents" }] : []),
-    ...(hasComplianceData ? [{ key: "compliance", label: "Medication completion" }] : []),
+    ...(hasComplianceData ? [{ key: "compliance", label: "Administrations given" }] : []),
     ...(flowRows.rows.length ? [
       { key: "admissions", label: "Admissions" },
       { key: "discharges", label: "Discharges" },
@@ -774,7 +762,7 @@ function buildOverviewReport(context) {
       utilization: capacityRow ? percent(capacityRow.operationalUtilization) : "Not available",
       open: capacityRow ? integer(capacityRow.openToOperatingLimit) : "Not available",
       incidents: incidentRow ? integer(incidentRow.incidents) : "Not reported",
-      compliance: complianceRow ? percent(complianceRow.compliance_pct) : "Not reported",
+      compliance: complianceRow ? integer(complianceRow.given) : "Not reported",
       admissions: flowRow ? integer(flowRow.admissions) : "Not reported",
       discharges: flowRow ? integer(flowRow.discharges) : "Not reported",
       net: flowRow ? signed(flowRow.net_change) : "Not reported"
@@ -789,7 +777,7 @@ function buildOverviewReport(context) {
   const operatingContext = [
     `Census is shown for ${census.label}.`,
     ...(hasIncidentData ? [`Incident counts use ${formatMonthLabel(incidentRows.period, { fallback: "the latest incident month" })}.`] : []),
-    ...(hasComplianceData ? [`Medication completion uses ${formatMonthLabel(complianceRows.period, { fallback: "the latest medication month" })}.`] : []),
+    ...(hasComplianceData ? [`Administrations given use ${formatMonthLabel(complianceRows.period, { fallback: "the latest medication month" })}.`] : []),
     ...(flowRows.rows.length ? [`Resident flow uses ${formatMonthLabel(flowRows.period, { fallback: "the latest flow month" })}${flowComplete ? "." : ` and covers ${flowCoverage}.`}`] : []),
     ...(capacity ? ["Current operating limits appear only on the latest report."] : []),
     ...(hasMissingCommunityMeasures ? ["Missing community measures are labeled as not reported rather than zero."] : [])
@@ -799,7 +787,7 @@ function buildOverviewReport(context) {
     `The governed ${hasWeeklyCensusDetail ? "weekly" : "monthly"} census is ${integer(census.total)} across ${integer(census.rows.length)} communities for ${census.label}.`,
     `${topCommunity?.community ?? "The largest community"} has the largest census at ${integer(topCommunity?.census)}.`,
     ...(hasIncidentData ? [`${formatMonthLabel(incidentRows.period, { fallback: "The latest incident month" })} recorded ${integer(incidentTotal)} incidents.`] : []),
-    ...(hasComplianceData ? [`Weighted medication completion was ${percent(compliance.percentage)} for ${formatMonthLabel(complianceRows.period, { fallback: "the latest medication month" })}.`] : []),
+    ...(hasComplianceData ? [`${integer(compliance.given)} medication administrations were recorded as given for ${formatMonthLabel(complianceRows.period, { fallback: "the latest medication month" })}.`] : []),
     ...(flowRows.rows.length ? [flowComplete
       ? `Resident flow for ${formatMonthLabel(flowRows.period, { fallback: "the latest month" })} was ${signed(flowTotals.net)}, with ${integer(flowTotals.admissions)} admissions and ${integer(flowTotals.discharges)} discharges.`
       : `Resident flow records for ${formatMonthLabel(flowRows.period, { fallback: "the latest month" })} cover ${flowCoverage} and contain net movement of ${signed(flowTotals.net)}, with ${integer(flowTotals.admissions)} admissions and ${integer(flowTotals.discharges)} discharges.`
@@ -835,8 +823,8 @@ function buildOverviewReport(context) {
         detail: formatMonthLabel(incidentRows.period, { fallback: "Latest month" })
       }] : []),
       ...(hasComplianceData ? [{
-        label: "Medication completion",
-        value: percent(compliance.percentage),
+        label: "Administrations given",
+        value: integer(compliance.given),
         detail: formatMonthLabel(complianceRows.period, { fallback: "Latest month" })
       }] : []),
       ...(flowRows.rows.length ? [{
@@ -1088,8 +1076,8 @@ function buildCommunityReport(context) {
         detail: `${integer(population.overOneYear)} current residents`
       }]),
       {
-        label: "Medication compliance",
-        value: compliance ? percent(compliance.compliance_pct) : "Not available",
+        label: "Administrations given",
+        value: compliance ? integer(compliance.given) : "Not available",
         detail: formatMonthLabel(complianceRows.period ?? request.period, { fallback: "Selected period" })
       },
       ...(currentCapacity ? [{
@@ -1185,16 +1173,13 @@ function buildCommunityReport(context) {
         id: "medication-performance",
         title: "Medication performance",
         intro: compliance
-          ? `${facilityName} recorded ${percent(compliance.compliance_pct)} scheduled administration compliance in ${formatMonthLabel(complianceRows.period, { fallback: "the latest month" })}.`
+          ? `${facilityName} recorded ${integer(compliance.given)} medication administrations as given in ${formatMonthLabel(complianceRows.period, { fallback: "the latest month" })}.`
           : `Medication performance is summarized from the latest governed community records.`,
         blocks: [
           ...(compliance ? [{
             type: "metric_grid",
             items: [
-              { label: "Scheduled", value: integer(compliance.total_scheduled) },
-              { label: "Given", value: integer(compliance.given) },
-              { label: "Not completed", value: integer(scheduledNotCompleted(compliance)) },
-              { label: "Compliance", value: percent(compliance.compliance_pct) }
+              { label: "Administrations given", value: integer(compliance.given) }
             ]
           }] : []),
         ]
@@ -1214,7 +1199,7 @@ function buildCommunityReport(context) {
       ...(burden ? [{
         id: "medication-burden",
         title: "Current medication burden",
-        intro: "Resident-level 30-day measures are shown separately from monthly scheduled-administration compliance.",
+        intro: "Current medication orders are shown separately from the monthly administration count.",
         blocks: [{
           type: "metric_grid",
           items: medicationBurdenItems(burden)
@@ -1349,7 +1334,7 @@ function buildEffectivenessReport(context) {
   const medicationSourceRows = (summary.medicationCompliance ?? []).filter(inScope);
   const complianceRows = latestMonthRows(medicationSourceRows, evidencePeriod);
   const compliance = weightedCompliance(complianceRows.rows);
-  const complianceAvailable = complianceRows.rows.length > 0 && compliance.scheduled > 0;
+  const complianceAvailable = complianceRows.rows.length > 0;
   const complianceByMonth = new Map();
   medicationSourceRows.forEach((row) => {
     const month = text(row.month_bucket);
@@ -1360,15 +1345,14 @@ function buildEffectivenessReport(context) {
     complianceByMonth.set(month, current);
   });
   const complianceTrend = [...complianceByMonth.entries()]
-    .filter(([, totals]) => totals.scheduled > 0)
+    .filter(([, totals]) => totals.given >= 0)
     .sort(([left], [right]) => left.localeCompare(right))
     .slice(-6)
     .map(([month, totals]) => {
-      const percentage = totals.given / totals.scheduled * 100;
       return {
         label: formatMonthLabel(month, { fallback: month }),
-        value: percentage,
-        displayValue: percent(percentage)
+        value: totals.given,
+        displayValue: integer(totals.given)
       };
     });
 
@@ -1458,8 +1442,8 @@ function buildEffectivenessReport(context) {
       ? `${periodLabel} recorded ${integer(incidentTotal)} incidents${incidentRate == null ? "" : `, or ${decimalFormatter.format(incidentRate)} per 100 census`}.`
       : `Incident volume is not available for ${periodLabel}.`,
     complianceAvailable
-      ? `Weighted medication compliance was ${percent(compliance.percentage)}.`
-      : `Medication compliance is not available for ${periodLabel}.`,
+      ? `${integer(compliance.given)} medication administrations were recorded as given.`
+      : `Administrations given are not available for ${periodLabel}.`,
     episodesAvailable
       ? `The episode record contains ${integer(internalReturnEpisodes)} return admissions among ${integer(repeatResidents)} residents with multiple Alamo episodes.`
       : `Episode history is not available for this scope.`,
@@ -1497,8 +1481,8 @@ function buildEffectivenessReport(context) {
         detail: periodLabel
       },
       {
-        label: "Medication compliance",
-        value: complianceAvailable ? percent(compliance.percentage) : "Not available",
+        label: "Administrations given",
+        value: complianceAvailable ? integer(compliance.given) : "Not available",
         detail: periodLabel
       },
       ...(flowAvailable ? [{
@@ -1568,7 +1552,7 @@ function buildEffectivenessReport(context) {
       {
         id: "stabilization-signals",
         title: "Observed stabilization signals",
-        intro: `Incident rates are normalized to monthly census so volume can be compared across periods. Medication completion is weighted from scheduled and given administrations. Direction is descriptive and does not establish that the program caused the change.`,
+        intro: `Incident rates are normalized to monthly census so volume can be compared across periods. The medication trend counts administrations recorded as given. Direction is descriptive and does not establish that the program caused the change.`,
         blocks: [
           ...(incidentRateTrend.length >= 2 ? [{
             type: "line_chart",
@@ -1577,7 +1561,7 @@ function buildEffectivenessReport(context) {
           }] : [{ type: "paragraph", text: "A multi-month normalized incident trend is not available in this scope." }]),
           ...(complianceTrend.length >= 2 ? [{
             type: "line_chart",
-            label: "Weighted medication compliance",
+            label: "Administrations given",
             items: complianceTrend
           }] : [{ type: "paragraph", text: "A multi-month medication trend is not available in this scope." }])
         ]
@@ -2058,129 +2042,54 @@ function buildFocusedReport(context) {
       const monthWeighted = weightedCompliance(entry.rows);
       return {
         label: formatMonthLabel(entry.month, { fallback: entry.month, month: "short" }),
-        value: monthWeighted.percentage,
-        displayValue: percent(monthWeighted.percentage)
+        value: monthWeighted.given,
+        displayValue: integer(monthWeighted.given)
       };
     });
-    const burden = request.period
-      ? null
-      : medicationBurden(summary, request.facilityId, scopeRows);
-    const burdenByCommunity = burden && !request.facilityId
-      ? [...new Set(burden.rows.map((row) => text(row.facility_id)).filter(Boolean))]
-          .flatMap((facilityId) => {
-            const communityBurden = medicationBurden(
-              summary,
-              facilityId,
-              scopeRows.filter((row) => text(row.facility_id) === facilityId)
-            );
-            return communityBurden ? [{
-              facilityId,
-              community: names.get(facilityId) ?? `Facility ${facilityId}`,
-              burden: communityBurden
-            }] : [];
-          })
-          .sort((left, right) => left.community.localeCompare(right.community))
-      : [];
-    const burdenCommunityColumns = [
-      { key: "community", label: "Community" },
-      { key: "residents", label: "Residents" },
-      ...(burdenByCommunity.some((row) => row.burden.averageActiveMedications != null)
-        ? [{ key: "active", label: "Average active medications" }]
-        : []),
-      ...(burdenByCommunity.some((row) => row.burden.averagePsychotropics != null)
-        ? [{ key: "psychotropics", label: "Average psychotropics" }]
-        : []),
-      ...(burdenByCommunity.some((row) => row.burden.averageResidentCompliance != null)
-        ? [{ key: "compliance", label: "Average resident compliance" }]
-        : []),
-      ...(burdenByCommunity.some((row) => row.burden.prnFollowupPercentage != null)
-        ? [{ key: "prn", label: "PRN follow-up" }]
-        : [])
-    ];
     return buildBaseReport({
       request,
       definition,
       title: request.facilityId ? `${scopeLabel} medication performance report` : definition.title,
-      summary: `${scopeLabel} recorded ${percent(weighted.percentage)} scheduled medication completion in ${formatMonthLabel(compliance.period, { fallback: "the latest month" })}, with ${integer(weighted.notCompleted)} scheduled administrations not completed.`,
+      summary: `${scopeLabel} recorded ${integer(weighted.given)} medication administrations as given in ${formatMonthLabel(compliance.period, { fallback: "the latest month" })}.`,
       scope,
       period: { value: compliance.period, label: formatMonthLabel(compliance.period, { fallback: "Latest month" }) },
       generatedAt,
       dataThrough,
       freshness,
       metrics: [
-        { label: "Completion", value: percent(weighted.percentage), detail: formatMonthLabel(compliance.period, { fallback: "Latest month" }) },
-        { label: "Scheduled", value: integer(weighted.scheduled), detail: "Governed scheduled administrations" },
-        { label: "Given", value: integer(weighted.given), detail: "Recorded as given" },
-        { label: "Not completed", value: integer(weighted.notCompleted), detail: "Scheduled minus given" }
+        { label: "Administrations given", value: integer(weighted.given), detail: formatMonthLabel(compliance.period, { fallback: "Latest month" }) }
       ],
       sections: [
         ...(complianceTrend.length > 1 ? [{
           id: "compliance-trend",
-          title: "Monthly completion trend",
-          intro: `${scopeLabel} completion is weighted from scheduled and given administrations for the latest ${integer(complianceTrend.length)} consecutive months with the same reporting-community set through ${formatMonthLabel(compliance.period, { fallback: "the selected month" })}.`,
+          title: "Monthly administrations given",
+          intro: `The latest ${integer(complianceTrend.length)} consecutive months use the same reporting-community set through ${formatMonthLabel(compliance.period, { fallback: "the selected month" })}.`,
           blocks: [{
             type: "line_chart",
-            label: "Weighted scheduled-administration completion",
+            label: "Administrations given",
             items: complianceTrend
           }]
         }] : []),
         {
           id: "administration-detail",
-          title: "Community administration performance",
-          intro: `Community totals and weighted completion rates are shown for ${formatMonthLabel(compliance.period, { fallback: "the selected month" })}.`,
+          title: "Administrations given by community",
+          intro: `Community counts are shown for ${formatMonthLabel(compliance.period, { fallback: "the selected month" })}.`,
           blocks: [table(
             [
               { key: "community", label: "Community" },
-              { key: "scheduled", label: "Scheduled" },
-              { key: "given", label: "Given" },
-              { key: "notGiven", label: "Not completed" },
-              { key: "compliance", label: "Completion" }
+              { key: "given", label: "Given" }
             ],
             [...compliance.rows]
-              .sort((left, right) => number(left.compliance_pct) - number(right.compliance_pct))
+              .sort((left, right) => number(right.given) - number(left.given))
               .map((row) => ({
                 community: names.get(text(row.facility_id)) || text(row.facility_name),
-                scheduled: integer(row.total_scheduled),
-                given: integer(row.given),
-                notGiven: integer(scheduledNotCompleted(row)),
-                compliance: percent(row.compliance_pct)
+                given: integer(row.given)
               }))
           )]
-        },
-        ...(burden ? [{
-          id: "current-medication-burden",
-          title: "Current resident medication burden",
-          intro: "These current resident-level 30-day measures are separate from the monthly weighted scheduled-administration rate above.",
-          blocks: [
-            {
-              type: "metric_grid",
-              items: medicationBurdenItems(burden, true)
-            },
-            ...(burdenByCommunity.length ? [table(
-              burdenCommunityColumns,
-              burdenByCommunity.map((row) => ({
-                community: row.community,
-                residents: integer(row.burden.rows.length),
-                active: row.burden.averageActiveMedications == null
-                  ? "Not available"
-                  : decimalFormatter.format(row.burden.averageActiveMedications),
-                psychotropics: row.burden.averagePsychotropics == null
-                  ? "Not available"
-                  : decimalFormatter.format(row.burden.averagePsychotropics),
-                compliance: row.burden.averageResidentCompliance == null
-                  ? "Not available"
-                  : percent(row.burden.averageResidentCompliance),
-                prn: row.burden.prnFollowupPercentage == null
-                  ? "Not available"
-                  : percent(row.burden.prnFollowupPercentage)
-              }))
-            )] : [])
-          ]
-        }] : [])
+        }
       ],
       sources: [
         evidence("medication_compliance_monthly", complianceSourceRows),
-        ...(burden ? [evidence("mar_resident_summary", burden.rows)] : [])
       ]
     });
   }

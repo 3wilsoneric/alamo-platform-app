@@ -63,19 +63,9 @@ const glossaryEntries: GlossaryEntry[] = [
       "The most recent recorded note date used for documentation gap calculations."
   },
   {
-    term: "Medication Compliance",
+    term: "Administrations Given",
     definition:
-      "The percentage of scheduled medication administrations that were successfully given."
-  },
-  {
-    term: "Refusal Rate",
-    definition:
-      "The percentage of scheduled medication opportunities marked as refused."
-  },
-  {
-    term: "Not Given",
-    definition:
-      "Scheduled medication administrations that were not completed for any tracked reason."
+      "The number of medication administrations recorded as given in the selected period."
   },
   {
     term: "Reporting Period",

@@ -4,6 +4,10 @@ import {
 } from "./platform-data.mjs";
 import { normalizeQueryText, understandQuery } from "../shared/query-understanding.mjs";
 import {
+  isRetiredMedicationBreakdownRequest,
+  isRetiredMedicationCategory
+} from "../shared/medication-presentation-policy.mjs";
+import {
   findClosestMonthWindow,
   formatMonthLabel,
   parseRequestedMonthBuckets
@@ -574,7 +578,6 @@ const metricSliceTools = createMetricSliceTools({
   average,
   buildIncidentCategoryComparisonTool: incidentComparisonTools.buildIncidentCategoryComparisonTool,
   buildUnavailablePeriodResult,
-  calculateWeightedCompliance,
   countBySum,
   filterByFacility,
   filterIncidentsByCategory,
@@ -589,7 +592,6 @@ const metricSliceTools = createMetricSliceTools({
   getIncidentCategoryFilter,
   getIncidentRows,
   getMedicationComplianceRows,
-  getMedicationRefusalRows,
   getPortfolioFallbackScopes,
   getRequestedMonthBuckets,
   getResidentRows,
@@ -1182,6 +1184,27 @@ export async function compileCopilotIntent(payload = {}) {
   };
 }
 
+function buildGivenOnlyClarification(content) {
+  return normalizeToolResultContract({
+    handled: true,
+    tool: "clarification",
+    text: "That breakdown is not available in this view. Ask for administrations given by community, resident, or month.",
+    truthState: "plan_rejected",
+    trace: makeTrace({
+      tool: "clarification",
+      dataSource: "current presentation policy",
+      rowCount: 0,
+      note: "retired medication breakdown",
+      truthState: "plan_rejected"
+    }),
+    planValidation: {
+      valid: false,
+      errors: ["retired medication breakdown"]
+    },
+    analysisFrame: createEmptyAnalysisFrame()
+  }, { tool: "clarification", content });
+}
+
 export async function runCopilotTool(payload = {}) {
   const turnStartedAt = Date.now();
   const content = String(payload.content ?? "").trim();
@@ -1191,6 +1214,10 @@ export async function runCopilotTool(payload = {}) {
       handled: false,
       reason: "empty"
     };
+  }
+
+  if (isRetiredMedicationBreakdownRequest(content)) {
+    return buildGivenOnlyClarification(content);
   }
 
   const certifiedQuestionRoute = getCertifiedQuestionRouteById(payload.certifiedQuestionRouteId);
@@ -1267,6 +1294,13 @@ export async function runCopilotTool(payload = {}) {
   }
   const executionContent = prepared.contextualFollowUp ? prepared.executionPlan.canonicalPrompt : interpretedContent;
   const tool = prepared.executionPlan.tool ?? prepared.fallbackTool;
+  if (
+    isRetiredMedicationBreakdownRequest(executionContent) ||
+    isRetiredMedicationCategory(prepared.executionPlan?.expected?.category) ||
+    ["medication_exception_detail", "medication_refusals_by_community"].includes(tool)
+  ) {
+    return buildGivenOnlyClarification(executionContent);
+  }
   const capabilityValidation = validatePlanToolCapability(prepared.executionPlan);
   if (!capabilityValidation.valid) {
     const violation = capabilityValidation.errors[0] ?? {
@@ -1568,7 +1602,9 @@ function summarizeToolForClaude(result) {
 
 function getToolPlan(content, communities) {
   const text = normalizeText(content);
-  const plan = [detectTool(content, communities)];
+  const medicationResidentIntent = /\b(medication|medications|meds|emar|mar|administration|administrations)\b/.test(text) &&
+    /\bby resident\b/.test(text);
+  const plan = [medicationResidentIntent ? "medication_watch" : detectTool(content, communities)];
   const add = (tool) => {
     if (!plan.includes(tool)) plan.push(tool);
   };
@@ -1613,11 +1649,10 @@ function getToolPlan(content, communities) {
   if (/\b(documentation|doc gap|note gap|last note|care note)\b/.test(text)) {
     add("documentation_gaps");
   }
-  if (/\b(medication|medications|meds|emar|mar|compliance|refusal|refusals|refused|not given|missed|held|late|prn)\b/.test(text)) {
-    const medicationDetailIntent = /\b(exception|exceptions|detail|details|list|every|all|rows?|who|resident|residents|client|clients|reason|reasons|recent|last 90|not given|missed|held|late|prn)\b/.test(text);
-    if (/\b(compliance|given|scheduled)\b/.test(text) && !/\bnot given\b/.test(text)) add("medication_compliance");
-    if (medicationDetailIntent) add("medication_exception_detail");
-    add(/\b(refusal|refusals|refused|not given)\b/.test(text) ? "medication_refusals_by_community" : "medication_profile");
+  if (/\b(medication|medications|meds|emar|mar|administration|administrations|compliance)\b/.test(text)) {
+    if (/\b(by resident|resident mar|resident medication)\b/.test(text)) add("medication_watch");
+    else if (/\b(given|administration|administrations|compliance)\b/.test(text)) add("medication_compliance");
+    else add("medication_profile");
   }
   if (/\b(compare|analysis|analyze|why|what stands out|what matters|overall|operating picture)\b/.test(text)) {
     add("operating_snapshot");
@@ -1625,7 +1660,7 @@ function getToolPlan(content, communities) {
     add("community_profile");
     add("census_movement");
     add("incident_breakdown");
-    add("medication_refusals_by_community");
+    add("medication_compliance");
   }
 
   return plan.slice(0, 8);
@@ -1646,9 +1681,8 @@ function getCompositionToolPlan(content, communities, primaryTool) {
     if (/\b(driv(?:e|es|ing|er|ers)|account(?:s|ed)? for|top residents?|top clients?|most frequent|repeat residents?|repeat clients?|high frequency|highest volume)\b/.test(text)) add("incident_resident_drivers");
     add("incident_breakdown");
   }
-  if (/\b(medication|medications|meds|emar|mar|compliance|refusal|refused|not given|missed|held|late|prn)\b/.test(text)) {
-    if (/\b(exception|exceptions|detail|details|list|every|all|rows?|who|reason|reasons|recent|not given|missed|held|late|prn)\b/.test(text)) add("medication_exception_detail");
-    add(/\b(refusal|refused|not given)\b/.test(text) ? "medication_refusals_by_community" : "medication_compliance");
+  if (/\b(medication|medications|meds|emar|mar|administration|administrations|compliance)\b/.test(text)) {
+    add(/\b(by resident|resident mar|resident medication)\b/.test(text) ? "medication_watch" : "medication_compliance");
   }
   if (/\b(documentation|doc gap|note gap|last note)\b/.test(text)) add("documentation_gaps");
   if (/\b(diagnosis|diagnoses|clinical mix)\b/.test(text)) add("diagnosis_mix");
@@ -1662,6 +1696,9 @@ function getCompositionToolPlan(content, communities, primaryTool) {
 export async function runRelevantCopilotTools(payload = {}) {
   const content = String(payload.content ?? "").trim();
   if (!content) return [];
+  if (isRetiredMedicationBreakdownRequest(content)) {
+    return [summarizeToolForClaude(buildGivenOnlyClarification(content))];
+  }
 
   if (isAnalysisFrame(payload.analysisFrame)) {
     const result = await runCopilotTool(payload);
@@ -1677,6 +1714,9 @@ export async function runRelevantCopilotTools(payload = {}) {
     }))];
   }
   const interpretedContent = understanding.changed ? understanding.correctedText : content;
+  if (isRetiredMedicationBreakdownRequest(interpretedContent)) {
+    return [summarizeToolForClaude(buildGivenOnlyClarification(interpretedContent))];
+  }
   const hasDirectEntityMatch = Boolean(findResident(interpretedContent, communities) || findFacility(interpretedContent, communities));
   if (!isExportIntent(interpretedContent) && !isAnalysisIntent(interpretedContent) && !hasDirectEntityMatch) return [];
 

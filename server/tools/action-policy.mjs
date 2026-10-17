@@ -50,7 +50,7 @@ export function createActionPolicyTools(dependencies) {
 
     if (/\b(medication|meds|emar|compliance|refusal|refused|not given)\b/.test(text) || result.tool?.includes("medication")) {
       add({ label: `Show ${label} medication profile`, kind: "tool", tool: "run_analysis", prompt: `${label} medication profile` });
-      add({ label: "Show medication compliance", kind: "tool", tool: "run_analysis", prompt: `${label} medication compliance` });
+      add({ label: "Show administrations given", kind: "tool", tool: "run_analysis", prompt: `${label} medication administrations given` });
     }
 
     if (/\b(resident|residents|client|clients|profile|name)\b/.test(text) || result.tool?.includes("resident")) {

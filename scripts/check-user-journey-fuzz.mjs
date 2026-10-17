@@ -577,25 +577,25 @@ function makeMedicationCase() {
       expect: {
         tools: ["medication_profile"],
         facilityId: facility?.id,
-        textIncludesAny: ["Compliance", "medication"]
+        textIncludesAny: ["administrations given", "medication"]
       }
     },
     {
       family: "medication",
-      prompt: `${facility ? `${aliasForFacility(facility)} ` : ""}medication compliance latest month`,
+      prompt: `${facility ? `${aliasForFacility(facility)} ` : ""}medication administrations given latest month`,
       expect: {
         tools: ["medication_compliance"],
         facilityId: facility?.id,
-        textIncludesAny: ["Compliance", "%"]
+        textIncludesAny: ["administrations given", "Given"]
       }
     },
     {
       family: "medication",
-      prompt: "What medications had the most refusals?",
+      prompt: "Show portfolio medication administrations given by community.",
       expect: {
-        tools: ["medication_refusals_by_community", "ad_hoc_medication_chart"],
-        textIncludes: ["refus"],
-        visualType: "bar_chart"
+        tools: ["medication_compliance"],
+        textIncludes: ["given"],
+        visualType: "table"
       }
     }
   ]);

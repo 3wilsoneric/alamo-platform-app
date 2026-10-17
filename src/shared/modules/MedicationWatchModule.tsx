@@ -4,11 +4,7 @@ export interface MedicationWatchItem {
   community?: string | null;
   unit?: string | null;
   signal: string;
-  compliance?: string | null;
-  notGiven30?: number | null;
-  refusals30?: number | null;
-  prn30?: number | null;
-  activeMeds?: number | null;
+  given30?: number | null;
   lastMar?: string | null;
 }
 
@@ -25,7 +21,7 @@ function formatCount(value?: number | null) {
 export function MedicationWatchModule({
   items,
   onSelect,
-  emptyLabel = "No resident MAR watch records match this selection."
+  emptyLabel = "No resident administration records match this selection."
 }: MedicationWatchModuleProps) {
   if (!items.length) {
     return (
@@ -42,7 +38,7 @@ export function MedicationWatchModule({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#595959]">
-                Watch item {index + 1}
+                Resident {index + 1}
               </div>
               <div className="mt-1 truncate text-[17px] font-semibold tracking-[-0.03em] text-[#111111]">
                 {item.resident}
@@ -52,7 +48,7 @@ export function MedicationWatchModule({
               </div>
             </div>
             <div className="shrink-0 border border-[#d9d9d9] bg-white px-3 py-1 text-[12px] font-semibold text-[#0f8b73]">
-              {item.compliance || "MAR"}
+              MAR
             </div>
           </div>
 
@@ -60,18 +56,11 @@ export function MedicationWatchModule({
             {item.signal}
           </div>
 
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            {[
-              ["Not given", formatCount(item.notGiven30)],
-              ["Refusals", formatCount(item.refusals30)],
-              ["PRN", formatCount(item.prn30)],
-              ["Meds", formatCount(item.activeMeds)]
-            ].map(([label, value]) => (
-              <div key={label} className="border-t border-[#d9d9d9] bg-white px-0 py-2">
-                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">{label}</div>
-                <div className="mt-0.5 text-[15px] font-semibold tabular-nums text-[#111111]">{value}</div>
-              </div>
-            ))}
+          <div className="mt-3">
+            <div className="border-t border-[#d9d9d9] bg-white px-0 py-2">
+              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">Given, 30 days</div>
+              <div className="mt-0.5 text-[15px] font-semibold tabular-nums text-[#111111]">{formatCount(item.given30)}</div>
+            </div>
           </div>
 
           {item.lastMar ? (

@@ -17,6 +17,8 @@ const MEDICATION_KEYWORDS = Object.freeze([
   "meds",
   "emar",
   "mar",
+  "administration",
+  "administrations given",
   "compliance",
   "refusal",
   "refusals",
@@ -233,18 +235,18 @@ export const ANALYSIS_SLICE_CATALOG = Object.freeze([
   }),
   Object.freeze({
     id: "medication_compliance_monthly",
-    title: "Medication Compliance by Community and Medication",
+    title: "Administrations Given by Community and Medication",
     domain: "medications",
     grain: "community_month_medication",
     source: "tool_context.marMonthlyByCommunityMedication",
     metrics: Object.freeze(["medications", "medication_compliance"]),
     modes: Object.freeze(["aggregate", "comparison", "trend"]),
-    defaultMeasure: "compliance_pct",
-    valueField: "compliance_pct",
+    defaultMeasure: "given",
+    valueField: "given",
     periodField: "month_bucket",
     dateField: null,
     dimensions: Object.freeze(["community", "month", "medication"]),
-    fields: Object.freeze(["community", "month", "medication", "scheduled", "given", "not_given", "compliance"]),
+    fields: Object.freeze(["community", "month", "medication", "given"]),
     keywords: MEDICATION_KEYWORDS,
     defaultGrouping: "community",
     defaultVisual: "table"
@@ -287,18 +289,18 @@ export const ANALYSIS_SLICE_CATALOG = Object.freeze([
   }),
   Object.freeze({
     id: "mar_resident_summary",
-    title: "Resident MAR Summary",
+    title: "Administrations Given by Resident",
     domain: "medications",
     grain: "resident_current_medication",
     source: "tool_context.marResidentSummary",
-    metrics: Object.freeze(["medications", "resident_medications", "mar", "medication_refusals"]),
+    metrics: Object.freeze(["medications", "resident_medications", "mar", "administrations_given"]),
     modes: Object.freeze(["aggregate", "detail", "profile"]),
-    defaultMeasure: "refusals_30d",
-    valueField: "refusals_30d",
+    defaultMeasure: "given_30d",
+    valueField: "given_30d",
     periodField: null,
     dateField: "last_recorded_date",
     dimensions: Object.freeze(["community", "resident", "medication"]),
-    fields: Object.freeze(["community", "resident", "active_medication_count", "active_psychotropic_count", "refusals_7d", "refusals_30d", "compliance_pct_30d", "last_recorded_date"]),
+    fields: Object.freeze(["community", "resident", "given_7d", "given_30d", "last_recorded_date"]),
     keywords: MEDICATION_KEYWORDS,
     defaultGrouping: "resident",
     defaultVisual: "table"
@@ -582,6 +584,7 @@ function inferRequestedMode(text) {
 }
 
 export function getAnalysisSlice(id) {
+  if (["medication_refusal_summary", "mar_exception_detail_90d", "mar_prn_effectiveness_90d"].includes(id)) return null;
   return ANALYSIS_SLICE_CATALOG.find((slice) => slice.id === id) ?? null;
 }
 
@@ -627,6 +630,7 @@ export function rankAnalysisSlicesForQuery(content, frame = {}) {
           : null);
 
   return ANALYSIS_SLICE_CATALOG
+    .filter((slice) => !["medication_refusal_summary", "mar_exception_detail_90d", "mar_prn_effectiveness_90d"].includes(slice.id))
     .map((slice) => {
       let score = 0;
       if (requestedDomain && slice.domain === requestedDomain) score += 8;

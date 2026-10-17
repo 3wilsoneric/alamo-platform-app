@@ -340,16 +340,6 @@ function buildOperationalSlices(snapshot) {
       }))
   }));
 
-  const medicationRefusals = (reportsSummary?.refusalByMedication ?? [])
-    .slice(0, 20)
-    .map((row) => ({
-      facilityId: row.facility_id,
-      communityName: facilityNames.get(row.facility_id) ?? row.facility_id,
-      medication: row.medication,
-      refusals: row.refusals,
-      refusalPct: row.refusal_pct
-    }));
-
   return normalizeKnownNamesDeep({
     reportingMonth: homeDashboard?.reporting_month ?? null,
     generatedAt: snapshot.generated_at ?? snapshot.snapshot?.generated_at ?? null,
@@ -363,8 +353,7 @@ function buildOperationalSlices(snapshot) {
     latestIncidentCategories,
     incidentDetailsByCategory,
     incidentDetailsByCommunity,
-    recentCommunitySeries,
-    medicationRefusals
+    recentCommunitySeries
   });
 }
 
@@ -465,7 +454,7 @@ function getQuestionIntent(message) {
     return {
       intent: "medication",
       instruction:
-        "The user is asking about medication. Use governed medication tool rows; use incident rows only when the question is specifically about medication-refusal incidents."
+        "The user is asking about medication. Use governed medication tool rows and present administrations given for the stated period. Do not add exception or refusal summaries."
     };
   }
 
@@ -546,6 +535,12 @@ async function buildCopilotContext(message, analysisFrame = null, session = {}) 
 
 function pickDeterministicToolAnswer(context) {
   const results = Array.isArray(context?.toolResults) ? context.toolResults : [];
+  const presentationPolicyResult = results.find((result) =>
+    result?.tool === "clarification" &&
+    result?.trace?.dataSource === "current presentation policy" &&
+    typeof result?.text === "string"
+  );
+  if (presentationPolicyResult) return presentationPolicyResult;
   const certifiedResult = results.find((result) =>
     typeof result?.text === "string" &&
     result.text.trim() &&

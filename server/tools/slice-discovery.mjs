@@ -314,11 +314,11 @@ function filterRows(content, rows, slice, communities, dependencies) {
 function getValue(row, slice) {
   if (!slice.valueField) return 1;
   if (slice.id === "medication_compliance_monthly") {
-    return Number(firstPresent(row, ["compliance_pct", "compliance"]) ?? 0);
+    return Number(firstPresent(row, ["given", "total_given", "given_count"]) ?? 0);
   }
   if (slice.id === "community_operating_summary") return Number(firstPresent(row, ["incidents", "incident_count"]) ?? 0);
   if (slice.id === "resident_incident_summary") return Number(firstPresent(row, ["incident_count_90d", "incidents_90d", "incident_count_all_time", "incidents"]) ?? 0);
-  if (slice.id === "mar_resident_summary") return Number(firstPresent(row, ["refusals_30d", "mar_refusals_30d", "not_given_30d", "mar_not_given_30d"]) ?? 0);
+  if (slice.id === "mar_resident_summary") return Number(firstPresent(row, ["given_30d", "mar_given_30d"]) ?? 0);
   if (slice.id === "documentation_status") return Number(firstPresent(row, ["days_since_last_note"]) ?? 0);
   if (slice.id === "census_weekly_by_community") return Number(firstPresent(row, ["census"]) ?? 0);
   if (slice.id === "census_data_quality") return Number(firstPresent(row, ["excluded_or_non_countable_rows", "suspected_test_rows", "monthly_census_minus_active_roster"]) ?? 0);
@@ -331,23 +331,15 @@ function aggregateRows(rows, slice, groups, dependencies, communities) {
   for (const row of rows) {
     const cells = groups.map((group) => getDimensionValue(row, group, slice, dependencies, communities));
     const key = cells.join(" · ") || "Total";
-    const current = grouped.get(key) ?? { cells, value: 0, weightedGiven: 0, weightedScheduled: 0 };
-    if (slice.id === "medication_compliance_monthly") {
-      const scheduled = Number(firstPresent(row, ["total_scheduled", "scheduled_count"]) || 0);
-      const given = Number(firstPresent(row, ["given", "total_given", "given_count"]) || 0);
-      current.weightedScheduled += scheduled;
-      current.weightedGiven += given;
-      current.value = current.weightedScheduled > 0 ? (current.weightedGiven / current.weightedScheduled) * 100 : getValue(row, slice);
-    } else {
-      current.value += getValue(row, slice);
-    }
+    const current = grouped.get(key) ?? { cells, value: 0 };
+    current.value += getValue(row, slice);
     grouped.set(key, current);
   }
   const aggregated = [...grouped.entries()]
     .map(([label, row]) => ({
       label,
       value: row.value,
-      cells: [...row.cells, slice.id === "medication_compliance_monthly" ? `${defaultFormatValue(row.value, 1)}%` : defaultFormatValue(row.value)]
+      cells: [...row.cells, defaultFormatValue(row.value)]
     }));
 
   return sortAggregatedRows(aggregated, slice, groups);
@@ -411,8 +403,7 @@ function detailCells(row, slice, dependencies, communities) {
       firstPresent(row, ["census"]) ?? "—",
       firstPresent(row, ["census_delta"]) ?? "—",
       firstPresent(row, ["incidents", "incident_count"]) ?? "—",
-      firstPresent(row, ["incidents_per_100_residents", "incidents_per_100"]) ?? "—",
-      firstPresent(row, ["compliance_pct"]) ?? "—"
+      firstPresent(row, ["incidents_per_100_residents", "incidents_per_100"]) ?? "—"
     ];
   }
   if (slice.id === "incident_detail_history") {
@@ -464,11 +455,8 @@ function detailCells(row, slice, dependencies, communities) {
     return [
       getCommunityName(row, dependencies, communities),
       firstPresent(row, ["resident_name", "client_name", "resident_id", "res_number"]) ?? "Unknown resident",
-      firstPresent(row, ["active_medication_count"]) ?? 0,
-      firstPresent(row, ["active_psychotropic_count"]) ?? 0,
-      firstPresent(row, ["refusals_7d", "mar_refusals_7d"]) ?? 0,
-      firstPresent(row, ["refusals_30d", "mar_refusals_30d"]) ?? 0,
-      firstPresent(row, ["compliance_pct_30d", "mar_compliance_pct_30d"]) ?? "—",
+      firstPresent(row, ["given_7d", "mar_given_7d"]) ?? 0,
+      firstPresent(row, ["given_30d", "mar_given_30d"]) ?? 0,
       dependencies.formatDateLabel(firstPresent(row, ["last_recorded_date"]))
     ];
   }
@@ -587,13 +575,13 @@ function detailCells(row, slice, dependencies, communities) {
 }
 
 function detailColumns(slice) {
-  if (slice.id === "community_operating_summary") return ["Community", "Month", "Residents", "Census", "Census delta", "Incidents", "Incidents / 100", "Compliance %"];
+  if (slice.id === "community_operating_summary") return ["Community", "Month", "Residents", "Census", "Census delta", "Incidents", "Incidents / 100"];
   if (slice.id === "incident_detail_history") return ["Community", "Resident", "Date", "Category", "Description"];
   if (slice.id === "mar_exception_detail_90d") return ["Community", "Resident", "Date", "Medication", "Outcome", "Reason / note"];
   if (slice.id === "mar_prn_effectiveness_90d") return ["Community", "Resident", "Date", "Medication", "Outcome", "Reason / result"];
   if (slice.id === "mar_medication_orders_current") return ["Community", "Resident", "Medication", "Dose", "Route", "Schedule", "Indication", "PRN", "Psychotropic", "Narcotic"];
   if (slice.id === "resident_incident_summary") return ["Community", "Resident", "Unit", "All-time", "30 days", "90 days", "Last incident", "Last category"];
-  if (slice.id === "mar_resident_summary") return ["Community", "Resident", "Active meds", "Psychotropics", "Refusals 7d", "Refusals 30d", "Compliance 30d", "Last MAR date"];
+  if (slice.id === "mar_resident_summary") return ["Community", "Resident", "Given 7d", "Given 30d", "Last MAR date"];
   if (slice.id === "documentation_status") return ["Community", "Resident", "Last note", "Days since note"];
   if (slice.id === "resident_episode_history") return ["Community", "Resident", "Admitted", "Discharged", "Status", "Outcome"];
   if (slice.id === "census_weekly_by_community") return ["Week start", "Week end", "Community", "Census"];
@@ -615,7 +603,7 @@ export function createSliceDiscoveryTools(dependencies) {
       return {
         handled: true,
         tool: "slice_discovery",
-        text: "I could not map that request to a loaded data slice. Try asking for incidents, census, residents, medication compliance, refusals, or MAR exceptions.",
+        text: "I could not map that request to a loaded data slice. Try asking for incidents, census, residents, or administrations given.",
         truthState: "not_loaded",
         trace: dependencies.makeTrace({
           tool: "slice_discovery",
@@ -699,7 +687,7 @@ export function createSliceDiscoveryTools(dependencies) {
           cells: detailCells(row, slice, dependencies, communities)
         }))
       : aggregateRows(filtered.rows, slice, groups, dependencies, communities).slice(0, dependencies.wantsAllRows(content) ? 250 : 25);
-    const columns = detailMode ? detailColumns(slice) : [...groups.map((group) => group[0].toUpperCase() + group.slice(1)), slice.id === "medication_compliance_monthly" ? "Compliance %" : slice.defaultMeasure.replace(/_/g, " ")];
+    const columns = detailMode ? detailColumns(slice) : [...groups.map((group) => group[0].toUpperCase() + group.slice(1)), slice.id === "medication_compliance_monthly" ? "Given" : slice.defaultMeasure.replace(/_/g, " ")];
     const title = `${label} ${slice.title}`;
     const summary = buildSliceSummary(slice, rows, groups);
     const rowSetId = detailMode && filtered.rows.length ? dependencies.fingerprintRows(filtered.rows) : null;

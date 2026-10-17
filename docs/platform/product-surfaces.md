@@ -375,7 +375,7 @@ Current analytical module families include:
 - incident breakdown, detail list, category comparison, rate, and rate change
 - resident profile, resident incident history, resident search, and watch summary
 - diagnosis mix, demographics, length of stay
-- medication profile, compliance, current orders, resident watchlists, and exact MAR exception/PRN detail
+- medication profile, administrations given by month/community/resident, and current orders; source MAR exception and PRN rows stay server-side for audit and are not presented as analytical breakdowns
 - documentation gaps
 - community and period comparison
 

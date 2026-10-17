@@ -130,13 +130,7 @@ export function AdHocVisualModule({
   const isMedicationProfileRenderer = moduleId === "medication-profile" && visual.type === "summary_card";
   const isMedicationComplianceRenderer = moduleId === "medication-compliance" && ["table", "bar_chart"].includes(visual.type);
   const isMedicationWatchRenderer = moduleId === "medication-watch" && ["table", "ranked_list"].includes(visual.type);
-  const isMedicationExceptionRenderer = [
-    "medication-exceptions",
-    "medication-refusal-detail",
-    "medication-late-admins",
-    "medication-held-admins",
-    "medication-prn-detail"
-  ].includes(moduleId) && visual.type === "table";
+  const isMedicationExceptionRenderer = false;
   const isDiagnosisMixRenderer = moduleId === "diagnosis-mix" && ["bar_chart", "donut_chart"].includes(visual.type);
   const isMultiSeriesTrendRenderer = moduleId === "community-time-series" && visual.type === "multi_line_chart";
   const isPeriodHeatmapRenderer = moduleId === "community-time-series" && visual.type === "heatmap";
@@ -297,24 +291,9 @@ export function AdHocVisualModule({
           <MedicationProfileModule
             items={getMedicationProfileModuleItems(visual)}
             {...(runDrilldown ? {
-              onSelect: (item) => {
+              onSelect: () => {
                 const scope = String(visual.title ?? "Portfolio").replace(/\s+Medication Profile$/i, "").trim() || "Portfolio";
-                const label = item.label.toLowerCase();
-                if (label === "compliance" || label === "scheduled" || label === "given") {
-                  runDrilldown(`show ${scope} medication compliance`);
-                } else if (label === "not given") {
-                  runDrilldown(`show not-given medication detail for ${scope} from the last 90 days`);
-                } else if (label === "refusals" || label === "refusal detail") {
-                  runDrilldown(`show medication refusal detail for ${scope} from the last 90 days`);
-                } else if (label === "late administrations") {
-                  runDrilldown(`show late medication administrations for ${scope} from the last 90 days`);
-                } else if (label === "held medications") {
-                  runDrilldown(`show held medication detail for ${scope} from the last 90 days`);
-                } else if (label === "prn detail") {
-                  runDrilldown(`show PRN medication detail for ${scope} from the last 90 days`);
-                } else {
-                  runDrilldown(`show the resident medication watchlist for ${scope}`);
-                }
+                runDrilldown(`show ${scope} administrations given`);
               }
             } : {})}
           />
@@ -396,7 +375,7 @@ export function AdHocVisualModule({
                   ["Incidents", getProfileValue(visual, ["incident rollup", "incidents"])],
                   ["30d Inc.", getProfileValue(visual, ["incidents 30 days"])],
                   ["Meds", getProfileValue(visual, ["active medications"])],
-                  ["MAR 30d", getProfileValue(visual, ["mar compliance 30 days"])]
+                  ["Given 30d", getProfileValue(visual, ["mar given 30 days"])]
                 ].map(([label, value]) => (
                   <div key={label} className="border-t border-[#d9d9d9] px-0 py-2.5">
                     <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#595959]">{label}</div>

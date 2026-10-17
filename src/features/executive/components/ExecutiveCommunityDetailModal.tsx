@@ -261,51 +261,25 @@ function OperationalLineChart({ points, accent, selectedId, onSelect, ariaLabel,
 function MedicationDetail({ facilityName, dashboard, onClose, closeButtonRef, embedded = false }: { facilityName: string; dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"]; onClose: () => void; closeButtonRef: React.RefObject<HTMLButtonElement | null>; embedded?: boolean }) {
   const periodPanelId = useId();
   const medication = dashboard.medication;
-  const [selectedKind, setSelectedKind] = useState<string | null>(null);
-  const [recordPage, setRecordPage] = useState(0);
-  const availableHistory = (dashboard.medicationHistory ?? []).filter((item) => item.compliancePct != null);
+  const availableHistory = (dashboard.medicationHistory ?? []).filter((item) => item.given != null);
   const history = (availableHistory.length ? availableHistory : medication ? [{ month: medication.month, compliancePct: medication.compliancePct, scheduled: medication.scheduled, given: medication.given, notGiven: medication.notGiven }] : []).slice(-6);
   const [selectedMonth, setSelectedMonth] = useState(medication?.month ?? history.at(-1)?.month ?? null);
   const chrome = <div className="mar-binder__book-tabs"><h1 id={embedded ? "executive-community-workspace-title" : "executive-community-dialog-title"}>{facilityName}</h1><strong><Pill aria-hidden="true" />Medication administration</strong><div className="mar-binder__context"><span>{facilityName}</span><i aria-hidden="true">/</i><span>Medication Administration</span><button ref={closeButtonRef} type="button" onClick={onClose} aria-label={embedded ? "Back to overview" : "Close Medication administration detail"} className={embedded ? "executive-material-workspace__back" : undefined}>{embedded ? <><ArrowLeft aria-hidden="true" /><span>Back to overview</span></> : <X aria-hidden="true" />}</button></div></div>;
   if (!medication) return <div data-executive-detail-view="medications" data-mar-binder="true" className="mar-binder">{chrome}<div className="mar-binder__sheet mar-binder__sheet--empty"><EmptyState>Medication administration totals are not available.</EmptyState></div></div>;
   const selectedPeriod = history.find((item) => item.month === selectedMonth) ?? medication;
-  const scheduled = selectedPeriod.scheduled;
   const given = selectedPeriod.given;
-  const notGiven = selectedPeriod.notGiven;
-  const givenPct = scheduled != null && scheduled > 0 && given != null ? (given / scheduled) * 100 : null;
-  const notGivenPct = scheduled != null && scheduled > 0 && notGiven != null ? (notGiven / scheduled) * 100 : null;
-  const exceptions = (dashboard.medicationExceptions ?? []).filter((row) => dateMatchesMonth(row.date, selectedMonth));
-  const exceptionKinds = [...exceptions.reduce((counts, row) => counts.set(row.outcome, (counts.get(row.outcome) ?? 0) + 1), new Map<string, number>()).entries()].sort((left, right) => right[1] - left[1]);
-  const visibleExceptions = selectedKind ? exceptions.filter((row) => row.outcome === selectedKind) : exceptions;
-  const periodWatch = [...exceptions.reduce((counts, row) => {
-    const key = row.residentId ?? row.residentName;
-    const current = counts.get(key) ?? { residentId: row.residentId, residentName: row.residentName, exceptions: 0 };
-    current.exceptions += 1;
-    counts.set(key, current);
-    return counts;
-  }, new Map<string, { residentId: string | null; residentName: string; exceptions: number }>()).values()].sort((left, right) => right.exceptions - left.exceptions).slice(0, 10);
-  const watch = periodWatch;
-  function selectMonth(month: string) { setSelectedMonth(month); setSelectedKind(null); setRecordPage(0); }
-  function selectKind(kind: string | null) { setSelectedKind(kind); setRecordPage(0); }
+  function selectMonth(month: string) { setSelectedMonth(month); }
   return <div data-executive-detail-view="medications" data-mar-binder="true" className="mar-binder">
     {chrome}
     <PeriodTabs months={history.map((point) => point.month)} selectedMonth={selectedMonth} onSelect={selectMonth} label="Medication month" className="mar-binder__months" panelId={periodPanelId} />
     <div className="mar-binder__sheet" id={periodPanelId} role="tabpanel" aria-labelledby={selectedMonth ? `${periodPanelId}-${selectedMonth}` : undefined}>
       <div className="mar-binder__rings" aria-hidden="true"><i /><i /><i /></div>
       <div className="mar-binder__primary">
-        <section className="material-panel mar-binder__history"><div className="material-panel__title"><ClipboardList aria-hidden="true" /><h2>Compliance history</h2><strong>{formatExecutiveNumber(selectedPeriod.compliancePct, "%")} <small>completion</small></strong></div><OperationalLineChart points={history.filter((item) => item.compliancePct != null).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { fallback: item.month, month: "short" }), value: item.compliancePct! }))} accent="#74134f" selectedId={selectedMonth} onSelect={selectMonth} ariaLabel="Medication compliance history" unitLabel="percent" /></section>
-        <section className="material-panel mar-binder__composition"><div className="material-panel__title"><Pill aria-hidden="true" /><h2>Administration composition</h2><strong>{formatMonthLabel(selectedPeriod.month, { fallback: selectedPeriod.month, month: "long" })}</strong></div>{givenPct != null && notGivenPct != null ? <div className="mar-composition-bar" aria-label={`${formatExecutiveNumber(givenPct, "%")} given and ${formatExecutiveNumber(notGivenPct, "%")} not given`}><span style={{ width: `${Math.min(100, givenPct)}%` }}>{formatExecutiveNumber(givenPct, "%")}</span><i style={{ width: `${Math.min(100, notGivenPct)}%` }}>{formatExecutiveNumber(notGivenPct, "%")}</i></div> : <p className="material-inline-empty">Composition unavailable for this period.</p>}<dl><MedicationTotal label="Scheduled" value={scheduled} /><MedicationTotal label="Given" value={given} /><MedicationTotal label="Not given" value={notGiven} emphasis /></dl></section>
-      </div>
-      <div className="mar-binder__detail-grid">
-        <section className="material-panel material-table-panel mar-binder__exceptions"><div className="material-table-panel__heading"><h2><FileCheck2 aria-hidden="true" />Medication administration exceptions</h2><span>{exceptions.length ? `${exceptions.length} available records` : "No loaded exception records for this month"}</span></div>{exceptionKinds.length ? <div className="mar-exception-tabs"><button type="button" aria-pressed={!selectedKind} onClick={() => selectKind(null)}>All ({exceptions.length})</button>{exceptionKinds.map(([kind, count]) => <button key={kind} type="button" aria-pressed={selectedKind === kind} onClick={() => selectKind(kind)}>{kind} ({count})</button>)}</div> : null}<ScrollableRecords label="Medication exception records"><table><thead><tr><th>Resident</th><th>Medication</th><th>Date</th><th>Outcome</th><th>Recorded reason</th><th>Note</th></tr></thead><tbody>{visibleExceptions.length ? visibleExceptions.slice(recordPage * 12, (recordPage + 1) * 12).map((row) => <tr key={row.id}><td>{row.residentName}</td><td>{[row.medication, row.dosage].filter(Boolean).join(" ")}</td><td>{row.date ? formatExecutiveDate(row.date) : "—"}</td><td>{row.outcome}</td><td>{row.reason || "—"}</td><td>{row.noteRecorded ? "Recorded" : "Not recorded"}</td></tr>) : <tr><td colSpan={6} className="material-table-empty">{selectedKind ? `No ${selectedKind.toLowerCase()} records are available for this month.` : "No medication exception records for this month are included in the loaded history."}</td></tr>}</tbody></table></ScrollableRecords><RecordPagination label="Medication exceptions" page={recordPage} pageSize={12} total={visibleExceptions.length} onChange={setRecordPage} /></section>
-        <aside className="material-panel mar-binder__watch"><div className="material-panel__title"><UsersRound aria-hidden="true" /><h2>Resident watch</h2></div><p>{formatMonthLabel(selectedPeriod.month, { month: "long" })} · Available exception records</p>{watch.length ? <ol>{watch.map((row, index) => <li key={row.residentId ?? row.residentName}><span>{index + 1}</span><strong>{row.residentName}</strong><b>{formatExecutiveNumber(row.exceptions)}</b></li>)}</ol> : <div className="material-inline-empty">No resident exception records for this month are included in the loaded history.</div>}</aside>
+        <section className="material-panel mar-binder__history"><div className="material-panel__title"><ClipboardList aria-hidden="true" /><h2>Administrations given</h2><strong>{formatExecutiveNumber(given)} <small>given</small></strong></div><OperationalLineChart points={history.filter((item) => item.given != null).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { fallback: item.month, month: "short" }), value: item.given! }))} accent="#74134f" selectedId={selectedMonth} onSelect={selectMonth} ariaLabel="Medication administrations given by month" unitLabel="administrations" /></section>
+        <section className="material-panel mar-binder__composition"><div className="material-panel__title"><Pill aria-hidden="true" /><h2>{formatMonthLabel(selectedPeriod.month, { fallback: selectedPeriod.month, month: "long" })}</h2></div><p className="text-[18px] leading-8 text-[#2e2733]">{formatExecutiveNumber(given)} medication administrations were recorded as given.</p></section>
       </div>
     </div>
   </div>;
-}
-
-function MedicationTotal({ label, value, emphasis = false }: { label: string; value: number | null; emphasis?: boolean }) {
-  return <div className="flex items-center justify-between gap-6 py-4"><dt className="text-[14px] font-medium text-[#625868]">{label}</dt><dd className={`text-[24px] font-semibold tabular-nums ${emphasis ? "text-[#7a3f69]" : "text-[#2e2733]"}`}>{formatExecutiveNumber(value)}</dd></div>;
 }
 
 function AdmissionsDetail({ facilityName, dashboard, initialAdmissionId, onSelectionChange, onOpenCard, onClose, closeButtonRef }: { facilityName: string; dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"]; initialAdmissionId?: number | null; onSelectionChange: ((referralId: number) => void) | undefined; onOpenCard: (card: AdmissionsBoardCard) => void; onClose: () => void; closeButtonRef: React.RefObject<HTMLButtonElement | null> }) {

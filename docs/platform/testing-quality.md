@@ -554,9 +554,8 @@ surface QA catches hidden module/display breakage across the prepared surface
 catalog and high-volume visual answers.
 
 `npm run check:browser-mar` is the MAR-specific version of this visual hygiene
-audit. It loads the Azure-published snapshot and adds medication profile,
-medication watch, medication refusal detail, and resident medication profile
-cases to the browser suite.
+audit. It loads the Azure-published snapshot and checks medication profile,
+administrations given by resident, and resident medication profile cases.
 
 `npm run check:browser-explorer` is the full-screen governed data explorer
 gate. It opens the resident, incident, and census explorer routes directly,
