@@ -1,11 +1,7 @@
 import { LICENSING_OUTCOMES, LICENSING_TOPICS } from "./licensing-analysis.mjs";
 
-export const LICENSING_COMMUNITIES = Object.freeze([
-  { facilityId: "337", licenseNumber: "079201030", name: "San Pablo" },
-  { facilityId: "345", licenseNumber: "197610805", name: "Santa Clarita" },
-  { facilityId: "344", licenseNumber: "502701372", name: "Turlock" },
-  { facilityId: "343", licenseNumber: "365530119", name: "JC Wallace House" }
-]);
+import { LICENSING_COMMUNITIES } from "./licensing-communities.mjs";
+export { LICENSING_COMMUNITIES } from "./licensing-communities.mjs";
 
 function invalid() {
   throw new Error("The licensing collection could not be validated.");

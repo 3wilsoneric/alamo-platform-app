@@ -1,12 +1,10 @@
 import { createHash } from "node:crypto";
-import { getLicensingLibrary, getLicensingUpdates } from "./licensing-library.mjs";
-import { getPipelineAdmissionsSummary } from "./pipeline-admissions-summary.mjs";
 
 export function everyAgentFingerprint(value) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 32);
 }
 
-export function createEveryAgentAdapters({ licensing = getLicensingLibrary, updates = getLicensingUpdates, pipeline = getPipelineAdmissionsSummary } = {}) {
+export function createEveryAgentAdapters({ licensing, updates, pipeline }) {
   return {
     async licensing() {
       const [library, feed] = await Promise.all([licensing(new URL("https://www.alamoplatform.com/api/platform/licensing")), updates()]);

@@ -2,16 +2,15 @@ import { randomUUID } from "node:crypto";
 import { EVERYAGENT_USERS } from "../shared/everyagent-catalog.mjs";
 import { EVERYAGENT_VERSION, validateEveryAgentCommand } from "../shared/everyagent-contracts.mjs";
 import { createEveryAgentStore } from "./everyagent-store.mjs";
-import { createEveryAgentAdapters } from "./everyagent-adapters.mjs";
 import { everyAgentActor, grantFor, freshAssignment, scopeAllows, allowedAssignment } from "./everyagent-access.mjs";
 import { publishEveryAgentResult } from "./everyagent-publication.mjs";
 import { createEveryAgentWorkflowService } from "./everyagent-workflow-service.mjs";
-import { createHttpError } from "./http-errors.mjs";
+import { createHttpError } from "./http-error-contract.mjs";
 
 const LEASE = 120_000;
 const hidden = () => createHttpError(404, "not_found", "Not found.");
 
-export function createEveryAgentService({ store = createEveryAgentStore(), adapters = createEveryAgentAdapters(), now = () => Date.now() } = {}) {
+export function createEveryAgentService({ store = createEveryAgentStore(), adapters = {}, now = () => Date.now() } = {}) {
   const workflows = createEveryAgentWorkflowService({ store, adapters, now });
   async function overview(auth) {
     const userId = everyAgentActor(auth);

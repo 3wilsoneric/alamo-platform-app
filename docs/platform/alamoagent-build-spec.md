@@ -67,7 +67,7 @@ Documenting them is not evidence that infrastructure has been provisioned.
 | P11 | Native LIC 624 plus backlog intake | New forms can start in-app; uploads remain useful for backlog. Preserve the existing editor and validate fidelity to the official form. |
 | P12 | Demonstrable quality | Reliability and useful outcomes are measured through acceptance tests and evals. “Perfect” is an objective, not a readiness claim. |
 | P13 | Pipeline assessment review | Supervisors can ask AlamoAgent for team assessment-workflow exceptions; assessors can ask about their own assigned work. Show evidence and the next review action, without treating sparse records as proof of poor performance. |
-| P14 | Independent agent home with cross-app conversations | Work with AlamoAgent directly in its own workspace; let a conversation use authorized application capabilities as needed and continue from embedded entry points. This is required direction; service extraction and a standalone home are not yet implemented. |
+| P14 | Independent agent home with cross-app conversations | Work with AlamoAgent directly in its own workspace; let a conversation use authorized application capabilities as needed and continue from embedded entry points. The independently runnable monitoring API is locally verified; the standalone home and central conversation are still required implementation. |
 
 Raj and Betty retain standalone Licensing permissions. The previous request for
 a Jarvis-like introduction was superseded by the later explicit removal of all
@@ -87,7 +87,8 @@ deployment receipts. Production was not re-probed while creating this spec.
 | Personal monitoring state | Deployed | [Service](../../server/everyagent-service.mjs), [persistence](../../server/everyagent-persistence.mjs). ETag-protected Blob, source fingerprints, lease, assignments and work history. |
 | Durable monitoring workflow | Implemented and locally verified; not deployed | [Functions registration](../../server/everyagent-functions.mjs), [versioned orchestrator](../../server/everyagent-orchestrator.mjs), [workflow service](../../server/everyagent-workflow-service.mjs). Real Functions host restart/replay tested with isolated Azurite. General model planning and conversation remain future work. |
 | Dormant owner chat | Implemented, separate surface | [OwnerChatPage](../../src/features/home/pages/OwnerChatPage.tsx) reuses the existing conversational analyst workspace. The agent companion currently links to Ask a question; conversation is not integrated into its tasks. |
-| Independent agent service and direct workspace | Required; proposed design below | The current API, access helpers, routes, and source adapters still depend on Platform. A separate worker entry point does not establish an independent agent service or portable conversation. |
+| Independent monitoring API | Implemented and locally verified; not deployed | [HTTP host](../../server/everyagent-host.mjs), [dedicated authentication](../../server/everyagent-auth.mjs), [minimal package](../../scripts/prepare-everyagent-service.mjs). Versioned work API runs outside Platform with its own audience/client allowlist. Existing Platform route uses the same handler and service. |
+| Direct workspace and portable conversation | Required; not implemented | The independent API currently serves monitoring work and commands. Central messages, task-linked chat, source-aware navigation, and a separately hosted workspace remain future work. |
 | Native LIC 624 creation and editing | Deployed | [Native reports](executive-director-workspace.md#native-reports), October 13 release. Create, save, reopen, review, and versioned audit are present. The earlier upload-only limitation is obsolete. |
 | Upload and extraction | Implemented; see owning workflow for release evidence | Fillable-PDF extraction and review exist. Image-only files stop at OCR-required; connected OCR, automatic filing, incident linking, and official-PDF generation are not delivered by native creation. |
 | Readable state-report reader | Deployed | [Licensing Reports](product-surfaces.md#licensing-reports). Briefs, paragraphs, page references, findings/corrections, and original download. |
@@ -102,8 +103,9 @@ Current implementation specifics:
 - Node ESM API modules with checked contracts, hosted with the browser bundle in
   Azure Container Apps. Vercel adapters are retained but do not describe the
   current public production host.
-- Existing Claude synthesis follows deterministic analyst tools. The actual
-  configured production model is not inferred from a source default.
+- Existing Claude synthesis follows deterministic analyst tools. Read-only
+  production configuration on October 16 confirms claude-sonnet-4-6. The
+  monitoring workflows and independent work API do not call a model.
 - Databricks/published snapshots own governed analytics; Blob holds documents,
   source captures, and current agent state.
 - The web worker wakes every minute; due assignments check published sources
@@ -117,7 +119,7 @@ Current implementation specifics:
 | Layer | Proposed choice | Keep, extend, or add |
 |---|---|---|
 | Agent workspace and embedded UI | React/TypeScript direct workspace plus shared companion components | Extract existing chat/module components; share conversation/task APIs across authorized hosts |
-| Agent API | Independently deployed Node/TypeScript service on Azure Container Apps with its own Entra API audience | Extract from Platform; preserve the current pilot grant separately from app entitlements |
+| Agent API | Independently deployed Node/TypeScript service on Azure Container Apps with its own Entra API audience | Independent monitoring API implemented; cloud registration/hosting and conversation API remain pending |
 | Application tools | Versioned adapters calling source-owned authenticated APIs | Keep domain rules, record authorization, and transactions in each application |
 | Durable orchestration | Azure Durable Functions, checked JavaScript ESM, Azure Storage backend | First worker implemented and verified locally; separate cloud deployment pending |
 | Reasoning | Existing Claude integration behind typed model/tool contracts | Reuse initially; version model selection per skill and compare changes through evals |
@@ -262,7 +264,7 @@ an open Platform, Pipeline, or Workforce tab to run a task.
 Keep the code in an independent `alamoagent` application/repository, optionally
 as a sibling under the workspace wrapper. It owns its build, dependencies,
 Entra API registration, deployment, and operational data. The wrapper remains
-documentation-only. Until extraction is implemented, this file remains the
+documentation-only. Until repository extraction is implemented, this file remains the
 canonical spec; move it with the service and leave a pointer when ownership
 actually changes, rather than maintaining two competing build specs.
 
@@ -283,24 +285,31 @@ until the separately tested data migration. Do not copy source application
 databases into the agent or move the existing Platform knowledge prototype
 wholesale into a general memory store.
 
-Current couplings to remove, established from source:
+Extraction status, established from source and local checks:
 
-- `shared/everyagent-catalog.mjs` gates all skills through Licensing access.
-  Separate the Eric-only agent rollout grant from each connector's application
-  permission check; a general agent must not depend on having a Licensing role.
-- `src/features/agent/everyAgentApi.ts` assumes the Platform API route and auth
-  helper. Inject an agent client/token provider and use a versioned agent API.
-  Keep a compatibility route during migration, with one authoritative backend.
-- `server/everyagent-adapters.mjs` imports Platform's Licensing implementation
-  directly. Replace that dependency with an authenticated read contract owned
-  by Platform; retain Pipeline's aggregate boundary until its new scoped
-  assessment-review API exists.
-- Work evidence uses Platform-relative URLs. Carry application ID, typed
+- `shared/everyagent-identity.mjs` now owns the Eric-only agent rollout grant.
+  The skill catalog independently applies Licensing access to that skill.
+  This separation does not enable another user or broaden source permissions.
+- `shared/everyagent-client.mjs` injects the authenticated transport and endpoint.
+  Platform uses it with its existing auth helper and compatibility route.
+  The independent host serves `/api/agent/v1/work`; routing the production UI
+  there requires its own Entra registration/token acquisition and cutover.
+- The pure adapters accept injected source readers. Platform composition lives
+  in `server/everyagent-platform-adapters.mjs`, used by the legacy facade and
+  worker. No direct source readers or Platform reporting runtime enter the
+  standalone API package. Source-owned HTTP connectors and delegated/background
+  authorization contracts remain to be implemented; this is not yet a fully
+  extracted worker or a portable source connector.
+- Work evidence still uses Platform-relative URLs. Carry application ID, typed
   resource ID and source revision; resolve verified deep links through a
-  server-controlled application registry so a link works from every host.
-- Persistence and worker preparation currently use Platform configuration and
-  copy its runtime. Package only agent-owned modules, contracts and adapters;
-  assign independent configuration and identities at cutover.
+  server-controlled application registry before enabling a direct UI.
+- The API package contains 22 runtime source files and three direct dependencies
+  (Azure identity, Blob, JOSE). It runs with an independent dependency install
+  outside this repository. Production requires managed-identity Blob settings;
+  the existing state schema/path is retained for migration continuity.
+  The worker package still includes Platform connectors. Independent storage
+  ownership/identity, source contracts, repository extraction, and cloud
+  cutover remain separate work; no second writer schema or database is created.
 
 ### Conversation continuity and application selection
 
@@ -558,7 +567,7 @@ proposed workflow or memory capabilities. No production release was performed.
 |---|---|---|---|
 | S0 | Reconciled living spec and agent entry-point guidance | Current/planned split, requirement IDs, implementation map, linked handbook and retention registration | Implemented; maintained with this build |
 | S1a | Durable task foundation exercised by a Licensing check | Scoped contracts, persisted checkpoints, restart, duplicate, cancellation and revocation tests; traceable result | Implemented and locally verified; not deployed |
-| S1b | Independent agent API, connector boundary and controlled worker rollout | Extracted access/client/source contracts, isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Next architecture slice; not implemented or deployed |
+| S1b | Independent agent API, connector boundary and controlled worker rollout | Extracted access/client/source contracts, isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Monitoring API/access/client and source injection implemented and locally verified; HTTP connectors, hosting and cutover pending |
 | S2 | Direct agent workspace and complete Licensing workflow with task-linked conversation | Existing chat components reused; central conversation → scoped sources → brief → work → correction; direct-home/Platform continuity and Q14 checks | Required direction; proposed implementation |
 | S3 | Second durable workflow and second embedded host | Pipeline adapter permissions and aggregate boundary preserved; same task accessible from authorized hosts; no transcript leakage | Proposed |
 | S3a | Pipeline assessment-review read skill | Pipeline-owned scoped projection; supervisor-team and assessor-own queries with source-backed exceptions and Q13 checks | Required; not implemented |
@@ -572,12 +581,13 @@ entry point. The authenticated API and UI expose run progress, cancel, and retry
 The deployed web timer remains the production scheduler until S1b cutover.
 Avoid generic unused infrastructure and preserve current state during migration.
 
-The next extraction establishes an agent API and application connector boundary
-before adding more hosts. Switch the existing Platform UI to that API behind a
-compatibility client, prove behavior parity, and then build the direct workspace
-over the same conversation/task contracts. Add a second host only after that
-continuity works. This is an incremental extraction of the tested runtime, not
-a second independent implementation of its workflows.
+The monitoring API and compatibility client now establish the first extraction
+boundary. Next, define and implement the source-owned authenticated read
+connectors, registered host policy and portable source links. Provision the
+agent audience/hosting only with concrete cost and cutover evidence; wire the
+existing client to it, then build the direct workspace over central
+conversation/task contracts. Add a second host after continuity works. This
+extends the tested runtime rather than reimplementing its workflows.
 
 Migration must account for existing assignments, scope, review receipts, and
 unresolved work. Plan an idempotent import from the existing Blob, compare
@@ -638,8 +648,9 @@ Maintain the private pilot throughout.
   presentation assets, and passes a production-only dependency install and
   startup checks for missing storage or an incorrect runtime mode.
 
-S1b starts with the independent API, access and connector contracts described
-above. Cloud activation also requires sizing/identity/network configuration,
+S1b has started with the independent monitoring API, access grant and injected
+client/source readers. Cloud activation still requires real source-owned HTTP
+connectors, sizing/identity/network configuration,
 durable history retention, and a tested operational cutover/rollback procedure.
 Then add the direct workspace, task-linked conversation and correction path;
 introduce Postgres with explicit import and reconciliation checks as central
@@ -648,11 +659,69 @@ The full application gate and production build pass; the [local verification
 receipt](deployment-operations.md#alamoagent-durable-worker-candidate--2026-10-16-not-deployed)
 records the host and browser evidence separately from production releases.
 
+### S1b initial API extraction record — 2026-10-16
+
+- The shared work handler powers both the existing Platform URL and a separate
+  Node HTTP host. The latter owns no timer, source reader, email sender or model
+  client. It reads and updates the existing ETag-protected work projection.
+- Standalone authentication verifies RS256 Entra v2 tokens for the configured
+  tenant, its own audience, a delegated scope and explicit client IDs, then
+  applies the Eric-only agent grant. No Platform development bypass is copied.
+  Browser origins are exact HTTPS allowlist entries; CORS is not authorization.
+  Per-host data policy remains pending before any additional host is enabled.
+- The real HTTP test signs synthetic tokens and checks wrong audience, issuer,
+  tenant, client, scope, signature, expiry, application-only claims and denied
+  users. It also checks missing auth, CORS, 4 KiB command limits, redacted failures,
+  optimistic conflicts, review persistence through host recreation, and shared
+  cancel/retry behavior. The same suite passes from the isolated API package.
+- Production startup refuses missing auth/storage configuration and development
+  mode. The real CLI also starts, serves health/auth denial, and shuts down
+  cleanly with synthetic configuration. The package includes only its explicit
+  runtime closure, a pruned lock and Dockerfile. No resource, DNS record, client registration or repository
+  was created. A Docker image build and cloud identity/ingress test remain
+  release prerequisites; an npm package check is not a deployed-service check.
+- Documentation, both TypeScript checks, the complete analyst suite, production
+  build, browser checks at 320/390/1440px and the real worker process-restart
+  check pass. The isolated dependency tree matches the existing reviewed root
+  lock without version or integrity drift.
+- See the [API verification and operations receipt](deployment-operations.md#alamoagent-independent-api-candidate--2026-10-16-not-deployed).
+
+### Cost envelope — checked 2026-10-16
+
+This code extraction creates no new Azure resources or model calls. It does
+not change the existing cloud bill. A **$15–50/month USD planning allowance**
+for a small independent pilot assumes one small Container Apps replica,
+low-volume Functions checks, modest storage/logging, existing environment and
+registry, and no new database or private networking. It is an estimate, not a
+quote or a usage cap. Final sizing, region, retention and discounts must be
+resolved before provisioning; existing subscription grants may already be used.
+
+The West US 2 Azure retail feed returned standard consumption rates of
+$0.000034/vCPU-second active, $0.000004/vCPU-second idle, and
+$0.000004/GiB-second memory. At 0.25 vCPU/0.5 GiB for 730 hours, replica compute
+alone is about $7.88 if entirely idle or $27.59 if entirely active, before free
+grants, requests, storage, logging and network charges. This is a proposed
+small-service size, not a measured production requirement. Functions execution,
+replay and storage are separately billable. Current Platform allocation is
+0.5 vCPU/1 GiB with min 1/max 3 replicas; no allocation was changed.
+[Container Apps pricing](https://azure.microsoft.com/en-us/pricing/details/container-apps/),
+[Azure retail feed](https://prices.azure.com/api/retail/prices),
+[Durable Functions billing](https://learn.microsoft.com/en-us/azure/durable-task/durable-functions/durable-functions-billing).
+
+Production currently configures Claude Sonnet 4.6, whose standard API rates
+are $3/million input and $15/million output tokens. A conversation turn consuming
+10,000 input and 2,000 output tokens **across all model calls** would cost about
+$0.06; 1,000 such turns about $60. Longer contexts, retries and additional tool
+cycles change that total. Current Licensing/Admissions monitoring uses
+no model calls. Before adding task-linked conversation, implement per-task
+usage accounting and hard call/token limits, with a visible budget-stop state.
+[Sonnet 4.6 pricing](https://platform.claude.com/docs/en/models/sonnet-4-6/overview).
+
 ## 11. Open decisions and deferred work
 
 - Azure Storage is selected for the first Durable Functions backend. Select
   cloud hosting/region, network and identity settings, history retention,
-  infrastructure ownership, and operating cost before S1b.
+  infrastructure ownership, and measured operating cost before cloud cutover.
 - Specify database schema, migrations, connection/identity model, backup and
   restore, task projection consistency, and retention/deletion policy.
 - Define per-skill quality, latency and cost thresholds using baseline cases;
@@ -690,3 +759,4 @@ records the host and browser evidence separately from production releases.
 | 2026-10-16 | Implement the first durable workflow using the supported Functions SDK and Azure Storage | Real host replay verified locally; retain existing work store during execution cutover; Postgres and cloud rollout remain separately tracked |
 | 2026-10-16 | Add assessment-review use for supervisors and assessors | Build a Pipeline-owned, user-scoped read contract; surface neutral exceptions and own-work guidance through AlamoAgent after role and PHI checks. Current Eric-only pilot and aggregate Admissions watch do not satisfy this yet. |
 | 2026-10-16 | Eric requested an independent AlamoAgent home and conversations that reach connected applications as needed | Propose a separately deployed agent API/workspace, central conversation IDs, shared host client and source-owned connectors. Extract Platform couplings incrementally; keep the private rollout and notification restrictions. No service extraction or domain deployment claimed. |
+| 2026-10-16 | Eric asked about cost and to proceed where no new spend was required | Implemented and locally verified independent monitoring API, dedicated auth and minimal packaging. No paid resources or model calls added. Recorded the pilot estimate; hosting, source HTTP connectors and direct chat remain pending. |

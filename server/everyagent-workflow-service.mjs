@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { EVERYAGENT_USERS } from "../shared/everyagent-catalog.mjs";
 import { createEveryAgentStore } from "./everyagent-store.mjs";
-import { createEveryAgentAdapters, everyAgentFingerprint } from "./everyagent-adapters.mjs";
+import { everyAgentFingerprint } from "./everyagent-adapters.mjs";
 import { allowedAssignment, freshAssignment, grantFor, scopeAllows } from "./everyagent-access.mjs";
 import { publishEveryAgentResult } from "./everyagent-publication.mjs";
 import { validateEveryAgentWorkflowResult } from "./everyagent-workflow-validation.mjs";
-import { createHttpError } from "./http-errors.mjs";
+import { createHttpError } from "./http-error-contract.mjs";
 
 const INTERVAL = 15 * 60_000;
 const DEADLINE = 20 * 60_000;
@@ -28,7 +28,7 @@ function cancel(task, at) {
     issue: "This run was canceled or its assignment changed." });
 }
 
-export function createEveryAgentWorkflowService({ store = createEveryAgentStore(), adapters = createEveryAgentAdapters(), now = () => Date.now() } = {}) {
+export function createEveryAgentWorkflowService({ store = createEveryAgentStore(), adapters = {}, now = () => Date.now() } = {}) {
   const stamp = () => new Date(now()).toISOString();
   function visible(state, userId, assignments) {
     return state.tasks.filter(task => task.userId === userId && assignments.some(a =>

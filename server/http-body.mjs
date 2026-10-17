@@ -1,4 +1,4 @@
-import { createHttpError } from "./http-errors.mjs";
+import { createHttpError } from "./http-error-contract.mjs";
 
 const DEFAULT_MAX_REQUEST_BODY_BYTES = 1_000_000;
 

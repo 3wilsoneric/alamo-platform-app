@@ -1,10 +1,11 @@
 import { EVERYAGENT_TENANT, everyAgentSkillsFor } from "../shared/everyagent-catalog.mjs";
-import { createHttpError } from "./http-errors.mjs";
+import { hasEveryAgentAccess } from "../shared/everyagent-identity.mjs";
+import { createHttpError } from "./http-error-contract.mjs";
 
 const hidden = () => createHttpError(404, "not_found", "Not found.");
 export const grantFor = userId => everyAgentSkillsFor({ tid: EVERYAGENT_TENANT, oid: userId });
 export function everyAgentActor(auth) {
-  if (auth?.authenticated !== true || auth.mode !== "entra-delegated" || !everyAgentSkillsFor(auth.claims).length) throw hidden();
+  if (auth?.authenticated !== true || auth.mode !== "entra-delegated" || !hasEveryAgentAccess(auth.claims)) throw hidden();
   return String(auth.claims.oid).toLowerCase();
 }
 export function freshAssignment(userId, skill) {

@@ -1,11 +1,10 @@
 import { app } from "@azure/functions";
 import * as df from "durable-functions";
 import { everyAgentMonitorV1 } from "./everyagent-orchestrator.mjs";
-import { createEveryAgentWorkflowService } from "./everyagent-workflow-service.mjs";
 
 // No public HTTP starter, source payload endpoint, or management key is exposed
 // through the web app. The timer claims only server-authorized assignments.
-export function registerEveryAgentFunctions({ service = createEveryAgentWorkflowService(), schedule = "0 * * * * *" } = {}) {
+export function registerEveryAgentFunctions({ service, schedule = "0 * * * * *" }) {
   df.app.orchestration("agentMonitorV1", everyAgentMonitorV1);
   df.app.activity("agentCollectV1", { handler: id => service.collect(id) });
   df.app.activity("agentValidateV1", { handler: ({ id, source }) => service.validate(id, source) });

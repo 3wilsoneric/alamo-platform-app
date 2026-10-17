@@ -46,6 +46,82 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### AlamoAgent independent API candidate — 2026-10-16 (not deployed)
+
+The independently runnable Node service exposes `GET/POST /api/agent/v1/work`
+and an unauthenticated liveness-only `GET /healthz`. It has no scheduler, model
+client or direct source reader. Platform still uses `/api/platform/everyagent`
+through the same handler/service; its existing authenticated browser transport
+is now injected into a shared client. No production routing changed.
+
+Prepare and verify from the owning checkout:
+
+```bash
+npm run everyagent:prepare-service
+npm run check:everyagent-service
+npm run check:everyagent-service-package
+```
+
+Preparation creates `generated/everyagent-service` with 22 explicit source
+files, a Dockerfile and a pruned lock. Its only direct dependencies are Azure
+identity, Azure Blob and JOSE (57 installed packages at this receipt).
+It excludes Platform source readers/reporting, clinical code, presentation
+assets, browser bundles and environment files. Preparation may contact the npm
+registry to prune the lock; it creates no cloud resources. The package check
+installs dependencies outside the repository and runs the signed-token HTTP
+suite there, preventing fallback to Platform's node_modules.
+
+Before hosting, configure:
+
+- `NODE_ENV=production`; `PORT` defaults to 8080.
+- `ALAMOAGENT_ENTRA_TENANT_ID` for the existing pilot tenant.
+- `ALAMOAGENT_ENTRA_API_AUDIENCE` for a dedicated Entra v2 API registration.
+- `ALAMOAGENT_ENTRA_CLIENT_IDS` as explicit comma-separated registered client
+  IDs. `ALAMOAGENT_ENTRA_SCOPE` defaults to `access_as_user`.
+- `ALAMOAGENT_BROWSER_ORIGINS` as exact comma-separated HTTPS origins, including
+  the direct home itself when it exists. No wildcard or ambient Platform auth.
+  Clients acquire a token for this audience; a Platform-audience token is denied.
+- `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_CONTAINER`, `AZURE_CLIENT_ID` for the
+  managed identity and approved work-state container. There is no production
+  local-file fallback. Existing `everyagent/state-v1.json` schema and ETag
+  behavior are retained; configure ownership/RBAC and verify continuity at cutover.
+
+Local verification: real HTTP tests pass for signed JWT validation, wrong
+issuer/audience/tenant/client/scope/signature/expiry, application-only claims,
+Eric-only access, exact origins, bounded commands, redacted errors, conflicts,
+review persistence through host recreation and shared cancel/retry commands.
+The isolated package passes that same suite and startup refusal without
+production mode, complete authentication or managed-identity storage settings.
+The real CLI entry also starts, serves health/unauthenticated requests, and
+shuts down cleanly with synthetic configuration and no Azure calls.
+These tests use only synthetic local state and keys. They do not verify an
+Azure Entra registration, deployed image, managed identity or ingress.
+
+Local regression receipt, October 16: `check:docs`, both TypeScript checks,
+full `check:analyst`, and `build` pass. Agent browser checks pass at 320, 390 and
+1440px with the existing quiet helper, scope, review, progress and cancel/retry
+flows. The actual Functions worker kill/restart proof also passes after source
+composition was separated; its receipt is
+`generated/everyagent-host-check/1792203400253/result.json`.
+The API build, analyst and browser logs are under
+`generated/alamoagent-api-{build,analyst,browser}.log`. These are local artifacts,
+not deployment receipts. The build retains its existing large-chunk warning.
+
+Before release, build/scan the image, verify cloud identity and storage access,
+set ingress/availability/log retention and request-rate limits, implement the
+source-owned authenticated read connectors and portable application links,
+then test routing/CSP, state continuity and rollback. The current worker remains
+composed with Platform source readers; this candidate extracts the HTTP service,
+not the entire worker. The historical first-install `everyagent:prepare-release`
+overlay is not a runtime-upgrade recipe for this extraction. Use a reviewed
+complete runtime image with these new helper dependencies at Platform cutover.
+
+No Azure resource, Entra registration, hostname or repository was created, and
+no deployment/email/access expansion occurred. The [living build spec cost
+estimate](alamoagent-build-spec.md#cost-envelope--checked-2026-10-16) records the
+$15–50/month small-pilot infrastructure planning allowance and separate model
+usage, with its assumptions and exclusions. This code step adds neither.
+
 ### AlamoAgent durable worker candidate — 2026-10-16 (not deployed)
 
 The candidate uses Azure Durable Functions with the Azure Storage provider,

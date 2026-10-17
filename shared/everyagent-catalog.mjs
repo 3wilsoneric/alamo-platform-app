@@ -1,12 +1,8 @@
-import { LICENSING_COMMUNITIES } from "./licensing-contracts.mjs";
+import { LICENSING_COMMUNITIES } from "./licensing-communities.mjs";
 import { hasLicensingAccess } from "./licensing-access.mjs";
 
-export const EVERYAGENT_TENANT = "d72d9036-cff8-4f5f-a6fa-d698f621d420";
-// Eric-only preview. Worker authorization is resolved from this same policy,
-// never from stored browser tokens, email addresses, or client-supplied roles.
-export const EVERYAGENT_USERS = Object.freeze([
-  "f73371d5-d2b4-48b4-a32b-1edc7c88869f"
-]);
+import { hasEveryAgentAccess } from "./everyagent-identity.mjs";
+export { EVERYAGENT_TENANT, EVERYAGENT_USERS } from "./everyagent-identity.mjs";
 
 export const EVERYAGENT_SKILLS = Object.freeze([
   { id: "licensing", version: 1, title: "Licensing", application: "platform", applicationName: "Alamo Platform",
@@ -23,6 +19,7 @@ export const EVERYAGENT_SKILLS = Object.freeze([
 ]);
 
 export function everyAgentSkillsFor(claims) {
-  if (!hasLicensingAccess(claims) || !EVERYAGENT_USERS.includes(String(claims.oid).toLowerCase())) return [];
-  return [...EVERYAGENT_SKILLS];
+  if (!hasEveryAgentAccess(claims)) return [];
+  // Application permissions constrain their own skills, never agent identity.
+  return EVERYAGENT_SKILLS.filter(skill => skill.id !== "licensing" || hasLicensingAccess(claims));
 }

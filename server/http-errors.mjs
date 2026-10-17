@@ -1,31 +1,8 @@
 import { isSnapshotUnavailableError } from "./snapshot-status.mjs";
 import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 
-export class HttpError extends Error {
-  /**
-   * @param {number} statusCode
-   * @param {string} code
-   * @param {string} message
-   * @param {unknown} [details]
-   */
-  constructor(statusCode, code, message, details = null) {
-    super(message);
-    this.name = "HttpError";
-    this.statusCode = statusCode;
-    this.code = code;
-    this.details = details;
-  }
-}
-
-/**
- * @param {number} statusCode
- * @param {string} code
- * @param {string} message
- * @param {unknown} [details]
- */
-export function createHttpError(statusCode, code, message, details = null) {
-  return new HttpError(statusCode, code, message, details);
-}
+import { createHttpError } from "./http-error-contract.mjs";
+export { HttpError, createHttpError } from "./http-error-contract.mjs";
 
 export function getRequestUrl(req, origin = "https://www.alamoplatform.com") {
   try {
