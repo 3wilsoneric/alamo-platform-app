@@ -151,7 +151,7 @@ export const GUIDED_QUESTION_CONTRACTS = Object.freeze({
     requiredAnswerTerms: [["resident", "change", "incident", "profile"]]
   }),
   "resident-incident-history": contract({
-    allowedTruthStates: ["valid_rows", "verified_zero"],
+    allowedTruthStates: ["valid_rows", "verified_zero", "summary_not_shown"],
     allowedVisualTypes: ["bar_chart", "table"],
     requiredAnswerTerms: [["incident"]]
   }),

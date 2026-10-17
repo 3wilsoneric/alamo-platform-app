@@ -133,7 +133,8 @@ const POPULAR_ROUTE_DEPTH_REQUIREMENTS = Object.freeze({
   "census-trend:0": { minWords: 35, minVisualRows: 6 },
   "community-change-summary:0": { minWords: 38, minVisualRows: 4 },
   "community-comparison:0": { minWords: 35, minVisualRows: 5 },
-  "incident-current-snapshot:0": { minWords: 30, minVisualRows: 5 },
+  // Category taxonomy is intentionally narrow; do not require invented bars.
+  "incident-current-snapshot:0": { minWords: 30, minVisualRows: 3 },
   "incident-category-breakdown:0": { minWords: 30, minVisualRows: 5 },
   "resident-search:0": { minWords: 12, minVisualRows: 0 },
   "medication-profile:0": { minWords: 10, minVisualRows: 1 }

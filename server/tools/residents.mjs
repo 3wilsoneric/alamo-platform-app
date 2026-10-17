@@ -740,24 +740,29 @@ export function createResidentTools(dependencies) {
     return {
       handled: true,
       tool: "resident_incident_history",
+      truthState: details.length ? "valid_rows" : incidentRollup.total ? "summary_not_shown" : "verified_zero",
       text: [
         `${label} incident history`,
         `Community: ${resident.facility_name || facility?.community_name || resident.facility_id}; unit ${resident.unit_number ?? "—"}.`,
         `Matched incidents: ${formatNumber(details.length)}.`,
+        !details.length && incidentRollup.total
+          ? "Detailed incident history cannot be verified from the current records; the historical profile rollup is shown separately."
+          : null,
         `${hasIncidentRollup ? "Historical" : "Loaded-history"} rollup: ${formatNumber(incidentRollup.total)} total; ${formatNumber(incidentRollup.days30)} in 30 days; ${formatNumber(incidentRollup.days90)} in 90 days; ${formatNumber(incidentRollup.days180)} in 180 days.`,
         details.length
           ? `Recent incidents: ${details.slice(0, 6).map((incident) => `${incident.category || incident.incident_type || "Incident"}${incident.incident_date || incident.received_at ? ` on ${formatDateLabel(incident.incident_date ?? incident.received_at)}` : ""}`).join("; ")}.`
-          : "No incident records matched this resident in the loaded snapshot.",
+          : "No incident records matched this resident in the current detail archive.",
         categories.length
           ? `Category mix: ${categories.map(([name, count]) => `${name} (${formatNumber(count)})`).join(", ")}.`
           : "Category mix is not available for this resident."
-      ].join("\n"),
+      ].filter(Boolean).join("\n"),
       trace: makeTrace({
         tool: "resident_incident_history",
         dataSource: "enriched resident profile and incident detail history",
         rowCount: details.length,
         facility,
-        note: resident.res_number ? `resident ${resident.res_number}` : null
+        note: resident.res_number ? `resident ${resident.res_number}` : null,
+        truthState: details.length ? "valid_rows" : incidentRollup.total ? "summary_not_shown" : "verified_zero"
       }),
       visual: categories.length
         ? {
@@ -770,7 +775,16 @@ export function createResidentTools(dependencies) {
               value: Number(value)
             }))
           }
-        : undefined,
+        : {
+            type: "table",
+            title: `${label} Incident Coverage`,
+            subtitle: incidentRollup.total ? "Detail unavailable" : "No matching incidents",
+            columns: ["Measure", "Count"],
+            rows: [
+              { label: "Matched incident details", value: 0, cells: ["Matched incident details", "0"] },
+              { label: "Historical profile rollup", value: incidentRollup.total, cells: ["Historical profile rollup", formatNumber(incidentRollup.total)] }
+            ]
+          },
       actions: [
         { label: `Open ${resident.facility_name || facility?.community_name || "community"} residents`, kind: "route", route: `/communities/${resident.facility_id}?focus=residents` },
         { label: `Export ${resident.facility_name || facility?.community_name || "community"} incidents`, kind: "tool", tool: "export_csv", prompt: `export ${resident.facility_name || facility?.community_name || resident.facility_id} incidents to csv` }
