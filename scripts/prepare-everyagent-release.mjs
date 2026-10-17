@@ -4,6 +4,10 @@ import { promisify } from "node:util";
 import path from "node:path";
 
 const root = process.cwd();
+const sourcePackage = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
+if (sourcePackage.dependencies?.["@alamo/agent-runtime"]) {
+  throw new Error("The legacy agent overlay cannot install the extracted engine. Build a dependency-aware Platform image including its lock and vendor package, or deploy the independent agent API/worker.");
+}
 const base = process.env.EVERYAGENT_BASE_IMAGE;
 if (!/^pipelineprodacra6qdvl6ebenac\.azurecr\.io\/alamo-platform@sha256:[a-f0-9]{64}$/.test(base ?? "")) {
   throw new Error("Set EVERYAGENT_BASE_IMAGE to the verified live production digest.");

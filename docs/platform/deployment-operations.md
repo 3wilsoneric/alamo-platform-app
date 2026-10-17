@@ -46,6 +46,67 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### AlamoAgent engine source extraction — 2026-10-16 (not deployed)
+
+The agent engine now has its own local Git project at
+`/Users/eric/CareEngineMain/alamoagent`. Its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md)
+and [living build spec](/Users/eric/CareEngineMain/alamoagent/docs/build-spec.md)
+are canonical. The user prioritized engine capabilities and application connections;
+standalone UI work is parked. Platform's existing client is retained.
+
+Platform consumes the reviewed internal archive
+`vendor/alamo-agent-runtime-0.1.0.tgz` from engine source commit `ee7c428` through
+its normal package lock. The archive integrity and runtime source bytes were
+verified against that project. Existing
+agent entry points and contracts re-export that package; unused internal aliases
+were removed. The engine owns its runtime dependencies, checked source, emitted
+public types, independent API/worker packaging, and skill definitions. No sibling
+checkout or symlink is needed by an installed consumer. The Platform source API,
+source-owned grants and domain adapters remain in this application.
+
+Both independent entry points use the engine's application connector router.
+Each reviewed skill binds to a source application; deployment configuration maps
+that app to an exact HTTPS origin/path, audience and workload identity. Optional
+`ALAMOAGENT_CONNECTORS_JSON` replaces the older single-Platform settings when set.
+Unknown apps, duplicate app registrations, invalid paths and unsafe origins fail
+configuration. No chat can choose a connector URL or credential. There is no
+cross-app fallback after denial. Current production definitions still use Platform
+for both Licensing and Admissions summaries; direct Pipeline, Workforce and
+AlamoHealth source capabilities are not claimed by the synthetic routing test.
+
+Verification receipts in this checkout:
+
+- Independent engine `npm test`, API/worker builds and isolated API package check:
+  passed. API has 36 runtime files and three direct dependencies; worker has 24
+  runtime files and four dependencies. No browser build is needed in the engine.
+- Two independently signed local HTTP apps: routing, separate grants, wrong-user
+  and wrong-community denial, cross-app receipt rejection, revocation, durable
+  publication and conversation rechecks passed. No live model/source calls.
+- Platform compatibility checks: work, workflows, source permissions and scoped
+  conversations passed against the installed archive, including public types.
+- `generated/alamoagent-extraction-package.log`: isolated API install/startup,
+  real HTTP authorization suite and shutdown passed (57 installed packages).
+- `generated/alamoagent-extraction-worker-host.log`: isolated worker install
+  (92 packages) and real Functions/Azurite kill/restart/replay passed; one source
+  read, one result, and preserved review receipt.
+- `generated/alamoagent-extraction-browser.log`: existing direct/embedded client
+  regression passed at 320/390/1440px. This is preservation coverage, not new UI work.
+- `generated/alamoagent-extraction-analyst.log` and
+  `generated/alamoagent-extraction-build.log`: the complete `check:analyst` suite
+  and production build passed (exit 0). The existing large-chunk build warning
+  remains. Documentation/retention, lint and dependency/type checks passed.
+
+Dependency-aware Platform builds must include `vendor/` before `npm ci`. The
+Licensing job context/Dockerfile now do so using the pinned package path. The old
+agent-only overlay fails early with an explicit migration message, because it
+cannot safely install the new dependency. Use a reviewed full dependency-aware
+Platform image or the independent engine packages for a future release; copying
+only compatibility modules onto the old image would leave the package missing.
+
+No deployment, Git remote, cloud resource, registration, consent, source grant,
+rollout expansion or email delivery was created. Eric-only access, inactive Wilson
+branding, existing state paths and the current production scheduler remain intact.
+
 ### AlamoAgent direct home and conversations — 2026-10-16 (not deployed)
 
 The independent API now has a standalone browser build and a versioned central

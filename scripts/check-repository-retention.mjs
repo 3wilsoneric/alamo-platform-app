@@ -196,6 +196,7 @@ function projectFiles() {
 }
 
 function ownershipClass(file) {
+  if (/^vendor\/alamo-agent-runtime-\d+\.\d+\.\d+\.tgz$/.test(file)) return "pinned agent engine distribution";
   if (rootFiles.has(file)) return "app shell and tooling";
   if (approvedDeploymentOverlayFiles.has(file)) return "app shell and tooling";
   if (approvedDocs.has(file)) return file.startsWith("docs/reference/") ? "live specification" : "handbook";

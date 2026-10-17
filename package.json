@@ -173,14 +173,13 @@
     "check:browser-everyagent-conversations": "node scripts/check-browser-everyagent-conversations.mjs"
   },
   "dependencies": {
-    "@azure/functions": "4.16.5",
+    "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.1.0.tgz",
     "@azure/identity": "^4.13.1",
     "@azure/msal-browser": "^4.26.0",
     "@azure/msal-react": "^3.0.20",
     "@azure/storage-blob": "^12.33.0",
     "@databricks/sql": "^2.2.0",
     "@svg-maps/usa": "^2.0.0",
-    "durable-functions": "3.6.0",
     "jose": "^6.2.3",
     "lucide-react": "^0.525.0",
     "pdf-lib": "^1.17.1",

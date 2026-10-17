@@ -33,10 +33,11 @@ await api.command(owner, { action: "configure", skillId: "licensing", communityI
 await api.command(owner, { action: "configure", skillId: "admissions-watch", communityIds: [], paused: true, expectedVersion: 0 });
 await makeStore().update(state => { state.assignments.find(a => a.skillId === "licensing").cursor = {}; return true; });
 const importUrl = file => JSON.stringify(pathToFileURL(path.join(runtimeRoot, file)).href);
+const functionsUrl = process.env.AGENT_TEST_WORKER_RUNTIME ? importUrl("server/everyagent-functions.mjs") : JSON.stringify(import.meta.resolve("@alamo/agent-runtime/server/everyagent-functions.mjs"));
 await writeFile(path.join(directory, "worker.mjs"), `
 import { appendFile, access, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
-import { registerEveryAgentFunctions } from ${importUrl("server/everyagent-functions.mjs")};
+import { registerEveryAgentFunctions } from ${functionsUrl};
 import { createEveryAgentWorkflowService } from ${importUrl("server/everyagent-workflow-service.mjs")};
 import { createEveryAgentStore } from ${importUrl("server/everyagent-store.mjs")};
 import { createEveryAgentPersistence } from ${importUrl("server/everyagent-persistence.mjs")};
