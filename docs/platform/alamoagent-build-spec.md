@@ -67,6 +67,7 @@ Documenting them is not evidence that infrastructure has been provisioned.
 | P11 | Native LIC 624 plus backlog intake | New forms can start in-app; uploads remain useful for backlog. Preserve the existing editor and validate fidelity to the official form. |
 | P12 | Demonstrable quality | Reliability and useful outcomes are measured through acceptance tests and evals. “Perfect” is an objective, not a readiness claim. |
 | P13 | Pipeline assessment review | Supervisors can ask AlamoAgent for team assessment-workflow exceptions; assessors can ask about their own assigned work. Show evidence and the next review action, without treating sparse records as proof of poor performance. |
+| P14 | Independent agent home with cross-app conversations | Work with AlamoAgent directly in its own workspace; let a conversation use authorized application capabilities as needed and continue from embedded entry points. This is required direction; service extraction and a standalone home are not yet implemented. |
 
 Raj and Betty retain standalone Licensing permissions. The previous request for
 a Jarvis-like introduction was superseded by the later explicit removal of all
@@ -86,6 +87,7 @@ deployment receipts. Production was not re-probed while creating this spec.
 | Personal monitoring state | Deployed | [Service](../../server/everyagent-service.mjs), [persistence](../../server/everyagent-persistence.mjs). ETag-protected Blob, source fingerprints, lease, assignments and work history. |
 | Durable monitoring workflow | Implemented and locally verified; not deployed | [Functions registration](../../server/everyagent-functions.mjs), [versioned orchestrator](../../server/everyagent-orchestrator.mjs), [workflow service](../../server/everyagent-workflow-service.mjs). Real Functions host restart/replay tested with isolated Azurite. General model planning and conversation remain future work. |
 | Dormant owner chat | Implemented, separate surface | [OwnerChatPage](../../src/features/home/pages/OwnerChatPage.tsx) reuses the existing conversational analyst workspace. The agent companion currently links to Ask a question; conversation is not integrated into its tasks. |
+| Independent agent service and direct workspace | Required; proposed design below | The current API, access helpers, routes, and source adapters still depend on Platform. A separate worker entry point does not establish an independent agent service or portable conversation. |
 | Native LIC 624 creation and editing | Deployed | [Native reports](executive-director-workspace.md#native-reports), October 13 release. Create, save, reopen, review, and versioned audit are present. The earlier upload-only limitation is obsolete. |
 | Upload and extraction | Implemented; see owning workflow for release evidence | Fillable-PDF extraction and review exist. Image-only files stop at OCR-required; connected OCR, automatic filing, incident linking, and official-PDF generation are not delivered by native creation. |
 | Readable state-report reader | Deployed | [Licensing Reports](product-surfaces.md#licensing-reports). Briefs, paragraphs, page references, findings/corrections, and original download. |
@@ -114,8 +116,9 @@ Current implementation specifics:
 
 | Layer | Proposed choice | Keep, extend, or add |
 |---|---|---|
-| Embedded UI | React/TypeScript shared components and existing chat/module renderer | Extend; embed the same task surface in authorized hosts |
-| API and application tools | Node/TypeScript on Azure Container Apps, Entra authentication, managed identities | Extend existing boundary |
+| Agent workspace and embedded UI | React/TypeScript direct workspace plus shared companion components | Extract existing chat/module components; share conversation/task APIs across authorized hosts |
+| Agent API | Independently deployed Node/TypeScript service on Azure Container Apps with its own Entra API audience | Extract from Platform; preserve the current pilot grant separately from app entitlements |
+| Application tools | Versioned adapters calling source-owned authenticated APIs | Keep domain rules, record authorization, and transactions in each application |
 | Durable orchestration | Azure Durable Functions, checked JavaScript ESM, Azure Storage backend | First worker implemented and verified locally; separate cloud deployment pending |
 | Reasoning | Existing Claude integration behind typed model/tool contracts | Reuse initially; version model selection per skill and compare changes through evals |
 | Skills | Versioned TypeScript capability packages with input/output schemas | Extend the current catalog into executable, tested contracts |
@@ -153,7 +156,7 @@ establish truth or authorization.
 
 ```mermaid
 flowchart TD
-    A["Embedded helper in each app"] --> C["Agent API and authorization"]
+    A["Direct workspace and embedded helpers"] --> C["Agent API and authorization"]
     B["Schedules and application events"] --> C
     C --> D["Durable workflow"]
     D --> E["Skill activities: reasoning, tools, validation"]
@@ -247,6 +250,132 @@ permissions, assignment scope, skill actions, and any narrower task scope.
 The companion should show actual work, progress, and evidence with optional
 conversation. Reuse the dormant chat's working components after tracing their
 dependencies; do not mount a second competing state or polling system.
+
+### Independent service and direct workspace
+
+AlamoAgent should have one independently deployed service and a direct web
+workspace. `agent.alamoplatform.com` is a proposed address, not a provisioned or
+verified endpoint. That workspace opens existing conversations, work, sources,
+and responsibilities with the same quiet helper styling. It does not require
+an open Platform, Pipeline, or Workforce tab to run a task.
+
+Keep the code in an independent `alamoagent` application/repository, optionally
+as a sibling under the workspace wrapper. It owns its build, dependencies,
+Entra API registration, deployment, and operational data. The wrapper remains
+documentation-only. Until extraction is implemented, this file remains the
+canonical spec; move it with the service and leave a pointer when ownership
+actually changes, rather than maintaining two competing build specs.
+
+| Boundary | Agent owns | Application owns |
+|---|---|---|
+| Experience | Direct workspace, shared conversation/work components, progress and citations | Compact entry point and verified navigation/context bridge |
+| Execution | Conversation/task IDs, orchestration, skill selection, budgets, task outcomes | Domain operations, validation and transaction rules |
+| Identity | Agent access grant, conversation membership, assignment and tool policy | Current user roles, team membership and record/resource permissions |
+| Data | Scoped conversation/task metadata, authorized evidence references, personal memory and improvement records | Authoritative records, original documents, application audit and data lifecycle |
+| Connectivity | Versioned capability registry and adapters with bounded output contracts | Authenticated API endpoints and authorized, deduplicable events |
+
+Deploy the web/API service separately from the durable Functions worker. They
+share agent-owned contracts and application-state storage; the workflow engine
+continues to own replay history. PostgreSQL is the target for conversations,
+assignments, task projections and scoped memory; Blob retains appropriate
+artifacts. The first extraction can retain the current Blob projection adapter
+until the separately tested data migration. Do not copy source application
+databases into the agent or move the existing Platform knowledge prototype
+wholesale into a general memory store.
+
+Current couplings to remove, established from source:
+
+- `shared/everyagent-catalog.mjs` gates all skills through Licensing access.
+  Separate the Eric-only agent rollout grant from each connector's application
+  permission check; a general agent must not depend on having a Licensing role.
+- `src/features/agent/everyAgentApi.ts` assumes the Platform API route and auth
+  helper. Inject an agent client/token provider and use a versioned agent API.
+  Keep a compatibility route during migration, with one authoritative backend.
+- `server/everyagent-adapters.mjs` imports Platform's Licensing implementation
+  directly. Replace that dependency with an authenticated read contract owned
+  by Platform; retain Pipeline's aggregate boundary until its new scoped
+  assessment-review API exists.
+- Work evidence uses Platform-relative URLs. Carry application ID, typed
+  resource ID and source revision; resolve verified deep links through a
+  server-controlled application registry so a link works from every host.
+- Persistence and worker preparation currently use Platform configuration and
+  copy its runtime. Package only agent-owned modules, contracts and adapters;
+  assign independent configuration and identities at cutover.
+
+### Conversation continuity and application selection
+
+Persist conversations centrally with tenant, owner/membership, resource scope,
+messages, task links and provenance. A new conversation can start at the direct
+home or inside an application. An embedded launch supplies only bounded
+context references: host application, current route, selected resource IDs,
+filters and an optional conversation ID. The service validates those references
+and conversation membership. Page text and a conversation ID grant no access.
+
+Opening the same conversation from another authorized host resumes its stored
+task and messages. Opening a new chat does not merge prior transcripts. Keep
+current page context separate from the chat's explicit scope: changing tabs
+must not silently change the target of an in-flight task. Cross-app questions
+can select additional read capabilities within the user's existing permissions
+and the task's limits; a chat explicitly locked to an app or resource remains
+locked until the user changes that scope.
+
+For each turn, the service resolves permitted capabilities, loads the relevant
+skill, calls the required source APIs, validates the returned evidence, and
+responds in the same chat. Show which applications supplied information and
+their freshness. An unavailable app produces a labeled partial answer, not an
+inferred result. Open a source application's UI only when the user chooses a
+source/action link or the workflow needs a handoff that its APIs do not support.
+Record IDs from different apps require an explicit mapping before any join.
+
+Expose versioned conversation, message, task, event-stream and capability
+contracts. Mutations use request IDs; streamed events have sequence IDs for
+reconnect without duplicate messages or tasks. Personalization and scoped
+memory remain central so switching hosts does not create a separate agent.
+Source-specific transcript/evidence permissions are rechecked on retrieval,
+including after membership changes; conversation ownership alone does not
+preserve revoked access to source data. Derived messages and artifacts carry
+their required source permissions; withhold or recompute an affected answer
+when its permitted portions cannot be separated reliably.
+
+Start with a shared React client for trusted first-party apps and the direct
+workspace. It receives the agent API client, bounded host context and a
+navigation callback; it does not import another app's stores or runtime. Calls
+to the central API use agent-targeted authentication, exact allowed origins,
+and independently checked host data policy. Bind that policy to registered,
+authenticated clients rather than a browser-supplied host name or CORS alone.
+Do not forward transcripts into the host's server logs or analytics. A component
+rendered in a host page shares
+that page's JavaScript trust boundary; use an agent-owned isolated frame or a
+direct-workspace handoff for any host that must not see its rendered content.
+
+### Connector identity and transport
+
+An application is connected when it publishes a versioned capability contract:
+operation ID, input/output schema, identity mapping, allowed resource scope,
+freshness/error states, evidence references, action category and idempotency
+rules. Begin with existing HTTPS APIs. Add MCP wrappers when discovery or
+reuse by another agent client justifies them; MCP is not required for the
+first decoupled service and does not replace application authorization.
+
+For interactive Entra-protected APIs configured to support delegation, use an
+agent-targeted access token and obtain the appropriate downstream token via
+On-Behalf-Of. Each app still checks its roles and resources. Other identity
+systems require a verified mapping/delegation contract; do not assume shared
+sign-in establishes shared authorization. Background jobs use workload identity
+plus an explicit, revocable user assignment that the source can authorize;
+an organization-wide service token cannot stand in for that user scope.
+Tokens and secrets stay out of model context, conversations and task history.
+[Microsoft's OBO contract](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow)
+requires audience-specific downstream tokens; optional MCP integration must
+also honor [MCP authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
+
+First decoupling proof: start a chat at the direct home, request a Licensing
+change summary and authorized Admissions aggregates, open a cited source, and
+resume the same conversation from Platform without a duplicate task. Verify
+that a wrong host, another user, a revoked source grant, an expired session,
+and a broken connector cannot expose another conversation or broaden access.
+The initial direct home remains Eric-only; connecting an app does not activate
+its users or expand this rollout. Email remains disabled.
 
 ### Pipeline assessment review handoff — 2026-10-16
 
@@ -403,6 +532,7 @@ permission, recovery, and result checks begin with the first workflow.
 | Q11 | Respect rollout restrictions | Eric-only agent; Raj/Betty standalone Licensing; Andrew inactive; no email delivery |
 | Q12 | Retain form fidelity | Preserve native editor/review behavior; official-form field/content comparison and representative demo validation before claiming official output parity |
 | Q13 | Scope assessment review | Assessor-own and supervisor-team permission tests, reassignment/revocation, versioned completion, imported-versus-authored evidence, missing-reason cases, PHI-minimized memory/logs, and unavailable-source behavior |
+| Q14 | Decouple and resume across hosts | Direct home and Platform share a conversation/task; audience-specific auth, source revocation, host policy, scoped transcripts, reconnect/deduplication, valid cross-app links and partial-source failures are verified |
 
 Use deterministic assertions for permissions, schemas, replay, and duplicate
 prevention. Use fixed representative task datasets, semantic grading, and human
@@ -428,8 +558,8 @@ proposed workflow or memory capabilities. No production release was performed.
 |---|---|---|---|
 | S0 | Reconciled living spec and agent entry-point guidance | Current/planned split, requirement IDs, implementation map, linked handbook and retention registration | Implemented; maintained with this build |
 | S1a | Durable task foundation exercised by a Licensing check | Scoped contracts, persisted checkpoints, restart, duplicate, cancellation and revocation tests; traceable result | Implemented and locally verified; not deployed |
-| S1b | Production worker rollout and operational storage migration | Isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Pending; no cloud resources or data migration performed |
-| S2 | Complete Licensing workflow with task-linked conversation | Captured source → validated brief → work item → correction; existing chat reused; mobile and keyboard review | Proposed |
+| S1b | Independent agent API, connector boundary and controlled worker rollout | Extracted access/client/source contracts, isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Next architecture slice; not implemented or deployed |
+| S2 | Direct agent workspace and complete Licensing workflow with task-linked conversation | Existing chat components reused; central conversation → scoped sources → brief → work → correction; direct-home/Platform continuity and Q14 checks | Required direction; proposed implementation |
 | S3 | Second durable workflow and second embedded host | Pipeline adapter permissions and aggregate boundary preserved; same task accessible from authorized hosts; no transcript leakage | Proposed |
 | S3a | Pipeline assessment-review read skill | Pipeline-owned scoped projection; supervisor-team and assessor-own queries with source-backed exceptions and Q13 checks | Required; not implemented |
 | S4 | User-controlled memory and knowledge relationships | Memory review/edit/delete, source-backed graph, scoped retrieval, assertion approval and correction tests | Proposed |
@@ -441,6 +571,13 @@ Admissions adapters through the real durable engine, behind a separate worker
 entry point. The authenticated API and UI expose run progress, cancel, and retry.
 The deployed web timer remains the production scheduler until S1b cutover.
 Avoid generic unused infrastructure and preserve current state during migration.
+
+The next extraction establishes an agent API and application connector boundary
+before adding more hosts. Switch the existing Platform UI to that API behind a
+compatibility client, prove behavior parity, and then build the direct workspace
+over the same conversation/task contracts. Add a second host only after that
+continuity works. This is an incremental extraction of the tested runtime, not
+a second independent implementation of its workflows.
 
 Migration must account for existing assignments, scope, review receipts, and
 unresolved work. Plan an idempotent import from the existing Blob, compare
@@ -501,10 +638,12 @@ Maintain the private pilot throughout.
   presentation assets, and passes a production-only dependency install and
   startup checks for missing storage or an incorrect runtime mode.
 
-Before S1b, finish cloud sizing/identity/network configuration, durable history
-retention, and a tested operational cutover/rollback procedure. Then add the
-task-linked conversation and correction path; introduce Postgres with explicit
-import and reconciliation checks as scoped memory becomes operational.
+S1b starts with the independent API, access and connector contracts described
+above. Cloud activation also requires sizing/identity/network configuration,
+durable history retention, and a tested operational cutover/rollback procedure.
+Then add the direct workspace, task-linked conversation and correction path;
+introduce Postgres with explicit import and reconciliation checks as central
+conversations and scoped memory become operational.
 The full application gate and production build pass; the [local verification
 receipt](deployment-operations.md#alamoagent-durable-worker-candidate--2026-10-16-not-deployed)
 records the host and browser evidence separately from production releases.
@@ -518,8 +657,10 @@ records the host and browser evidence separately from production releases.
   restore, task projection consistency, and retention/deletion policy.
 - Define per-skill quality, latency and cost thresholds using baseline cases;
   do not invent pass rates before measuring representative tasks.
-- Define the host context/conversation contract and which existing chat
-  components can be extracted without disturbing analyst behavior.
+- Finalize the proposed direct-home hostname, deployment/repository ownership,
+  Entra registrations, connector identity mappings and versioned host/context
+  schemas. Inventory existing chat dependencies before extracting components;
+  the shared workspace must not disturb analyst behavior.
 - Inventory additional applications, API owners, event contracts, and shared
   identifiers. AlamoHealth capabilities remain a separate future integration.
 - For S3a, settle the exact Pipeline-to-Platform user identity mapping and
@@ -548,3 +689,4 @@ records the host and browser evidence separately from production releases.
 | 2026-10-16 | Eric requested continuous build-spec maintenance | Link this spec from AGENTS and handbook; update decisions, status, evidence, and next work with each relevant change |
 | 2026-10-16 | Implement the first durable workflow using the supported Functions SDK and Azure Storage | Real host replay verified locally; retain existing work store during execution cutover; Postgres and cloud rollout remain separately tracked |
 | 2026-10-16 | Add assessment-review use for supervisors and assessors | Build a Pipeline-owned, user-scoped read contract; surface neutral exceptions and own-work guidance through AlamoAgent after role and PHI checks. Current Eric-only pilot and aggregate Admissions watch do not satisfy this yet. |
+| 2026-10-16 | Eric requested an independent AlamoAgent home and conversations that reach connected applications as needed | Propose a separately deployed agent API/workspace, central conversation IDs, shared host client and source-owned connectors. Extract Platform couplings incrementally; keep the private rollout and notification restrictions. No service extraction or domain deployment claimed. |

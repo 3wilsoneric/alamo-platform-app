@@ -308,6 +308,15 @@ A persisted execution-mode fence coordinates the updated inline worker and
 durable worker. See the [build spec implementation record](alamoagent-build-spec.md#s1a-implementation-record--2026-10-16)
 for tested guarantees and remaining rollout/storage work.
 
+The next architectural direction is an independent AlamoAgent service and
+direct workspace, with Platform becoming one authenticated host and source
+connector. Conversation/task identity stays central; each application retains
+its domain records and authorization. The [decoupling contract](alamoagent-build-spec.md#independent-service-and-direct-workspace)
+records the current source couplings, shared host client, cross-app continuity,
+and extraction sequence. This is proposed implementation, not an existing
+standalone service or expanded rollout; the Platform knowledge prototype keeps
+its current ownership until an explicit migration.
+
 The current repository is not yet a drop-in integration product. It contains
 working assumptions that are specific to Alamo Health and ElderMark, including:
 
