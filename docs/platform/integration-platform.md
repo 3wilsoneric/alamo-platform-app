@@ -243,9 +243,9 @@ disabled until a separate payload, QA, rollback, cost, and approval review.
 
 ## Current Limitations
 
-### EveryAgent first application-spanning slice — 2026-10-16
+### AlamoAgent first application-spanning slice — 2026-10-16
 
-EveryAgent is the shared work surface, with registered skills and personal
+AlamoAgent is the shared work surface, with registered skills and personal
 standing responsibilities. The first implemented capabilities are the Platform
 Licensing library and the independently deployed Pipeline application's existing
 protected admissions-summary API. `shared/everyagent-catalog.mjs` declares each
@@ -253,12 +253,13 @@ skill's version, application, capability, scope, schedule, output route, and
 permitted read/review actions. Adding a capability requires a real adapter and
 verification; an application name or navigation link alone is not a connection.
 
-The pilot preserves the verified tenant/object-ID allowlist for Eric, Raj, and
-Betty. Each receives a personal Licensing responsibility and can narrow its
-community scope, pause monitoring, resume, and mark results reviewed. Only Eric
-receives Admissions watch in this first slice. Its adapter projects aggregate
-counts from the existing Pipeline summary; referral identities, clinical detail,
-and packets do not enter EveryAgent state. This does not expand either source
+The preview is restricted to Eric's verified tenant-local object ID. He receives
+personal Licensing and Admissions watch responsibilities, can narrow Licensing
+community scope, pause monitoring, resume, and mark results reviewed. Raj and
+Betty retain standalone Licensing access; their earlier agent assignments and
+history remain stored but no longer run or publish. This restriction applies to
+the UI, API, and worker. The Admissions adapter projects aggregate counts from the existing Pipeline summary; referral identities, clinical detail,
+and packets do not enter AlamoAgent state. This does not expand either source
 application's access or expose new Pipeline commands.
 
 `server/everyagent-service.mjs` checks grants on every request and publication.
@@ -268,7 +269,7 @@ before publishing. A pause or scope change during a read cancels that publicatio
 Initial collections establish a completed baseline; later changes create review
 items. Failed/stale sources remain explicit and cannot be converted to zero or
 erase prior results. Duplicate checks preserve review receipts. The source
-collector's Monday/Wednesday cadence remains separate from EveryAgent's
+collector's Monday/Wednesday cadence remains separate from AlamoAgent's
 15-minute checks of published sources.
 
 Production persistence is an ETag-protected `everyagent/state-v1.json` Blob in
@@ -286,7 +287,7 @@ general company graph, inferred clinical facts, or approved knowledge assertions
 General skill authoring, team assignments, dynamic entitlement administration,
 shared company-graph persistence, and AlamoHealth capabilities remain subsequent
 slices. Knowledge's owner-only boundary is unchanged. Email is disabled and the
-EveryAgent command contract exposes no send or source-application write action.
+AlamoAgent command contract exposes no send or source-application write action.
 
 `check:everyagent` covers scope/identity isolation, CAS and concurrent leases,
 restart recovery, pause races, duplicate suppression, review persistence,

@@ -24,14 +24,14 @@ Read the relevant source below and the host application's own agent map before
 implementing. Reuse presentation across products; do not import one product's
 clinical transactions, authorization, or runtime into another.
 
-## EveryAgent assistant mark
+## AlamoAgent assistant mark
 
-The approved EveryAgent mark is `public/brand/everyagent-alamo-v1.webp`: the
+The approved AlamoAgent mark is `public/brand/everyagent-alamo-v1.webp`: the
 original combined Alamo head-and-tree and emerald glass orb. Use it through
 `EveryAgentOrb` as a small mark in the updates toolbar, embedded launcher, and
 companion header. Do not use a large hero mark, welcome message, tagline, or
 onboarding pop-up. The helper starts with actual work and controls; Licensing
-shows a compact collection status rather than an EveryAgent title card.
+shows a compact collection status rather than an AlamoAgent title card.
 The main Alamo Health Management wordmark stays intact.
 The later brighter color variant was not selected.
 
@@ -40,7 +40,7 @@ the existing Alamo head mark and a faithful render of the former CSS orb.
 The deployed derivative is 512 pixels square, WebP quality 92 with alpha. Its
 transparent margins are accounted for in the component's image sizing.
 
-Generation prompt:
+Generation prompt (original name retained for provenance):
 
 > Use case: compositing / logo-brand exploration. Create ONE cohesive new EveryAgent assistant icon combining the two supplied logos. Image 1 is the Alamo brand identity reference: a simple right-facing human head outline, the back of the head becoming a branching tree with small green leaves. Image 2 is the current EveryAgent material and form reference: a softly glowing emerald sphere with delicate orbital lines. Preserve the recognizable Alamo right-facing forehead/nose/chin silhouette and leaf/tree crown, but reinterpret them as a modern premium 3D emerald-and-jade glass sculpture integrated into the rounded EveryAgent orb. The head/tree should feel built into the volume, with a clean sculpted profile and a restrained arrangement of dimensional leaves, not a flat sticker applied to a sphere. Let the softly rounded orb body and very subtle orbital curves unify the mark. Calm intelligent assistant personality, warm and organic, contemporary and minimal. Deep forest green, translucent emerald, gentle mint highlights. Soft studio light from the upper left, convincing bevels, depth, polished satin glass with controlled reflections; no chrome, no plastic toy look. Strong clear silhouette that can work as a small app launcher. Front-facing graphic composition with only enough perspective to show depth. Center the single icon with generous transparent margins. Transparent background with preserved alpha. No lettering, no wordmark, no labels, no comparison layout, no robot face, no eyes, no scenery, no floor, no watermark. Preview concept only.
 

@@ -22,13 +22,13 @@ full-page phone menu begins below that complete header rather than beneath the
 browser status area.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
-EveryAgent is an Eric Wilson-only preview: only his verified tenant-local object
+AlamoAgent is an Eric Wilson-only preview: only his verified tenant-local object
 ID receives its navigation, embedded launcher, workspace, API access, and worker
 assignments. Betty Dominici and Raj Thandi instead see Licensing in that row,
 opening the existing report library at `/analytics/licensing` without the agent
 identity or launcher. They retain their previous Licensing API access. No other
 account, including a platform administrator, receives Licensing access.
-EveryAgent opens directly to updates, source links, and review controls. The
+AlamoAgent opens directly to updates, source links, and review controls. The
 small orb opens the same work from other pages. There is no welcome hero,
 introduction, tagline, explanatory subtitle, or first-visit pop-up. Skill
 settings and notification status sit behind Manage skills. Functional report
@@ -537,49 +537,46 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 
 ## Licensing Reports
 
-`/analytics/agent` is the EveryAgent work surface, also reachable through
-`/everyagent` and a shared-header entry for its three pilot users. It opens on
-an assistant introduction and a readable personal briefing. A green orb and
-compact skill links establish one general EveryAgent; findings and their original
-sources lead the page. Monitoring controls sit behind “Manage my skills,” with
-review actions and persisted check history retained. Each user can pause their own monitoring
-and narrow Licensing community scope. Shared collection continues independently.
-Eric also receives a read-only Admissions watch skill over the protected Pipeline
-summary. Sources that are unavailable or not connected are labeled explicitly.
-The workspace has no prompt-first intake and displays that email delivery is off.
+`/analytics/agent` is the AlamoAgent work surface for Eric Wilson. The legacy
+`/everyagent` link remains supported. Navigation, accessible names, tooltips,
+and helper copy use AlamoAgent; internal API, state, and asset names remain
+stable. It opens directly on a compact status toolbar, skill links, and actual
+work. Manage skills contains personal scope, pause/resume controls, and the
+email-off status. Review actions and persisted check history remain available.
+Eric receives Licensing monitoring and a read-only Admissions watch skill over
+the protected Pipeline summary. Unavailable or disconnected sources are labeled
+explicitly. Shared source collection continues independently of personal scope.
 
-For the same pilot accounts, a persistent green EveryAgent launcher is embedded
-in the authenticated Platform shell. It opens a keyboard-accessible dialog with
-an introduction, the current page name, up to two recent findings (unreviewed
-work first), skill links, and the full briefing. “Ask a question” opens the
-existing question workspace; this release does not add conversational planning
-or read arbitrary page content. The greeting uses the signed-in profile when
-available. A dismissible first introduction is scoped to that account’s browser
-session; no report or work content is stored there. One account-keyed provider
-shares polling and mutation state across the page and companion, retains results
-on failures, and stops polling while the document is hidden. Restricted admissions,
-executive-only accounts, executive pages, and presentation mode do not mount the
-companion. The feature is currently embedded in Platform; Pipeline remains a
-connected skill rather than a second host for this UI.
+A small green orb in the authenticated Platform shell opens a keyboard-accessible
+companion with up to two recent findings (unreviewed work first), source links,
+skill links, and All updates. Ask a question opens the existing question
+workspace. The helper has no greeting, introduction, product title, subtitle,
+or first-visit pop-up. It does not add conversational planning or read arbitrary
+page content. One account-keyed provider shares polling and mutation state
+across the workspace and companion, retains results on failures, and stops
+polling while the document is hidden. Restricted admissions, executive-only
+accounts, executive pages, and presentation mode do not mount the companion.
+Pipeline remains a connected skill rather than a second host for this UI.
 
 Licensing remains a read-only library of the four-community CCLD baseline for
-Betty Dominici, Raj Thandi, and Eric. `?skill=licensing` opens its existing rich
-module. The legacy `/licensing` and `/analytics/licensing` routes preserve query
-parameters and add the Licensing skill when redirecting. Other accounts return
-to Analytics before any Licensing or EveryAgent data mounts.
+Betty Dominici, Raj Thandi, and Eric. For Eric, `?skill=licensing` opens its rich
+module and the legacy `/licensing` and `/analytics/licensing` routes preserve
+query parameters while redirecting to that skill. Raj and Betty retain the
+standalone Licensing library at `/analytics/licensing`, without agent navigation,
+launcher, API access, or worker assignments. Other accounts return to Analytics
+before Licensing or agent data mounts.
 
-The Licensing skill opens with a green EveryAgent work summary and an explicit
-“Active skill: Licensing” label. The latest report module appears immediately. It shows the real last-check status, archived report
-count, community count, and automatic check schedule. Failed or unavailable
-checks are labeled; the UI never animates a fictitious scan. A secondary
-Explore reports control provides community selection and evidence views for
-latest reports (up to eight), substantiated complaint findings, cited
-deficiencies, recorded correction plans, or the full library. A community
-selection scopes the query. The module reports its date range and historical
-evidence counts, then drills into an individual report. Back preserves the
-question and scope; report links remain directly addressable. It uses the
-existing authenticated library and deterministic question filters, not a new
-LLM runtime.
+The Licensing skill opens with compact collection status and the latest report
+module. It shows the real last-check status, archived report count, community
+count, and automatic check schedule. Failed or unavailable checks are labeled;
+the UI never animates a fictitious scan. A secondary Explore reports control
+provides community selection and evidence views for latest reports (up to
+eight), substantiated complaint findings, cited deficiencies, recorded correction
+plans, or the full library. A community selection scopes the query. The module
+reports its date range and historical evidence counts, then drills into an
+individual report. Back preserves the question and scope; report links remain
+directly addressable. It uses the existing authenticated library and deterministic
+question filters, not a new LLM runtime.
 
 The individual reader opens with a formatted brief: the state finding, topics, reported
 concerns, finding excerpts, and cited deficiencies with their correction plans.

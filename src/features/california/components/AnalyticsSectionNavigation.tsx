@@ -42,7 +42,7 @@ export default function AnalyticsSectionNavigation({
         {canUseEveryAgent ? <SectionButton
           section="agent"
           active={active === "agent"}
-          label="EveryAgent"
+          label="AlamoAgent"
           onClick={() => onNavigate("agent")}
         /> : canViewLicensing ? <SectionButton
           section="licensing"

@@ -14,10 +14,10 @@ export default function EveryAgentWorkspace() {
   const [settings, setSettings] = useState(false);
   const needsReview = data?.work.filter(item => item.status === "needs_review").length ?? 0;
   const work = data?.work.filter(item => filter === "latest" || item.status === filter) ?? [];
-  return <section className="everyagent-workspace" aria-label="EveryAgent workspace">
+  return <section className="everyagent-workspace" aria-label="AlamoAgent workspace">
     <div className="everyagent-toolbar">
       <div><EveryAgentOrb /><span className="everyagent-live" role="status">{agentStatus(data, error)}</span></div>
-      <div><button type="button" aria-label="Refresh EveryAgent" title="Refresh" onClick={refresh}><RefreshCw size={17} /></button><button type="button" aria-label="Manage skills" title="Manage skills" aria-expanded={settings} onClick={() => setSettings(value => !value)}><SlidersHorizontal size={17} /></button></div>
+      <div><button type="button" aria-label="Refresh AlamoAgent" title="Refresh" onClick={refresh}><RefreshCw size={17} /></button><button type="button" aria-label="Manage skills" title="Manage skills" aria-expanded={settings} onClick={() => setSettings(value => !value)}><SlidersHorizontal size={17} /></button></div>
     </div>
     <nav className="everyagent-skill-links" aria-label="Connected skills">
       {data?.skills.map(skill => <Link key={skill.id} to={skill.href}>{skill.title}<ArrowUpRight size={14} /></Link>)}

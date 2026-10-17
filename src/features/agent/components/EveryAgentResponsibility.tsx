@@ -33,7 +33,7 @@ export default function EveryAgentResponsibility({ skill, responsibility, busy, 
     </div>
     {settings && <form className="everyagent-settings" onSubmit={event => { event.preventDefault(); void update(responsibility.paused, scope).then(() => setSettings(false)).catch(() => {}); }}>
       <fieldset><legend>Communities to watch</legend>{skill.communities.map(community => <label key={community.id}><input type="checkbox" checked={scope.includes(community.id)} onChange={event => setScope(current => event.target.checked ? [...current, community.id] : current.filter(id => id !== community.id))} />{community.name}</label>)}</fieldset>
-      <p>Pausing or changing scope affects your EveryAgent monitoring. Shared source collection continues.</p>
+      <p>Pausing or changing scope affects your AlamoAgent monitoring. Shared source collection continues.</p>
       <button type="submit" disabled={busy || !scope.length}>Save scope</button>
     </form>}
   </article>;

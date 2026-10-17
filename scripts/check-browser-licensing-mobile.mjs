@@ -98,8 +98,8 @@ await withBrowserQa(async (browser) => {
     await page.getByText("Latest check complete", { exact: true }).waitFor();
     await page.getByRole("region", { name: "Licensing answer" }).waitFor();
     assert.equal(new URL(page.url()).pathname, "/analytics/agent", "old Licensing route must redirect to the Agent workspace");
-    assert.equal(await page.getByRole("heading", { name: "EveryAgent", exact: true }).count(), 0);
-    assert.doesNotMatch(await page.getByRole("region", { name: "EveryAgent work", exact: true }).innerText(), /Active skill|State reports collected, organized/);
+    assert.equal(await page.getByRole("heading", { name: "AlamoAgent", exact: true }).count(), 0);
+    assert.doesNotMatch(await page.getByRole("region", { name: "AlamoAgent work", exact: true }).innerText(), /Active skill|State reports collected, organized/);
     const list = await measure(page);
     assert.ok(list.overflow <= 1, `${viewport.width}px list overflowed by ${list.overflow}px`);
     assert.equal(list.searchWidth, 0, "search must stay secondary to the agent output");
@@ -213,7 +213,7 @@ await withBrowserQa(async (browser) => {
   await desktop.route("**/api/platform/licensing/updates", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...updates, status: "failed" }) }));
   await desktop.goto(`${BASE_URL}/analytics/licensing`);
   await desktop.getByText("Latest check needs attention", { exact: true }).waitFor();
-  assert.match(await desktop.getByRole("region", { name: "EveryAgent work", exact: true }).innerText(), /last complete report collection/);
+  assert.match(await desktop.getByRole("region", { name: "AlamoAgent work", exact: true }).innerText(), /last complete report collection/);
   await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   await desktopContext.close();
   // Supply account claims at the auth-hook boundary while retaining the real
@@ -236,9 +236,9 @@ await withBrowserQa(async (browser) => {
     for (const route of ["/everyagent", "/analytics/agent", "/analytics/agent?skill=licensing"]) {
       await page.goto(`${BASE_URL}${route}`);
       await page.waitForURL(url => url.pathname === "/analytics");
-      assert.equal(await page.getByRole("button", { name: "Open EveryAgent" }).count(), 0);
-      assert.equal(await page.getByRole("link", { name: "EveryAgent", exact: true }).count(), 0);
-      assert.equal(await page.getByRole("button", { name: "EveryAgent", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: "Open AlamoAgent" }).count(), 0);
+      assert.equal(await page.getByRole("link", { name: "AlamoAgent", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: "AlamoAgent", exact: true }).count(), 0);
     }
     await page.goto(`${BASE_URL}/analytics/licensing`);
     if (licensed) {
@@ -246,7 +246,7 @@ await withBrowserQa(async (browser) => {
       await page.getByRole("region", { name: "Licensing answer" }).waitFor();
       assert.equal(new URL(page.url()).pathname, "/analytics/licensing");
       assert.equal(await page.locator(".everyagent-orb").count(), 0);
-      assert.doesNotMatch(await page.locator("body").innerText(), /EveryAgent/);
+      assert.doesNotMatch(await page.locator("body").innerText(), /AlamoAgent/);
       await page.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
       await page.getByRole("region", { name: "Report summary" }).waitFor();
       await page.reload();
@@ -259,11 +259,11 @@ await withBrowserQa(async (browser) => {
     }
     if (width < 768) {
       await page.getByRole("button", { name: "Open navigation" }).click();
-      assert.equal(await page.getByRole("navigation", { name: "Mobile platform pages" }).getByRole("link", { name: "EveryAgent" }).count(), 0);
+      assert.equal(await page.getByRole("navigation", { name: "Mobile platform pages" }).getByRole("link", { name: "AlamoAgent" }).count(), 0);
     }
-    assert.equal(agentRequests, 0, "excluded accounts must never mount the EveryAgent provider or request its API");
+    assert.equal(agentRequests, 0, "excluded accounts must never mount the AlamoAgent provider or request its API");
     await context.close();
   }
   await writeFile(path.join(output, "latest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), passed: true, results }, null, 2));
-  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px; Raj and Betty retain reports without EveryAgent, unlisted accounts are denied, and excluded accounts never request the EveryAgent API.");
+  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px; Raj and Betty retain reports without AlamoAgent, unlisted accounts are denied, and excluded accounts never request the AlamoAgent API.");
 });

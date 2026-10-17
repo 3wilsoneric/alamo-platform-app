@@ -29,7 +29,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const canUseEveryAgent = useEveryAgentAccess();
   const { allowed: canViewDemo } = usePresentationAccess();
   const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : [...PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "workforce" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo)),
-    ...(canUseEveryAgent ? [{ id: "everyagent", label: "EveryAgent", href: "/analytics/agent" }] : [])];
+    ...(canUseEveryAgent ? [{ id: "everyagent", label: "AlamoAgent", href: "/analytics/agent" }] : [])];
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {
