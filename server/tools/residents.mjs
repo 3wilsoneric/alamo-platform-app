@@ -770,20 +770,15 @@ export function createResidentTools(dependencies) {
             title: `${label} Incident Categories`,
             subtitle: "Matched incidents",
             valueLabel: "Incidents",
-            rows: categories.map(([rowLabel, value]) => ({
-              label: rowLabel,
-              value: Number(value)
-            }))
+            rows: categories.map(([rowLabel, value]) => ({ label: rowLabel, value: Number(value) }))
           }
         : {
             type: "table",
             title: `${label} Incident Coverage`,
             subtitle: incidentRollup.total ? "Detail unavailable" : "No matching incidents",
             columns: ["Measure", "Count"],
-            rows: [
-              { label: "Matched incident details", value: 0, cells: ["Matched incident details", "0"] },
-              { label: "Historical profile rollup", value: incidentRollup.total, cells: ["Historical profile rollup", formatNumber(incidentRollup.total)] }
-            ]
+            rows: [{ label: "Matched incident details", value: 0, cells: ["Matched incident details", "0"] },
+              { label: "Historical profile rollup", value: incidentRollup.total, cells: ["Historical profile rollup", formatNumber(incidentRollup.total)] }]
           },
       actions: [
         { label: `Open ${resident.facility_name || facility?.community_name || "community"} residents`, kind: "route", route: `/communities/${resident.facility_id}?focus=residents` },
