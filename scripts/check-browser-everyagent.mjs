@@ -5,29 +5,37 @@ import path from "node:path";
 import { BASE_URL, withBrowserQa } from "./browser-qa-utils.mjs";
 import { createEveryAgentPersistence } from "../server/everyagent-persistence.mjs";
 import { createEveryAgentStore } from "../server/everyagent-store.mjs";
+import { createEveryAgentWorkflowService } from "../server/everyagent-workflow-service.mjs";
 import { createEveryAgentService } from "../server/everyagent-service.mjs";
-import { EVERYAGENT_TENANT, EVERYAGENT_USERS } from "../shared/everyagent-catalog.mjs";
+import { EVERYAGENT_SKILLS, EVERYAGENT_TENANT, EVERYAGENT_USERS } from "../shared/everyagent-catalog.mjs";
 
 const output = path.resolve("generated/browser-everyagent");
 await mkdir(output, { recursive: true });
 const directory = await mkdtemp(path.join(os.tmpdir(), "everyagent-browser-"));
 const auth = { authenticated: true, mode: "entra-delegated", claims: { tid: EVERYAGENT_TENANT, oid: EVERYAGENT_USERS[0] } };
 let time = Date.now();
-let fingerprint = "one";
+let fingerprint = "a".repeat(64);
 const result = (skill) => ({ connection: "connected", issue: null, sourceCheckedAt: new Date(time).toISOString(), entries: [{
   key: skill, fingerprint, communityIds: skill === "licensing" ? ["337"] : [],
   title: skill === "licensing" ? "New San Pablo inspection report" : "Admissions activity changed",
   summary: skill === "licensing" ? "A new inspection report is ready to review with its original state source." : "12 active referrals · 2 flagged as stale · 1 unassigned · 4 awaiting admission.",
   evidence: [{ id: skill, kind: "module", label: "View source", href: skill === "licensing" ? "/analytics/agent?skill=licensing" : "/admissions", observedAt: new Date(time).toISOString() }], relationships: []
 }] });
-const service = createEveryAgentService({
-  store: createEveryAgentStore(createEveryAgentPersistence({ localPath: path.join(directory, "state.json"), azure: false })),
-  adapters: { licensing: async () => result("licensing"), "admissions-watch": async () => result("admissions-watch") }, now: () => time
-});
-await service.tick(); time += 16 * 60_000; fingerprint = "two"; await service.tick();
+const store = createEveryAgentStore(createEveryAgentPersistence({ localPath: path.join(directory, "state.json"), azure: false }));
+const adapters = { licensing: async () => result("licensing"), "admissions-watch": async () => result("admissions-watch") };
+const service = createEveryAgentService({ store, adapters, now: () => time });
+const workflows = createEveryAgentWorkflowService({ store, adapters, now: () => time });
+await service.tick(); time += 16 * 60_000; fingerprint = "b".repeat(64); await service.tick();
 try {
   await withBrowserQa(async browser => {
     for (const width of [320, 390, 1440]) {
+      // Each viewport starts with the same full scope; workflow controls below
+      // deliberately narrow it and must not change the next viewport's setup.
+      for (const responsibility of (await service.overview(auth)).responsibilities) {
+        const skill = EVERYAGENT_SKILLS.find(item => item.id === responsibility.skillId);
+        await service.command(auth, { action: "configure", skillId: skill.id, paused: false,
+          communityIds: skill.communities.map(community => community.id), expectedVersion: responsibility.version });
+      }
       const context = await browser.newContext({ viewport: { width, height: width === 1440 ? 1000 : 844 } });
       const page = await context.newPage();
       const errors = [];
@@ -105,6 +113,25 @@ try {
       await companion.getByRole("article").first().waitFor();
       await companion.getByRole("button", { name: "Close AlamoAgent" }).click();
       assert.equal(await page.getByRole("button", { name: "Dismiss AlamoAgent introduction" }).count(), 0, "the helper must not show an onboarding pop-up");
+      const current = await service.overview(auth);
+      for (const responsibility of current.responsibilities) await service.command(auth, { action: "configure", skillId: responsibility.skillId,
+        paused: responsibility.skillId !== "licensing", communityIds: responsibility.skillId === "licensing" ? ["337"] : [], expectedVersion: responsibility.version });
+      await workflows.prepare();
+      await page.goto(`${BASE_URL}/analytics/agent`, { waitUntil: "domcontentloaded" });
+      await page.getByRole("button", { name: "Cancel Licensing check", exact: true }).click();
+      await page.getByText("Canceled", { exact: true }).last().waitFor({ state: "attached" });
+      assert((await service.overview(auth)).tasks.some(task => task.status === "canceled"));
+      time += 16 * 60_000;
+      const [failed] = await workflows.prepare();
+      await workflows.fail(failed.id);
+      await page.getByRole("button", { name: "Refresh AlamoAgent" }).click();
+      await page.getByRole("button", { name: "Retry Licensing check", exact: true, includeHidden: true }).last().waitFor({ state: "attached" });
+      if (!(await page.locator(".everyagent-runs").evaluate(element => element.open))) await page.getByText("Work progress", { exact: true }).click();
+      await page.getByRole("button", { name: "Retry Licensing check", exact: true }).last().click();
+      await page.getByRole("button", { name: "Cancel Licensing check", exact: true }).waitFor();
+      assert(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth <= 1));
+      await page.screenshot({ path: path.join(output, `alamoagent-work-progress-${width}.png`), fullPage: true });
+      await page.getByRole("button", { name: "Cancel Licensing check", exact: true }).click();
       assert.deepEqual(errors, []);
       await context.close();
     }
@@ -135,6 +162,6 @@ try {
       await page.screenshot({ path: path.join(output, `wilson-panel-preview-${width}.png`), fullPage: false });
       await context.close();
     }
-    console.log("AlamoAgent browser checks passed at 320, 390 and 1440px: updates first, compact icon, no introductory copy or pop-ups, keyboard focus, source recovery, persisted pause/scope/review, history, no overflow or runtime errors. Saved Wilson branding also passed desktop/mobile previews with the supplied logo.");
+    console.log("AlamoAgent browser checks passed at 320, 390 and 1440px: updates first, compact icon, no introductory copy or pop-ups, keyboard focus, source recovery, persisted pause/scope/review, workflow progress and cancel/retry, history, no overflow or runtime errors. Saved Wilson branding also passed desktop/mobile previews with the supplied logo.");
   });
 } finally { await rm(directory, { recursive: true, force: true }); }

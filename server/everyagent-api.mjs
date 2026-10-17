@@ -9,7 +9,7 @@ function runtime() { return service ??= createEveryAgentService(); }
 
 // All replicas share a durable lease. Work resumes on the next tick after a
 // restart; the scheduler never depends on an open browser or a user's token.
-if (process.env.EVERYAGENT_WORKER_ENABLED === "true") {
+if (process.env.EVERYAGENT_WORKER_ENABLED === "true" && process.env.EVERYAGENT_WORKER_MODE !== "durable") {
   const check = () => { void Promise.resolve().then(() => runtime().tick()).catch(() => console.warn("EveryAgent check could not complete; next tick will retry.")); };
   setTimeout(check, 5_000).unref();
   setInterval(check, 60_000).unref();

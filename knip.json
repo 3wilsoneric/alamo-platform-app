@@ -3,7 +3,8 @@
   "entry": [
     "src/main.tsx",
     "api/**/*.js",
-    "scripts/**/*.mjs"
+    "scripts/**/*.mjs",
+    "server/everyagent-worker.mjs"
   ],
   "project": [
     "src/**/*.{ts,tsx}",

@@ -82,7 +82,7 @@ deployment receipts. Production was not re-probed while creating this spec.
 | Private embedded helper and agent workspace | Deployed | [Product surfaces](product-surfaces.md#licensing-reports), [rename release](deployment-operations.md#alamoagent-name--2026-10-16). Workspace, compact companion, sources, scope, pause/resume, review receipts, history. |
 | Licensing and Admissions watch skills | Deployed | [Catalog](../../shared/everyagent-catalog.mjs), [adapters](../../server/everyagent-adapters.mjs). Pipeline supplies protected aggregate summaries only. |
 | Personal monitoring state | Deployed | [Service](../../server/everyagent-service.mjs), [persistence](../../server/everyagent-persistence.mjs). ETag-protected Blob, source fingerprints, lease, assignments and work history. |
-| General durable workflow engine | Proposed | Existing timer/lease worker handles bounded monitoring; it is not a general persisted multistep agent runtime. |
+| Durable monitoring workflow | Implemented and locally verified; not deployed | [Functions registration](../../server/everyagent-functions.mjs), [versioned orchestrator](../../server/everyagent-orchestrator.mjs), [workflow service](../../server/everyagent-workflow-service.mjs). Real Functions host restart/replay tested with isolated Azurite. General model planning and conversation remain future work. |
 | Dormant owner chat | Implemented, separate surface | [OwnerChatPage](../../src/features/home/pages/OwnerChatPage.tsx) reuses the existing conversational analyst workspace. The agent companion currently links to Ask a question; conversation is not integrated into its tasks. |
 | Native LIC 624 creation and editing | Deployed | [Native reports](executive-director-workspace.md#native-reports), October 13 release. Create, save, reopen, review, and versioned audit are present. The earlier upload-only limitation is obsolete. |
 | Upload and extraction | Implemented; see owning workflow for release evidence | Fillable-PDF extraction and review exist. Image-only files stop at OCR-required; connected OCR, automatic filing, incident linking, and official-PDF generation are not delivered by native creation. |
@@ -114,7 +114,7 @@ Current implementation specifics:
 |---|---|---|
 | Embedded UI | React/TypeScript shared components and existing chat/module renderer | Extend; embed the same task surface in authorized hosts |
 | API and application tools | Node/TypeScript on Azure Container Apps, Entra authentication, managed identities | Extend existing boundary |
-| Durable orchestration | Azure Durable Functions with its supported TypeScript/JavaScript integration | Add a separately deployed workflow runtime; select its storage backend during the first implementation slice |
+| Durable orchestration | Azure Durable Functions, checked JavaScript ESM, Azure Storage backend | First worker implemented and verified locally; separate cloud deployment pending |
 | Reasoning | Existing Claude integration behind typed model/tool contracts | Reuse initially; version model selection per skill and compare changes through evals |
 | Skills | Versioned TypeScript capability packages with input/output schemas | Extend the current catalog into executable, tested contracts |
 | Operational records | Azure PostgreSQL | Add transactional task projections, assignments, evidence metadata, memory, and relationship records |
@@ -132,6 +132,12 @@ machines or assume cross-service writes are atomic.
 The model runtime operates inside workflow activities. Deterministic
 orchestrator code does not make live model or external API calls during replay.
 No agent SDK alone is assumed to provide the durable business workflow.
+
+The first runtime slice deliberately retains assignments, review receipts, and
+work projections in the existing ETag-protected Blob. Durable Functions owns
+execution history and checkpoints. Moving those application projections to
+Postgres is a separate migration, not a prerequisite for proving orchestration.
+No existing Pipeline or Workforce database is repurposed for Platform state.
 
 Azure Durable Functions currently supports TypeScript. The separate standalone
 Durable Task JavaScript/TypeScript SDK is documented as preview; the proposed
@@ -358,17 +364,20 @@ proposed workflow or memory capabilities. No production release was performed.
 
 | Slice | Deliverable | Exit evidence | Status |
 |---|---|---|---|
-| S0 | Reconciled living spec and agent entry-point guidance | Current/planned split, requirement IDs, implementation map, linked handbook and retention registration | Implemented in this documentation change |
-| S1 | Durable task foundation exercised by a Licensing check | Scoped contracts, persisted checkpoints, execution/DB ownership, restart, duplicate, cancellation and revocation tests; traceable result | Proposed; next build slice |
+| S0 | Reconciled living spec and agent entry-point guidance | Current/planned split, requirement IDs, implementation map, linked handbook and retention registration | Implemented; maintained with this build |
+| S1a | Durable task foundation exercised by a Licensing check | Scoped contracts, persisted checkpoints, restart, duplicate, cancellation and revocation tests; traceable result | Implemented and locally verified; not deployed |
+| S1b | Production worker rollout and operational storage migration | Isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Pending; no cloud resources or data migration performed |
 | S2 | Complete Licensing workflow with task-linked conversation | Captured source → validated brief → work item → correction; existing chat reused; mobile and keyboard review | Proposed |
 | S3 | Second durable workflow and second embedded host | Pipeline adapter permissions and aggregate boundary preserved; same task accessible from authorized hosts; no transcript leakage | Proposed |
 | S4 | User-controlled memory and knowledge relationships | Memory review/edit/delete, source-backed graph, scoped retrieval, assertion approval and correction tests | Proposed |
 | S5 | Measured improvement and additional skills | Corrections become evals, candidate comparisons, version promotion/rollback, task-level cost/latency targets | Proposed |
 | S6 | Broader rollout and optional notifications | Explicit rollout decision and per-user/action validation; recipients/channels confirmed at that time | Deferred |
 
-S1 should be a vertical implementation: one real Licensing check uses the new
-foundation. Avoid generic unused infrastructure. Preserve the current worker
-and state until migration/recovery is verified.
+S1a is a vertical implementation of the existing Licensing and aggregate
+Admissions adapters through the real durable engine, behind a separate worker
+entry point. The authenticated API and UI expose run progress, cancel, and retry.
+The deployed web timer remains the production scheduler until S1b cutover.
+Avoid generic unused infrastructure and preserve current state during migration.
 
 Migration must account for existing assignments, scope, review receipts, and
 unresolved work. Plan an idempotent import from the existing Blob, compare
@@ -378,12 +387,70 @@ itself is not completion.
 
 The next concrete proof is: a Licensing task survives a restart, produces one
 cited result, accepts a correction, and passes the regression case derived from
-that correction. Deliver this through S1/S2 while maintaining the private pilot.
+that correction. Restart, a cited result, and review persistence are verified
+for S1a. Task-linked correction/conversation and its learning eval remain S2.
+Maintain the private pilot throughout.
+
+### S1a implementation record — 2026-10-16
+
+- Pinned runtime packages: durable-functions 3.6.0 and @azure/functions 4.16.5.
+  A targeted uuid 11.1.1 override removes the newly introduced vulnerable
+  transitive version; the production dependency audit passes.
+- A timer dispatches authorized assignments to agentMonitorV1. Its collect,
+  validate, publish, and failure activities use bounded retries and a 20-minute
+  task deadline. Persisted task IDs survive lost dispatch responses.
+- Activity outputs are projected into scoped, bounded evidence before entering
+  orchestration history. Unknown upstream fields are dropped; unsafe evidence
+  links, duplicate entry keys, unsupported relations, and altered validation
+  digests are rejected. The existing deterministic Licensing reader supplies
+  report summaries; this slice does not add model-generated findings.
+- Permission and assignment-version checks run before collection, after the
+  source response, during validation, and atomically with publication. Cancel
+  prevents later publication and skips that scheduled occurrence; pause stops
+  the responsibility. Already completed effects are not represented as undone.
+  Tests also cancel during the source request and between validation and its
+  commit, proving those responses do not create a new checkpoint after cancel.
+- Task completion, assignment cursor, work item, and run receipt commit in the
+  same ETag update. Duplicate activity delivery preserves the same receipt.
+  A failed run has at most one retry successor, including a replayed command
+  arriving after that successor completed.
+- A persisted execution-mode fence prevents the updated web timer from claiming
+  or publishing once the durable worker takes ownership. A worker heartbeat
+  drives availability; the browser is not the scheduler.
+- Active tasks are retained separately from 300 recent terminal tasks, with a
+  hard 50-active-task limit. Work capacity and unresolved-review retention are
+  unchanged. Engine-history retention/purge configuration is still required
+  before cloud rollout; it is separate from these application projections.
+- The new progress disclosure is functional UI, with real phases and cancel/
+  retry controls. Existing work, sources, branding, and standalone Licensing
+  remain intact. No new email or source-application write tool is introduced.
+  Browser checks pass at 320, 390, and 1440px, including scope, pause, review,
+  cancellation, retry, focus, source recovery, and overflow checks.
+- The actual Functions host test kills the process during validation, restarts
+  against the same isolated storage, and verifies one source read, the same
+  instance, one cited result, one run receipt, and persisted review.
+  Reproduce with the [workflow checks](../../scripts/check-everyagent-workflows.mjs)
+  and [Functions host check](../../scripts/check-everyagent-workflow-host.mjs).
+- The worker package is prepared with everyagent:prepare-worker. It has no
+  public HTTP starter; the production entry requires NODE_ENV=production and
+  managed-identity storage. No cloud deployment has occurred.
+  Preparation rebuilds its own generated directory, excludes private
+  presentation assets, and passes a production-only dependency install and
+  startup checks for missing storage or an incorrect runtime mode.
+
+Before S1b, finish cloud sizing/identity/network configuration, durable history
+retention, and a tested operational cutover/rollback procedure. Then add the
+task-linked conversation and correction path; introduce Postgres with explicit
+import and reconciliation checks as scoped memory becomes operational.
+The full application gate and production build pass; the [local verification
+receipt](deployment-operations.md#alamoagent-durable-worker-candidate--2026-10-16-not-deployed)
+records the host and browser evidence separately from production releases.
 
 ## 11. Open decisions and deferred work
 
-- Select Durable Functions storage/hosting details, regional availability,
-  Node/package versions, infrastructure ownership, and operating cost for S1.
+- Azure Storage is selected for the first Durable Functions backend. Select
+  cloud hosting/region, network and identity settings, history retention,
+  infrastructure ownership, and operating cost before S1b.
 - Specify database schema, migrations, connection/identity model, backup and
   restore, task projection consistency, and retention/deletion policy.
 - Define per-skill quality, latency and cost thresholds using baseline cases;
@@ -413,3 +480,4 @@ that correction. Deliver this through S1/S2 while maintaining the private pilot.
 | 2026-10-16, reconciliation | Native LIC 624 was deployed October 13 | Do not repeat the earlier claim that uploads are required to create a report |
 | 2026-10-16 | Proposed TypeScript/Azure durable workflow, Postgres memory, versioned skills, and eval-driven improvement | Record as target architecture; no provisioning or deployment claimed |
 | 2026-10-16 | Eric requested continuous build-spec maintenance | Link this spec from AGENTS and handbook; update decisions, status, evidence, and next work with each relevant change |
+| 2026-10-16 | Implement the first durable workflow using the supported Functions SDK and Azure Storage | Real host replay verified locally; retain existing work store during execution cutover; Postgres and cloud rollout remain separately tracked |

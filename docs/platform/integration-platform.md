@@ -299,6 +299,15 @@ restart recovery, pause races, duplicate suppression, review persistence,
 source failure/recovery, and aggregate-only Pipeline memory. Responsive browser
 checks exercise the worker-first UI, configuration, review receipts, and history.
 
+The next durable-worker slice is implemented in source and verified locally,
+but is not deployed. Azure Durable Functions owns checkpoint/replay history;
+the existing private Blob retains assignments, work, and task projections.
+The worker reuses these same adapters and grants, and the authenticated API
+adds cancel/retry controls without adding outbound or source-write actions.
+A persisted execution-mode fence coordinates the updated inline worker and
+durable worker. See the [build spec implementation record](alamoagent-build-spec.md#s1a-implementation-record--2026-10-16)
+for tested guarantees and remaining rollout/storage work.
+
 The current repository is not yet a drop-in integration product. It contains
 working assumptions that are specific to Alamo Health and ElderMark, including:
 

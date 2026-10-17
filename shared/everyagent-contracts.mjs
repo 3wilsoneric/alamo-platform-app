@@ -1,9 +1,11 @@
 export const EVERYAGENT_VERSION = 1;
 
-// Only personal monitoring settings and review receipts can be mutated here.
+// Only personal monitoring settings, run controls, and review receipts can be mutated here.
 // Application commands and outbound communications are not exposed.
 export function validateEveryAgentCommand(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Choose a valid EveryAgent action.");
+  if (["cancel_run", "retry_run"].includes(value.action) && Object.keys(value).every(key => ["action", "runId"].includes(key)) &&
+      typeof value.runId === "string" && /^[a-f0-9]{32}$/.test(value.runId)) return { action: value.action, runId: value.runId };
   if (value.action === "review" && Object.keys(value).every(key => ["action", "workId"].includes(key)) &&
       typeof value.workId === "string" && /^[a-f0-9]{32}$/.test(value.workId)) return { action: "review", workId: value.workId };
   if (value.action === "configure" && Object.keys(value).every(key => ["action", "skillId", "paused", "communityIds", "expectedVersion"].includes(key)) &&

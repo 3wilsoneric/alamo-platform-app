@@ -9,6 +9,8 @@ export function createEveryAgentStore(persistence = createEveryAgentPersistence(
         !Array.isArray(value.assignments) || !Array.isArray(value.work) || !Array.isArray(value.runs)) {
       throw new Error("EveryAgent state could not be read.");
     }
+    value.tasks ??= [];
+    if (!Array.isArray(value.tasks)) throw new Error("Agent task state could not be read.");
     return { value, version: result.version };
   }
   async function update(mutate) {
@@ -19,6 +21,10 @@ export function createEveryAgentStore(persistence = createEveryAgentPersistence(
       value.revision++;
       // Keep recent execution history; evidence lives with bounded work items.
       value.runs = value.runs.slice(-300);
+      const active = value.tasks.filter(task => ["queued", "running"].includes(task.status));
+      const terminal = value.tasks.filter(task => !["queued", "running"].includes(task.status)).slice(-300);
+      if (active.length > 50) throw new Error("Agent task queue is full.");
+      value.tasks = [...terminal, ...active];
       value.work = value.work.filter(item => item.status !== "completed" ||
         Date.parse(item.createdAt) > Date.now() - 90 * 86_400_000);
       if (value.work.length > 2000) throw new Error("EveryAgent review queue is full.");

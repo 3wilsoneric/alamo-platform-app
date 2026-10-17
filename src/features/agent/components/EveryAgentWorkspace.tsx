@@ -5,6 +5,7 @@ import { agentStatus, useEveryAgent } from "../EveryAgentContext";
 import EveryAgentResponsibility, { agentTime } from "./EveryAgentResponsibility";
 import { EveryAgentOrb } from "./EveryAgentIdentity";
 import EveryAgentWork from "./EveryAgentWork";
+import EveryAgentRuns from "./EveryAgentRuns";
 import { useAgentBranding } from "../useAgentBranding";
 import "../everyAgent.css";
 
@@ -37,6 +38,7 @@ export default function EveryAgentWorkspace() {
         <div className="everyagent-work-list">{work.slice(0, visibleCount).map(item => <EveryAgentWork key={item.id} item={item} />)}</div>
         {work.length > visibleCount && <button type="button" className="everyagent-more" onClick={() => setVisibleCount(count => count + 10)}>Show more work ({work.length - visibleCount} remaining)<ChevronDown size={15} /></button>}
       </section>
+      <EveryAgentRuns />
       <details className="everyagent-history"><summary>Check history</summary>{data.runs.length ? <ul>{data.runs.map(run => <li key={run.id}><span>{data.skills.find(skill => skill.id === run.skillId)?.title}</span><span>{run.status.replaceAll("_", " ")}</span><time>{agentTime(run.finishedAt)}</time></li>)}</ul> : <p>No checks recorded yet.</p>}</details>
     </>}
   </section>;

@@ -46,6 +46,86 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### AlamoAgent durable worker candidate — 2026-10-16 (not deployed)
+
+The candidate uses Azure Durable Functions with the Azure Storage provider,
+registered through `server/everyagent-worker.mjs`. There is no public HTTP
+starter. The timer resolves server-owned assignments; the existing authenticated
+web API exposes task projections and scoped cancel/retry commands. Existing
+production remains on the inline timer until a separately verified cutover.
+
+Prepare the worker from the owning checkout:
+
+```bash
+npm run everyagent:prepare-worker
+npm ci --prefix generated/everyagent-worker --omit=dev --ignore-scripts
+```
+
+The generated package includes the worker's checked runtime, pinned dependencies,
+lockfile/overrides, and host configuration. It excludes private presentation
+assets and environment files. No cloud resources are created by preparation.
+Preparation replaces only its own generated directory to prevent stale files
+from entering a subsequent package. The isolated package passed a production
+dependency install and rejects development mode or absent storage settings.
+
+Local execution proof uses isolated synthetic data and local Azure emulation:
+
+```bash
+npm install --prefix generated/agent-workflow-tools --no-save azure-functions-core-tools@4.16.0 azurite@3.37.0
+npm run check:everyagent-workflows
+npm run check:everyagent-workflow-host
+npm run check:browser-everyagent
+```
+
+The host check retains diagnostic artifacts under ignored
+`generated/everyagent-host-check/`. It actually terminates the Functions process
+after collection, restarts against the same Azurite history, and verifies that
+the source is read once, the instance resumes, one cited result/run receipt is
+published, and review persists through the app service. Azurite uses only its
+public development credential on loopback; cloud credentials are not passed.
+
+Local verification receipt, October 16: the final real-host replay check passed
+at `generated/everyagent-host-check/1792200024134/result.json`. Browser checks
+passed at 320, 390, and 1440px, with captured work-progress screenshots under
+`generated/browser-everyagent/`. The complete `check:docs`, `check:analyst`
+(including both TypeScript checks and the workflow regressions), `build`, and
+production dependency gate also passed. These are local verification receipts,
+not production release evidence.
+
+Required cloud configuration remains to be provisioned and verified:
+
+- A separate Functions worker and private Azure Storage backend for Blob,
+  Queue, and Table orchestration state. Select hosting/region/network settings
+  and history purge/retention before enabling the timer.
+- `NODE_ENV=production`, `FUNCTIONS_WORKER_RUNTIME=node`,
+  `EVERYAGENT_WORKER_ENABLED=true`, and `EVERYAGENT_WORKER_MODE=durable`.
+  The production worker refuses development-mode startup.
+- An identity-based `AzureWebJobsStorage` connection with the documented host
+  and Durable Functions permissions. Use managed identity rather than storing
+  an account key; see [Microsoft's configuration guide](https://learn.microsoft.com/en-us/azure/durable-task/durable-functions/durable-functions-configure-managed-identity).
+- Existing `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_CONTAINER`, and
+  `AZURE_CLIENT_ID` for Platform work state, plus the existing Licensing/Pipeline
+  read configuration. The orchestration storage and application work Blob have
+  distinct responsibilities. Do not reuse a source application's database.
+
+Cutover order: deploy the updated web/API code with the existing inline mode;
+verify backward compatibility; stop its inline scheduler and allow its lease to
+finish; then enable the durable worker. Its first prepare persists the durable
+execution fence, which the updated inline worker checks before claim and
+publication. Use the worker heartbeat and observed task completion to verify
+the transition. Existing assignment cursors prevent a new backlog flood.
+
+Rollback must first stop/drain durable execution, account for any running task,
+and retain current work/review receipts. Changing only an environment flag does
+not clear the persisted fence. Do not restore an older web image that ignores
+the fence while the durable worker is active. A production rollback utility
+and reconciliation exercise remain rollout prerequisites; no automatic reset
+or history deletion is provided by this candidate.
+
+The Eric-only catalog, disabled email delivery, and Andrew's inactive Wilson
+profile are unchanged. PostgreSQL migration, conversation/correction, and
+broader agent rollout remain tracked in the [living build spec](alamoagent-build-spec.md).
+
 ### AlamoAgent name — 2026-10-16
 
 The private embedded helper is now named AlamoAgent in navigation, tooltips,

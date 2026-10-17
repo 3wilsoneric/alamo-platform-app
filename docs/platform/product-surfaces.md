@@ -566,6 +566,13 @@ polling while the document is hidden. Restricted admissions, executive-only
 accounts, executive pages, and presentation mode do not mount the companion.
 Pipeline remains a connected skill rather than a second host for this UI.
 
+The next source candidate adds a Work progress disclosure when durable tasks
+exist. It shows persisted collection, validation, and publication phases with
+cancel/retry actions; prior work and review receipts remain visible. Failed
+runs with a retry successor do not offer another retry. Worker availability
+uses a durable heartbeat after cutover. This candidate is locally verified,
+not part of the current production release; conversation remains separate.
+
 Licensing remains a read-only library of the four-community CCLD baseline for
 Betty Dominici, Raj Thandi, and Eric. For Eric, `?skill=licensing` opens its rich
 module and the legacy `/licensing` and `/analytics/licensing` routes preserve
