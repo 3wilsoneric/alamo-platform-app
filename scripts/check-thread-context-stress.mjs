@@ -348,7 +348,7 @@ async function runAction(page, action) {
 
   if (action === "reload") {
     const before = await storedAnalysisSession(page);
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await waitForStoredFrame(page, (frame) => frame === null, "reload should start clean");
     const after = await storedAnalysisSession(page);
     if (before?.sessionId && after?.sessionId === before.sessionId) {
