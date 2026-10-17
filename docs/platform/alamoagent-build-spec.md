@@ -66,6 +66,7 @@ Documenting them is not evidence that infrastructure has been provisioned.
 | P10 | Traceable licensing work | Readable summaries and report text, preserved source links/originals, honest extraction/freshness states, and drill-down into evidence. |
 | P11 | Native LIC 624 plus backlog intake | New forms can start in-app; uploads remain useful for backlog. Preserve the existing editor and validate fidelity to the official form. |
 | P12 | Demonstrable quality | Reliability and useful outcomes are measured through acceptance tests and evals. “Perfect” is an objective, not a readiness claim. |
+| P13 | Pipeline assessment review | Supervisors can ask AlamoAgent for team assessment-workflow exceptions; assessors can ask about their own assigned work. Show evidence and the next review action, without treating sparse records as proof of poor performance. |
 
 Raj and Betty retain standalone Licensing permissions. The previous request for
 a Jarvis-like introduction was superseded by the later explicit removal of all
@@ -81,6 +82,7 @@ deployment receipts. Production was not re-probed while creating this spec.
 |---|---|---|
 | Private embedded helper and agent workspace | Deployed | [Product surfaces](product-surfaces.md#licensing-reports), [rename release](deployment-operations.md#alamoagent-name--2026-10-16). Workspace, compact companion, sources, scope, pause/resume, review receipts, history. |
 | Licensing and Admissions watch skills | Deployed | [Catalog](../../shared/everyagent-catalog.mjs), [adapters](../../server/everyagent-adapters.mjs). Pipeline supplies protected aggregate summaries only. |
+| Assessment review for supervisors and assessors | Required; not implemented or deployed | The present aggregate Admissions watch has no user-scoped assessment-detail contract. A Pipeline-owned read projection and role-tested agent grant are needed before either role can use it. |
 | Personal monitoring state | Deployed | [Service](../../server/everyagent-service.mjs), [persistence](../../server/everyagent-persistence.mjs). ETag-protected Blob, source fingerprints, lease, assignments and work history. |
 | Durable monitoring workflow | Implemented and locally verified; not deployed | [Functions registration](../../server/everyagent-functions.mjs), [versioned orchestrator](../../server/everyagent-orchestrator.mjs), [workflow service](../../server/everyagent-workflow-service.mjs). Real Functions host restart/replay tested with isolated Azurite. General model planning and conversation remain future work. |
 | Dormant owner chat | Implemented, separate surface | [OwnerChatPage](../../src/features/home/pages/OwnerChatPage.tsx) reuses the existing conversational analyst workspace. The agent companion currently links to Ask a question; conversation is not integrated into its tasks. |
@@ -246,6 +248,65 @@ The companion should show actual work, progress, and evidence with optional
 conversation. Reuse the dormant chat's working components after tracing their
 dependencies; do not mount a second competing state or polling system.
 
+### Pipeline assessment review handoff — 2026-10-16
+
+Eric wants the assessment audit he can request manually to be available through
+AlamoAgent. A supervisor should be able to ask for team-level work that needs
+review; an assessor should be able to ask the same questions about their own
+assigned referrals and receive practical next steps. This is a new requirement,
+not a claim that the current Eric-only agent or aggregate Admissions watch
+already supports those users. It does not authorize email or clinical writes.
+
+Pipeline must own a bounded, read-only assessment-review projection. The
+existing Platform admissions-summary bearer token and aggregate watch are not
+a user authorization mechanism for referral-level data. The new connector must
+authenticate the real requesting person, map that identity to Pipeline's
+current roles and assignments, and enforce scope in Pipeline before data leaves
+it. Supervisors see only the team scope Pipeline grants them; assessors see
+their own assigned work, including authorized reassignment/coverage changes.
+Agent assignment, Platform admin status, a client-provided assessor ID, or a
+background service credential cannot expand that scope. Recheck authorization
+on detail reads and after reassignment or revocation. Background tasks need an
+explicit per-user grant and must not reuse a browser token indefinitely.
+
+The minimum projection for each authorized referral includes stable referral
+and assessment IDs, assigned assessor ID, workflow/decision status, draft and
+signature timestamps, Meet the Client send status, reason-code/note presence,
+assessment revision, provenance category, and a versioned completion summary
+derived from Pipeline's current question rules, including narrative-presence
+counts without narrative content. Include distinct fields edited by the
+assessor of record after import, last authored change, and source/audit
+timestamps. Do not use raw autosave event totals as a measure of effort, or
+count imported/seeded values as answers the assessor personally entered. Keep
+unknown, unavailable, stale, and verified-zero states distinct. Return a
+bounded page/cursor and source-as-of timestamp; never silently truncate the
+team or turn a failed pull into an empty queue.
+
+Agent summaries should flag neutral, evidence-backed review cases: a signed
+assessment with little or no authored answer activity, a declined referral
+without a documented reason, an active referral with no assessment, an
+unsigned/in-progress assessment needing follow-up, or a decision/send status
+that merits verification. Some early declines are legitimate, and an imported
+record may be clinically useful; these are prompts to inspect, not misconduct
+findings or automatic workflow blocks. The assessor view should explain what
+is missing or imported on their own case and link to the authorized Pipeline
+workspace. The supervisor view can filter by assessor and date within the
+server-enforced team scope. Default agent task state, chat history, traces,
+and notifications contain counts, statuses, IDs, and source links only, not
+client names, clinical answers, packets, or narrative text. Any later detail
+view must reauthorize at read time in Pipeline and audit the access.
+
+First acceptance cases: (1) assessor cannot request a coworker's referral by
+ID, filter, prompt, or background task; (2) supervisor can review only their
+authorized team; (3) reassignment and grant revocation remove access on the
+next read; (4) signed imported-only, substantive authored, declined-without-
+reason, and ordinary in-progress fixtures produce distinct explanations;
+(5) changed questionnaire versions use the correct rules; (6) a source
+failure remains visibly unavailable and retains prior evidence without
+publishing a false zero; (7) browser, API, worker, logs, and agent memory
+respect the same PHI boundary. The current private pilot remains in force
+until these role and data-scope checks pass and a separate release is verified.
+
 ## 7. Skills and personal responsibilities
 
 A reusable skill definition describes how a job is performed. A personal
@@ -341,6 +402,7 @@ permission, recovery, and result checks begin with the first workflow.
 | Q10 | Release repeatably | Versioned workflow/skill/model/config, regression results, migration checks, and rollback evidence |
 | Q11 | Respect rollout restrictions | Eric-only agent; Raj/Betty standalone Licensing; Andrew inactive; no email delivery |
 | Q12 | Retain form fidelity | Preserve native editor/review behavior; official-form field/content comparison and representative demo validation before claiming official output parity |
+| Q13 | Scope assessment review | Assessor-own and supervisor-team permission tests, reassignment/revocation, versioned completion, imported-versus-authored evidence, missing-reason cases, PHI-minimized memory/logs, and unavailable-source behavior |
 
 Use deterministic assertions for permissions, schemas, replay, and duplicate
 prevention. Use fixed representative task datasets, semantic grading, and human
@@ -369,6 +431,7 @@ proposed workflow or memory capabilities. No production release was performed.
 | S1b | Production worker rollout and operational storage migration | Isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Pending; no cloud resources or data migration performed |
 | S2 | Complete Licensing workflow with task-linked conversation | Captured source → validated brief → work item → correction; existing chat reused; mobile and keyboard review | Proposed |
 | S3 | Second durable workflow and second embedded host | Pipeline adapter permissions and aggregate boundary preserved; same task accessible from authorized hosts; no transcript leakage | Proposed |
+| S3a | Pipeline assessment-review read skill | Pipeline-owned scoped projection; supervisor-team and assessor-own queries with source-backed exceptions and Q13 checks | Required; not implemented |
 | S4 | User-controlled memory and knowledge relationships | Memory review/edit/delete, source-backed graph, scoped retrieval, assertion approval and correction tests | Proposed |
 | S5 | Measured improvement and additional skills | Corrections become evals, candidate comparisons, version promotion/rollback, task-level cost/latency targets | Proposed |
 | S6 | Broader rollout and optional notifications | Explicit rollout decision and per-user/action validation; recipients/channels confirmed at that time | Deferred |
@@ -459,6 +522,9 @@ records the host and browser evidence separately from production releases.
   components can be extracted without disturbing analyst behavior.
 - Inventory additional applications, API owners, event contracts, and shared
   identifiers. AlamoHealth capabilities remain a separate future integration.
+- For S3a, settle the exact Pipeline-to-Platform user identity mapping and
+  supervisor team-scope source before implementing the read projection. Do not
+  substitute the existing organization-wide summary token for user scope.
 - Reconcile LIC 624 against the exact official form supplied by Eric; native
   entry exists, but official-PDF export and proven layout parity remain separate.
 - OCR for scanned backlog, incident linking, automatic filing, and mail intake
@@ -481,3 +547,4 @@ records the host and browser evidence separately from production releases.
 | 2026-10-16 | Proposed TypeScript/Azure durable workflow, Postgres memory, versioned skills, and eval-driven improvement | Record as target architecture; no provisioning or deployment claimed |
 | 2026-10-16 | Eric requested continuous build-spec maintenance | Link this spec from AGENTS and handbook; update decisions, status, evidence, and next work with each relevant change |
 | 2026-10-16 | Implement the first durable workflow using the supported Functions SDK and Azure Storage | Real host replay verified locally; retain existing work store during execution cutover; Postgres and cloud rollout remain separately tracked |
+| 2026-10-16 | Add assessment-review use for supervisors and assessors | Build a Pipeline-owned, user-scoped read contract; surface neutral exceptions and own-work guidance through AlamoAgent after role and PHI checks. Current Eric-only pilot and aggregate Admissions watch do not satisfy this yet. |
