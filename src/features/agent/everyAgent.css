@@ -47,9 +47,10 @@
 .everyagent-controls{display:flex;align-items:center;gap:14px;margin-top:10px}.everyagent-controls a{margin-right:auto}.everyagent-controls a,.everyagent-controls button{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:#17684f;font-size:12px}.everyagent-controls button{min-width:32px}
 .everyagent-issue{background:#fff9ed;padding:10px;margin:12px 0}
 .everyagent-settings{border-top:1px solid #e1e7e2;padding-top:16px}.everyagent-settings legend{font-size:12px;font-weight:600;margin-bottom:8px}.everyagent-settings label{display:flex;align-items:center;gap:10px;min-height:44px;font-size:13px}.everyagent-settings input{accent-color:#087d64}.everyagent-settings p{font-size:11px;color:#68786d;line-height:1.6;margin:10px 0}.everyagent-settings button{background:#087d64;color:white;min-height:44px;padding:0 16px;font-size:12px;border-radius:5px}
-.everyagent-launcher{position:fixed;z-index:55;right:24px;bottom:max(22px,env(safe-area-inset-bottom));display:grid;place-items:center;width:52px;height:52px;padding:9px;border:1px solid #246c55;border-radius:50%;background:#123f32;color:#f1fff4;box-shadow:0 6px 24px #153b3329}
-.everyagent-launcher:hover{background:#19513e}.everyagent-badge{position:absolute;top:-3px;right:-3px;display:flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 3px;border-radius:20px;background:#ccedb7;color:#1e4c35;font-size:10px;border:1px solid #fff}
-.everyagent-launcher--wilson,.everyagent-launcher--wilson:hover{background:#fff;border-color:#842323}
+.everyagent-launcher{position:fixed;z-index:55;right:24px;bottom:max(22px,env(safe-area-inset-bottom));display:grid;place-items:center;width:52px;height:52px;padding:0;border:0;border-radius:50%;background:transparent;color:#f1fff4;box-shadow:none}
+.everyagent-launcher:not(.everyagent-launcher--wilson)>.everyagent-orb{width:100%;height:100%}
+.everyagent-badge{position:absolute;top:-3px;right:-3px;display:flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 3px;border-radius:20px;background:#ccedb7;color:#1e4c35;font-size:10px;border:1px solid #fff}
+.everyagent-launcher--wilson,.everyagent-launcher--wilson:hover{padding:9px;background:#fff;border:1px solid #842323;box-shadow:0 6px 24px #153b3329}
 .everyagent-companion{position:fixed;inset:auto 18px 18px auto;width:430px;max-width:calc(100vw - 24px);height:min(620px,calc(100dvh - 36px));max-height:calc(100dvh - 24px);padding:0;margin:0;overflow:hidden;border:1px solid #d1e0d6;border-radius:18px;color:var(--ea-ink);background:#fcfdfb;box-shadow:0 20px 80px #173b3440}
 .everyagent-companion::backdrop{background:#09251b26;backdrop-filter:blur(2px)}
 body:has(.everyagent-companion[open]){overflow:hidden}

@@ -3,7 +3,7 @@
 - purpose: implementation details for reusing the realistic folder, paper, ledger, and dashboard styling across Pipeline and Alamo Platform
 - status: active design reference; extracted values plus explicitly identified reuse rules, not a completed shared component library
 - owners: product, frontend
-- updated: 2026-10-16
+- updated: 2026-10-17
 - tags: design, folders, pipeline, dashboard, typography, materials, responsive
 - labels: platform-handbook, implementation-reference
 
@@ -39,6 +39,10 @@ The built-in image-generation tool produced the approved transparent PNG from
 the existing Alamo head mark and a faithful render of the former CSS orb.
 The deployed derivative is 512 pixels square, WebP quality 92 with alpha. Its
 transparent margins are accounted for in the component's image sizing.
+The embedded Alamo launcher uses the mark itself at the full `52px` button size,
+with no extra filled circle, border, or button shadow behind it. Keep the review
+badge and keyboard focus outline; toolbar and companion-header marks stay `32px`.
+This launcher refinement is implemented locally; deployment is not yet verified.
 
 Generation prompt (original name retained for provenance):
 
