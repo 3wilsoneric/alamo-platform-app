@@ -502,7 +502,7 @@ async function main() {
     if (
       homeNavigation.current !== "home" ||
       homeNavigation.left.join(",") !== "home" ||
-      homeNavigation.right.join(",") !== "analytics,admissions,workforce"
+      homeNavigation.right.join(",") !== "analytics,admissions,workforce,everyagent"
     ) {
       throw new Error(`Home platform navigation is out of order: ${JSON.stringify(homeNavigation)}`);
     }
@@ -546,7 +546,7 @@ async function main() {
     if (
       questionNavigation.current !== "analytics" ||
       questionNavigation.left.join(",") !== "home" ||
-      questionNavigation.right.join(",") !== "analytics,admissions,workforce"
+      questionNavigation.right.join(",") !== "analytics,admissions,workforce,everyagent"
     ) {
       throw new Error(`Analytics question navigation is out of order: ${JSON.stringify(questionNavigation)}`);
     }
@@ -569,7 +569,7 @@ async function main() {
       .getByRole("link", { name: "Back to California map" })
       .waitFor({ state: "visible", timeout: 5_000 });
 
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await page
       .locator('[data-certified-question-guide="true"]')
       .waitFor({ state: "visible", timeout: 5_000 });
@@ -632,7 +632,7 @@ async function main() {
     if (
       analyticsNavigation.current !== "analytics" ||
       analyticsNavigation.left.join(",") !== "home" ||
-      analyticsNavigation.right.join(",") !== "analytics,admissions,workforce"
+      analyticsNavigation.right.join(",") !== "analytics,admissions,workforce,everyagent"
     ) {
       throw new Error(`Analytics platform navigation is out of order: ${JSON.stringify(analyticsNavigation)}`);
     }
@@ -690,7 +690,7 @@ async function main() {
     await page
       .locator('[data-fifty-state-page="true"][data-fifty-state-embedded="false"]')
       .waitFor({ state: "visible", timeout: 10_000 });
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await page
       .locator('[data-fifty-state-page="true"][data-fifty-state-embedded="false"]')
       .waitFor({ state: "visible", timeout: 10_000 });
