@@ -1,3 +1,4 @@
+import { handleEveryAgentRequest } from "../server/everyagent-api.mjs";
 import {
   getAdmissionsDashboardData,
   getAnalystQaStatus,
@@ -130,6 +131,10 @@ const PLATFORM_GET_ROUTES = Object.freeze({
 
 export default async function handler(req, res) {
   const requestPath = String(req.url ?? "").split("?", 1)[0] ?? "";
+  if (requestPath === "/api/platform/everyagent" || requestPath.startsWith("/api/platform/everyagent/")) {
+    await handleEveryAgentRequest(req, res);
+    return;
+  }
   if (isExecutiveDirectorApiPath(requestPath)) {
     await handleExecutiveDirectorApiRequest(req, res);
     return;

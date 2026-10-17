@@ -31,6 +31,10 @@ import {
   PLATFORM_DATA_REFRESH_EVENT
 } from "../api/platformData";
 import { writeStorageItem } from "../storage/browserStorage";
+import { useEveryAgentAccess } from "../auth/everyAgentAccess";
+import { getApiAuthCachePartition } from "../api/authenticatedFetch";
+import { EveryAgentProvider } from "../../features/agent/EveryAgentContext";
+import EveryAgentCompanion from "../../features/agent/components/EveryAgentCompanion";
 
 export default function ProtectedAppShell() {
   const location = useLocation();
@@ -42,7 +46,7 @@ export default function ProtectedAppShell() {
   const isDeployedWorkforceDemo = import.meta.env.VITE_WORKFORCE_DEMO === "true" && location.pathname === "/workforce";
   const isStandaloneEditorial =
     location.pathname === "/outreach" || location.pathname === "/fiftystate";
-  const isLicensingExperience = location.pathname === "/licensing" || location.pathname === "/analytics/licensing";
+  const isAgentExperience = ["/everyagent", "/analytics/agent", "/licensing", "/analytics/licensing"].includes(location.pathname);
   const isCaliforniaExperience =
     location.pathname === "/" ||
     location.pathname === "/questions" ||
@@ -65,11 +69,12 @@ export default function ProtectedAppShell() {
     isE2EAuthBypassEnabled
   );
   const hasPlatformOwnerAccess = usePlatformOwnerAccess();
+  const hasEveryAgentAccess = useEveryAgentAccess();
   const skipWorkspacePreparation =
     isAdmissionsExperience ||
     isExecutiveDirectorExperience ||
     isPipelineHandoff ||
-    isLicensingExperience ||
+    isAgentExperience ||
     isPresentation ||
     isDeployedWorkforceDemo ||
     admissionsAccess.restrictedToAdmissions ||
@@ -299,7 +304,7 @@ export default function ProtectedAppShell() {
 
   if (isPresentation) return <Outlet key={accountKey} />;
 
-  return (
+  const shell = (
     <div className="app-theme-root relative min-h-screen overflow-x-clip bg-white text-[#241f18]">
       {isExecutiveDirectorExperience || (isDeployedWorkforceDemo && executiveDirectorAccess.restrictedToExecutive)
         ? <ExecutiveDirectorHeader />
@@ -328,6 +333,8 @@ export default function ProtectedAppShell() {
       </main>
     </div>
   );
+  const showEveryAgent = hasEveryAgentAccess && !admissionsAccess.restrictedToAdmissions && !executiveDirectorAccess.restrictedToExecutive && !isExecutiveDirectorExperience;
+  return showEveryAgent ? <EveryAgentProvider key={getApiAuthCachePartition()}>{shell}<EveryAgentCompanion /></EveryAgentProvider> : shell;
 }
 
 function AuthenticationRedirect({

@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { BASE_URL, withBrowserQa } from "./browser-qa-utils.mjs";
+import { queryLicensingLibrary } from "../server/licensing-library.mjs";
+import { analyzeLicensingReport } from "../shared/licensing-analysis.mjs";
 
 const output = path.join(process.cwd(), "generated/browser-licensing-mobile");
 const communities = [
@@ -41,9 +43,10 @@ const library = {
 const reportById = new Map(reports.map((report, index) => [report.id, {
   ...report,
   text: index === 0
-    ? "COMPLAINT INVESTIGATION REPORT\n\nALLEGATION: Medication administration records were not consistently documented.\n\nThe department reviewed records, interviewed staff, and found that documentation required corrective follow-up. The licensee submitted a plan of correction.\n\nThis deliberately long source line verifies that mobile layouts wrap identifiers and narrative text without creating horizontal scrolling: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789."
-    : "FACILITY EVALUATION REPORT\n\nThe department completed a routine inspection and recorded no deficiencies."
+    ? '<meta name="robots" content="noindex">\nCOMPLAINT INVESTIGATION REPORT\n1\n2\n3\n4\nALLEGATION(S):\nMedication administration records were not consistently documented.\nINVESTIGATION FINDINGS:\nSubstantiated\nThe department reviewed records and interviewed staff. The allegation was substantiated because medication documentation required corrective follow-up.\nThis deliberately long source line verifies wrapping: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.\nPage: 1 of 2\nDEFICIENCY INFORMATION FOR THIS PAGE:\nType B\nSection Cited\n80075(b)\nDeficient Practice Statement\nBased on record review, medication records were incomplete.\nPOC Due Date: 08/26/2026\nPlan of Correction\nAdministrator will train staff and submit the completed records.\nFailure to correct\nPage: 2 of 2\nThis deliberately long source line verifies wrapping: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.'
+    : "FACILITY EVALUATION REPORT\nNARRATIVE\nThe department completed a routine inspection and recorded no deficiencies.\nPage: 1 of 1"
 }]));
+for (const report of reports) report.analysis = analyzeLicensingReport(reportById.get(report.id)).summary;
 const updates = {
   version: "licensing-updates-v1", status: "complete", lastChecked: "2026-10-05T16:02:23.460Z",
   lastSuccessful: library.collectedAt,
@@ -54,7 +57,7 @@ const updates = {
 async function installApiFixtures(page) {
   await page.route("**/api/platform/licensing**", async (route) => {
     const url = new URL(route.request().url());
-    let payload = library;
+    let payload = queryLicensingLibrary({ ...library, reports: [...reportById.values()] }, url);
     if (url.pathname.endsWith("/updates")) payload = updates;
     else if (url.pathname.endsWith("/report")) payload = reportById.get(url.searchParams.get("id")) ?? null;
     await route.fulfill({ status: payload ? 200 : 404, contentType: "application/json", body: JSON.stringify(payload ?? { error: "not_found" }) });
@@ -92,9 +95,16 @@ await withBrowserQa(async (browser) => {
     await installApiFixtures(page);
     await page.goto(`${BASE_URL}/analytics/licensing`, { waitUntil: "domcontentloaded" });
     await page.locator('[data-licensing-workspace="true"]').waitFor({ state: "visible" });
+    await page.getByText("Latest check complete", { exact: true }).waitFor();
+    await page.getByRole("region", { name: "Licensing answer" }).waitFor();
+    assert.equal(new URL(page.url()).pathname, "/analytics/agent", "old Licensing route must redirect to the Agent workspace");
+    assert.equal(await page.getByRole("heading", { name: "AlamoAgent", exact: true }).count(), 0);
+    assert.doesNotMatch(await page.getByRole("region", { name: "AlamoAgent work", exact: true }).innerText(), /Active skill|State reports collected, organized/);
     const list = await measure(page);
     assert.ok(list.overflow <= 1, `${viewport.width}px list overflowed by ${list.overflow}px`);
-    assert.ok(list.searchWidth >= viewport.width - 34, `${viewport.width}px search was cramped`);
+    assert.equal(list.searchWidth, 0, "search must stay secondary to the agent output");
+    assert.equal(await page.locator("article[data-licensing-reader]").count(), 0, "agent must not automatically open a report");
+    assert.equal(await page.getByRole("button", { name: "Explore reports", exact: true }).getAttribute("aria-expanded"), "false");
     assert.ok(list.workspaceWidth >= viewport.width - 34, `${viewport.width}px workspace was cramped`);
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-list-390.png"), fullPage: false });
 
@@ -107,26 +117,47 @@ await withBrowserQa(async (browser) => {
     if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-updates-390.png"), fullPage: false });
     await page.getByRole("button", { name: "Close state updates" }).click();
 
-    await page.getByRole("button", { name: /San Pablo/i }).click();
+    await page.getByRole("region", { name: "Licensing answer" }).waitFor();
+    assert.match(await page.getByRole("region", { name: "Licensing answer" }).innerText(), /3 latest state reports/);
+    if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-answer-390.png"), fullPage: false });
+    await page.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
     await page.locator("article[data-licensing-reader]").waitFor({ state: "visible" });
     const reader = await measure(page);
     assert.ok(reader.overflow <= 1, `${viewport.width}px reader overflowed by ${reader.overflow}px`);
     const readerTitleBox = await page.locator("article[data-licensing-reader] h2").boundingBox();
     assert.ok(readerTitleBox && readerTitleBox.y >= 0 && readerTitleBox.y < viewport.height, `${viewport.width}px reader did not return to its title`);
-    assert.equal(await page.getByRole("link", { name: "Open state source" }).count(), 1, `${viewport.width}px reader lost the state source action`);
+    assert.equal(await page.getByRole("link", { name: "Open original on state site" }).getAttribute("href"), communities[0].sourceUrl, `${viewport.width}px reader lost the stable state source action`);
+    assert.match(await page.getByRole("region", { name: "Report summary" }).innerText(), /Substantiated complaint finding/);
+    assert.match(await page.getByRole("region", { name: "Reported concerns" }).innerText(), /Medication administration records/);
+    assert.match(await page.getByRole("region", { name: "State findings" }).innerText(), /documentation required corrective follow-up/);
+    const corrections = await page.getByRole("region", { name: "Deficiencies and correction plans" }).innerText();
+    assert.match(corrections, /Administrator will train staff/);
+    assert.match(corrections, /26 August 2026/);
+    assert.doesNotMatch(corrections, /overdue/i);
     const sourceText = page.locator('[data-licensing-source-text="true"]');
     assert.equal(await sourceText.count(), 1, `${viewport.width}px reader did not embed the archived report`);
-    assert.match(await sourceText.innerText(), /documentation required corrective follow-up/, `${viewport.width}px reader omitted the report body`);
-    assert.match(await sourceText.innerText(), /ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/, `${viewport.width}px reader truncated long source text`);
-    assert.equal(await page.getByRole("button", { name: "Download original text" }).count(), 1, `${viewport.width}px reader lost the download action`);
+    assert.equal(await sourceText.locator(".licensing-report-prose p").count(), 2, "report narrative must render as separate paragraphs");
+    assert.equal(await sourceText.locator("pre").count(), 0, "report text must not be a preformatted dump");
+    assert.doesNotMatch(await sourceText.innerText(), /COMPLAINT INVESTIGATION REPORT|Section Cited|noindex/);
+    assert.equal(await page.getByRole("button", { name: "Download original text", exact: true }).count(), 1, `${viewport.width}px reader lost the download action`);
     assert.equal(reader.undersized.length, 0, `${viewport.width}px exposed undersized reader controls: ${reader.undersized.join(", ")}`);
     if (viewport.width === 390) {
       await page.screenshot({ path: path.join(output, "licensing-reader-390.png"), fullPage: false });
       const downloadPromise = page.waitForEvent("download");
-      await page.getByRole("button", { name: "Download original text" }).click();
+      await page.getByRole("button", { name: "Download original text", exact: true }).click();
       const download = await downloadPromise;
       assert.match(download.suggestedFilename(), /^CCLD-079201030-2026-08-12-\d{8}\.txt$/, "original text download used an unexpected filename");
+      assert.equal(await readFile(await download.path(), "utf8"), reportById.get(reports[0].id).text, "download must preserve the original bytes including form gutters");
     }
+    await page.getByRole("button", { name: "Source · page 1" }).first().click();
+    assert.equal(await page.locator('[data-source-page="1"]').evaluate(element => element === document.activeElement), true, "source reference must focus its narrative page");
+    assert.match(await sourceText.innerText(), /documentation required corrective follow-up/, `${viewport.width}px reader omitted the report body`);
+    assert.match(await sourceText.innerText(), /ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/, `${viewport.width}px reader truncated long source text`);
+    assert.ok((await measure(page)).overflow <= 1, "formatted report text must wrap");
+    if (viewport.width === 390) await page.screenshot({ path: path.join(output, "licensing-text-390.png"), fullPage: false });
+    await page.getByRole("button", { name: "Back to reports" }).click();
+    await page.getByRole("region", { name: "Licensing answer" }).waitFor();
+    assert.match(await page.getByRole("region", { name: "Licensing answer" }).innerText(), /3 latest state reports/);
     results.push({ viewport, list, reader, panel: panelBox });
     await context.close();
   }
@@ -135,41 +166,104 @@ await withBrowserQa(async (browser) => {
   await installApiFixtures(desktop);
   await desktop.goto(`${BASE_URL}/analytics/licensing`, { waitUntil: "domcontentloaded" });
   await desktop.locator('[data-licensing-workspace="true"]').waitFor({ state: "visible" });
-  const desktopLayout = await desktop.evaluate(() => {
-    const aside = document.querySelector('[data-licensing-workspace="true"] aside');
-    const selectedReport = aside?.querySelector('[aria-pressed="true"]');
-    const reader = document.querySelector('[data-licensing-workspace="true"] [aria-label="Report reader"]');
-    const page = document.querySelector('[data-licensing-page="true"]');
-    const analyticsLink = document.querySelector('[data-platform-page-target="analytics"]');
-    const licensingLink = document.querySelector('[data-analytics-section-target="licensing"]');
-    return {
-      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      asideWidth: Math.round(aside?.getBoundingClientRect().width ?? 0),
-      readerWidth: Math.round(reader?.getBoundingClientRect().width ?? 0),
-      pageBackground: page ? getComputedStyle(page).backgroundColor : null,
-      asideBackground: aside ? getComputedStyle(aside).backgroundColor : null,
-      selectedReportBackground: selectedReport ? getComputedStyle(selectedReport).backgroundColor : null,
-      readerBackground: reader ? getComputedStyle(reader).backgroundColor : null,
-      analyticsCurrent: analyticsLink?.getAttribute("aria-current"),
-      licensingCurrent: licensingLink?.getAttribute("aria-current")
-    };
-  });
-  assert.ok(desktopLayout.overflow <= 1, `desktop licensing overflowed by ${desktopLayout.overflow}px`);
-  assert.ok(desktopLayout.asideWidth >= 240, "desktop report rail was too narrow to scan");
-  assert.ok(desktopLayout.readerWidth > desktopLayout.asideWidth, "desktop report reader did not retain the primary width");
-  assert.equal(desktopLayout.pageBackground, "rgb(255, 255, 255)", "licensing canvas did not retain the requested white foundation");
-  assert.notEqual(desktopLayout.selectedReportBackground, desktopLayout.readerBackground, "selected report did not separate from the reader");
-  assert.equal(desktopLayout.analyticsCurrent, "page", "primary Analytics navigation was not active");
-  assert.equal(desktopLayout.licensingCurrent, "page", "Licensing navigation was not active");
-  await desktop.locator('[data-licensing-source-text="true"]').waitFor({ state: "visible" });
-  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /COMPLAINT INVESTIGATION REPORT/, "desktop reader omitted the archived report");
-  await desktop.screenshot({ path: path.join(output, "licensing-desktop-1440.png"), fullPage: false });
-  await desktop.getByRole("button", { name: /Santa Clarita/i }).click();
-  await desktop.locator('article[data-licensing-reader]').waitFor({ state: "visible" });
-  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection and recorded no deficiencies/, "selecting another report did not replace the inline document");
-  assert.doesNotMatch(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /COMPLAINT INVESTIGATION REPORT/, "previous report text remained in the reader");
+  await desktop.getByText("Latest check complete", { exact: true }).waitFor();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
+  const desktopLayout = await desktop.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    agentColor: getComputedStyle(document.querySelector('.agent-work-card')).backgroundColor,
+    licensingCurrent: document.querySelector('[data-analytics-section-target="agent"]')?.getAttribute('aria-current')
+  }));
+  assert.ok(desktopLayout.overflow <= 1);
+  assert.equal(desktopLayout.agentColor, "rgba(0, 0, 0, 0)", "helper status should not be a promotional banner");
+  assert.equal(desktopLayout.licensingCurrent, "page");
+  await desktop.screenshot({ path: path.join(output, "licensing-agent-1440.png"), fullPage: false });
+  await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();
+  await desktop.getByRole("button", { name: "Cited deficiencies", exact: true }).click();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
+  assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 1, "citation question must filter by evidence");
+  await desktop.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
+  await desktop.getByRole("region", { name: "Report summary" }).waitFor();
+  await desktop.getByRole("button", { name: "Read report text", exact: true }).click();
+  await desktop.screenshot({ path: path.join(output, "licensing-text-1440.png"), fullPage: false });
+  await desktop.getByRole("button", { name: "Back to reports" }).click();
+  await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();
+  await desktop.getByRole("combobox", { name: "Licensing community" }).selectOption("344");
+  await desktop.getByRole("button", { name: "Cited deficiencies", exact: true }).click();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
+  assert.match(await desktop.getByRole("region", { name: "Licensing answer" }).innerText(), /couldn’t find a matching report/);
+  assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 0);
+  await desktop.getByRole("button", { name: "Explore reports", exact: true }).click();
+  await desktop.getByRole("combobox", { name: "Licensing community" }).selectOption("");
+  await desktop.getByRole("textbox", { name: "Ask about licensing reports" }).fill("Santa Clarita");
+  await desktop.getByRole("button", { name: "Find licensing reports" }).click();
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
+  assert.equal(await desktop.getByRole("list", { name: "Licensing reports" }).locator("li").count(), 1);
+  await desktop.getByRole("button", { name: /Santa Clarita.*Complaint/ }).click();
+  await desktop.getByRole("region", { name: "Report summary" }).waitFor();
+  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection and recorded no deficiencies/);
+  assert.doesNotMatch(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /medication documentation/, "previous report text remained in the reader");
+  const legacyReportUrl = desktop.url().replace("/analytics/agent", "/analytics/licensing");
+  await desktop.goto(legacyReportUrl);
+  await desktop.waitForURL(url => url.pathname === "/analytics/agent");
+  assert.equal(new URL(desktop.url()).pathname, "/analytics/agent");
+  await desktop.reload();
+  await desktop.getByRole("region", { name: "Report summary" }).waitFor();
+  assert.match(await desktop.locator('[data-licensing-source-text="true"]').innerText(), /routine inspection/, "report deep link must survive reload");
   results.push({ viewport: { width: 1440, height: 900 }, desktop: desktopLayout });
+  await desktop.route("**/api/platform/licensing/updates", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...updates, status: "failed" }) }));
+  await desktop.goto(`${BASE_URL}/analytics/licensing`);
+  await desktop.getByText("Latest check needs attention", { exact: true }).waitFor();
+  assert.match(await desktop.getByRole("region", { name: "AlamoAgent work", exact: true }).innerText(), /last complete report collection/);
+  await desktop.getByRole("region", { name: "Licensing answer" }).waitFor();
   await desktopContext.close();
+  // Supply account claims at the auth-hook boundary while retaining the real
+  // shared grant policies and all route, navigation, and provider components.
+  for (const [oid, width, licensed] of [
+    ["424b21d4-605a-43a6-8dff-2a89a846e698", 390, true],
+    ["75099b5b-5f7d-437f-8e3b-181f1fea1653", 1440, true],
+    ["unlisted-account", 390, false]
+  ]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await context.newPage();
+    const claims = JSON.stringify({ tid: "d72d9036-cff8-4f5f-a6fa-d698f621d420", oid });
+    await page.route("**/src/shared/auth/everyAgentAccess.ts*", route => route.fulfill({ contentType: "application/javascript",
+      body: `import { everyAgentSkillsFor } from '/shared/everyagent-catalog.mjs'; export function useEveryAgentAccess() { return everyAgentSkillsFor(${claims}).length > 0; }` }));
+    await page.route("**/src/shared/auth/licensingAccess.ts*", route => route.fulfill({ contentType: "application/javascript",
+      body: `import { hasLicensingAccess } from '/shared/licensing-access.mjs'; export function useLicensingAccess() { return hasLicensingAccess(${claims}); }` }));
+    let agentRequests = 0;
+    page.on("request", request => { if (new URL(request.url()).pathname === "/api/platform/everyagent") agentRequests++; });
+    await installApiFixtures(page);
+    for (const route of ["/everyagent", "/analytics/agent", "/analytics/agent?skill=licensing"]) {
+      await page.goto(`${BASE_URL}${route}`);
+      await page.waitForURL(url => url.pathname === "/analytics");
+      assert.equal(await page.getByRole("button", { name: "Open AlamoAgent" }).count(), 0);
+      assert.equal(await page.getByRole("link", { name: "AlamoAgent", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: "AlamoAgent", exact: true }).count(), 0);
+    }
+    await page.goto(`${BASE_URL}/analytics/licensing`);
+    if (licensed) {
+      await page.getByRole("heading", { name: "Licensing", exact: true }).waitFor();
+      await page.getByRole("region", { name: "Licensing answer" }).waitFor();
+      assert.equal(new URL(page.url()).pathname, "/analytics/licensing");
+      assert.equal(await page.locator(".everyagent-orb").count(), 0);
+      assert.doesNotMatch(await page.locator("body").innerText(), /AlamoAgent/);
+      await page.getByRole("button", { name: /San Pablo.*Complaint/ }).click();
+      await page.getByRole("region", { name: "Report summary" }).waitFor();
+      await page.reload();
+      await page.getByRole("region", { name: "Report summary" }).waitFor();
+      await page.getByRole("button", { name: "Back to reports" }).click();
+      await page.getByRole("heading", { name: "Licensing", exact: true }).waitFor();
+      await page.screenshot({ path: path.join(output, `licensing-without-everyagent-${width}.png`), fullPage: false });
+    } else {
+      await page.waitForURL(url => url.pathname === "/analytics");
+    }
+    if (width < 768) {
+      await page.getByRole("button", { name: "Open navigation" }).click();
+      assert.equal(await page.getByRole("navigation", { name: "Mobile platform pages" }).getByRole("link", { name: "AlamoAgent" }).count(), 0);
+    }
+    assert.equal(agentRequests, 0, "excluded accounts must never mount the AlamoAgent provider or request its API");
+    await context.close();
+  }
   await writeFile(path.join(output, "latest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), passed: true, results }, null, 2));
-  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px with navigation, list, updates sheet, inline report reader, and original-record actions.");
+  console.log("Licensing QA passed at 320px, 390px, 430px, and 1440px; Raj and Betty retain reports without AlamoAgent, unlisted accounts are denied, and excluded accounts never request the AlamoAgent API.");
 });

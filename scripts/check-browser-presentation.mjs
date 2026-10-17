@@ -13,19 +13,15 @@ const destinations = [
 await withBrowserQa(async (browser) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(`${BASE_URL}/home`, { waitUntil: "domcontentloaded" });
-  const shortcut = page.getByRole("button", { name: "Open presentation" });
-  await shortcut.waitFor({ state: "visible" });
-  await shortcut.click();
+  await page.locator('[data-platform-header="true"]').waitFor({ state: "visible" });
+  assert.equal(await page.getByRole("button", { name: "Open presentation" }).count(), 0);
+  await page.goto(`${BASE_URL}/presentation`, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /full screen/i }).waitFor({ state: "visible" });
   assert.equal(new URL(page.url()).pathname, "/presentation");
 
   await page.goto(`${BASE_URL}/executive/dashboard`, { waitUntil: "domcontentloaded" });
-  const executiveShortcut = page.locator('[data-executive-director-header="true"]').getByRole("button", { name: "Open presentation" });
-  await executiveShortcut.waitFor({ state: "visible" });
-  await executiveShortcut.click();
-  await page.getByRole("button", { name: "Close presentation" }).click();
   await page.locator('[data-executive-director-header="true"]').waitFor({ state: "visible" });
-  assert.equal(new URL(page.url()).pathname, "/executive/dashboard", "Closing the deck must return to the Executive Director route.");
+  assert.equal(await page.getByRole("button", { name: "Open presentation" }).count(), 0);
 
   for (const [slide, route, label] of destinations) {
     await page.goto(`${BASE_URL}/presentation#${slide}`, { waitUntil: "domcontentloaded" });
@@ -65,5 +61,5 @@ await withBrowserQa(async (browser) => {
   assert.equal(await page.locator(".presentation-controls").evaluate((element) => element.scrollWidth <= element.clientWidth), true, "Mobile controls must fit without horizontal overflow.");
   await page.screenshot({ path: `${screenshotDir}/community-mobile.png` });
   await page.close();
-  console.log("Presentation browser checks passed: shortcut, full-screen control, route links, new-tab behavior, and mobile controls.");
+  console.log("Presentation browser checks passed: hidden shortcuts, direct access, full-screen control, route links, new-tab behavior, and mobile controls.");
 });

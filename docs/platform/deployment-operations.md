@@ -46,6 +46,310 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### EveryAgent opens directly to the work — 2026-10-16
+
+The helper has no welcome hero, greeting, product heading, explanatory subtitle,
+tagline, or first-visit pop-up. Its workspace starts with a small status toolbar,
+skill links, and the existing updates. The icon-only launcher opens actual work
+and source links immediately. Licensing uses a compact collection status instead
+of an EveryAgent title card; standalone Licensing for Raj and Betty keeps its
+existing presentation. Functional report titles, filters, source links, review
+actions, history, and skill settings remain available.
+
+- source: `39c3327`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc82`
+- image: `sha256:5586eb10d975d085167ca7133406311e30ee228a0d1ce28b59f26b167dd083c9`
+- revision: `alamo-platform-prod-web--everyagent-helper-39c3327`
+- preceding image / rollback: `sha256:e486661ea96b398bd43f8608c1f1f2d208e57d7661b3c252ea9aeea511703805`
+- browser assets: `/assets/index-BA3VPLyw.js`, `/assets/index-BK0NXO1R.css`
+
+The release replaces only `/app/dist` over the exact Eric-only production
+image. The candidate's catalog still grants EveryAgent only to Eric and
+preserves Raj/Betty's standalone Licensing permissions. No server, worker,
+notification, or data configuration changes are included.
+
+Docs, TypeScript, the full analyst gate, and the production build passed.
+EveryAgent browser checks at 320/390/1440 pixels verify work appears within
+the first screen, compact marks, absence of introductory copy and pop-ups,
+keyboard focus, source recovery, and persisted pause/scope/review/history.
+Licensing checks at 320/390/430/1440 pixels cover compact helper status,
+readable reports, sources, and retained account exclusions. The candidate and
+production each passed 28 entry, asset, logo-byte, compression, and anonymous-API
+checks. The revision is Healthy/Running with one replica and 100% traffic.
+Eric's signed-in production workspace and companion both open directly to
+existing work with the small original mark and no introductory copy. The
+Licensing Logic App remains Disabled and its job notification flag is `false`.
+
+### EveryAgent preview restricted to Eric — 2026-10-16
+
+EveryAgent is now enabled only for Eric Wilson's verified tenant-local object
+ID. The same grant policy gates the navigation, launcher/provider, workspace,
+API reads and commands, and worker assignments. Existing Raj/Betty assignments
+and history are retained but no longer run or publish. They keep standalone
+Licensing reports at `/analytics/licensing`, with Licensing navigation and no
+EveryAgent identity or launcher. The original combined logo remains selected
+for Eric. Email delivery remains disabled.
+
+- source: `d6b608e`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc81`
+- image: `sha256:e486661ea96b398bd43f8608c1f1f2d208e57d7661b3c252ea9aeea511703805`
+- revision: `alamo-platform-prod-web--everyagent-private-d6b608e`
+- preceding image: `sha256:e28ffec58d67f5bebc513634a889956c508cecea19e1aa3bbeaef97f7c4de1c3`
+- browser assets: `/assets/index-dPWoKmQF.js`, `/assets/index-Bw0pVmX2.css`
+
+This release overlays only the browser bundle and `shared/everyagent-catalog.mjs`
+onto the exact preceding production image. Rollbacks must retain this access
+restriction; the preceding image grants EveryAgent to all three prior pilots.
+No data migration, email activation, or integration permission change occurs.
+
+Docs, TypeScript, the full analyst gate, build, and responsive browser checks
+passed. Signed local test tokens verify Raj/Betty receive 404 from EveryAgent
+while retaining Licensing. Service checks cover denied commands and ignored
+legacy worker assignments. Browser fixtures exercise the real grant policies:
+both prior pilots retain report drilldowns without agent navigation or API
+requests; unlisted accounts are redirected. The exact release container also
+passed the owner/denied-account service checks and 28 route, compression,
+asset, logo, and anonymous-API checks. Production passed those same 28 HTTP
+checks, and Eric's signed-in session retained his introduction, first logo,
+and both skills. Azure reports the restricted revision Healthy/Running with
+one replica and 100% traffic; the preceding revision is no longer active.
+The worker flag remains `true`, the Licensing Logic App is Disabled, and the
+scheduled job's notification flag is still `false`.
+
+### Original Alamo / EveryAgent mark — 2026-10-16
+
+The original combined head-and-leaves emerald orb is deployed as
+`/brand/everyagent-alamo-v1.webp` in the briefing, embedded launcher, companion
+header, and Licensing skill. The approved asset and generation provenance are
+recorded in [material-folder-design.md](material-folder-design.md).
+
+- source: `8b2b9ba`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc80`
+- image: `sha256:e28ffec58d67f5bebc513634a889956c508cecea19e1aa3bbeaef97f7c4de1c3`
+- revision: `alamo-platform-prod-web--everyagent-logo-8b2b9ba`
+- preceding image: `sha256:46e520d30bbf34b5012a8c59028593282b476a554a3f048cfbbc93a61177bea0`
+- browser assets: `/assets/index-6jD-fc75.js`, `/assets/index-Bw0pVmX2.css`
+
+Docs, TypeScript, the full analyst gate, production build, and responsive
+EveryAgent/Licensing checks passed. Both candidate and production passed 28
+route, compression, asset, logo-byte, and anonymous-API checks. The revision is
+Healthy/Running; the signed-in production view loaded the selected first logo.
+The worker remains enabled and email delivery remains disabled. This release
+predates the subsequent Eric-only rollout restriction; do not restore its
+broader access policy when rolling back presentation changes.
+
+### Embedded EveryAgent introduction and briefing — 2026-10-16
+
+EveryAgent now introduces itself, greets the signed-in user, and leads with
+source-linked findings. Skill controls are behind “Manage my skills.” A persistent
+green launcher opens the same work in a compact dialog from permitted Platform
+pages, with the current page name, recent findings, skill links, and access to
+the existing question workspace. No new conversational planner or application
+permissions were introduced. Email remains disabled.
+
+- source: `f96108e`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7y`
+- image: `sha256:46e520d30bbf34b5012a8c59028593282b476a554a3f048cfbbc93a61177bea0`
+- revision: `alamo-platform-prod-web--everyagent-ui-f96108e`
+- preceding image / rollback: `sha256:c826df7073d656b51d66c266b985e7bd0a4247d2df3b8ffe044c3cc0c4e7afa9`
+- browser assets: `/assets/index-CP98q5fh.js`, `/assets/index-BsNoGC8I.css`
+
+The initial overlay build (`cc7x`) hit the image-depth limit at 125 source layers.
+The successful build uses the existing `Dockerfile.frontend-rebase` against that
+exact live digest. The local candidate has three filesystem layers; its runtime
+configuration and hashes of 24,019 backend, dependency, and runtime files match
+the source image. Only the browser bundle changes. The worker setting stays
+`true`, its private Blob state is preserved, the Licensing Logic App remains
+Disabled, and the job's notification flag remains `false`.
+
+Docs, the full analyst gate, TypeScript, and production build passed. EveryAgent
+browser checks passed at 320/390/1440 pixels, covering introduction, embedded
+findings, page context, Escape/focus restoration, source failure/recovery, and
+persisted pause/scope/review. Licensing reader regression checks passed at
+320/390/430/1440 pixels. The candidate and production each passed 27 route,
+entry/asset parity, compression, and anonymous API checks. Azure reports the
+new revision Healthy/Running with one replica. Eric's signed-in session showed
+the personal introduction and real existing work. These checks do not replace
+the previously documented full live ship-gate limitation.
+
+### EveryAgent responsibilities across Platform and Pipeline — 2026-10-16
+
+EveryAgent is deployed at `/analytics/agent`, with `/everyagent` as an alias and
+an entry in the shared Platform navigation for the existing three pilot users.
+Its first two registered skills use the real Licensing library and the existing
+protected Pipeline admissions-summary integration. Eric receives both skills;
+Raj and Betty retain Licensing. Personal pause/resume, community monitoring
+scope, review receipts, recent runs, source references, and explicit evidence
+relationships persist in the private Azure Blob `everyagent/state-v1.json`.
+No source-application commands, outbound notifications, or clinical writes are
+exposed. Email remains disabled in both the Licensing job and its Logic App.
+
+- source: `cbc7292`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7w`
+- web image: `sha256:c826df7073d656b51d66c266b985e7bd0a4247d2df3b8ffe044c3cc0c4e7afa9`
+- revision: `alamo-platform-prod-web--everyagent-cbc7292`
+- preceding web image: `sha256:c5d92d466d065b0c6f12307223d3d2e1af644725242f1fab1ae15001efd0ef28`
+- browser assets: `/assets/index-BRqtPndE.js`, `/assets/index-ZjZNtUtd.css`
+- runtime setting: `EVERYAGENT_WORKER_ENABLED` is the string `true`
+- persistence verified: Blob created at `2026-10-16T22:33:17Z`, 38,938 bytes
+
+The shared worker wakes each minute in the always-on web runtime and checks due
+responsibilities every 15 minutes. An expiring Blob-backed lease coordinates
+replicas. Source reads are shared across subscribers; assignment grants, scope,
+version, and pause state are checked again before results are published. First
+collections create completed baselines; subsequent content changes create review
+items. Existing state collection stays on its Monday/Wednesday schedule. The
+worker does not need an open browser or a saved user token.
+
+The release overlays only the EveryAgent modules, a bounded insertion into the
+actual live API router, and the reviewed browser bundle. The preparation command
+is `everyagent:prepare-release` with `EVERYAGENT_BASE_IMAGE` set to the exact live
+digest. Azure CLI's normal `containerapp update` successfully applied the image
+and worker setting; raw PATCH requests from CLI-expanded template output were
+rejected because that output includes unsupported/read-only fields such as
+`imageType` and `customMetricsSettings`. Do not replay those rejected bodies.
+
+Full analyst checks, docs, TypeScript, lint, unused-code/duplicate checks, and
+production build passed. EveryAgent tests cover identity and community scope,
+concurrent leases, restart recovery, duplicate suppression, review persistence,
+pause races, failed sources, older unresolved work, and aggregate-only Pipeline
+memory. Responsive EveryAgent checks passed at 320/390/1440 pixels; the existing
+Licensing skill passed at 320/390/430/1440 pixels. The candidate container passed
+20 route/compression/auth checks. Production passed the existing 23 entry/asset/
+Licensing-auth checks plus the EveryAgent alias and anonymous GET/POST denials.
+
+The new revision is Healthy/Running, has one replica, and receives 100% of traffic.
+Eric's signed-in session showed both real completed checks, the 95-report
+Licensing baseline, the current Pipeline aggregate summary, and persisted check
+history. Opening Licensing preserved its report modules and returned to
+EveryAgent. The Logic App is still Disabled and the job delivery flag is still
+the string `false`; no email was sent. The previously documented full live
+ship-gate limitation remains separate from these passing release checks.
+
+Rollback points the web app to the preceding image digest. That image ignores
+the EveryAgent worker flag; retain the private state Blob for recovery. General
+skill authoring, team assignment administration, the full shared knowledge graph,
+and AlamoHealth adapters are not part of this first release.
+
+### Agent workspace with Licensing skill; email delivery paused — 2026-10-16
+
+The user clarified that the product is one general Agent with connected skills.
+The navigation and workspace are now Agent, with Licensing explicitly labeled
+as the active skill. The shared Agent work card renders the existing licensing
+collector status and report modules. It does not introduce an unconnected chat
+or claim additional skills. Existing licensing deep links redirect to
+`/analytics/agent` with query parameters intact, and the same three-account
+access boundary applies before the skill mounts.
+
+**Email delivery is paused until a new explicit user request.** The production
+Logic App `alamo-platform-licensing-alerts` is Disabled, and the scheduled job's
+`LICENSING_ALERT_NOTIFICATIONS_ENABLED` is the string `false`. State collection
+and in-app updates continue. There were no Logic App executions after the
+previous activation; the last listed attempts were failed runs on October 6.
+Do not restore the preceding section's enabled state during a redeployment.
+If future delivery is approved, use a fresh cutoff unless the user explicitly
+asks to send the backlog.
+
+- source: `8e50054`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7v`
+- web image: `sha256:c5d92d466d065b0c6f12307223d3d2e1af644725242f1fab1ae15001efd0ef28`
+- revision: `alamo-platform-prod-web--agent-skills-1016`
+- preceding web image: `sha256:38f114944f49b9d1326f6da914f5feaa21be7624932d7484fa0d72e99aae1dd0`
+- browser assets: `/assets/index-OzBLv6cD.js`, `/assets/index-DtZiCD2T.css`
+
+Typecheck, docs, unused-code, full analyst checks, Licensing contracts/job
+checks, responsive browser checks at four widths, and the production build
+passed. The browser check verifies the general Agent identity, the active
+Licensing skill, preserved report links through the old route, automatic report
+modules, and failed-check handling. The earlier full live ship-gate limitation
+recorded below remains separate from these passing scoped checks.
+Production is Healthy/Running. Twenty-three route/asset/auth checks passed,
+and Eric's signed-in session followed the legacy URL to `/analytics/agent`,
+showing Agent, Active skill: Licensing, and the automatic 95-report results.
+The job update completed successfully with delivery false; its Monday/Wednesday
+cron remains unchanged, and the Logic App remains Disabled.
+
+### Licensing agent, readable reports, and change emails — 2026-10-16
+
+Licensing now opens with a green agent work summary and the latest report
+module already populated. Its status comes from the scheduled collector's
+actual last-check record; failed checks remain visible. Explore reports is a
+secondary control for community-scoped findings, citations, correction plans,
+and text retrieval. Report drilldowns retain their URL and return context.
+The report body uses source headings, paragraph spacing, sentence-boundary
+breaks, and page markers; original wording and the complete raw-text download
+remain intact. The official-source link uses the stable facility record and
+identifies the report date/control number to select.
+
+- source: `b3c3aba`, branch `codex/licensing-readable-briefs`
+- ACR build: `cc7u`
+- web image: `sha256:38f114944f49b9d1326f6da914f5feaa21be7624932d7484fa0d72e99aae1dd0`
+- web revision: `alamo-platform-prod-web--licensing-worker-1016`
+- preceding brief-only revision/image: `alamo-platform-prod-web--licensing-briefs-1016`, `sha256:3c4881cbebe85f61a2bd597d08e3ce6a71d00017c4bbc4e16059fad7c8b0fbc7`
+- browser assets: `/assets/index-6esYPSyh.js`, `/assets/index-u5UgfaAt.css`
+- worker image: `sha256:96987c75e617f25a6d768cd43314da944493b8dbd44098c5f0f34cd6f84c43c3` (ACR `cc7q`)
+- notifications activated after: `2026-10-16T19:12:51Z`
+
+The existing Monday/Wednesday 9 a.m. Pacific job now emails Raj and Betty when
+new source changes publish. The Office 365 workflow is Enabled and its signed
+callback remains in Key Vault. Email contains change metadata and links to the
+report brief, with no report narrative or resident details. Versioned envelopes
+and sent receipts support retries. The activation cutoff leaves the two old
+queued notices archived without delivering them. Manual verification execution
+`alamo-platform-licensing-check-d4rpica` succeeded; its log recorded an
+outside-schedule skip and `before_start` for both old notices. No test email was
+sent. Preserve the activation timestamp and notification enable flag when
+redeploying the scheduled job.
+
+Validation: Licensing contracts, job/email tests, docs, typecheck, analyst
+checks, production build, and 320/390/430/1440-pixel Licensing browser checks
+passed. Browser coverage includes automatic results, failed-check truth,
+community filtering, empty results, drilldown/back/reload, source-page focus,
+wrapping, and an unchanged original download. All 95 archived reports produced
+readable narratives; real complaint and inspection pages were inspected.
+Earlier broad browser regressions passed after aligning stale expectations
+with the deployed medication and navigation labels. The full live ship gate
+is not certified: the runtime incident report-shape audit still fails on
+pre-existing taxonomy/comparison-data expectations, and automated signed-in
+smoke has no saved auth state. This scoped release does not change that runtime
+or published incident data.
+
+Production verification: the named revision is Healthy/Running with one
+replica. Twenty public checks passed across entry/asset parity, identity/gzip/
+Brotli responses, and all three anonymous Licensing API denials. Eric's existing
+signed-in session showed the automatic 95-report/four-community worker view,
+eight latest report summaries, a readable Turlock narrative with original page
+numbers, and the official facility link. Citation exploration returned eleven
+matching reports with thirteen citations and eleven recorded correction plans.
+
+### Presentation shortcut removal — 2026-10-16
+
+The presentation icon is temporarily removed from both the main Platform and
+Executive Director headers. The authenticated `/presentation` direct link,
+viewer controls, private deck, and Eric/Andrew access rules remain available.
+This frontend-only release preserves the incident taxonomy release's runtime
+and keeps `VITE_WORKFORCE_DEMO=true`.
+
+- source commit: `374e411` on `codex/hide-presentation-shortcut`
+- image digest: `sha256:66af35e63a6c372a6db6664b5d67e93abdb52ad61c42bb7c550576111dedfafd`
+- revision: `alamo-platform-prod-web--hide-presentation-374e411`
+- rollback digest: `sha256:4624f6a2be1f4f25f937e4b97cbff0d4bcb157e0f768a9a3c0236cbc768d6669`
+- browser entry assets: `/assets/index-D3Y8Ia8M.js` and `/assets/index-0KRl1n-B.css`
+
+The candidate's root, admissions, chat, and presentation entries match the
+release build across identity, gzip, and Brotli. The runtime image configuration
+is identical to its base, and anonymous presentation API access returns 401 with
+private/no-store caching. Docs, TypeScript, build, and presentation authorization
+checks passed, including validation of the current 16-slide private package.
+The live revision is Healthy/Running with one replica and 100% traffic; all four
+production smoke probes passed. Signed-in browser verification confirmed both
+headers omit the icon and the direct presentation link still loads all 16 slides.
+Executive Director, Workforce, and auth-redirect contract checks also passed.
+The full analyst gate stopped at an unrelated existing query-intent expectation:
+`find medication refusal incidents ever` expected `Medication Refusal` but
+received `null` after the preceding incident-taxonomy release. This release does
+not change query intent, taxonomy, or server behavior.
+
 ### Incident taxonomy release — 2026-10-16
 
 Routine medication-refusal reports no longer enter governed incident totals or
@@ -2164,13 +2468,18 @@ callback URL in Key Vault as `licensing-alert-webhook-url`. The job resolves
 that secret through its existing user-assigned identity and never includes the
 URL in its image or source. Recipients are locked to
 `raj@aaahealthservices.com` and `betty@aaahealthservices.com` in both code and
-the workflow definition. Delivery is currently launch-gated: the Logic App is
-disabled and the job sets `LICENSING_ALERT_NOTIFICATIONS_ENABLED=false` so the
-scheduled collector continues to queue changes without sending them. Launch
-requires reauthorizing the Office 365 connection, enabling the Logic App, and
-changing that job setting to exactly `true`; complete all three in one verified
-release. A pending envelope must be reviewed before launch because enabling
-delivery will retry it.
+the workflow definition. Templates default to disabled delivery. Activation
+uses `licensing:deploy-alert-workflow -- --enable` and the job deploy script's
+`--enable-notifications --notifications-not-before=<UTC timestamp>` options.
+The Office 365 connection must be Connected. The job requires both
+`LICENSING_ALERT_NOTIFICATIONS_ENABLED=true` and `LICENSING_ALERT_NOT_BEFORE`;
+queued runs before that timestamp are skipped without deleting their evidence.
+Email delivery was paused by the user on October 16: the job flag is false and
+the Logic App is Disabled. Keep both disabled until explicit authorization to
+resume. If later approved, choose a new activation timestamp so this pause does
+not silently release old notices. The v2 email
+includes report dates and direct brief links; v1 envelopes remain readable for
+explicitly included older runs. No report body or resident details enter email.
 
 The twice-weekly schedule is Monday and Wednesday at 9 a.m.
 America/Los_Angeles. Azure evaluates

@@ -157,7 +157,7 @@ function renderPromptVariables(prompt) {
     .replace(/\{month\}/g, "May 2026")
     .replace(/\{startMonth\}/g, "May 2026")
     .replace(/\{endMonth\}/g, "June 2026")
-    .replace(/\{medicationDetail\}/g, "medication refusal detail");
+    .replace(/\{medicationDetail\}/g, "not-given medication detail");
 }
 
 function catalogPrompts() {

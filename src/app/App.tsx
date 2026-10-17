@@ -18,7 +18,9 @@ import WorkforcePage from "../features/workforce/pages/WorkforcePage";
 import PresentationPage from "../features/presentation/PresentationPage";
 import OwnerChatPage from "../features/home/pages/OwnerChatPage";
 
-import LicensingPage from "../features/licensing/pages/LicensingPage";
+import AgentPage from "../features/agent/pages/AgentPage";
+import LicensingRoute from "../features/licensing/pages/LicensingRoute";
+import { useEveryAgentAccess } from "../shared/auth/everyAgentAccess";
 import ExecutiveDirectorPage from "../features/executive/pages/ExecutiveDirectorPage";
 import ExecutiveDirectorDashboardPage from "../features/executive/pages/ExecutiveDirectorDashboardPage";
 
@@ -41,7 +43,11 @@ function withRouteBoundary(node: ReactNode) {
 
 function LegacyLicensingRedirect() {
   const location = useLocation();
-  return <Navigate to={`/analytics/licensing${location.search}${location.hash}`} replace />;
+  const canUseEveryAgent = useEveryAgentAccess();
+  if (location.pathname !== "/everyagent" && !canUseEveryAgent) return <LicensingRoute />;
+  const params = new URLSearchParams(location.search);
+  if (location.pathname !== "/everyagent") params.set("skill", "licensing");
+  return <Navigate to={`/analytics/agent${params.size ? `?${params}` : ""}${location.hash}`} replace />;
 }
 
 function LegacyOutreachRedirect() {
@@ -85,7 +91,9 @@ export default function App() {
         <Route path="/glossary" element={withRouteBoundary(<GlossaryPage />)} />
         <Route path="/explorer/:kind" element={withRouteBoundary(<DataExplorerPage />)} />
         <Route path="/command-center" element={withRouteBoundary(<CommandCenterPage />)} />
-        <Route path="/analytics/licensing" element={withRouteBoundary(<LicensingPage />)} />
+        <Route path="/analytics/agent" element={withRouteBoundary(<AgentPage />)} />
+        <Route path="/everyagent" element={<LegacyLicensingRedirect />} />
+        <Route path="/analytics/licensing" element={<LegacyLicensingRedirect />} />
         <Route path="/licensing" element={<LegacyLicensingRedirect />} />
         <Route path="/outreach" element={withRouteBoundary(<OutreachPage />)} />
         <Route path="/fiftystate" element={<LegacyOutreachRedirect />} />

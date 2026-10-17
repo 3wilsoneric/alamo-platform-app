@@ -34,7 +34,7 @@ function renderPrompt(template, communityName) {
     .replaceAll("{month}", "May 2026")
     .replaceAll("{startMonth}", "May 2026")
     .replaceAll("{endMonth}", "June 2026")
-    .replaceAll("{medicationDetail}", "medication refusal detail");
+    .replaceAll("{medicationDetail}", "not-given medication detail");
 }
 
 function slug(value) {

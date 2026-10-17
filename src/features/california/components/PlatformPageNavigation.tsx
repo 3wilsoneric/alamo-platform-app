@@ -5,8 +5,8 @@ import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
-import PresentationShortcut from "../../presentation/PresentationShortcut";
 import { usePresentationAccess } from "../../presentation/usePresentationAccess";
+import { useEveryAgentAccess } from "../../../shared/auth/everyAgentAccess";
 
 const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
@@ -17,7 +17,7 @@ const PLATFORM_PAGES = [
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
   const { pathname } = useLocation();
-  const active = pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" || pathname === "/licensing"
+  const active = pathname === "/analytics/agent" || pathname === "/everyagent" ? "everyagent" : pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" || pathname === "/licensing"
     ? "analytics"
     : pathname.startsWith("/admissions") ? "admissions"
       : pathname.startsWith("/workforce") ? "workforce"
@@ -26,8 +26,10 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const canViewOwnerWorkspace = usePlatformOwnerAccess() || (import.meta.env.DEV && isE2EAuthBypassEnabled);
+  const canUseEveryAgent = useEveryAgentAccess();
   const { allowed: canViewDemo } = usePresentationAccess();
-  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "workforce" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo));
+  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : [...PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "workforce" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo)),
+    ...(canUseEveryAgent ? [{ id: "everyagent", label: "AlamoAgent", href: "/analytics/agent" }] : [])];
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {
@@ -65,7 +67,6 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
             </Link>
           ))}
           </div>
-          {!restricted ? <PresentationShortcut /> : null}
           <PlatformUserIdentity className="ml-3" nameSide="bottom" />
         </div>
         <button type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="platform-mobile-menu" onClick={() => setMenuOpen((open) => !open)} className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-sm font-semibold text-[#315b54] md:hidden">

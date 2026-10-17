@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-10-12
+- updated: 2026-10-16
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -22,8 +22,17 @@ full-page phone menu begins below that complete header rather than beneath the
 browser status area.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
-Betty Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
-other account, including a platform administrator, receives Licensing access.
+AlamoAgent is an Eric Wilson-only preview: only his verified tenant-local object
+ID receives its navigation, embedded launcher, workspace, API access, and worker
+assignments. Betty Dominici and Raj Thandi instead see Licensing in that row,
+opening the existing report library at `/analytics/licensing` without the agent
+identity or launcher. They retain their previous Licensing API access. No other
+account, including a platform administrator, receives Licensing access.
+AlamoAgent opens directly to updates, source links, and review controls. The
+small orb opens the same work from other pages. There is no welcome hero,
+introduction, tagline, explanatory subtitle, or first-visit pop-up. Skill
+settings and notification status sit behind Manage skills. Functional report
+titles and source labels remain visible so users can identify the work.
 The owner-only Outreach workspace remains available by its direct route but is
 absent from shared desktop and mobile navigation; the workspace and its APIs
 remain hidden from every other account.
@@ -244,15 +253,15 @@ The analyst remains a vertical chat/module workspace:
 
 ## Private Presentation
 
-`/presentation` displays the supplied 28-slide Alamo Data Strategy deck in a
-full-window 16:9 desktop viewer. A presentation button beside the desktop account
-control in both the main and Executive Director headers appears only after an
-authorized access check. An explicitly authorized presentation account can
+`/presentation` displays the supplied 16-slide Alamo Data Strategy deck in a
+full-window 16:9 desktop viewer. The presentation shortcut is temporarily removed
+from both the main and Executive Director headers; authorized users can still
+open the direct `/presentation` link. An explicitly authorized presentation account can
 enter `/presentation` even if its normal workspace is otherwise zone-restricted;
 the slide and route APIs retain their separate server-side access checks. The
 phone menu has no shortcut.
-It requests browser full screen on click; browsers without that API retain the
-full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
+The viewer's full-screen control requests browser full screen; browsers without
+that API retain the full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
 navigate. F toggles full screen, S toggles speaker notes, and Close returns to
 the originating Platform page. Slide hashes support direct links. Screenshot
 slides for the Community dashboard, admissions file, Pipeline assessment, and
@@ -528,28 +537,75 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 
 ## Licensing Reports
 
-`/analytics/licensing` is a read-only library of the four-community CCLD baseline
-for Betty Dominici and Raj Thandi. It lives inside Analytics beside Reports and
-Ask a question, with no top-level or community-profile navigation item. The
-legacy `/licensing` route preserves query parameters when redirecting to the
-new route. Other accounts return to Analytics before any Licensing data mounts.
+`/analytics/agent` is the AlamoAgent work surface for Eric Wilson. The legacy
+`/everyagent` link remains supported. Navigation, accessible names, tooltips,
+and helper copy use AlamoAgent; internal API, state, and asset names remain
+stable. It opens directly on a compact status toolbar, skill links, and actual
+work. Manage skills contains personal scope, pause/resume controls, and the
+email-off status. Review actions and persisted check history remain available.
+Eric receives Licensing monitoring and a read-only Admissions watch skill over
+the protected Pipeline summary. Unavailable or disconnected sources are labeled
+explicitly. Shared source collection continues independently of personal scope.
 
-The page presents a short report summary followed by the complete archived
-state-report text in the same reader pane. The display removes recognized
-numbered form gutters but does not alter the stored evidence; the complete text
-remains downloadable, and the state facility record remains linked. There is no
-locally archived PDF or facsimile. The summary is derived from the archived
-text, and historical deadlines do not imply current overdue work.
+A small green orb in the authenticated Platform shell opens a keyboard-accessible
+companion with up to two recent findings (unreviewed work first), source links,
+skill links, and All updates. Ask a question opens the existing question
+workspace. The helper has no greeting, introduction, product title, subtitle,
+or first-visit pop-up. It does not add conversational planning or read arbitrary
+page content. One account-keyed provider shares polling and mutation state
+across the workspace and companion, retains results on failures, and stops
+polling while the document is hidden. Restricted admissions, executive-only
+accounts, executive pages, and presentation mode do not mount the companion.
+Pipeline remains a connected skill rather than a second host for this UI.
 
-The interface has one search box and an Updates notice. Search understands a
+Licensing remains a read-only library of the four-community CCLD baseline for
+Betty Dominici, Raj Thandi, and Eric. For Eric, `?skill=licensing` opens its rich
+module and the legacy `/licensing` and `/analytics/licensing` routes preserve
+query parameters while redirecting to that skill. Raj and Betty retain the
+standalone Licensing library at `/analytics/licensing`, without agent navigation,
+launcher, API access, or worker assignments. Other accounts return to Analytics
+before Licensing or agent data mounts.
+
+The Licensing skill opens with compact collection status and the latest report
+module. It shows the real last-check status, archived report count, community
+count, and automatic check schedule. Failed or unavailable checks are labeled;
+the UI never animates a fictitious scan. A secondary Explore reports control
+provides community selection and evidence views for latest reports (up to
+eight), substantiated complaint findings, cited deficiencies, recorded correction
+plans, or the full library. A community selection scopes the query. The module
+reports its date range and historical evidence counts, then drills into an
+individual report. Back preserves the question and scope; report links remain
+directly addressable. It uses the existing authenticated library and deterministic
+question filters, not a new LLM runtime.
+
+The individual reader opens with a formatted brief: the state finding, topics, reported
+concerns, finding excerpts, and cited deficiencies with their correction plans.
+Source references jump to their narrative page. Report text is an always-open
+reading view with page markers, explicit source headings, bullets, and spaced
+paragraphs capped at sentence boundaries. Repeated form headers, signature
+fields, standard notices, and continuation instructions are omitted from that
+reading view; the complete original remains available by download. Citation
+excerpts remain available through disclosures. Missing extraction is
+labeled, mixed complaint findings stay distinct, and historical correction
+deadlines do not imply current overdue work. Report-list entries show the
+finding headline and topics instead of a truncated generic form title.
+
+The original-source action links to the stable state facility record and names
+the report date and complaint number to locate in its report list. The state's
+per-report API uses a changing inventory index, so that URL is not persisted as
+a stable document link. There is no locally archived PDF or facsimile. Display
+formatting removes recognized numbered form gutters; the original-text download
+preserves the stored text byte for byte. Briefs derive only from that evidence.
+
+The secondary exploration panel also offers a report-finding box and an Updates notice. Search understands a
 small explicit vocabulary of communities, findings, citation/correction terms,
 years, and remaining text terms. It retrieves reports; it is not an unrestricted
-AI question-answer service. There are no statistics panels or filter menus.
-Report selection and search remain addressable in the URL.
+AI question-answer service. It does not infer current compliance from archived findings. Question, community,
+report selection, and search remain addressable in the URL.
 
 The authenticated `/api/platform/licensing`, `/api/platform/licensing/report`,
 and `/api/platform/licensing/updates` endpoints independently enforce the same
-two tenant-local Entra object IDs before reading any records. Signed-in
+three tenant-local Entra object IDs before reading any records. Signed-in
 nonmembers receive a generic 404; names, email claims, administrator roles, app
 tokens, and development bypasses cannot grant access. Anonymous requests remain
 401. The endpoints read a validated, atomic library
@@ -584,16 +640,20 @@ rebuilds the feed without fetching CCLD. Original ledger and evidence remain in
 moving the collector to a different machine.
 
 The Azure Container Apps job runs Mondays and Wednesdays at 9 a.m. Pacific and publishes
-updates to the live page without this Mac or Codex. After a complete collection
-publishes atomically, changes from that run are also queued for email to Raj
-Thandi and Betty Dominici. No-change runs do not send mail. The job persists a
+updates to the live page without this Mac or Codex. **Email delivery is paused
+at the user’s request.** The job notification flag is false and the alert Logic
+App is Disabled. Do not enable either without a new explicit user instruction.
+After a complete collection publishes atomically, changes may still be queued
+for later review; the prepared recipients remain Raj Thandi and Betty Dominici. Messages name the community and change, include the
+report date when present, and link directly to its brief and original-source
+actions. Facility-level changes link to Licensing Updates. No-change runs do
+not send mail. Delivery requires an explicit activation timestamp; older queued
+notices remain archived and are skipped. The job persists a
 private pending envelope and an immutable sent receipt under the Licensing
 storage prefix, retries unsent envelopes on a later execution, and never places
 report text or resident information in the message. Delivery uses the existing
 connected Office 365 Outlook account through the private
 `alamo-platform-licensing-alerts` Logic App; its signed callback URL is resolved
-from Key Vault and is absent from source and browser code. The page uses a
-compact breadcrumb/Updates row above search, without a visible page title or
-subtitle. On phones, Updates opens as a bounded modal sheet, report browsing and
-reading are separate views, long state text wraps without horizontal overflow,
+from Key Vault and is absent from source and browser code. The page uses a compact context/Updates row above the green agent entry. On phones, Updates opens as a bounded modal sheet, answer modules and
+report reading are separate views, long state text wraps without horizontal overflow,
 and source/download actions become full-width tap targets.

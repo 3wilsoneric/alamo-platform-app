@@ -163,35 +163,145 @@
   background: #fffefa;
 }
 
-.licensing-report-document__header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  padding: 14px clamp(16px, 2vw, 26px);
-  border-bottom: 1px solid #d6dbd6;
+.licensing-brief-sections {
+  overflow-wrap: anywhere;
 }
 
-.licensing-report-document__header h3 {
-  margin: 0;
-  color: #193246;
-  font: 600 21px/1.25 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-}
-
-.licensing-report-document__header span {
-  color: #64716c;
-  font: 500 12px/1.5 "Helvetica Neue", Arial, sans-serif;
+.licensing-brief-sections h3 {
+  margin: 0 0 12px;
+  color: #263c30;
+  font: 600 19px/1.35 "Helvetica Neue", Arial, sans-serif;
 }
 
 .licensing-report-document__body {
   min-width: 0;
-  padding: 20px clamp(16px, 2vw, 26px) 28px;
+  padding: 0 clamp(20px, 3vw, 40px) 32px;
   color: #273633;
-  font: 400 15px/1.75 "Helvetica Neue", Arial, sans-serif;
+  font: 400 16px/1.85 "Helvetica Neue", Arial, sans-serif;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
 }
+
+.licensing-report-document__header {
+  padding: 28px clamp(20px, 3vw, 40px) 24px;
+  border-bottom: 1px solid #e3e5dd;
+}
+
+.licensing-report-document__header h3 {
+  color: #263c30;
+  font: 600 24px/1.3 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.licensing-report-document__header p {
+  max-width: 65ch;
+  margin-top: 10px;
+  color: #667168;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.licensing-report-page {
+  padding-top: 28px;
+}
+
+.licensing-report-page + .licensing-report-page {
+  margin-top: 28px;
+  border-top: 1px solid #e3e5dd;
+}
+
+.licensing-report-page h4 {
+  margin: 0 0 18px;
+  color: #647469;
+  font: 600 12px/1.5 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.licensing-report-prose {
+  max-width: 68ch;
+}
+
+.licensing-report-prose > * + * {
+  margin-top: 20px;
+}
+
+.licensing-report-prose h5 {
+  margin-top: 28px;
+  color: #234a3d;
+  font: 600 17px/1.6 "Helvetica Neue", Arial, sans-serif;
+}
+
+.licensing-report-prose ul {
+  padding-left: 22px;
+  list-style: disc;
+}
+
+.licensing-report-document__footer {
+  border-top: 1px solid #e3e5dd;
+  padding: 16px clamp(20px, 3vw, 40px);
+  color: #667168;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.licensing-report-document__footer button {
+  min-height: 44px;
+  color: #287261;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.licensing-agent { max-width: 900px; margin: 0 auto; }
+.agent-work-card { padding: clamp(20px, 3vw, 30px); border-radius: 12px; background: #087d64; color: white; }
+.agent-work-card__identity { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.agent-work-card__identity h1 { font: 600 20px/1.4 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.02em; }
+.agent-work-card__mode { margin-left: auto; border: 1px solid #ffffff60; border-radius: 20px; padding: 4px 10px; color: #e3f6ee; font-size: 11px; }
+.agent-work-card__status { margin-top: 22px; font-size: 23px; font-weight: 600; line-height: 1.4; }
+.agent-work-card__summary { margin-top: 8px; color: #e1f2eb; font-size: 14px; line-height: 1.7; }
+.agent-work-card__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #ffffff40; }
+.agent-work-card__facts dt { color: #d2e9df; font-size: 12px; }
+.agent-work-card__facts dd { margin-top: 6px; font-size: 14px; line-height: 1.6; font-weight: 500; }
+.agent-work-card--helper { padding: 0 0 18px; border-radius: 0; background: transparent; color: #183c32; }
+.agent-work-card--helper .agent-work-card__status { margin-top: 0; font-size: 14px; font-weight: 500; }
+.agent-work-card--helper .agent-work-card__summary { color: #586d61; font-size: 13px; }
+.agent-work-card--helper .agent-work-card__facts { margin-top: 12px; padding-top: 12px; border-color: #dce5de; gap: 12px; }
+.agent-work-card--helper .agent-work-card__facts dt { color: #67786f; }
+.agent-work-card--helper .agent-work-card__facts dd { margin-top: 3px; font-size: 13px; }
+.licensing-agent__trigger {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 0; margin-top: 10px;
+  color: #287261; font-size: 13px; font-weight: 600;
+}
+.licensing-agent__trigger:hover { color: #153c2e; }
+.licensing-agent__questions { padding: 4px 0 8px; }
+.licensing-agent__scope { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 24px 0 16px; font-size: 13px; font-weight: 600; color: #576960; }
+.licensing-agent__scope select { min-height: 44px; max-width: 100%; padding: 8px 32px 8px 12px; border: 1px solid #c9d7d0; border-radius: 6px; background: white; font-size: 16px; color: #244e3f; }
+.licensing-agent__suggestions { border-top: 1px solid #dbe4de; }
+.licensing-agent__suggestions button { display: flex; width: 100%; min-height: 56px; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 4px; border-bottom: 1px solid #dbe4de; color: #244e3f; text-align: left; font-size: 16px; line-height: 1.5; }
+.licensing-agent__suggestions button:hover { background: #f4f8f5; }
+.licensing-agent__suggestions svg { flex-shrink: 0; }
+.licensing-agent__search { margin-top: 24px; }
+.licensing-agent__search label { display: block; margin-bottom: 10px; color: #617168; font-size: 13px; line-height: 1.6; }
+.licensing-agent__search > div { display: flex; gap: 8px; border: 1px solid #a8c9ba; border-radius: 10px; padding: 6px; background: #f6faf7; }
+.licensing-agent__search input { min-width: 0; flex: 1; min-height: 44px; padding: 8px; background: transparent; font-size: 16px; }
+.licensing-agent__search button { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 7px; background: #087d64; color: white; }
+.licensing-answer { max-width: 900px; margin: 28px auto 0; padding: clamp(18px, 3vw, 32px); border: 1px solid #d5dfd8; border-top: 3px solid #0f8b73; background: #fffefa; overflow-wrap: anywhere; }
+.licensing-answer__eyebrow { color: #487160; font-size: 12px; font-weight: 600; }
+.licensing-answer h2 { margin-top: 10px; color: #243c31; font: 600 clamp(23px, 4vw, 29px)/1.3 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.025em; }
+.licensing-answer__question { margin-top: 12px; color: #53665a; font-size: 15px; }
+.licensing-answer__summary { margin-top: 16px; max-width: 70ch; color: #42564b; font-size: 16px; line-height: 1.75; }
+.licensing-answer__evidence { margin-top: 20px; padding: 16px; border-radius: 6px; background: #edf3ee; color: #305342; font-size: 14px; line-height: 1.6; }
+.licensing-answer__evidence span { display: block; margin-top: 6px; color: #657267; font-size: 12px; }
+.licensing-answer__reports { margin-top: 24px; }
+.licensing-answer__reports li { border-top: 1px solid #dce3dd; }
+.licensing-answer__reports button { display: block; width: 100%; padding: 22px 0; text-align: left; }
+.licensing-answer__reports button:hover .licensing-answer__report-title { color: #087d64; }
+.licensing-answer__report-context { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; color: #68776c; font-size: 12px; line-height: 1.6; }
+.licensing-answer__report-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; color: #273d31; font-size: 18px; font-weight: 600; line-height: 1.4; }
+.licensing-answer__report-title svg { flex-shrink: 0; }
+.licensing-answer__topics { display: block; margin-top: 8px; font-size: 13px; color: #68776c; line-height: 1.6; }
+.licensing-answer__open { display: block; margin-top: 12px; color: #287261; font-size: 13px; font-weight: 600; }
+.licensing-answer__more { min-height: 44px; color: #287261; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; }
+.licensing-answer footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #dce3dd; color: #68776c; font-size: 12px; line-height: 1.7; }
 
 [data-admissions-overview="true"] > div,
 [data-workforce-overview="true"] > div {

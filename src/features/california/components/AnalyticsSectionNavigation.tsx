@@ -1,6 +1,7 @@
 import { useLicensingAccess } from "../../../shared/auth/licensingAccess";
+import { useEveryAgentAccess } from "../../../shared/auth/everyAgentAccess";
 
-export type AnalyticsSection = "reports" | "questions" | "licensing";
+export type AnalyticsSection = "reports" | "questions" | "agent" | "licensing";
 
 export default function AnalyticsSectionNavigation({
   active,
@@ -10,6 +11,7 @@ export default function AnalyticsSectionNavigation({
   onNavigate: (section: AnalyticsSection) => void;
 }) {
   const canViewLicensing = useLicensingAccess();
+  const canUseEveryAgent = useEveryAgentAccess();
   return (
     <nav
       aria-label="Analytics sections"
@@ -37,7 +39,12 @@ export default function AnalyticsSectionNavigation({
           label="Ask a question"
           onClick={() => onNavigate("questions")}
         />
-        {canViewLicensing ? <SectionButton
+        {canUseEveryAgent ? <SectionButton
+          section="agent"
+          active={active === "agent"}
+          label="AlamoAgent"
+          onClick={() => onNavigate("agent")}
+        /> : canViewLicensing ? <SectionButton
           section="licensing"
           active={active === "licensing"}
           label="Licensing"

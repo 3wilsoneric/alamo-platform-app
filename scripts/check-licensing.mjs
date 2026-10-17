@@ -6,12 +6,27 @@ import { LICENSING_COMMUNITIES, licensingTextForDisplay, validateLicensingLibrar
 import { queryLicensingLibrary, validateLicensingBaseline, validateLicensingBundle } from "../server/licensing-library.mjs";
 import { usesLicensingAzureStorage } from "../server/licensing-storage.mjs";
 import { analyzeLicensingReport } from "../shared/licensing-analysis.mjs";
+import { licensingReadingBlocks, licensingReadingPages } from "../shared/licensing-reading-view.mjs";
 import { hasLicensingAccess } from "../shared/licensing-access.mjs";
 import { assertLicensingAccess } from "../server/licensing-access.mjs";
 
 const communities = LICENSING_COMMUNITIES.map((c) => ({ ...c,
   licensedName: `${c.name} licensed facility`, licenseStatus: "Licensed", reportCount: 1, complaintCount: 0,
   sourceUrl: `https://www.ccld.dss.ca.gov/carefacilitysearch/FacDetail/${c.licenseNumber}` }));
+const longNarrative = "The analyst reviewed records and interviewed staff about the visit. ".repeat(16).trim();
+const readable = licensingReadingBlocks(longNarrative);
+assert.ok(readable.length > 1, "long narrative must be split into readable paragraphs");
+assert.equal(readable.map(block => block.text).join(" "), longNarrative, "paragraph formatting must preserve source wording");
+assert.ok(readable.every(block => block.text.length <= 600));
+const labeledNarrative = licensingReadingBlocks(`Investigation Finding: ${longNarrative}`);
+assert.equal(labeledNarrative[0].text, "Investigation Finding:");
+assert.ok(labeledNarrative.slice(1).every(block => block.kind === "paragraph" && block.text.length <= 600), "a source label must not turn a long narrative into a heading");
+assert.deepEqual(licensingReadingBlocks("{Cont.on 809C}"), []);
+assert.equal(licensingReadingBlocks("The inspection continued on Friday.")[0].text, "The inspection continued on Friday.", "a substantive continuation is not a form instruction");
+assert.equal(licensingReadingBlocks("Findings recorded. (Continue on LIC9099C...)")[0].text, "Findings recorded.");
+assert.equal(licensingReadingBlocks("Allegation: Staff did not keep records.")[0].kind, "heading");
+assert.equal(licensingReadingBlocks("• Records were reviewed.")[0].kind, "list-item");
+assert.deepEqual(licensingReadingPages([{ page: 1, text: "First page." }, { page: 3, text: "Third page." }]).map(page => page.page), [1, 3], "source page numbers must survive omitted boilerplate pages");
 const reports = communities.map((c, index) => {
   const text = index === 0 ? "Resident rights and medication records were reviewed." : "Annual inspection narrative.";
   return { id: `${c.licenseNumber}-${String(index).padStart(32, "0")}`, facilityId: c.facilityId,
@@ -194,6 +209,11 @@ try {
     const result = await licensingApiResponse("/api/platform/licensing/report?id=invalid", { tid: tenantId, oid, scp: "access_as_user" });
     assert.equal(result.statusCode, 400, "Betty, Raj, and Eric must reach the report loader after authenticated authorization");
     assert.equal(result.body.code, "licensing_report_invalid");
+  }
+  for (const oid of licensedUsers.slice(0, 2)) {
+    const result = await licensingApiResponse("/api/platform/everyagent", { tid: tenantId, oid, scp: "access_as_user" });
+    assert.equal(result.statusCode, 404, "Raj and Betty retain Licensing but cannot reach EveryAgent");
+    assert.equal(result.body.error, "Not found.");
   }
 } finally {
   globalThis.fetch = originalFetch;
