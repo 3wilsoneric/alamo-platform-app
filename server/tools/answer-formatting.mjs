@@ -715,9 +715,17 @@ export function createAnswerFormattingTools({
     }
 
     if (result.tool === "resident_incident_history") {
-      const residentName = result.visual?.title?.replace(/\s+Incident Categories$/i, "") || firstMeaningfulTextLine(result.text) || "This resident";
+      const residentName = result.visual?.title?.replace(/\s+Incident (?:Categories|Coverage)$/i, "") || firstMeaningfulTextLine(result.text) || "This resident";
       const community = String(result.text ?? "").match(/\bCommunity:\s*([^.;]+)(?:[.;]|$)/i)?.[1]?.trim();
       const matchedCount = result.trace?.rowCount ?? result.visual?.originalRowCount ?? rows.reduce((total, row) => total + Number(row.value || 0), 0);
+      const truthState = result.truthState ?? result.trace?.truthState;
+      if (truthState === "summary_not_shown") {
+        const historicalTotal = String(result.text ?? "").match(/Historical rollup:\s*([\d,]+) total/i)?.[1] ?? "an unspecified number of";
+        return `${residentName}'s profile lists ${historicalTotal} historical incident${historicalTotal === "1" ? "" : "s"}, but detailed incident history cannot be verified from the current records. A category breakdown is unavailable.`;
+      }
+      if (truthState === "verified_zero") {
+        return `No incident details matched ${residentName}${community ? ` at ${community}` : ""} in the available history.`;
+      }
       const topCategories = rows.slice(0, 3)
         .map((row) => `${row.label} (${formatNumber(row.value)})`)
         .join(", ");

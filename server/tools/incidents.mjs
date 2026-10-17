@@ -1028,10 +1028,12 @@ export function createIncidentRateTools(dependencies) {
     const portfolioCensusRows = communities.census ?? [];
     const incidentRows = filterByFacility(portfolioIncidentRows, facility);
     const censusRows = filterByFacility(portfolioCensusRows, facility);
-    const availableMonths = [...new Set([
-      ...incidentRows.map((row) => row.month_bucket).filter(Boolean),
-      ...censusRows.map((row) => row.month_bucket).filter(Boolean)
-    ])].sort();
+    // A rate needs both an incident numerator and a census denominator.
+    // The latest incident month can precede publication of its census.
+    const censusMonths = new Set(censusRows.filter((row) => Number(row.census) > 0).map((row) => row.month_bucket).filter(Boolean));
+    const availableMonths = [...new Set(incidentRows.map((row) => row.month_bucket).filter(Boolean))]
+      .filter((month) => censusMonths.has(month))
+      .sort();
     const requestedMonths = getRequestedMonthBuckets(content, availableMonths);
     const comparisonMonths = requestedMonths.length >= 2
       ? requestedMonths.slice(0, 2).sort()
@@ -1123,6 +1125,7 @@ export function createIncidentRateTools(dependencies) {
     return {
       handled: true,
       tool: "incident_rate_change",
+      truthState: "valid_rows",
       text: [
         `${leader.communityName} had the largest incident-rate change, ${direction === "increased" ? "rising" : direction === "decreased" ? "falling" : "holding steady"} by ${Math.abs(leader.rateDelta).toFixed(1)} from ${leader.leftRate.toFixed(1)} to ${leader.rightRate.toFixed(1)} incidents per 100 residents.`,
         "Calculation",
@@ -1136,7 +1139,8 @@ export function createIncidentRateTools(dependencies) {
         rowCount: categoryRows.length + censusRows.filter((row) => [leftMonth, rightMonth].includes(row.month_bucket)).length,
         facility,
         period: `${leftMonth} vs ${rightMonth}`,
-        note: "rate = incidents / census * 100"
+        note: "rate = incidents / census * 100",
+        truthState: "valid_rows"
       }),
       visual: {
         type: "table",
