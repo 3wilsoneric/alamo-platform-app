@@ -46,6 +46,125 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### AlamoAgent direct home and conversations — 2026-10-16 (not deployed)
+
+The independent API now has a standalone browser build and a versioned central
+conversation endpoint at `/api/agent/v1/conversations`. The same React component
+can open a conversation from Platform using `?chat=<id>`. Chats read Licensing
+summaries and Admissions aggregates through the authenticated source connector;
+no direct application transaction, email or assessment-detail capability is added.
+The existing `/chat` analyst route remains its separate, unchanged product surface.
+
+Build and verification commands:
+
+```bash
+npm run check:everyagent-conversations
+npm run check:browser-everyagent-conversations
+npm run everyagent:prepare-service
+npm run check:everyagent-service-package
+npm run check:docs
+npm run check:analyst
+npm run build
+```
+
+`everyagent:prepare-service` builds the separate web entry before assembling the
+API package. It contains 33 runtime modules, three direct backend dependencies,
+and `web/` with the independent HTML/assets and original approved mark. It does
+not copy Platform's public directory, router, reporting modules or private assets.
+The Dockerfile serves the browser from `/app/web` in the same API process; this
+code change does not require a second web hosting resource. The durable worker
+package is still independent and contains no conversation/model runtime.
+
+Configuration, in addition to the source/API settings below:
+
+- `ALAMOAGENT_CHAT_CLIENT_IDS`: exact delegated client IDs allowed to render
+  transcripts. Every entry must also be in `ALAMOAGENT_ENTRA_CLIENT_IDS`. Leave
+  empty to keep the conversation routes inactive. Register both the direct
+  browser client and the trusted Platform client before testing continuity.
+  CORS, a supplied host label and conversation possession are insufficient.
+- `ALAMOAGENT_WEB_ROOT`: optional fixed directory of compiled browser assets.
+  The packaged image sets `/app/web`. Public routes are only `/`, emitted assets
+  and the approved mark; API misses never fall through to HTML. CSP blocks
+  framing and limits scripts to the same origin. Configure the exact direct-home
+  origin in `ALAMOAGENT_BROWSER_ORIGINS` along with authorized embedded hosts;
+  verify CSP/MSAL popup behavior against the real registered origins before release.
+- `VITE_ALAMOAGENT_API_ORIGIN` and `VITE_ALAMOAGENT_SCOPE`: public build-time agent
+  endpoint and delegated scope. Platform shows its optional Chats entry only
+  when both are configured. Its existing MSAL instance requests an agent-audience
+  token; it never forwards its ordinary Platform API token to this service.
+- `VITE_ALAMOAGENT_CLIENT_ID`: the direct browser's own Entra SPA client. Register
+  the direct origin as its return address and consent its agent delegated scope.
+  Keep `VITE_E2E_AUTH_BYPASS` unset for release. The existing loopback-only browser
+  preview convention does not disable backend JWT verification.
+- `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`: existing provider convention, supplied
+  only to the independent API. Default model remains `claude-sonnet-4-6`. This
+  runtime makes one request per submitted turn with its own fixed limits, not
+  the analyst retry settings. Missing credentials leave saved work accessible
+  and report chat synthesis as unconfigured.
+
+Conversations use `everyagent/conversations-v1.json` in agent-owned state storage,
+separate from `everyagent/state-v1.json`. Reads and writes retain the existing
+managed-identity and ETag behavior. Current bounds: 50 saved chats, 40 turns per
+chat, 8 MiB total; two active turns and 50 submitted turns per rolling 24 hours.
+A provider attempt has a 35-second timeout, at most 85 KB context and 1,200 output
+tokens. Turns record planned model/prompt, model-attempt start and reported
+input/output tokens on completed answers. Failed/interrupted attempts can have
+unknown usage; reconcile provider billing rather than counting those as free.
+These are resource bounds, not a measured dollar budget. Enabling chat
+uses paid provider calls; no live model call was made for local verification.
+
+Conversation scope is immutable per chat and can only become less accessible as
+source grants/assignments narrow. A work-linked conversation filters by its source
+references; missing matches stay explicit. Source failures can produce partial
+answers only while all conversation permissions can still be verified. If a
+required grant cannot be verified, the entire transcript/title is withheld,
+including previously saved answers. The UI clears rendered chat data when hidden
+and rechecks on focus, refresh and polling. Already-read content is not erased.
+
+Submitted request IDs are replay-safe within retained state: the same ID/text
+returns the same turn, while altered text conflicts. A canceled or expired turn
+cannot publish a late answer. Cancellation does not guarantee an in-flight model
+request stops billing. This request-driven chat is not yet a durable model
+workflow: after a process loss, pending turns become interrupted on the next
+read after their two-minute lease. Retrying the original request does not rerun
+it; the user explicitly submits another turn. No automatic model retries occur.
+
+Local acceptance checks use signed synthetic Entra tokens, a separate authenticated
+HTTP source, temporary file-backed state and synthetic model responses. They
+exercise source/client/user isolation, persistence, request deduplication,
+citations, revocation, cancellation and process-loss lease behavior. The browser
+check runs the actual API with two registered clients behind a test transport;
+no live credentials, production data, deployment or notification is involved.
+Local verification passed: full `check:analyst`, both TypeScript checks,
+source/HTTP conversation tests, docs/retention, lint, code-health, unused-code,
+zero duplicates and the Platform build. The independent API/web package installs
+outside the repo (57 backend packages), boots its actual production entry point,
+serves the browser, rejects unauthenticated chat/work requests and shuts down
+cleanly. Browser checks pass at 320/390/1440px for both the existing helper and
+the new direct/embedded conversation flow, including unsent-draft preservation
+across tab visibility changes. Mobile and desktop screenshots were visually
+inspected. The build retains Platform's existing large-chunk warning.
+
+Receipts are `generated/alamoagent-chat-{analyst,build,browser,package}.log`,
+`generated/alamoagent-chat-existing-browser.log`, and screenshots under
+`generated/browser-everyagent-conversations/`. The browser setup caught and
+fixed public-asset origin handling and a StrictMode refresh/remount race.
+These are local synthetic verification artifacts, not production receipts.
+
+Before release: verify actual Entra consent, downstream source roles/grants and
+RBAC, isolated storage lifecycle/backups, production availability and rollback.
+Define transcript retention/deletion/export; test real-model groundedness and
+adversarial source text, measure latency/token spend, and set operational alerts.
+Schema/citation checks do not prove that a model's claims are supported. The
+full-report correction workflow, durable model replay, learning/memory review,
+additional embedded hosts and PostgreSQL migration remain future work.
+
+Provider and sign-in contracts were checked against the
+[Claude tool-response documentation](https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use)
+and [MSAL token acquisition documentation](https://learn.microsoft.com/en-us/entra/msal/javascript/browser/acquire-token).
+The [living spec](alamoagent-build-spec.md#s2a-direct-home-and-scoped-conversations--2026-10-16)
+is the canonical capability and remaining-work record.
+
 ### AlamoAgent authenticated source connector — 2026-10-16 (not deployed)
 
 The independent API and durable worker now use the source-owned Platform

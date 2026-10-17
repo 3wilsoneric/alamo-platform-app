@@ -17,14 +17,15 @@ function encode(value) {
   return bytes;
 }
 
-export function createEveryAgentPersistence({ localPath = path.resolve("generated/everyagent/state-v1.json"), azure = isProductionLikeRuntime() } = {}) {
+export function createEveryAgentPersistence({ localPath = path.resolve("generated/everyagent/state-v1.json"), azure = isProductionLikeRuntime(), blobPath = "everyagent/state-v1.json" } = {}) {
+  if (!["everyagent/state-v1.json", "everyagent/conversations-v1.json"].includes(blobPath)) throw new Error("Unknown agent state collection.");
   if (azure) {
     const account = process.env.AZURE_STORAGE_ACCOUNT?.trim();
     const container = process.env.AZURE_STORAGE_CONTAINER?.trim();
     const identity = process.env.AZURE_CLIENT_ID?.trim();
     if (!account || !container || !identity) throw new Error("EveryAgent durable storage is not configured.");
     const blob = new BlobServiceClient(`https://${account}.blob.core.windows.net`, new ManagedIdentityCredential(identity),
-      { retryOptions: { maxTries: 2, tryTimeoutInMs: 10_000 } }).getContainerClient(container).getBlockBlobClient("everyagent/state-v1.json");
+      { retryOptions: { maxTries: 2, tryTimeoutInMs: 10_000 } }).getContainerClient(container).getBlockBlobClient(blobPath);
     return {
       async read() {
         try {

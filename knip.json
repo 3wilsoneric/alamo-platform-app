@@ -5,7 +5,8 @@
     "api/**/*.js",
     "scripts/**/*.mjs",
     "server/everyagent-worker.mjs",
-    "server/everyagent-server.mjs"
+    "server/everyagent-server.mjs",
+    "src/agent-main.tsx"
   ],
   "project": [
     "src/**/*.{ts,tsx}",

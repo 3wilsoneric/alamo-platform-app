@@ -17,7 +17,7 @@ try {
   assert.deepEqual(Object.keys(pkg.dependencies).sort(), ["@azure/identity", "@azure/storage-blob", "jose"]);
   const lock = JSON.parse(await readFile(path.join(directory, "package-lock.json"), "utf8"));
   assert(!Object.keys(lock.packages).some(name => /databricks|anthropic|durable-functions|react|pdf-lib/.test(name)));
-  execFileSync("npm", ["ci", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: directory, stdio: "pipe", timeout: 120_000 });
+  execFileSync("npm", ["ci", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund", "--prefer-offline"], { cwd: directory, stdio: "pipe", timeout: 120_000 });
   await mkdir(path.join(directory, "scripts"));
   await cp(path.join(root, "scripts/check-everyagent-service.mjs"), path.join(directory, "scripts/check-everyagent-service.mjs"));
   const env = { PATH: process.env.PATH, TMPDIR: os.tmpdir() };
@@ -31,6 +31,7 @@ try {
     [{}, /requires production mode/],
     [{ NODE_ENV: "production" }, /Configure the agent tenant/],
     [production, /Configure the agent Platform connector/],
+    [{ ...production, ...connector, ALAMOAGENT_CHAT_CLIENT_IDS: "99999999-9999-4999-8999-999999999999" }, /Chat clients must be registered/],
     [{ ...production, ...connector }, /durable storage is not configured/]
   ]) {
     const result = spawnSync(process.execPath, ["server/everyagent-server.mjs"], { cwd: directory, env: { ...env, ...settings }, encoding: "utf8", timeout: 10_000 });
@@ -42,7 +43,8 @@ try {
   // unauthenticated requests must not perform any storage or identity I/O.
   const child = spawn(process.execPath, ["server/everyagent-server.mjs"], { cwd: directory, stdio: ["ignore", "pipe", "pipe"],
     env: { ...env, ...production, ...connector, PORT: String(port), AZURE_STORAGE_ACCOUNT: "syntheticagentfixture",
-      AZURE_STORAGE_CONTAINER: "synthetic", AZURE_CLIENT_ID: production.ALAMOAGENT_ENTRA_CLIENT_IDS } });
+      AZURE_STORAGE_CONTAINER: "synthetic", AZURE_CLIENT_ID: production.ALAMOAGENT_ENTRA_CLIENT_IDS,
+      ALAMOAGENT_CHAT_CLIENT_IDS: production.ALAMOAGENT_ENTRA_CLIENT_IDS, ALAMOAGENT_WEB_ROOT: path.join(directory, "web") } });
   const exited = once(child, "exit");
   let timer;
   try {
@@ -56,6 +58,10 @@ try {
     const base = `http://127.0.0.1:${port}`;
     assert.equal((await fetch(`${base}/healthz`, { signal: AbortSignal.timeout(5000) })).status, 200);
     assert.equal((await fetch(`${base}/api/agent/v1/work`, { signal: AbortSignal.timeout(5000) })).status, 401);
+    assert.equal((await fetch(`${base}/api/agent/v1/conversations`, { signal: AbortSignal.timeout(5000) })).status, 401);
+    const web = await fetch(base, { signal: AbortSignal.timeout(5000) });
+    assert.equal(web.status, 200); assert.match(web.headers.get("content-type"), /text\/html/);
+    assert.match(await web.text(), /<title>AlamoAgent<\/title>/);
   } finally {
     clearTimeout(timer); child.kill("SIGTERM");
     const kill = setTimeout(() => child.kill("SIGKILL"), 7000);

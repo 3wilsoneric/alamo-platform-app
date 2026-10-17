@@ -8,6 +8,7 @@ import EveryAgentWork from "./EveryAgentWork";
 import EveryAgentRuns from "./EveryAgentRuns";
 import { useAgentBranding } from "../useAgentBranding";
 import "../everyAgent.css";
+import { agentChatConfigured } from "../conversations/agentTransport";
 
 export default function EveryAgentWorkspace() {
   const { data, error, busy, refresh, command } = useEveryAgent();
@@ -25,6 +26,7 @@ export default function EveryAgentWorkspace() {
     <nav className="everyagent-skill-links" aria-label="Connected skills">
       {data?.skills.map(skill => <Link key={skill.id} to={skill.href}>{skill.title}<ArrowUpRight size={14} /></Link>)}
       <Link to="/analytics/questions">Ask a question<ArrowUpRight size={14} /></Link>
+      {agentChatConfigured && <Link to="/analytics/agent?chat=home">Chats<ArrowUpRight size={14} /></Link>}
     </nav>
     {error && <div role="alert" className="everyagent-error">{error}<button type="button" onClick={refresh}>Try again</button></div>}
     {settings && data && <section className="everyagent-manage-panel" aria-label="Manage skills"><div className="everyagent-section-title"><h2>Skills</h2><button type="button" onClick={() => setSettings(false)}>Done</button></div>

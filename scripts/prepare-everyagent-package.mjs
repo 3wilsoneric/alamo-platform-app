@@ -13,7 +13,10 @@ const core = [
   "shared/licensing-access.mjs", "shared/licensing-communities.mjs", "shared/everyagent-links.mjs", "shared/everyagent-source-contracts.mjs"
 ];
 const api = ["server/everyagent-auth.mjs", "server/everyagent-host.mjs", "server/everyagent-http.mjs", "server/everyagent-server.mjs",
-  "server/everyagent-service.mjs", "server/http-body.mjs", "server/http-response.mjs", "shared/everyagent-client.mjs"];
+  "server/everyagent-service.mjs", "server/http-body.mjs", "server/http-response.mjs", "shared/everyagent-client.mjs",
+  "server/everyagent-web.mjs", "server/everyagent-conversations.mjs", "server/everyagent-conversation-http.mjs",
+  "server/everyagent-conversation-model.mjs", "server/everyagent-conversation-sources.mjs", "server/everyagent-conversation-store.mjs",
+  "shared/everyagent-conversations.mjs"];
 const worker = ["server/everyagent-functions.mjs", "server/everyagent-orchestrator.mjs", "server/everyagent-worker.mjs"];
 
 export async function prepareEveryAgentPackage(kind) {
@@ -43,6 +46,9 @@ export async function prepareEveryAgentPackage(kind) {
     if (name && (dependency.version !== lock.packages[name]?.version || dependency.integrity !== lock.packages[name]?.integrity)) throw new Error("The isolated package changed a reviewed dependency. Update the root lock explicitly.");
   }
   if (kind === "worker") await cp(path.join(root, "scripts/azure/everyagent-host.json"), path.join(destination, "host.json"));
-  else await writeFile(path.join(destination, "Dockerfile"), "FROM node:22-bookworm-slim\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund\nCOPY server ./server\nCOPY shared ./shared\nENV NODE_ENV=production\nUSER node\nEXPOSE 8080\nCMD [\"node\", \"server/everyagent-server.mjs\"]\n");
+  else {
+    await cp(path.join(root, "generated/everyagent-web"), path.join(destination, "web"), { recursive: true });
+    await writeFile(path.join(destination, "Dockerfile"), "FROM node:22-bookworm-slim\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund\nCOPY server ./server\nCOPY shared ./shared\nCOPY web ./web\nENV NODE_ENV=production ALAMOAGENT_WEB_ROOT=/app/web\nUSER node\nEXPOSE 8080\nCMD [\"node\", \"server/everyagent-server.mjs\"]\n");
+  }
   console.log(`Prepared independent ${kind} (${files.length} runtime files, ${names.length} direct dependencies) at ${destination}. No resources created or deployed.`);
 }

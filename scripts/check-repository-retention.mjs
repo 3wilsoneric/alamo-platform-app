@@ -35,6 +35,8 @@ const rootFiles = new Set([
   "tsconfig.json",
   "tsconfig.server.json",
   "vercel.json",
+  "agent.html",
+  "vite.agent.config.ts",
   "vite.config.ts"
 ]);
 

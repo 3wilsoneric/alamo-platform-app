@@ -15,6 +15,7 @@ const requestBodyPath = path.join(root, "server/http-body.mjs");
 const apiAuthPath = path.join(root, "server/api-auth.mjs");
 const apiResponsePath = path.join(root, "server/http-response.mjs");
 const authenticatedFetchPath = path.join(root, "src/shared/api/authenticatedFetch.ts");
+const boundedResponse = await readFile(path.join(root, "src/shared/api/boundedResponse.ts"), "utf8");
 const authConfigPath = path.join(root, "src/app/auth/authConfig.ts");
 const claudeCopilotPath = path.join(root, "server/claude-copilot.mjs");
 const vercelConfigPath = path.join(root, "vercel.json");
@@ -105,8 +106,9 @@ if (
 }
 if (
   !authenticatedFetch.includes("DEFAULT_API_RESPONSE_MAX_BYTES") ||
-  !authenticatedFetch.includes('response.headers.get("content-length")') ||
-  !authenticatedFetch.includes("response.body.getReader()") ||
+  !authenticatedFetch.includes('from "./boundedResponse"') ||
+  !boundedResponse.includes('response.headers.get("content-length")') ||
+  !boundedResponse.includes("response.body.getReader()") ||
   !authenticatedFetch.includes("readBoundedJsonResponse")
 ) {
   failures.push("authenticatedFetch.ts: browser API responses must be streamed through a bounded byte limit");

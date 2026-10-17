@@ -5,6 +5,7 @@ import { agentStatus, useEveryAgent } from "../EveryAgentContext";
 import { EveryAgentOrb } from "./EveryAgentIdentity";
 import EveryAgentWork from "./EveryAgentWork";
 import { useAgentBranding } from "../useAgentBranding";
+import { agentChatConfigured } from "../conversations/agentTransport";
 import "../everyAgent.css";
 
 export default function EveryAgentCompanion() {
@@ -22,6 +23,7 @@ export default function EveryAgentCompanion() {
     if (open && element && !element.open) element.showModal();
     if (!open && element?.open) { element.close(); launcher.current?.focus({ preventScroll: true }); }
   }, [open]);
+  if (agentChatConfigured && location.pathname === "/analytics/agent" && new URLSearchParams(location.search).has("chat")) return null;
   return <div className="everyagent-embedded">
     <button ref={launcher} type="button" className={`everyagent-launcher everyagent-launcher--${branding.variant}`} aria-label={`Open ${branding.name}`} title={branding.name} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
       <EveryAgentOrb />{needsReview.length > 0 && <span className="everyagent-badge" aria-label={`${needsReview.length} updates need review`}>{needsReview.length}</span>}
@@ -34,7 +36,7 @@ export default function EveryAgentCompanion() {
           <div className="everyagent-companion-work">{recent.map(item => <EveryAgentWork key={item.id} item={item} compact />)}{!recent.length && <p className="everyagent-empty">{data ? "No updates yet." : "Loading updates…"}</p>}</div>
           {data && <nav className="everyagent-companion-skills" aria-label={`${branding.name} skills`}>{data.skills.map(skill => <Link key={skill.id} to={skill.href} onClick={() => setOpen(false)}>{skill.title}<ArrowUpRight size={16} /></Link>)}</nav>}
         </div>
-        <footer><Link to="/analytics/agent" onClick={() => setOpen(false)}>All updates<ArrowUpRight size={16} /></Link><Link to="/analytics/questions" onClick={() => setOpen(false)}>Ask a question</Link></footer>
+        <footer><Link to="/analytics/agent" onClick={() => setOpen(false)}>All updates<ArrowUpRight size={16} /></Link><Link to={agentChatConfigured ? "/analytics/agent?chat=home" : "/analytics/questions"} onClick={() => setOpen(false)}>{agentChatConfigured ? "Chats" : "Ask a question"}</Link></footer>
       </div>
     </dialog>
   </div>;

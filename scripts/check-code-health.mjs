@@ -210,7 +210,7 @@ for (const cycle of findCycles(runtimeGraph)) {
 }
 
 const browserEntrypoint = path.join(root, "src/main.tsx");
-const browserReachableFiles = findReachableFiles(graph, [browserEntrypoint]);
+const browserReachableFiles = findReachableFiles(graph, [browserEntrypoint, path.join(root, "src/agent-main.tsx")]);
 for (const file of files) {
   const relativePath = path.relative(root, file);
   if (!relativePath.startsWith("src/") || relativePath.endsWith(".d.ts")) continue;

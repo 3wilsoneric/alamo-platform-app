@@ -539,6 +539,17 @@ available behind a disclosure so provenance does not crowd the reading surface.
 
 Unknown and retired paths resolve through the application catch-all to `/home`; no retired page aliases ship as product routes.
 
+## Independent agent chat candidate
+
+Implemented locally, not deployed: the separate AlamoAgent home opens monitoring
+work and saved conversations, reusing the existing compact chat composer and
+message rendering. Discuss starts a conversation scoped to a work item's sources.
+The optional `/analytics/agent?chat=<id>` entry resumes the same centrally stored
+conversation using an agent-audience token. It is visible only when the agent
+endpoint/scope are configured and remains Eric-only. The existing owner `/chat`
+analyst is unchanged. See the [living build spec](alamoagent-build-spec.md#s2a-direct-home-and-scoped-conversations--2026-10-16)
+for source boundaries, interruption behavior and release limitations.
+
 ## Licensing Reports
 
 The [AlamoAgent living build spec](alamoagent-build-spec.md) captures the accepted

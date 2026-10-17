@@ -67,7 +67,7 @@ Documenting them is not evidence that infrastructure has been provisioned.
 | P11 | Native LIC 624 plus backlog intake | New forms can start in-app; uploads remain useful for backlog. Preserve the existing editor and validate fidelity to the official form. |
 | P12 | Demonstrable quality | Reliability and useful outcomes are measured through acceptance tests and evals. “Perfect” is an objective, not a readiness claim. |
 | P13 | Pipeline assessment review | Supervisors can ask AlamoAgent for team assessment-workflow exceptions; assessors can ask about their own assigned work. Show evidence and the next review action, without treating sparse records as proof of poor performance. |
-| P14 | Independent agent home with cross-app conversations | Work with AlamoAgent directly in its own workspace; let a conversation use authorized application capabilities as needed and continue from embedded entry points. The independently runnable monitoring API is locally verified; the standalone home and central conversation are still required implementation. |
+| P14 | Independent agent home with cross-app conversations | Work with AlamoAgent directly in its own workspace; let a conversation use authorized application capabilities as needed and continue from embedded entry points. The independent API, standalone home and central summary conversations are implemented locally; live hosting/identity setup and full report/correction workflows remain pending. |
 
 Raj and Betty retain standalone Licensing permissions. The previous request for
 a Jarvis-like introduction was superseded by the later explicit removal of all
@@ -85,11 +85,11 @@ deployment receipts. Production was not re-probed while creating this spec.
 | Licensing and Admissions watch skills | Deployed | [Catalog](../../shared/everyagent-catalog.mjs), [adapters](../../server/everyagent-adapters.mjs). Pipeline supplies protected aggregate summaries only. |
 | Assessment review for supervisors and assessors | Required; not implemented or deployed | The present aggregate Admissions watch has no user-scoped assessment-detail contract. A Pipeline-owned read projection and role-tested agent grant are needed before either role can use it. |
 | Personal monitoring state | Deployed | [Service](../../server/everyagent-service.mjs), [persistence](../../server/everyagent-persistence.mjs). ETag-protected Blob, source fingerprints, lease, assignments and work history. |
-| Durable monitoring workflow | Implemented and locally verified; not deployed | [Functions registration](../../server/everyagent-functions.mjs), [versioned orchestrator](../../server/everyagent-orchestrator.mjs), [workflow service](../../server/everyagent-workflow-service.mjs). Real Functions host restart/replay tested with isolated Azurite. General model planning and conversation remain future work. |
+| Durable monitoring workflow | Implemented and locally verified; not deployed | [Functions registration](../../server/everyagent-functions.mjs), [versioned orchestrator](../../server/everyagent-orchestrator.mjs), [workflow service](../../server/everyagent-workflow-service.mjs). Real Functions host restart/replay tested with isolated Azurite. General model planning and durable model-turn replay remain future work; summary conversations are implemented separately below. |
 | Dormant owner chat | Implemented, separate surface | [OwnerChatPage](../../src/features/home/pages/OwnerChatPage.tsx) reuses the existing conversational analyst workspace. The agent companion currently links to Ask a question; conversation is not integrated into its tasks. |
 | Independent monitoring API and worker | Implemented; local verification recorded below; not deployed | [HTTP host](../../server/everyagent-host.mjs), [worker](../../server/everyagent-worker.mjs), [package builder](../../scripts/prepare-everyagent-package.mjs). Both runtime packages exclude Platform source implementations. The independent API revalidates source access before showing persisted work. |
 | Authenticated Platform source connector | Implemented; not deployed | [Source API](../../server/platform-agent-source-api.mjs), [source grants](../../server/platform-agent-source-grants.mjs), [HTTP client](../../server/everyagent-source-client.mjs). Workload identity plus a source-owned, expiring, revocable subject/skill/community grant; Licensing summaries and existing Admissions aggregates only. |
-| Direct workspace and portable conversation | Required; not implemented | The independent API currently serves monitoring work and commands. Central messages, task-linked chat, source-aware navigation, and a separately hosted workspace remain future work. |
+| Direct workspace and portable conversation | Implemented locally; not deployed | [Shared home](../../src/features/agent/conversations/AgentConversationHome.tsx), [conversation service](../../server/everyagent-conversations.mjs). Central Blob-backed summary conversations, explicit skill/resource scope, task-linked entry, read-time authorization and registered-client continuity. Full report analysis, correction/learning workflows and live model/Entra verification are still pending. |
 | Native LIC 624 creation and editing | Deployed | [Native reports](executive-director-workspace.md#native-reports), October 13 release. Create, save, reopen, review, and versioned audit are present. The earlier upload-only limitation is obsolete. |
 | Upload and extraction | Implemented; see owning workflow for release evidence | Fillable-PDF extraction and review exist. Image-only files stop at OCR-required; connected OCR, automatic filing, incident linking, and official-PDF generation are not delivered by native creation. |
 | Readable state-report reader | Deployed | [Licensing Reports](product-surfaces.md#licensing-reports). Briefs, paragraphs, page references, findings/corrections, and original download. |
@@ -120,7 +120,7 @@ Current implementation specifics:
 | Layer | Proposed choice | Keep, extend, or add |
 |---|---|---|
 | Agent workspace and embedded UI | React/TypeScript direct workspace plus shared companion components | Extract existing chat/module components; share conversation/task APIs across authorized hosts |
-| Agent API | Independently deployed Node/TypeScript service on Azure Container Apps with its own Entra API audience | Independent monitoring API implemented; cloud registration/hosting and conversation API remain pending |
+| Agent API | Independently deployed Node/TypeScript service on Azure Container Apps with its own Entra API audience | Monitoring/conversation API implemented; cloud registration, hosting and live verification remain pending |
 | Application tools | Versioned adapters calling source-owned authenticated APIs | Keep domain rules, record authorization, and transactions in each application |
 | Durable orchestration | Azure Durable Functions, checked JavaScript ESM, Azure Storage backend | First worker implemented and verified locally; separate cloud deployment pending |
 | Reasoning | Existing Claude integration behind typed model/tool contracts | Reuse initially; version model selection per skill and compare changes through evals |
@@ -305,15 +305,16 @@ Extraction status, established from source and local checks:
 - A fixed application link registry now resolves Platform-relative evidence
   into verified absolute links for the independent API. Connector evidence
   carries application, resource kind/ID and source revision. The existing
-  Platform interface retains its local navigation behavior; no direct UI is
-  enabled by the link change.
-- The API package contains 26 runtime files and three direct dependencies; the
+  Platform interface retains its local navigation behavior. The direct-home
+  candidate reuses these links; production chat navigation remains configuration-gated.
+- The API package contains 33 runtime files, its separate browser bundle and
+  three direct dependencies; the
   worker has 21 runtime files and four direct dependencies. Both use minimal
   locks derived from the reviewed root lock. Production requires managed
   identity and connector configuration; existing state schema/path is retained
   for migration continuity. Cloud storage/identity ownership, source grants,
-  repository extraction and cutover still need operational setup. No second
-  writer schema or database is created.
+  repository extraction and cutover still need operational setup. Conversation state uses a separate versioned Blob collection; the existing
+  monitoring schema is unchanged. No database was provisioned.
 
 ### Conversation continuity and application selection
 
@@ -572,7 +573,7 @@ proposed workflow or memory capabilities. No production release was performed.
 | S0 | Reconciled living spec and agent entry-point guidance | Current/planned split, requirement IDs, implementation map, linked handbook and retention registration | Implemented; maintained with this build |
 | S1a | Durable task foundation exercised by a Licensing check | Scoped contracts, persisted checkpoints, restart, duplicate, cancellation and revocation tests; traceable result | Implemented and locally verified; not deployed |
 | S1b | Independent agent API, connector boundary and controlled worker rollout | Extracted access/client/source contracts, isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Independent API/worker, authenticated Platform source connector, revocable grants and portable links implemented; hosting, Azure identity/grant setup and cutover pending |
-| S2 | Direct agent workspace and complete Licensing workflow with task-linked conversation | Existing chat components reused; central conversation → scoped sources → brief → work → correction; direct-home/Platform continuity and Q14 checks | Required direction; proposed implementation |
+| S2 | Direct agent workspace and complete Licensing workflow with task-linked conversation | Existing chat components reused; central conversation → scoped sources → brief → work → correction; direct-home/Platform continuity and Q14 checks | S2a direct home and scoped summary conversations implemented locally; full-report/correction workflow, durable model-turn replay and live rollout pending |
 | S3 | Second durable workflow and second embedded host | Pipeline adapter permissions and aggregate boundary preserved; same task accessible from authorized hosts; no transcript leakage | Proposed |
 | S3a | Pipeline assessment-review read skill | Pipeline-owned scoped projection; supervisor-team and assessor-own queries with source-backed exceptions and Q13 checks | Required; not implemented |
 | S4 | User-controlled memory and knowledge relationships | Memory review/edit/delete, source-backed graph, scoped retrieval, assertion approval and correction tests | Proposed |
@@ -586,8 +587,8 @@ The deployed web timer remains the production scheduler until S1b cutover.
 Avoid generic unused infrastructure and preserve current state during migration.
 
 The monitoring API, source connector and independently packaged worker establish
-the extraction boundary. Next, build the direct workspace over central
-conversation/task contracts with registered host policy. Provision audience,
+the extraction boundary. S2a adds the direct workspace over central
+conversation contracts and registered-client transcript policy. Provision audience,
 workload identities, source grant storage and hosting with concrete cost and
 cutover evidence; wire the existing client to it after live verification. Add
 a second host after continuity works. This extends the tested runtime rather
@@ -602,7 +603,8 @@ itself is not completion.
 The next concrete proof is: a Licensing task survives a restart, produces one
 cited result, accepts a correction, and passes the regression case derived from
 that correction. Restart, a cited result, and review persistence are verified
-for S1a. Task-linked correction/conversation and its learning eval remain S2.
+for S1a. Task-linked summary conversation is implemented in S2a; the correction
+workflow and its learning eval remain S2.
 Maintain the private pilot throughout.
 
 ### S1a implementation record — 2026-10-16
@@ -656,9 +658,10 @@ S1b includes the independent monitoring API/worker and authenticated Platform
 source connector. Cloud activation still requires live source grant and
 identity verification, sizing/network configuration,
 durable history retention, and a tested operational cutover/rollback procedure.
-Then add the direct workspace, task-linked conversation and correction path;
-introduce Postgres with explicit import and reconciliation checks as central
-conversations and scoped memory become operational.
+The direct workspace and task-linked summary conversation now have a local
+implementation. Add the correction path and explicit memory review next;
+introduce Postgres with import and reconciliation checks as conversation volume
+and scoped memory grow beyond the bounded pilot.
 The full application gate and production build pass; the [local verification
 receipt](deployment-operations.md#alamoagent-durable-worker-candidate--2026-10-16-not-deployed)
 records the host and browser evidence separately from production releases.
@@ -724,8 +727,9 @@ records the host and browser evidence separately from production releases.
   rejects redirects, enforces a deadline and response bound, and sanitizes errors.
 - Both independent runtimes now use the HTTP connector. The Platform compatibility
   facade keeps its direct source composition and existing inline timer until
-  controlled deployment. Interactive conversation/OBO, host policies, direct UI,
-  repository separation and live Entra/Azure verification are still unfinished.
+  controlled deployment. The later S2a candidate adds conversation, trusted-client
+  transcript policy and direct UI. OBO, additional host policies, repository
+  separation and live Entra/Azure verification are still unfinished.
 - Deterministic signed-token HTTP checks cover wrong audience/identity/scope,
   revoked/expired/changed grants, revocation during a read, denial at publication
   and retrieval, response bounds, injected links, secret exclusion, and retained
@@ -739,6 +743,74 @@ records the host and browser evidence separately from production releases.
   checks at 320/390/1440px. Platform's own transport keeps portable Platform
   evidence links local; independent clients retain absolute application links.
   These results establish local readiness only, not live connector access.
+
+### S2a direct home and scoped conversations — 2026-10-16
+
+Implemented locally; not deployed or enabled for another user:
+
+- `src/agent-main.tsx` and `agent.html` build an independent browser bundle.
+  The API can serve it from a fixed directory; only its root, emitted assets
+  and approved logo are public. The bundle excludes Platform's router/runtime
+  and private assets. Platform optionally mounts the same conversation component
+  at `/analytics/agent?chat=<id>` using the central agent API.
+- The home opens work first, with a compact mark, saved chats and a New chat
+  control. It reuses the dormant chat's compact composer and formatted-message
+  component. No launch copy, introductory hero or greeting is added. Discuss
+  opens a chat limited to the work item's source references and community scope.
+- The versioned conversation API creates, reads, sends and cancels. IDs and
+  messages are persisted centrally in `everyagent/conversations-v1.json`, using
+  ETag concurrency, independently of the unchanged monitoring collection.
+  One request ID produces one turn; reusing it with different text fails.
+  Switching hosts resumes the same chat without copying transcripts to host
+  storage or merging another chat's history.
+- Only Eric's verified agent identity and explicitly registered transcript
+  clients can use chat. `ALAMOAGENT_CHAT_CLIENT_IDS` is narrower than the general
+  agent-client allowlist. Both direct and Platform hosts acquire agent-audience
+  delegated tokens; a claimed host name, Origin, ID or branding grants nothing.
+  No Pipeline/Workforce/AlamoHealth embedded host is enabled by this slice.
+- Skill/community scope is frozen at creation from server-owned assignments;
+  it never expands when browsing or when assignments later broaden. Reads,
+  model input and publication recheck current source grants and assignment
+  scope. Whole transcripts and their titles are withheld when any required
+  source permission cannot be verified. Cancellation remains available without
+  returning a transcript. Browser refresh/focus revalidates; hidden tabs clear
+  rendered conversation data. Distributed checks remain point-in-time checks.
+- The model receives bounded current published summaries, up to 20 matching
+  entries per selected skill, plus at most three prior completed turns. Work
+  chats filter by source references before selecting entries. Citations resolve
+  only to validated server-returned evidence. Each turn makes at most one
+  Claude request with a 35-second provider timeout, an 85 KB context bound and
+  1,200 output tokens. There are at most two active turns and 50 submitted turns
+  per rolling day for the pilot owner. Turns record the planned model/prompt,
+  model-attempt start and reported token usage on completed answers; failed or
+  interrupted calls retain unknown usage rather than implying zero cost. No model tool can write application data,
+  send messages, browse arbitrary URLs, schedule work or expand permissions.
+- Saved chats are limited to 50, with 40 turns each and an 8 MiB collection bound.
+  Capacity fails visibly instead of silently deleting conversations. PostgreSQL,
+  user-managed deletion/export and a production transcript-retention policy
+  remain migration/release work. Monitoring history retention is separate.
+- A chat turn is request-driven, not a Durable Functions model workflow. A
+  pending turn exceeding its two-minute lease is marked interrupted on the next
+  read. It cannot publish a late answer; the user can submit another turn.
+  Cancellation prevents publication but may not stop an already billed provider
+  call. There is no automatic model replay or promise of exactly-once billing.
+- Missing model configuration produces a visible unavailable state. No model
+  call was made to a live provider during this build. Structured-output and
+  permission checks use synthetic responses; semantic grounding, prompt-injection
+  robustness, production identity consent and real-model quality still need
+  representative evals before release. Correction messages are conversational
+  context only, not approved memory or self-modifying skills.
+
+Local checks passed: full analyst gate, both TypeScript checks, Platform and
+independent browser builds, isolated API package, scoped conversation tests and
+mobile/desktop checks of direct/embedded continuity. Visual inspection and
+refresh/revocation/draft behavior are included. Real-model quality and live
+identity/deployment remain explicitly unverified.
+
+Verification commands and deployment configuration live in the
+[operations receipt](deployment-operations.md#alamoagent-direct-home-and-conversations--2026-10-16-not-deployed).
+Next: complete full-report/correction task semantics and evals, then verify the
+live private-pilot identity/source/model setup before a controlled cutover.
 
 ### Cost envelope — checked 2026-10-16
 
@@ -767,8 +839,10 @@ are $3/million input and $15/million output tokens. A conversation turn consumin
 10,000 input and 2,000 output tokens **across all model calls** would cost about
 $0.06; 1,000 such turns about $60. Longer contexts, retries and additional tool
 cycles change that total. Current Licensing/Admissions monitoring uses
-no model calls. Before adding task-linked conversation, implement per-task
-usage accounting and hard call/token limits, with a visible budget-stop state.
+no model calls. S2a records per-turn model/prompt, attempt start and reported
+token usage on completed answers, with hard call/output-token limits and a
+visible budget-stop state. Failed/interrupted attempts may have unknown usage;
+reconcile provider billing and measure input-token/cost distributions before release.
 [Sonnet 4.6 pricing](https://platform.claude.com/docs/en/models/sonnet-4-6/overview).
 
 ## 11. Open decisions and deferred work
@@ -782,8 +856,8 @@ usage accounting and hard call/token limits, with a visible budget-stop state.
   do not invent pass rates before measuring representative tasks.
 - Finalize the proposed direct-home hostname, deployment/repository ownership,
   Entra registrations, connector identity mappings and versioned host/context
-  schemas. Inventory existing chat dependencies before extracting components;
-  the shared workspace must not disturb analyst behavior.
+  schemas. The compact composer/message renderer are reused without importing
+  the analyst runtime; preserve that boundary as more hosts are added.
 - Inventory additional applications, API owners, event contracts, and shared
   identifiers. AlamoHealth capabilities remain a separate future integration.
 - For S3a, settle the exact Pipeline-to-Platform user identity mapping and
@@ -815,3 +889,4 @@ usage accounting and hard call/token limits, with a visible budget-stop state.
 | 2026-10-16 | Eric requested an independent AlamoAgent home and conversations that reach connected applications as needed | Propose a separately deployed agent API/workspace, central conversation IDs, shared host client and source-owned connectors. Extract Platform couplings incrementally; keep the private rollout and notification restrictions. No service extraction or domain deployment claimed. |
 | 2026-10-16 | Eric asked about cost and to proceed where no new spend was required | Implemented and locally verified independent monitoring API, dedicated auth and minimal packaging. No paid resources or model calls added. Recorded the pilot estimate; hosting, source HTTP connectors and direct chat remain pending. |
 | 2026-10-16 | Continue decoupling without expanding the pilot | Added source-owned authenticated reads, revocable workload/subject grants, source-aware retrieval and publication, portable links, and a minimal independent worker. Cloud resources and the direct chat workspace remain separate deliverables. |
+| 2026-10-16 | Proceed with the standalone chat home | Implemented a separate browser build and central scoped summary conversations shared with the optional Platform host. Retained Eric-only access, disabled email, no live model calls or cloud deployment. Full report/correction and durable model-turn workflows remain future work. |
