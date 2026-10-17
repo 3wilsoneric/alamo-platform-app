@@ -552,7 +552,9 @@ export async function startCleanChat(page) {
   await clearClientState(page);
   const currentPath = new URL(page.url()).pathname;
   const route = currentPath === "/chat" ? "/chat" : "/analytics/questions";
-  await page.goto(`${BASE_URL}${route}`, { waitUntil: "networkidle" });
+  // The embedded Agent polls for work in the background; it can keep the
+  // network busy even after the question workspace is ready to use.
+  await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-certified-question-guide="true"], [data-conversational-prompt="hero"]').first().waitFor({
     state: "visible",
     timeout: 10_000
