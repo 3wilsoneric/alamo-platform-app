@@ -44,6 +44,16 @@ Generation prompt (original name retained for provenance):
 
 > Use case: compositing / logo-brand exploration. Create ONE cohesive new EveryAgent assistant icon combining the two supplied logos. Image 1 is the Alamo brand identity reference: a simple right-facing human head outline, the back of the head becoming a branching tree with small green leaves. Image 2 is the current EveryAgent material and form reference: a softly glowing emerald sphere with delicate orbital lines. Preserve the recognizable Alamo right-facing forehead/nose/chin silhouette and leaf/tree crown, but reinterpret them as a modern premium 3D emerald-and-jade glass sculpture integrated into the rounded EveryAgent orb. The head/tree should feel built into the volume, with a clean sculpted profile and a restrained arrangement of dimensional leaves, not a flat sticker applied to a sphere. Let the softly rounded orb body and very subtle orbital curves unify the mark. Calm intelligent assistant personality, warm and organic, contemporary and minimal. Deep forest green, translucent emerald, gentle mint highlights. Soft studio light from the upper left, convincing bevels, depth, polished satin glass with controlled reflections; no chrome, no plastic toy look. Strong clear silhouette that can work as a small app launcher. Front-facing graphic composition with only enough perspective to show depth. Center the single icon with generous transparent margins. Transparent background with preserved alpha. No lettering, no wordmark, no labels, no comparison layout, no robot face, no eyes, no scenery, no floor, no watermark. Preview concept only.
 
+## Andrew's saved Wilson mark
+
+Andrew's future agent uses the name Wilson and the supplied red face image at
+`public/brand/wilson-andrew.png`. The PNG is preserved byte-for-byte; it is not
+regenerated, recolored, or substituted for the Alamo mark. It fits inside a
+small white circular launcher and the compact toolbar/companion mark. The
+profile uses the exact verified tenant/object ID through `agentBrandingFor`;
+branding and access are independent. Andrew remains outside the agent pilot.
+This profile is saved for a later rollout, not deployed or enabled.
+
 ## Source anchors
 
 Extraction baseline: Platform implementation commit `a6863b2`, reviewed on

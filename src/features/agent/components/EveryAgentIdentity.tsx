@@ -1,3 +1,6 @@
+import { useAgentBranding } from "../useAgentBranding";
+
 export function EveryAgentOrb() {
-  return <span className="everyagent-orb" aria-hidden="true"><img src="/brand/everyagent-alamo-v1.webp" alt="" width={512} height={512} draggable={false} /></span>;
+  const branding = useAgentBranding();
+  return <span className={`everyagent-orb everyagent-orb--${branding.variant}`} aria-hidden="true"><img src={branding.mark} alt="" draggable={false} /></span>;
 }

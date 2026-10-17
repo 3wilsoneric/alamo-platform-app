@@ -98,7 +98,7 @@ await withBrowserQa(async (browser) => {
     await page.getByText("Latest check complete", { exact: true }).waitFor();
     await page.getByRole("region", { name: "Licensing answer" }).waitFor();
     assert.equal(new URL(page.url()).pathname, "/analytics/agent", "old Licensing route must redirect to the Agent workspace");
-    assert.equal(await page.getByRole("heading", { name: "AlamoAgent", exact: true }).count(), 0);
+    assert.equal(await page.getByRole("heading", { name: /^(AlamoAgent|Wilson)$/, exact: true }).count(), 0);
     assert.doesNotMatch(await page.getByRole("region", { name: "AlamoAgent work", exact: true }).innerText(), /Active skill|State reports collected, organized/);
     const list = await measure(page);
     assert.ok(list.overflow <= 1, `${viewport.width}px list overflowed by ${list.overflow}px`);
@@ -221,6 +221,7 @@ await withBrowserQa(async (browser) => {
   for (const [oid, width, licensed] of [
     ["424b21d4-605a-43a6-8dff-2a89a846e698", 390, true],
     ["75099b5b-5f7d-437f-8e3b-181f1fea1653", 1440, true],
+    ["e9f39185-d751-45c0-bcf5-c24d3565bdd9", 390, false],
     ["unlisted-account", 390, false]
   ]) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
@@ -230,15 +231,17 @@ await withBrowserQa(async (browser) => {
       body: `import { everyAgentSkillsFor } from '/shared/everyagent-catalog.mjs'; export function useEveryAgentAccess() { return everyAgentSkillsFor(${claims}).length > 0; }` }));
     await page.route("**/src/shared/auth/licensingAccess.ts*", route => route.fulfill({ contentType: "application/javascript",
       body: `import { hasLicensingAccess } from '/shared/licensing-access.mjs'; export function useLicensingAccess() { return hasLicensingAccess(${claims}); }` }));
+    await page.route("**/src/features/agent/useAgentBranding.ts*", route => route.fulfill({ contentType: "application/javascript",
+      body: `import { agentBrandingFor } from '/shared/agent-branding.mjs'; export function useAgentBranding() { return agentBrandingFor(${claims}); }` }));
     let agentRequests = 0;
     page.on("request", request => { if (new URL(request.url()).pathname === "/api/platform/everyagent") agentRequests++; });
     await installApiFixtures(page);
     for (const route of ["/everyagent", "/analytics/agent", "/analytics/agent?skill=licensing"]) {
       await page.goto(`${BASE_URL}${route}`);
       await page.waitForURL(url => url.pathname === "/analytics");
-      assert.equal(await page.getByRole("button", { name: "Open AlamoAgent" }).count(), 0);
-      assert.equal(await page.getByRole("link", { name: "AlamoAgent", exact: true }).count(), 0);
-      assert.equal(await page.getByRole("button", { name: "AlamoAgent", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: /^Open (AlamoAgent|Wilson)$/ }).count(), 0);
+      assert.equal(await page.getByRole("link", { name: /^(AlamoAgent|Wilson)$/, exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: /^(AlamoAgent|Wilson)$/, exact: true }).count(), 0);
     }
     await page.goto(`${BASE_URL}/analytics/licensing`);
     if (licensed) {
@@ -259,7 +262,7 @@ await withBrowserQa(async (browser) => {
     }
     if (width < 768) {
       await page.getByRole("button", { name: "Open navigation" }).click();
-      assert.equal(await page.getByRole("navigation", { name: "Mobile platform pages" }).getByRole("link", { name: "AlamoAgent" }).count(), 0);
+      assert.equal(await page.getByRole("navigation", { name: "Mobile platform pages" }).getByRole("link", { name: /^(AlamoAgent|Wilson)$/ }).count(), 0);
     }
     assert.equal(agentRequests, 0, "excluded accounts must never mount the AlamoAgent provider or request its API");
     await context.close();

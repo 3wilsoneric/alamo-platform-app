@@ -28,6 +28,10 @@ assignments. Betty Dominici and Raj Thandi instead see Licensing in that row,
 opening the existing report library at `/analytics/licensing` without the agent
 identity or launcher. They retain their previous Licensing API access. No other
 account, including a platform administrator, receives Licensing access.
+Andrew Dominici has a saved, inactive personal brand profile: Wilson with the
+user-supplied red face mark. It matches his exact tenant/object ID and affects
+presentation only. Saving this profile does not enable his agent access,
+Licensing access, or worker assignments; Eric keeps AlamoAgent and its orb.
 AlamoAgent opens directly to updates, source links, and review controls. The
 small orb opens the same work from other pages. There is no welcome hero,
 introduction, tagline, explanatory subtitle, or first-visit pop-up. Skill

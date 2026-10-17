@@ -59,7 +59,7 @@ export function EveryAgentProvider({ children }: { children: ReactNode }) {
 
 export function useEveryAgent() {
   const state = useContext(EveryAgentContext);
-  if (!state) throw new Error("AlamoAgent requires its authenticated provider.");
+  if (!state) throw new Error("The assistant requires its authenticated provider.");
   return state;
 }
 

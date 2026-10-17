@@ -9,7 +9,7 @@ export function updateEveryAgent(command: EveryAgentCommand) {
 }
 function request(init: RequestInit) {
   return fetchWithApiAuth("/api/platform/everyagent", init, { consume: async response => {
-    if (!response.ok) throw new Error(response.status === 409 ? "These settings changed. Refresh before saving again." : "AlamoAgent could not complete this request. Try again.");
+    if (!response.ok) throw new Error(response.status === 409 ? "These settings changed. Refresh before saving again." : "This request could not be completed. Try again.");
     return readBoundedJsonResponse<EveryAgentOverview>(response, 8 * 1024 * 1024);
   } });
 }

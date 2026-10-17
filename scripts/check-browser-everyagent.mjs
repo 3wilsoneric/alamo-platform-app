@@ -108,6 +108,33 @@ try {
       assert.deepEqual(errors, []);
       await context.close();
     }
-    console.log("AlamoAgent browser checks passed at 320, 390 and 1440px: updates first, compact icon, no introductory copy or pop-ups, keyboard focus, source recovery, persisted pause/scope/review, history, no overflow or runtime errors.");
+    // Preview Andrew's saved presentation identity with synthetic work only.
+    // E2E access is local; production grants are separately asserted unchanged.
+    for (const width of [390, 1440]) {
+      const context = await browser.newContext({ viewport: { width, height: 900 } });
+      const page = await context.newPage();
+      const claims = JSON.stringify({ tid: EVERYAGENT_TENANT, oid: "e9f39185-d751-45c0-bcf5-c24d3565bdd9" });
+      await page.route("**/src/features/agent/useAgentBranding.ts*", route => route.fulfill({ contentType: "application/javascript",
+        body: `import { agentBrandingFor } from '/shared/agent-branding.mjs'; export function useAgentBranding() { return agentBrandingFor(${claims}); }` }));
+      await page.route("**/api/platform/everyagent", async route => route.fulfill({ json: { ...await service.overview(auth), workerEnabled: true } }));
+      await page.goto(`${BASE_URL}/analytics/agent`, { waitUntil: "domcontentloaded" });
+      await page.getByRole("region", { name: "Wilson workspace" }).getByRole("article").first().waitFor();
+      assert.doesNotMatch(await page.locator("body").innerText(), /AlamoAgent|EveryAgent|OneAgent/);
+      const mark = page.locator(".everyagent-workspace .everyagent-orb img");
+      assert.equal(await mark.getAttribute("src"), "/brand/wilson-andrew.png");
+      await mark.evaluate(image => image.decode());
+      assert.equal(await mark.evaluate(image => image.naturalWidth), 395);
+      assert(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth <= 1));
+      await page.screenshot({ path: path.join(output, `wilson-preview-${width}.png`), fullPage: false });
+      await page.getByRole("button", { name: "Open Wilson", exact: true }).click();
+      const companion = page.getByRole("dialog", { name: "Wilson", exact: true });
+      await companion.waitFor();
+      assert.equal(await companion.locator(".everyagent-orb img").getAttribute("src"), "/brand/wilson-andrew.png");
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Close Wilson");
+      assert.doesNotMatch(await companion.innerText(), /AlamoAgent|EveryAgent|OneAgent/);
+      await page.screenshot({ path: path.join(output, `wilson-panel-preview-${width}.png`), fullPage: false });
+      await context.close();
+    }
+    console.log("AlamoAgent browser checks passed at 320, 390 and 1440px: updates first, compact icon, no introductory copy or pop-ups, keyboard focus, source recovery, persisted pause/scope/review, history, no overflow or runtime errors. Saved Wilson branding also passed desktop/mobile previews with the supplied logo.");
   });
 } finally { await rm(directory, { recursive: true, force: true }); }

@@ -7,12 +7,23 @@ import { createEveryAgentStore } from "../server/everyagent-store.mjs";
 import { createEveryAgentService } from "../server/everyagent-service.mjs";
 import { createEveryAgentAdapters } from "../server/everyagent-adapters.mjs";
 import { EVERYAGENT_TENANT, EVERYAGENT_USERS, everyAgentSkillsFor } from "../shared/everyagent-catalog.mjs";
+import { agentBrandingFor } from "../shared/agent-branding.mjs";
 import { hasLicensingAccess } from "../shared/licensing-access.mjs";
 
 const directory = await mkdtemp(path.join(os.tmpdir(), "everyagent-check-"));
 const localPath = path.join(directory, "state.json");
 const auth = id => ({ authenticated: true, mode: "entra-delegated", claims: { tid: EVERYAGENT_TENANT, oid: id } });
 const owner = auth(EVERYAGENT_USERS[0]);
+const andrew = auth("e9f39185-d751-45c0-bcf5-c24d3565bdd9");
+assert.equal(agentBrandingFor(andrew.claims).name, "Wilson");
+assert.equal(agentBrandingFor(andrew.claims).mark, "/brand/wilson-andrew.png");
+assert.equal(agentBrandingFor({ tid: EVERYAGENT_TENANT.toUpperCase(), oid: andrew.claims.oid.toUpperCase() }).name, "Wilson");
+assert.equal(agentBrandingFor(owner.claims).name, "AlamoAgent");
+for (const claims of [null, {}, { ...andrew.claims, tid: "wrong-tenant" }, { name: "Andrew Dominici", preferred_username: "andrew@example.com" }]) {
+  assert.equal(agentBrandingFor(claims).name, "AlamoAgent", "personal branding requires the exact tenant and object ID");
+}
+assert.deepEqual(everyAgentSkillsFor(andrew.claims), [], "a brand profile must never grant agent access");
+assert.equal(hasLicensingAccess(andrew.claims), false, "saving Wilson must not grant Andrew Licensing");
 const formerPilots = ["424b21d4-605a-43a6-8dff-2a89a846e698", "75099b5b-5f7d-437f-8e3b-181f1fea1653"].map(auth);
 const teammate = formerPilots[0];
 let clock = Date.now();
@@ -44,7 +55,7 @@ try {
     assert.deepEqual(everyAgentSkillsFor(former.claims), []);
     await rejects(service.command(former, { action: "configure", skillId: "licensing", communityIds: ["337"], paused: false, expectedVersion: 0 }), 404);
   }
-  for (const invalid of [...formerPilots, auth("not-allowed"), { ...auth("admin"), claims: { tid: EVERYAGENT_TENANT, oid: "admin", roles: ["Alamo.Admissions.Admin"], email: "ericwilsonalamo@outlook.com" } }, { ...owner, claims: { ...owner.claims, tid: "wrong-tenant" } }, { ...owner, mode: "entra-application" }, { authenticated: false }]) {
+  for (const invalid of [andrew, ...formerPilots, auth("not-allowed"), { ...auth("admin"), claims: { tid: EVERYAGENT_TENANT, oid: "admin", roles: ["Alamo.Admissions.Admin"], email: "ericwilsonalamo@outlook.com" } }, { ...owner, claims: { ...owner.claims, tid: "wrong-tenant" } }, { ...owner, mode: "entra-application" }, { authenticated: false }]) {
     await rejects(service.overview(invalid), 404);
   }
   assert.equal((await service.overview(owner)).skills.length, 2);
