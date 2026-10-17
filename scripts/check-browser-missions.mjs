@@ -94,8 +94,8 @@ const missions = [
       },
       {
         prompt: "Show San Pablo's medication profile.",
-        expect: [/A & A Health Services San Pablo/i, /medication/i, /compliance|scheduled/i],
-        surface: /Medication Profile|Compliance/i
+        expect: [/A & A Health Services San Pablo/i, /medication/i, /administrations given/i],
+        surface: /Medication Profile|Administrations Given/i
       }
     ]
   }
