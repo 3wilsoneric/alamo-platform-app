@@ -46,6 +46,129 @@ serving a stale browser bundle. Always reconcile identity, gzip, and Brotli
 entry responses before promotion. Record the preceding image digest so
 rollback remains an Azure Container App image update.
 
+### AlamoAgent authenticated source connector — 2026-10-16 (not deployed)
+
+The independent API and durable worker now use the source-owned Platform
+connector at `POST /api/platform/agent-source/v1`. Operations are `read` and
+`authorize`; capabilities are current Licensing monitoring and the existing
+Admissions aggregate projection. Platform retains its source implementations
+and upstream Pipeline credentials. The independent runtime does not receive
+referral rows, raw source payloads or a user/browser token.
+
+Prepare both independent packages:
+
+```bash
+npm run everyagent:prepare-service
+npm run everyagent:prepare-worker
+npm run check:everyagent-source
+npm run check:everyagent-service-package
+npm run check:everyagent-connector-host
+```
+
+The shared package builder emits explicit closures and rejects lockfile drift.
+The API has 26 runtime files/3 direct dependencies; the worker has 21 runtime
+files/4 direct dependencies. Neither includes the Platform reporting, clinical,
+Licensing storage or source-grant implementation. The worker has 92 locked
+transitive package entries, including optional platform packages, at this
+receipt. There is no production fallback to direct imports or local credentials.
+The legacy Platform facade and its inline timer keep their existing composition
+until the controlled cloud cutover described below.
+
+Required source-side setup before deployment:
+
+1. Register a dedicated Entra API audience for the Platform connector, use
+   `requestedAccessTokenVersion=2`, and expose application role
+   `AlamoAgent.Source.Read` with Application membership. Assign it only to the
+   intended managed-identity service principal. Configure the actual token
+   audience in `PLATFORM_AGENT_SOURCE_AUDIENCE`; v2 audiences are normally the
+   resource application ID. Do not reuse the agent/browser audience.
+2. Set `PLATFORM_AGENT_SOURCE_STORAGE_ACCOUNT` and
+   `PLATFORM_AGENT_SOURCE_STORAGE_CONTAINER` for a separate private source-owned
+   grant container. Platform reads it using its `AZURE_CLIENT_ID`. The reader
+   rejects using the work-state account/container pair, reads at most 64 KiB,
+   and does not cache or fall back when missing/unavailable.
+3. Maintain `agent-source/grants-v1.json` through source administration, outside
+   the agent. Each grant binds exact workload client/service-principal IDs to
+   one subject, skill, community scope, expiry and revocation state. Missing,
+   duplicate, malformed, expired and revoked grants deny access. Existing
+   Licensing/owner permissions and the Eric-only agent grant also apply.
+4. Verify Azure RBAC for **every identity attached to the agent host**, including
+   the work-state identity. None may write source grants or possess account-wide
+   roles/keys that bypass container separation. Use an agent-specific identity
+   for work state and connectors; do not attach Platform's source identity to
+   the agent host. Container separation alone does not prove RBAC isolation.
+
+Inert example registry; the workload IDs must be replaced with verified Entra
+IDs, expiry deliberately selected, and revocation explicitly cleared during
+source administration before this permits anything:
+
+```json
+{
+  "version": 1,
+  "grants": [{
+    "id": "eric-licensing-monitor",
+    "clientId": "00000000-0000-0000-0000-000000000000",
+    "principalId": "00000000-0000-0000-0000-000000000000",
+    "subjectId": "f73371d5-d2b4-48b4-a32b-1edc7c88869f",
+    "skillId": "licensing",
+    "communityIds": ["337"],
+    "expiresAt": "2026-10-16T00:00:00Z",
+    "revoked": true
+  }]
+}
+```
+
+Use a separate `admissions-watch` grant with `communityIds: []` for the current
+aggregate capability. This grants no assessment-detail or other-user access.
+The source grant revision is a digest of all authorization fields, including
+expiry/scope; edits do not rely on an operator remembering to bump a version.
+Revocation is rechecked around source reads, during validation, before publish,
+and on independent-API retrieval. These are point-in-time checks across services,
+not an atomic distributed revocation transaction. Engine history and retained
+work have separate retention/access policies. New reads with unverifiable
+access hide stored results; pause/cancel remain usable.
+
+Required independent API/worker settings:
+
+- `ALAMOAGENT_PLATFORM_ORIGIN`: exact HTTPS Platform origin. The endpoint path is
+  fixed; redirects, arbitrary destinations and HTTP origins are rejected.
+- `ALAMOAGENT_PLATFORM_SCOPE`: the source resource scope, normally
+  `api://<source-application-id>/.default`.
+- `ALAMOAGENT_CONNECTOR_CLIENT_ID`: the agent-specific managed identity client ID.
+  Its service-principal ID must also match the source grant. Token acquisition
+  is bounded; tokens never enter task/checkpoint inputs, state or logs.
+- Existing managed-identity work-state settings and the API/Functions settings
+  in the candidate sections below. No new model configuration is required.
+
+Local evidence, October 16: signed-token HTTP tests pass for token/grant/scope
+denials, narrowed projections, revocation during reads and before publication,
+retrieval withholding, expiry, changed grant revisions, safe links, bounded
+responses, error redaction and retained reviews. The API package passes an
+isolated install and real entry-point checks. The worker package independently
+installs outside the repository and passes an actual Functions process
+kill/restart against a separately authenticated local source; one read, one
+result/receipt and review continuity are verified at
+`generated/everyagent-host-check/1792209050905/result.json`.
+Browser checks pass at 320/390/1440px. No test used live source data, Azure
+credentials, a public model or an email action. The first independent worker
+install timed out; the retry using the package cache passed.
+
+The full `check:analyst` gate, `check:docs`, browser/server TypeScript checks,
+production build, lint, code-health, unused-code and duplicate-code checks pass.
+The final browser pass also verifies that portable Platform evidence links
+resolve locally inside Platform. Build, analyst and browser logs are saved at
+`generated/alamoagent-connectors-{build,analyst,browser}.log`; the build retains
+its existing large-chunk warning. These are local verification artifacts.
+
+Azure registrations, role assignments, grant storage/RBAC, production source
+access, live rollout and rollback remain unverified and unprovisioned. No cloud
+resource, outbound notification or deployment was created by this change.
+Direct conversation, interactive OBO, additional hosts and the independent
+chat workspace remain future work in the [living build spec](alamoagent-build-spec.md).
+[Entra access-token versions and audiences](https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens)
+and [workload authorization](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow)
+underpin the identity configuration; a JWT unit test does not validate tenant setup.
+
 ### AlamoAgent independent API candidate — 2026-10-16 (not deployed)
 
 The independently runnable Node service exposes `GET/POST /api/agent/v1/work`
@@ -62,7 +185,7 @@ npm run check:everyagent-service
 npm run check:everyagent-service-package
 ```
 
-Preparation creates `generated/everyagent-service` with 22 explicit source
+Preparation creates `generated/everyagent-service` with 26 explicit source
 files, a Dockerfile and a pruned lock. Its only direct dependencies are Azure
 identity, Azure Blob and JOSE (57 installed packages at this receipt).
 It excludes Platform source readers/reporting, clinical code, presentation
@@ -81,8 +204,10 @@ Before hosting, configure:
 - `ALAMOAGENT_BROWSER_ORIGINS` as exact comma-separated HTTPS origins, including
   the direct home itself when it exists. No wildcard or ambient Platform auth.
   Clients acquire a token for this audience; a Platform-audience token is denied.
+- The source connector origin/scope/identity settings described in the current
+  source-connector receipt above; startup requires them.
 - `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_CONTAINER`, `AZURE_CLIENT_ID` for the
-  managed identity and approved work-state container. There is no production
+  agent-specific managed identity and approved work-state container. There is no production
   local-file fallback. Existing `everyagent/state-v1.json` schema and ETag
   behavior are retained; configure ownership/RBAC and verify continuity at cutover.
 
@@ -108,11 +233,11 @@ The API build, analyst and browser logs are under
 not deployment receipts. The build retains its existing large-chunk warning.
 
 Before release, build/scan the image, verify cloud identity and storage access,
-set ingress/availability/log retention and request-rate limits, implement the
-source-owned authenticated read connectors and portable application links,
-then test routing/CSP, state continuity and rollback. The current worker remains
-composed with Platform source readers; this candidate extracts the HTTP service,
-not the entire worker. The historical first-install `everyagent:prepare-release`
+set ingress/availability/log retention and request-rate limits, verify the
+source-owned connector and grants in Azure, then test routing/CSP, state
+continuity and rollback. The subsequent source-connector change also extracts
+the durable worker; its package uses authenticated HTTP and excludes Platform
+source readers. The historical first-install `everyagent:prepare-release`
 overlay is not a runtime-upgrade recipe for this extraction. Use a reviewed
 complete runtime image with these new helper dependencies at Platform cutover.
 
@@ -124,7 +249,9 @@ usage, with its assumptions and exclusions. This code step adds neither.
 
 ### AlamoAgent durable worker candidate — 2026-10-16 (not deployed)
 
-The candidate uses Azure Durable Functions with the Azure Storage provider,
+The initial candidate established Azure Durable Functions with the Azure Storage provider;
+the source-connector receipt above supersedes its initial direct-import worker
+composition and broad package. The durable runtime remains
 registered through `server/everyagent-worker.mjs`. There is no public HTTP
 starter. The timer resolves server-owned assignments; the existing authenticated
 web API exposes task projections and scoped cancel/retry commands. Existing
@@ -180,8 +307,9 @@ Required cloud configuration remains to be provisioned and verified:
   and Durable Functions permissions. Use managed identity rather than storing
   an account key; see [Microsoft's configuration guide](https://learn.microsoft.com/en-us/azure/durable-task/durable-functions/durable-functions-configure-managed-identity).
 - Existing `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_CONTAINER`, and
-  `AZURE_CLIENT_ID` for Platform work state, plus the existing Licensing/Pipeline
-  read configuration. The orchestration storage and application work Blob have
+  `AZURE_CLIENT_ID` for retained work state, plus the independent worker
+  connector settings described above. Licensing/Pipeline credentials stay in
+  Platform. The orchestration storage and application work Blob have
   distinct responsibilities. Do not reuse a source application's database.
 
 Cutover order: deploy the updated web/API code with the existing inline mode;

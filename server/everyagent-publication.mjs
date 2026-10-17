@@ -30,7 +30,8 @@ export function publishEveryAgentResult(state, assignment, result, started, fini
   for (const item of work) {
     const id = everyAgentFingerprint([assignment.userId, assignment.skillId, item.key, item.fingerprint, wasInitialized ? result.sourceCheckedAt : "baseline"]);
     if (state.work.some(existing => existing.id === id)) continue;
-    state.work.push({ id, runId, userId: assignment.userId, skillId: assignment.skillId, title: item.title, summary: item.summary,
+    state.work.push({ ...(result.sourceGrant ? { sourceGrant: result.sourceGrant } : {}),
+      id, runId, userId: assignment.userId, skillId: assignment.skillId, title: item.title, summary: item.summary,
       communityIds: item.communityIds, status: wasInitialized ? "needs_review" : "completed", createdAt: at, reviewedAt: null,
       sourceFingerprint: item.fingerprint, sourceCheckedAt: result.sourceCheckedAt,
       evidence: item.evidence, relationships: item.relationships });

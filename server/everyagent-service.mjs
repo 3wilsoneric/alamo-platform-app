@@ -6,29 +6,44 @@ import { everyAgentActor, grantFor, freshAssignment, scopeAllows, allowedAssignm
 import { publishEveryAgentResult } from "./everyagent-publication.mjs";
 import { createEveryAgentWorkflowService } from "./everyagent-workflow-service.mjs";
 import { createHttpError } from "./http-error-contract.mjs";
+import { portableEveryAgentEvidence, resolveEveryAgentLink } from "../shared/everyagent-links.mjs";
 
 const LEASE = 120_000;
 const hidden = () => createHttpError(404, "not_found", "Not found.");
 
-export function createEveryAgentService({ store = createEveryAgentStore(), adapters = {}, now = () => Date.now() } = {}) {
-  const workflows = createEveryAgentWorkflowService({ store, adapters, now });
-  async function overview(auth) {
+export function createEveryAgentService({ store = createEveryAgentStore(), adapters = {}, now = () => Date.now(), portableLinks = false,
+  sourceAccess = /** @type {null | ((assignment: any, receipt?: any) => Promise<any>)} */ (null) } = {}) {
+  const workflows = createEveryAgentWorkflowService({ store, adapters, now, sourceAccess });
+  async function overview(auth, attempt = 0) {
     const userId = everyAgentActor(auth);
     const { value } = await store.read();
     const skills = grantFor(userId);
     const assignments = skills.map(skill => value.assignments.find(a => a.userId === userId && a.skillId === skill.id) ?? freshAssignment(userId, skill));
-    const visible = item => item.userId === userId && assignments.some(a => a.skillId === item.skillId && allowedAssignment(a) && scopeAllows(item, a));
+    // Revalidate at retrieval; a stored result or conversation owner is not
+    // continuing authority after the source withdraws access.
+    const permitted = new Set((await Promise.all(assignments.map(async assignment => {
+      try { if (sourceAccess) await sourceAccess(assignment); return assignment.skillId; } catch { return null; }
+    }))).filter(Boolean));
+    if (sourceAccess && (await store.read()).value.revision !== value.revision) {
+      if (attempt >= 2) throw createHttpError(409, "agent_state_changed", "Agent work changed. Refresh and try again.");
+      return overview(auth, attempt + 1);
+    }
+    const visibleAssignments = assignments.filter(a => permitted.has(a.skillId));
+    const visible = item => item.userId === userId && visibleAssignments.some(a => a.skillId === item.skillId && allowedAssignment(a) && scopeAllows(item, a));
     const work = value.work.filter(visible).reverse();
     const recentCompleted = new Set(work.filter(item => item.status === "completed").slice(0, 50).map(item => item.id));
-    const tasks = workflows.visible(value, userId, assignments);
+    const tasks = workflows.visible(value, userId, visibleAssignments);
     return {
       version: EVERYAGENT_VERSION, emailEnabled: false,
       workerEnabled: value.executionMode === "durable" ? Number.isFinite(Date.parse(value.lastWorkflowHeartbeat)) &&
         now() - Date.parse(value.lastWorkflowHeartbeat) < 120_000 && Date.parse(value.lastWorkflowHeartbeat) <= now() + 5000 : process.env.EVERYAGENT_WORKER_ENABLED === "true",
-      skills, responsibilities: assignments.map(({ userId: _user, cursor: _cursor, ...rest }) => ({ ...rest,
-        issue: rest.issue ?? (!rest.paused && rest.nextCheck && Date.parse(rest.nextCheck) < now() - 5 * 60_000
+      skills: portableLinks ? skills.map(skill => ({ ...skill, href: resolveEveryAgentLink(skill.href).href })) : skills,
+      responsibilities: assignments.map(({ userId: _user, cursor: _cursor, ...rest }) => ({ ...rest,
+        connection: permitted.has(rest.skillId) ? rest.connection : "unavailable",
+        issue: !permitted.has(rest.skillId) ? "Source access could not be verified. Results are hidden until access is restored." : rest.issue ?? (!rest.paused && rest.nextCheck && Date.parse(rest.nextCheck) < now() - 5 * 60_000
           ? "The next check is delayed. Previous results may be out of date." : null) })),
-      work: work.filter(item => item.status === "needs_review" || recentCompleted.has(item.id)).map(({ userId: _user, ...rest }) => rest),
+      work: work.filter(item => item.status === "needs_review" || recentCompleted.has(item.id)).map(({ userId: _user, ...rest }) =>
+        portableLinks ? { ...rest, evidence: rest.evidence.map(item => portableEveryAgentEvidence(item, rest.sourceFingerprint ?? null)) } : rest),
       runs: value.runs.filter(visible).slice(-20).reverse().map(({ userId: _user, communityIds: _scope, ...rest }) => rest),
       tasks,
       working: tasks.some(task => ["queued", "running"].includes(task.status)) ||
@@ -41,6 +56,16 @@ export function createEveryAgentService({ store = createEveryAgentStore(), adapt
     let input;
     try { input = validateEveryAgentCommand(raw); }
     catch { throw createHttpError(400, "everyagent_command_invalid", "Choose a valid EveryAgent action."); }
+    if (sourceAccess && !(input.action === "cancel_run" || (input.action === "configure" && input.paused))) {
+      const { value } = await store.read();
+      const target = input.action === "review" ? value.work.find(item => item.id === input.workId && item.userId === userId) :
+        input.action === "retry_run" ? value.tasks.find(task => task.id === input.runId && task.userId === userId) : input;
+      if (!target) throw hidden();
+      const assignment = input.action === "configure" ? { userId, skillId: input.skillId, communityIds: input.communityIds } :
+        value.assignments.find(a => a.userId === userId && a.skillId === target.skillId);
+      if (!assignment) throw hidden();
+      try { await sourceAccess(assignment); } catch { throw createHttpError(403, "source_access_unavailable", "Source access must be restored before this action."); }
+    }
     if (input.action === "cancel_run" || input.action === "retry_run") {
       await workflows.command(userId, input);
       return overview(auth);
@@ -76,6 +101,7 @@ export function createEveryAgentService({ store = createEveryAgentStore(), adapt
   }
 
   async function tick() {
+    if (sourceAccess) throw new Error("Remote source connectors require the durable worker.");
     const token = randomUUID();
     const started = now();
     const claimed = await store.update(state => {

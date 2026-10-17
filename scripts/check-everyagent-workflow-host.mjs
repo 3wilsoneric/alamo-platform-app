@@ -13,6 +13,7 @@ import { EVERYAGENT_TENANT, EVERYAGENT_USERS } from "../shared/everyagent-catalo
 // Real Functions host + isolated Azurite storage. No Azure credentials, cloud
 // writes, public sources, or production task records are used in this check.
 const root = process.cwd();
+const runtimeRoot = path.resolve(process.env.AGENT_TEST_WORKER_RUNTIME || root);
 const tools = path.join(root, "generated/agent-workflow-tools/node_modules/.bin");
 const func = process.env.AGENT_TEST_FUNC_PATH || path.join(tools, "func");
 const azurite = process.env.AGENT_TEST_AZURITE_PATH || path.join(tools, "azurite");
@@ -24,14 +25,14 @@ await mkdir(directory, { recursive: true });
 const localPath = path.join(directory, "state.json");
 const marker = path.join(directory, "validating");
 const release = path.join(directory, "resume");
-const readLog = path.join(directory, "source-reads");
+const readLog = process.env.AGENT_TEST_SOURCE_READ_LOG || path.join(directory, "source-reads");
 const makeStore = () => createEveryAgentStore(createEveryAgentPersistence({ localPath, azure: false }));
 const owner = { authenticated: true, mode: "entra-delegated", claims: { tid: EVERYAGENT_TENANT, oid: EVERYAGENT_USERS[0] } };
 const api = createEveryAgentService({ store: makeStore() });
 await api.command(owner, { action: "configure", skillId: "licensing", communityIds: ["337"], paused: false, expectedVersion: 0 });
 await api.command(owner, { action: "configure", skillId: "admissions-watch", communityIds: [], paused: true, expectedVersion: 0 });
 await makeStore().update(state => { state.assignments.find(a => a.skillId === "licensing").cursor = {}; return true; });
-const importUrl = file => JSON.stringify(pathToFileURL(path.join(root, file)).href);
+const importUrl = file => JSON.stringify(pathToFileURL(path.join(runtimeRoot, file)).href);
 await writeFile(path.join(directory, "worker.mjs"), `
 import { appendFile, access, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
@@ -40,6 +41,7 @@ import { createEveryAgentWorkflowService } from ${importUrl("server/everyagent-w
 import { createEveryAgentStore } from ${importUrl("server/everyagent-store.mjs")};
 import { createEveryAgentPersistence } from ${importUrl("server/everyagent-persistence.mjs")};
 import { createEveryAgentAdapters } from ${importUrl("server/everyagent-adapters.mjs")};
+import { createEveryAgentSourceClient } from ${importUrl("server/everyagent-source-client.mjs")};
 const adapters = createEveryAgentAdapters({
   licensing: async () => {
     await appendFile(${JSON.stringify(readLog)}, "read\\n");
@@ -53,7 +55,11 @@ const adapters = createEveryAgentAdapters({
   pipeline: async () => { throw new Error("Paused skill must not read"); }
 });
 const store = createEveryAgentStore(createEveryAgentPersistence({localPath: ${JSON.stringify(localPath)}, azure: false}));
-const service = createEveryAgentWorkflowService({store, adapters});
+const sourceBase = ${JSON.stringify(process.env.AGENT_TEST_SOURCE_URL || "")};
+const source = sourceBase ? createEveryAgentSourceClient({ origin: "https://source.example.test",
+  getToken: async () => ({ token: ${JSON.stringify(process.env.AGENT_TEST_SOURCE_TOKEN || "")}, expiresOnTimestamp: Date.now() + 60_000 }),
+  fetchImpl: (url, init) => fetch(new URL(new URL(url).pathname, sourceBase), init) }) : null;
+const service = createEveryAgentWorkflowService({store, adapters: source?.adapters ?? adapters, sourceAccess: source?.authorize ?? null});
 const validate = service.validate;
 service.validate = async (...args) => {
   await writeFile(${JSON.stringify(marker)}, "ready");
@@ -63,7 +69,7 @@ service.validate = async (...args) => {
 registerEveryAgentFunctions({service, schedule: "*/5 * * * * *"});
 `);
 await writeFile(path.join(directory, "package.json"), JSON.stringify({ name: "alamoagent-host-check", type: "module", main: "worker.mjs" }));
-await symlink(path.join(root, "node_modules"), path.join(directory, "node_modules"), "dir");
+await symlink(path.join(runtimeRoot, "node_modules"), path.join(directory, "node_modules"), "dir");
 const host = JSON.parse(await readFile(path.join(root, "scripts/azure/everyagent-host.json"), "utf8"));
 host.extensions.durableTask.storageProvider = { type: "azureStorage", controlQueueVisibilityTimeout: "00:01:00", workItemQueueVisibilityTimeout: "00:01:00", maxQueuePollingInterval: "00:00:02", partitionCount: 1 };
 await writeFile(path.join(directory, "host.json"), JSON.stringify(host));
@@ -124,10 +130,16 @@ try {
   assert.equal(after.work.length, 1);
   assert.equal(after.work[0].status, "needs_review");
   assert.equal(after.runs.length, 1);
+  if (process.env.AGENT_TEST_SOURCE_URL) {
+    assert.equal(after.work[0].sourceGrant.id, "test-licensing");
+    assert(after.work[0].evidence.every(item => item.href.startsWith("https://")));
+    assert(runtimeRoot !== root, "connector proof uses the independent package");
+  }
   assert.equal((await readFile(readLog, "utf8")).trim().split("\n").length, 1, "completed source activity is replayed from durable history");
   await api.command(owner, { action: "review", workId: after.work[0].id });
   assert((await makeStore().read()).value.work[0].reviewedAt);
-  const result = { passed: true, syntheticOnly: true, engine: "Azure Durable Functions", checks: ["persisted source checkpoint", "worker process killed during validation", "same instance resumed", "source read once", "one cited result and run receipt", "review persisted through existing API"] };
+  const result = { passed: true, syntheticOnly: true, engine: "Azure Durable Functions", independentConnector: Boolean(process.env.AGENT_TEST_SOURCE_URL),
+    checks: ["persisted source checkpoint", "worker process killed during validation", "same instance resumed", "source read once", "one cited result and run receipt", "review persisted through existing API"] };
   await writeFile(path.join(directory, "result.json"), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
 } finally {

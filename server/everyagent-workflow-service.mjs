@@ -28,7 +28,8 @@ function cancel(task, at) {
     issue: "This run was canceled or its assignment changed." });
 }
 
-export function createEveryAgentWorkflowService({ store = createEveryAgentStore(), adapters = {}, now = () => Date.now() } = {}) {
+export function createEveryAgentWorkflowService({ store = createEveryAgentStore(), adapters = {},
+  sourceAccess = /** @type {null | ((assignment: any, receipt?: any) => Promise<any>)} */ (null), now = () => Date.now() } = {}) {
   const stamp = () => new Date(now()).toISOString();
   function visible(state, userId, assignments) {
     return state.tasks.filter(task => task.userId === userId && assignments.some(a =>
@@ -82,11 +83,16 @@ export function createEveryAgentWorkflowService({ store = createEveryAgentStore(
     if (!current) return null;
     const adapter = adapters[current.task.skillId];
     if (!adapter) throw new Error("The skill has no source adapter.");
-    const raw = await adapter();
+    const raw = await adapter(current.assignment);
     // Recheck after the source request before returning anything to history.
     const latest = await enter(id, "validate");
     if (!latest) return null;
     const result = validateEveryAgentWorkflowResult(raw, latest.assignment);
+    if (sourceAccess) {
+      if (!result.sourceGrant) throw new Error("The source did not provide a grant receipt.");
+      await sourceAccess(latest.assignment, result.sourceGrant);
+      if (!await enter(id, "validate")) return null;
+    }
     if (result.connection === "unavailable") throw new Error("The source is temporarily unavailable.");
     return result;
   }
@@ -94,6 +100,10 @@ export function createEveryAgentWorkflowService({ store = createEveryAgentStore(
     const current = await enter(id, "validate");
     if (!current || result === null) return null;
     const verified = validateEveryAgentWorkflowResult(result, current.assignment);
+    if (sourceAccess) {
+      if (!verified.sourceGrant) throw new Error("The source did not provide a grant receipt.");
+      await sourceAccess(current.assignment, verified.sourceGrant);
+    }
     const digest = everyAgentFingerprint(verified);
     const saved = await store.update(state => {
       const task = state.tasks.find(t => t.id === id);
@@ -105,6 +115,14 @@ export function createEveryAgentWorkflowService({ store = createEveryAgentStore(
     return task && active(task) && saved.executionMode === "durable" && assignmentFor(saved, task) && task.resultDigest === digest ? verified : null;
   }
   async function publish(id, result) {
+    if (sourceAccess) {
+      const current = await enter(id, "publish");
+      if (current && result !== null) {
+        const verified = validateEveryAgentWorkflowResult(result, current.assignment);
+        if (!verified.sourceGrant) throw new Error("The source did not provide a grant receipt.");
+        await sourceAccess(current.assignment, verified.sourceGrant);
+      }
+    }
     const at = stamp();
     const state = await store.update(value => {
       const task = value.tasks.find(t => t.id === id);

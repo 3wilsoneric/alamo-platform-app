@@ -6,6 +6,7 @@ export type EveryAgentCommand = { action: "review"; workId: string } | { action:
 export function validateEveryAgentCommand(value: unknown): EveryAgentCommand;
 export interface EveryAgentEvidence {
   id: string; kind: string; label: string; href: string; observedAt: string | null;
+  resource?: { application: string; kind: string; id: string; revision: string | null };
 }
 export interface EveryAgentWork {
   runId?: string;

@@ -19,7 +19,7 @@ const result = (skill) => ({ connection: "connected", issue: null, sourceChecked
   key: skill, fingerprint, communityIds: skill === "licensing" ? ["337"] : [],
   title: skill === "licensing" ? "New San Pablo inspection report" : "Admissions activity changed",
   summary: skill === "licensing" ? "A new inspection report is ready to review with its original state source." : "12 active referrals · 2 flagged as stale · 1 unassigned · 4 awaiting admission.",
-  evidence: [{ id: skill, kind: "module", label: "View source", href: skill === "licensing" ? "/analytics/agent?skill=licensing" : "/admissions", observedAt: new Date(time).toISOString() }], relationships: []
+  evidence: [{ id: skill, kind: "module", label: "View source", href: `https://www.alamoplatform.com${skill === "licensing" ? "/analytics/agent?skill=licensing" : "/admissions"}`, observedAt: new Date(time).toISOString() }], relationships: []
 }] });
 const store = createEveryAgentStore(createEveryAgentPersistence({ localPath: path.join(directory, "state.json"), azure: false }));
 const adapters = { licensing: async () => result("licensing"), "admissions-watch": async () => result("admissions-watch") };
@@ -51,6 +51,8 @@ try {
       await page.getByRole("link", { name: /Admissions watch/ }).first().waitFor();
       const workspace = page.getByRole("region", { name: "AlamoAgent workspace" });
       await workspace.getByRole("article").first().waitFor();
+      const sourceLinks = await workspace.getByRole("link", { name: /View source/ }).evaluateAll(links => links.map(link => link.getAttribute("href")));
+      assert(sourceLinks.length > 0 && sourceLinks.every(href => href?.startsWith("/")), "portable Platform evidence remains local navigation inside Platform");
       assert.equal(new URL(page.url()).pathname, "/analytics/agent");
       assert.doesNotMatch(await page.locator("body").innerText(), /EveryAgent|OneAgent/);
       assert.doesNotMatch(await workspace.innerText(), /I’m AlamoAgent|Hello,|Hello there|Here, while you work|Your assistant|Your briefing|Something you want to look into/);

@@ -87,7 +87,8 @@ deployment receipts. Production was not re-probed while creating this spec.
 | Personal monitoring state | Deployed | [Service](../../server/everyagent-service.mjs), [persistence](../../server/everyagent-persistence.mjs). ETag-protected Blob, source fingerprints, lease, assignments and work history. |
 | Durable monitoring workflow | Implemented and locally verified; not deployed | [Functions registration](../../server/everyagent-functions.mjs), [versioned orchestrator](../../server/everyagent-orchestrator.mjs), [workflow service](../../server/everyagent-workflow-service.mjs). Real Functions host restart/replay tested with isolated Azurite. General model planning and conversation remain future work. |
 | Dormant owner chat | Implemented, separate surface | [OwnerChatPage](../../src/features/home/pages/OwnerChatPage.tsx) reuses the existing conversational analyst workspace. The agent companion currently links to Ask a question; conversation is not integrated into its tasks. |
-| Independent monitoring API | Implemented and locally verified; not deployed | [HTTP host](../../server/everyagent-host.mjs), [dedicated authentication](../../server/everyagent-auth.mjs), [minimal package](../../scripts/prepare-everyagent-service.mjs). Versioned work API runs outside Platform with its own audience/client allowlist. Existing Platform route uses the same handler and service. |
+| Independent monitoring API and worker | Implemented; local verification recorded below; not deployed | [HTTP host](../../server/everyagent-host.mjs), [worker](../../server/everyagent-worker.mjs), [package builder](../../scripts/prepare-everyagent-package.mjs). Both runtime packages exclude Platform source implementations. The independent API revalidates source access before showing persisted work. |
+| Authenticated Platform source connector | Implemented; not deployed | [Source API](../../server/platform-agent-source-api.mjs), [source grants](../../server/platform-agent-source-grants.mjs), [HTTP client](../../server/everyagent-source-client.mjs). Workload identity plus a source-owned, expiring, revocable subject/skill/community grant; Licensing summaries and existing Admissions aggregates only. |
 | Direct workspace and portable conversation | Required; not implemented | The independent API currently serves monitoring work and commands. Central messages, task-linked chat, source-aware navigation, and a separately hosted workspace remain future work. |
 | Native LIC 624 creation and editing | Deployed | [Native reports](executive-director-workspace.md#native-reports), October 13 release. Create, save, reopen, review, and versioned audit are present. The earlier upload-only limitation is obsolete. |
 | Upload and extraction | Implemented; see owning workflow for release evidence | Fillable-PDF extraction and review exist. Image-only files stop at OCR-required; connected OCR, automatic filing, incident linking, and official-PDF generation are not delivered by native creation. |
@@ -296,20 +297,23 @@ Extraction status, established from source and local checks:
   there requires its own Entra registration/token acquisition and cutover.
 - The pure adapters accept injected source readers. Platform composition lives
   in `server/everyagent-platform-adapters.mjs`, used by the legacy facade and
-  worker. No direct source readers or Platform reporting runtime enter the
-  standalone API package. Source-owned HTTP connectors and delegated/background
-  authorization contracts remain to be implemented; this is not yet a fully
-  extracted worker or a portable source connector.
-- Work evidence still uses Platform-relative URLs. Carry application ID, typed
-  resource ID and source revision; resolve verified deep links through a
-  server-controlled application registry before enabling a direct UI.
-- The API package contains 22 runtime source files and three direct dependencies
-  (Azure identity, Blob, JOSE). It runs with an independent dependency install
-  outside this repository. Production requires managed-identity Blob settings;
-  the existing state schema/path is retained for migration continuity.
-  The worker package still includes Platform connectors. Independent storage
-  ownership/identity, source contracts, repository extraction, and cloud
-  cutover remain separate work; no second writer schema or database is created.
+  legacy inline worker. The independent durable worker now calls the Platform
+  source API over authenticated HTTP. Both independent packages exclude source
+  readers and the Platform reporting runtime. Background source grants are
+  implemented; interactive OBO, new source applications, and general user/team
+  delegation remain future contracts.
+- A fixed application link registry now resolves Platform-relative evidence
+  into verified absolute links for the independent API. Connector evidence
+  carries application, resource kind/ID and source revision. The existing
+  Platform interface retains its local navigation behavior; no direct UI is
+  enabled by the link change.
+- The API package contains 26 runtime files and three direct dependencies; the
+  worker has 21 runtime files and four direct dependencies. Both use minimal
+  locks derived from the reviewed root lock. Production requires managed
+  identity and connector configuration; existing state schema/path is retained
+  for migration continuity. Cloud storage/identity ownership, source grants,
+  repository extraction and cutover still need operational setup. No second
+  writer schema or database is created.
 
 ### Conversation continuity and application selection
 
@@ -567,7 +571,7 @@ proposed workflow or memory capabilities. No production release was performed.
 |---|---|---|---|
 | S0 | Reconciled living spec and agent entry-point guidance | Current/planned split, requirement IDs, implementation map, linked handbook and retention registration | Implemented; maintained with this build |
 | S1a | Durable task foundation exercised by a Licensing check | Scoped contracts, persisted checkpoints, restart, duplicate, cancellation and revocation tests; traceable result | Implemented and locally verified; not deployed |
-| S1b | Independent agent API, connector boundary and controlled worker rollout | Extracted access/client/source contracts, isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Monitoring API/access/client and source injection implemented and locally verified; HTTP connectors, hosting and cutover pending |
+| S1b | Independent agent API, connector boundary and controlled worker rollout | Extracted access/client/source contracts, isolated cloud worker/storage, cutover/rollback evidence, retained assignments/reviews; separate Postgres migration proof | Independent API/worker, authenticated Platform source connector, revocable grants and portable links implemented; hosting, Azure identity/grant setup and cutover pending |
 | S2 | Direct agent workspace and complete Licensing workflow with task-linked conversation | Existing chat components reused; central conversation → scoped sources → brief → work → correction; direct-home/Platform continuity and Q14 checks | Required direction; proposed implementation |
 | S3 | Second durable workflow and second embedded host | Pipeline adapter permissions and aggregate boundary preserved; same task accessible from authorized hosts; no transcript leakage | Proposed |
 | S3a | Pipeline assessment-review read skill | Pipeline-owned scoped projection; supervisor-team and assessor-own queries with source-backed exceptions and Q13 checks | Required; not implemented |
@@ -581,13 +585,13 @@ entry point. The authenticated API and UI expose run progress, cancel, and retry
 The deployed web timer remains the production scheduler until S1b cutover.
 Avoid generic unused infrastructure and preserve current state during migration.
 
-The monitoring API and compatibility client now establish the first extraction
-boundary. Next, define and implement the source-owned authenticated read
-connectors, registered host policy and portable source links. Provision the
-agent audience/hosting only with concrete cost and cutover evidence; wire the
-existing client to it, then build the direct workspace over central
-conversation/task contracts. Add a second host after continuity works. This
-extends the tested runtime rather than reimplementing its workflows.
+The monitoring API, source connector and independently packaged worker establish
+the extraction boundary. Next, build the direct workspace over central
+conversation/task contracts with registered host policy. Provision audience,
+workload identities, source grant storage and hosting with concrete cost and
+cutover evidence; wire the existing client to it after live verification. Add
+a second host after continuity works. This extends the tested runtime rather
+than reimplementing its workflows.
 
 Migration must account for existing assignments, scope, review receipts, and
 unresolved work. Plan an idempotent import from the existing Blob, compare
@@ -648,9 +652,9 @@ Maintain the private pilot throughout.
   presentation assets, and passes a production-only dependency install and
   startup checks for missing storage or an incorrect runtime mode.
 
-S1b has started with the independent monitoring API, access grant and injected
-client/source readers. Cloud activation still requires real source-owned HTTP
-connectors, sizing/identity/network configuration,
+S1b includes the independent monitoring API/worker and authenticated Platform
+source connector. Cloud activation still requires live source grant and
+identity verification, sizing/network configuration,
 durable history retention, and a tested operational cutover/rollback procedure.
 Then add the direct workspace, task-linked conversation and correction path;
 introduce Postgres with explicit import and reconciliation checks as central
@@ -685,6 +689,56 @@ records the host and browser evidence separately from production releases.
   check pass. The isolated dependency tree matches the existing reviewed root
   lock without version or integrity drift.
 - See the [API verification and operations receipt](deployment-operations.md#alamoagent-independent-api-candidate--2026-10-16-not-deployed).
+
+### S1b source connector and worker extraction — 2026-10-16
+
+- Platform exposes a versioned, workload-only source API with `read` and
+  `authorize` operations. It accepts a dedicated Entra v2 audience and the
+  application role `AlamoAgent.Source.Read`, then checks the token's client and
+  service-principal IDs against a source-owned grant. Browser tokens, a supplied
+  user ID, generic admin roles and agent API tokens cannot establish permission.
+- Each grant binds the workload to one subject, skill, permitted communities,
+  expiry and revocation state. The source's existing Licensing/owner policy and
+  Eric-only rollout are additional constraints. The uncached registry lives in
+  a separate private container; neither agent workload nor state identities may
+  write it. Missing, ambiguous, malformed, expired or revoked grants fail closed.
+- Source authorization runs before and after source I/O. The connector returns
+  only bounded work evidence; Pipeline's organization summary remains a
+  Platform-owned aggregate projection. Referral rows, patient data, raw report
+  payloads and unknown fields do not cross this boundary. This is not the future
+  assessor/supervisor review capability or direct Pipeline user delegation.
+- The durable worker carries a source grant revision in its result and rechecks
+  it after collection, at validation and before publication, including replay.
+  These are point-in-time distributed checks, not a cross-service transaction:
+  revocation may occur immediately after the last check. Subsequent retrieval
+  independently verifies current access and hides results when authorization
+  fails or cannot be reached. Existing work remains retained under its storage
+  policy; hiding an item does not erase already-read data or engine history.
+- Review, retry and resume/scope changes require source authorization in the
+  independent API. Pause and cancel remain available while a source is down or
+  access has been withdrawn. Assignment revisions are checked after permission
+  I/O so a concurrent scope change cannot return the earlier scoped snapshot.
+- Source links resolve through a fixed application registry, with typed resource
+  references and revisions. No host-supplied destination, redirect, arbitrary
+  URL, transcript or credential selects a tool or expands scope. The HTTP client
+  rejects redirects, enforces a deadline and response bound, and sanitizes errors.
+- Both independent runtimes now use the HTTP connector. The Platform compatibility
+  facade keeps its direct source composition and existing inline timer until
+  controlled deployment. Interactive conversation/OBO, host policies, direct UI,
+  repository separation and live Entra/Azure verification are still unfinished.
+- Deterministic signed-token HTTP checks cover wrong audience/identity/scope,
+  revoked/expired/changed grants, revocation during a read, denial at publication
+  and retrieval, response bounds, injected links, secret exclusion, and retained
+  reviews. Reproduce with `check:everyagent-source`.
+- `check:everyagent-connector-host` installs the worker package outside the repo,
+  runs the actual Functions host against a separately authenticated local source,
+  and kills/restarts it between collection and validation. Its receipt and the
+  complete regression results are recorded in [operations](deployment-operations.md#alamoagent-authenticated-source-connector--2026-10-16-not-deployed).
+- Local verification passed: the full analyst gate, documentation checks, both
+  TypeScript checks, production build, isolated API/worker checks and browser
+  checks at 320/390/1440px. Platform's own transport keeps portable Platform
+  evidence links local; independent clients retain absolute application links.
+  These results establish local readiness only, not live connector access.
 
 ### Cost envelope — checked 2026-10-16
 
@@ -760,3 +814,4 @@ usage accounting and hard call/token limits, with a visible budget-stop state.
 | 2026-10-16 | Add assessment-review use for supervisors and assessors | Build a Pipeline-owned, user-scoped read contract; surface neutral exceptions and own-work guidance through AlamoAgent after role and PHI checks. Current Eric-only pilot and aggregate Admissions watch do not satisfy this yet. |
 | 2026-10-16 | Eric requested an independent AlamoAgent home and conversations that reach connected applications as needed | Propose a separately deployed agent API/workspace, central conversation IDs, shared host client and source-owned connectors. Extract Platform couplings incrementally; keep the private rollout and notification restrictions. No service extraction or domain deployment claimed. |
 | 2026-10-16 | Eric asked about cost and to proceed where no new spend was required | Implemented and locally verified independent monitoring API, dedicated auth and minimal packaging. No paid resources or model calls added. Recorded the pilot estimate; hosting, source HTTP connectors and direct chat remain pending. |
+| 2026-10-16 | Continue decoupling without expanding the pilot | Added source-owned authenticated reads, revocable workload/subject grants, source-aware retrieval and publication, portable links, and a minimal independent worker. Cloud resources and the direct chat workspace remain separate deliverables. |

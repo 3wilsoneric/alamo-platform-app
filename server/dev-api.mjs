@@ -1,5 +1,7 @@
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
 import { handleEveryAgentRequest } from "./everyagent-api.mjs";
+import { handlePlatformAgentSourceRequest } from "./platform-agent-source-api.mjs";
+import { AGENT_SOURCE_PATH } from "../shared/everyagent-source-contracts.mjs";
 import { getPlatformIncidentHistory } from "./platform-incident-history.mjs";
 import { assertLicensingAccess } from "./licensing-access.mjs";
 import http from "node:http";
@@ -191,6 +193,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (requestUrl.pathname === AGENT_SOURCE_PATH) {
+    await handlePlatformAgentSourceRequest(req, createVercelResponseAdapter(res));
+    return;
+  }
   if (requestUrl.pathname === "/api/platform/everyagent" || requestUrl.pathname.startsWith("/api/platform/everyagent/")) {
     await handleEveryAgentRequest(req, createVercelResponseAdapter(res));
     return;

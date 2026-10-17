@@ -24,10 +24,14 @@ try {
   execFileSync(process.execPath, ["scripts/check-everyagent-service.mjs"], { cwd: directory, env, stdio: "pipe", timeout: 30_000 });
   const production = { NODE_ENV: "production", ALAMOAGENT_ENTRA_TENANT_ID: "d72d9036-cff8-4f5f-a6fa-d698f621d420",
     ALAMOAGENT_ENTRA_API_AUDIENCE: "api://test", ALAMOAGENT_ENTRA_CLIENT_IDS: "11111111-1111-4111-8111-111111111111" };
+  const connector = { ALAMOAGENT_PLATFORM_ORIGIN: "https://source.example.test",
+    ALAMOAGENT_PLATFORM_SCOPE: "api://11111111-1111-4111-8111-111111111111/.default",
+    ALAMOAGENT_CONNECTOR_CLIENT_ID: production.ALAMOAGENT_ENTRA_CLIENT_IDS };
   for (const [settings, message] of [
     [{}, /requires production mode/],
     [{ NODE_ENV: "production" }, /Configure the agent tenant/],
-    [production, /durable storage is not configured/]
+    [production, /Configure the agent Platform connector/],
+    [{ ...production, ...connector }, /durable storage is not configured/]
   ]) {
     const result = spawnSync(process.execPath, ["server/everyagent-server.mjs"], { cwd: directory, env: { ...env, ...settings }, encoding: "utf8", timeout: 10_000 });
     assert.equal(result.status, 1); assert.match(result.stderr, message);
@@ -37,7 +41,7 @@ try {
   // The real entry point starts with synthetic storage settings. Liveness and
   // unauthenticated requests must not perform any storage or identity I/O.
   const child = spawn(process.execPath, ["server/everyagent-server.mjs"], { cwd: directory, stdio: ["ignore", "pipe", "pipe"],
-    env: { ...env, ...production, PORT: String(port), AZURE_STORAGE_ACCOUNT: "syntheticagentfixture",
+    env: { ...env, ...production, ...connector, PORT: String(port), AZURE_STORAGE_ACCOUNT: "syntheticagentfixture",
       AZURE_STORAGE_CONTAINER: "synthetic", AZURE_CLIENT_ID: production.ALAMOAGENT_ENTRA_CLIENT_IDS } });
   const exited = once(child, "exit");
   let timer;
