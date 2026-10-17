@@ -3,7 +3,7 @@
 - purpose: define how Alamo Platform can become a reusable analytics and operating layer for EHR, eMAR, and dashboard products
 - status: approved platform direction; current capabilities and required productization work are identified separately
 - owners: product, engineering, data platform, security
-- updated: 2026-09-07
+- updated: 2026-10-16
 - tags: integration, ehr, emar, analytics, embedding, recovery, platform
 - labels: platform-handbook, platform-direction, integration-contract
 - related files:
@@ -244,6 +244,11 @@ disabled until a separate payload, QA, rollback, cost, and approval review.
 ## Current Limitations
 
 ### AlamoAgent first application-spanning slice — 2026-10-16
+
+The [AlamoAgent living build spec](alamoagent-build-spec.md) owns the consolidated
+requirements, proposed workflow/memory/skill architecture, acceptance criteria,
+and implementation sequence. This section records the implemented integration
+boundary; planned capabilities in the spec are not deployment claims.
 
 AlamoAgent is the shared work surface, with registered skills and personal
 standing responsibilities. The first implemented capabilities are the Platform

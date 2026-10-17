@@ -39,6 +39,7 @@ const rootFiles = new Set([
 ]);
 
 const platformDocs = [
+  "docs/platform/alamoagent-build-spec.md",
   "docs/platform/admissions-zone.md",
   "docs/platform/acquisition-parent-company-program.md",
   "docs/platform/README.md",

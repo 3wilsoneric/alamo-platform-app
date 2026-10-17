@@ -541,6 +541,10 @@ Unknown and retired paths resolve through the application catch-all to `/home`; 
 
 ## Licensing Reports
 
+The [AlamoAgent living build spec](alamoagent-build-spec.md) captures the accepted
+helper experience and future embedding/conversation requirements. The behavior
+below describes the current implementation.
+
 `/analytics/agent` is the AlamoAgent work surface for Eric Wilson. The legacy
 `/everyagent` link remains supported. Navigation, accessible names, tooltips,
 and helper copy use AlamoAgent; internal API, state, and asset names remain

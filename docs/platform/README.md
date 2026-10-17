@@ -3,7 +3,7 @@
 - purpose: canonical entry point for the current Alamo Platform product, runtime, data publishing path, and analyst workspace
 - status: authoritative current-state handbook
 - owners: product, engineering, data platform
-- updated: 2026-09-09
+- updated: 2026-10-16
 - tags: alamo-platform, architecture, analyst, snapshot, databricks, operations
 - labels: platform-handbook, current-state, authoritative
 - related files:
@@ -12,6 +12,7 @@
   - [executive-director-workspace.md](executive-director-workspace.md)
   - [architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md)
   - [integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md)
+  - [alamoagent-build-spec.md](alamoagent-build-spec.md)
   - [acquisition-parent-company-program.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/acquisition-parent-company-program.md)
   - [private-behavioral-health-acquisition-master-dossier.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/reference/private-behavioral-health-acquisition-master-dossier.md)
   - [product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md)
@@ -56,6 +57,12 @@ flowchart LR
 ```
 
 ## Read Order
+
+For AlamoAgent work, start with the [living build spec](alamoagent-build-spec.md).
+It consolidates product decisions, the verified baseline, proposed architecture,
+acceptance criteria, and the next build slices. Update it as the work evolves;
+the current-state and deployment documents remain the implementation and release
+evidence, respectively.
 
 1. [admissions-zone.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/admissions-zone.md) for the first-party Pipeline Admissions application boundary.
    [workforce-zone.md](../../docs/platform/workforce-zone.md) for the matching Alamo Workforce boundary.

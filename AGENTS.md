@@ -13,6 +13,7 @@ Use progressive disclosure:
 - Platform handbook: [docs/platform/README.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/README.md)
 - Architecture: [docs/platform/architecture.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/architecture.md)
 - Integration platform strategy: [docs/platform/integration-platform.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/integration-platform.md)
+- AlamoAgent living build spec: [docs/platform/alamoagent-build-spec.md](docs/platform/alamoagent-build-spec.md) — read before agent, skill, workflow, memory, embedding, or agent-rollout work; update it in the same change when decisions, scope, implementation status, evidence, or next steps change.
 - Product surfaces: [docs/platform/product-surfaces.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/product-surfaces.md)
 - Folder and material styling: [docs/platform/material-folder-design.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/material-folder-design.md) — read before reusing the realistic folders, dashboard folios, ledgers, or Licensing styling in Platform or Pipeline.
 - Operator journeys: [docs/platform/user-journeys.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md)
@@ -41,6 +42,14 @@ Use progressive disclosure:
 - Medication/MAR data may be documented only as platform analytics context, not as a separate product.
 
 ## Verification Defaults
+
+For AlamoAgent work, keep the living build spec current before handoff. Distinguish
+user requirements, proposed architecture, implemented source, and verified
+deployment; a passing build or saved branding does not establish production
+availability. Preserve the latest rollout and notification restrictions. Keep
+deployment receipts in the operations doc and link them from the spec rather
+than creating competing plans. Documentation maintenance does not authorize
+deployment, broader access, or outbound notifications.
 
 Run from this directory:
 
