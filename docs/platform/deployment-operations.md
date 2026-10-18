@@ -4112,3 +4112,22 @@ The revision is Healthy/Running at 100% traffic. Direct
 `/workflow?view=organization` returns 200. Standalone Workflow build and lint,
 Platform production build, and local map/Ask browser checks pass. This release
 replaces browser assets only.
+
+### Workflow Organization control cleanup — 2026-10-18
+
+Removed the redundant map title/section strip and preview status copy. Search
+now shares the Map/Ask tab bar, and the chart begins immediately beneath it.
+The footer caption retains the limitation that connections are functional,
+not verified reporting relationships.
+
+- browser source commit: `df1c3ff` on `codex/workflow-native-20261018`
+- ACR build: `cc8r`; tag: `workflow-org-clean-20261018-df1c3ff`
+- image: `alamo-platform@sha256:37f5b0a8cb1684cd040a0805ecc323206fdc817f9bfbb1d65f5c893500cebb09`
+- revision: `alamo-platform-prod-web--wforgclean-1018-37f5b0`
+- rollback image: `alamo-platform@sha256:a7bbb932b88792b92bbcd8d55d641f1be425191367b66a2688c9ac26ec871ba0`
+- browser assets: `/assets/index-D1rMfEXK.js`, `/assets/index-CIdc-mKE.css`
+
+The revision is Healthy/Running at 100% traffic. Direct
+`/workflow?view=organization` returns 200. Standalone Workflow build and lint,
+Platform production build, and desktop/phone layout checks pass. This release
+replaces browser assets only.
