@@ -39,7 +39,7 @@ bundle locally, pass the exact current production image digest as `BASE_IMAGE`,
 and replace only `/app/dist`. This preserves the already-proven Azure server,
 API, environment, and data adapters while shipping the reviewed React bundle.
 The production build stages the same current entry document at the root,
-`/admissions`, and `/chat`, then regenerates gzip and Brotli siblings for every
+`/admissions`, `/chat`, and `/workflow`, then regenerates gzip and Brotli siblings for every
 served HTML, JavaScript, CSS, JSON, and SVG file. This prevents physical route
 indexes or compressed representations retained from an older overlay from
 serving a stale browser bundle. Always reconcile identity, gzip, and Brotli

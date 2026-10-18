@@ -115,7 +115,7 @@ const rejectedPathParts = [
   /^docs\/code-bible\//,
   /^public\/strategy\//,
   /^src\/features\/briefings\//,
-  /^src\/features\/(admin|demo|strategy|suite|workflow)\//,
+  /^src\/features\/(admin|demo|strategy|suite)\//,
   /^src\/mobile\//,
   /^api\/debug\//,
   /^api\/census\.js$/,
@@ -202,7 +202,7 @@ function ownershipClass(file) {
   if (approvedDocs.has(file)) return file.startsWith("docs/reference/") ? "live specification" : "handbook";
   if (/^src\/.+\.(?:ts|tsx|css|json)$/.test(file)) return "browser runtime";
   if (/^config\/.+\.json$/.test(file)) return "data ingestion configuration";
-  if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js)$/.test(file)) return "static browser asset";
+  if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js|woff2)$/.test(file)) return "static browser asset";
   if (/^api\/.+\.js$/.test(file)) return "Vercel API";
   if (/^server\/.+\.mjs$/.test(file)) return "server domain";
   if (/^server\/presentations\/alamo-data-strategy\/(?:deck\.json|fonts\.json|slides\/[a-z0-9-]+\.html|images\/[a-z0-9-]+\.png|fonts\/[a-zA-Z0-9-]+\.(?:ttf|woff2|txt))$/.test(file)) return "private presentation assets";

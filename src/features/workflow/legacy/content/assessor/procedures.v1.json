@@ -1,0 +1,1954 @@
+{
+  "schemaVersion": 1,
+  "id": "alamo-assessor-procedures",
+  "version": 1,
+  "authoredAt": "2026-10-17",
+  "status": "review",
+  "sourceApplication": "workflow",
+  "sourceRevision": {
+    "pipeline": "561c491c",
+    "workflow": "41ced97-with-existing-local-edits"
+  },
+  "scope": "Application operating procedures; domain and off-app ownership review remains explicit.",
+  "authority": {
+    "agent": "read_investigate_draft",
+    "email": "disabled",
+    "signatures": "human_source_action",
+    "admissionDecision": "human_source_action",
+    "publication": "local_review_content"
+  },
+  "procedures": [
+    {
+      "id": "W1",
+      "procedureId": 1001,
+      "code": "ASM-001",
+      "version": 1,
+      "title": "Pick up an assigned referral",
+      "trigger": "A case is assigned, reassigned or reopened for work.",
+      "outcome": "The assessor knows which case is theirs, its current state and the next responsible action.",
+      "preconditions": [
+        "Signed in to Pipeline with current access.",
+        "Use the existing referral; verify identity before acting."
+      ],
+      "steps": [
+        {
+          "id": "W1.1",
+          "title": "Find the assigned work",
+          "clickpath": [
+            "Home",
+            "Board",
+            "Client card"
+          ],
+          "action": "Check the displayed owner/scope and the next action on the card. Open the intended client.",
+          "expectedResult": "The existing referral opens at its current work stage.",
+          "guideTarget": "home-board-card",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W1.2",
+          "title": "Verify the case and owner",
+          "clickpath": [
+            "Referral workspace",
+            "Intake"
+          ],
+          "action": "Compare client details, community and assigned assessor with the work you were asked to do.",
+          "expectedResult": "Correct case and recorded owner are established.",
+          "guideTarget": "intake-routing",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": "If ownership or identity is unclear, ask the source owner to reconcile it before changing clinical work.",
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W1.3",
+          "title": "Read the latest context",
+          "clickpath": [
+            "Referral workspace",
+            "Activity"
+          ],
+          "action": "Inspect relevant recent changes and then return to the current record.",
+          "expectedResult": "You can distinguish current state from an earlier change.",
+          "guideTarget": "workspace-history",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W1.4",
+          "title": "Choose the next action",
+          "clickpath": [
+            "Referral workspace",
+            "Workspace tabs"
+          ],
+          "action": "Continue to the page named by the current task. Keep any unresolved ownership question explicit.",
+          "expectedResult": "An evidence-linked next action and responsible person are identified.",
+          "guideTarget": "workspace-stage-nav",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "A visible case is not proof that you own it.",
+        "After reassignment, recheck access and stop using an earlier cached brief."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Current referral identity/version",
+          "Current source assignment",
+          "Workflow state",
+          "Outstanding requirements when available"
+        ],
+        "draftInstructions": "Draft a case orientation: current state, recorded owner, known gaps, next existing source action and evidence links. Mark unavailable requirements as unavailable rather than absent.",
+        "humanDecision": "Assessor verifies identity and responsibility; authorized source operator resolves assignment changes."
+      },
+      "tags": [
+        "assessor",
+        "assigned",
+        "orientation",
+        "ownership"
+      ]
+    },
+    {
+      "id": "W2",
+      "procedureId": 1002,
+      "code": "ASM-002",
+      "version": 1,
+      "title": "Prepare an assessment from records",
+      "trigger": "A new assessment or new evidence needs preparation.",
+      "outcome": "A source-linked preparation brief and interview questions are ready, with unknowns preserved.",
+      "preconditions": [
+        "Open the correct referral.",
+        "Use only evidence you are authorized to inspect."
+      ],
+      "steps": [
+        {
+          "id": "W2.1",
+          "title": "Inspect the originals",
+          "clickpath": [
+            "Referral workspace",
+            "Files",
+            "Document"
+          ],
+          "action": "Open the relevant original document. Check the person, document date and source.",
+          "expectedResult": "Evidence is inspected in its original context.",
+          "guideTarget": "workspace-files",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W2.2",
+          "title": "Open preparation",
+          "clickpath": [
+            "Referral workspace",
+            "Assessment",
+            "Preparation view"
+          ],
+          "action": "Use the preparation view where available; it edits the same canonical assessment. For an existing interview, return to the relevant section rather than creating another assessment.",
+          "expectedResult": "The existing assessment and its recorded values are visible.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W2.3",
+          "title": "Compare recorded information",
+          "clickpath": [
+            "Assessment",
+            "Current information or Client info"
+          ],
+          "action": "Review prior information with its source and date. Keep current and historical statements separate.",
+          "expectedResult": "Differences and unknowns remain attributable.",
+          "guideTarget": "assessment-recorded",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W2.4",
+          "title": "Review proposed values",
+          "clickpath": [
+            "Assessment",
+            "Relevant field",
+            "Source review"
+          ],
+          "action": "Confirm or correct imported suggestions using the source review controls when shown. Do not treat accepted extraction as client confirmation.",
+          "expectedResult": "Imported values retain accurate source/review state.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": "If the source cannot be inspected, leave the value pending or uncertainty explicit.",
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W2.5",
+          "title": "Prepare remaining questions",
+          "clickpath": [
+            "Assessment",
+            "Assessment section",
+            "Question area"
+          ],
+          "action": "Use applicable fields to identify what still needs asking. Record only supplied facts; keep an interview agenda separate from asserted answers.",
+          "expectedResult": "A question list distinguishes missing, conflicting and unverified information.",
+          "guideTarget": "assessment-fields",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W2.6",
+          "title": "Confirm saved work",
+          "clickpath": [
+            "Assessment",
+            "Save status"
+          ],
+          "action": "Wait for the saved state before navigating away.",
+          "expectedResult": "The source confirms the current edits were saved.",
+          "guideTarget": "assessment-save-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Conflicting sources remain separate until a person resolves them.",
+        "Do not carry an old answer forward as a current fact without checking its relevance."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Authorized answer text and versions",
+          "Original evidence references and dates",
+          "Field provenance/review state",
+          "Applicable questionnaire fields"
+        ],
+        "draftInstructions": "Prepare a concise brief with known facts, sources/dates, conflicting accounts and specific interview questions. Cite each factual statement. Do not infer a negative answer from missing information.",
+        "humanDecision": "Assessor verifies source interpretation and accepts any field changes in Pipeline."
+      },
+      "tags": [
+        "assessor",
+        "preparation",
+        "records",
+        "interview questions"
+      ]
+    },
+    {
+      "id": "W3",
+      "procedureId": 1003,
+      "code": "ASM-003",
+      "version": 1,
+      "title": "Schedule or reschedule an assessment",
+      "trigger": "An encounter needs an appointment or a revised time.",
+      "outcome": "Pipeline records the correct appointment or its actual exception status.",
+      "preconditions": [
+        "Open the intended assessment.",
+        "Confirm coordination details through the approved human communication process."
+      ],
+      "steps": [
+        {
+          "id": "W3.1",
+          "title": "Open scheduling",
+          "clickpath": [
+            "Referral workspace",
+            "Assessment",
+            "Schedule interview or Edit"
+          ],
+          "action": "Choose Schedule interview for a new appointment, or Edit/Change appointment when shown.",
+          "expectedResult": "Scheduling opens for this referral.",
+          "guideTarget": "assessment-schedule-open",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W3.2",
+          "title": "Set date and duration",
+          "clickpath": [
+            "Scheduling",
+            "Date and time",
+            "Duration"
+          ],
+          "action": "Check the displayed time zone, then set date, time and duration.",
+          "expectedResult": "The proposed appointment details are visible.",
+          "guideTarget": "assessment-schedule-fields",
+          "sourceRef": "components/pipeline/AssessmentSchedulingDialogs.tsx",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W3.3",
+          "title": "Choose the method",
+          "clickpath": [
+            "Scheduling",
+            "Method",
+            "Location / contact details"
+          ],
+          "action": "Choose in person, phone, Zoom or record review as applicable; supply the corresponding details.",
+          "expectedResult": "Method and coordination details agree.",
+          "guideTarget": "assessment-schedule-method",
+          "sourceRef": "components/pipeline/AssessmentSchedulingDialogs.tsx",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W3.4",
+          "title": "Save the appointment",
+          "clickpath": [
+            "Scheduling",
+            "Schedule interview / Schedule record review / Save new time"
+          ],
+          "action": "Review the details and choose the displayed save action once. Wait for success.",
+          "expectedResult": "The saved appointment appears in the assessment and Calendar.",
+          "guideTarget": "assessment-schedule-save",
+          "sourceRef": "components/pipeline/AssessmentSchedulingDialogs.tsx",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": "For a conflict or failed save, inspect the message and resolve it; do not claim booking succeeded.",
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W3.5",
+          "title": "Check the actual outcome",
+          "clickpath": [
+            "Calendar",
+            "Appointment",
+            "Available outcome controls"
+          ],
+          "action": "Use the available source action when the encounter is completed, cancelled or a no-show. Reschedule through the same linked assessment when needed.",
+          "expectedResult": "The recorded status describes what actually happened.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/CalendarWorkDetails.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Scheduling does not start an interview.",
+        "A missed encounter does not complete the assessment.",
+        "External calendar synchronization is not assumed."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Assessment and referral versions",
+          "Current appointment/time zone",
+          "Permitted scheduling controls",
+          "Confirmed human coordination details"
+        ],
+        "draftInstructions": "Prepare a scheduling brief with known details and unresolved coordination questions. Explain the source conflict or missing prerequisite. Do not select a time or contact anyone on the assessor’s behalf.",
+        "humanDecision": "The assessor confirms and saves the appointment through Pipeline."
+      },
+      "tags": [
+        "assessor",
+        "schedule",
+        "appointment",
+        "reschedule",
+        "no show"
+      ]
+    },
+    {
+      "id": "W4",
+      "procedureId": 1004,
+      "code": "ASM-004",
+      "version": 1,
+      "title": "Conduct and document the assessment",
+      "trigger": "The assessor begins or resumes the encounter.",
+      "outcome": "Answers and progress reflect the encounter, with sources and unresolved questions preserved.",
+      "preconditions": [
+        "Verify the person and correct assessment.",
+        "Use applicable professional judgment and current approved guidance."
+      ],
+      "steps": [
+        {
+          "id": "W4.1",
+          "title": "Begin or resume deliberately",
+          "clickpath": [
+            "Referral workspace",
+            "Assessment",
+            "Begin interview when offered"
+          ],
+          "action": "Use the explicit begin action when starting. Resume the existing assessment if work already began. Switching views alone does not start an encounter.",
+          "expectedResult": "The actual lifecycle state is recorded.",
+          "guideTarget": "assessment-begin-confirm",
+          "sourceRef": "components/pipeline/AssessmentSchedulingDialogs.tsx",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W4.2",
+          "title": "Choose the relevant section",
+          "clickpath": [
+            "Assessment",
+            "Assessment section"
+          ],
+          "action": "Select the topic needed; sections do not have to be completed in display order.",
+          "expectedResult": "Applicable questions for that section are visible.",
+          "guideTarget": "assessment-section-nav",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W4.3",
+          "title": "Record the information",
+          "clickpath": [
+            "Assessment",
+            "Question area"
+          ],
+          "action": "Enter supplied facts in the canonical field. Attribute client report, collateral, record or observation, and distinguish history from current information.",
+          "expectedResult": "Answers address the active question without invented conclusions.",
+          "guideTarget": "assessment-fields",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W4.4",
+          "title": "Revisit earlier answers",
+          "clickpath": [
+            "Assessment",
+            "Current information / Client info",
+            "Recorded answer"
+          ],
+          "action": "Open an earlier answer when clarification is needed and preserve relevant uncertainty.",
+          "expectedResult": "The same assessment is updated rather than duplicated.",
+          "guideTarget": "assessment-recorded",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W4.5",
+          "title": "Confirm progress and saves",
+          "clickpath": [
+            "Assessment",
+            "Save status",
+            "Next / Next section"
+          ],
+          "action": "Check save state and continue to the next applicable section. Leave unresolved items visible for follow-up.",
+          "expectedResult": "Saved progress and remaining work are distinguishable.",
+          "guideTarget": "assessment-save-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Unknown information remains unknown.",
+        "A completed interview is distinct from a signature, decision and sent packet."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Applicable field/question definitions",
+          "Authorized existing answers and sources",
+          "Current assessment state"
+        ],
+        "draftInstructions": "Suggest specific follow-up questions based on supplied gaps. Draft clear wording only from provided evidence, retaining attribution, dates and uncertainty. Do not diagnose or make placement decisions.",
+        "humanDecision": "Assessor conducts the encounter, confirms facts and records answers."
+      },
+      "tags": [
+        "assessor",
+        "interview",
+        "questions",
+        "document"
+      ]
+    },
+    {
+      "id": "W5",
+      "procedureId": 1005,
+      "code": "ASM-005",
+      "version": 1,
+      "title": "Review answer quality and sign",
+      "trigger": "Assessment work is ready for review or has unresolved gaps.",
+      "outcome": "The assessor reviews content and source blockers, then explicitly signs when ready.",
+      "preconditions": [
+        "Use the current assessment version.",
+        "Resolve source validation errors and pending saves."
+      ],
+      "steps": [
+        {
+          "id": "W5.1",
+          "title": "Open the review",
+          "clickpath": [
+            "Assessment",
+            "Review assessment"
+          ],
+          "action": "Inspect the assembled assessment and the source’s incomplete items.",
+          "expectedResult": "Full assessment review is open.",
+          "guideTarget": "assessment-review",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W5.2",
+          "title": "Check evidence and completeness",
+          "clickpath": [
+            "Review assessment",
+            "Relevant answer",
+            "Files when needed"
+          ],
+          "action": "Resolve required missing information and pending imported values using their original source.",
+          "expectedResult": "Mechanical blockers are resolved or remain explicitly open.",
+          "guideTarget": "assessment-fields",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W5.3",
+          "title": "Improve the answer",
+          "clickpath": [
+            "Assessment",
+            "Narrative field",
+            "Answer format"
+          ],
+          "action": "Check whether the answer addresses the question, names its source, separates current/history, and preserves uncertainty. Remove unsupported or irrelevant wording.",
+          "expectedResult": "A clearer answer preserves the same supported facts.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W5.4",
+          "title": "Check successful persistence",
+          "clickpath": [
+            "Assessment",
+            "Save status"
+          ],
+          "action": "Wait for saved status; resolve any conflict or error before signing.",
+          "expectedResult": "The version being reviewed is saved.",
+          "guideTarget": "assessment-save-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W5.5",
+          "title": "Sign explicitly",
+          "clickpath": [
+            "Review assessment",
+            "Sign & continue to decision / Sign assessment",
+            "Confirmation"
+          ],
+          "action": "Review the confirmation and choose Sign assessment only when you are ready and authorized.",
+          "expectedResult": "The source displays signature evidence for the assessment.",
+          "guideTarget": "assessment-sign",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W5.6",
+          "title": "Recognize the next boundary",
+          "clickpath": [
+            "Assessment",
+            "Signature history"
+          ],
+          "action": "Read the recorded signature. Editing remains possible until signed-and-sent finalization under current source rules.",
+          "expectedResult": "A signature is not mistaken for a sent packet or admission.",
+          "guideTarget": null,
+          "sourceRef": "docs/ASSESSMENT_FINAL_SEND_POLICY.md",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Do not manufacture facts to clear a required field.",
+        "Agent wording is a proposal; the assessor reviews it.",
+        "A local walkthrough completion cannot sign the record."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Current answer text",
+          "Field-specific writing guidance",
+          "Evidence/provenance",
+          "Source completion blockers",
+          "Current revision and save state"
+        ],
+        "draftInstructions": "Produce field-specific findings with evidence, explanation and proposed wording. Separate mechanical completeness from quality. Preserve facts and uncertainty, avoid grading the employee, and stop short of signing.",
+        "humanDecision": "Assessor accepts or rejects edits and performs the signature action."
+      },
+      "tags": [
+        "assessor",
+        "quality",
+        "review",
+        "sign",
+        "wording"
+      ]
+    },
+    {
+      "id": "W6",
+      "procedureId": 1006,
+      "code": "ASM-006",
+      "version": 1,
+      "title": "Record a recommendation and support the decision",
+      "trigger": "There is enough evidence to express a recommendation or an authorized human is ready to decide.",
+      "outcome": "Recommendation and admission decision remain distinct, attributable records.",
+      "preconditions": [
+        "Confirm who is responsible for the decision.",
+        "Use current source permissions and assessment evidence."
+      ],
+      "steps": [
+        {
+          "id": "W6.1",
+          "title": "Review the working recommendation",
+          "clickpath": [
+            "Assessment",
+            "Review assessment",
+            "Working decision / recommendation"
+          ],
+          "action": "Where available, record the recommendation and its supported reason. Wait for its save to complete.",
+          "expectedResult": "The recommendation is saved independently of the admission decision.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W6.2",
+          "title": "Open Decision",
+          "clickpath": [
+            "Referral workspace",
+            "Decision"
+          ],
+          "action": "Inspect the existing recommendation, decision and any unresolved requirements.",
+          "expectedResult": "The current decision context is visible.",
+          "guideTarget": "workspace-decision",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W6.3",
+          "title": "Record the authorized decision",
+          "clickpath": [
+            "Decision",
+            "Available outcome and reason controls"
+          ],
+          "action": "The responsible authorized person records the actual outcome and supported reason. A direct decision can exist without a new supervisor-review submission.",
+          "expectedResult": "The source confirms the recorded decision.",
+          "guideTarget": "workspace-decision",
+          "sourceRef": "lib/pipeline/workflow-store.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W6.4",
+          "title": "Add the admission date when applicable",
+          "clickpath": [
+            "Decision",
+            "Planned admission date"
+          ],
+          "action": "For an accepted referral, enter the known planned date. Leave an unknown date unresolved instead of inventing it.",
+          "expectedResult": "The saved date reflects the agreed plan.",
+          "guideTarget": "workspace-admit-date",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W6.5",
+          "title": "Choose the appropriate next path",
+          "clickpath": [
+            "Decision",
+            "Continue to finish & send when applicable"
+          ],
+          "action": "Continue to handoff preparation for accepted work, or follow the appropriate declined/pending path.",
+          "expectedResult": "The next step matches the recorded outcome.",
+          "guideTarget": "workspace-finish-send",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "A recommendation is not an admission decision.",
+        "New recommendations no longer automatically create supervisor reviews.",
+        "Admission confirmation is a separately authorized action."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Assessment evidence",
+          "Recommendation and decision records",
+          "Outstanding requirements",
+          "Current source permissions"
+        ],
+        "draftInstructions": "Draft an evidence brief and proposed rationale, exposing unresolved facts. Distinguish recommendation from decision and do not choose acceptance or decline autonomously.",
+        "humanDecision": "The responsible person records the recommendation/decision and date through Pipeline."
+      },
+      "tags": [
+        "assessor",
+        "recommendation",
+        "decision",
+        "admission"
+      ]
+    },
+    {
+      "id": "W7",
+      "procedureId": 1007,
+      "code": "ASM-007",
+      "version": 1,
+      "title": "Prepare the client handoff",
+      "trigger": "An accepted referral needs a current, usable handoff.",
+      "outcome": "A reviewed handoff draft identifies supported facts, outstanding work and the next owner.",
+      "preconditions": [
+        "For a real Meet the Client send: accepted decision, signed assessment and valid planned admission date.",
+        "Check current identity, selected files and assessment/packet versions.",
+        "Agent email remains disabled; this procedure prepares and reviews the handoff."
+      ],
+      "steps": [
+        {
+          "id": "W7.1",
+          "title": "Inspect the handoff context",
+          "clickpath": [
+            "Referral workspace",
+            "Decision"
+          ],
+          "action": "Confirm the actual decision and planned date; inspect the assessment’s signature separately.",
+          "expectedResult": "Prerequisites are known rather than inferred from one status.",
+          "guideTarget": "workspace-decision",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W7.2",
+          "title": "Open the packet workspace",
+          "clickpath": [
+            "Decision",
+            "Continue to finish & send"
+          ],
+          "action": "Open the existing summary and packet workspace. Opening it sends nothing.",
+          "expectedResult": "The packet review is available.",
+          "guideTarget": "workspace-finish-send",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W7.3",
+          "title": "Review the summary",
+          "clickpath": [
+            "Finish & send",
+            "Packet / assessment summary"
+          ],
+          "action": "Check factual accuracy, attribution and the current assessment version. Make open questions and the next responsible person clear.",
+          "expectedResult": "The handoff is usable and supported by the source.",
+          "guideTarget": "workspace-packet-preview",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W7.4",
+          "title": "Verify selected files",
+          "clickpath": [
+            "Finish & send",
+            "Packet selection / preview"
+          ],
+          "action": "Open the selected evidence and verify the client, relevance and current versions. Exclude unrelated material.",
+          "expectedResult": "The selected packet matches the intended handoff.",
+          "guideTarget": "workspace-packet-preview",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W7.5",
+          "title": "Inspect the email draft",
+          "clickpath": [
+            "Finish & send",
+            "Preview email / View email"
+          ],
+          "action": "Review the proposed audience, subject, body and attachments. Close the preview to leave it unsent.",
+          "expectedResult": "A human-reviewed draft exists; no delivery is claimed.",
+          "guideTarget": "packet-open-email",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W7.6",
+          "title": "Treat delivery as a separate outcome",
+          "clickpath": [
+            "Finish & send",
+            "Delivery status"
+          ],
+          "action": "If an independently authorized human sends through the source app, verify the source delivery record for the exact version. This walkthrough and the agent do not send.",
+          "expectedResult": "Delivery is either source-confirmed or remains unconfirmed.",
+          "guideTarget": "packet-delivery-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": "For stale preview, refresh and review again. For an uncertain provider outcome, reconcile before considering another send.",
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "A preview or signature is not successful delivery.",
+        "Missing delivery evidence means unconfirmed, not necessarily unsent.",
+        "A successful send does not prove recipient acknowledgment."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Current assessment content/version",
+          "Decision and planned admission date",
+          "Requirements and next owner",
+          "Current selected packet/version",
+          "Source delivery evidence"
+        ],
+        "draftInstructions": "Draft: purpose, supported current information, important uncertainty, pending items with owner/next action, and source links. Attach a readiness list. Do not invent facts or recipients and do not send email.",
+        "humanDecision": "Human reviews the draft, audience and attachments. Any future delivery uses separate explicit authorization and current source checks."
+      },
+      "tags": [
+        "assessor",
+        "handoff",
+        "packet",
+        "meet the client",
+        "summary"
+      ]
+    },
+    {
+      "id": "W8",
+      "procedureId": 1008,
+      "code": "ASM-008",
+      "version": 1,
+      "title": "Correct an assessment after new information",
+      "trigger": "A correction or new evidence affects an existing assessment.",
+      "outcome": "The appropriate edit or note preserves the earlier record and its lineage.",
+      "preconditions": [
+        "Verify the exact assessment and whether signed-and-sent finalization occurred."
+      ],
+      "steps": [
+        {
+          "id": "W8.1",
+          "title": "Check finality",
+          "clickpath": [
+            "Assessment",
+            "Signature history / sent indication"
+          ],
+          "action": "Determine whether the assessment is both signed and recorded as sent. A signature alone does not finalize it.",
+          "expectedResult": "The available correction path is understood.",
+          "guideTarget": null,
+          "sourceRef": "docs/ASSESSMENT_FINAL_SEND_POLICY.md",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W8.2",
+          "title": "Edit when still permitted",
+          "clickpath": [
+            "Assessment",
+            "Recorded answer"
+          ],
+          "action": "Before finalization, reopen the relevant answer, make the factual correction and verify saving.",
+          "expectedResult": "The source saves the ordinary edit with history.",
+          "guideTarget": "assessment-recorded",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": "If finalization has occurred, use Add note instead of overwriting the answer.",
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W8.3",
+          "title": "Add a note after finalization",
+          "clickpath": [
+            "Assessment",
+            "Details",
+            "Add note"
+          ],
+          "action": "When Add note is available, enter the new information and reason using the source form, then save and inspect the attributed note.",
+          "expectedResult": "An appended note preserves the finalized answers.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W8.4",
+          "title": "Inspect the history",
+          "clickpath": [
+            "Referral workspace",
+            "Activity"
+          ],
+          "action": "Verify the recorded correction. An explicit new assessment revision, when required, uses the source revision process rather than a duplicate referral.",
+          "expectedResult": "The old and new information remain traceable.",
+          "guideTarget": "workspace-history",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W8.5",
+          "title": "Identify affected handoffs",
+          "clickpath": [
+            "Finish & send",
+            "Existing packet / delivery status"
+          ],
+          "action": "Check whether a previous handoff used the earlier version. Prepare any needed follow-up for the responsible person.",
+          "expectedResult": "A correction is not mistaken for notification to recipients.",
+          "guideTarget": "packet-delivery-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Historical submitted reviews retain their existing request-changes path.",
+        "Do not assume updating the chart updated an earlier sent packet."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Assessment versions and finality",
+          "New source evidence",
+          "Addendum/revision history",
+          "Sent-version references"
+        ],
+        "draftInstructions": "Explain the factual change, cite old/new evidence, identify the permitted correction route and affected handoffs. Prepare a note or follow-up draft; do not rewrite finalized answers or notify recipients.",
+        "humanDecision": "Assessor chooses and saves the permitted correction; a responsible human handles any separately authorized follow-up."
+      },
+      "tags": [
+        "assessor",
+        "correction",
+        "addendum",
+        "add note",
+        "revision"
+      ]
+    },
+    {
+      "id": "W9",
+      "procedureId": 1009,
+      "code": "ASM-009",
+      "version": 1,
+      "title": "Organize the workday",
+      "trigger": "Starting work or returning to the queue.",
+      "outcome": "The assessor has a source-linked list of next actions, appointments and unresolved work.",
+      "preconditions": [
+        "Check the scope and freshness of the visible work."
+      ],
+      "steps": [
+        {
+          "id": "W9.1",
+          "title": "Read the Board",
+          "clickpath": [
+            "Home",
+            "Board"
+          ],
+          "action": "Inspect the next action and stage on each relevant card. Do not equate age or stage alone with clinical urgency.",
+          "expectedResult": "Current visible work is understood.",
+          "guideTarget": "my-queue",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W9.2",
+          "title": "Check appointments",
+          "clickpath": [
+            "Calendar",
+            "View and assessor/date filters"
+          ],
+          "action": "Choose the relevant date range and permitted scope. Open a linked appointment for details.",
+          "expectedResult": "Appointments are matched to the correct cases.",
+          "guideTarget": "calendar-filters",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W9.3",
+          "title": "Review follow-ups",
+          "clickpath": [
+            "Calendar",
+            "Case details",
+            "Follow-ups"
+          ],
+          "action": "Inspect recorded due/follow-up dates and owners. Use existing requests instead of creating a duplicate task.",
+          "expectedResult": "Open commitments and ownership are visible.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/CalendarWorkDetails.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W9.4",
+          "title": "Resume one case",
+          "clickpath": [
+            "Home or Workspaces",
+            "Client card / search result"
+          ],
+          "action": "Open the case and let existing save/resume controls preserve work when switching.",
+          "expectedResult": "The next action is taken in the correct existing workspace.",
+          "guideTarget": "workspace-results",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Unavailable or stale data is not an empty queue.",
+        "Time in a case and autosave counts do not measure effort."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Scoped active cases",
+          "Current assignments",
+          "Appointments",
+          "Recorded requirements/follow-up dates"
+        ],
+        "draftInstructions": "Draft a work brief grouped by recorded appointments, open follow-ups and blockers, with source links. Explain ranking using actual dates/rules; do not invent deadlines or judge employee productivity.",
+        "humanDecision": "Assessor chooses priorities and confirms any change to source work."
+      },
+      "tags": [
+        "assessor",
+        "daily",
+        "queue",
+        "workday"
+      ]
+    },
+    {
+      "id": "W10",
+      "procedureId": 1010,
+      "code": "ASM-010",
+      "version": 1,
+      "title": "Receive and maintain a referral",
+      "trigger": "New referral information arrives or intake details change.",
+      "outcome": "One correct canonical referral holds the verified intake information.",
+      "preconditions": [
+        "Confirm intake is part of your assigned responsibility.",
+        "Check for an existing referral before starting another."
+      ],
+      "steps": [
+        {
+          "id": "W10.1",
+          "title": "Look for existing work",
+          "clickpath": [
+            "Workspaces",
+            "Search"
+          ],
+          "action": "Search using the available referral details and inspect the matching person/community.",
+          "expectedResult": "An existing episode is reused when appropriate.",
+          "guideTarget": "workspace-search",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W10.2",
+          "title": "Open or start the intended intake",
+          "clickpath": [
+            "Existing referral",
+            "Intake; or New referral"
+          ],
+          "action": "Use the existing record when found. For genuinely new work, enter supplied identity details and verify the source.",
+          "expectedResult": "The correct intake is open.",
+          "guideTarget": "intake-identity",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W10.3",
+          "title": "Record routing",
+          "clickpath": [
+            "Intake",
+            "Referral source / contact / community / assessor"
+          ],
+          "action": "Enter verified routing details and select the correct linked assessor.",
+          "expectedResult": "Responsibility and routing are explicit.",
+          "guideTarget": "intake-routing",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W10.4",
+          "title": "Attach the received records",
+          "clickpath": [
+            "Intake",
+            "Upload area"
+          ],
+          "action": "Choose the relevant files and check upload/processing results. Selected filenames alone do not prove upload.",
+          "expectedResult": "Actual uploaded records stay with this referral.",
+          "guideTarget": "initial-packet-upload",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W10.5",
+          "title": "Verify creation and saving",
+          "clickpath": [
+            "Intake",
+            "Create referral when offered / saved status"
+          ],
+          "action": "Use the source create/save action as applicable. Confirm the canonical referral exists; a recovered private draft may still need completion.",
+          "expectedResult": "The source confirms the referral identity and saved state.",
+          "guideTarget": "create-workspace",
+          "sourceRef": "docs/REFERRAL_INTAKE_RECOVERY.md",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Do not create a new referral solely to resume existing work.",
+        "A matching name alone does not establish canonical identity."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Existing scoped referral search",
+          "Supplied identity/routing evidence",
+          "Current draft/canonical state"
+        ],
+        "draftInstructions": "Prepare a missing-intake checklist and potential duplicate/identity questions with source evidence. Never merge by name or create a referral automatically.",
+        "humanDecision": "Authorized intake owner verifies identity and saves the referral."
+      },
+      "tags": [
+        "assessor",
+        "intake",
+        "referral",
+        "identity"
+      ]
+    },
+    {
+      "id": "W11",
+      "procedureId": 1011,
+      "code": "ASM-011",
+      "version": 1,
+      "title": "Add and review supporting evidence",
+      "trigger": "A document arrives, extraction needs review or evidence is missing.",
+      "outcome": "The correct evidence and its review state are traceable to the case.",
+      "preconditions": [
+        "Verify the referral and authorized document access."
+      ],
+      "steps": [
+        {
+          "id": "W11.1",
+          "title": "Add to the existing case",
+          "clickpath": [
+            "Referral workspace",
+            "Files",
+            "Add documents"
+          ],
+          "action": "Choose the correct files and wait for the actual upload result.",
+          "expectedResult": "Files attach to the intended case.",
+          "guideTarget": "workspace-files-upload",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W11.2",
+          "title": "Inspect the original",
+          "clickpath": [
+            "Files",
+            "File entry",
+            "Preview / open"
+          ],
+          "action": "Check identity, date, source and relevant pages before using the content.",
+          "expectedResult": "The document has been inspected rather than inferred from its filename.",
+          "guideTarget": "workspace-files",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W11.3",
+          "title": "Review extracted suggestions",
+          "clickpath": [
+            "Intake or Assessment",
+            "Suggested value",
+            "Source evidence"
+          ],
+          "action": "Use the available source-review controls to confirm or correct suggested values. Keep unresolved suggestions pending.",
+          "expectedResult": "The value’s provenance and review status are accurate.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W11.4",
+          "title": "Verify the result",
+          "clickpath": [
+            "Assessment",
+            "Save status; Files",
+            "Document list"
+          ],
+          "action": "Confirm the saved value and retained original. Do not remove a document as part of routine review.",
+          "expectedResult": "Evidence remains available with the correct saved state.",
+          "guideTarget": "assessment-save-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Extraction success is not verification of every value.",
+        "If the wrong file is attached, use the source’s explicit removal/correction process only when authorized."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Document inventory and source references",
+          "Extraction/review state",
+          "Field provenance",
+          "Current case identity"
+        ],
+        "draftInstructions": "List missing or conflicting evidence and the specific source pages needed for review. Propose value corrections only from authorized content; retain the original reference.",
+        "humanDecision": "Human verifies documents and accepts or rejects extracted values."
+      },
+      "tags": [
+        "assessor",
+        "documents",
+        "files",
+        "evidence",
+        "extraction"
+      ]
+    },
+    {
+      "id": "W12",
+      "procedureId": 1012,
+      "code": "ASM-012",
+      "version": 1,
+      "title": "Request information and coordinate follow-up",
+      "trigger": "Work is waiting for records, clarification or coordination.",
+      "outcome": "An attributable request and next follow-up remain visible to the responsible people.",
+      "preconditions": [
+        "Use an approved contact and communication channel.",
+        "Confirm ownership and the information actually needed."
+      ],
+      "steps": [
+        {
+          "id": "W12.1",
+          "title": "Inspect existing requests",
+          "clickpath": [
+            "Calendar",
+            "Case details",
+            "Follow-ups"
+          ],
+          "action": "Find the existing requirement and its responsible/requested-from details before starting another request.",
+          "expectedResult": "The missing item and current owner are identified.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/CalendarWorkDetails.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W12.2",
+          "title": "Prepare a precise request",
+          "clickpath": [
+            "Manual coordination",
+            "Approved contact channel"
+          ],
+          "action": "State what is needed, why it is needed for the task, and the next action. Include only authorized information.",
+          "expectedResult": "A clear request draft is ready for a human to review.",
+          "guideTarget": null,
+          "sourceRef": "lib/pipeline/workflow-records.ts",
+          "application": "manual",
+          "binding": "manual",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W12.3",
+          "title": "Communicate through the approved process",
+          "clickpath": [
+            "Manual coordination",
+            "Human contact"
+          ],
+          "action": "The responsible person communicates and records the factual response in the appropriate source field or request.",
+          "expectedResult": "Contact or response is recorded only if it actually occurred.",
+          "guideTarget": null,
+          "sourceRef": "lib/pipeline/workflow-records.ts",
+          "application": "manual",
+          "binding": "manual",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W12.4",
+          "title": "Set the next follow-up",
+          "clickpath": [
+            "Calendar",
+            "Case details",
+            "Follow-ups",
+            "Follow-up date / save"
+          ],
+          "action": "Update the existing request’s follow-up details when supported and verify saving.",
+          "expectedResult": "The next commitment remains tied to the correct request.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/CalendarWorkDetails.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "No response is not a negative answer.",
+        "No agent emails or other outbound messages are enabled.",
+        "Local contact/escalation ownership must be confirmed with Alamo."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Requirement details and milestone",
+          "Recorded owner/requestee",
+          "Relevant authorized source facts",
+          "Approved communication process"
+        ],
+        "draftInstructions": "Draft a focused request and a follow-up checklist. Preserve unknowns; identify which facts need a response. Do not choose unverified contacts, invent a response or send.",
+        "humanDecision": "Responsible person reviews and communicates, then records the actual result."
+      },
+      "tags": [
+        "assessor",
+        "records request",
+        "follow up",
+        "coordination"
+      ]
+    },
+    {
+      "id": "W13",
+      "procedureId": 1013,
+      "code": "ASM-013",
+      "version": 1,
+      "title": "Transfer work or arrange coverage",
+      "trigger": "A case changes owner or work needs coverage/escalation.",
+      "outcome": "The receiving owner can identify current work, open commitments and unresolved issues.",
+      "preconditions": [
+        "Verify the authorized receiving owner and local coverage process."
+      ],
+      "steps": [
+        {
+          "id": "W13.1",
+          "title": "Assemble the current context",
+          "clickpath": [
+            "Referral workspace",
+            "Assessment / Decision / Files / Activity"
+          ],
+          "action": "Identify the latest saved state, open questions and relevant evidence.",
+          "expectedResult": "A current transfer brief can be prepared.",
+          "guideTarget": "workspace-stage-nav",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W13.2",
+          "title": "Review recorded ownership",
+          "clickpath": [
+            "Referral workspace",
+            "Intake",
+            "Assigned assessor"
+          ],
+          "action": "Inspect the current linked owner. Use the existing ownership control only when you are responsible and authorized to make the change.",
+          "expectedResult": "The intended responsibility change is explicit.",
+          "guideTarget": "intake-routing",
+          "sourceRef": "components/pipeline/ReferralPacketCanvas.tsx",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W13.3",
+          "title": "Record the handoff reason",
+          "clickpath": [
+            "Intake",
+            "Owner-change confirmation when shown"
+          ],
+          "action": "Explain the reason and review any confirmation the source presents. Verify the saved owner after the change.",
+          "expectedResult": "Source ownership evidence reflects the actual transfer.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/ReferralPacketCanvas.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W13.4",
+          "title": "Resolve acceptance or escalation",
+          "clickpath": [
+            "Manual coordination",
+            "Receiving owner / approved escalation contact"
+          ],
+          "action": "Provide the brief through the approved human process and clarify who owns outstanding work. Record acceptance only where it is actually evidenced.",
+          "expectedResult": "Open commitments have a known next owner, or the unresolved handoff is explicit.",
+          "guideTarget": null,
+          "sourceRef": "lib/pipeline/workflow-records.ts",
+          "application": "manual",
+          "binding": "manual",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Reading a shared case does not prove accepting responsibility.",
+        "Reassignment requires new access checks for retained agent results."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Current and intended assignment",
+          "Case/version references",
+          "Open commitments",
+          "Recorded transfer reason and acceptance where available"
+        ],
+        "draftInstructions": "Draft a transfer brief: case state, saved version, open items, due dates if recorded, proposed receiving owner and evidence. Stop if identity/assignment is ambiguous; do not reassign automatically.",
+        "humanDecision": "Authorized human changes ownership and confirms the coverage arrangement."
+      },
+      "tags": [
+        "assessor",
+        "coverage",
+        "transfer",
+        "reassignment"
+      ]
+    },
+    {
+      "id": "W14",
+      "procedureId": 1014,
+      "code": "ASM-014",
+      "version": 1,
+      "title": "Follow through after the decision",
+      "trigger": "A decision or handoff has been recorded and work remains.",
+      "outcome": "Outstanding items and final responsibilities are visible until the source confirms their actual outcomes.",
+      "preconditions": [
+        "Confirm which post-decision tasks belong to the assessor and which belong to another owner."
+      ],
+      "steps": [
+        {
+          "id": "W14.1",
+          "title": "Inspect the decision and date",
+          "clickpath": [
+            "Referral workspace",
+            "Decision"
+          ],
+          "action": "Read the actual outcome and known planned admission date.",
+          "expectedResult": "Accepted, declined and pending work remain distinct.",
+          "guideTarget": "workspace-decision",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W14.2",
+          "title": "Check outstanding work",
+          "clickpath": [
+            "Calendar",
+            "Case details",
+            "Follow-ups"
+          ],
+          "action": "Review existing requests, evidence and owners. Continue the appropriate follow-up rather than assuming acceptance closed the work.",
+          "expectedResult": "Remaining commitments are visible.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/CalendarWorkDetails.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W14.3",
+          "title": "Check the handoff evidence",
+          "clickpath": [
+            "Finish & send",
+            "Delivery status"
+          ],
+          "action": "Inspect recorded delivery when relevant. Treat recipient acknowledgment as separate evidence.",
+          "expectedResult": "The known handoff state is accurately described.",
+          "guideTarget": "packet-delivery-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W14.4",
+          "title": "Confirm the responsible next owner",
+          "clickpath": [
+            "Manual coordination",
+            "Responsible coordinator / receiving team"
+          ],
+          "action": "Clarify remaining tasks and obtain the appropriate source update. Admission confirmation stays with its authorized owner.",
+          "expectedResult": "The next responsibility or verified outcome is explicit.",
+          "guideTarget": null,
+          "sourceRef": "lib/pipeline/workflow-records.ts",
+          "application": "manual",
+          "binding": "manual",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Acceptance or signature alone does not close all work.",
+        "Do not infer EHR receipt, actual admission or receiving-team acknowledgment from a packet preview."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Decision and planned date",
+          "Outstanding requirements",
+          "Delivery and receiving evidence",
+          "Current responsibility scope"
+        ],
+        "draftInstructions": "Draft a follow-through brief with unresolved items, recorded owners and source evidence. Distinguish each milestone and explain missing proof without marking the case complete.",
+        "humanDecision": "Each responsible human completes their permitted source action; coordinator/admin confirms admission where required."
+      },
+      "tags": [
+        "assessor",
+        "admission",
+        "follow through",
+        "outstanding requirements"
+      ]
+    },
+    {
+      "id": "W15",
+      "procedureId": 1015,
+      "code": "ASM-015",
+      "version": 1,
+      "title": "Recover and verify saved work",
+      "trigger": "Saving, uploading or switching work encounters an error or conflict.",
+      "outcome": "The assessor preserves pending work and establishes the actual saved source state.",
+      "preconditions": [
+        "Keep the current editor open when it contains unsaved work."
+      ],
+      "steps": [
+        {
+          "id": "W15.1",
+          "title": "Read the save state",
+          "clickpath": [
+            "Assessment",
+            "Save status"
+          ],
+          "action": "Distinguish saved, saving, queued/offline, conflict and error states.",
+          "expectedResult": "The unresolved condition is identified.",
+          "guideTarget": "assessment-save-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W15.2",
+          "title": "Use the existing recovery path",
+          "clickpath": [
+            "Home / Workspaces",
+            "Continue intake when offered"
+          ],
+          "action": "Resume the correct private draft when creation did not finish. Re-select file bytes if requested; recovered filenames are not proof of upload.",
+          "expectedResult": "The original draft/case is resumed without duplication.",
+          "guideTarget": null,
+          "sourceRef": "docs/REFERRAL_INTAKE_RECOVERY.md",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W15.3",
+          "title": "Reconcile conflicting work",
+          "clickpath": [
+            "Assessment",
+            "Conflict / recovery controls when shown"
+          ],
+          "action": "Inspect the current source version and pending changes. Use the existing reconciliation controls; do not overwrite newer work blindly.",
+          "expectedResult": "The chosen resolution preserves the intended current information.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W15.4",
+          "title": "Use backup only when needed",
+          "clickpath": [
+            "Assessment",
+            "Details",
+            "Backup & recovery"
+          ],
+          "action": "Use the existing backup/import preview flow if appropriate. Inspect the preview and explicitly confirm any import; cancel if the scope is wrong.",
+          "expectedResult": "No imported change is claimed before source confirmation.",
+          "guideTarget": null,
+          "sourceRef": "components/pipeline/AssessmentWorkspace.tsx",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W15.5",
+          "title": "Verify the final state",
+          "clickpath": [
+            "Assessment",
+            "Save status; Referral",
+            "Activity"
+          ],
+          "action": "Confirm source persistence and relevant recorded changes. If unresolved, provide the support owner with a minimal problem description through the approved process.",
+          "expectedResult": "Saved work or a clearly owned unresolved issue is established.",
+          "guideTarget": "assessment-save-status",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "A restored local draft is not a saved chart.",
+        "Avoid duplicate retries after an uncertain outcome; inspect source state."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Current save/error state",
+          "Source version",
+          "Pending-change metadata",
+          "Existing recovery options"
+        ],
+        "draftInstructions": "Explain the actual error and identify the existing recovery path. Draft a minimal support description without private values. Never claim a successful save from a click, local recovery or filename.",
+        "humanDecision": "Human selects reconciliation/import actions and checks the saved outcome."
+      },
+      "tags": [
+        "assessor",
+        "save",
+        "recovery",
+        "offline",
+        "conflict"
+      ]
+    },
+    {
+      "id": "W16",
+      "procedureId": 1016,
+      "code": "ASM-016",
+      "version": 1,
+      "title": "Learn and practice an assessor task",
+      "trigger": "An assessor needs onboarding, a refresher or help with a task.",
+      "outcome": "The learner understands the task and has practiced its controls without claiming real work completion.",
+      "preconditions": [
+        "Use fictional information in practice.",
+        "Confirm the procedure applies to the current task and app version."
+      ],
+      "steps": [
+        {
+          "id": "W16.1",
+          "title": "Choose the procedure",
+          "clickpath": [
+            "Workflow",
+            "Procedures",
+            "Assessor procedure"
+          ],
+          "action": "Read purpose, prerequisites and expected results. Use the procedure matching the actual job.",
+          "expectedResult": "The task and its boundaries are understood.",
+          "guideTarget": null,
+          "sourceRef": "docs/playbook-workflow-model.md",
+          "application": "workflow",
+          "binding": "workflow_surface",
+          "exception": null,
+          "sourceOwner": "workflow"
+        },
+        {
+          "id": "W16.2",
+          "title": "Walk through the steps",
+          "clickpath": [
+            "Procedure detail",
+            "Begin guided walkthrough"
+          ],
+          "action": "Follow the procedure and inspect expected results. Use notes for learning only, without client identifiers.",
+          "expectedResult": "Guidance is reviewed; its local completion is not a source transaction.",
+          "guideTarget": null,
+          "sourceRef": "docs/playbook-workflow-model.md",
+          "application": "workflow",
+          "binding": "workflow_surface",
+          "exception": null,
+          "sourceOwner": "workflow"
+        },
+        {
+          "id": "W16.3",
+          "title": "Open the existing fictional tutorial",
+          "clickpath": [
+            "Pipeline",
+            "Tutorials",
+            "Referral walkthrough / task shortcut"
+          ],
+          "action": "Use the existing fictional referral path at /tutorials/referral. Show me where reveals a control without activating it.",
+          "expectedResult": "A fictional practice case is open.",
+          "guideTarget": null,
+          "sourceRef": "docs/training/TUTORIAL_WORKFLOW_REBUILD.md",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W16.4",
+          "title": "Practice and inspect the result",
+          "clickpath": [
+            "Fictional referral",
+            "Relevant task controls",
+            "Back / Next step"
+          ],
+          "action": "Try the applicable controls, inspect the expected result, and repeat when needed. Simulate send sends nothing.",
+          "expectedResult": "A practice attempt is distinct from a real save, signature or delivery.",
+          "guideTarget": null,
+          "sourceRef": "docs/training/TUTORIAL_WORKFLOW_REBUILD.md",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W16.5",
+          "title": "Return to real work deliberately",
+          "clickpath": [
+            "Tutorial",
+            "Close / Done",
+            "Home"
+          ],
+          "action": "Return to ordinary work and verify the real case identity before acting. Record learning through an approved process if one exists.",
+          "expectedResult": "Practice state is not mistaken for clinical work or a formal qualification.",
+          "guideTarget": null,
+          "sourceRef": "docs/training/TUTORIAL_WORKFLOW_REBUILD.md",
+          "application": "pipeline",
+          "binding": "source_surface",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        }
+      ],
+      "exceptions": [
+        "Workflow walkthrough state is local/prototype.",
+        "Completing this tutorial does not award competency or new permissions."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Task and applicable procedure version",
+          "Registered app tutorial targets",
+          "Synthetic practice scenario",
+          "Reviewed learning objective"
+        ],
+        "draftInstructions": "Explain the task, select the matching procedure, and guide one step at a time with expected results. Keep practice separate from real work and pause when the source control/version does not match.",
+        "humanDecision": "Learner operates the controls; designated reviewers assess any required demonstration."
+      },
+      "tags": [
+        "assessor",
+        "tutorial",
+        "training",
+        "practice",
+        "learn"
+      ]
+    },
+    {
+      "id": "W17",
+      "procedureId": 1017,
+      "code": "ASM-017",
+      "version": 1,
+      "title": "Propose a procedure or workflow improvement",
+      "trigger": "An assessor finds confusing guidance, missing support or repeated handoff friction.",
+      "outcome": "A specific evidence-backed change proposal is ready for the responsible content or product owner.",
+      "preconditions": [
+        "Use permitted references and synthetic examples; do not paste identifiable case material into reusable lessons."
+      ],
+      "steps": [
+        {
+          "id": "W17.1",
+          "title": "Locate the affected instruction",
+          "clickpath": [
+            "Workflow",
+            "Procedures",
+            "Relevant procedure and step"
+          ],
+          "action": "Identify the exact instruction and task where the problem occurs.",
+          "expectedResult": "The proposal refers to a specific procedure/task.",
+          "guideTarget": null,
+          "sourceRef": "docs/playbook-workflow-model.md",
+          "application": "workflow",
+          "binding": "workflow_surface",
+          "exception": null,
+          "sourceOwner": "workflow"
+        },
+        {
+          "id": "W17.2",
+          "title": "Verify actual app behavior",
+          "clickpath": [
+            "Pipeline",
+            "Relevant task page",
+            "Activity when applicable"
+          ],
+          "action": "Compare the instruction with the source control and actual result. Preserve unknowns and differences in versions.",
+          "expectedResult": "The mismatch has a concrete source reference.",
+          "guideTarget": "workspace-history",
+          "sourceRef": "lib/training/operator-guided-tutorials.ts",
+          "application": "pipeline",
+          "binding": "source_control",
+          "exception": null,
+          "sourceOwner": "pipeline"
+        },
+        {
+          "id": "W17.3",
+          "title": "Write the proposed change",
+          "clickpath": [
+            "Manual review",
+            "Designated content / product owner"
+          ],
+          "action": "Describe the trigger, current step, observed problem, proposed wording or behavior, and expected result. Use a safe example.",
+          "expectedResult": "A reviewable proposal exists without silently changing policy.",
+          "guideTarget": null,
+          "sourceRef": "docs/playbook-workflow-model.md",
+          "application": "manual",
+          "binding": "manual",
+          "exception": null,
+          "sourceOwner": "workflow"
+        },
+        {
+          "id": "W17.4",
+          "title": "Separate the release decisions",
+          "clickpath": [
+            "Manual review",
+            "Procedure owner and agent owner"
+          ],
+          "action": "A reviewed procedure revision and an evaluated agent behavior change are separate decisions. Record the affected task and version when the owner publishes.",
+          "expectedResult": "A suggestion is not mislabeled as an approved or activated change.",
+          "guideTarget": null,
+          "sourceRef": "docs/playbook-workflow-model.md",
+          "application": "manual",
+          "binding": "manual",
+          "exception": null,
+          "sourceOwner": "workflow"
+        }
+      ],
+      "exceptions": [
+        "Repeated practice does not automatically become company policy.",
+        "Workflow has no verified submission/publishing API for this path yet; use the approved human review process."
+      ],
+      "agent": {
+        "requiredContext": [
+          "Procedure/app versions",
+          "Permitted evidence of the issue",
+          "Specific proposed change",
+          "Accountable content owner"
+        ],
+        "draftInstructions": "Draft a change proposal with source references, rationale, revised instruction and affected tasks/skills. Mark inference and unknowns. Do not publish guidance or activate changed behavior automatically.",
+        "humanDecision": "Content owner reviews guidance; agent owner separately reviews any executable change."
+      },
+      "tags": [
+        "assessor",
+        "procedure",
+        "improvement",
+        "feedback"
+      ]
+    }
+  ]
+}

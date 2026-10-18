@@ -19,6 +19,12 @@ below and passes the automated retention gate. Completed plans, duplicate
 documentation, sample data, placeholder product areas, generated mirrors, and
 unreachable code are deleted rather than archived in the app repository.
 
+The user-requested `/workflow` route now owns `src/features/workflow/**` as a
+mounted browser feature. This replaces the old blanket prohibition on a
+Workflow path; it does not reinstate retired root-shell or strategy prototypes.
+Its seeded content is explicitly preview-only until governed sources and
+activity persistence replace it.
+
 ## Ownership Classes
 
 | Class | Paths | Owner | Why it exists |

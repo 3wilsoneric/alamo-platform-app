@@ -13,6 +13,7 @@ const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
+  { id: "workflow", label: "Workflow", href: "/workflow" },
   { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true }
 ];
 
@@ -22,6 +23,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
     ? "analytics"
     : pathname.startsWith("/admissions") ? "admissions"
       : pathname.startsWith("/workforce") ? "workforce"
+      : pathname.startsWith("/workflow") ? "workflow"
       : pathname.startsWith("/outreach") || pathname.startsWith("/fiftystate") ? "outreach"
       : pathname === "/" || pathname.startsWith("/home") || pathname.startsWith("/communities") ? "home" : "";
   const [menuOpen, setMenuOpen] = useState(false);

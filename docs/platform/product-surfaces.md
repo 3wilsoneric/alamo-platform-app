@@ -13,6 +13,14 @@
 
 ## Shared navigation and responsive layout
 
+`/workflow` is the native Platform-hosted Workflow preview. It uses the shared
+authenticated header, then a Workflow-specific rail for the dashboard,
+point-of-care workspace, procedures, walkthroughs, policies, training, roles,
+and documents. Its seeded procedure, document, and activity data are illustrative;
+the route does not write to ElderMark or persist a clinical record. Direct route
+refreshes use the Platform SPA entry. Admissions-only and Executive Director-only
+account boundaries still apply.
+
 Every authenticated route shares one header with the Alamo home anchor and
 Analytics and Admissions destinations. Below 768px, Menu exposes
 those links plus Communities; Escape, outside click, and navigation close it.

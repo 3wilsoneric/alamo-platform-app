@@ -19,8 +19,10 @@ async function collectFiles(directory) {
 }
 
 async function resolveImport(importer, specifier) {
-  if (!specifier.startsWith(".")) return null;
-  const base = path.resolve(path.dirname(importer), specifier);
+  if (!specifier.startsWith(".") && !specifier.startsWith("@/")) return null;
+  const base = specifier.startsWith("@/")
+    ? path.resolve(root, "src/features/workflow/legacy/src", specifier.slice(2))
+    : path.resolve(path.dirname(importer), specifier);
   const candidates = [
     base,
     ...sourceExtensions.map((extension) => `${base}${extension}`),
@@ -223,7 +225,6 @@ const retiredSourcePrefixes = [
   "src/features/admin/",
   "src/features/demo/",
   "src/features/strategy/",
-  "src/features/workflow/",
   "src/mobile/",
   "src/shared/search/"
 ];

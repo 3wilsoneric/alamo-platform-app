@@ -1,0 +1,1803 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "updated": "2026-10-18",
+  "status": "draft-authoring-library",
+  "ownerApplication": "workflow",
+  "origin": {
+    "repository": "CareEngineMain/alamoagent",
+    "file": "skills/library/catalog.v1.json",
+    "revision": 2,
+    "importedAt": "2026-10-18"
+  },
+  "applications": [
+    {
+      "id": "pipeline",
+      "name": "Pipeline",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "platform",
+      "name": "Platform",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "workflow",
+      "name": "Alamo Workflow",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "alamohealth",
+      "name": "Point of Care / AlamoHealth",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "workforce",
+      "name": "Alamo Workforce",
+      "relationship": "adjacent-authoritative-source"
+    }
+  ],
+  "sources": {
+    "assessor-model": {
+      "title": "Assessor whole-job model",
+      "path": "../CareEngineMain/alamoagent/docs/assessor-work-model.md",
+      "basis": "source-inspected role draft"
+    },
+    "assessor-procedures": {
+      "title": "Alamo Workflow assessor procedures",
+      "path": "docs/assessor-procedures.md",
+      "basis": "authored procedures awaiting domain review"
+    },
+    "assessor-clickpaths": {
+      "title": "Assessor source-checked clickpaths",
+      "path": "docs/assessor-clickpaths.md",
+      "basis": "source-checked navigation, not production certification"
+    },
+    "pipeline": {
+      "title": "Pipeline architecture",
+      "path": "../pipeline-agent-assessment-review/docs/ARCHITECTURE.md",
+      "basis": "application source documentation"
+    },
+    "pipeline-auth": {
+      "title": "Pipeline permission roles",
+      "path": "../pipeline-agent-assessment-review/lib/auth/pipeline-auth.ts",
+      "basis": "software permission model, not job descriptions"
+    },
+    "pipeline-finality": {
+      "title": "Assessment final-send policy",
+      "path": "../pipeline-agent-assessment-review/docs/ASSESSMENT_FINAL_SEND_POLICY.md",
+      "basis": "source workflow policy"
+    },
+    "platform": {
+      "title": "Platform operator journeys",
+      "path": "../CareEngineMain/alamo-platform-app/docs/platform/user-journeys.md",
+      "basis": "application source documentation"
+    },
+    "community": {
+      "title": "Executive Director workspace",
+      "path": "../alamo-platform-lic624-native-report/docs/platform/executive-director-workspace.md",
+      "basis": "source workspace and facility scope"
+    },
+    "workforce": {
+      "title": "Workforce ownership and aggregate feed",
+      "path": "../alamo-platform-lic624-native-report/docs/platform/workforce-zone.md",
+      "basis": "adjacent source ownership; HR runtime not inspected"
+    },
+    "workflow": {
+      "title": "Alamo Workflow procedure and teaching model",
+      "path": "docs/playbook-workflow-model.md",
+      "basis": "product direction and partial local implementation"
+    },
+    "care": {
+      "title": "Point of Care active direction",
+      "path": "../CareEngineMain/careengine/docs/engineering/point-of-care-platform-pivot-plan.md",
+      "basis": "planned care workflows; not approved clinical procedures"
+    },
+    "integration": {
+      "title": "Suite integration inventory",
+      "path": "../CareEngineMain/alamoagent/docs/suite-integration-readiness.md",
+      "basis": "local source/configuration audit"
+    },
+    "assessor-pack": {
+      "title": "Executable synthetic assessor pack",
+      "path": "../CareEngineMain/alamoagent/skills/assessment-review/pack.mjs",
+      "basis": "local synthetic implementation"
+    },
+    "brief-pack": {
+      "title": "Executable synthetic role brief pack",
+      "path": "../CareEngineMain/alamoagent/skills/workflow-briefs/pack.mjs",
+      "basis": "local synthetic implementation"
+    },
+    "human-evals": {
+      "title": "Assessor human review process",
+      "path": "../CareEngineMain/alamoagent/docs/assessor-human-review.md",
+      "basis": "tooling; actual reviewer evidence outstanding"
+    },
+    "harness": {
+      "title": "Shared skill harness",
+      "path": "../CareEngineMain/alamoagent/docs/skill-harness.md",
+      "basis": "local bounded execution and offline improvement"
+    }
+  },
+  "roles": [
+    {
+      "id": "referral-intake-coordinator",
+      "title": "Referral / intake coordinator",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Turn an incoming referral and its documents into a correctly identified, attributable intake record with missing requirements and the next owner visible.",
+      "applications": [
+        "pipeline",
+        "workflow"
+      ],
+      "objects": [
+        "referral",
+        "person-reference",
+        "evidence-document",
+        "requirement",
+        "assignment"
+      ],
+      "scope": "Authorized referral queue and assigned intake resources; identity matching or visibility never assigns clinical responsibility.",
+      "cadence": [
+        "At intake: establish identity, source and packet inventory.",
+        "During queue review: follow unresolved requests and reconcile new documents.",
+        "At transfer: record the next responsible owner and outstanding requirements."
+      ],
+      "knowledge": [
+        "Person versus referral versus stay identity",
+        "Original document, extraction and reviewed fact",
+        "Requirements and assignment states",
+        "Upload/save recovery and private document handling"
+      ],
+      "measures": [
+        "Time from received referral to recorded intake owner, when both timestamps exist",
+        "Missing-requirement age and unresolved identity exceptions; unknown coverage remains explicit"
+      ],
+      "questions": [
+        "Is intake a dedicated job or shared with assessors/coordinators?",
+        "Who may resolve duplicate identities and merge or link records?",
+        "Which requirements are mandatory by referral source and facility?"
+      ],
+      "sources": [
+        "pipeline",
+        "assessor-model"
+      ],
+      "workflows": [
+        {
+          "id": "intake-register",
+          "title": "Receive and orient a referral",
+          "grounding": "source-supported",
+          "trigger": "New referral or reopened intake",
+          "inputs": [
+            "Source referral identifier",
+            "Supplied documents and their dates",
+            "Current assignment/identity state"
+          ],
+          "steps": [
+            "Inspect the source record and original documents.",
+            "Separate known identity from uncertain matches; do not create a second person on a guess.",
+            "Prepare an intake summary and record or request the authorized next owner in Pipeline."
+          ],
+          "sourceOutcome": "A source record with a verified identity decision, document inventory and recorded assignment or explicit unresolved ownership.",
+          "handoffTo": [
+            "assessment-coordinator"
+          ],
+          "skillIds": [
+            "referral-orientation",
+            "packet-evidence-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "intake-complete",
+          "title": "Track missing intake information",
+          "grounding": "source-supported",
+          "trigger": "Missing packet item or newly received evidence",
+          "inputs": [
+            "Current requirement list",
+            "Recorded requests and responses",
+            "Latest document revisions"
+          ],
+          "steps": [
+            "Compare received evidence with the current requirements.",
+            "Prepare specific requests for missing information without inferring a negative clinical finding.",
+            "Have the responsible person record the response and recheck the requirement state."
+          ],
+          "sourceOutcome": "Requirement resolution is recorded in Pipeline, or an unresolved item retains an accountable owner.",
+          "handoffTo": [
+            "assessor",
+            "assessment-coordinator"
+          ],
+          "skillIds": [
+            "intake-requirements-review",
+            "work-follow-up-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "assessment-coordinator",
+      "title": "Assessment scheduling / assignment coordinator",
+      "grounding": "source-supported-role-family",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Keep assessment work assigned, scheduled and recoverable, while preserving each assessor’s responsibility and source permissions.",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow"
+      ],
+      "objects": [
+        "assignment",
+        "appointment",
+        "referral",
+        "requirement",
+        "coverage-commitment"
+      ],
+      "scope": "Reviewed team/facility assignment and scheduling authority; the software assessment_coordinator permission is not itself a complete job definition.",
+      "cadence": [
+        "Review unassigned and blocked work at the start of the working period.",
+        "Reconcile appointment changes and coverage requests as they arrive.",
+        "Transfer unfinished coordination explicitly when coverage changes."
+      ],
+      "knowledge": [
+        "Assignment versus access",
+        "Appointment and cancellation states",
+        "Coverage and receiving ownership",
+        "Scheduling and notification authority"
+      ],
+      "measures": [
+        "Unassigned-case duration with a defined start event",
+        "Appointment changes with a recorded next owner or next attempt"
+      ],
+      "questions": [
+        "Who can reassign across facilities and approve temporary coverage?",
+        "Who contacts referral sources and confirms appointments?",
+        "What working hours, travel and absence rules apply?"
+      ],
+      "sources": [
+        "pipeline",
+        "pipeline-auth",
+        "assessor-model"
+      ],
+      "workflows": [
+        {
+          "id": "coord-assign",
+          "title": "Prepare assignment and coverage review",
+          "grounding": "source-supported",
+          "trigger": "Unassigned work, absence or queue review",
+          "inputs": [
+            "Current source assignments",
+            "Authorized queue",
+            "Reviewed coverage constraints"
+          ],
+          "steps": [
+            "Identify unassigned or conflicting ownership from current source facts.",
+            "Prepare an assignment proposal and list constraints needing confirmation.",
+            "An authorized operator makes the source assignment; verify the recorded owner."
+          ],
+          "sourceOutcome": "Pipeline confirms the assignment or the coverage exception remains open.",
+          "handoffTo": [
+            "assessor",
+            "admissions-supervisor"
+          ],
+          "skillIds": [
+            "assignment-coverage-review",
+            "supervisor-exception-brief"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "coord-schedule",
+          "title": "Prepare scheduling and recovery",
+          "grounding": "source-supported",
+          "trigger": "New encounter, cancellation or no-show",
+          "inputs": [
+            "Appointment state",
+            "Case owner",
+            "Permitted scheduling facts"
+          ],
+          "steps": [
+            "Check the latest appointment and required participants.",
+            "Prepare options or a recovery checklist without booking or messaging.",
+            "The coordinator confirms the source change and records the next attempt when needed."
+          ],
+          "sourceOutcome": "The source contains the confirmed appointment or an explicit pending/rescheduled/cancelled state.",
+          "handoffTo": [
+            "assessor",
+            "referral-intake-coordinator"
+          ],
+          "skillIds": [
+            "assessment-schedule-preparation",
+            "work-follow-up-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "assessor",
+      "title": "Assessor",
+      "grounding": "source-supported-role-family",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Turn assigned referral evidence into an attributable assessment, explicit recommendation and usable handoff while keeping uncertainty visible.",
+      "applications": [
+        "pipeline",
+        "workflow"
+      ],
+      "objects": [
+        "referral",
+        "assessment",
+        "answer",
+        "evidence-document",
+        "recommendation",
+        "handoff"
+      ],
+      "scope": "Current assigned cases and source-authorized evidence. A role blueprint does not authorize another assessor’s case.",
+      "cadence": [
+        "Orient to assigned work and new evidence.",
+        "Prepare, conduct and document each assessment using the current questionnaire.",
+        "Review, clarify, sign/send through authorized source workflows and follow unresolved handoffs."
+      ],
+      "knowledge": [
+        "Evidence attribution and answer provenance",
+        "Unknown versus explicit negative",
+        "Signature, final-send and correction states",
+        "Interview/app navigation, downtime and review feedback"
+      ],
+      "measures": [
+        "Supported-answer and unresolved-question rates with reviewed rubrics",
+        "Handoff preparation and receiving-acknowledgment gaps, measured separately"
+      ],
+      "questions": [
+        "Which duties vary by assessor credentials, facility and referral source?",
+        "What makes an answer useful beyond mechanical completeness?",
+        "What off-app work, travel, follow-up and mentoring belong in this role?"
+      ],
+      "sources": [
+        "assessor-model",
+        "assessor-procedures",
+        "assessor-clickpaths",
+        "pipeline-finality",
+        "assessor-pack"
+      ],
+      "workflows": [
+        {
+          "id": "assessor-prepare",
+          "title": "Prepare and review assessment evidence",
+          "grounding": "source-supported",
+          "trigger": "Assigned referral or changed source material",
+          "inputs": [
+            "Authorized answer packet",
+            "Independent source excerpts",
+            "Current questionnaire and provenance"
+          ],
+          "steps": [
+            "Use the existing assessor preparation procedures and source-checked clickpaths.",
+            "Compare supplied answers with evidence and preserve conflicts, dates and unknowns.",
+            "Review proposed findings and carry specific unresolved questions into human clarification."
+          ],
+          "sourceOutcome": "The assessor records attributable answers and resolutions in Pipeline; a saved agent review is not source completion.",
+          "handoffTo": [
+            "clinical-reviewer"
+          ],
+          "skillIds": [
+            "assessment-preparation",
+            "assessment-answer-quality",
+            "assessor-clarification"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "assessor-handoff",
+          "title": "Prepare the recommendation and handoff",
+          "grounding": "source-supported",
+          "trigger": "Current assessment is ready for human review",
+          "inputs": [
+            "Current reviewed assessment",
+            "Outstanding requirements",
+            "Source finality and delivery state"
+          ],
+          "steps": [
+            "Recheck changed answers and the applicable final-send/correction policy.",
+            "Prepare a source-linked handoff; keep recipient and remaining requirements explicit.",
+            "The responsible person signs, decides or sends only through the authorized source path; verify delivery and any receiving acknowledgment separately."
+          ],
+          "sourceOutcome": "Source evidence records each required signature/decision/send and, separately, receiving acknowledgment.",
+          "handoffTo": [
+            "clinical-reviewer",
+            "transition-coordinator"
+          ],
+          "skillIds": [
+            "assessor-handoff",
+            "handoff-reconciliation",
+            "source-correction-impact"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "clinical-reviewer",
+      "title": "Clinical reviewer / admission decision-maker",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Make the human judgments and documented decisions assigned to an appropriately qualified reviewer, using attributable assessment evidence and the facility’s approved scope.",
+      "applications": [
+        "pipeline",
+        "alamohealth",
+        "workflow"
+      ],
+      "objects": [
+        "assessment",
+        "recommendation",
+        "admission-decision",
+        "scope-profile",
+        "review-decision"
+      ],
+      "scope": "Only source-authorized cases and privileges. reviewer is a software role, not evidence of licensure or authority to admit.",
+      "cadence": [
+        "Review cases actually assigned for a decision or consultation.",
+        "Request clarification when evidence does not support a decision.",
+        "Record the decision and communicate its source-confirmed implications through the responsible handoff."
+      ],
+      "knowledge": [
+        "Facility scope and decision privileges",
+        "Evidence limits and attribution",
+        "Recommendation versus admission decision versus actual admission",
+        "Required signatures and correction rules"
+      ],
+      "measures": [
+        "Decision-ready versus clarification-needed cases with explicit reasons",
+        "Time awaiting the assigned human decision, excluding unobserved periods"
+      ],
+      "questions": [
+        "Who owns admission decisions at each site, and under which privileges?",
+        "When is clinical review required versus optional consultation?",
+        "Which historical supervisor review paths remain applicable?"
+      ],
+      "sources": [
+        "pipeline",
+        "assessor-model",
+        "care"
+      ],
+      "workflows": [
+        {
+          "id": "clinical-decision",
+          "title": "Prepare evidence for a human decision",
+          "grounding": "source-supported",
+          "trigger": "A decision or consultation is explicitly requested",
+          "inputs": [
+            "Current assessment",
+            "Recorded recommendation",
+            "Approved site criteria and unresolved items"
+          ],
+          "steps": [
+            "Verify the correct case, source versions and the reviewer’s authority.",
+            "Prepare evidence and questions against supplied approved criteria without deciding suitability.",
+            "The qualified reviewer records the decision and rationale through the owning application."
+          ],
+          "sourceOutcome": "An authorized source decision with rationale and version linkage, or a recorded clarification request.",
+          "handoffTo": [
+            "assessor",
+            "transition-coordinator"
+          ],
+          "skillIds": [
+            "admission-decision-brief",
+            "assessment-answer-quality"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "clinical-change",
+          "title": "Review new evidence after a decision",
+          "grounding": "source-supported",
+          "trigger": "Correction or materially changed source evidence",
+          "inputs": [
+            "Original decision reference",
+            "New evidence",
+            "Source correction history"
+          ],
+          "steps": [
+            "Identify the exact change and preserve the earlier record.",
+            "Prepare affected questions and downstream handoff references.",
+            "An authorized reviewer determines whether an addendum or new decision is required."
+          ],
+          "sourceOutcome": "A source-recorded review disposition and any required correction; the prior decision is not silently rewritten.",
+          "handoffTo": [
+            "assessor",
+            "clinical-care-lead"
+          ],
+          "skillIds": [
+            "source-correction-impact",
+            "evidence-change-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "admissions-supervisor",
+      "title": "Admissions / assessment supervisor",
+      "grounding": "source-supported-role-family",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Maintain accountable assessment flow across the authorized team, resolve coordination exceptions and prepare evidence-based coaching without treating activity counts as effort.",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow"
+      ],
+      "objects": [
+        "team-assignment",
+        "exception",
+        "requirement",
+        "handoff",
+        "queue-measure"
+      ],
+      "scope": "Authorized team/facility metadata and permitted cases; team access and clinical narrative access are separate.",
+      "cadence": [
+        "Review unowned, overdue, blocked and uncertain-delivery work.",
+        "Coordinate coverage and clarification with responsible people.",
+        "Review recurring workflow friction and independent fictional training examples."
+      ],
+      "knowledge": [
+        "Canonical workflow states and queue limitations",
+        "Coverage, freshness and assignment history",
+        "Team metadata versus protected narrative",
+        "Coaching and approved escalation ownership"
+      ],
+      "measures": [
+        "Age of actionable exceptions with complete source history",
+        "Receiving-acknowledgment gaps and correction burden; no inferred staff productivity score"
+      ],
+      "questions": [
+        "Which exceptions require same-period review and who defines the due rules?",
+        "What can supervisors see in assessment content versus metadata?",
+        "Who can approve coverage and who owns coaching?"
+      ],
+      "sources": [
+        "pipeline",
+        "assessor-model",
+        "brief-pack"
+      ],
+      "workflows": [
+        {
+          "id": "supervisor-queue",
+          "title": "Review team exceptions",
+          "grounding": "source-supported",
+          "trigger": "Queue review or a source-confirmed exception",
+          "inputs": [
+            "Authorized team view",
+            "Defined exception codes",
+            "Current ownership and evidence"
+          ],
+          "steps": [
+            "Check coverage and freshness before interpreting counts.",
+            "Prepare exceptions, evidence and the human verification needed.",
+            "Assign follow-up through the permitted source workflow and verify its state."
+          ],
+          "sourceOutcome": "Source-owned follow-up or explicit unresolved ownership; the brief itself does not resolve the exception.",
+          "handoffTo": [
+            "assessment-coordinator",
+            "assessor"
+          ],
+          "skillIds": [
+            "supervisor-exception-brief",
+            "assignment-coverage-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "supervisor-improve",
+          "title": "Prepare coaching and process feedback",
+          "grounding": "inferred",
+          "trigger": "Repeated clarification or handoff friction",
+          "inputs": [
+            "Permitted work evidence",
+            "Approved rubric",
+            "Reviewed fictional examples"
+          ],
+          "steps": [
+            "Separate source facts from interpretation and missing observations.",
+            "Prepare a specific process question or training example.",
+            "Have the responsible reviewer decide what guidance or process should change."
+          ],
+          "sourceOutcome": "Reviewed feedback linked to evidence, with publication/skill changes left to the authorized owners.",
+          "handoffTo": [
+            "procedure-training-owner"
+          ],
+          "skillIds": [
+            "training-preparation",
+            "skill-evaluation-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "transition-coordinator",
+      "title": "Admission / transition coordinator",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Carry the accepted referral into a receiving-team handoff with clear identity, dates, requirements and acknowledgment, without equating an accepted decision with actual admission.",
+      "applications": [
+        "pipeline",
+        "alamohealth",
+        "platform",
+        "workflow"
+      ],
+      "objects": [
+        "admission-decision",
+        "requirement",
+        "handoff",
+        "resident-reference",
+        "stay"
+      ],
+      "scope": "Authorized sending and receiving resources; cross-app identity and recipient access must be verified separately.",
+      "cadence": [
+        "Review accepted or transitioning cases and missing dates.",
+        "Reconcile sending and receiving evidence as it changes.",
+        "Close only the responsibilities supported by source receipts."
+      ],
+      "knowledge": [
+        "Acceptance, scheduled arrival, actual admission and stay identity",
+        "Source ownership of receiving records",
+        "Audience restrictions and required acknowledgment",
+        "Failed or uncertain delivery recovery"
+      ],
+      "measures": [
+        "Transitions with a known receiving owner and current readiness evidence",
+        "Time from recorded send to required receiving acknowledgment where observable"
+      ],
+      "questions": [
+        "Which team owns the transition after the assessment is sent?",
+        "What constitutes accepted receiving acknowledgment?",
+        "Which data must be reverified in Point of Care before becoming care facts?"
+      ],
+      "sources": [
+        "pipeline",
+        "community",
+        "care"
+      ],
+      "workflows": [
+        {
+          "id": "transition-ready",
+          "title": "Review transition readiness",
+          "grounding": "source-supported",
+          "trigger": "Accepted referral or changed arrival plan",
+          "inputs": [
+            "Recorded decision",
+            "Requirements and dates",
+            "Receiving identity and scope"
+          ],
+          "steps": [
+            "Compare current requirements with source-confirmed completion.",
+            "Prepare a handoff checklist and name unknowns without declaring readiness from missing data.",
+            "The receiving owner verifies and records acceptance through the appropriate source."
+          ],
+          "sourceOutcome": "Source-owned readiness/acceptance and outstanding requirements remain distinguishable.",
+          "handoffTo": [
+            "shift-supervisor",
+            "clinical-care-lead"
+          ],
+          "skillIds": [
+            "transition-readiness-review",
+            "assessor-handoff"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "transition-reconcile",
+          "title": "Reconcile failed or uncertain handoff",
+          "grounding": "source-supported",
+          "trigger": "A send fails, is uncertain or lacks acknowledgment",
+          "inputs": [
+            "Delivery attempt IDs",
+            "Receiving evidence when authorized",
+            "Current case revision"
+          ],
+          "steps": [
+            "Compare the exact attempt with the current source record.",
+            "Prepare a verification or retry recommendation without sending.",
+            "A human reconciles the source result and receiving acknowledgment."
+          ],
+          "sourceOutcome": "The source records the reconciled delivery/receipt state or an accountable unresolved exception.",
+          "handoffTo": [
+            "assessor",
+            "community-director"
+          ],
+          "skillIds": [
+            "handoff-reconciliation",
+            "work-follow-up-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "direct-care-staff",
+      "title": "Direct-care staff",
+      "grounding": "source-supported-role-family",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Carry out assigned, approved care work and document what was observed, performed and still unresolved within the person’s actual authorization and training.",
+      "applications": [
+        "alamohealth",
+        "workflow"
+      ],
+      "objects": [
+        "resident",
+        "stay",
+        "care-obligation",
+        "observation",
+        "intervention",
+        "response",
+        "shift-handoff"
+      ],
+      "scope": "Current facility/shift/resident assignments and approved care privileges. No eMAR, prescribing or inferred clinical authority.",
+      "cadence": [
+        "At handoff: verify assigned residents and open care work.",
+        "During care: follow approved procedures and record actual observations/actions or exceptions.",
+        "At transfer: preserve outstanding response review and receiving ownership."
+      ],
+      "knowledge": [
+        "Resident identity and approved care plan version",
+        "Observed, reported and inferred facts",
+        "Care performed versus documentation prepared",
+        "Approved escalation and downtime procedures"
+      ],
+      "measures": [
+        "Assigned obligations with attributable source outcomes or exceptions",
+        "Handoffs carrying unresolved care work; not task counts as quality of care"
+      ],
+      "questions": [
+        "What are the actual direct-care titles and approved activities at each site?",
+        "Which observations or notes require review or a second signature?",
+        "What off-app duties and downtime procedures must be represented?"
+      ],
+      "sources": [
+        "care",
+        "workflow"
+      ],
+      "workflows": [
+        {
+          "id": "care-start",
+          "title": "Orient to assigned care work",
+          "grounding": "source-supported",
+          "trigger": "Shift start or reassignment",
+          "inputs": [
+            "Current resident assignments",
+            "Approved plan and due obligations",
+            "Open handoff items"
+          ],
+          "steps": [
+            "Verify person, place, assignment and current plan.",
+            "Review the source-owned obligations and unresolved information.",
+            "Seek the responsible human clarification when the plan, authority or ownership is unclear."
+          ],
+          "sourceOutcome": "A source-confirmed assignment and reviewed handoff context; viewing a brief does not attest care occurred.",
+          "handoffTo": [
+            "shift-supervisor"
+          ],
+          "skillIds": [
+            "shift-care-brief",
+            "care-obligation-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "care-document",
+          "title": "Prepare documentation and carry forward work",
+          "grounding": "source-supported",
+          "trigger": "A care interaction or observation has occurred",
+          "inputs": [
+            "Human-supplied observations/actions",
+            "Event times and attribution",
+            "Current documentation requirements"
+          ],
+          "steps": [
+            "Separate observed facts from reported information and inference.",
+            "Prepare a draft only from supplied facts; do not invent performance or response.",
+            "The authorized staff member verifies, records/signs and hands unresolved work to the next owner."
+          ],
+          "sourceOutcome": "Authorized source documentation and explicit outstanding obligations; draft acceptance alone is not a clinical signature.",
+          "handoffTo": [
+            "shift-supervisor",
+            "clinical-care-lead"
+          ],
+          "skillIds": [
+            "care-note-draft",
+            "care-handoff-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "shift-supervisor",
+      "title": "Shift / house supervisor",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Keep assigned care work covered and preserve unresolved responsibilities across staff and shift changes.",
+      "applications": [
+        "alamohealth",
+        "platform",
+        "workflow"
+      ],
+      "objects": [
+        "shift",
+        "staff-assignment",
+        "care-obligation",
+        "exception",
+        "handoff"
+      ],
+      "scope": "Reviewed house/facility/shift scope, with clinical and HR details limited by their independent source grants.",
+      "cadence": [
+        "At shift opening: reconcile coverage and unresolved handoff items.",
+        "During the shift: route care-work exceptions to the appropriate authorized owner.",
+        "At shift close: verify transfer of open commitments."
+      ],
+      "knowledge": [
+        "Assignment and coverage rules",
+        "Approved escalation ownership",
+        "Care versus staffing versus analytical records",
+        "Acknowledgment and continuity during downtime"
+      ],
+      "measures": [
+        "Unowned care obligations with known source coverage",
+        "Open commitments transferred with explicit receiving acknowledgment"
+      ],
+      "questions": [
+        "Is shift/house supervision a distinct role at every community?",
+        "Who can change assignments and who can provide qualified clinical review?",
+        "Which source proves a receiving shift accepted responsibility?"
+      ],
+      "sources": [
+        "care",
+        "community",
+        "workforce"
+      ],
+      "workflows": [
+        {
+          "id": "shift-coverage",
+          "title": "Review work and coverage exceptions",
+          "grounding": "source-supported",
+          "trigger": "Shift start, absence or new unowned work",
+          "inputs": [
+            "Current assignments",
+            "Open obligations",
+            "Permitted staffing aggregate/context"
+          ],
+          "steps": [
+            "Check whether the source evidence is current and complete.",
+            "Prepare an exception list separating coverage from clinical decisions.",
+            "The authorized supervisor records assignments or routes the question to the appropriate owner."
+          ],
+          "sourceOutcome": "Source-recorded coverage or an accountable unresolved exception.",
+          "handoffTo": [
+            "workforce-coordinator",
+            "clinical-care-lead"
+          ],
+          "skillIds": [
+            "care-obligation-review",
+            "workforce-coverage-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "shift-transfer",
+          "title": "Prepare the next-shift handoff",
+          "grounding": "source-supported",
+          "trigger": "Shift change or transfer of responsibility",
+          "inputs": [
+            "Open care work",
+            "Recorded response reviews",
+            "Current sending/receiving scope"
+          ],
+          "steps": [
+            "Assemble only the authorized unresolved commitments and evidence.",
+            "Name unknown receiving ownership and outstanding response review.",
+            "The responsible people confirm the transfer in the source workflow."
+          ],
+          "sourceOutcome": "Required receiving acknowledgment and source assignment change, or an explicit unresolved handoff.",
+          "handoffTo": [
+            "direct-care-staff",
+            "clinical-care-lead"
+          ],
+          "skillIds": [
+            "care-handoff-review",
+            "work-follow-up-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "clinical-care-lead",
+      "title": "Qualified clinical / care-plan lead",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Own the clinical review, care-plan interpretation and response decisions assigned by the facility’s approved scope and the person’s verified privileges.",
+      "applications": [
+        "alamohealth",
+        "pipeline",
+        "workflow"
+      ],
+      "objects": [
+        "care-plan",
+        "assessment",
+        "observation",
+        "response-review",
+        "care-obligation"
+      ],
+      "scope": "Credential- and privilege-appropriate resources and decisions; actual titles and scope require local confirmation.",
+      "cadence": [
+        "Review assigned new information and outstanding response reviews.",
+        "Maintain authorized care-plan decisions and attributable documentation.",
+        "Prepare clear follow-through for staff and the next qualified reviewer."
+      ],
+      "knowledge": [
+        "Approved facility scope and care policy",
+        "Plan versions, provenance and clinical signatures",
+        "Response evidence and uncertainty",
+        "Transition evidence versus accepted clinical facts"
+      ],
+      "measures": [
+        "Assigned response reviews with source-recorded dispositions",
+        "Care-plan changes with linked evidence and downstream review needs"
+      ],
+      "questions": [
+        "Which disciplines actually hold these responsibilities in each community?",
+        "Who owns care-plan approval and response review?",
+        "Which source policies define thresholds and escalation timing?"
+      ],
+      "sources": [
+        "care",
+        "workflow"
+      ],
+      "workflows": [
+        {
+          "id": "clinical-response",
+          "title": "Prepare a response review",
+          "grounding": "source-supported",
+          "trigger": "Assigned response review or changed observation",
+          "inputs": [
+            "Authorized observations",
+            "Current approved plan",
+            "Recorded actions and response"
+          ],
+          "steps": [
+            "Check dates, attribution and current plan version.",
+            "Prepare the observed change and unresolved evidence for a qualified person.",
+            "The qualified reviewer determines and records the disposition; the agent does not prescribe an intervention."
+          ],
+          "sourceOutcome": "A source-recorded human review/disposition linked to the correct observations and plan.",
+          "handoffTo": [
+            "direct-care-staff",
+            "shift-supervisor"
+          ],
+          "skillIds": [
+            "response-follow-up-review",
+            "care-note-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "clinical-plan-change",
+          "title": "Review impact of a care-plan change",
+          "grounding": "source-supported",
+          "trigger": "An authorized plan revision is recorded",
+          "inputs": [
+            "Prior/current plan references",
+            "Affected obligations",
+            "Related guidance"
+          ],
+          "steps": [
+            "Identify the exact changed source references.",
+            "Prepare impacted obligations and guidance for review without replacing signed records.",
+            "The authorized owners confirm changes and hand off affected work."
+          ],
+          "sourceOutcome": "Source-approved plan/obligation changes and reviewed guidance references.",
+          "handoffTo": [
+            "procedure-training-owner",
+            "shift-supervisor"
+          ],
+          "skillIds": [
+            "evidence-change-review",
+            "procedure-impact-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "community-director",
+      "title": "Community / Executive Director",
+      "grounding": "source-supported-role-family",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Maintain facility-level operational oversight, licensing follow-through and accountable cross-team coordination within assigned communities.",
+      "applications": [
+        "platform",
+        "pipeline",
+        "workflow",
+        "alamohealth"
+      ],
+      "objects": [
+        "community",
+        "operational-measure",
+        "incident-report",
+        "licensing-finding",
+        "transition",
+        "follow-up"
+      ],
+      "scope": "Assigned communities only; the Executive Director workspace is distinct from unrestricted Platform, assessment, HR and clinical access.",
+      "cadence": [
+        "Review current community context and actionable gaps.",
+        "Follow licensing/reporting work and cross-team ownership.",
+        "Review source-backed exceptions and outstanding commitments with the responsible owners."
+      ],
+      "knowledge": [
+        "Community scope and analytical freshness",
+        "Incident/report status and original source records",
+        "Admissions transition versus assessment workflow",
+        "Reporting and escalation rules supplied by approved policy"
+      ],
+      "measures": [
+        "Owned exceptions with source-confirmed follow-through",
+        "Report readiness and delivery states; timeliness only against reviewed applicable due rules"
+      ],
+      "questions": [
+        "Which licensing/report duties belong to the director versus a specialist?",
+        "Who can approve, file and acknowledge each report?",
+        "Which meetings, staffing and facility duties happen outside these apps?"
+      ],
+      "sources": [
+        "community",
+        "platform",
+        "workforce"
+      ],
+      "workflows": [
+        {
+          "id": "director-community",
+          "title": "Review community operations",
+          "grounding": "source-supported",
+          "trigger": "Regular review or a scoped exception",
+          "inputs": [
+            "Governed community views",
+            "Current period and freshness",
+            "Permitted admissions/workforce aggregates"
+          ],
+          "steps": [
+            "Verify the community, period and dataset coverage.",
+            "Prepare a concise brief with source links and known gaps.",
+            "Route follow-up to a responsible owner and verify source-recorded progress."
+          ],
+          "sourceOutcome": "An owned follow-up or explicit unresolved exception, not merely a read dashboard.",
+          "handoffTo": [
+            "admissions-supervisor",
+            "shift-supervisor",
+            "workforce-coordinator"
+          ],
+          "skillIds": [
+            "community-operations-brief",
+            "data-freshness-review",
+            "work-follow-up-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "director-report",
+          "title": "Review licensing/report preparation",
+          "grounding": "source-supported",
+          "trigger": "New report draft or state report change",
+          "inputs": [
+            "Original source/report",
+            "Facility identity",
+            "Recorded review and filing state"
+          ],
+          "steps": [
+            "Inspect originals and preserve facts, attribution and uncertainty.",
+            "Review proposed language or follow-up requirements against approved policy.",
+            "An authorized person records review and performs any filing or delivery outside the agent."
+          ],
+          "sourceOutcome": "Source review, save, filing and delivery evidence are separate; unknown states remain unknown.",
+          "handoffTo": [
+            "licensing-compliance-owner"
+          ],
+          "skillIds": [
+            "licensing-findings-review",
+            "lic624-language-review",
+            "executive-exception-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "licensing-compliance-owner",
+      "title": "Licensing / compliance owner",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Maintain traceable licensing evidence, report preparation and applicable follow-up without replacing official source documents or inventing reporting rules.",
+      "applications": [
+        "platform",
+        "workflow"
+      ],
+      "objects": [
+        "licensing-report",
+        "finding",
+        "incident-report",
+        "evidence-document",
+        "policy",
+        "follow-up"
+      ],
+      "scope": "Authorized facilities and reports; reporting authority and external communication approval must be separately established.",
+      "cadence": [
+        "Review changed state reports and source collection gaps.",
+        "Prepare evidence and language review for authorized staff.",
+        "Maintain owned follow-ups and procedure changes after review."
+      ],
+      "knowledge": [
+        "Original versus extracted and summarized text",
+        "Facility-specific approved reporting requirements",
+        "Report draft/review/save/file/deliver distinctions",
+        "Policy versioning and source retention"
+      ],
+      "measures": [
+        "Findings with current source citations and accountable follow-up",
+        "Report corrections and missing-evidence rates; no universal deadline assumption"
+      ],
+      "questions": [
+        "Is there a dedicated compliance role or does each director own this?",
+        "What reviewed rules apply to each facility and report category?",
+        "Who confirms filing, delivery and subsequent follow-up?"
+      ],
+      "sources": [
+        "community",
+        "platform",
+        "workflow"
+      ],
+      "workflows": [
+        {
+          "id": "compliance-findings",
+          "title": "Review source licensing changes",
+          "grounding": "source-supported",
+          "trigger": "New or changed state report",
+          "inputs": [
+            "Original report and source URL",
+            "Prior version",
+            "Facility scope"
+          ],
+          "steps": [
+            "Compare exact versions and identify substantive changes.",
+            "Prepare a readable summary with citations and uncertainty.",
+            "Have the responsible owner review the finding and record an assigned follow-up."
+          ],
+          "sourceOutcome": "A reviewed finding linked to its original and an owned follow-up, without implied filing.",
+          "handoffTo": [
+            "community-director",
+            "executive-operations-leader"
+          ],
+          "skillIds": [
+            "licensing-findings-review",
+            "evidence-change-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "compliance-report",
+          "title": "Prepare fact-preserving report language",
+          "grounding": "source-supported",
+          "trigger": "Native LIC 624 draft or backlog scan review",
+          "inputs": [
+            "Original/pre-edit text",
+            "Source evidence",
+            "Current report revision"
+          ],
+          "steps": [
+            "Separate extracted text from verified human facts.",
+            "Propose wording changes with a difference view and unresolved questions.",
+            "A human confirms the exact version before the owning app saves; filing is a separate action."
+          ],
+          "sourceOutcome": "Source-confirmed accepted revision; any filing/delivery needs its own evidence.",
+          "handoffTo": [
+            "community-director"
+          ],
+          "skillIds": [
+            "lic624-language-review",
+            "procedure-impact-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "executive-operations-leader",
+      "title": "Executive / operations leader",
+      "grounding": "source-supported-role-family",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Understand governed organization trends and material exceptions, choose accountable follow-up and evaluate whether the software improves work.",
+      "applications": [
+        "platform",
+        "workflow"
+      ],
+      "objects": [
+        "cohort",
+        "metric-definition",
+        "community",
+        "exception",
+        "responsibility",
+        "outcome"
+      ],
+      "scope": "Explicitly authorized portfolio/aggregate views; organization-wide analysis never grants individual clinical, employee or conversation access.",
+      "cadence": [
+        "Review defined operational measures and material exceptions.",
+        "Assign accountable investigation through existing governance.",
+        "Review business outcomes and product/skill evidence before expansion."
+      ],
+      "knowledge": [
+        "Cohorts, denominators, time windows and missing data",
+        "Aggregate suppression and scope",
+        "Correlation versus cause",
+        "Verified outcome versus activity and draft counts"
+      ],
+      "measures": [
+        "Workflow measures with documented denominator, freshness and coverage",
+        "Verified useful outcomes and review burden; no unsupported staff ranking"
+      ],
+      "questions": [
+        "Which decisions should recurring executive briefs support?",
+        "Which thresholds, recipients and channels are approved for exception alerts?",
+        "What outcome/cost evidence is required before expanding agent authority?"
+      ],
+      "sources": [
+        "platform",
+        "brief-pack",
+        "integration"
+      ],
+      "workflows": [
+        {
+          "id": "executive-trends",
+          "title": "Review aggregate trends",
+          "grounding": "source-supported",
+          "trigger": "Defined operating review or requested comparison",
+          "inputs": [
+            "Governed aggregate packet",
+            "Metric definitions",
+            "Period, coverage and suppression"
+          ],
+          "steps": [
+            "Check comparable periods and complete source definitions.",
+            "Prepare the measures and limitations without exposing raw records or inventing causes.",
+            "Choose a scoped investigation and responsible human owner."
+          ],
+          "sourceOutcome": "A recorded decision/follow-up with authorized evidence; a trend explanation is not causal proof.",
+          "handoffTo": [
+            "community-director",
+            "data-quality-analyst"
+          ],
+          "skillIds": [
+            "executive-workflow-brief",
+            "operational-trend-explanation"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "executive-exceptions",
+          "title": "Review a proposed exception",
+          "grounding": "source-supported",
+          "trigger": "An approved trigger is met or a human requests investigation",
+          "inputs": [
+            "Reviewed rule",
+            "Permitted exception evidence",
+            "Accountable owner and recipient policy"
+          ],
+          "steps": [
+            "Check that the rule, source scope and current evidence are available.",
+            "Prepare the reason, uncertainty and proposed next human action.",
+            "A person decides whether/how to notify or act; all email remains disabled."
+          ],
+          "sourceOutcome": "A reviewed disposition with source evidence; drafts are not delivered alerts.",
+          "handoffTo": [
+            "community-director",
+            "licensing-compliance-owner"
+          ],
+          "skillIds": [
+            "executive-exception-draft",
+            "work-follow-up-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "workforce-coordinator",
+      "title": "Workforce / HR operations coordinator",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Coordinate staffing, credential and hiring follow-through through the authoritative Workforce application, using Platform only for its permitted aggregate overview.",
+      "applications": [
+        "platform",
+        "workforce",
+        "workflow"
+      ],
+      "objects": [
+        "staff-assignment",
+        "credential-status",
+        "open-position",
+        "applicant-stage",
+        "coverage-gap"
+      ],
+      "scope": "HR/workforce source permissions are independent of Platform aggregates or resident-care permissions; no personal HR connector is enabled.",
+      "cadence": [
+        "Review authorized coverage/credential exceptions and open positions.",
+        "Coordinate source-recorded next actions with community owners.",
+        "Maintain reviewed role and onboarding requirements."
+      ],
+      "knowledge": [
+        "Aggregate versus personal HR data",
+        "Credential status versus clinical privilege",
+        "Position, applicant and assignment ownership",
+        "Staffing and notification approvals"
+      ],
+      "measures": [
+        "Coverage exceptions with an assigned source owner",
+        "Age of open-role next actions and missing credential evidence, within approved HR policy"
+      ],
+      "questions": [
+        "Which roles own scheduling, recruiting, credentials and employee onboarding?",
+        "Which Workforce states actually block scheduling, and who can resolve them?",
+        "Which staff records can each community director see?"
+      ],
+      "sources": [
+        "workforce",
+        "community"
+      ],
+      "workflows": [
+        {
+          "id": "workforce-coverage",
+          "title": "Review staffing and credential gaps",
+          "grounding": "source-supported",
+          "trigger": "Authorized workforce review or source change",
+          "inputs": [
+            "Current aggregate overview",
+            "Reviewed scheduling-block flags",
+            "Permitted source deep links"
+          ],
+          "steps": [
+            "Check scope and freshness; keep names/details out of aggregate-only views.",
+            "Prepare the reported coverage gaps without making fitness or hiring decisions.",
+            "The authorized Workforce operator verifies and records the next action."
+          ],
+          "sourceOutcome": "Workforce records the disposition; Platform counts and agent drafts do not modify staff status.",
+          "handoffTo": [
+            "community-director",
+            "shift-supervisor"
+          ],
+          "skillIds": [
+            "workforce-coverage-review",
+            "work-follow-up-draft"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "workforce-onboard",
+          "title": "Prepare role onboarding requirements",
+          "grounding": "inferred",
+          "trigger": "A role begins or approved duties change",
+          "inputs": [
+            "Reviewed role blueprint",
+            "Effective assignment",
+            "Approved learning requirements"
+          ],
+          "steps": [
+            "Confirm the actual job and scope rather than copying a software permission label.",
+            "Prepare applicable learning and unresolved credential/assignment questions.",
+            "Authorized owners record employment, access and learning decisions separately."
+          ],
+          "sourceOutcome": "Separate source evidence for employment assignment, granted access and learning; none substitutes for another.",
+          "handoffTo": [
+            "procedure-training-owner",
+            "application-administrator"
+          ],
+          "skillIds": [
+            "training-preparation",
+            "procedure-impact-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "procedure-training-owner",
+      "title": "Procedure / training owner",
+      "grounding": "source-supported-role-family",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Turn reviewed work knowledge into current procedures, walkthroughs, practice and feedback while keeping guidance aligned with source app behavior.",
+      "applications": [
+        "workflow",
+        "pipeline",
+        "platform",
+        "alamohealth"
+      ],
+      "objects": [
+        "procedure-version",
+        "policy",
+        "task",
+        "tutorial",
+        "practice-case",
+        "review-decision"
+      ],
+      "scope": "Authorized knowledge and teaching content; drafting guidance does not grant publication authority or access to employee private conversations.",
+      "cadence": [
+        "Review source/policy changes affecting guidance.",
+        "Prepare and review procedures and fictional practice cases.",
+        "Collect explicit feedback and keep teaching versions aligned with app/task versions."
+      ],
+      "knowledge": [
+        "Procedure versus policy versus observed habit",
+        "Source-backed clickpaths and alternative branches",
+        "Fictional practice versus real work",
+        "Review, publication and retirement/version compatibility"
+      ],
+      "measures": [
+        "Approved tasks with current source-checked guidance",
+        "Learner/reviewer correction burden and stale-guidance gaps; completion is not competence"
+      ],
+      "questions": [
+        "Who approves procedures and clinical/legal content for each domain?",
+        "Where are authoritative policy versions and learning records stored?",
+        "Who may publish or retire guidance, and how are affected users informed?"
+      ],
+      "sources": [
+        "workflow",
+        "assessor-procedures",
+        "assessor-clickpaths",
+        "human-evals"
+      ],
+      "workflows": [
+        {
+          "id": "training-author",
+          "title": "Draft or revise a procedure",
+          "grounding": "source-supported",
+          "trigger": "New work family or documented source change",
+          "inputs": [
+            "App-owned rules",
+            "Reviewed source material",
+            "Permitted workflow evidence"
+          ],
+          "steps": [
+            "Separate required policy from observed practice and inferred gaps.",
+            "Draft purpose, prerequisites, branches, evidence and human decisions; use only verified clickpaths.",
+            "Route the version to its domain owner and preserve the previous published version."
+          ],
+          "sourceOutcome": "A reviewed published procedure version in its owning source; a draft or common habit is not policy.",
+          "handoffTo": [
+            "clinical-care-lead",
+            "licensing-compliance-owner",
+            "application-administrator"
+          ],
+          "skillIds": [
+            "sop-draft-from-evidence",
+            "procedure-impact-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "training-practice",
+          "title": "Prepare teaching and isolated practice",
+          "grounding": "source-supported",
+          "trigger": "New hire, refresher or identified learning need",
+          "inputs": [
+            "Reviewed role tasks",
+            "Approved procedure versions",
+            "Fictional examples and rubric"
+          ],
+          "steps": [
+            "Match the learning task to the current role and app version.",
+            "Prepare explanations, walkthroughs and fictional practice with visible recovery branches.",
+            "Record actual reviewer feedback separately from tutorial completion and competence decisions."
+          ],
+          "sourceOutcome": "Versioned learning evidence and human feedback; no real record change or automatic grant.",
+          "handoffTo": [
+            "assessor",
+            "direct-care-staff",
+            "workforce-coordinator"
+          ],
+          "skillIds": [
+            "procedure-match",
+            "procedure-walkthrough",
+            "training-preparation"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "data-quality-analyst",
+      "title": "Data / operational quality analyst",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Make business measures and cross-app evidence interpretable, traceable and scoped, while identifying gaps before they become confident operational claims.",
+      "applications": [
+        "platform",
+        "pipeline",
+        "alamohealth",
+        "workflow"
+      ],
+      "objects": [
+        "dataset",
+        "source-revision",
+        "metric-definition",
+        "identity-mapping",
+        "lineage",
+        "quality-exception"
+      ],
+      "scope": "Approved datasets and metadata; analytical access does not confer source transaction rights or unrestricted person-level access.",
+      "cadence": [
+        "Check freshness and coverage before analysis.",
+        "Investigate source/projection differences and identity ambiguities.",
+        "Review metric definitions, source changes and proposed mappings with business owners."
+      ],
+      "knowledge": [
+        "Source of truth and effective time",
+        "Lineage and corrections",
+        "Canonical identities and ambiguous matches",
+        "Cohort semantics, denominators and disclosure"
+      ],
+      "measures": [
+        "Known coverage and freshness against reviewed source expectations",
+        "Unresolved mapping/lineage exceptions and reconciliation differences"
+      ],
+      "questions": [
+        "Who owns each metric and cross-application identity mapping?",
+        "Which completeness and freshness targets are valid per dataset?",
+        "What aggregate disclosure and drill-down policy applies?"
+      ],
+      "sources": [
+        "platform",
+        "integration"
+      ],
+      "workflows": [
+        {
+          "id": "data-reconcile",
+          "title": "Investigate data or measure differences",
+          "grounding": "source-supported",
+          "trigger": "Missing/stale feed or conflicting measures",
+          "inputs": [
+            "Dataset revisions and watermarks",
+            "Metric definitions",
+            "Authorized source/projection references"
+          ],
+          "steps": [
+            "Check time, scope, grain and completeness before comparing values.",
+            "Trace the difference to the source and transformation references.",
+            "Prepare a correction or definition question for the owning system; never silently patch clinical truth."
+          ],
+          "sourceOutcome": "An owned source/definition disposition and a subsequently reconciled governed view.",
+          "handoffTo": [
+            "application-administrator",
+            "executive-operations-leader"
+          ],
+          "skillIds": [
+            "data-freshness-review",
+            "lineage-coverage-review",
+            "operational-trend-explanation"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "data-map",
+          "title": "Prepare an ontology or identity mapping",
+          "grounding": "source-supported",
+          "trigger": "New source or changed schema",
+          "inputs": [
+            "Source metadata",
+            "Reviewed business definitions",
+            "Ambiguous/candidate mappings"
+          ],
+          "steps": [
+            "Identify what each source object actually means and who owns it.",
+            "Propose relationships with evidence and validity periods; leave ambiguous identities unresolved.",
+            "Business/source owners review the mapping before activation or downstream use."
+          ],
+          "sourceOutcome": "A reviewed versioned mapping; proposal acceptance does not grant new data access.",
+          "handoffTo": [
+            "application-administrator",
+            "procedure-training-owner"
+          ],
+          "skillIds": [
+            "source-mapping-proposal",
+            "source-drift-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    },
+    {
+      "id": "application-administrator",
+      "title": "Application / integration administrator",
+      "grounding": "inferred-role-split",
+      "reviewStatus": "draft-not-reviewed",
+      "mission": "Operate source integrations, permissions, releases and recovery while preserving each application’s authority and auditable change process.",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth",
+        "workforce"
+      ],
+      "objects": [
+        "application-manifest",
+        "capability",
+        "grant-reference",
+        "release",
+        "incident",
+        "integration-checkpoint"
+      ],
+      "scope": "Explicit administrative duties and workload permissions; technical access is not a clinical signature, HR decision or general agent grant.",
+      "cadence": [
+        "Review integration health and failed work.",
+        "Prepare source, policy and release changes with compatibility evidence.",
+        "Reconcile outages and recovery before expanding enabled capabilities."
+      ],
+      "knowledge": [
+        "Workload versus user authority",
+        "Replay, idempotency and uncertain outcomes",
+        "Source/version compatibility and rollback",
+        "Secrets, retention and audit ownership"
+      ],
+      "measures": [
+        "Verified integration readiness and recoverable failures",
+        "Recovery/reconciliation outcomes and unclosed access/coverage gaps"
+      ],
+      "questions": [
+        "Who owns the independent agent remote, CI and production release?",
+        "Who owns the shared foundation serving and publication identities?",
+        "Which approval, incident and recovery processes already govern these apps?"
+      ],
+      "sources": [
+        "integration",
+        "harness"
+      ],
+      "workflows": [
+        {
+          "id": "admin-connect",
+          "title": "Prepare application/capability onboarding",
+          "grounding": "source-supported",
+          "trigger": "New integration or proposed source capability",
+          "inputs": [
+            "Manifest and contract versions",
+            "Source ownership",
+            "Identity/policy and conformance evidence"
+          ],
+          "steps": [
+            "Inventory what exists, is configured and is actually authorized separately.",
+            "Prepare missing contracts, mappings and controlled test evidence.",
+            "The owning operators approve configuration and release through the actual process; a catalog entry cannot activate itself."
+          ],
+          "sourceOutcome": "An explicitly reviewed integration with independently verified access/readiness, or a named unmet prerequisite.",
+          "handoffTo": [
+            "data-quality-analyst",
+            "procedure-training-owner"
+          ],
+          "skillIds": [
+            "integration-readiness-review",
+            "source-mapping-proposal",
+            "source-drift-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        },
+        {
+          "id": "admin-recover",
+          "title": "Investigate and recover incomplete work",
+          "grounding": "source-supported",
+          "trigger": "Failure, retry uncertainty or release regression",
+          "inputs": [
+            "Source receipts/checkpoints",
+            "Redacted traces",
+            "Current versions and recovery procedure"
+          ],
+          "steps": [
+            "Distinguish failed, pending and uncertain outcomes before retrying.",
+            "Prepare a bounded recovery and verification plan without bypassing source preconditions.",
+            "The authorized operator performs recovery and verifies source state and rollback compatibility."
+          ],
+          "sourceOutcome": "Source-confirmed reconciliation or an accountable unresolved incident; successful execution alone is insufficient.",
+          "handoffTo": [
+            "data-quality-analyst",
+            "admissions-supervisor"
+          ],
+          "skillIds": [
+            "work-recovery-guide",
+            "integration-readiness-review",
+            "skill-evaluation-review"
+          ],
+          "exception": "Stop at missing authority, ambiguous ownership or stale evidence; retain the open item and its source references."
+        }
+      ],
+      "sharedSkillIds": [
+        "procedure-match",
+        "work-recovery-guide"
+      ]
+    }
+  ],
+  "openCoverage": [
+    "Finance/revenue-cycle duties and actual application ownership",
+    "Facilities, transport, food service, housekeeping and other off-app work",
+    "External clinicians, referral partners and other non-employee actors",
+    "Site-specific clinical disciplines, credentials and reporting authority",
+    "Actual employee roster, role combinations, coverage and effective dates",
+    "Approved working cadences, due rules and escalation contacts"
+  ],
+  "commonBoundaries": [
+    "Role descriptions are inferred job blueprints, not approved job descriptions, actual employee dossiers or access grants.",
+    "Source-supported means the app/document supports the workflow; it does not establish which person or title owns it.",
+    "Read, investigate and draft; source actions and exact-version approvals remain separate.",
+    "Eric-only pilot; no emails; no real assessment reads or changes; no production activation.",
+    "No clinical judgment, treatment thresholds, legal deadlines or credential requirements are invented.",
+    "Expected duties, observed work, inferred patterns, reviewed learning and demonstrated competence remain distinct.",
+    "A learning completion, accepted draft, source command receipt and verified business outcome are different facts.",
+    "Private conversations are not automatically workforce or management data.",
+    "Existing 17 assessor procedures/workflows remain linked; this catalog neither duplicates their clickpaths nor activates them."
+  ]
+}

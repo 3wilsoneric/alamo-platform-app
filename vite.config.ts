@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath, URL } from "node:url";
 
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://localhost:3002";
 
@@ -12,6 +13,11 @@ const developmentProxies = {
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src/features/workflow/legacy/src", import.meta.url))
+    }
+  },
   build: {
     // Vite's generated dependency-preload wrapper can leave React.lazy routes
     // pending even after every chunk returns 200. Direct imports are both

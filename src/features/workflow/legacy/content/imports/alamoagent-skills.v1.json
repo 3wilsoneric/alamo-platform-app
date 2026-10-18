@@ -1,0 +1,2259 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "updated": "2026-10-18",
+  "ownerApplication": "alamoagent",
+  "status": "draft-authoring-library",
+  "executionEnabled": false,
+  "sources": {
+    "assessor-model": {
+      "title": "Assessor whole-job model",
+      "path": "docs/assessor-work-model.md",
+      "basis": "source-inspected role draft"
+    },
+    "assessor-procedures": {
+      "title": "Alamo Workflow assessor procedures",
+      "path": "../../alamo-workflow/docs/assessor-procedures.md",
+      "basis": "authored procedures awaiting domain review"
+    },
+    "assessor-clickpaths": {
+      "title": "Assessor source-checked clickpaths",
+      "path": "../../alamo-workflow/docs/assessor-clickpaths.md",
+      "basis": "source-checked navigation, not production certification"
+    },
+    "pipeline": {
+      "title": "Pipeline architecture",
+      "path": "../../pipeline-agent-assessment-review/docs/ARCHITECTURE.md",
+      "basis": "application source documentation"
+    },
+    "pipeline-finality": {
+      "title": "Assessment final-send policy",
+      "path": "../../pipeline-agent-assessment-review/docs/ASSESSMENT_FINAL_SEND_POLICY.md",
+      "basis": "source workflow policy"
+    },
+    "platform": {
+      "title": "Platform operator journeys",
+      "path": "../alamo-platform-app/docs/platform/user-journeys.md",
+      "basis": "application source documentation"
+    },
+    "community": {
+      "title": "Executive Director workspace",
+      "path": "../../alamo-platform-lic624-native-report/docs/platform/executive-director-workspace.md",
+      "basis": "source workspace and facility scope"
+    },
+    "workforce": {
+      "title": "Workforce ownership and aggregate feed",
+      "path": "../../alamo-platform-lic624-native-report/docs/platform/workforce-zone.md",
+      "basis": "adjacent source ownership; HR runtime not inspected"
+    },
+    "workflow": {
+      "title": "Alamo Workflow procedure and teaching model",
+      "path": "../../alamo-workflow/docs/playbook-workflow-model.md",
+      "basis": "product direction and partial local implementation"
+    },
+    "care": {
+      "title": "Point of Care active direction",
+      "path": "../careengine/docs/engineering/point-of-care-platform-pivot-plan.md",
+      "basis": "planned care workflows; not approved clinical procedures"
+    },
+    "integration": {
+      "title": "Suite integration inventory",
+      "path": "docs/suite-integration-readiness.md",
+      "basis": "local source/configuration audit"
+    },
+    "assessor-pack": {
+      "title": "Executable synthetic assessor pack",
+      "path": "skills/assessment-review/pack.mjs",
+      "basis": "local synthetic implementation"
+    },
+    "brief-pack": {
+      "title": "Executable synthetic role brief pack",
+      "path": "skills/workflow-briefs/pack.mjs",
+      "basis": "local synthetic implementation"
+    },
+    "human-evals": {
+      "title": "Assessor human review process",
+      "path": "docs/assessor-human-review.md",
+      "basis": "tooling; actual reviewer evidence outstanding"
+    },
+    "harness": {
+      "title": "Shared skill harness",
+      "path": "docs/skill-harness.md",
+      "basis": "local bounded execution and offline improvement"
+    }
+  },
+  "skills": [
+    {
+      "id": "referral-orientation",
+      "version": 1,
+      "title": "Orient to an assigned referral",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "referral-intake-coordinator",
+        "assessment-coordinator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A referral is assigned, reopened or explicitly requested.",
+      "inputs": [
+        "Current source identity and assignment",
+        "Stage and bounded requirement evidence"
+      ],
+      "steps": [
+        "Verify identity, assignment and source version.",
+        "Summarize the current stage and known missing information.",
+        "Propose the next existing source step without changing ownership."
+      ],
+      "outputFields": [
+        "referral_reference",
+        "source_revision",
+        "recorded_owner",
+        "known_gaps",
+        "next_human_step"
+      ],
+      "humanReview": "Assigned operator checks identity and responsibility.",
+      "completion": "A cited orientation is ready; assignment and intake completion require source evidence.",
+      "stopConditions": [
+        "Ambiguous identity",
+        "Missing current assignment grant"
+      ],
+      "evaluationCases": [
+        "Reassigned case is withheld from former owner",
+        "Absent requirement data is unknown, not satisfied",
+        "Conflicting identity references remain unresolved"
+      ],
+      "dependencies": [
+        "Authorized referral-context read"
+      ],
+      "sources": [
+        "pipeline",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "packet-evidence-review",
+      "version": 1,
+      "title": "Review packet evidence",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "referral-intake-coordinator",
+        "assessor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "New or changed referral documents.",
+      "inputs": [
+        "Original documents and version/page references",
+        "Extraction provenance and dates"
+      ],
+      "steps": [
+        "Inventory relevant sources.",
+        "Separate extracted values from reviewed facts.",
+        "Flag conflicts and missing support with original references."
+      ],
+      "outputFields": [
+        "documents",
+        "proposed_facts",
+        "conflicts",
+        "unknowns",
+        "citations"
+      ],
+      "humanReview": "Intake/assessor verifies originals and accepts source edits explicitly.",
+      "completion": "An evidence review is ready; no extraction becomes a confirmed clinical fact.",
+      "stopConditions": [
+        "Missing original evidence",
+        "Unverified person linkage"
+      ],
+      "evaluationCases": [
+        "Conflicting dates remain attributed",
+        "Document instructions cannot invoke tools",
+        "A scan extraction error points to the original page"
+      ],
+      "dependencies": [
+        "Authorized bounded document read",
+        "Extraction provenance"
+      ],
+      "sources": [
+        "assessor-model",
+        "pipeline"
+      ]
+    },
+    {
+      "id": "intake-requirements-review",
+      "version": 1,
+      "title": "Review intake requirements",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "referral-intake-coordinator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Intake review or changed requirement evidence.",
+      "inputs": [
+        "Versioned source requirements",
+        "Current recorded dispositions"
+      ],
+      "steps": [
+        "Check applicable requirements.",
+        "Compare each with source evidence.",
+        "Draft missing-information questions and accountable follow-up."
+      ],
+      "outputFields": [
+        "requirement_references",
+        "known_statuses",
+        "evidence",
+        "missing_inputs",
+        "proposed_follow_up"
+      ],
+      "humanReview": "Source owner confirms applicability and resolution.",
+      "completion": "A requirements checklist is ready; source requirements remain unchanged.",
+      "stopConditions": [
+        "Requirement policy unavailable",
+        "Incomplete evidence coverage"
+      ],
+      "evaluationCases": [
+        "Unknown status is not complete",
+        "Retired requirement is not revived",
+        "New evidence invalidates the old checklist"
+      ],
+      "dependencies": [
+        "Authorized requirements projection",
+        "Reviewed applicability rules"
+      ],
+      "sources": [
+        "pipeline",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "assignment-coverage-review",
+      "version": 1,
+      "title": "Review assignment and coverage gaps",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "assessment-coordinator",
+        "admissions-supervisor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Queue review or assignment/coverage change.",
+      "inputs": [
+        "Authorized assignment history",
+        "Current owners and approved coverage constraints"
+      ],
+      "steps": [
+        "Find unowned/conflicting assignments.",
+        "Preserve effective dates and missing coverage.",
+        "Draft questions or assignment options for authorized humans."
+      ],
+      "outputFields": [
+        "scope",
+        "assignment_exceptions",
+        "effective_times",
+        "proposed_options",
+        "unknowns"
+      ],
+      "humanReview": "Authorized coordinator decides and records assignment.",
+      "completion": "A coverage review is ready; nobody is reassigned by the skill.",
+      "stopConditions": [
+        "Missing team/facility grant",
+        "Unknown assignment freshness"
+      ],
+      "evaluationCases": [
+        "Temporary reassignment removes old access",
+        "No employee capacity inferred from click counts",
+        "Cross-facility options excluded without authority"
+      ],
+      "dependencies": [
+        "Effective assignment projection",
+        "Source-owned coverage policy"
+      ],
+      "sources": [
+        "pipeline",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "assessment-schedule-preparation",
+      "version": 1,
+      "title": "Prepare scheduling or rescheduling",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "assessment-coordinator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Requested assessment appointment or failed encounter.",
+      "inputs": [
+        "Current appointment state",
+        "Permitted participant/availability facts",
+        "Reviewed scheduling constraints"
+      ],
+      "steps": [
+        "Check recorded appointment and owner.",
+        "Identify missing details or a recovery branch.",
+        "Prepare options and a human confirmation checklist."
+      ],
+      "outputFields": [
+        "appointment_reference",
+        "current_state",
+        "options",
+        "unresolved_constraints",
+        "confirmation_steps"
+      ],
+      "humanReview": "Coordinator books, reschedules or contacts people through approved tools.",
+      "completion": "A scheduling proposal is ready; no appointment or message is created.",
+      "stopConditions": [
+        "Availability unavailable",
+        "Source appointment changed"
+      ],
+      "evaluationCases": [
+        "Cancellation is not a completed encounter",
+        "Time zone ambiguity remains explicit",
+        "Proposed slot is not presented as booked"
+      ],
+      "dependencies": [
+        "Authorized calendar/context capability",
+        "Reviewed scheduling rules"
+      ],
+      "sources": [
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "assessment-preparation",
+      "version": 1,
+      "title": "Prepare an evidence-based assessment brief",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "assessor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Assigned encounter or refreshed evidence.",
+      "inputs": [
+        "Current authorized answers",
+        "Independent excerpts",
+        "Questionnaire/provenance"
+      ],
+      "steps": [
+        "Read relevant source context.",
+        "Separate supported facts, conflicts and unknowns.",
+        "Draft interview questions with source/date attribution."
+      ],
+      "outputFields": [
+        "supported_facts",
+        "conflicts",
+        "questions",
+        "citations",
+        "source_revision"
+      ],
+      "humanReview": "Assessor validates evidence and conducts the assessment.",
+      "completion": "A preparation brief is ready; no client response or clinical conclusion is fabricated.",
+      "stopConditions": [
+        "Evidence unavailable",
+        "Assignment changed"
+      ],
+      "evaluationCases": [
+        "Old history is not current confirmation",
+        "No negative inferred from silence",
+        "Imported answer retains provenance"
+      ],
+      "dependencies": [
+        "Authorized content projection",
+        "Independent evidence references"
+      ],
+      "sources": [
+        "assessor-model",
+        "assessor-procedures"
+      ]
+    },
+    {
+      "id": "assessment-answer-quality",
+      "version": 1,
+      "title": "Review assessment answer quality",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "assessor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "local-synthetic",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Review supplied answers or refresh an outdated quality proposal.",
+      "inputs": [
+        "Current authorized content packet",
+        "Independent evidence excerpts"
+      ],
+      "steps": [
+        "Run the existing bounded quality activity.",
+        "Validate findings and exact citations against current evidence.",
+        "Save the immutable unaccepted proposal."
+      ],
+      "outputFields": [
+        "findings",
+        "suggested_wording",
+        "questions",
+        "handoff_summary",
+        "citations"
+      ],
+      "humanReview": "Assessor reviews the exact source-bound proposal; clinical sufficiency is not decided by the model.",
+      "completion": "Current-source-bound quality draft saved; human review remains required.",
+      "stopConditions": [
+        "Source/grant changed",
+        "Unsupported output",
+        "Budget or trace failure"
+      ],
+      "evaluationCases": [
+        "Unsupported suggestion is rejected",
+        "Fact/uncertainty preserved during rewriting",
+        "Stale source invalidates saved review"
+      ],
+      "dependencies": [
+        "Existing synthetic assessor pack",
+        "Real content source remains unbound",
+        "Independent reviewer evidence outstanding"
+      ],
+      "sources": [
+        "assessor-pack",
+        "human-evals"
+      ]
+    },
+    {
+      "id": "assessor-clarification",
+      "version": 1,
+      "title": "Prepare assessor clarification checklist",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "assessor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "local-synthetic",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Accepted current quality review contains open questions.",
+      "inputs": [
+        "Accepted current quality artifact",
+        "Fresh authorized source packet"
+      ],
+      "steps": [
+        "Verify parent acceptance and current evidence.",
+        "Prepare questions and proposed human reviewers.",
+        "Save the source-bound checklist without resolving questions."
+      ],
+      "outputFields": [
+        "questions",
+        "evidence_references",
+        "proposed_reviewers",
+        "parent_artifact"
+      ],
+      "humanReview": "Assessor verifies responses and records changes in Pipeline.",
+      "completion": "Clarification draft saved; source questions remain unresolved until human/source work.",
+      "stopConditions": [
+        "No accepted current parent",
+        "No open questions",
+        "Source changed"
+      ],
+      "evaluationCases": [
+        "Rejected parent cannot authorize follow-through",
+        "Clarification acceptance is not source resolution",
+        "New answer requires a fresh quality review"
+      ],
+      "dependencies": [
+        "Existing synthetic follow-through pack",
+        "Current parent/source binding"
+      ],
+      "sources": [
+        "assessor-pack",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "assessor-handoff",
+      "version": 1,
+      "title": "Prepare assessor handoff draft",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "assessor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "local-synthetic",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Current supported answers have an accepted quality review.",
+      "inputs": [
+        "Accepted current quality artifact",
+        "Fresh packet",
+        "Outstanding requirement and ownership context"
+      ],
+      "steps": [
+        "Verify no open answer questions in the current reviewed packet.",
+        "Prepare supported summary and remaining requirements.",
+        "Save a draft with unknown recipient/ownership still explicit."
+      ],
+      "outputFields": [
+        "reviewed_summary",
+        "pending_requirements",
+        "receiving_owner_state",
+        "citations"
+      ],
+      "humanReview": "Assessor verifies requirements, recipient and authorized source send path.",
+      "completion": "Handoff draft saved; no delivery, signature, admission decision or receiving acknowledgment.",
+      "stopConditions": [
+        "Open answer question",
+        "Stale/rejected quality parent",
+        "Missing authorization"
+      ],
+      "evaluationCases": [
+        "Blocked quality cannot produce a ready handoff",
+        "Unknown receiver is not invented",
+        "Draft acceptance never sends"
+      ],
+      "dependencies": [
+        "Existing synthetic assessor pack",
+        "Receiving/source completion contract remains open"
+      ],
+      "sources": [
+        "assessor-pack",
+        "pipeline-finality"
+      ]
+    },
+    {
+      "id": "admission-decision-brief",
+      "version": 1,
+      "title": "Prepare evidence for an admission decision",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "clinical-reviewer"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "An authorized human requests a decision brief.",
+      "inputs": [
+        "Assessment/recommendation versions",
+        "Approved site criteria",
+        "Unresolved evidence"
+      ],
+      "steps": [
+        "Organize source facts against supplied reviewed criteria.",
+        "Preserve conflicting information and unanswered questions.",
+        "Prepare the human decision packet without selecting an outcome."
+      ],
+      "outputFields": [
+        "evidence_by_criterion",
+        "conflicts",
+        "open_questions",
+        "source_versions"
+      ],
+      "humanReview": "Qualified authorized decision-maker owns suitability, decision and signature.",
+      "completion": "A decision packet is ready; no admission decision or clinical clearance.",
+      "stopConditions": [
+        "Site criteria absent",
+        "Reviewer authority unknown"
+      ],
+      "evaluationCases": [
+        "Recommendation is not admission",
+        "Missing criterion does not become a passed check",
+        "Unapproved clinical threshold is never invented"
+      ],
+      "dependencies": [
+        "Authorized case content",
+        "Reviewed site criteria and human decision ownership"
+      ],
+      "sources": [
+        "pipeline",
+        "care",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "transition-readiness-review",
+      "version": 1,
+      "title": "Review transition readiness",
+      "family": "pipeline",
+      "applications": [
+        "pipeline",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "transition-coordinator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Accepted referral or changed arrival plan.",
+      "inputs": [
+        "Source decision",
+        "Required transition items",
+        "Verified sending/receiving identity references"
+      ],
+      "steps": [
+        "Compare requirements with current evidence.",
+        "Identify missing receiving ownership, date or acceptance.",
+        "Prepare a scoped checklist without creating a clinical record."
+      ],
+      "outputFields": [
+        "source_decision",
+        "requirements",
+        "receiving_identity",
+        "readiness_gaps",
+        "handoff_questions"
+      ],
+      "humanReview": "Sending and receiving owners confirm their respective source responsibilities.",
+      "completion": "A readiness review is ready; accepted referral is not an actual admission.",
+      "stopConditions": [
+        "Cross-app identity unresolved",
+        "Receiving grant absent"
+      ],
+      "evaluationCases": [
+        "Accepted referral and admitted stay stay distinct",
+        "Recipient access rechecked",
+        "Missing date remains unknown"
+      ],
+      "dependencies": [
+        "Cross-app identity binding",
+        "Receiving requirements and acknowledgment contract"
+      ],
+      "sources": [
+        "pipeline",
+        "care",
+        "community"
+      ]
+    },
+    {
+      "id": "handoff-reconciliation",
+      "version": 1,
+      "title": "Reconcile a handoff status",
+      "family": "pipeline",
+      "applications": [
+        "pipeline",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "transition-coordinator",
+        "admissions-supervisor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Failed, uncertain or unacknowledged delivery.",
+      "inputs": [
+        "Exact attempt/source revision",
+        "Sending receipt",
+        "Receiving evidence if authorized"
+      ],
+      "steps": [
+        "Compare the same attempt across available evidence.",
+        "Separate prepared, sent, failed, uncertain and acknowledged states.",
+        "Draft verification/retry guidance with no automatic resend."
+      ],
+      "outputFields": [
+        "attempt_reference",
+        "send_state",
+        "receipt_state",
+        "unknowns",
+        "proposed_verification"
+      ],
+      "humanReview": "Source owner resolves/retries through the owning application.",
+      "completion": "A reconciliation proposal is ready; no delivery or acknowledgment is manufactured.",
+      "stopConditions": [
+        "Attempt identity ambiguous",
+        "Source changed"
+      ],
+      "evaluationCases": [
+        "Lost response does not trigger duplicate send",
+        "Sent is not received",
+        "Late correction updates the right attempt"
+      ],
+      "dependencies": [
+        "Source result lookup",
+        "Reviewed recipient/acknowledgment meaning"
+      ],
+      "sources": [
+        "pipeline",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "source-correction-impact",
+      "version": 1,
+      "title": "Review assessment correction impact",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "assessor",
+        "clinical-reviewer"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Assessment correction or new evidence after review/send.",
+      "inputs": [
+        "Prior/current versions",
+        "Source finality policy",
+        "Linked decisions/handoffs"
+      ],
+      "steps": [
+        "Identify the changed facts and provenance.",
+        "List affected reviewed artifacts and possible downstream readers.",
+        "Prepare the authorized correction/review path without overwriting history."
+      ],
+      "outputFields": [
+        "version_difference",
+        "affected_references",
+        "required_reviews",
+        "unknown_delivery_impact"
+      ],
+      "humanReview": "Authorized assessor/reviewer selects the source correction or addendum path.",
+      "completion": "An impact draft is ready; prior signatures and records remain intact.",
+      "stopConditions": [
+        "Prior version unavailable",
+        "Policy version unknown"
+      ],
+      "evaluationCases": [
+        "Finalized record is not silently patched",
+        "Unsent versus sent states choose different review questions",
+        "Source change invalidates previous quality acceptance"
+      ],
+      "dependencies": [
+        "Versioned source history",
+        "Reviewed final-send policy"
+      ],
+      "sources": [
+        "pipeline-finality",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "supervisor-exception-brief",
+      "version": 1,
+      "title": "Prepare supervisor exception brief",
+      "family": "pipeline",
+      "applications": [
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "admissions-supervisor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "local-synthetic",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Request a current team exception review.",
+      "inputs": [
+        "Authorized complete team metadata packet"
+      ],
+      "steps": [
+        "Use the existing role service and strict packet checks.",
+        "Prepare deterministic exception evidence and verification steps.",
+        "Save an immutable unaccepted draft through the shared runner."
+      ],
+      "outputFields": [
+        "team_exception_evidence",
+        "verification_steps",
+        "coverage",
+        "source_revisions"
+      ],
+      "humanReview": "Supervisor reviews the draft and makes source-owned follow-up decisions.",
+      "completion": "Unaccepted team brief saved; no assignment, message or source resolution.",
+      "stopConditions": [
+        "Partial/stale history",
+        "Wrong team scope",
+        "Grant change"
+      ],
+      "evaluationCases": [
+        "No narrative leaks into metadata view",
+        "Reassignment and blocker resolution reconcile",
+        "Saved brief withheld after revocation"
+      ],
+      "dependencies": [
+        "Existing synthetic role brief pack",
+        "Complete real source export still missing"
+      ],
+      "sources": [
+        "brief-pack",
+        "integration"
+      ]
+    },
+    {
+      "id": "executive-workflow-brief",
+      "version": 1,
+      "title": "Prepare executive workflow brief",
+      "family": "pipeline",
+      "applications": [
+        "pipeline",
+        "platform"
+      ],
+      "ownerRoleIds": [
+        "executive-operations-leader"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "local-synthetic",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Request an aggregate workflow comparison.",
+      "inputs": [
+        "Authorized aggregate-only packet",
+        "Fixed metric policy"
+      ],
+      "steps": [
+        "Check exact cohort definitions and suppression.",
+        "Prepare deterministic measures, denominators and limits.",
+        "Save an unaccepted aggregate brief through the shared runner."
+      ],
+      "outputFields": [
+        "cohort_measures",
+        "denominators",
+        "suppression",
+        "coverage",
+        "limitations"
+      ],
+      "humanReview": "Executive reviews interpretation and proposed follow-up; no individual drill-down.",
+      "completion": "Aggregate draft saved; no publication, causal conclusion or case disclosure.",
+      "stopConditions": [
+        "Suppression/policy mismatch",
+        "Stale or incomplete source"
+      ],
+      "evaluationCases": [
+        "No case/owner/event IDs in output",
+        "Small cohorts remain suppressed",
+        "Cohort changes cannot become performance claims"
+      ],
+      "dependencies": [
+        "Existing synthetic role brief pack",
+        "Production aggregate policy and live routing evidence outstanding"
+      ],
+      "sources": [
+        "brief-pack",
+        "integration"
+      ]
+    },
+    {
+      "id": "community-operations-brief",
+      "version": 1,
+      "title": "Prepare a community operations brief",
+      "family": "platform",
+      "applications": [
+        "platform"
+      ],
+      "ownerRoleIds": [
+        "community-director"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Requested community review or approved cadence.",
+      "inputs": [
+        "Authorized community view",
+        "Metric definitions and current period",
+        "Available admissions/workforce summaries"
+      ],
+      "steps": [
+        "Validate community and period scope.",
+        "Summarize verified measures and actionable gaps.",
+        "Link each follow-up to evidence and the appropriate human owner."
+      ],
+      "outputFields": [
+        "community_scope",
+        "period",
+        "verified_measures",
+        "exceptions",
+        "source_links"
+      ],
+      "humanReview": "Community director reviews and routes follow-up; source systems own actions.",
+      "completion": "A scoped community brief is ready; reading a dashboard does not close work.",
+      "stopConditions": [
+        "Unavailable source slice",
+        "Wrong community grant"
+      ],
+      "evaluationCases": [
+        "Snapshot fallback is labeled partial",
+        "No portfolio leakage",
+        "Missing measure is not zero"
+      ],
+      "dependencies": [
+        "Governed community capability",
+        "Module coverage/freshness contract"
+      ],
+      "sources": [
+        "community",
+        "platform"
+      ]
+    },
+    {
+      "id": "licensing-findings-review",
+      "version": 1,
+      "title": "Review licensing findings and changes",
+      "family": "platform",
+      "applications": [
+        "platform"
+      ],
+      "ownerRoleIds": [
+        "licensing-compliance-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "New or changed state report.",
+      "inputs": [
+        "Original report/source link",
+        "Current and prior text",
+        "Facility scope"
+      ],
+      "steps": [
+        "Compare cited source passages.",
+        "Prepare a readable summary separating reported findings from interpretation.",
+        "Draft follow-up questions with explicit owner/rule gaps."
+      ],
+      "outputFields": [
+        "report_reference",
+        "change_summary",
+        "cited_findings",
+        "unknowns",
+        "follow_up_questions"
+      ],
+      "humanReview": "Authorized facility/compliance owner verifies original and applicability.",
+      "completion": "A cited review is ready; no finding closure or filing.",
+      "stopConditions": [
+        "Original/source revision unavailable",
+        "Facility mapping unresolved"
+      ],
+      "evaluationCases": [
+        "Summary links original evidence",
+        "Formatting preserves dates and attribution",
+        "Missing source collection is not no findings"
+      ],
+      "dependencies": [
+        "Original/report version contract",
+        "Existing licensing monitoring is narrower than this candidate"
+      ],
+      "sources": [
+        "community",
+        "platform"
+      ]
+    },
+    {
+      "id": "lic624-language-review",
+      "version": 1,
+      "title": "Review LIC 624 wording",
+      "family": "platform",
+      "applications": [
+        "platform"
+      ],
+      "ownerRoleIds": [
+        "licensing-compliance-owner",
+        "community-director"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Native report draft or backlog extraction is ready for language review.",
+      "inputs": [
+        "Original/pre-edit narrative",
+        "Current draft version",
+        "Verified source facts and uncertainty"
+      ],
+      "steps": [
+        "Identify clarity and attribution issues.",
+        "Propose minimal language changes with visible differences.",
+        "Present unresolved factual questions separately from wording edits."
+      ],
+      "outputFields": [
+        "original_revision",
+        "proposed_changes",
+        "fact_preservation_notes",
+        "questions"
+      ],
+      "humanReview": "Human confirms exact text/version; Platform performs any save; filing/delivery are separate.",
+      "completion": "A wording proposal is ready; the agent does not commit or file the report.",
+      "stopConditions": [
+        "Missing factual support",
+        "Concurrent source edit",
+        "Ambiguous actor/time"
+      ],
+      "evaluationCases": [
+        "No invented fact or softened uncertainty",
+        "Rejected wording leaves source untouched",
+        "Model failure does not block ordinary source draft saving"
+      ],
+      "dependencies": [
+        "Authorized report content",
+        "Reviewed comparison/commit interaction",
+        "Source command remains separate"
+      ],
+      "sources": [
+        "community"
+      ]
+    },
+    {
+      "id": "executive-exception-draft",
+      "version": 1,
+      "title": "Prepare a governed executive exception",
+      "family": "platform",
+      "applications": [
+        "platform",
+        "pipeline"
+      ],
+      "ownerRoleIds": [
+        "executive-operations-leader",
+        "licensing-compliance-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "An explicitly reviewed exception rule is met.",
+      "inputs": [
+        "Versioned trigger rule",
+        "Current scoped evidence",
+        "Reviewed owner/recipient policy"
+      ],
+      "steps": [
+        "Verify the trigger against deterministic source evidence.",
+        "Prepare reason, scope, unknowns and proposed follow-up.",
+        "Retain a draft; do not send or infer recipient authority."
+      ],
+      "outputFields": [
+        "rule_reference",
+        "evidence",
+        "reason",
+        "proposed_owner",
+        "next_human_action"
+      ],
+      "humanReview": "Designated human reviews policy, audience and any future action.",
+      "completion": "Exception draft ready; no notification, email, publication or acknowledgment.",
+      "stopConditions": [
+        "Unreviewed rule",
+        "Unknown recipient scope",
+        "Incomplete data"
+      ],
+      "evaluationCases": [
+        "No universal reporting deadline invented",
+        "Threshold change invalidates old proposal",
+        "Repeated source event does not imply a new delivered alert"
+      ],
+      "dependencies": [
+        "Approved trigger/recipient policy",
+        "Source evidence and later delivery contract"
+      ],
+      "sources": [
+        "community",
+        "brief-pack"
+      ]
+    },
+    {
+      "id": "workforce-coverage-review",
+      "version": 1,
+      "title": "Review workforce coverage aggregates",
+      "family": "platform",
+      "applications": [
+        "platform",
+        "workforce"
+      ],
+      "ownerRoleIds": [
+        "workforce-coordinator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Requested staffing/credential/open-role review.",
+      "inputs": [
+        "Authorized counts-only Workforce summary",
+        "Source scheduling-block flags",
+        "Scope/as-of time"
+      ],
+      "steps": [
+        "Validate the aggregate source and freshness.",
+        "Describe recorded gaps and next source verification.",
+        "Keep staff/applicant personal data out unless a separate authorized capability exists."
+      ],
+      "outputFields": [
+        "community_scope",
+        "coverage_counts",
+        "recorded_blocks",
+        "open_role_gaps",
+        "source_links"
+      ],
+      "humanReview": "Workforce operator verifies and records HR/scheduling decisions.",
+      "completion": "Aggregate review ready; no employee status, scheduling or hiring action.",
+      "stopConditions": [
+        "No Workforce connection",
+        "Expired summary",
+        "Personal detail requested without capability"
+      ],
+      "evaluationCases": [
+        "No staff/applicant names in aggregate output",
+        "Unknown feed is not zero gaps",
+        "Credential label is not clinical privilege"
+      ],
+      "dependencies": [
+        "Workforce-owned summary capability",
+        "No direct personal-HR agent connector"
+      ],
+      "sources": [
+        "workforce"
+      ]
+    },
+    {
+      "id": "operational-trend-explanation",
+      "version": 1,
+      "title": "Explain a governed operational trend",
+      "family": "platform",
+      "applications": [
+        "platform"
+      ],
+      "ownerRoleIds": [
+        "data-quality-analyst",
+        "executive-operations-leader"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A user requests a defined comparison.",
+      "inputs": [
+        "Governed deterministic measures",
+        "Cohort/time definitions",
+        "Coverage and suppression"
+      ],
+      "steps": [
+        "Check comparable scope, time and grain.",
+        "Explain verified differences and limitations.",
+        "Suggest a scoped question for investigation without asserting cause."
+      ],
+      "outputFields": [
+        "metric_definition",
+        "comparison",
+        "denominators",
+        "limitations",
+        "investigation_questions"
+      ],
+      "humanReview": "Metric owner/reviewer validates interpretation and any further investigation.",
+      "completion": "An explanation grounded in verified calculations is ready.",
+      "stopConditions": [
+        "Unmatched periods",
+        "Missing denominator",
+        "Suppressed value"
+      ],
+      "evaluationCases": [
+        "No substituted period",
+        "No causal claim from association",
+        "No staff ranking from activity"
+      ],
+      "dependencies": [
+        "Authorized deterministic analytical capability",
+        "Reviewed metric definitions"
+      ],
+      "sources": [
+        "platform",
+        "integration"
+      ]
+    },
+    {
+      "id": "data-freshness-review",
+      "version": 1,
+      "title": "Review dataset freshness and coverage",
+      "family": "platform",
+      "applications": [
+        "platform",
+        "pipeline",
+        "alamohealth",
+        "workflow"
+      ],
+      "ownerRoleIds": [
+        "data-quality-analyst"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A source is stale, missing or being considered for use.",
+      "inputs": [
+        "Dataset watermark/version",
+        "Declared coverage",
+        "Lineage and expected freshness policy"
+      ],
+      "steps": [
+        "Compare observed coverage with reviewed source expectations.",
+        "Identify unavailable or partial slices.",
+        "Prepare a bounded source-owner investigation."
+      ],
+      "outputFields": [
+        "dataset_reference",
+        "as_of",
+        "coverage",
+        "policy_gap",
+        "investigation"
+      ],
+      "humanReview": "Data/source owner confirms expectations and recovery.",
+      "completion": "A readiness finding is ready; no data repair or completeness claim without evidence.",
+      "stopConditions": [
+        "Unknown freshness policy",
+        "Unverified dataset identity"
+      ],
+      "evaluationCases": [
+        "Missing events cannot masquerade as zero work",
+        "Old snapshot remains labeled stale",
+        "Publication timestamp differs from source event time"
+      ],
+      "dependencies": [
+        "Source watermarks",
+        "Reviewed coverage/freshness targets"
+      ],
+      "sources": [
+        "integration",
+        "platform"
+      ]
+    },
+    {
+      "id": "shift-care-brief",
+      "version": 1,
+      "title": "Prepare an assigned care/shift brief",
+      "family": "care",
+      "applications": [
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "direct-care-staff",
+        "shift-supervisor"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Shift start or authorized care handoff review.",
+      "inputs": [
+        "Current person/shift assignments",
+        "Approved care plan references",
+        "Open obligations and reviewed observations"
+      ],
+      "steps": [
+        "Verify assignment and resident identity.",
+        "Organize due/open work and known changes using source facts.",
+        "Keep missing information and qualified-review needs explicit."
+      ],
+      "outputFields": [
+        "assignment_scope",
+        "plan_versions",
+        "open_work",
+        "source_changes",
+        "unknowns"
+      ],
+      "humanReview": "Authorized staff verify current plan and responsibilities.",
+      "completion": "A care brief is ready; it does not attest care, diagnose or set interventions.",
+      "stopConditions": [
+        "No current care grant",
+        "Plan unavailable",
+        "Identity mismatch"
+      ],
+      "evaluationCases": [
+        "Wrong resident rejected",
+        "Old observation is not current baseline",
+        "No intervention inferred from vague symptoms"
+      ],
+      "dependencies": [
+        "Future authorized Point of Care read",
+        "Reviewed site/role scope"
+      ],
+      "sources": [
+        "care"
+      ]
+    },
+    {
+      "id": "care-obligation-review",
+      "version": 1,
+      "title": "Review open or unowned care work",
+      "family": "care",
+      "applications": [
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "shift-supervisor",
+        "direct-care-staff"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A reviewed care-work exception or requested queue check.",
+      "inputs": [
+        "Source obligations and owners",
+        "Recorded due/response state",
+        "Approved escalation rules"
+      ],
+      "steps": [
+        "Check current obligation and source coverage.",
+        "Separate due work, unknown ownership and response review.",
+        "Prepare verification steps for the responsible qualified person."
+      ],
+      "outputFields": [
+        "obligation_references",
+        "recorded_states",
+        "owner_gaps",
+        "review_questions"
+      ],
+      "humanReview": "Authorized care owner decides and records assignment/disposition.",
+      "completion": "Exception review ready; no closure or change to care timing.",
+      "stopConditions": [
+        "Unreviewed timing rule",
+        "Incomplete assignment scope"
+      ],
+      "evaluationCases": [
+        "No invented clinical schedule",
+        "Recorded exception stays distinct from omitted care",
+        "Resolved source obligation removes stale exception"
+      ],
+      "dependencies": [
+        "Care obligation projection",
+        "Reviewed assignment/response lifecycle"
+      ],
+      "sources": [
+        "care"
+      ]
+    },
+    {
+      "id": "care-note-draft",
+      "version": 1,
+      "title": "Draft care documentation from supplied facts",
+      "family": "care",
+      "applications": [
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "direct-care-staff",
+        "clinical-care-lead"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "An authorized person supplies facts from a care interaction.",
+      "inputs": [
+        "Attributed observations/actions",
+        "Actual times or explicit unknowns",
+        "Current source note requirements"
+      ],
+      "steps": [
+        "Separate observed, reported and inferred content.",
+        "Draft clear language using only supplied facts.",
+        "Flag missing attribution or response without filling it in."
+      ],
+      "outputFields": [
+        "draft_text",
+        "fact_references",
+        "attribution",
+        "unknowns"
+      ],
+      "humanReview": "Authorized human verifies and signs/records in the owning clinical system.",
+      "completion": "Unaccepted note draft ready; no clinical signature or attestation that care occurred.",
+      "stopConditions": [
+        "Wrong resident",
+        "Missing authority",
+        "Unsupported clinical assertion"
+      ],
+      "evaluationCases": [
+        "No invented care/action/response",
+        "Reported statement stays reported",
+        "Late entry retains actual event and entry-time distinctions"
+      ],
+      "dependencies": [
+        "Authorized care-content contract",
+        "Reviewed documentation rules and signature boundary"
+      ],
+      "sources": [
+        "care"
+      ]
+    },
+    {
+      "id": "response-follow-up-review",
+      "version": 1,
+      "title": "Prepare qualified response follow-up",
+      "family": "care",
+      "applications": [
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "clinical-care-lead"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A source-assigned response review needs preparation.",
+      "inputs": [
+        "Current reviewed plan",
+        "Attributed observations",
+        "Recorded intervention and response evidence"
+      ],
+      "steps": [
+        "Collect authorized evidence for the assigned review.",
+        "List what is recorded and what remains unknown.",
+        "Prepare questions for the qualified reviewer without choosing treatment."
+      ],
+      "outputFields": [
+        "review_reference",
+        "observed_changes",
+        "response_evidence",
+        "questions"
+      ],
+      "humanReview": "Qualified reviewer owns interpretation, disposition and any care-plan change.",
+      "completion": "A review packet is ready; no clinical recommendation, closure or escalation threshold is invented.",
+      "stopConditions": [
+        "No qualified-review owner",
+        "Unapproved policy",
+        "Stale observations"
+      ],
+      "evaluationCases": [
+        "Missing response is unknown",
+        "No clinical conclusion from documentation absence",
+        "Changed plan invalidates old review packet"
+      ],
+      "dependencies": [
+        "Response-review projection",
+        "Approved clinical policy and reviewer assignment"
+      ],
+      "sources": [
+        "care"
+      ]
+    },
+    {
+      "id": "care-handoff-review",
+      "version": 1,
+      "title": "Review continuity of care handoff",
+      "family": "care",
+      "applications": [
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "shift-supervisor",
+        "direct-care-staff"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Shift/person transfer or unresolved receiving work.",
+      "inputs": [
+        "Open obligations",
+        "Current sending/receiving assignment",
+        "Source handoff and response-review evidence"
+      ],
+      "steps": [
+        "Identify unresolved commitments and supplied context.",
+        "Check whether the receiving owner is actually recorded.",
+        "Prepare a concise handoff with acknowledgment still explicit."
+      ],
+      "outputFields": [
+        "open_commitments",
+        "receiving_owner_state",
+        "evidence",
+        "acknowledgment_state"
+      ],
+      "humanReview": "Sending/receiving humans verify and record the source transfer.",
+      "completion": "A handoff draft/review is ready; no transfer or acknowledgment is fabricated.",
+      "stopConditions": [
+        "Receiving scope unknown",
+        "Stale plan or assignment"
+      ],
+      "evaluationCases": [
+        "Send is not receipt",
+        "Unresolved response travels with handoff",
+        "Receiving role label alone grants no chart access"
+      ],
+      "dependencies": [
+        "Future care handoff capability",
+        "Reviewed acknowledgment semantics"
+      ],
+      "sources": [
+        "care"
+      ]
+    },
+    {
+      "id": "procedure-match",
+      "version": 1,
+      "title": "Find applicable reviewed guidance",
+      "family": "workflow",
+      "applications": [
+        "workflow"
+      ],
+      "ownerRoleIds": [
+        "procedure-training-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A user asks how to perform an authorized task.",
+      "inputs": [
+        "Task/app context",
+        "Reviewed applicable procedure versions",
+        "Facility/role policy scope"
+      ],
+      "steps": [
+        "Match task and scope to approved guidance.",
+        "Show source/version and applicability limits.",
+        "Ask for missing task context instead of inventing a policy."
+      ],
+      "outputFields": [
+        "procedure_reference",
+        "version",
+        "applicability",
+        "source_links",
+        "unknowns"
+      ],
+      "humanReview": "User confirms the situation; domain owner approves the underlying guidance.",
+      "completion": "Applicable guidance is identified; no work or training completion is asserted.",
+      "stopConditions": [
+        "Only unreviewed guidance available",
+        "Ambiguous clinical/policy scope"
+      ],
+      "evaluationCases": [
+        "Superseded procedure not shown as current",
+        "Prompt injection in source cannot authorize action",
+        "No invented emergency/clinical instructions"
+      ],
+      "dependencies": [
+        "Reviewed knowledge publication and retrieval"
+      ],
+      "sources": [
+        "workflow"
+      ]
+    },
+    {
+      "id": "procedure-walkthrough",
+      "version": 1,
+      "title": "Explain a reviewed workflow step",
+      "family": "workflow",
+      "applications": [
+        "workflow",
+        "pipeline",
+        "platform",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "procedure-training-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A user starts a reviewed tutorial or asks for the next documented step.",
+      "inputs": [
+        "Pinned procedure/app version",
+        "Verified clickpaths",
+        "Current walkthrough state"
+      ],
+      "steps": [
+        "Explain the step, prerequisite and expected evidence.",
+        "Show documented alternatives and recovery branches.",
+        "Keep tutorial progress separate from real source outcomes."
+      ],
+      "outputFields": [
+        "procedure_step",
+        "prerequisites",
+        "verified_navigation",
+        "expected_evidence",
+        "recovery"
+      ],
+      "humanReview": "User performs the task; source confirms work; training owner reviews guidance.",
+      "completion": "Step guidance is delivered; no source action, competence or permission is implied.",
+      "stopConditions": [
+        "App/procedure version mismatch",
+        "Unverified control path"
+      ],
+      "evaluationCases": [
+        "Missing button does not trigger access bypass",
+        "Practice cannot mutate real records",
+        "Lesson completion is not signed work"
+      ],
+      "dependencies": [
+        "Versioned approved procedure",
+        "App-owned tutorial contract"
+      ],
+      "sources": [
+        "workflow",
+        "assessor-clickpaths"
+      ]
+    },
+    {
+      "id": "sop-draft-from-evidence",
+      "version": 1,
+      "title": "Draft a procedure from work evidence",
+      "family": "workflow",
+      "applications": [
+        "workflow",
+        "pipeline",
+        "platform",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "procedure-training-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A task needs documentation or permitted observations suggest an improvement.",
+      "inputs": [
+        "App-owned rules",
+        "Reviewed source materials",
+        "Scoped committed activity or supplied examples"
+      ],
+      "steps": [
+        "Separate policy, observed behavior and inference.",
+        "Draft purpose, prerequisites, steps, branches, evidence and ownership.",
+        "List gaps and route the proposed version for domain review."
+      ],
+      "outputFields": [
+        "procedure_draft",
+        "evidence_links",
+        "inferences",
+        "exceptions",
+        "review_questions"
+      ],
+      "humanReview": "Designated domain/knowledge owner approves before publication.",
+      "completion": "A reviewable procedure draft exists; habits do not become policy and no skill activates.",
+      "stopConditions": [
+        "Unapproved observation/capture scope",
+        "No authoritative rule for a consequential step"
+      ],
+      "evaluationCases": [
+        "Common workaround remains proposed",
+        "No inferred off-app event presented as observed",
+        "Source change flags affected guidance"
+      ],
+      "dependencies": [
+        "Governed activity/evidence access",
+        "Workflow review/publication lifecycle"
+      ],
+      "sources": [
+        "workflow",
+        "assessor-procedures",
+        "integration"
+      ]
+    },
+    {
+      "id": "procedure-impact-review",
+      "version": 1,
+      "title": "Review guidance affected by a change",
+      "family": "workflow",
+      "applications": [
+        "workflow",
+        "pipeline",
+        "platform",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "procedure-training-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "App, policy or reviewed role requirements change.",
+      "inputs": [
+        "Versioned change",
+        "Linked procedures/tutorials/skills",
+        "Ownership references"
+      ],
+      "steps": [
+        "Identify exact affected references.",
+        "Compare prerequisites, steps and output meaning.",
+        "Prepare review requests and compatibility questions without silently republishing."
+      ],
+      "outputFields": [
+        "change_reference",
+        "affected_assets",
+        "compatibility_questions",
+        "review_owners"
+      ],
+      "humanReview": "App/domain/training owners decide new versions and rollout.",
+      "completion": "An impact review is ready; existing guidance and running work are not silently migrated.",
+      "stopConditions": [
+        "Missing source version",
+        "Unknown asset ownership"
+      ],
+      "evaluationCases": [
+        "Unrelated guidance not invalidated without evidence",
+        "Old inflight work keeps pinned version until reviewed migration",
+        "Policy edit does not auto-release a skill"
+      ],
+      "dependencies": [
+        "Dependency/lineage links",
+        "Reviewed version/publication ownership"
+      ],
+      "sources": [
+        "workflow",
+        "integration"
+      ]
+    },
+    {
+      "id": "training-preparation",
+      "version": 1,
+      "title": "Prepare role learning and fictional practice",
+      "family": "workflow",
+      "applications": [
+        "workflow",
+        "pipeline",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "procedure-training-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Onboarding, refresher or an explicitly reviewed learning need.",
+      "inputs": [
+        "Draft/reviewed role tasks with status",
+        "Approved procedures",
+        "Fictional cases and rubric"
+      ],
+      "steps": [
+        "Select applicable task knowledge and current guidance.",
+        "Prepare explanations and isolated practice including exceptions.",
+        "Leave reviewer scores blank until actual review and separate completion from competence."
+      ],
+      "outputFields": [
+        "learning_objectives",
+        "procedure_versions",
+        "fictional_exercises",
+        "rubric",
+        "review_questions"
+      ],
+      "humanReview": "Trainer/domain reviewer validates content; authorized owner decides competence.",
+      "completion": "Training material is ready for review; no employee record, credential or access is changed.",
+      "stopConditions": [
+        "No approved procedure for consequential task",
+        "Real case requested under synthetic-only restriction"
+      ],
+      "evaluationCases": [
+        "Simulated grade cannot become human evidence",
+        "Practice includes recovery and uncertainty",
+        "Role title does not imply completed training"
+      ],
+      "dependencies": [
+        "Reviewed teaching content",
+        "Isolated practice and learning-record contract"
+      ],
+      "sources": [
+        "workflow",
+        "human-evals"
+      ]
+    },
+    {
+      "id": "source-mapping-proposal",
+      "version": 1,
+      "title": "Propose business ontology/source mappings",
+      "family": "foundation",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth",
+        "workforce"
+      ],
+      "ownerRoleIds": [
+        "data-quality-analyst",
+        "application-administrator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "New source, dataset or business concept.",
+      "inputs": [
+        "Authorized metadata",
+        "Source ownership",
+        "Reviewed concepts and candidate crosswalks"
+      ],
+      "steps": [
+        "Describe source semantics and identity boundaries.",
+        "Propose entity/relationship mappings with evidence and effective dates.",
+        "Keep ambiguous identities and unverified assumptions for review."
+      ],
+      "outputFields": [
+        "source_references",
+        "mapping_proposals",
+        "ambiguities",
+        "lineage",
+        "review_owners"
+      ],
+      "humanReview": "Business/source stewards approve definitions; activation and grants are separate.",
+      "completion": "A mapping proposal is ready; no identities are merged and no access is granted.",
+      "stopConditions": [
+        "Unverified source owner",
+        "Ambiguous identity without evidence"
+      ],
+      "evaluationCases": [
+        "Name match alone never merges people",
+        "Metadata visibility is not data permission",
+        "Source revision change invalidates prior mapping review"
+      ],
+      "dependencies": [
+        "Authorized metadata discovery",
+        "Reviewed identity/governance contract"
+      ],
+      "sources": [
+        "integration"
+      ]
+    },
+    {
+      "id": "lineage-coverage-review",
+      "version": 1,
+      "title": "Review lineage and coverage gaps",
+      "family": "foundation",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "data-quality-analyst"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A measure, brief or dataset needs evidence verification.",
+      "inputs": [
+        "Source and transformation references",
+        "Watermarks/coverage",
+        "Projection and outcome references"
+      ],
+      "steps": [
+        "Trace each derived claim to its declared source/version.",
+        "Identify missing transformations, authority or completeness evidence.",
+        "Prepare source-owner questions without implying missing data equals no work."
+      ],
+      "outputFields": [
+        "lineage_paths",
+        "coverage_gaps",
+        "stale_references",
+        "owner_questions"
+      ],
+      "humanReview": "Data/source owners verify or repair their own contracts.",
+      "completion": "A lineage/coverage review is ready; no completeness proof from a diagram alone.",
+      "stopConditions": [
+        "Unknown dataset identity",
+        "Missing revision evidence"
+      ],
+      "evaluationCases": [
+        "Source-to-draft-to-receipt chain preserves revisions",
+        "Partial export refuses complete metrics",
+        "Hash is not authentication"
+      ],
+      "dependencies": [
+        "Governed lineage metadata",
+        "Source-owned completeness definitions"
+      ],
+      "sources": [
+        "integration"
+      ]
+    },
+    {
+      "id": "integration-readiness-review",
+      "version": 1,
+      "title": "Review application/skill readiness",
+      "family": "foundation",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth",
+        "workforce"
+      ],
+      "ownerRoleIds": [
+        "application-administrator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Proposed integration, capability or release.",
+      "inputs": [
+        "Manifests and versions",
+        "Identity/policy bindings",
+        "Conformance, quality and recovery evidence"
+      ],
+      "steps": [
+        "Distinguish declared, implemented, configured, authorized and deployed states.",
+        "Evaluate known prerequisites and identify missing evidence.",
+        "Prepare a reviewable readiness record without activating anything."
+      ],
+      "outputFields": [
+        "component_states",
+        "evidence",
+        "blocking_dependencies",
+        "review_decisions_needed"
+      ],
+      "humanReview": "Source, release and product owners approve actual configuration and rollout.",
+      "completion": "A readiness assessment is ready; catalog registration and local tests do not enable access.",
+      "stopConditions": [
+        "Missing source binding",
+        "Unverified deployment evidence"
+      ],
+      "evaluationCases": [
+        "Passing build is not deployed service",
+        "Fixture grant cannot become production permission",
+        "No automatic activation from completed checklist"
+      ],
+      "dependencies": [
+        "Current catalog and source ownership",
+        "Release/recovery and quality evidence"
+      ],
+      "sources": [
+        "integration",
+        "harness"
+      ]
+    },
+    {
+      "id": "source-drift-review",
+      "version": 1,
+      "title": "Review source/schema/permission drift",
+      "family": "foundation",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth",
+        "workforce"
+      ],
+      "ownerRoleIds": [
+        "application-administrator",
+        "data-quality-analyst"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Source version, schema or grant policy changes.",
+      "inputs": [
+        "Prior/current source metadata",
+        "Affected reviewed mappings/skills",
+        "Compatibility rules"
+      ],
+      "steps": [
+        "Identify exact changes and unknown compatibility.",
+        "Mark affected approvals/evidence for fresh review.",
+        "Prepare migration or stop conditions without weakening source checks."
+      ],
+      "outputFields": [
+        "change_set",
+        "affected_references",
+        "compatibility_state",
+        "revalidation_plan"
+      ],
+      "humanReview": "Source/integration owners review and release compatible changes.",
+      "completion": "Drift review is ready; a new schema is not silently accepted.",
+      "stopConditions": [
+        "Untrusted metadata",
+        "Missing baseline version"
+      ],
+      "evaluationCases": [
+        "Removed field cannot be silently defaulted",
+        "Revocation blocks retained retrieval",
+        "Changed meanings require reviewed mapping"
+      ],
+      "dependencies": [
+        "Versioned metadata and policy references",
+        "Compatibility and rollback policy"
+      ],
+      "sources": [
+        "integration"
+      ]
+    },
+    {
+      "id": "skill-evaluation-review",
+      "version": 1,
+      "title": "Review skill quality and candidate changes",
+      "family": "foundation",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "procedure-training-owner",
+        "application-administrator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A skill candidate or explicit feedback is ready for review.",
+      "inputs": [
+        "Pinned baseline/candidate",
+        "Comparable fictional cases",
+        "Actual trace-linked results and reviewer provenance"
+      ],
+      "steps": [
+        "Separate engineering fixtures, model trials and human judgments.",
+        "Compare outcome failures, correction burden, authority and cost.",
+        "Prepare a release recommendation with missing evidence and rollback target."
+      ],
+      "outputFields": [
+        "baseline_candidate_refs",
+        "evaluation_evidence",
+        "critical_failures",
+        "review_gaps",
+        "release_recommendation"
+      ],
+      "humanReview": "Independent/domain reviewer and release owner decide promotion; the skill cannot approve itself.",
+      "completion": "An evaluation review is ready; no automatic activation or fabricated human score.",
+      "stopConditions": [
+        "Incomparable cases",
+        "Missing reviewer provenance",
+        "Critical failures unresolved"
+      ],
+      "evaluationCases": [
+        "Canned output is not live model evidence",
+        "Candidate cannot grade/promote itself",
+        "Held-out exposure is declared"
+      ],
+      "dependencies": [
+        "Evaluation runner and immutable evidence",
+        "Actual domain reviewer input"
+      ],
+      "sources": [
+        "human-evals",
+        "harness"
+      ]
+    },
+    {
+      "id": "work-follow-up-draft",
+      "version": 1,
+      "title": "Prepare accountable follow-up",
+      "family": "shared",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth",
+        "workforce"
+      ],
+      "ownerRoleIds": [
+        "admissions-supervisor",
+        "community-director"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A reviewed unresolved item needs ownership or a next step.",
+      "inputs": [
+        "Current unresolved evidence",
+        "Recorded owner/due policy",
+        "Permitted next actions"
+      ],
+      "steps": [
+        "State what is known, missing and who currently owns it.",
+        "Draft a specific question or next human step.",
+        "Keep unknown owners/deadlines explicit and retain source references."
+      ],
+      "outputFields": [
+        "work_reference",
+        "known_owner",
+        "policy_due_state",
+        "proposed_next_step",
+        "evidence"
+      ],
+      "humanReview": "Responsible human accepts responsibility and records source follow-up.",
+      "completion": "Follow-up proposal ready; no assignment, deadline, email or escalation is created.",
+      "stopConditions": [
+        "Unknown source scope",
+        "No reviewed due rule"
+      ],
+      "evaluationCases": [
+        "Owner not invented",
+        "No default licensing clock",
+        "Drafting a request does not contact anyone"
+      ],
+      "dependencies": [
+        "Source-owned work and responsibility context"
+      ],
+      "sources": [
+        "assessor-model",
+        "integration"
+      ]
+    },
+    {
+      "id": "evidence-change-review",
+      "version": 1,
+      "title": "Compare evidence without rewriting history",
+      "family": "shared",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "data-quality-analyst",
+        "procedure-training-owner"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "A source document or record revision changes.",
+      "inputs": [
+        "Exact prior/current versions",
+        "Source lineage and timestamps",
+        "Authorized scope"
+      ],
+      "steps": [
+        "Compare the same object and distinguish additions, corrections and missing coverage.",
+        "Preserve attribution and uncertainty in both versions.",
+        "Prepare affected review questions with exact references."
+      ],
+      "outputFields": [
+        "version_pair",
+        "changes",
+        "unchanged_evidence",
+        "uncertainties",
+        "affected_reviews"
+      ],
+      "humanReview": "Owning domain/source reviewer decides the consequence of a change.",
+      "completion": "A cited comparison is ready; prior source facts are not overwritten.",
+      "stopConditions": [
+        "Different identity or incomparable versions",
+        "Missing original"
+      ],
+      "evaluationCases": [
+        "Reordered text is not a factual change",
+        "New uncertainty is retained",
+        "Private prior version withheld after revocation"
+      ],
+      "dependencies": [
+        "Versioned source/evidence retrieval"
+      ],
+      "sources": [
+        "integration",
+        "assessor-model"
+      ]
+    },
+    {
+      "id": "work-recovery-guide",
+      "version": 1,
+      "title": "Prepare bounded work recovery guidance",
+      "family": "shared",
+      "applications": [
+        "pipeline",
+        "platform",
+        "workflow",
+        "alamohealth"
+      ],
+      "ownerRoleIds": [
+        "application-administrator"
+      ],
+      "reviewStatus": "draft-not-reviewed",
+      "implementation": "design-only",
+      "authority": "read-investigate-draft",
+      "activation": "not-enabled-by-library",
+      "trigger": "Save, delivery, integration or workflow outcome is uncertain.",
+      "inputs": [
+        "Current source receipt/status",
+        "Checkpoint and version",
+        "Approved app recovery procedure"
+      ],
+      "steps": [
+        "Identify whether work failed, remains pending or has an uncertain result.",
+        "Prepare the documented verification path before retrying.",
+        "Keep consequential actions with authorized operators and current source preconditions."
+      ],
+      "outputFields": [
+        "known_state",
+        "uncertain_outcome",
+        "verification_steps",
+        "approved_recovery_reference"
+      ],
+      "humanReview": "Authorized source/operator verifies and performs recovery.",
+      "completion": "Recovery guidance ready; no duplicate action, overwrite or permission bypass.",
+      "stopConditions": [
+        "No approved recovery path",
+        "Unavailable current source state"
+      ],
+      "evaluationCases": [
+        "Lost acknowledgment prompts result lookup before retry",
+        "Offline draft not presented as saved",
+        "Concurrent edit never silently overwritten"
+      ],
+      "dependencies": [
+        "Source result lookup",
+        "Approved app recovery procedures"
+      ],
+      "sources": [
+        "assessor-model",
+        "integration"
+      ]
+    }
+  ],
+  "commonBoundaries": [
+    "Role descriptions are inferred job blueprints, not approved job descriptions, actual employee dossiers or access grants.",
+    "Source-supported means the app/document supports the workflow; it does not establish which person or title owns it.",
+    "Read, investigate and draft; source actions and exact-version approvals remain separate.",
+    "Eric-only pilot; no emails; no real assessment reads or changes; no production activation.",
+    "No clinical judgment, treatment thresholds, legal deadlines or credential requirements are invented.",
+    "Expected duties, observed work, inferred patterns, reviewed learning and demonstrated competence remain distinct.",
+    "A learning completion, accepted draft, source command receipt and verified business outcome are different facts.",
+    "Private conversations are not automatically workforce or management data.",
+    "Existing 17 assessor procedures/workflows remain linked; this catalog neither duplicates their clickpaths nor activates them."
+  ]
+}

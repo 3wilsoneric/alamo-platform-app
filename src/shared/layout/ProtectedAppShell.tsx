@@ -44,6 +44,7 @@ export default function ProtectedAppShell() {
   const isPipelineHandoff = location.pathname === "/pipeline";
   const isPresentation = location.pathname === "/presentation";
   const isDeployedWorkforceDemo = import.meta.env.VITE_WORKFORCE_DEMO === "true" && location.pathname === "/workforce";
+  const isWorkflowExperience = location.pathname === "/workflow";
   const isStandaloneEditorial =
     location.pathname === "/outreach" || location.pathname === "/fiftystate";
   const isAgentExperience = ["/everyagent", "/analytics/agent", "/licensing", "/analytics/licensing"].includes(location.pathname);
@@ -77,6 +78,7 @@ export default function ProtectedAppShell() {
     isAgentExperience ||
     isPresentation ||
     isDeployedWorkforceDemo ||
+    isWorkflowExperience ||
     admissionsAccess.restrictedToAdmissions ||
     executiveDirectorAccess.restrictedToExecutive;
   const accountKey = isE2EAuthBypassEnabled
@@ -315,7 +317,7 @@ export default function ProtectedAppShell() {
       <main className={`min-h-[calc(100dvh-var(--platform-header-height))] min-w-0 ${isExecutiveDirectorExperience ? "bg-[#f4f6f5]" : "bg-white"}`}>
         <div
           className={
-            isExecutiveDirectorExperience
+            isExecutiveDirectorExperience || isWorkflowExperience
               ? "px-0 pb-0"
               : isStandaloneEditorial
               ? "px-3 pb-10 pt-3 sm:px-4 sm:pt-4 lg:px-8"
@@ -326,7 +328,7 @@ export default function ProtectedAppShell() {
                   : "px-3 pb-10 pt-5 sm:px-6 lg:px-8 print:p-0"
           }
         >
-          <div className={`mx-auto min-h-full w-full ${location.pathname === "/licensing" || isCaliforniaExperience || isExecutiveDirectorExperience ? "" : "max-w-[1432px]"}`}>
+          <div className={`mx-auto min-h-full w-full ${location.pathname === "/licensing" || isCaliforniaExperience || isExecutiveDirectorExperience || isWorkflowExperience ? "" : "max-w-[1432px]"}`}>
             <Outlet />
           </div>
         </div>
