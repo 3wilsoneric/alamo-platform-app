@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-16
+- updated: 2026-10-18
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -49,6 +49,18 @@ rollback remains an Azure Container App image update.
 `/workflow` must use the SPA fallback. Do not stage a physical `workflow/`
 directory: the current Azure app server treats that directory as a file and
 returns 503 (`EISDIR`) on direct requests.
+
+### Owner-only Workflow preview — 2026-10-18
+
+- source commit: `46333e4` on `codex/workflow-native-20261018`
+- active image: `alamo-platform@sha256:551e826ba6dd003217f9d324839506c5d00620ec030e59f2b95dfec6cd46dd18`
+- active revision: `alamo-platform-prod-web--workflowfix-1018-46333e4`
+- rollback image: `alamo-platform@sha256:bea22afd04f233c2768aa5d84e0b0a1a08619b8000f8dcd47e75e28d9ca6847d`
+- verified: Healthy/Running, 100% traffic; direct `/workflow`, `/home`, `/admissions`, and `/healthz` return 200; protected API returns 401 anonymously.
+
+The first overlay staged a physical `/workflow` directory and returned 503 on
+that route. The corrective image was built from the original healthy base,
+removed that directory, and verified through the public host.
 
 ### AlamoAgent engine source extraction — 2026-10-16 (not deployed)
 
