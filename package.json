@@ -132,7 +132,7 @@
     "check:lint-js": "eslint api server shared scripts",
     "check:code-health": "node scripts/check-code-health.mjs",
     "check:unused": "knip --reporter compact",
-    "check:duplicates": "jscpd src server shared api --min-lines 12 --min-tokens 80 --threshold 0 --reporters console --ignore '**/*.d.mts,**/fonts/*-OFL.txt'",
+    "check:duplicates": "jscpd src server shared api --min-lines 12 --min-tokens 80 --threshold 0 --reporters console --ignore '**/*.d.mts,**/fonts/*-OFL.txt,**/workflow/legacy/content/imports/*.json'",
     "check:dependencies": "node scripts/check-dependencies.mjs",
     "check:tool-registry": "node scripts/check-tool-registry.mjs",
     "check:analyst-capabilities": "node scripts/check-analyst-capabilities.mjs",

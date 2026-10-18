@@ -47,3 +47,8 @@ intentional source JSON update. `npm run check:workflow-library` checks hashes,
 review states, unique IDs, resolved knowledge links and exact generated output.
 The data is a deployed snapshot; knowledge workspace notes are not a database
 editor and do not save back to the canonical content.
+
+The exact imported AlamoAgent JSON snapshot is excluded from code-clone detection:
+its shared application catalog is intentional source data. Snapshot integrity and
+content freshness are checked by `check:workflow-library`; runtime code retains
+the existing zero-duplicate gate.
