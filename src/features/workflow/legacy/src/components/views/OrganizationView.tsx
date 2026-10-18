@@ -20,28 +20,6 @@ const STARTER_QUESTIONS = [
   'Show San Pablo',
 ]
 
-function NetworkIllustration() {
-  return (
-    <svg className="org-hero-art" viewBox="0 0 500 250" fill="none" aria-hidden="true">
-      <path d="M250 35v36M71 136v43M160 136v43M250 136v43M340 136v43M429 136v43" stroke="#A9C4C2" strokeWidth="1.3" opacity=".63" />
-      <path d="M71 136V99q0-9 9-9h340q9 0 9 9v37M160 136V90M250 136V90M340 136V90" stroke="#A9C4C2" strokeWidth="1.3" opacity=".63" />
-      <path d="M71 178h358" stroke="#C7A169" strokeWidth="1.3" opacity=".6" />
-      <circle cx="250" cy="33" r="18" fill="#1D675D" stroke="#9BC8AD" strokeWidth="1.5" />
-      <circle cx="250" cy="33" r="5" fill="#DCF3E5" />
-      {[71, 160, 250, 340, 429].map((x, index) => <g key={x}>
-        <rect x={x - 29} y="132" width="58" height="43" rx="8" fill={index === 2 ? '#D8E9E3' : '#F3F0E8'} opacity=".94" />
-        <circle cx={x} cy="147" r="5" fill={index === 2 ? '#16645C' : '#B0784E'} />
-        <path d={`M${x - 10} 162h20`} stroke="#60777A" strokeWidth="2" strokeLinecap="round" />
-      </g>)}
-      {[104, 177, 250, 323, 396].map((x) => <g key={x}>
-        <path d={`M${x} 178v24`} stroke="#C7A169" strokeWidth="1.3" opacity=".6" />
-        <circle cx={x} cy="209" r="8" fill="#F3F0E8" stroke="#C7A169" strokeWidth="1.5" />
-      </g>)}
-      <circle cx="33" cy="39" r="2" fill="#A9C4C2" opacity=".4" /><circle cx="455" cy="42" r="3" fill="#A9C4C2" opacity=".4" />
-    </svg>
-  )
-}
-
 export default function OrganizationView() {
   const [mode, setMode] = useState<Mode>('map')
   const [selectedId, setSelectedId] = useState('operations')
@@ -81,16 +59,6 @@ export default function OrganizationView() {
   return (
     <div className="org-page">
       <div className="org-frame">
-        <header className={`org-hero ${mode === 'ask' ? 'org-hero--compact' : ''}`}>
-          <div className="org-hero-copy">
-            <span className="org-kicker"><span className="org-kicker-line" /> ORGANIZATION / WORKFLOW</span>
-            {mode === 'ask' ? <h1>Ask the <em>organization.</em></h1> : <h1>Organization <em>map.</em></h1>}
-            <p>{mode === 'ask' ? 'Find the right community or function without guessing.' : 'Executive functions, communities, and how their work connects.'}</p>
-          </div>
-          <NetworkIllustration />
-          <span className="org-hero-index">STRUCTURE / 01—05</span>
-        </header>
-
         <div className="org-bar">
           <div className="org-mode-switch" role="tablist" aria-label="Organization view">
             <button type="button" role="tab" aria-selected={mode === 'map'} className={mode === 'map' ? 'active' : ''} onClick={() => setMode('map')}><UsersRound size={16} /> Organization map</button>
