@@ -147,7 +147,7 @@ export default function Sidebar({ active, onNav, collapsed, onToggle }: SidebarP
 
     return (
         <aside
-            className="workflow-sidebar fixed left-0 top-[var(--platform-header-height)] bottom-0 z-30 flex flex-col overflow-hidden transition-[width] duration-200"
+            className="workflow-sidebar fixed left-0 top-0 bottom-0 z-30 flex flex-col overflow-hidden transition-[width] duration-200"
             style={{ width: collapsed ? SIDEBAR_COL : SIDEBAR_W, background: '#f8faf9', borderRight: '1px solid #d9e0e3' }}
         >
             {/* Logo */}
@@ -215,6 +215,10 @@ export default function Sidebar({ active, onNav, collapsed, onToggle }: SidebarP
 
             {/* User footer */}
             <div className="sidebar-footer flex-shrink-0 p-3 border-t">
+                <a href="/home" className={`mb-2 flex items-center rounded-md px-2 py-2 text-[12px] font-semibold text-[#52616b] hover:bg-[#edf4f0] hover:text-[#095f4d] ${collapsed ? 'justify-center' : 'gap-2'}`} title="Back to Platform" aria-label="Back to Platform">
+                    <span aria-hidden="true">←</span>
+                    {!collapsed && <span>Back to Platform</span>}
+                </a>
                 {collapsed ? (
                     <div
                         className="flex items-center justify-center cursor-pointer mx-auto transition-opacity hover:opacity-80"

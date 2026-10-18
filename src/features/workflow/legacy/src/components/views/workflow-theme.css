@@ -18,12 +18,12 @@
   color: var(--color-ink);
   background: #f2f4f4;
   font-family: "Workflow Geist", "Helvetica Neue", sans-serif;
-  min-height: calc(100dvh - var(--platform-header-height));
+  min-height: 100dvh;
 }
 
-.workflow-app .workflow-sidebar { top: var(--platform-header-height); }
-.workflow-app .workflow-dashboard { height: calc(100dvh - var(--platform-header-height) - 64px) !important; }
-.workflow-app :is(.workflow-surface--training, .workflow-surface--policies, .workflow-surface--documents) > div { height: calc(100dvh - var(--platform-header-height) - 64px) !important; }
+.workflow-app .workflow-sidebar { top: 0; }
+.workflow-app .workflow-dashboard { height: calc(100dvh - 64px) !important; }
+.workflow-app :is(.workflow-surface--training, .workflow-surface--policies, .workflow-surface--documents) > div { height: calc(100dvh - 64px) !important; }
 
 .workflow-app .font-sans { font-family: "Workflow Geist", "Helvetica Neue", sans-serif; }
 .workflow-app .font-serif { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }

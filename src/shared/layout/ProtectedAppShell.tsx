@@ -308,13 +308,13 @@ export default function ProtectedAppShell() {
 
   const shell = (
     <div className="app-theme-root relative min-h-screen overflow-x-clip bg-white text-[#241f18]">
-      {isExecutiveDirectorExperience || (isDeployedWorkforceDemo && executiveDirectorAccess.restrictedToExecutive)
+      {isWorkflowExperience ? null : isExecutiveDirectorExperience || (isDeployedWorkforceDemo && executiveDirectorAccess.restrictedToExecutive)
         ? <ExecutiveDirectorHeader />
         : <PlatformPageNavigation restricted={admissionsAccess.restrictedToAdmissions} />}
       {!online || staleDataAt ? (
         <ConnectionStatusBanner online={online} staleDataAt={staleDataAt} />
       ) : null}
-      <main className={`min-h-[calc(100dvh-var(--platform-header-height))] min-w-0 ${isExecutiveDirectorExperience ? "bg-[#f4f6f5]" : "bg-white"}`}>
+      <main className={`${isWorkflowExperience ? "min-h-screen" : "min-h-[calc(100dvh-var(--platform-header-height))]"} min-w-0 ${isExecutiveDirectorExperience ? "bg-[#f4f6f5]" : "bg-white"}`}>
         <div
           className={
             isExecutiveDirectorExperience || isWorkflowExperience

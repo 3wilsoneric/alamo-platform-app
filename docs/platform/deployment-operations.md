@@ -3999,3 +3999,19 @@ the Admissions dashboard contract, production build, and responsive
 Admissions browser regression pass. A dedicated regression also proves that a
 future accepted Pipeline move-in remains present across the executive update
 and detailed dashboard even when the week-bounded briefing slice omits it.
+
+### Workflow full-height shell — 2026-10-18
+
+Workflow no longer renders the Platform navigation above its own sidebar and
+header. Its dashboard and libraries use the full viewport, with a sidebar link
+back to Platform home. Other Platform routes retain their navigation.
+
+- ACR build: `cc8k`
+- image: `alamo-platform@sha256:6e1cb0eaaacb8268509102eb43824a91729f7d5db20e6dc39401cc15311b6bf5` (tag `workflow-no-header-20261018`)
+- active revision: `alamo-platform-prod-web--wfheader-1018-6e1cb0e`
+- rollback image: `alamo-platform@sha256:551e826ba6dd003217f9d324839506c5d00620ec030e59f2b95dfec6cd46dd18`
+- active browser assets: `/assets/index-DTI8tOeS.js` and `/assets/index-CVYv3UsE.css`
+
+The revision is Healthy/Running at 100% traffic. Direct `/workflow`, `/home`,
+`/admissions`, and `/healthz` requests return 200. TypeScript, production build,
+and local desktop/mobile route checks pass.
