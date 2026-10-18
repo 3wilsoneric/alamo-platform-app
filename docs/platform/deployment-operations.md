@@ -4074,3 +4074,23 @@ The revision is Healthy/Running at 100% traffic. Direct `/workflow`, `/home`,
 probe remains 401. TypeScript, production build, and desktop/mobile browser
 checks pass, including map selection, community drill-down, chat grounding,
 search, and no horizontal overflow.
+
+### Workflow organization chart fit — 2026-10-18
+
+The Organization map now uses a full-width two-tier chart with compact selected
+details below it. The chart fits a 1280x800 desktop viewport without page scroll;
+phone-width cards use one column. Community selection and the bounded Ask handoff
+remain available.
+
+- browser source commit: `16998de` on `codex/workflow-native-20261018`
+- ACR build: `cc8p`; tag: `workflow-org-fit-20261018-16998de`
+- image: `alamo-platform@sha256:c73c4a016549792382c696f5fe285934408cb51e0f1f958a5265b1eb5e5fc375`
+- revision: `alamo-platform-prod-web--wforgfit-1018-c73c4a`
+- rollback image: `alamo-platform@sha256:05eff49e55eca5334f318d5a1eff94674f89632892d6df3eecc44caf30a4207b`
+- browser assets: `/assets/index-6U5VSFY_.js`, `/assets/index-BR6uz8Qm.css`
+
+The revision is Healthy/Running at 100% traffic. Direct
+`/workflow?view=organization`, `/home`, `/admissions`, and `/healthz` return 200.
+Standalone Workflow build, lint, role-library check, and desktop/mobile chart
+interaction checks pass. This release replaces browser assets only and keeps the
+prior production server and access controls.
