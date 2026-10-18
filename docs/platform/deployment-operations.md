@@ -4015,3 +4015,38 @@ back to Platform home. Other Platform routes retain their navigation.
 The revision is Healthy/Running at 100% traffic. Direct `/workflow`, `/home`,
 `/admissions`, and `/healthz` requests return 200. TypeScript, production build,
 and local desktop/mobile route checks pass.
+
+### Workflow role, procedure and knowledge content — 2026-10-18
+
+The live native `/workflow` page now includes the authored content in its existing
+Documents repository and linked knowledge workspace: 16 role guides, 32 workflow
+summaries, 17 assessor procedures (81 steps), and 40 read-only AlamoAgent skill
+references. All 105 records carry source and review information. Readable document
+views, full-text filtering and Markdown downloads are connected. The existing role
+library and procedure walkthroughs remain available. These are deployed content
+snapshots; draft labels do not indicate clinical approval or new agent execution.
+
+- browser source: `9eca43b`; content-integrity check follow-up: `b336856`
+- branch: `codex/workflow-native-20261018`
+- ACR build: `cc8m`; tag: `workflow-library-20261018`
+- image: `alamo-platform@sha256:e100d97f394db9a7027bede75c8ef2c96cc582d9d73186b4ed55dfb1f008d624`
+- revision: `alamo-platform-prod-web--wflibrary-1018-e100d97`
+- rollback image: `alamo-platform@sha256:6e1cb0eaaacb8268509102eb43824a91729f7d5db20e6dc39401cc15311b6bf5`
+- browser assets: `/assets/index-DQMVecW-.js`, `/assets/index-CWHiuZIC.css`
+
+Verification: deterministic content/source hashes and graph links, frontend and
+server TypeScript, source syntax, lint, code health, retention, unused/duplicate
+code, dependency audit, documentation and production build passed. Desktop and
+390px browser checks verified document reading, download, linked knowledge view,
+no horizontal overflow in document detail and no page errors. Public `/workflow`,
+`/home`, `/admissions` and `/chat` returned the new entry bundle for identity, gzip
+and Brotli requests; live JS/CSS hashes match the reviewed build. `/healthz` returns
+200 and anonymous `/api/platform/health` remains 401.
+
+The full predeployment gate was not completed: after correcting the intentional
+imported-data clone classification, `check:analyst` stopped in the unrelated live
+analyst-decision check because local Databricks OAuth/PAT credentials are absent.
+Production signed-in UI verification was unavailable in this browser session.
+This scoped content release uses the exact preceding production image as its base,
+replaces only browser assets, and preserves the Azure server, API, data adapters,
+owner-only Workflow gate, Eric-only agent access and disabled emails.
