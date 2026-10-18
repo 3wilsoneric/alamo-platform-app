@@ -4131,3 +4131,52 @@ The revision is Healthy/Running at 100% traffic. Direct
 `/workflow?view=organization` returns 200. Standalone Workflow build and lint,
 Platform production build, and desktop/phone layout checks pass. This release
 replaces browser assets only.
+
+### AlamoAgent → Workflow knowledge read — 2026-10-18
+
+The existing AlamoAgent helper on Platform Home can search the native Workflow
+library and open source documents with revision-bound citations. Results are
+original excerpts from 105 draft/review records: 16 roles, 32 human workflow
+summaries, 17 procedures and 40 agent skill references. This is an on-demand
+read capability, not model-generated answers, a new scheduled responsibility,
+source publication or independent API/worker activation. Workflow's route retains
+its existing helper-hidden setting. Eric-only access and no emails remain in force.
+
+- source: `a7f9236e4f5ca02b2c0531cbf177dbe147b186fd` on `codex/workflow-agent-read`
+- release checkout: `/Users/eric/alamo-platform-workflow-agent-read`
+- ACR build: `cc8s`; tag: `workflow-agent-read-20261018-a7f9236`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:150a51e82b5211f9cad3d152b6de5edb510d9fd00ff100c210cf3f152379fe7c`
+- revision: `alamo-platform-prod-web--wfagent-1018-a7f9236`
+- rollback/base image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:37f5b0a8cb1684cd040a0805ecc323206fdc817f9bfbb1d65f5c893500cebb09`
+- browser assets: `/assets/index-BtS7n-kN.js`, `/assets/index-vWqGyAPc.css`
+- endpoint: `POST /api/platform/workflow-knowledge`
+- added package: `@alamo/agent-workflow-knowledge@0.17.0`; existing runtime remains `@alamo/agent-runtime@0.1.0`
+
+The release overlays the browser distribution, two source-handler modules, the
+source content snapshot, a dependency-free engine package and two API routing
+lines onto the exact current Azure image. It does not replace the broader local
+server tree or include the other checkout's pending Workforce changes. Existing
+Organization UI releases through `df1c3ff` are included. The base image was checked
+again immediately before promotion to avoid replacing a concurrent release.
+
+Verified at 23:33 UTC: new revision Healthy/Running at 100% traffic; health, Home
+and Workflow Organization routes return 200; identity/gzip/Brotli entry bytes
+and JS/CSS hashes match the tested build. The live source route returns protected,
+no-store JSON 401 without authentication. A live signed-in read was not exercised:
+no delegated Eric browser session was available to this check. Authenticated reads
+were tested locally using signed JWTs, and the assembled production container
+passed source/contract/handler integration with a test-injected authorized identity.
+No live authorization bypass was installed or enabled.
+
+Verification passed: engine tests, API/worker packaging and isolated package smoke;
+Workflow retrieval/access/revision/tamper tests; desktop and phone browser checks
+for source navigation and stale-reference recovery; frontend/server TypeScript;
+content generation; docs/retention; lint, code health, unused code, zero duplicates
+and dependency audit; production browser build; actual container startup and HTTP
+checks. The broader analyst gate remains blocked at the existing local Databricks
+credential prerequisite; this release does not change that integration.
+
+The independent engine's catalog declares the on-demand capability but its own
+Workflow connector remains unconfigured. Next work is conversation-executor wiring
+with delegated source identity and staff-reviewed retrieval examples. The source
+snapshot remains compiled content; durable authoring/publication is separate work.

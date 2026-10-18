@@ -55,6 +55,11 @@ the existing zero-duplicate gate.
 
 ## Workflow knowledge connection — 2026-10-18
 
+Deployed on Azure revision `alamo-platform-prod-web--wfagent-1018-a7f9236`,
+verified Healthy/Running with 100% traffic. Live asset hashes and anonymous
+access denial pass; signed-in retrieval was verified locally, not through a live
+Eric browser session. See [release evidence](deployment-operations.md#alamoagent--workflow-knowledge-read--2026-10-18).
+
 The existing helper now has a bounded Workflow source lookup. The source endpoint
 `POST /api/platform/workflow-knowledge` checks Entra authentication, Platform owner
 access and the Eric-only AlamoAgent gate before reading the 105-record snapshot.
