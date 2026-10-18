@@ -4094,3 +4094,21 @@ The revision is Healthy/Running at 100% traffic. Direct
 Standalone Workflow build, lint, role-library check, and desktop/mobile chart
 interaction checks pass. This release replaces browser assets only and keeps the
 prior production server and access controls.
+
+### Workflow Organization banner removal — 2026-10-18
+
+Removed the dark banner from both Organization map and Ask views. The view now
+starts with its tabs directly beneath the Workflow page bar; no chart data or
+question behavior changed.
+
+- browser source commit: `822f023` on `codex/workflow-native-20261018`
+- ACR build: `cc8q`; tag: `workflow-org-nohero-20261018-822f023`
+- image: `alamo-platform@sha256:a7bbb932b88792b92bbcd8d55d641f1be425191367b66a2688c9ac26ec871ba0`
+- revision: `alamo-platform-prod-web--wforgclear-1018-a7bbb9`
+- rollback image: `alamo-platform@sha256:c73c4a016549792382c696f5fe285934408cb51e0f1f958a5265b1eb5e5fc375`
+- browser assets: `/assets/index-DlVZTx5S.js`, `/assets/index-BvVW_C7J.css`
+
+The revision is Healthy/Running at 100% traffic. Direct
+`/workflow?view=organization` returns 200. Standalone Workflow build and lint,
+Platform production build, and local map/Ask browser checks pass. This release
+replaces browser assets only.
