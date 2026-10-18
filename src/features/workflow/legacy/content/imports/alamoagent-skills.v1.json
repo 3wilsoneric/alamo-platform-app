@@ -5,6 +5,33 @@
   "ownerApplication": "alamoagent",
   "status": "draft-authoring-library",
   "executionEnabled": false,
+  "applications": [
+    {
+      "id": "pipeline",
+      "name": "Pipeline",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "platform",
+      "name": "Platform",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "workflow",
+      "name": "Alamo Workflow",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "alamohealth",
+      "name": "Point of Care / AlamoHealth",
+      "relationship": "principal-app"
+    },
+    {
+      "id": "workforce",
+      "name": "Alamo Workforce",
+      "relationship": "adjacent-authoritative-source"
+    }
+  ],
   "sources": {
     "assessor-model": {
       "title": "Assessor whole-job model",

@@ -1,3 +1,4 @@
+import { LIBRARY_DOCUMENTS, LIBRARY_KNOWLEDGE } from './library-content'
 import type { Procedure, Video, Document, QuickTap, KnowledgeFile } from './types'
 import { assessorProcedures } from './assessor-procedures'
 
@@ -164,6 +165,7 @@ export const VIDEO_LIBRARY: Video[] = [
 // ─── Documents ────────────────────────────────────────────────────────────────
 
 export const REPO_DOCS: Document[] = [
+    ...LIBRARY_DOCUMENTS,
     { id: "d01", code: "POL-001", title: "Admissions & Intake Policy", type: "Policy", dept: "Administration", owner: "M. Rodriguez", version: "3.1", effective_date: "Jan 1, 2025", reviewed_at: "Jan 1, 2025", review_due: "Jan 1, 2026", status: "active", size: "1.1 MB", format: "PDF" },
     { id: "d02", code: "POL-012", title: "Patient Rights & Autonomy Policy", type: "Policy", dept: "Clinical", owner: "Dr. K. Patel", version: "2.4", effective_date: "Dec 1, 2024", reviewed_at: "Dec 1, 2024", review_due: "Dec 1, 2025", status: "active", size: "0.8 MB", format: "PDF" },
     { id: "d03", code: "POL-015", title: "Suicide Prevention Policy", type: "Policy", dept: "Behavioral Health", owner: "Dr. K. Patel", version: "4.0", effective_date: "Nov 15, 2024", reviewed_at: "Nov 15, 2024", review_due: "Nov 15, 2025", status: "active", size: "1.3 MB", format: "PDF" },
@@ -181,6 +183,7 @@ export const REPO_DOCS: Document[] = [
 // ─── Knowledge workspace ─────────────────────────────────────────────────────
 
 export const KNOWLEDGE_FILES: KnowledgeFile[] = [
+    ...LIBRARY_KNOWLEDGE,
     {
         id: 'kf-med-refusal-map',
         title: 'Medication refusal workflow map',

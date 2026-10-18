@@ -5,11 +5,12 @@ import { useState } from 'react'
 import { REPO_DOCS } from '@/lib/data'
 import type { Document } from '@/lib/types'
 import KnowledgeWorkspace from '@/components/documents/KnowledgeWorkspace'
+import DocumentBody from '@/components/documents/DocumentBody'
 import HR from '@/components/ui/HR'
 
-const DOC_TYPES = ['All types', 'Policy', 'Procedure', 'Training', 'Form']
-const DOC_DEPTS = ['All departments', 'Administration', 'Behavioral Health', 'Clinical', 'Nursing', 'Security', 'All Staff']
-const DOC_STATUS = ['All statuses', 'active', 'review', 'expiring']
+const DOC_TYPES = ['All types', ...new Set(REPO_DOCS.map(doc => doc.type))]
+const DOC_DEPTS = ['All departments', ...new Set(REPO_DOCS.map(doc => doc.dept))]
+const DOC_STATUS = ['All statuses', 'draft', 'review', 'active', 'expiring']
 
 const statusMeta: Record<string, { label: string; color: string }> = {
     active: { label: 'Active', color: 'text-teal' },
@@ -43,7 +44,7 @@ export default function DocumentsPage() {
         if (typeFilter !== 'All types' && d.type !== typeFilter) return false
         if (deptFilter !== 'All departments' && d.dept !== deptFilter) return false
         if (statusFilter !== 'All statuses' && d.status !== statusFilter) return false
-        if (searchQ && !d.title.toLowerCase().includes(searchQ.toLowerCase()) && !d.code.toLowerCase().includes(searchQ.toLowerCase())) return false
+        if (searchQ && ![d.title, d.code, d.body ?? ''].join(' ').toLowerCase().includes(searchQ.toLowerCase())) return false
         return true
     })
 
@@ -61,7 +62,7 @@ export default function DocumentsPage() {
         const sm = statusMeta[doc.status] ?? statusMeta.draft!
         return (
             <div className="overflow-y-auto bg-cream" style={{ height: 'calc(100vh - 54px)' }}>
-                <div className="px-12 pt-9 pb-20 max-w-[760px]">
+                <div className="px-5 sm:px-12 pt-9 pb-20 max-w-[880px]">
                     <button onClick={() => setSelectedDoc(null)} className="font-sans text-[13px] text-navy bg-transparent border-none cursor-pointer p-0 mb-7 underline underline-offset-2">
                         ← Document repository
                     </button>
@@ -94,7 +95,8 @@ export default function DocumentsPage() {
                     </div>
 
                     <div className="mb-8">
-                        <div className="font-serif text-[1.05rem] font-bold text-ink mb-3.5">Version history</div>
+                        {doc.body ? <><div className="mb-6 break-words rounded border border-border bg-bg p-4 text-xs text-ink3">Source: {doc.source_reference}<br />Source updated: {doc.source_updated}</div><DocumentBody body={doc.body} /></> : <>
+                        <div className="font-serif text-[1.05rem] font-bold text-ink mb-3.5">Sample version history</div>
                         <div className="border border-border">
                             <div className="grid gap-x-4 px-4 py-2 border-b border-border" style={{ gridTemplateColumns: '60px 110px 140px 1fr' }}>
                                 {['Ver.', 'Date', 'Author', 'Note'].map(h => <span key={h} className="font-mono text-[9px] text-ink3 tracking-[0.09em] uppercase">{h}</span>)}
@@ -108,11 +110,12 @@ export default function DocumentsPage() {
                                 </div>
                             ))}
                         </div>
+                        </>}
                     </div>
 
                     <div className="flex gap-2.5">
-                        {['Download', 'Upload new version', 'Archive'].map(action => (
-                            <button key={action} className={`px-4 py-2 font-sans text-[13px] border cursor-pointer transition-all ${action === 'Download' ? 'bg-navy border-navy text-white font-bold' : 'bg-transparent border-border text-ink2 hover:border-navy'}`}>
+                        {(doc.body ? ['Download'] : ['Download', 'Upload new version', 'Archive']).map(action => (
+                            <button key={action} onClick={() => { if (!doc.body) return; const url = URL.createObjectURL(new Blob([doc.body], { type: 'text/markdown;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = `${doc.code}.md`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }} className={`px-4 py-2 font-sans text-[13px] border cursor-pointer transition-all ${action === 'Download' ? 'bg-navy border-navy text-white font-bold' : 'bg-transparent border-border text-ink2 hover:border-navy'}`}>
                                 {action}
                             </button>
                         ))}
@@ -285,7 +288,7 @@ export default function DocumentsPage() {
                 </div>
 
                 <div className="workflow-library-table-wrap mx-8 mt-6 overflow-x-auto rounded-md border border-border bg-bg">
-                    <div className="workflow-library-table-head grid gap-x-4 px-4 py-3" style={{ gridTemplateColumns: '72px minmax(220px,1fr) 90px 140px 110px 90px 68px' }}>
+                    <div className="workflow-library-table-head grid gap-x-4 px-4 py-3" style={{ gridTemplateColumns: '130px minmax(220px,1fr) 90px 140px 110px 90px 68px' }}>
                         {['Code', 'Title', 'Type', 'Department', 'Owner', 'Review due', 'Status'].map(h => (
                             <span key={h} className="font-mono text-[9px] text-ink3 tracking-[0.1em] uppercase">{h}</span>
                         ))}
@@ -294,8 +297,8 @@ export default function DocumentsPage() {
                         const sm = statusMeta[d.status] ?? statusMeta.draft!
                         return (
                             <div key={d.id} className="workflow-library-table-row">
-                                <button onClick={() => setSelectedDoc(d)} className="grid gap-x-4 w-full px-4 py-4 bg-transparent border-none cursor-pointer text-left items-center hover:bg-[#eef4f7] transition-colors" style={{ gridTemplateColumns: '72px minmax(220px,1fr) 90px 140px 110px 90px 68px' }}>
-                                    <span className="font-mono text-[9.5px] text-ink3">{d.code}</span>
+                                <button onClick={() => setSelectedDoc(d)} className="grid gap-x-4 w-full px-4 py-4 bg-transparent border-none cursor-pointer text-left items-center hover:bg-[#eef4f7] transition-colors" style={{ gridTemplateColumns: '130px minmax(220px,1fr) 90px 140px 110px 90px 68px' }}>
+                                    <span className="break-words font-mono text-[9.5px] text-ink3">{d.code}</span>
                                     <span className="font-serif text-[0.95rem] text-ink">{d.title}</span>
                                     <span className="font-sans text-[12px] text-ink3">{d.type}</span>
                                     <span className="font-sans text-[12px] text-ink3">{d.dept}</span>

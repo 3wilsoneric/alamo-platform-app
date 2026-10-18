@@ -70,6 +70,9 @@ export interface Document {
     effective_date: string
     reviewed_at: string
     review_due: string
+    body?: string
+    source_reference?: string
+    source_updated?: string
 }
 
 export interface KnowledgeFile {
@@ -83,6 +86,7 @@ export interface KnowledgeFile {
     linked_file_ids: string[]
     source_codes: string[]
     body: string
+    read_only?: boolean
 }
 
 // ─── Walkthrough ──────────────────────────────────────────────────────────────

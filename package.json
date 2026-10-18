@@ -170,7 +170,9 @@
     "check:everyagent-connector-host": "node scripts/check-everyagent-connector-host.mjs",
     "everyagent:build-web": "vite build --config vite.agent.config.ts && node scripts/prepare-everyagent-web.mjs",
     "check:everyagent-conversations": "node scripts/check-everyagent-conversations.mjs",
-    "check:browser-everyagent-conversations": "node scripts/check-browser-everyagent-conversations.mjs"
+    "check:browser-everyagent-conversations": "node scripts/check-browser-everyagent-conversations.mjs",
+    "workflow:refresh-library": "node scripts/workflow-library-content.mjs --write",
+    "check:workflow-library": "node scripts/workflow-library-content.mjs --check"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.1.0.tgz",

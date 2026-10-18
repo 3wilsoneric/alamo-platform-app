@@ -30,3 +30,20 @@ verified with two synthetic authenticated HTTP applications.
 Eric-only access and disabled emails remain unchanged. Andrew's Wilson branding
 is saved, with no access enabled. Extraction and tests do not establish production
 availability. See [deployment operations](deployment-operations.md) for receipts.
+
+## Workflow content in Platform — 2026-10-18
+
+Workflow is now embedded at `/workflow` in Platform, behind its existing owner
+access gate. Workflow owns roles, human workflows, SOPs and learning content;
+AlamoAgent owns skills, agent execution and evaluations. The source-linked
+Documents and knowledge workspace contain 16 draft role guides, 32 workflow
+summaries, 17 assessor procedures with 81 steps, and 40 read-only skill references.
+These 105 records retain review status, source version and handoff links. They
+are deployed content snapshots, not approved policies or a new agent activation.
+See [deployment operations](deployment-operations.md) for the release receipt.
+
+Refresh the deployed content with `npm run workflow:refresh-library` after an
+intentional source JSON update. `npm run check:workflow-library` checks hashes,
+review states, unique IDs, resolved knowledge links and exact generated output.
+The data is a deployed snapshot; knowledge workspace notes are not a database
+editor and do not save back to the canonical content.

@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { KNOWLEDGE_FILES, REPO_DOCS } from '@/lib/data'
+import DocumentBody from './DocumentBody'
 import type { KnowledgeFile } from '@/lib/types'
 
 interface KnowledgeWorkspaceProps {
@@ -128,6 +129,7 @@ export default function KnowledgeWorkspace({ onClose }: KnowledgeWorkspaceProps)
       return (
         file.title.toLowerCase().includes(q) ||
         file.folder.toLowerCase().includes(q) ||
+        file.body.toLowerCase().includes(q) ||
         file.tags.some((tag) => tag.toLowerCase().includes(q)) ||
         file.source_codes.some((code) => code.toLowerCase().includes(q))
       )
@@ -206,7 +208,7 @@ export default function KnowledgeWorkspace({ onClose }: KnowledgeWorkspaceProps)
   }
 
   const updateSelectedFile = (patch: Partial<KnowledgeFile>) => {
-    if (!selectedFile) return
+    if (!selectedFile || selectedFile.read_only) return
     setFiles((current) =>
       current.map((file) =>
         file.id === selectedFile.id
@@ -304,6 +306,8 @@ export default function KnowledgeWorkspace({ onClose }: KnowledgeWorkspaceProps)
                     {selectedFile.folder}
                   </div>
                   <input
+                    readOnly={selectedFile.read_only}
+                    aria-label="Knowledge file title"
                     value={selectedFile.title}
                     onChange={(event) => updateSelectedFile({ title: event.target.value })}
                     className="mt-1 w-full border-none bg-transparent p-0 text-[1.1rem] font-semibold tracking-[-0.03em] text-[#162033] outline-none"
@@ -330,6 +334,8 @@ export default function KnowledgeWorkspace({ onClose }: KnowledgeWorkspaceProps)
 
               <div className="mb-3 rounded-[18px] border border-[#E0E7F4] bg-white px-4 py-3 shadow-sm">
                 <textarea
+                  readOnly={selectedFile.read_only}
+                  aria-label="Knowledge file summary"
                   value={selectedFile.summary}
                   onChange={(event) => updateSelectedFile({ summary: event.target.value })}
                   rows={2}
@@ -355,11 +361,11 @@ export default function KnowledgeWorkspace({ onClose }: KnowledgeWorkspaceProps)
               </div>
 
               <div className="rounded-[22px] border border-[#DCE4F3] bg-white shadow-sm">
-                <textarea
+                {selectedFile.read_only ? <div className="p-5"><p className="mb-5 text-xs text-slate-500">Source-linked reference · changes are maintained in the owning content library.</p><DocumentBody body={selectedFile.body} /></div> : <textarea
                   value={selectedFile.body}
                   onChange={(event) => updateSelectedFile({ body: event.target.value })}
                   className="min-h-[520px] w-full resize-none border-none bg-transparent px-4 py-4 font-mono text-[11.5px] leading-6 text-[#24344E] outline-none"
-                />
+                />}
               </div>
 
               {selectedRules ? (
@@ -379,7 +385,7 @@ export default function KnowledgeWorkspace({ onClose }: KnowledgeWorkspaceProps)
                     </button>
                   ) : (
                     <div className="rounded-full border border-[#D9ECDD] bg-[#F4FBF6] px-3 py-1.5 text-[10px] font-semibold text-[#2E7A55]">
-                      Complete
+                      Structure checked
                     </div>
                   )}
                 </div>
