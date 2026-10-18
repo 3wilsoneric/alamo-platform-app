@@ -22,8 +22,8 @@ unreachable code are deleted rather than archived in the app repository.
 The user-requested `/workflow` route now owns `src/features/workflow/**` as a
 mounted browser feature. This replaces the old blanket prohibition on a
 Workflow path; it does not reinstate retired root-shell or strategy prototypes.
-Its seeded content is explicitly preview-only until governed sources and
-activity persistence replace it.
+Its seeded content is explicitly owner-only and preview-only until governed
+sources and activity persistence replace it.
 
 ## Ownership Classes
 
