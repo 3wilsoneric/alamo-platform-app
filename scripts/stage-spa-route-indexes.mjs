@@ -4,7 +4,7 @@ import path from "node:path";
 
 const distRoot = path.resolve(process.cwd(), "dist");
 const sourceIndex = path.join(distRoot, "index.html");
-const routeDirectories = ["admissions", "chat", "workflow"];
+const routeDirectories = ["admissions", "chat"];
 
 await Promise.all(routeDirectories.map(async (route) => {
   const routeDirectory = path.join(distRoot, route);
