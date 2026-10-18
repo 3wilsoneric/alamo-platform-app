@@ -23,6 +23,12 @@ const NAV_SECTIONS = [
         id: 'learning', label: 'Learning',
         items: [
             { id: 'training' as NavPage, label: 'Training' },
+        ],
+    },
+    {
+        id: 'people', label: 'People',
+        items: [
+            { id: 'organization' as NavPage, label: 'Organization' },
             { id: 'role_library' as NavPage, label: 'Roles & skills' },
         ],
     },
@@ -83,7 +89,7 @@ function BrandLockup() {
 }
 
 export default function Sidebar({ active, onNav, collapsed, onToggle }: SidebarProps) {
-    const [openSections, setOpenSections] = useState<Record<string, boolean>>({ care: true, learning: true, system: true })
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>({ care: true, learning: true, people: true, system: true })
     const toggleSection = (id: string) => setOpenSections(s => ({ ...s, [id]: !s[id] }))
 
     const iconFor = (id: NavPage) => {
@@ -107,6 +113,8 @@ export default function Sidebar({ active, onNav, collapsed, onToggle }: SidebarP
                 return <svg {...common}><path d="M3 4.5 8 2l5 2.5v7L8 14l-5-2.5z" stroke="currentColor" strokeWidth="1.3" /><path d="M8 6.2v3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
             case 'role_library':
                 return <svg {...common}><circle cx="5" cy="5" r="2" stroke="currentColor" strokeWidth="1.3" /><circle cx="11" cy="5" r="2" stroke="currentColor" strokeWidth="1.3" /><path d="M1.8 12.5c.2-2 1.3-3 3.2-3s3 1 3.2 3M8 12.5c.2-2 1.3-3 3.2-3s3 1 3.2 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+            case 'organization':
+                return <svg {...common}><circle cx="8" cy="3" r="1.6" stroke="currentColor" strokeWidth="1.3" /><path d="M8 4.8v3M3 10V8h10v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /><circle cx="3" cy="12" r="1.6" stroke="currentColor" strokeWidth="1.3" /><circle cx="8" cy="12" r="1.6" stroke="currentColor" strokeWidth="1.3" /><circle cx="13" cy="12" r="1.6" stroke="currentColor" strokeWidth="1.3" /></svg>
             case 'documents':
                 return <svg {...common}><path d="M4 2.8h6l2 2v8.4H4z" stroke="currentColor" strokeWidth="1.3" /><path d="M6 8h4M6 10.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
             case 'settings':

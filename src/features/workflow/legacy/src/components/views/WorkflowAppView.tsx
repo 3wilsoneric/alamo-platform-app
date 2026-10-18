@@ -14,6 +14,7 @@ import TrainingPage from '@/app/training/page'
 import DocumentsPage from '@/app/documents/page'
 import PoliciesPage from '@/app/policies/page'
 import RoleSkillLibraryView from '@/components/views/RoleSkillLibraryView'
+import OrganizationView from '@/components/views/OrganizationView'
 import './workflow-theme.css'
 
 const PAGE_META: Record<Exclude<NavPage, 'home' | 'incident_center' | 'eldermark_agent'>, { title: string; sub?: string }> = {
@@ -26,6 +27,7 @@ const PAGE_META: Record<Exclude<NavPage, 'home' | 'incident_center' | 'eldermark
   forms: { title: 'Forms' },
   training: { title: 'Training' },
   role_library: { title: 'Roles & skills' },
+  organization: { title: 'Organization' },
   documents: { title: 'Documents' },
   settings: { title: 'Settings' },
 }
@@ -93,6 +95,8 @@ export default function WorkflowAppView({
         return <TrainingPage />
       case 'role_library':
         return <RoleSkillLibraryView />
+      case 'organization':
+        return <OrganizationView />
       case 'documents':
         return <DocumentsPage />
       case 'policies':

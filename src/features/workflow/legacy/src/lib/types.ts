@@ -116,6 +116,7 @@ export type NavPage =
     | 'forms'
     | 'training'
     | 'role_library'
+    | 'organization'
     | 'documents'
     | 'incident_center'
     | 'eldermark_agent'

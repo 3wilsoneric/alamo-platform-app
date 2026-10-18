@@ -335,7 +335,7 @@ export default function ProtectedAppShell() {
       </main>
     </div>
   );
-  const showEveryAgent = hasEveryAgentAccess && !admissionsAccess.restrictedToAdmissions && !executiveDirectorAccess.restrictedToExecutive && !isExecutiveDirectorExperience;
+  const showEveryAgent = hasEveryAgentAccess && !admissionsAccess.restrictedToAdmissions && !executiveDirectorAccess.restrictedToExecutive && !isExecutiveDirectorExperience && !isWorkflowExperience;
   return showEveryAgent ? <EveryAgentProvider key={getApiAuthCachePartition()}>{shell}<EveryAgentCompanion /></EveryAgentProvider> : shell;
 }
 

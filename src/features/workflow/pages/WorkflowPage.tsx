@@ -1,12 +1,13 @@
 import { InteractionStatus } from "@azure/msal-browser";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { AuthenticationProgress } from "../../../app/auth/AuthenticationProgress";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
 import WorkflowAppView from "../legacy/src/components/views/WorkflowAppView";
 
 export default function WorkflowPage() {
+  const location = useLocation();
   const isOwner = usePlatformOwnerAccess();
   const isAuthenticated = useIsAuthenticated();
   const { accounts, inProgress, instance } = useMsal();
@@ -23,5 +24,6 @@ export default function WorkflowPage() {
     return <Navigate to="/home" replace />;
   }
 
-  return <WorkflowAppView />;
+  const initialPage = new URLSearchParams(location.search).get("view") === "organization" ? "organization" : "dashboard";
+  return <WorkflowAppView initialPage={initialPage} />;
 }

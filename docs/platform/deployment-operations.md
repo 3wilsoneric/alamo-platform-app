@@ -4050,3 +4050,27 @@ Production signed-in UI verification was unavailable in this browser session.
 This scoped content release uses the exact preceding production image as its base,
 replaces only browser assets, and preserves the Azure server, API, data adapters,
 owner-only Workflow gate, Eric-only agent access and disabled emails.
+
+### Workflow organization preview — 2026-10-18
+
+Workflow now has an Organization view with an illustrated functional map, the
+five canonical Platform communities, community team-layer drill-downs, search,
+and a bounded question interface. The map labels executive functions as an
+illustrative model; it does not assert personnel assignments, reporting lines,
+or contact details. Unverified person-level questions receive an explicit
+unavailable answer. `/workflow?view=organization` opens the view directly for
+authorized users. The unrelated Platform assistant overlay is hidden inside
+Workflow so it does not cover the organization tool.
+
+- browser source branch: `codex/workflow-native-20261018`
+- ACR build: `cc8n`; tag: `workflow-org-preview-20261018`
+- image: `alamo-platform@sha256:05eff49e55eca5334f318d5a1eff94674f89632892d6df3eecc44caf30a4207b`
+- revision: `alamo-platform-prod-web--wforg-1018-05eff49`
+- rollback image: `alamo-platform@sha256:e100d97f394db9a7027bede75c8ef2c96cc582d9d73186b4ed55dfb1f008d624`
+- browser assets: `/assets/index-_OnvK4l1.js`, `/assets/index-Bo3d6Wyv.css`
+
+The revision is Healthy/Running at 100% traffic. Direct `/workflow`, `/home`,
+`/admissions`, and `/healthz` requests return 200; an anonymous platform API
+probe remains 401. TypeScript, production build, and desktop/mobile browser
+checks pass, including map selection, community drill-down, chat grounding,
+search, and no horizontal overflow.
