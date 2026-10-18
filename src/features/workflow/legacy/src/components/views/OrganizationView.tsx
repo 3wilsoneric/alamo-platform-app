@@ -64,17 +64,12 @@ export default function OrganizationView() {
             <button type="button" role="tab" aria-selected={mode === 'map'} className={mode === 'map' ? 'active' : ''} onClick={() => setMode('map')}><UsersRound size={16} /> Organization map</button>
             <button type="button" role="tab" aria-selected={mode === 'ask'} className={mode === 'ask' ? 'active' : ''} onClick={() => setMode('ask')}><MessageSquareText size={16} /> Ask organization</button>
           </div>
-          <div className="org-bar-status"><span /> FUNCTIONAL PREVIEW <span className="org-bar-divider">/</span> NO VERIFIED REPORTING LINES</div>
+          {mode === 'map' && <label className="org-search"><Search size={17} /><input aria-label="Find a function or community" placeholder="Find a function or community" value={query} onChange={(event) => setQuery(event.target.value)} />{query && <button type="button" aria-label="Clear search" onClick={() => setQuery('')}><X size={15} /></button>}</label>}
         </div>
 
         {mode === 'map' ? (
           <div className="org-layout">
             <div className="org-map-column">
-              <div className="org-map-toolbar">
-                <div><span className="org-section-index">01 / THE STRUCTURE</span><h2>Organization map</h2></div>
-                <label className="org-search"><Search size={17} /><input aria-label="Find a function or community" placeholder="Find a function or community" value={query} onChange={(event) => setQuery(event.target.value)} />{query && <button type="button" aria-label="Clear search" onClick={() => setQuery('')}><X size={15} /></button>}</label>
-              </div>
-
               <div className="org-map-canvas">
                 <div className="org-root-node"><span className="org-root-emblem"><Building2 size={20} /></span><span><small>THE ORGANIZATION</small><strong>Alamo Health Management</strong></span></div>
                 <div className="org-root-stem" aria-hidden="true" />
