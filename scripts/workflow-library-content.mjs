@@ -24,7 +24,8 @@ const roleId = id => `role:${id}`
 const skillId = id => `skill:${id}`
 const workflowId = id => `workflow:${id}`
 function add(record) {
-  records.push({ ...record, body: `# ${record.title}\n\n${record.notice}\n\n${record.body}`, linkedIds: [...new Set(record.linkedIds)] })
+  const document = { ...record, body: `# ${record.title}\n\n${record.notice}\n\n${record.body}`, linkedIds: [...new Set(record.linkedIds)] };
+  records.push({ ...document, revision: createHash("sha256").update(JSON.stringify(document)).digest("hex") });
 }
 
 for (const role of roles.roles) {

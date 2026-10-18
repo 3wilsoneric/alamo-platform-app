@@ -72,6 +72,7 @@ export interface Document {
     review_due: string
     body?: string
     source_reference?: string
+    source_revision?: string
     source_updated?: string
 }
 

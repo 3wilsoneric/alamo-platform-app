@@ -11,7 +11,7 @@ export const LIBRARY_DOCUMENTS: Document[] = content.records.map(record => ({
   version: String(record.version), format: 'Markdown', size: `${(new TextEncoder().encode(record.body).length / 1024).toFixed(1)} KB`,
   status: record.kind === 'procedure' ? 'review' : 'draft',
   effective_date: 'Not effective — draft', reviewed_at: 'Not reviewed', review_due: 'Not assigned',
-  body: record.body, source_reference: `${record.sourceFile} · ${record.sourceId}`, source_updated: record.updated,
+  body: record.body, source_reference: `${record.sourceFile} · ${record.sourceId}`, source_updated: record.updated, source_revision: record.revision,
 }))
 
 export const LIBRARY_KNOWLEDGE: KnowledgeFile[] = content.records.map(record => ({

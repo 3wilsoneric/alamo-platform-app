@@ -24,6 +24,7 @@ export default function WorkflowPage() {
     return <Navigate to="/home" replace />;
   }
 
-  const initialPage = new URLSearchParams(location.search).get("view") === "organization" ? "organization" : "dashboard";
-  return <WorkflowAppView initialPage={initialPage} />;
+  const params = new URLSearchParams(location.search);
+  const initialPage = params.has("document") ? "documents" : params.get("view") === "organization" ? "organization" : "dashboard";
+  return <WorkflowAppView key={location.search} initialPage={initialPage} />;
 }

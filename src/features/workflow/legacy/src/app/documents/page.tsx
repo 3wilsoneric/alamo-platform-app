@@ -34,7 +34,8 @@ export default function DocumentsPage() {
     const [deptFilter, setDeptFilter] = useState('All departments')
     const [statusFilter, setStatusFilter] = useState('All statuses')
     const [searchQ, setSearchQ] = useState('')
-    const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
+    const [citationRevision, setCitationRevision] = useState(() => new URLSearchParams(window.location.search).get('revision'))
+    const [selectedDoc, setSelectedDoc] = useState<Document | null>(() => REPO_DOCS.find(doc => doc.id === new URLSearchParams(window.location.search).get('document')) ?? null)
     const [processingStage, setProcessingStage] = useState(0)
     const [intakeForm, setIntakeForm] = useState({ title: '', code: '', type: 'Policy', dept: 'Clinical', owner: '', effective: '', reviewCycle: '12', notes: '' })
 
@@ -59,6 +60,7 @@ export default function DocumentsPage() {
     // ── Document detail ──────────────────────────────────────────────────────────
     if (selectedDoc) {
         const doc = selectedDoc
+        const staleCitation = Boolean(citationRevision && doc.source_revision && citationRevision !== doc.source_revision)
         const sm = statusMeta[doc.status] ?? statusMeta.draft!
         return (
             <div className="overflow-y-auto bg-cream" style={{ height: 'calc(100vh - 54px)' }}>
@@ -95,7 +97,7 @@ export default function DocumentsPage() {
                     </div>
 
                     <div className="mb-8">
-                        {doc.body ? <><div className="mb-6 break-words rounded border border-border bg-bg p-4 text-xs text-ink3">Source: {doc.source_reference}<br />Source updated: {doc.source_updated}</div><DocumentBody body={doc.body} /></> : <>
+                        {doc.body ? <><div className="mb-6 break-words rounded border border-border bg-bg p-4 text-xs text-ink3">Source: {doc.source_reference}<br />Source updated: {doc.source_updated}</div>{staleCitation ? <div role="alert"><p>This source changed since it was cited. The earlier version is not available here.</p><button className="mt-3 underline" onClick={() => setCitationRevision(doc.source_revision ?? null)}>Read the current version</button></div> : <DocumentBody body={doc.body} />}</> : <>
                         <div className="font-serif text-[1.05rem] font-bold text-ink mb-3.5">Sample version history</div>
                         <div className="border border-border">
                             <div className="grid gap-x-4 px-4 py-2 border-b border-border" style={{ gridTemplateColumns: '60px 110px 140px 1fr' }}>
@@ -114,7 +116,7 @@ export default function DocumentsPage() {
                     </div>
 
                     <div className="flex gap-2.5">
-                        {(doc.body ? ['Download'] : ['Download', 'Upload new version', 'Archive']).map(action => (
+                        {(doc.body ? (staleCitation ? [] : ['Download']) : ['Download', 'Upload new version', 'Archive']).map(action => (
                             <button key={action} onClick={() => { if (!doc.body) return; const url = URL.createObjectURL(new Blob([doc.body], { type: 'text/markdown;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = `${doc.code}.md`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }} className={`px-4 py-2 font-sans text-[13px] border cursor-pointer transition-all ${action === 'Download' ? 'bg-navy border-navy text-white font-bold' : 'bg-transparent border-border text-ink2 hover:border-navy'}`}>
                                 {action}
                             </button>
@@ -297,7 +299,7 @@ export default function DocumentsPage() {
                         const sm = statusMeta[d.status] ?? statusMeta.draft!
                         return (
                             <div key={d.id} className="workflow-library-table-row">
-                                <button onClick={() => setSelectedDoc(d)} className="grid gap-x-4 w-full px-4 py-4 bg-transparent border-none cursor-pointer text-left items-center hover:bg-[#eef4f7] transition-colors" style={{ gridTemplateColumns: '130px minmax(220px,1fr) 90px 140px 110px 90px 68px' }}>
+                                <button onClick={() => { setCitationRevision(null); setSelectedDoc(d) }} className="grid gap-x-4 w-full px-4 py-4 bg-transparent border-none cursor-pointer text-left items-center hover:bg-[#eef4f7] transition-colors" style={{ gridTemplateColumns: '130px minmax(220px,1fr) 90px 140px 110px 90px 68px' }}>
                                     <span className="break-words font-mono text-[9.5px] text-ink3">{d.code}</span>
                                     <span className="font-serif text-[0.95rem] text-ink">{d.title}</span>
                                     <span className="font-sans text-[12px] text-ink3">{d.type}</span>

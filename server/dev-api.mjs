@@ -1,3 +1,4 @@
+import { handleWorkflowKnowledgeRequest } from "./workflow-knowledge-api.mjs";
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
 import { handleEveryAgentRequest } from "./everyagent-api.mjs";
 import { handlePlatformAgentSourceRequest } from "./platform-agent-source-api.mjs";
@@ -197,6 +198,7 @@ const server = http.createServer(async (req, res) => {
     await handlePlatformAgentSourceRequest(req, createVercelResponseAdapter(res));
     return;
   }
+  if (requestUrl.pathname === "/api/platform/workflow-knowledge") { await handleWorkflowKnowledgeRequest(req, res); return; }
   if (requestUrl.pathname === "/api/platform/everyagent" || requestUrl.pathname.startsWith("/api/platform/everyagent/")) {
     await handleEveryAgentRequest(req, createVercelResponseAdapter(res));
     return;
