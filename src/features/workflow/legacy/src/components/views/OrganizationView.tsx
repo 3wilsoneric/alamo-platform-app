@@ -84,8 +84,8 @@ export default function OrganizationView() {
         <header className={`org-hero ${mode === 'ask' ? 'org-hero--compact' : ''}`}>
           <div className="org-hero-copy">
             <span className="org-kicker"><span className="org-kicker-line" /> ORGANIZATION / WORKFLOW</span>
-            {mode === 'ask' ? <h1>Ask the <em>organization.</em></h1> : <h1>Know how the<br /><em>work connects.</em></h1>}
-            <p>{mode === 'ask' ? 'Find the right community or function without guessing.' : 'Explore executive functions and community teams, then ask where to go next.'}</p>
+            {mode === 'ask' ? <h1>Ask the <em>organization.</em></h1> : <h1>Organization <em>map.</em></h1>}
+            <p>{mode === 'ask' ? 'Find the right community or function without guessing.' : 'Executive functions, communities, and how their work connects.'}</p>
           </div>
           <NetworkIllustration />
           <span className="org-hero-index">STRUCTURE / 01—05</span>
@@ -134,30 +134,22 @@ export default function OrganizationView() {
                   ))}
                   {visibleCommunities.length === 0 && <p className="org-no-results">No community matches that search.</p>}
                 </div>
-                {selectedCommunity && (
-                  <section className="org-community-focus" aria-label={`${selectedCommunity.title} team functions`}>
-                    <div className="org-community-focus-heading"><span>INSIDE THE COMMUNITY</span><strong>{selectedCommunity.title}</strong></div>
-                    <div className="org-community-focus-grid">
-                      {COMMUNITY_FUNCTIONS.map((role, index) => (
-                        <div className="org-local-role" key={role}><span className="org-local-avatar" aria-hidden="true"><UsersRound size={18} strokeWidth={1.4} /></span><span><small>FUNCTION {String(index + 1).padStart(2, '0')}</small><strong>{role}</strong></span></div>
-                      ))}
-                    </div>
-                  </section>
-                )}
                 <p className="org-map-caption">Community names come from Platform’s facility list. Connections describe functional support, not confirmed reporting relationships.</p>
               </div>
             </div>
 
             <aside className="org-detail" aria-live="polite">
-              <div className="org-detail-heading"><span>SELECTED / {selectedCommunity ? 'COMMUNITY' : 'FUNCTION'}</span><span className="org-detail-number">{selectedCommunity?.code ?? selectedArea?.marker}</span></div>
-              <div className={`org-detail-portrait ${selectedArea ? `org-tone-${selectedArea.tone}` : 'org-tone-blue'}`} aria-hidden="true"><div className="org-detail-orbit" /><div className="org-detail-symbol">{selectedCommunity ? <Building2 size={45} strokeWidth={1.2} /> : <UsersRound size={45} strokeWidth={1.2} />}</div></div>
-              <h3>{selectedCommunity?.title ?? selectedArea?.title}</h3>
-              <p>{selectedCommunity ? `${selectedCommunity.title} is a care-delivery community in the Platform facility list. This preview shows team functions, not names or reporting lines.` : selectedArea?.description}</p>
-              <div className="org-detail-rule" />
-              <span className="org-detail-label">{selectedCommunity ? 'TEAM LAYERS' : 'FOCUS AREAS'}</span>
-              <ul>{(selectedCommunity ? COMMUNITY_FUNCTIONS : selectedArea?.responsibilities ?? []).map((item, index) => <li key={item}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>)}</ul>
-              <button type="button" className="org-detail-ask" onClick={openSelectedInChat}>Ask about this <ArrowUpRight size={17} /></button>
-              <span className="org-detail-footnote">Illustrative model · No personnel directory connected</span>
+              <div className={`org-detail-icon ${selectedArea ? `org-tone-${selectedArea.tone}` : 'org-tone-blue'}`} aria-hidden="true">{selectedCommunity ? <Building2 size={23} strokeWidth={1.5} /> : <UsersRound size={23} strokeWidth={1.5} />}</div>
+              <div className="org-detail-copy">
+                <div className="org-detail-heading"><span>SELECTED {selectedCommunity ? 'COMMUNITY' : 'FUNCTION'}</span><span className="org-detail-number">{selectedCommunity?.code ?? selectedArea?.marker}</span></div>
+                <h3>{selectedCommunity?.title ?? selectedArea?.title}</h3>
+                <p>{selectedCommunity ? 'Care-delivery community. Team functions are shown here; personnel and reporting lines are not verified.' : selectedArea?.description}</p>
+              </div>
+              <div className="org-detail-focus">
+                <span className="org-detail-label">{selectedCommunity ? 'TEAM FUNCTIONS' : 'FOCUS AREAS'}</span>
+                <ul>{(selectedCommunity ? COMMUNITY_FUNCTIONS : selectedArea?.responsibilities ?? []).map((item) => <li key={item}>{item}</li>)}</ul>
+              </div>
+              <button type="button" className="org-detail-ask" onClick={openSelectedInChat}>Ask about this <ArrowUpRight size={16} /></button>
             </aside>
           </div>
         ) : (
