@@ -197,21 +197,12 @@ export interface ExecutiveDirectorCommunityDashboard {
     given: number | null;
     notGiven: number | null;
   } | null;
-  medicationExceptions: Array<{
-    id: string;
+  medicationResidents: Array<{
     residentId: string | null;
     residentName: string;
-    medication: string;
-    dosage: string | null;
-    date: string | null;
-    outcome: string;
-    reason: string | null;
-    noteRecorded: boolean;
-  }>;
-  medicationWatch: Array<{
-    residentId: string | null;
-    residentName: string;
-    exceptions: number;
+    given7d: number | null;
+    given30d: number | null;
+    lastRecordedDate: string | null;
   }>;
   admissions: {
     status: "connected" | "not_connected" | "unavailable";

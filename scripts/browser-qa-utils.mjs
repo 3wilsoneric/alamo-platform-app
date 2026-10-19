@@ -552,7 +552,8 @@ export async function startCleanChat(page) {
   await clearClientState(page);
   const currentPath = new URL(page.url()).pathname;
   const route = currentPath === "/chat" ? "/chat" : "/analytics/questions";
-  await page.goto(`${BASE_URL}${route}`, { waitUntil: "networkidle" });
+  // The questions route can poll for updates; wait for its explicit ready target below.
+  await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-certified-question-guide="true"], [data-conversational-prompt="hero"]').first().waitFor({
     state: "visible",
     timeout: 10_000

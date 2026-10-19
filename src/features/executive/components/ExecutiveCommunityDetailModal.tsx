@@ -251,6 +251,13 @@ function MedicationDetail({ facilityName, dashboard, onClose, closeButtonRef, em
   if (!medication) return <div data-executive-detail-view="medications" data-mar-binder="true" className="mar-binder">{chrome}<div className="mar-binder__sheet mar-binder__sheet--empty"><EmptyState>Medication administration totals are not available.</EmptyState></div></div>;
   const selectedPeriod = history.find((item) => item.month === selectedMonth) ?? medication;
   const given = selectedPeriod.given;
+  const recentResidents = dashboard.medicationResidents ?? [];
+  const renderResidents = (rows: typeof recentResidents) => rows.map((row, index) => <li key={`${row.residentId ?? row.residentName}-${index}`}>
+    <strong>{row.residentName}</strong>
+    <span><small>7 days</small>{formatExecutiveNumber(row.given7d)}</span>
+    <span><small>30 days</small>{formatExecutiveNumber(row.given30d)}</span>
+    <span><small>Latest record</small>{row.lastRecordedDate ? formatExecutiveDate(row.lastRecordedDate) : "—"}</span>
+  </li>);
   function selectMonth(month: string) { setSelectedMonth(month); }
   return <div data-executive-detail-view="medications" data-mar-binder="true" className="mar-binder">
     {chrome}
@@ -261,6 +268,14 @@ function MedicationDetail({ facilityName, dashboard, onClose, closeButtonRef, em
         <section className="material-panel mar-binder__history"><div className="material-panel__title"><ClipboardList aria-hidden="true" /><h2>Administrations given</h2><strong>{formatExecutiveNumber(given)} <small>given</small></strong></div><OperationalLineChart points={history.filter((item) => item.given != null).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { fallback: item.month, month: "short" }), value: item.given! }))} accent="#74134f" selectedId={selectedMonth} onSelect={selectMonth} ariaLabel="Medication administrations given by month" unitLabel="administrations" /></section>
         <section className="material-panel mar-binder__composition"><div className="material-panel__title"><Pill aria-hidden="true" /><h2>{formatMonthLabel(selectedPeriod.month, { fallback: selectedPeriod.month, month: "long" })}</h2></div><p className="text-[18px] leading-8 text-[#2e2733]">{formatExecutiveNumber(given)} medication administrations were recorded as given.</p></section>
       </div>
+      <section className="material-panel mar-binder__residents" aria-label="Resident administrations given">
+        <div className="material-panel__title"><UsersRound aria-hidden="true" /><h2>Administrations given by resident</h2></div>
+        <p>Rolling 7- and 30-day source summaries; these do not change with the calendar-month selection above.</p>
+        {recentResidents.length ? <>
+          <ol>{renderResidents(recentResidents.slice(0, 8))}</ol>
+          {recentResidents.length > 8 ? <details><summary>Show {formatExecutiveNumber(recentResidents.length - 8)} more residents</summary><ol>{renderResidents(recentResidents.slice(8))}</ol></details> : null}
+        </> : <p>Resident-level administrations-given detail is not available from the connected MAR source.</p>}
+      </section>
     </div>
   </div>;
 }

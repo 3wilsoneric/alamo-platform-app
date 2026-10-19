@@ -38,14 +38,6 @@ function text(value) {
   return normalized || null;
 }
 
-function medicationExceptionKind(row) {
-  if (row?.is_refusal) return "Refused";
-  if (row?.is_on_hold || /\bhold|held\b/i.test(String(row?.outcome_category ?? row?.administration_outcome ?? ""))) return "Held";
-  if (row?.is_over_60_minutes_late || Number(row?.minutes_late ?? 0) > 60) return "Late";
-  if (row?.is_prn) return "PRN";
-  return text(row?.outcome_category ?? row?.administration_outcome) ?? "Not given";
-}
-
 function scopeAdmissions(admissions, facilityId) {
   if (!admissions) {
     return {
@@ -120,10 +112,6 @@ export function buildExecutiveDirectorCommunityDashboard({
   const medicationRows = (reportsSummary?.medicationCompliance ?? [])
     .filter((row) => row.facility_id === facilityId);
   const latestMedication = latestByPeriod(medicationRows, "month_bucket");
-  const medicationExceptionRows = scopeToolRows(
-    toolRows(reportsSummary, "marExceptionDetails", "mar_exception_detail_90d"),
-    facilityId
-  );
   const medicationResidentRows = scopeToolRows(
     toolRows(reportsSummary, "marResidentSummary", "mar_resident_summary"),
     facilityId
@@ -133,39 +121,16 @@ export function buildExecutiveDirectorCommunityDashboard({
     facilityId
   );
   const admissions = scopeAdmissions(admissionsDashboard, facilityId);
-  const medicationExceptions = medicationExceptionRows
-    .map((row, index) => ({
-      id: text(row.administration_id ?? row.id) ?? `medication-exception-${index + 1}`,
+  const medicationResidents = medicationResidentRows
+    .map((row) => ({
       residentId: text(row.resident_id),
       residentName: text(row.resident_name) ?? text(row.resident_id) ?? "Resident",
-      medication: text(row.medication_name ?? row.medication) ?? "Medication not recorded",
-      dosage: text(row.dosage),
-      date: text(row.administration_date ?? row.scheduled_date ?? row.recorded_date),
-      outcome: medicationExceptionKind(row),
-      reason: text(row.not_given_reason ?? row.missed_or_held_reason ?? row.administration_note),
-      noteRecorded: Boolean(text(row.administration_note))
+      given7d: numeric(row.given_7d ?? row.mar_given_7d),
+      given30d: numeric(row.given_30d ?? row.mar_given_30d),
+      lastRecordedDate: text(row.last_recorded_date ?? row.last_mar_recorded_date)
     }))
-    .sort((left, right) => String(right.date ?? "").localeCompare(String(left.date ?? "")))
-    .slice(0, 50);
-  const exceptionCounts = new Map();
-  medicationExceptions.forEach((row) => {
-    const key = row.residentId ?? row.residentName;
-    const current = exceptionCounts.get(key) ?? { residentId: row.residentId, residentName: row.residentName, exceptions: 0 };
-    current.exceptions += 1;
-    exceptionCounts.set(key, current);
-  });
-  if (!exceptionCounts.size) {
-    medicationResidentRows.forEach((row) => {
-      const exceptions = numeric(row.refusals_30d ?? row.mar_refusals_30d ?? row.not_given_30d) ?? 0;
-      if (exceptions <= 0) return;
-      const residentId = text(row.resident_id);
-      exceptionCounts.set(residentId ?? text(row.resident_name) ?? "Resident", {
-        residentId,
-        residentName: text(row.resident_name) ?? residentId ?? "Resident",
-        exceptions
-      });
-    });
-  }
+    .filter((row) => row.given7d != null || row.given30d != null)
+    .sort((left, right) => String(right.lastRecordedDate ?? "").localeCompare(String(left.lastRecordedDate ?? "")) || left.residentName.localeCompare(right.residentName));
   const residentMovements = residentEpisodeRows
     .flatMap((row, index) => {
       const base = {
@@ -262,10 +227,7 @@ export function buildExecutiveDirectorCommunityDashboard({
           notGiven: numeric(latestMedication.not_given)
         }
       : null,
-    medicationExceptions,
-    medicationWatch: [...exceptionCounts.values()]
-      .sort((left, right) => right.exceptions - left.exceptions)
-      .slice(0, 10),
+    medicationResidents,
     admissions
   };
 }

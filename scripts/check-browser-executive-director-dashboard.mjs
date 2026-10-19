@@ -400,6 +400,15 @@ async function auditTablePanning(page, detail, label) {
 
 async function auditWorkspace(page, detail, workspace, label) {
   await auditTouchTargets(detail, label);
+  if (workspace.key === "medications") {
+    const residentDetail = detail.getByRole("region", { name: "Resident administrations given" });
+    const residentLayout = await residentDetail.evaluate((element) => ({ overflow: element.scrollWidth - element.clientWidth, rows: element.querySelectorAll("li").length }));
+    if (residentLayout.overflow > 2 || residentLayout.rows < 1) auditFindings.push({ label, issue: "Resident MAR detail must fit the reader and include source-backed rows.", ...residentLayout });
+    if (await page.evaluate(() => window.innerWidth <= 390)) {
+      await residentDetail.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `${screenshotDir}/${label.replaceAll(" ", "-")}-resident-mars.png`, fullPage: false });
+    }
+  }
   if (workspace.key === "incidents" && await page.evaluate(() => window.innerWidth < 640)) {
     const fontSize = await detail.getByRole("searchbox", { name: "Search clients with incidents" }).evaluate((input) => Number.parseFloat(getComputedStyle(input).fontSize));
     if (fontSize < 16) auditFindings.push({ label, issue: "Client search must avoid mobile browser zoom.", fontSize });
@@ -559,6 +568,10 @@ const dashboardResponse = {
       given: 10333,
       notGiven: 426
     },
+    medicationResidents: [
+      { residentId: "r-1", residentName: "Maria Gomez", given7d: 12, given30d: 51, lastRecordedDate: "2026-10-27" },
+      { residentId: "r-2", residentName: "James Carter", given7d: 8, given30d: 39, lastRecordedDate: "2026-10-26" }
+    ],
     medicationExceptions: [
       { id: "mar-1", residentId: "r-1", residentName: "Maria Gomez", medication: "Metformin", dosage: "500 mg", date: "2026-10-27", outcome: "Not given", reason: "Out of stock", noteRecorded: true },
       { id: "mar-2", residentId: "r-2", residentName: "James Carter", medication: "Lisinopril", dosage: "10 mg", date: "2026-10-27", outcome: "Not given", reason: "Not available", noteRecorded: true },
@@ -769,6 +782,10 @@ async function verifyPeriodSelection(modal, view, page) {
     if (!/September 2026[\s\S]*10,005 medication administrations were recorded as given/.test(composition) || /refus|not given|exception/i.test(await modal.innerText())) {
       throw new Error("Historical MAR detail must show only administrations given for the selected month.");
     }
+    const residents = modal.getByRole("region", { name: "Resident administrations given" });
+    if (!/Maria Gomez[\s\S]*12[\s\S]*51/.test(await residents.innerText()) || !/Rolling 7- and 30-day/.test(await residents.innerText())) {
+      throw new Error("MAR detail must retain resident-level administrations given with its rolling-period label.");
+    }
     await history.getByRole("tab", { name: /^Oct\b/ }).click();
   }
 }
@@ -816,6 +833,19 @@ await withBrowserQa(async (browser) => {
   const panelKinds = await summary.locator("[data-executive-dashboard-panel]").evaluateAll((panels) => panels.map((panel) => panel.getAttribute("data-executive-dashboard-panel")).sort());
   if (JSON.stringify(panelKinds) !== JSON.stringify(["census", "incidents", "medications"])) {
     throw new Error("The overview must contain only census, incident, and medication components.");
+  }
+  const incidentPanel = summary.locator('[data-executive-dashboard-panel="incidents"]');
+  if (await incidentPanel.locator('.executive-incident-months > div').count() !== 3 ||
+      await incidentPanel.locator('.executive-incident-client-section [data-incident-client-triage="true"]').count() !== 1) {
+    throw new Error("Incident activity must show three monthly columns followed by client-level incident review.");
+  }
+  if (/medication refusal|aggressive behavior|substance use|\bother\b/i.test(await incidentPanel.innerText())) {
+    throw new Error("The dashboard must not lead with incident classifications.");
+  }
+  const medicationPanel = summary.locator('[data-executive-dashboard-panel="medications"]');
+  if (await medicationPanel.getByRole('group', { name: 'Medication administrations given by month' }).count() !== 1 ||
+      /refus|not given|exception/i.test(await medicationPanel.innerText())) {
+    throw new Error("Medication overview must retain given-administration detail without refusals or not-given counts.");
   }
   if (await summary.locator("[data-executive-panel-tab]").count()) {
     throw new Error("Operating metrics must not be presented as file tabs.");

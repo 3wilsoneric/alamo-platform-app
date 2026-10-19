@@ -7,19 +7,19 @@ import type {
 
 function MetricGrid({ items }: { items: FullReportMetric[] }) {
   return (
-    <div className="grid border-y border-[#111111] sm:grid-cols-2 xl:grid-cols-3">
+    <div data-report-metrics="true" className="grid grid-cols-2 border-y border-[#111111] xl:grid-cols-3">
       {items.map((item, index) => {
         const mediumColumn = index % 2;
         const largeColumn = index % 3;
         return (
           <div
             key={`${item.label}-${index}`}
-            className={`min-w-0 px-0 py-4 sm:px-4 ${
-              index > 0 ? "border-t border-[#d9d9d9]" : ""
+            className={`min-w-0 px-2 py-4 sm:px-4 ${
+              index > 1 ? "border-t border-[#d9d9d9]" : ""
             } ${
-              index === 1 ? "sm:border-t-0" : ""
+              index === 1 ? "border-t-0" : ""
             } ${
-              mediumColumn > 0 ? "sm:border-l" : "sm:border-l-0"
+              mediumColumn > 0 ? "border-l" : "border-l-0"
             } ${
               index < 3 ? "xl:border-t-0" : "xl:border-t"
             } ${
@@ -29,11 +29,11 @@ function MetricGrid({ items }: { items: FullReportMetric[] }) {
             <p className="text-[10px] font-bold uppercase leading-4 tracking-[0.13em] text-[#595959]">
               {item.label}
             </p>
-            <p className="mt-1.5 font-sans text-[25px] font-bold leading-none tracking-[-0.04em]">
+            <p className="mt-1.5 font-sans text-[23px] font-bold leading-none tracking-[-0.04em] sm:text-[25px]">
               {item.value}
             </p>
             {item.detail ? (
-              <p className="mt-2 text-[11px] leading-[1.45] text-[#666666]">{item.detail}</p>
+              <p className="mt-2 text-[12px] leading-[1.45] text-[#666666]">{item.detail}</p>
             ) : null}
           </div>
         );
@@ -280,11 +280,11 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
           >
             {report.title}
           </h2>
-          <p className="mt-4 max-w-[850px] font-sans text-[14px] leading-[1.65] text-[#333333] sm:text-[16px]">
+          <p className="mt-4 hidden max-w-[850px] font-sans text-[14px] leading-[1.65] text-[#333333] sm:block sm:text-[16px]">
             {report.summary}
           </p>
         </div>
-        <div className="border-l-[3px] border-[#0f8b73] pl-4 text-[10px] leading-4 text-[#595959] xl:mt-1">
+        <div className="hidden border-l-[3px] border-[#0f8b73] pl-4 text-[12px] leading-5 text-[#595959] sm:block xl:mt-1">
           <p className="font-bold uppercase tracking-[0.12em] text-[#111111]">Coverage</p>
           <p className="mt-1">{report.period.label}</p>
           <p className="mt-3 font-bold uppercase tracking-[0.12em] text-[#111111]">Data through</p>
@@ -292,11 +292,17 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
           <p className="mt-3 font-bold uppercase tracking-[0.12em] text-[#111111]">Snapshot updated</p>
           <p className="mt-1">{report.generatedAtLabel}</p>
         </div>
+        <div className="border-l-[3px] border-[#0f8b73] pl-3 text-[12px] leading-5 text-[#4f5b55] sm:hidden">
+          <p><strong className="font-semibold text-[#243b32]">Data through</strong> {report.dataThrough}</p>
+          <p>Updated {report.generatedAtLabel}</p>
+          <details className="mt-1"><summary className="min-h-11 cursor-pointer py-2 font-semibold text-[#17684f]">Coverage details</summary><p className="pb-2">{report.period.label}</p></details>
+        </div>
       </header>
 
       <div className="mt-5">
         <MetricGrid items={report.metrics} />
       </div>
+      <p data-report-mobile-summary="true" className="mt-5 border-b border-[#d9d9d9] pb-5 font-sans text-[14px] leading-[1.65] text-[#333333] sm:hidden">{report.summary}</p>
 
       {report.sections.map((section, sectionIndex) => (
         <section
@@ -321,7 +327,7 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
         </section>
       ))}
 
-      <details className="mt-10 border-t border-[#111111] pt-3 text-[10px] leading-5 text-[#737373]">
+      <details data-report-evidence="true" className="mt-10 border-t border-[#111111] pt-3 text-[10px] leading-5 text-[#737373]">
         <summary className="cursor-pointer font-semibold text-[#595959]">Evidence used</summary>
         <p className="mt-2">
           {report.evidence.sources

@@ -27,7 +27,7 @@ export default function EveryAgentCompanion() {
   if (agentChatConfigured && location.pathname === "/analytics/agent" && new URLSearchParams(location.search).has("chat")) return null;
   return <div className="everyagent-embedded">
     <button ref={launcher} type="button" className={`everyagent-launcher everyagent-launcher--${branding.variant}`} aria-label={`Open ${branding.name}`} title={branding.name} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-      <EveryAgentOrb />{needsReview.length > 0 && <span className="everyagent-badge" aria-label={`${needsReview.length} updates need review`}>{needsReview.length}</span>}
+      <EveryAgentOrb /><span className="everyagent-launcher__label">Ask Alamo</span>{needsReview.length > 0 && <span className="everyagent-badge" aria-label={`${needsReview.length} updates need review`}>{needsReview.length}</span>}
     </button>
     <dialog ref={dialog} className="everyagent-companion" aria-label={branding.name} onClose={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
       <div className="everyagent-companion-inner">

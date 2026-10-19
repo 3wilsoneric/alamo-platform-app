@@ -28,6 +28,9 @@ await withBrowserQa(async (browser) => {
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.locator('[data-workforce-demo="true"]').waitFor({ state: "visible" });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, "Mobile Workforce must not overflow horizontally");
+  const actionWidths = await page.locator('[data-workforce-action-primary="true"]').evaluateAll((elements) => elements.map((element) => Math.round(element.getBoundingClientRect().width)));
+  assert.ok(actionWidths.length > 0 && actionWidths.every((width) => width >= 200), `Personnel action text must keep a readable phone-width column: ${actionWidths.join(", ")}`);
+  assert.equal(await page.locator('[data-workforce-staffing="true"] article dl').first().isVisible(), true, "Phone staffing must show explicit counts rather than relying on tiny dots");
   await page.screenshot({ path: `${screenshotDir}/workforce-mobile.png`, fullPage: true });
   await page.close();
   console.log("Workforce demo browser checks passed: labeled fictional fixture, briefing, board filters, and mobile layout.");

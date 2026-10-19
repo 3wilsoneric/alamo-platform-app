@@ -34,9 +34,9 @@ export default function WorkforceBriefing({ workforce }: { workforce: ConnectedW
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-[18px] font-semibold tracking-[-0.025em] text-[#202623]">Personnel brief</h2>
-          <p className="mt-1 text-[11px] text-[#737b77]">What needs someone’s attention this week</p>
+          <p className="mt-1 text-[13px] text-[#5e6b64]">What needs someone’s attention this week</p>
         </div>
-        <p className="text-[10px] text-[#7a817d]">Personnel data through {formatDate(workforce.asOf)}</p>
+        <p className="text-[12px] text-[#68736d]">Personnel data through {formatDate(workforce.asOf)}</p>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -222,7 +222,7 @@ function ActionList({
     <section data-workforce-action-list={tone} className={`h-full overflow-hidden rounded-2xl border ${treatment.border} bg-white shadow-[0_2px_8px_rgba(24,63,52,0.04)] sm:min-h-[230px]`}>
       <div className={`flex items-center justify-between gap-4 px-4 py-4 sm:px-5 ${treatment.surface}`}>
         <div>
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#6f7974]">{kicker}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#586961]">{kicker}</p>
           <h3 className="mt-1 text-[18px] font-semibold tracking-[-0.025em] text-[#263c35]">{title}</h3>
         </div>
         <span className={`inline-flex min-w-9 items-center justify-center rounded-full px-2.5 py-1.5 text-[12px] font-semibold tabular-nums ${treatment.count}`}>{items.length}</span>
@@ -232,15 +232,15 @@ function ActionList({
           {items.map((item) => {
             const body = (
               <>
-                <span className={`inline-flex w-fit whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[10px] font-semibold ${treatment.chip}`}>{item.chip}</span>
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold leading-5 text-[#263c35]">{item.primary}</span>
-                  <span className="mt-1 block text-[11px] leading-4 text-[#7a817d]">{item.secondary}</span>
+                <span className={`col-span-2 inline-flex w-fit whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12px] font-semibold sm:col-span-1 ${treatment.chip}`}>{item.chip}</span>
+                <span data-workforce-action-primary="true" className="col-start-1 row-start-2 min-w-0 sm:col-auto sm:row-auto">
+                  <span className="block text-[15px] font-semibold leading-5 text-[#263c35]">{item.primary}</span>
+                  <span className="mt-1 block text-[13px] leading-5 text-[#66736c]">{item.secondary}</span>
                 </span>
-                {item.href ? <ArrowRight className="h-3.5 w-3.5 text-[#0f795f] transition-transform group-hover:translate-x-0.5" aria-hidden="true" /> : <span />}
+                {item.href ? <ArrowRight className="col-start-2 row-start-2 h-3.5 w-3.5 text-[#0f795f] transition-transform group-hover:translate-x-0.5 sm:col-auto sm:row-auto" aria-hidden="true" /> : <span className="col-start-2 row-start-2 sm:col-auto sm:row-auto" />}
               </>
             );
-            const className = "group grid grid-cols-[84px_minmax(0,1fr)_14px] items-center gap-x-3 rounded-xl border border-[#e6eae8] bg-white p-3";
+            const className = "group grid grid-cols-[minmax(0,1fr)_14px] gap-y-2 items-center gap-x-3 rounded-xl border border-[#e6eae8] bg-white p-3 sm:grid-cols-[84px_minmax(0,1fr)_14px]";
             return (
               <li key={item.key}>
                 {item.href
@@ -251,7 +251,7 @@ function ActionList({
           })}
         </ul>
       ) : (
-        <p className="flex min-h-[104px] items-center justify-center px-5 text-center text-[12px] text-[#69716c] sm:min-h-[150px]">{emptyLabel}</p>
+        <p className="flex min-h-[104px] items-center justify-center px-5 text-center text-[14px] text-[#69716c] sm:min-h-[150px]">{emptyLabel}</p>
       )}
     </section>
   );

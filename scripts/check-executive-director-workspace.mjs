@@ -72,6 +72,10 @@ const scopedDashboard = buildExecutiveDirectorCommunityDashboard({
         { administration_id: "mar-344", facility_id: "344", resident_id: "resident-344", resident_name: "Turlock Resident", medication_name: "Medication A", administration_date: "2026-09-14", administration_outcome: "Not given" },
         { administration_id: "mar-337", facility_id: "337", resident_id: "resident-337", resident_name: "San Pablo Resident", medication_name: "Medication B", administration_date: "2026-09-15", administration_outcome: "Not given" }
       ],
+      marResidentSummary: [
+        { facility_id: "344", resident_id: "resident-344", resident_name: "Turlock Resident", given_7d: 12, given_30d: 54, last_recorded_date: "2026-10-07", refusals_30d: 3 },
+        { facility_id: "337", resident_id: "resident-337", resident_name: "San Pablo Resident", given_7d: 9, given_30d: 40, last_recorded_date: "2026-10-07", refusals_30d: 2 }
+      ],
       residentEpisodeHistory: [
         { episode_id: "episode-344", facility_id: "344", resident_id: "resident-344", resident_name: "Turlock Resident", admit_date: "2026-09-01" },
         { episode_id: "episode-337", facility_id: "337", resident_id: "resident-337", resident_name: "San Pablo Resident", admit_date: "2026-09-02" }
@@ -115,9 +119,9 @@ assert.deepEqual(scopedDashboard.census, [{ month: "2026-09", census: 80 }]);
 assert.deepEqual(scopedDashboard.admissions.cards.map((card) => card.referralId), [1]);
 assert.deepEqual(scopedDashboard.admissions.recentReferrals.map((row) => row.referralId), [1]);
 assert.deepEqual(scopedDashboard.incidentDetails.map((row) => row.id), ["incident-344"]);
-assert.deepEqual(scopedDashboard.medicationExceptions.map((row) => row.id), ["mar-344"]);
+assert.deepEqual(scopedDashboard.medicationResidents, [{ residentId: "resident-344", residentName: "Turlock Resident", given7d: 12, given30d: 54, lastRecordedDate: "2026-10-07" }]);
 assert.deepEqual(scopedDashboard.residentMovements.map((row) => row.id), ["episode-344-admit"]);
-assert.deepEqual(scopedDashboard.medicationWatch.map((row) => row.residentName), ["Turlock Resident"]);
+assert.equal("medicationExceptions" in scopedDashboard || "medicationWatch" in scopedDashboard, false, "The executive response must not include refusal/exception payloads.");
 assert.equal(JSON.stringify(scopedDashboard).includes("San Pablo Client"), false);
 assert.equal(JSON.stringify(scopedDashboard).includes("San Pablo Resident"), false);
 assert.equal(scopedDashboard.incidentDetails[0].injuryOccurred, null);

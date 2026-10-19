@@ -241,6 +241,8 @@ function CommunityOverview({ facilityId, dashboard, onOpenDetail, onOpenIncident
   const limit = dashboard.admissions.community?.operatingLimit ?? null;
   const occupancy = census && limit ? census.census / limit * 100 : null;
   const medication = dashboard.medication;
+  const incidentMonths = dashboard.incidentTrend.slice(-3);
+  const medicationMonths = (dashboard.medicationHistory ?? []).filter((item) => item.given != null).slice(-6);
 
   return <div data-daily-operating-summary="true" className="executive-dashboard-index">
     <DomainPanel kind="census" title="12-month census" icon={<UsersRound />} action="History" onOpen={() => onOpenDetail("census")}>
@@ -250,13 +252,21 @@ function CommunityOverview({ facilityId, dashboard, onOpenDetail, onOpenIncident
       </div>
       <ExecutiveTrendChart points={dashboard.census.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.census }))} accent="#174f81" height={180} compact ariaLabel="Community census history" />
     </DomainPanel>
-    <DomainPanel kind="incidents" title="Clients with incidents" icon={<ClipboardList />} action="View incidents" onOpen={() => onOpenDetail("incidents")}>
-      <ExecutiveIncidentClients facilityId={facilityId} compact onSelect={onOpenIncidentClient} />
+    <DomainPanel kind="incidents" title="Incident activity" icon={<ClipboardList />} action="View incidents" onOpen={() => onOpenDetail("incidents")}>
+      {incidentMonths.length ? <div className="executive-incident-months" aria-label="Recent monthly incident counts">
+        {incidentMonths.map((item, index) => <div key={item.month} className={index === incidentMonths.length - 1 ? "is-current" : undefined}>
+          <span>{formatMonthLabel(item.month, { month: "short" })}</span>
+          <strong>{formatExecutiveNumber(item.count)}</strong>
+          <small>{index === incidentMonths.length - 1 ? "Latest available" : "Recorded incidents"}</small>
+        </div>)}
+      </div> : <CompactEmpty>Incident totals are unavailable.</CompactEmpty>}
+      <div className="executive-incident-client-section"><h3>Clients with incident records</h3><ExecutiveIncidentClients facilityId={facilityId} compact onSelect={onOpenIncidentClient} /></div>
     </DomainPanel>
     <DomainPanel kind="medications" title="Medication administration" icon={<Pill />} action="View MARs" onOpen={() => onOpenDetail("medications")}>
       {medication ? <>
         <div className="executive-medication-overview"><div><strong>{formatExecutiveNumber(medication.given)}</strong><span>administrations given</span></div><span>{formatMonthLabel(medication.month, { month: "long" })}</span></div>
-        <p className="executive-period-note">Recorded medication administrations given in {formatMonthLabel(medication.month, { month: "long" })}.</p>
+        {medicationMonths.length > 1 ? <ExecutiveTrendChart points={medicationMonths.map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.given! }))} accent="#68214e" height={150} compact ariaLabel="Medication administrations given by month" unit="given" /> : null}
+        <p className="executive-period-note">Recorded as given in {formatMonthLabel(medication.month, { month: "long" })}. Open MARs for monthly detail.</p>
       </> : <CompactEmpty>Medication totals unavailable.</CompactEmpty>}
     </DomainPanel>
   </div>;

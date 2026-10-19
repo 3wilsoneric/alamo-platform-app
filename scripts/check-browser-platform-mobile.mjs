@@ -10,6 +10,7 @@ import {
 } from "./browser-qa-utils.mjs";
 
 const OUTPUT_DIR = path.join(process.cwd(), "generated", "browser-platform-mobile-qa");
+const CAPTURE_VISUALS = process.env.PLATFORM_MOBILE_SCREENSHOTS === "1";
 const VIEWPORTS = [
   { name: "compact-phone", width: 320, height: 568 },
   { name: "standard-phone", width: 390, height: 844 },
@@ -200,16 +201,22 @@ async function verifySafeArea(browser) {
   const geometry = await page.evaluate(() => {
     const header = document.querySelector("[data-platform-header='true']")?.getBoundingClientRect();
     const menu = document.querySelector("[data-platform-mobile-menu='true']")?.getBoundingClientRect();
-    return { headerHeight: header?.height ?? 0, menuTop: menu?.top ?? 0 };
+    const agent = document.querySelector(".everyagent-launcher")?.getBoundingClientRect();
+    const agentLabel = document.querySelector(".everyagent-launcher__label");
+    return { headerHeight: header?.height ?? 0, menuTop: menu?.top ?? 0, agent: agent ? { left: agent.left, right: agent.right, height: agent.height, bottom: agent.bottom } : null, agentLabelVisible: agentLabel ? getComputedStyle(agentLabel).display !== "none" : false, viewportWidth: window.innerWidth, viewportHeight: window.innerHeight };
   });
   await context.close();
   if (geometry.headerHeight < 106 || geometry.menuTop < 106) {
     return [`Shared mobile chrome ignored the simulated 47px top safe area: ${JSON.stringify(geometry)}`];
   }
+  if (geometry.agent && (!geometry.agentLabelVisible || geometry.agent.height < 44 || geometry.agent.left < 0 || geometry.agent.right > geometry.viewportWidth || geometry.agent.bottom > geometry.viewportHeight)) {
+    return [`Mobile agent launcher is not a visible, contained touch target: ${JSON.stringify(geometry)}`];
+  }
   return [];
 }
 
 await mkdir(OUTPUT_DIR, { recursive: true });
+if (CAPTURE_VISUALS) await mkdir(path.join(OUTPUT_DIR, "screenshots"), { recursive: true });
 
 await withBrowserQa(async (browser) => {
   const checks = [];
@@ -234,6 +241,9 @@ await withBrowserQa(async (browser) => {
 
       const routeFailures = loadFailure ? [`Route did not settle: ${loadFailure}`] : await routeContracts(page, route, viewport);
       const layout = await inspectMobileLayout(page);
+      if (CAPTURE_VISUALS && viewport.name === "standard-phone" && !loadFailure) {
+        await page.screenshot({ path: path.join(OUTPUT_DIR, "screenshots", `${route.name}-390.png`), fullPage: false });
+      }
       // The owner opens Licensing as an Agent skill; the legacy deep link redirects there.
       const expectedPathname = route.name === "licensing" ? "/analytics/agent" : route.pathname;
       if (layout.pathname !== expectedPathname) routeFailures.push(`Expected ${expectedPathname}, rendered ${layout.pathname}`);

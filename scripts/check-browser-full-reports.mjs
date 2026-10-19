@@ -149,7 +149,7 @@ async function assertReportSemantics(report, reportId) {
 }
 
 async function assertReportEndReachable(page, report, reportId, screenshotDir, viewportLabel) {
-  const evidence = report.locator("details");
+  const evidence = report.locator('[data-report-evidence="true"]');
   await evidence.scrollIntoViewIfNeeded();
   const evidenceBox = await evidence.boundingBox();
   const viewport = page.viewportSize();
@@ -484,6 +484,13 @@ async function runMobile(browser, screenshotDir) {
     await assertReportSemantics(report, reportId);
     await assertDocumentFits(page, `mobile ${reportId} report`);
     await assertContainedReader(page, `mobile ${reportId} report`);
+    const mobileHierarchy = await report.evaluate((element) => {
+      const metrics = element.querySelector('[data-report-metrics="true"]');
+      const summary = element.querySelector('[data-report-mobile-summary="true"]');
+      const columns = metrics ? getComputedStyle(metrics).gridTemplateColumns.split(" ").length : 0;
+      return { columns, metricsTop: metrics?.getBoundingClientRect().top ?? 0, summaryTop: summary?.getBoundingClientRect().top ?? 0 };
+    });
+    assert(mobileHierarchy.columns === 2 && mobileHierarchy.metricsTop < mobileHierarchy.summaryTop, `${reportId} phone reader must lead with two-column measures before narrative`);
     await page.screenshot({
       path: path.join(screenshotDir, `full-report-${reportId}-mobile.png`),
       fullPage: true
