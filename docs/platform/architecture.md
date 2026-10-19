@@ -492,7 +492,7 @@ relationship approval, publication and withdrawal atomic under concurrent writes
 The head selects the accepted revision; losing writers can leave unreferenced
 candidate archives, which are never served as accepted records. There is no local
 filesystem fallback. See [deployment operations](deployment-operations.md) for
-configuration, recovery, pilot limits and the explicit not-deployed status.
+configuration, recovery, pilot limits and the owner-only deployment status.
 
 Documents and quoted relationships have separate review decisions. Publication
 freezes approved content with explicitly selected approved connections. Source
@@ -501,3 +501,11 @@ retrieval, and withdrawing a published connection retracts its publication. Libr
 nodes remain draft references even when a connection to them is approved. This
 pilot does not implement staff-wide access, independent-reviewer separation, AI
 extraction, transitive dependency validation, or a downstream change feed.
+
+
+The shared Workflow pilot was deployed owner-only on 2026-10-19. Exact Entra
+tenant/object-ID grants, the existing owner gate and private Azure storage are
+enabled. Live health, anonymous denial and runtime managed-identity read/write
+checks pass; real-owner browser acceptance awaits sign-in. See the latest
+[deployment receipt](deployment-operations.md). No additional user or agent access
+was enabled.
