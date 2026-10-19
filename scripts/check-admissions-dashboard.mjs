@@ -227,7 +227,7 @@ const column = (key, label, statuses) => ({
   statuses: statuses.map(([status, count]) => ({ status, count }))
 });
 const pipelinePayload = {
-  contract_version: "3.3",
+  contract_version: "3.5",
   generated_at: "2026-09-26T13:00:00.000Z",
   board: {
     total: 3,
@@ -258,6 +258,7 @@ const pipelinePayload = {
       move_ins_complete: true,
       admitted_last_week_complete: true,
       moving_through_complete: true,
+      did_not_move_in_complete: true,
       weekly_trend_complete: true
     },
     recent_referrals: [
@@ -366,6 +367,19 @@ const pipelinePayload = {
       prior_placement: "Acute hospital",
       pipeline_path: "/?view=referrals&referralId=21"
     }],
+    did_not_move_in: [{
+      referral_id: 29,
+      client_name: "Taylor Reed",
+      cancelled_at: "2026-09-25T12:00:00.000Z",
+      status: "Did not move in",
+      community: "San Pablo",
+      owner: "Jordan",
+      source_name: "County behavioral health",
+      referring_county: "Contra Costa",
+      prior_placement: "Acute hospital",
+      pipeline_path: "/?view=referrals&referralId=29",
+      private_note: "must not pass through"
+    }],
     weekly_trend: [
       { week_start: "2026-09-14", received: 7, accepted: 3 },
       { week_start: "2026-09-21", received: 5, accepted: 2 }
@@ -392,10 +406,12 @@ assert.equal(summary?.briefing.status === "ready" ? summary.briefing.recentRefer
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.plannedMoveIns[1]?.readiness : null, "ready");
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.admittedLastWeek[0]?.admittedAt : null, "2026-09-17");
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.movingThrough[0]?.stage : null, "in_progress");
+assert.equal(summary?.briefing.status === "ready" ? summary.briefing.didNotMoveIn[0]?.status : null, "Did not move in");
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.admittedLastWeek[0]?.priorPlacement : null, "Acute hospital");
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.admittedLastWeek[0]?.owner : null, "Andrew");
 assert.ok(!JSON.stringify(summary).includes("must not pass through"), "undocumented admission fields do not pass through");
 assert.equal(normalizePipelineAdmissionsSummary({ ...pipelinePayload, briefing: { ...pipelinePayload.briefing, moving_through: [{ ...pipelinePayload.briefing.moving_through[0], pipeline_path: "https://evil.example" }] } }), null, "unsafe Pipeline links reject the feed");
+assert.equal(normalizePipelineAdmissionsSummary({ ...pipelinePayload, briefing: { ...pipelinePayload.briefing, did_not_move_in: [{ ...pipelinePayload.briefing.did_not_move_in[0], pipeline_path: "https://evil.example" }] } }), null, "unsafe outcome links reject the feed");
 const legacySummary = normalizePipelineAdmissionsSummary({ ...pipelinePayload, briefing: undefined });
 assert.deepEqual(legacySummary?.briefing, { status: "not_supported" });
 const legacyMetrics = { ...pipelinePayload.metrics };
@@ -432,6 +448,7 @@ assert.equal(normalizePipelineAdmissionsSummary({ generated_at: "x" }), null);
 const connected = buildAdmissionsDashboard(snapshot, { referralPipeline: summary });
 assert.equal(connected.referral_pipeline.briefing.admittedLastWeek[0]?.facilityId, "337", "admitted clients resolve to the governed community");
 assert.equal(connected.referral_pipeline.briefing.movingThrough[0]?.facilityId, "337", "active clients resolve to the governed community");
+assert.equal(connected.referral_pipeline.briefing.didNotMoveIn[0]?.facilityId, "337", "did-not-move-in outcomes resolve to the governed community");
 const cardsById = new Map(connected.referral_pipeline.board.cards.map((row) => [row.referralId, row]));
 assert.equal(cardsById.get(11)?.facilityId, "337");
 assert.equal(cardsById.get(12)?.facilityId, null);
