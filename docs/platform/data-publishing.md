@@ -141,6 +141,13 @@ Core snapshot sections:
 - analyst context manifest and tables under `reportsSummary.toolContext`
 - `clientDatabase`: a lightweight pointer to the separately published static client database
 
+The protected top-level `clinicalIdentity.resident_birth_dates` map is keyed by
+facility and resident number. It is derived from the current ElderMark roster,
+validated against the published current-resident keys, and projected only by the
+service-principal clinical roster API for exact admission matching. It is not
+included in community or browser resident rows, the analyst tool manifest, or
+the client database pointer.
+
 The optional `clientDatabase.path` points to a QA-approved JSON object in the
 same protected Azure container. The application validates that object against
 its published client count, baseline date, unique `canonical_client_id` primary

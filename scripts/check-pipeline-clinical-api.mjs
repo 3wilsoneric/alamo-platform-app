@@ -126,6 +126,7 @@ fixture.reportsSummary.toolContext.tables.resident_episode_history = [
 ];
 fixture.communities.residents[0].canonical_client_id = "client-avery";
 fixture.communities.residents[1].canonical_client_id = "client-jordan";
+fixture.clinicalIdentity = { resident_birth_dates: { "337:R-100": "1985-04-12" } };
 const checks = [];
 
 check("optional client enrichment cannot disable core clinical projections", () => {
@@ -170,10 +171,23 @@ check("roster search is deterministic, bounded, and cursor based", () => {
   equal(invalid.statusCode, 400);
 });
 
+check("protected roster carries the governed birth date without guessing a missing one", () => {
+  const response = request("/roster");
+  equal(response.body.residents.find((row) => row.resident_key === "337:R-100").date_of_birth, "1985-04-12");
+  equal(response.body.residents.find((row) => row.resident_key === "337:R-101").date_of_birth, null);
+  const invalid = structuredClone(fixture);
+  invalid.clinicalIdentity.resident_birth_dates["337:R-100"] = "1985-02-30";
+  equal(capture(() => request("/roster", invalid)).statusCode, 502);
+  const orphan = structuredClone(fixture);
+  orphan.clinicalIdentity.resident_birth_dates["337:unknown"] = "1985-04-12";
+  equal(capture(() => request("/roster", orphan)).statusCode, 502);
+});
+
 check("missing resident numbers remain null instead of being inferred", () => {
   const missing = structuredClone(fixture);
   missing.communities.residents[0].resident_id = "internal-only-100";
   delete missing.communities.residents[0].res_number;
+  delete missing.clinicalIdentity;
   const response = request("/roster", missing);
   const resident = response.body.residents.find((row) => row.resident_id === "internal-only-100");
   equal(resident.resident_number, null);

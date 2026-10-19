@@ -217,6 +217,22 @@ function validateSnapshot(snapshot) {
   const facilities = requiredRows(snapshot.communities.facilities, "facility directory");
   const residentRows = requiredRows(snapshot.communities.residents, "resident roster");
   const censusRows = requiredRows(snapshot.communities.census, "census");
+  const residentBirthDates = snapshot.clinicalIdentity === undefined ? {} : snapshot.clinicalIdentity?.resident_birth_dates;
+  if (!isObject(residentBirthDates)) {
+    throw clinicalError(502, "snapshot_invalid", "The governed birth-date projection is malformed.");
+  }
+  const residentKeys = new Set(residentRows.map((row) =>
+    `${facilityId(row.facility_id, "resident facility identifier")}:${residentId(row.res_number ?? row.resident_id)}`
+  ));
+  for (const [key, value] of Object.entries(residentBirthDates)) {
+    if (!residentKeys.has(key)) {
+      throw clinicalError(502, "snapshot_invalid", "A governed birth date has no current resident.");
+    }
+    const birthDate = governedSourceDate(value, "resident date of birth");
+    if (birthDate && dataAsOf && birthDate > dataAsOf) {
+      throw clinicalError(502, "snapshot_invalid", "A governed birth date is after the snapshot date.");
+    }
+  }
   const seenFacilities = new Set();
   for (const row of facilities) {
     const id = facilityId(row.facility_id, "facility identifier");
@@ -234,7 +250,7 @@ function validateSnapshot(snapshot) {
     throw clinicalError(502, "qa_not_approved", "The published clinical snapshot is not backed by a passing governed QA result.");
   }
 
-  return { snapshotId, generatedAt, dataAsOf, facilities, residentRows, censusRows, qa, seenFacilities };
+  return { snapshotId, generatedAt, dataAsOf, facilities, residentRows, residentBirthDates, censusRows, qa, seenFacilities };
 }
 
 function buildMetadata(context, snapshot, now) {
@@ -305,6 +321,9 @@ function projectRoster(context) {
       display_name: displayName,
       first_name: firstName,
       last_name: lastName,
+      date_of_birth: governedSourceDate(
+        context.residentBirthDates?.[residentKey], "resident date of birth"
+      ),
       community_id: communityId,
       community_name: facility.communityName,
       unit: nullableText(row.unit_number, "resident unit", 200),
