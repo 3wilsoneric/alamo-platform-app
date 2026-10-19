@@ -16,11 +16,25 @@
 
 ## Current Production Host
 
+### Admissions briefing drill-down — 2026-10-19
+
+- source commit: `9d4124a` on `codex/combined-admissions-briefing-20261019`
+- active image: `alamo-platform@sha256:5151185d496f7e3e6de140f3aea7554aefa6e71f0710ce6db15e6bc7f9037641`
+- active revision: `alamo-platform-prod-web--adm-drill-1019-9d4124a`
+- rollback image: `alamo-platform@sha256:7a03bb9af8c6d8eb5a83ad700ae79fc00a3cc3b2d0ebe3e481b44a707c97bc1f`
+- build: ACR `cc92`, based on the exact rollback digest through `Dockerfile.admissions-briefing-release`
+- verified: Healthy/Running with 100% traffic, unchanged 1–3 replica scale; public `/healthz`, `/`, `/home`, and `/admissions` return 200 and anonymous Admissions API returns 401. Served JS and CSS bytes match the new revision. The running Platform container reads Pipeline contract 3.4 (200), and its Admissions parser reports `connected` with all 29 current moving-through referrals.
+
+The briefing now uses the same four drill-down phases as Pipeline, with
+community and assessor filters and direct client links. Census community
+figures open the detailed Admissions view. The source release changed only the
+briefing browser bundle and its two server summary modules.
+
 ### Combined admissions context — 2026-10-19
 
 - source commit: `1b48456` on `codex/combined-admissions-briefing-20261019`
-- active image: `alamo-platform@sha256:7a03bb9af8c6d8eb5a83ad700ae79fc00a3cc3b2d0ebe3e481b44a707c97bc1f`
-- active revision: `alamo-platform-prod-web--admctx-1019-1b48456`
+- image: `alamo-platform@sha256:7a03bb9af8c6d8eb5a83ad700ae79fc00a3cc3b2d0ebe3e481b44a707c97bc1f`
+- revision: `alamo-platform-prod-web--admctx-1019-1b48456`
 - rollback image: `alamo-platform@sha256:510964a9ef6d0e9c3233066da2929bb045b7d7083191b80d4c2a349597a21d89`
 - build: ACR `cc91`, based on the exact rollback digest through `Dockerfile.admissions-briefing-release`
 - verified: Healthy/Running with 100% traffic; public `/healthz`, `/`, `/home`, and `/admissions` return 200; Admissions API returns 401 without authorization; `/` and `/admissions` entry bytes match the built source.
