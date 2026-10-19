@@ -248,6 +248,8 @@ const pipelinePayload = {
   briefing: {
     timezone: "America/Los_Angeles",
     window_end: "2026-09-26",
+    week_start: "2026-09-21",
+    week_end: "2026-09-27",
     last_week_start: "2026-09-14",
     last_week_end: "2026-09-20",
     coverage: {

@@ -288,6 +288,8 @@ export type AdmissionsPipelineBriefing =
       status: "ready";
       timezone: "America/Los_Angeles";
       windowEnd: string;
+      weekStart: string;
+      weekEnd: string;
       lastWeekStart?: string | null;
       lastWeekEnd?: string | null;
       coverage: {

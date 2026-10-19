@@ -133,7 +133,9 @@ server, never from the browser and never through Pipeline's internal APIs.
   recorded referral origin, county, assigned assessor, and the most recent
   placement from a signed assessment to the admitted, planned, and moving
   briefing rows. Missing placement stays null; accepted active clients without
-  an admit date remain in moving-through. Platform displays these records only after
+  an admit date remain in moving-through. Platform uses Pipeline's reporting
+  week for the admissions headings so a delayed clinical snapshot cannot shift
+  the listed week. Platform displays these records only after
   validating and bounding them in the server connector. The detailed dashboard
   continues to use the existing forward schedules; raw weekly trend remains
   contract data.

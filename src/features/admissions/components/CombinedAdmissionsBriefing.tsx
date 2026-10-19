@@ -34,7 +34,7 @@ export default function CombinedAdmissionsBriefing({
     <header className="border-b border-[#e2e7e1] bg-[linear-gradient(110deg,#edf4ef,#faf8f1)] px-5 py-6 sm:px-8 sm:py-8">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#52715f]">Weekly admissions briefing</p>
       <h2 id="combined-admissions-title" className="mt-1 text-[28px] font-semibold tracking-[-0.04em] text-[#1d3c31] sm:text-[36px]">Admissions &amp; census</h2>
-      <p className="mt-2 text-[14px] leading-6 text-[#52665b]">Week of {dateLabel(census.weekStart)} · Current residents, arrivals, planned admits, and clients still moving through Pipeline.</p>
+      <p className="mt-2 text-[14px] leading-6 text-[#52665b]">Week of {dateLabel(pipeline.weekStart)} · Current residents, arrivals, planned admits, and clients still moving through Pipeline.</p>
     </header>
 
     <section aria-labelledby="combined-census-title" className="border-b border-[#e6e8e3] px-5 py-6 sm:px-8 sm:py-8">
@@ -50,7 +50,7 @@ export default function CombinedAdmissionsBriefing({
 
     <div className="grid lg:grid-cols-2">
       <WeekList title="Admitted last week" period={hasLastWeek ? `${dateLabel(pipeline.lastWeekStart!)}–${dateLabel(pipeline.lastWeekEnd!)}` : "Previous week"} complete={coverage.admittedLastWeek === true} empty="No recorded admissions last week." rows={admitted.map((row) => ({ key: row.referralId, name: row.clientName, date: row.admittedAt, detail: row.community, context: contextLabel(row), url: row.pipelineUrl }))} />
-      <WeekList title="Planned admits this week" period={`${dateLabel(census.weekStart)}–${dateLabel(census.weekEnd)}`} complete={coverage.moveIns} empty="No planned admits this week." rows={planned.map((row) => ({ key: row.referralId, name: row.clientName, date: row.plannedAt, detail: `${row.community} · ${row.readiness === "blocked" ? "Requirements open" : row.readiness === "watch" ? "Review requirements" : "Ready"}`, context: contextLabel(row), url: row.pipelineUrl }))} />
+      <WeekList title="Planned admits this week" period={`${dateLabel(pipeline.weekStart)}–${dateLabel(pipeline.weekEnd)}`} complete={coverage.moveIns} empty="No planned admits this week." rows={planned.map((row) => ({ key: row.referralId, name: row.clientName, date: row.plannedAt, detail: `${row.community} · ${row.readiness === "blocked" ? "Requirements open" : row.readiness === "watch" ? "Review requirements" : "Ready"}`, context: contextLabel(row), url: row.pipelineUrl }))} />
     </div>
 
     <section aria-labelledby="combined-moving-title" className="border-t border-[#e6e8e3] px-5 py-6 sm:px-8 sm:py-8">

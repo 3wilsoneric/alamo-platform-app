@@ -411,6 +411,8 @@ function validateAdmissionsDashboardPayload(value: unknown) {
     if (pipelineBriefing.status === "ready") {
       if (pipelineBriefing.timezone !== "America/Los_Angeles") fail(endpoint, "referral_pipeline.briefing.timezone is not supported");
       assertIsoCalendarDate(pipelineBriefing.windowEnd, endpoint, "referral_pipeline.briefing.windowEnd");
+      assertIsoCalendarDate(pipelineBriefing.weekStart, endpoint, "referral_pipeline.briefing.weekStart");
+      assertIsoCalendarDate(pipelineBriefing.weekEnd, endpoint, "referral_pipeline.briefing.weekEnd");
       const coverage = assertRecord(pipelineBriefing.coverage, endpoint, "referral_pipeline.briefing.coverage");
       ["recentReferrals", "assessments", "moveIns", "weeklyTrend"].forEach((field) => assertBoolean(coverage[field], endpoint, `referral_pipeline.briefing.coverage.${field}`));
       for (const field of ["admittedLastWeek", "movingThrough"]) {

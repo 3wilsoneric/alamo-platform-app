@@ -289,6 +289,8 @@ function normalizeBriefing(value, pipelineOrigin) {
   if (
     value.timezone !== "America/Los_Angeles" ||
     !isoCalendarDate(value.window_end) ||
+    !isoCalendarDate(value.week_start) ||
+    !isoCalendarDate(value.week_end) ||
     !normalizedCoverage ||
     Object.values(normalizedCoverage).some((item) => item == null) ||
     !recentReferrals || recentReferrals.some((item) => !item) ||
@@ -305,6 +307,8 @@ function normalizeBriefing(value, pipelineOrigin) {
     status: "ready",
     timezone: value.timezone,
     windowEnd: value.window_end,
+    weekStart: value.week_start,
+    weekEnd: value.week_end,
     lastWeekStart: hasJourney ? value.last_week_start : null,
     lastWeekEnd: hasJourney ? value.last_week_end : null,
     coverage: normalizedCoverage,

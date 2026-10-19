@@ -28,7 +28,7 @@ await withBrowserQa(async (browser) => {
         metrics: { onBoard: 0, activeReferrals: 0, stale: 0, unassigned: 0, awaitingAdmission: 0 },
         upcomingAdmissions: { next7Days: 0, next30Days: 0, pastPlannedDate: 0, noPlannedDate: 0 },
         briefing: {
-          status: "ready", timezone: "America/Los_Angeles", windowEnd: weekStart,
+          status: "ready", timezone: "America/Los_Angeles", windowEnd: weekStart, weekStart, weekEnd,
           lastWeekStart, lastWeekEnd,
           coverage: { recentReferrals: true, assessments: true, moveIns: true, weeklyTrend: true, admittedLastWeek: true, movingThrough: true },
           recentReferrals: [], upcomingAssessments: [], weeklyTrend: [],
