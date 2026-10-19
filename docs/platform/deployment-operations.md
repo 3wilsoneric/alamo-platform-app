@@ -4186,3 +4186,28 @@ type, docs, dependency, source-health, and build checks passed. The full
 predeploy gate was also run with the existing local Databricks credentials and
 stopped at the same unrelated hard-coded resident-ranking assertion documented
 above; the release used the passing focused checks and live verification.
+
+### Monday Admissions ribbon — 2026-10-18 Pacific
+
+Platform Home now shows a compact Monday-only census briefing ribbon in Pacific
+time. It opens the existing Platform Admissions view and can be dismissed for
+that Monday. This browser-only release did not change Admissions data, the API,
+AlamoAgent access, or Workforce activation.
+
+- source commit: `d9cc0a0` on `codex/monday-briefing-ribbon-20261019`
+- ACR build: `cc8x`; tag: `monday-ribbon-1019-d9cc0a0`
+- image: `alamo-platform@sha256:04b265edc130c866da37eaa2fd6032c174eab33e1178da4a35e2bc163bd6c65e`
+- revision: `alamo-platform-prod-web--monday-1019-d9cc0a0`
+- rollback image: `alamo-platform@sha256:141a41d0198c957b70b17c4480fe9bb24ba455090ea4317c28417073357894e6`
+- browser assets: `/assets/index-CHHJoMOx.js`, `/assets/index-bvNVQero.css`
+
+The revision is Healthy/Running at 100% traffic with the same replica scale.
+Public `/healthz`, `/home`, `/admissions`, `/analytics/agent`, and `/personnel`
+return 200; anonymous Admissions API access returns 401. Root, Home,
+Admissions, and Chat entry bytes match the local candidate in identity, gzip,
+and Brotli representations, and the JS/CSS entry assets match byte for byte.
+The focused Monday desktop/320px/390px browser flow, Admissions browser and
+dashboard checks, 72-route mobile QA, TypeScript, docs, dependency audit, and
+production build passed. The full predeploy gate stopped at the same existing
+resident-risk test that expects a fixed ranking from changing live data; neither
+that test nor the ranking runtime changed in this release.
