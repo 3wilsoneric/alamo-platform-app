@@ -175,7 +175,7 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
       <details className="executive-incident-register__priority-rule"><summary>How derived priority is assigned</summary><p>Provisional operational grouping, not an official severity grade: High = recorded sentinel event or emergency-services notification; Medium = recorded injury; Low = all three explicitly No; otherwise Unknown.</p></details>
 
       {catalog ? <div className="executive-incident-register__coverage" data-executive-incident-coverage={catalog.coverage.status}>
-        <span>{catalog.coverage.status === "complete" ? "Complete connected source" : "Partial published snapshot"}{catalog.coverage.startDate && catalog.coverage.endDate ? ` · ${incidentDate(catalog.coverage.startDate)} – ${incidentDate(catalog.coverage.endDate)}` : ""}</span>
+        {catalog.coverage.status === "partial" ? <span>Partial published snapshot{catalog.coverage.startDate && catalog.coverage.endDate ? ` · ${incidentDate(catalog.coverage.startDate)} – ${incidentDate(catalog.coverage.endDate)}` : ""}</span> : null}
         {catalog.coverage.note ? <p>{catalog.coverage.note}</p> : null}
         {catalog.freshness.stale ? <p className="executive-incident-register__warning">{catalog.freshness.warning || "This history is awaiting a source refresh."}</p> : null}
       </div> : null}

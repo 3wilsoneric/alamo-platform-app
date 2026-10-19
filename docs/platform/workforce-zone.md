@@ -3,23 +3,28 @@
 - purpose: define the Alamo `/personnel` overview and its boundary with the separate Alamo Workforce application
 - status: current implementation and deployment contract
 - owners: product, engineering, HR operations
-- updated: 2026-09-29
+- updated: 2026-10-19
 - tags: workforce, hr, hiring, recruiting, integration
 - labels: application-boundary, current-state, deployment
 
-Personnel follows the same split as Admissions and Pipeline. Alamo Platform owns
-an aggregate `/personnel` overview; the old `/workforce` URL redirects there. The separate Alamo Workforce application
+Personnel is not released in Alamo Platform. Both `/personnel` and the legacy
+`/workforce` URL redirect to `/home` for every account, including the owner and
+presentation users. Shared and Executive Director navigation omit Personnel.
+The authenticated `/api/platform/workforce-dashboard` route returns 404 for
+everyone before reading the HR feed. A future release must explicitly reopen
+the route, navigation, and API together after verifying the live source; the
+fictional demo is not a production exception. The separate Alamo Workforce application
 owns staff records, credential tracking, open roles, applicants, and the
 spreadsheet or Paylocity data that feeds them.
 
 ## Personnel overview
 
-The live `/api/platform/workforce-dashboard` feed remains owner-only through
+The dormant live `/api/platform/workforce-dashboard` feed remains owner-only through
 `assertPlatformKnowledgeOwner`. A separate build-flagged fictional demo can be
-opened by the owner and Andrew's exact account after the server verifies its
-existing presentation permission. The demo never calls the live Workforce API
-and cannot link into the Workforce app. Other accounts are redirected home.
-This does not grant Andrew any live HR or other owner-workspace access.
+opened only after the Personnel release gate is deliberately removed; the
+current release gate blocks it for all accounts. The demo never calls the live
+Workforce API and cannot link into the Workforce app. This does not grant
+Andrew any live HR or other owner-workspace access.
 The page follows the Admissions board pattern: every element says what
 to do next and links to the place to do it.
 
@@ -44,12 +49,9 @@ The page shows no headline statistics or trend lines. It carries counts and job
 titles only, never staff or applicant names, emails, or employee numbers. It
 does not iframe the Workforce app.
 
-Local Vite development shows a clearly labeled fictional Workforce fixture when
-the aggregate feed is disconnected. A production build with
-`VITE_WORKFORCE_DEMO=true` always shows only that fixture and skips the live
-feed request. It makes the briefing, hiring board, filters, and mobile layout
-usable for review without implying the counts came from HR. The fixture has no
-links into Workforce. Production builds without this flag exclude the fixture.
+The dormant component contains a clearly labeled fictional Workforce fixture,
+but the current release gate blocks the route even when
+`VITE_WORKFORCE_DEMO=true`. The fixture has no links into Workforce.
 
 ## Workforce summary contract
 
@@ -59,7 +61,7 @@ server, never from the browser and never through Workforce's user APIs.
 - configuration: `WORKFORCE_SUMMARY_URL` (for example
   `https://<workforce-host>/api/platform/workforce-overview`) and
   `WORKFORCE_SUMMARY_TOKEN` (a Bearer shared secret). When either is unset the
-  Personnel page shows the source as not connected.
+  dormant Personnel page would show the source as not connected after release.
 - Workforce side: the token's SHA-256 is set as
   `Workforce__PlatformFeed__TokenSha256`; the token grants the summary and
   nothing else. Workforce also accepts an Entra app-only token holding

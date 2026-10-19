@@ -95,6 +95,7 @@ import {
 } from "./executive-director-api.mjs";
 
 const PORT = Number(process.env.API_PORT || process.env.PORT || 3002);
+const PERSONNEL_RELEASED = false;
 const LOOPBACK_DEV_ORIGIN = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/i;
 
 function getAllowedDevApiOrigins() {
@@ -429,6 +430,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (requestUrl.pathname === "/api/platform/workforce-dashboard") {
+      if (!PERSONNEL_RELEASED) throw createHttpError(404, "personnel_not_live", "Personnel is not available yet.");
       assertPlatformKnowledgeOwner(authContext);
       sendJson(res, 200, await getWorkforceDashboardData());
       return;

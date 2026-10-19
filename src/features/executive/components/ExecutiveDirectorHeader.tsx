@@ -1,11 +1,9 @@
 import { Link, NavLink } from "react-router-dom";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
-import { usePresentationAccess } from "../../presentation/usePresentationAccess";
 import "../executiveHeader.css";
 
 export function ExecutiveDirectorHeader() {
-  const { allowed: canViewDemo } = usePresentationAccess();
   return (
     <header data-executive-director-header="true" className="executive-director-header sticky top-0 z-40 border-b border-[#dfe3e0] bg-white/95 pt-[var(--platform-safe-top)] backdrop-blur print:hidden">
       <nav
@@ -19,7 +17,6 @@ export function ExecutiveDirectorHeader() {
           <div className="executive-director-header__sections">
             <ExecutiveNavLink to="/executive/dashboard" label="Community" />
             <ExecutiveNavLink to="/executive/licensing" label="Licensing" />
-            {import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo ? <ExecutiveNavLink to="/personnel" label="Personnel demo" /> : null}
           </div>
         </div>
         <div className="executive-director-header__account-actions">

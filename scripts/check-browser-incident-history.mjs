@@ -23,6 +23,7 @@ await withBrowserQa(async (browser) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
   const requests = [];
+  let connected = false;
   await page.route("**/api/platform/incidents/history?**", async (route) => {
     const url = new URL(route.request().url());
     const options = {
@@ -35,6 +36,7 @@ await withBrowserQa(async (browser) => {
     };
     requests.push(options);
     const response = buildExecutiveDirectorIncidentsResponse(snapshot, options, { allowPortfolio: true });
+    if (connected) response.coverage = { ...response.coverage, status: "complete", note: "All records in the connected source are searchable." };
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(response) });
   });
   await page.goto(`${BASE_URL}/incidents/history`, { waitUntil: "domcontentloaded" });
@@ -69,6 +71,10 @@ await withBrowserQa(async (browser) => {
   const layout = await page.evaluate(() => ({ width: innerWidth, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth }));
   assert.ok(layout.overflow <= 2, `Incident history must fit a phone: ${JSON.stringify(layout)}`);
   await page.screenshot({ path: `${screenshotDir}/mobile-filters.png`, fullPage: false });
+  connected = true;
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator('[data-executive-incident-coverage="complete"]').waitFor();
+  assert.doesNotMatch(await page.locator('[data-executive-incident-coverage="complete"]').innerText(), /Partial published snapshot|Complete connected source/);
   await context.close();
   console.log("Portfolio incident history browser checks passed.");
 });

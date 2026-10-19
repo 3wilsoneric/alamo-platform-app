@@ -279,8 +279,8 @@ The viewer's full-screen control requests browser full screen; browsers without
 that API retain the full-window viewer. Arrow keys, space, swipe, previous/next, and the slide picker
 navigate. F toggles full screen, S toggles speaker notes, and Close returns to
 the originating Platform page. Slide hashes support direct links. Screenshot
-slides for the Community dashboard, admissions file, Pipeline assessment, and
-Personnel have an **Open** link in the viewer controls. It opens the live route
+slides for the Community dashboard, admissions file, and Pipeline assessment
+have an **Open** link in the viewer controls. It opens the live route
 in a separate tab without replacing the deck; the destination still enforces
 its own existing access rules. The admissions screenshot opens the Community
 dashboard, where its client notification can be selected, rather than claiming

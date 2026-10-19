@@ -11,6 +11,7 @@ import {
   getPlatformSnapshotMetadata,
   getWorkforceDashboardData
 } from "../server/platform-data.mjs";
+import { createHttpError } from "../server/http-errors.mjs";
 import { getAnalystTraceTelemetry } from "../server/tools/turn-trace.mjs";
 import {
   handleProtectedGetRoutes,
@@ -65,6 +66,8 @@ import {
   isExecutiveDirectorApiPath
 } from "../server/executive-director-api.mjs";
 
+const PERSONNEL_RELEASED = false;
+
 const PLATFORM_GET_ROUTES = Object.freeze({
   "/api/platform/incidents/history": ({ requestUrl }) => getPlatformIncidentHistory(requestUrl),
   "/api/platform/presentation/access": ({ req, authContext }) => ({ allowed: hasPresentationAccess(authContext, { remoteAddress: req.socket?.remoteAddress }) }),
@@ -83,8 +86,9 @@ const PLATFORM_GET_ROUTES = Object.freeze({
     return getLicensingUpdates();
   },
   "/api/platform/admissions-dashboard": () => getAdmissionsDashboardData(),
-  // Owner-only until Workforce is connected to live HR data.
+  // Personnel is closed for every account until its live HR source is ready.
   "/api/platform/workforce-dashboard": ({ authContext }) => {
+    if (!PERSONNEL_RELEASED) throw createHttpError(404, "personnel_not_live", "Personnel is not available yet.");
     assertPlatformKnowledgeOwner(authContext);
     return getWorkforceDashboardData();
   },

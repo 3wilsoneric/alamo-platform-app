@@ -23,7 +23,7 @@ const ROUTES = [
   { name: "analytics", pathname: "/analytics", ready: "[data-reports-page='true']" },
   { name: "questions", pathname: "/analytics/questions", ready: "[data-certified-question-guide='true']" },
   { name: "admissions", pathname: "/admissions", ready: "[data-admissions-overview='true']" },
-  { name: "personnel", pathname: "/personnel", ready: "[data-workforce-overview='true']" },
+  { name: "personnel", pathname: "/personnel", ready: "[data-california-workspace-carousel='true']" },
   { name: "outreach", pathname: "/outreach", ready: "[data-fifty-state-page='true']" },
   { name: "licensing", pathname: "/analytics/licensing", ready: "[data-licensing-page='true']" },
   { name: "chat", pathname: "/chat", ready: "[data-owner-chat-route='true']" },
@@ -245,7 +245,7 @@ await withBrowserQa(async (browser) => {
         await page.screenshot({ path: path.join(OUTPUT_DIR, "screenshots", `${route.name}-390.png`), fullPage: false });
       }
       // The owner opens Licensing as an Agent skill; the legacy deep link redirects there.
-      const expectedPathname = route.name === "licensing" ? "/analytics/agent" : route.pathname;
+      const expectedPathname = route.name === "licensing" ? "/analytics/agent" : route.name === "personnel" ? "/home" : route.pathname;
       if (layout.pathname !== expectedPathname) routeFailures.push(`Expected ${expectedPathname}, rendered ${layout.pathname}`);
       if (layout.rootOverflow > 2 || layout.bodyOverflow > 2) routeFailures.push(`Document overflowed by ${layout.rootOverflow}px root / ${layout.bodyOverflow}px body`);
       if (layout.clippedControls.length) routeFailures.push(`Clipped controls: ${JSON.stringify(layout.clippedControls)}`);

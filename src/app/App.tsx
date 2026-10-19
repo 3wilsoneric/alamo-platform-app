@@ -61,6 +61,10 @@ function LegacyWorkforceRedirect() {
   return <Navigate to={`/personnel${location.search}${location.hash}`} replace />;
 }
 
+// Do not expose the unfinished Personnel surface, including its demo, until
+// the live HR feed has passed a separate release decision.
+const PERSONNEL_RELEASED = false;
+
 export default function App() {
   return (
     <Routes>
@@ -87,7 +91,7 @@ export default function App() {
         <Route path="/incidents" element={withRouteBoundary(<IncidentCenterPage />)} />
         <Route path="/incidents/history" element={withRouteBoundary(<IncidentHistoryPage />)} />
         <Route path="/admissions" element={withRouteBoundary(<AdmissionsPage />)} />
-        <Route path="/personnel" element={withRouteBoundary(<WorkforcePage />)} />
+        <Route path="/personnel" element={PERSONNEL_RELEASED ? withRouteBoundary(<WorkforcePage />) : <Navigate to="/home" replace />} />
         <Route path="/workforce" element={<LegacyWorkforceRedirect />} />
         <Route path="/workflow" element={withRouteBoundary(<WorkflowPage />)} />
         <Route path="/executive" element={<Navigate to="/executive/dashboard" replace />} />

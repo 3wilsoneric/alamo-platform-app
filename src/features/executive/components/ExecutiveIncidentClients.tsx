@@ -36,9 +36,12 @@ export function ExecutiveIncidentClients({ facilityId, compact = false, onSelect
 
   const clients = (result?.clients ?? []).slice(0, compact ? 3 : 20);
   const complete = result?.coverage.status === "complete";
+  const coverageLabel = complete
+    ? `${formatExecutiveNumber(result?.clientCount ?? 0)} matching clients`
+    : `Partial published incident history${!compact && result?.coverage.startDate && result.coverage.endDate ? ` · ${formatExecutiveDate(result.coverage.startDate)}–${formatExecutiveDate(result.coverage.endDate)}` : ""}${!compact ? ` · ${formatExecutiveNumber(result?.clientCount ?? 0)} matching clients` : ""}`;
   return <section data-incident-client-triage="true" className={`incident-client-triage${compact ? " incident-client-triage--compact" : ""}`} aria-label="Clients with incident records">
     {!compact ? <div className="incident-client-triage__intro"><div><h2>Clients with incident records</h2><p>Start with a client, then review their incident history. This is an operational sort by the latest record’s derived priority and date—not a clinical severity grade or an open-task queue.</p></div><label><Search aria-hidden="true" /><input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} aria-label="Search clients with incidents" placeholder="Search client name or ID" /></label></div> : <p className="incident-client-triage__lead">Clients first · open a record to review its incident history.</p>}
-    {result?.status === "ready" ? <p className="incident-client-triage__coverage" data-incident-client-coverage={result.coverage.status}>{complete ? "Connected incident source" : "Partial published incident history"}{!compact && result.coverage.startDate && result.coverage.endDate ? ` · ${formatExecutiveDate(result.coverage.startDate)}–${formatExecutiveDate(result.coverage.endDate)}` : ""}{!compact ? ` · ${formatExecutiveNumber(result.clientCount)} matching clients` : ""}</p> : null}
+    {result?.status === "ready" && (!complete || !compact) ? <p className="incident-client-triage__coverage" data-incident-client-coverage={result.coverage.status}>{coverageLabel}</p> : null}
     {loading && !result ? <p role="status" className="incident-client-triage__message">Loading clients…</p> : null}
     {error ? <p role="alert" className="incident-client-triage__message">{error}</p> : null}
     {!loading && !error && result?.status === "unavailable" ? <p role="status" className="incident-client-triage__message">Individual incident records are unavailable. The full incident register can be retried below.</p> : null}
