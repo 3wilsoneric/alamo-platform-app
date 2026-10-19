@@ -227,7 +227,7 @@ const column = (key, label, statuses) => ({
   statuses: statuses.map(([status, count]) => ({ status, count }))
 });
 const pipelinePayload = {
-  contract_version: "3.2",
+  contract_version: "3.3",
   generated_at: "2026-09-26T13:00:00.000Z",
   board: {
     total: 3,
@@ -343,8 +343,10 @@ const pipelinePayload = {
       client_name: "Casey Rivera",
       admitted_at: "2026-09-17",
       community: "San Pablo",
+      owner: "Andrew",
       source_name: "County behavioral health",
       referring_county: "Contra Costa",
+      prior_placement: "Acute hospital",
       pipeline_path: "/?view=referrals&referralId=31",
       private_note: "must not pass through"
     }],
@@ -357,6 +359,7 @@ const pipelinePayload = {
       owner: "Jordan",
       source_name: "County behavioral health",
       referring_county: "Contra Costa",
+      prior_placement: "Acute hospital",
       pipeline_path: "/?view=referrals&referralId=21"
     }],
     weekly_trend: [
@@ -385,6 +388,8 @@ assert.equal(summary?.briefing.status === "ready" ? summary.briefing.recentRefer
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.plannedMoveIns[1]?.readiness : null, "ready");
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.admittedLastWeek[0]?.admittedAt : null, "2026-09-17");
 assert.equal(summary?.briefing.status === "ready" ? summary.briefing.movingThrough[0]?.stage : null, "in_progress");
+assert.equal(summary?.briefing.status === "ready" ? summary.briefing.admittedLastWeek[0]?.priorPlacement : null, "Acute hospital");
+assert.equal(summary?.briefing.status === "ready" ? summary.briefing.admittedLastWeek[0]?.owner : null, "Andrew");
 assert.ok(!JSON.stringify(summary).includes("must not pass through"), "undocumented admission fields do not pass through");
 assert.equal(normalizePipelineAdmissionsSummary({ ...pipelinePayload, briefing: { ...pipelinePayload.briefing, moving_through: [{ ...pipelinePayload.briefing.moving_through[0], pipeline_path: "https://evil.example" }] } }), null, "unsafe Pipeline links reject the feed");
 const legacySummary = normalizePipelineAdmissionsSummary({ ...pipelinePayload, briefing: undefined });

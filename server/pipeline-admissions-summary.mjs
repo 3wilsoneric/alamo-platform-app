@@ -208,6 +208,7 @@ function normalizeBriefingMoveIn(row, pipelineOrigin) {
     readiness,
     sourceName: nullableText(row?.source_name, 160),
     referringCounty: nullableText(row?.referring_county, 120),
+    priorPlacement: nullableText(row?.prior_placement, 160),
     pipelineUrl: path
   };
 }
@@ -221,8 +222,10 @@ function normalizeBriefingAdmission(row, pipelineOrigin) {
   if (referralId == null || !clientName || !admittedAt || !community || !path) return null;
   return {
     referralId, clientName, admittedAt, community, facilityId: null,
+    owner: text(row?.owner, 80) ?? "Unassigned",
     sourceName: nullableText(row?.source_name, 160),
     referringCounty: nullableText(row?.referring_county, 120),
+    priorPlacement: nullableText(row?.prior_placement, 160),
     pipelineUrl: path
   };
 }
@@ -240,6 +243,7 @@ function normalizeMovingThrough(row, pipelineOrigin) {
     owner: text(row?.owner, 80) ?? "Unassigned",
     sourceName: nullableText(row?.source_name, 160),
     referringCounty: nullableText(row?.referring_county, 120),
+    priorPlacement: nullableText(row?.prior_placement, 160),
     pipelineUrl: path
   };
 }

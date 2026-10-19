@@ -4,7 +4,7 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 
 type ReadyBriefing = Extract<AdmissionsPipelineBriefing, { status: "ready" }>;
-type Origin = { sourceName?: string | null; referringCounty?: string | null };
+type ClientContext = { sourceName?: string | null; referringCounty?: string | null; priorPlacement?: string | null; owner: string };
 
 function dateLabel(value: string) {
   const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
@@ -13,8 +13,8 @@ function dateLabel(value: string) {
   }).format(date);
 }
 
-function originLabel(row: Origin) {
-  return `From ${row.sourceName || "origin not recorded"}${row.referringCounty ? ` · County: ${row.referringCounty}` : ""}`;
+function contextLabel(row: ClientContext) {
+  return `Origin: ${row.sourceName || "not recorded"} · County: ${row.referringCounty || "not recorded"} · Prior placement: ${row.priorPlacement || "not recorded"} · Assessor: ${row.owner}`;
 }
 
 export default function CombinedAdmissionsBriefing({
@@ -49,8 +49,8 @@ export default function CombinedAdmissionsBriefing({
     </section>
 
     <div className="grid lg:grid-cols-2">
-      <WeekList title="Admitted last week" period={hasLastWeek ? `${dateLabel(pipeline.lastWeekStart!)}–${dateLabel(pipeline.lastWeekEnd!)}` : "Previous week"} complete={coverage.admittedLastWeek === true} empty="No recorded admissions last week." rows={admitted.map((row) => ({ key: row.referralId, name: row.clientName, date: row.admittedAt, detail: row.community, origin: originLabel(row), url: row.pipelineUrl }))} />
-      <WeekList title="Planned admits this week" period={`${dateLabel(census.weekStart)}–${dateLabel(census.weekEnd)}`} complete={coverage.moveIns} empty="No planned admits this week." rows={planned.map((row) => ({ key: row.referralId, name: row.clientName, date: row.plannedAt, detail: `${row.community} · ${row.readiness === "blocked" ? "Requirements open" : row.readiness === "watch" ? "Review requirements" : "Ready"}`, origin: originLabel(row), url: row.pipelineUrl }))} />
+      <WeekList title="Admitted last week" period={hasLastWeek ? `${dateLabel(pipeline.lastWeekStart!)}–${dateLabel(pipeline.lastWeekEnd!)}` : "Previous week"} complete={coverage.admittedLastWeek === true} empty="No recorded admissions last week." rows={admitted.map((row) => ({ key: row.referralId, name: row.clientName, date: row.admittedAt, detail: row.community, context: contextLabel(row), url: row.pipelineUrl }))} />
+      <WeekList title="Planned admits this week" period={`${dateLabel(census.weekStart)}–${dateLabel(census.weekEnd)}`} complete={coverage.moveIns} empty="No planned admits this week." rows={planned.map((row) => ({ key: row.referralId, name: row.clientName, date: row.plannedAt, detail: `${row.community} · ${row.readiness === "blocked" ? "Requirements open" : row.readiness === "watch" ? "Review requirements" : "Ready"}`, context: contextLabel(row), url: row.pipelineUrl }))} />
     </div>
 
     <section aria-labelledby="combined-moving-title" className="border-t border-[#e6e8e3] px-5 py-6 sm:px-8 sm:py-8">
@@ -60,7 +60,7 @@ export default function CombinedAdmissionsBriefing({
         const label = stage === "received" ? "Referral received" : stage === "in_progress" ? "In progress" : "Decision";
         return <section key={stage} aria-label={label} className="min-w-0 rounded-xl border border-[#e1e7df] bg-[#fafbf8]">
           <h4 className="flex items-center justify-between border-b border-[#e1e7df] px-4 py-3 text-[13px] font-semibold text-[#345141]">{label}<span className="tabular-nums">{rows.length}</span></h4>
-          {rows.length ? <ul className="divide-y divide-[#e8ece6]">{rows.map((row) => <li key={row.referralId} className="px-4 py-3 text-[12px] leading-5"><a href={row.pipelineUrl} className="font-semibold text-[#16684e] underline-offset-2 hover:underline">{row.clientName}</a><span className="block text-[#4d5d52]">{row.status} · {row.community}</span><span className="block text-[#718076]">{originLabel(row)}</span></li>)}</ul> : <p className="px-4 py-4 text-[12px] text-[#718076]">None in this stage.</p>}
+          {rows.length ? <ul className="divide-y divide-[#e8ece6]">{rows.map((row) => <li key={row.referralId} className="px-4 py-3 text-[12px] leading-5"><a href={row.pipelineUrl} className="font-semibold text-[#16684e] underline-offset-2 hover:underline">{row.clientName}</a><span className="block text-[#4d5d52]">{row.status} · {row.community}</span><span className="block text-[#718076]">{contextLabel(row)}</span></li>)}</ul> : <p className="px-4 py-4 text-[12px] text-[#718076]">None in this stage.</p>}
         </section>;
       })}</div> : <p className="mt-5 text-[14px] text-[#657267]">{coverage.movingThrough === true ? "No active clients on the Pipeline board." : "Pipeline movement is unavailable."}</p>}
       {coverage.movingThrough === false ? <p className="mt-4 text-[12px] text-[#7a6845]">The list is capped; more clients may be on the board.</p> : null}
@@ -69,10 +69,10 @@ export default function CombinedAdmissionsBriefing({
   </article>;
 }
 
-function WeekList({ title, period, complete, empty, rows }: { title: string; period: string; complete: boolean; empty: string; rows: Array<{ key: number; name: string; date: string; detail: string; origin: string; url: string }> }) {
+function WeekList({ title, period, complete, empty, rows }: { title: string; period: string; complete: boolean; empty: string; rows: Array<{ key: number; name: string; date: string; detail: string; context: string; url: string }> }) {
   return <section aria-label={title} className="min-w-0 border-b border-[#e6e8e3] px-5 py-6 sm:px-8 sm:py-8 lg:border-b-0 lg:first:border-r">
     <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6c7e71]">{period}</p><h3 className="mt-1 text-[21px] font-semibold tracking-[-0.025em] text-[#26392f]">{title}</h3></div><strong className="text-[24px] tabular-nums text-[#2c684c]">{!complete && !rows.length ? "—" : `${rows.length}${complete ? "" : "+"}`}</strong></div>
-    {rows.length ? <ul className="mt-4 divide-y divide-[#e6e9e4]">{rows.map((row) => <li key={row.key} className="py-3 text-[13px] leading-5"><div className="flex flex-wrap items-baseline justify-between gap-x-3"><a href={row.url} className="font-semibold text-[#16684e] underline-offset-2 hover:underline">{row.name}</a><time className="text-[#6f7b70]">{dateLabel(row.date)}</time></div><p className="mt-0.5 text-[#3d5143]">{row.detail}</p><p className="text-[#718076]">{row.origin}</p></li>)}</ul> : <p className="mt-5 text-[13px] text-[#67756b]">{complete ? empty : "Admissions records are unavailable."}</p>}
+    {rows.length ? <ul className="mt-4 divide-y divide-[#e6e9e4]">{rows.map((row) => <li key={row.key} className="py-3 text-[13px] leading-5"><div className="flex flex-wrap items-baseline justify-between gap-x-3"><a href={row.url} className="font-semibold text-[#16684e] underline-offset-2 hover:underline">{row.name}</a><time className="text-[#6f7b70]">{dateLabel(row.date)}</time></div><p className="mt-0.5 text-[#3d5143]">{row.detail}</p><p className="text-[#718076]">{row.context}</p></li>)}</ul> : <p className="mt-5 text-[13px] text-[#67756b]">{complete ? empty : "Admissions records are unavailable."}</p>}
     {!complete ? <p className="mt-3 text-[12px] text-[#7a6845]">The list is capped or unavailable; this is not a complete count.</p> : null}
   </section>;
 }

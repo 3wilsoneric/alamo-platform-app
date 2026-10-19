@@ -312,7 +312,7 @@ function validateAdmissionsDashboardPayload(value: unknown) {
     assertString(row.facilityId, endpoint, `${path}.facilityId`, { nullable: true });
     assertTimestamp(row.plannedAt, `${path}.plannedAt`);
     assertWebLink(row.pipelineUrl, `${path}.pipelineUrl`);
-    for (const field of ["sourceName", "referringCounty"]) {
+    for (const field of ["sourceName", "referringCounty", "priorPlacement"]) {
       if (row[field] !== undefined) assertString(row[field], endpoint, `${path}.${field}`, { nullable: true });
     }
     if (!["ready", "watch", "blocked", "unknown"].includes(String(row.readiness))) {
@@ -322,8 +322,8 @@ function validateAdmissionsDashboardPayload(value: unknown) {
   const assertBriefingAdmission = (value: unknown, path: string) => {
     const row = assertRecord(value, endpoint, path);
     assertNumber(row.referralId, endpoint, `${path}.referralId`);
-    ["clientName", "community"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
-    ["facilityId", "sourceName", "referringCounty"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`, { nullable: true }));
+    ["clientName", "community", "owner"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
+    ["facilityId", "sourceName", "referringCounty", "priorPlacement"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`, { nullable: true }));
     assertIsoCalendarDate(row.admittedAt, endpoint, `${path}.admittedAt`);
     assertWebLink(row.pipelineUrl, `${path}.pipelineUrl`);
   };
@@ -331,7 +331,7 @@ function validateAdmissionsDashboardPayload(value: unknown) {
     const row = assertRecord(value, endpoint, path);
     assertNumber(row.referralId, endpoint, `${path}.referralId`);
     ["clientName", "community", "owner", "status"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
-    ["facilityId", "sourceName", "referringCounty"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`, { nullable: true }));
+    ["facilityId", "sourceName", "referringCounty", "priorPlacement"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`, { nullable: true }));
     if (!["received", "in_progress", "decision"].includes(String(row.stage))) fail(endpoint, `${path}.stage is not a known board column`);
     assertWebLink(row.pipelineUrl, `${path}.pipelineUrl`);
   };

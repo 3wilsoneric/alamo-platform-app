@@ -32,9 +32,9 @@ await withBrowserQa(async (browser) => {
           lastWeekStart, lastWeekEnd,
           coverage: { recentReferrals: true, assessments: true, moveIns: true, weeklyTrend: true, admittedLastWeek: true, movingThrough: true },
           recentReferrals: [], upcomingAssessments: [], weeklyTrend: [],
-          admittedLastWeek: [{ referralId: 101, clientName: "Alex Example", admittedAt: lastWeekEnd, community: "San Pablo", facilityId: "337", sourceName: "County referral", referringCounty: "Contra Costa", pipelineUrl: "https://alamo-pipeline.com/?view=referrals&referralId=101" }],
-          plannedMoveIns: [{ referralId: 102, clientName: "Morgan Example", plannedAt: weekEnd, community: "Turlock", facilityId: "342", owner: "Assessor", status: "Awaiting admit", readiness: "watch", sourceName: "Hospital", referringCounty: null, pipelineUrl: "https://alamo-pipeline.com/?view=referrals&referralId=102" }],
-          movingThrough: [{ referralId: 103, clientName: "Jordan Example", stage: "in_progress", status: "Assessment underway", community: "San Pablo", facilityId: "337", owner: "Assessor", sourceName: "County referral", referringCounty: "Contra Costa", pipelineUrl: "https://alamo-pipeline.com/?view=referrals&referralId=103" }]
+          admittedLastWeek: [{ referralId: 101, clientName: "Alex Example", admittedAt: lastWeekEnd, community: "San Pablo", facilityId: "337", owner: "Alex Assessor", sourceName: "County referral", referringCounty: "Contra Costa", priorPlacement: "Acute hospital", pipelineUrl: "https://alamo-pipeline.com/?view=referrals&referralId=101" }],
+          plannedMoveIns: [{ referralId: 102, clientName: "Morgan Example", plannedAt: weekEnd, community: "Turlock", facilityId: "342", owner: "Assessor", status: "Awaiting admit", readiness: "watch", sourceName: "Hospital", referringCounty: null, priorPlacement: null, pipelineUrl: "https://alamo-pipeline.com/?view=referrals&referralId=102" }],
+          movingThrough: [{ referralId: 103, clientName: "Jordan Example", stage: "decision", status: "Accepted · no planned admit date", community: "San Pablo", facilityId: "337", owner: "Assessor", sourceName: "County referral", referringCounty: "Contra Costa", priorPlacement: "Acute hospital", pipelineUrl: "https://alamo-pipeline.com/?view=referrals&referralId=103" }]
         },
         history: { coverageStartMonth: null, monthOutcomes: { month: weekStart.slice(0, 7), received: 0, accepted: 0, declined: 0, admitted: 0 }, monthly: [], decisionTiming: { windowDays: 90, medianDaysToDecision: null, decisionsCounted: 0 } }
       };
@@ -45,7 +45,8 @@ await withBrowserQa(async (browser) => {
     await combined.waitFor({ state: "visible", timeout: 60_000 });
     assert.match(await combined.innerText(), /Census by community/);
     assert.match(await combined.innerText(), /Alex Example[\s\S]*Morgan Example[\s\S]*Jordan Example/);
-    assert.match(await combined.innerText(), /From County referral · County: Contra Costa/);
+    assert.match(await combined.innerText(), /Origin: County referral · County: Contra Costa · Prior placement: Acute hospital · Assessor: Alex Assessor/);
+    assert.match(await combined.innerText(), /Accepted · no planned admit date/);
     assert.equal(await combined.locator('a[href^="https://alamo-pipeline.com/"]').count(), 3);
     assert.equal(await page.locator('[data-admissions-executive-update="true"]').count(), 0);
     await page.getByRole("tab", { name: /Schedule/ }).click();

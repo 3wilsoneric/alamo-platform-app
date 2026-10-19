@@ -251,6 +251,7 @@ export interface AdmissionsPipelineBriefingMoveIn {
   readiness: "ready" | "watch" | "blocked" | "unknown";
   sourceName?: string | null;
   referringCounty?: string | null;
+  priorPlacement?: string | null;
   pipelineUrl: string;
 }
 
@@ -262,6 +263,8 @@ export interface AdmissionsPipelineBriefingAdmission {
   facilityId: string | null;
   sourceName: string | null;
   referringCounty: string | null;
+  priorPlacement: string | null;
+  owner: string;
   pipelineUrl: string;
 }
 
@@ -275,6 +278,7 @@ export interface AdmissionsPipelineMovingClient {
   owner: string;
   sourceName: string | null;
   referringCounty: string | null;
+  priorPlacement: string | null;
   pipelineUrl: string;
 }
 
