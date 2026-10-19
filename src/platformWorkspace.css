@@ -24,7 +24,7 @@
   z-index: 1;
   top: clamp(48px, 8vh, 88px);
   right: clamp(20px, 3vw, 48px);
-  width: 340px;
+  width: clamp(300px, 24vw, 340px);
   border: 1px solid #c9d2d1;
   border-top: 4px solid #1c5377;
   border-radius: 4px;
@@ -86,8 +86,28 @@
 .california-community-index__metric strong { font-size: 23px; font-variant-numeric: tabular-nums; }
 .california-community-index__row > svg { color: #276584; }
 
-@media (min-width: 1320px) and (min-height: 680px) {
+@media (min-width: 1320px) {
   .california-community-index { display: block; }
+}
+
+@media (min-width: 1320px) and (max-height: 700px) {
+  .california-community-index { top: 24px; }
+  .california-community-index__header { padding-block: 12px; }
+  .california-community-index__row { min-height: 61px; padding-block: 8px; }
+}
+
+[data-mobile-community-home="true"] .california-community-index {
+  display: block;
+  position: static;
+  width: 100%;
+  box-shadow: 0 14px 35px #2036461c, inset 0 1px #fff;
+}
+
+@media (max-width: 380px) {
+  [data-mobile-community-home="true"] .california-community-index__row {
+    gap: 8px;
+    padding-inline: 12px;
+  }
 }
 
 [data-reports-page="true"] aside,

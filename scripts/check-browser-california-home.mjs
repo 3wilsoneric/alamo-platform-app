@@ -119,7 +119,7 @@ async function main() {
             "Portfolio census change does not reconcile to the five community changes."
           );
         }
-        const communityIndex = page.locator('[data-california-community-index="true"]');
+        const communityIndex = page.locator('[data-california-community-index="true"]:visible');
         await communityIndex.waitFor({ state: "visible", timeout: 5_000 });
         if (await communityIndex.locator('[data-california-index-community]').count() !== ALAMO_FACILITIES.length) {
           throw new Error("The main Platform home does not show every community in its census index.");
@@ -502,7 +502,7 @@ async function main() {
     if (
       homeNavigation.current !== "home" ||
       homeNavigation.left.join(",") !== "home" ||
-      homeNavigation.right.join(",") !== "analytics,admissions,workforce"
+      homeNavigation.right.join(",") !== "analytics,admissions,workflow,personnel,everyagent"
     ) {
       throw new Error(`Home platform navigation is out of order: ${JSON.stringify(homeNavigation)}`);
     }
@@ -546,7 +546,7 @@ async function main() {
     if (
       questionNavigation.current !== "analytics" ||
       questionNavigation.left.join(",") !== "home" ||
-      questionNavigation.right.join(",") !== "analytics,admissions,workforce"
+      questionNavigation.right.join(",") !== "analytics,admissions,workflow,personnel,everyagent"
     ) {
       throw new Error(`Analytics question navigation is out of order: ${JSON.stringify(questionNavigation)}`);
     }
@@ -632,7 +632,7 @@ async function main() {
     if (
       analyticsNavigation.current !== "analytics" ||
       analyticsNavigation.left.join(",") !== "home" ||
-      analyticsNavigation.right.join(",") !== "analytics,admissions,workforce"
+      analyticsNavigation.right.join(",") !== "analytics,admissions,workflow,personnel,everyagent"
     ) {
       throw new Error(`Analytics platform navigation is out of order: ${JSON.stringify(analyticsNavigation)}`);
     }
@@ -872,9 +872,9 @@ async function main() {
       !mobileHomeBox ||
       !finalCommunityBox ||
       mobileHomeBox.height < 780 ||
-      finalCommunityBox.y + finalCommunityBox.height < 810
+      finalCommunityBox.y + finalCommunityBox.height > mobileHomeBox.y + mobileHomeBox.height
     ) {
-      throw new Error("Mobile community rows do not use the available phone viewport.");
+      throw new Error("Mobile community index does not fit inside the phone viewport.");
     }
     for (const facility of ALAMO_FACILITIES) {
       const cardBox = await mobilePage

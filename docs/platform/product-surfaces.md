@@ -68,15 +68,13 @@ with the California community map on desktop and a stacked community selector
 on phones:
 
 - the user starts at `/home`
-- on Mondays in Pacific time, a dismissible Home ribbon opens the existing
-  `/admissions` briefing; dismissal lasts through that Monday only
 - five facility markers are projected from maintained city longitude/latitude coordinates;
   permanent leader lines keep the nearby Bay Area locations independently readable and clickable
 - a desktop community index beside the map exposes the same governed current census
   and comparable-period change without requiring hover; its rows highlight the
-  corresponding marker and open the same profile. The phone community list
-  also shows current census, with unavailable data labeled rather than
-  substituted with zero
+  corresponding marker and open the same profile. The same boxed index is the
+  primary Home navigation on phones and narrower windows; it shows current
+  census, with unavailable data labeled rather than substituted with zero
 - selecting a desktop marker or phone community row opens the comprehensive
   community profile; it is a compact desktop modal and a full-screen phone workspace
 - each profile combines census, incidents, medication performance, diagnosis mix,

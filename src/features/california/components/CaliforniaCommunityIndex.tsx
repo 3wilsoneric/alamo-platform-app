@@ -17,6 +17,7 @@ export default function CaliforniaCommunityIndex({
   communities,
   dashboard,
   unavailable,
+  mobile = false,
   highlightedFacilityId,
   onHighlight,
   onSelectCommunity
@@ -24,6 +25,7 @@ export default function CaliforniaCommunityIndex({
   communities: CaliforniaCommunity[];
   dashboard: HomeDashboardResponse | null;
   unavailable: boolean;
+  mobile?: boolean;
   highlightedFacilityId: string | null;
   onHighlight: (facilityId: string | null) => void;
   onSelectCommunity: (facilityId: string) => void;
@@ -42,11 +44,13 @@ export default function CaliforniaCommunityIndex({
           const census = metrics?.currentCensus ?? null;
           const change = metrics?.censusChange ?? null;
           const period = censusPeriod(metrics?.currentCensusPeriod ?? null, metrics?.censusCadence ?? null);
+          const priorPeriod = censusPeriod(metrics?.priorCensusPeriod ?? null, metrics?.censusCadence ?? null);
           return (
             <button
               key={community.facilityId}
               type="button"
               data-california-index-community={community.facilityId}
+              data-mobile-community-card={mobile ? community.facilityId : undefined}
               data-california-index-highlighted={highlightedFacilityId === community.facilityId ? "true" : undefined}
               className="california-community-index__row"
               onMouseEnter={() => onHighlight(community.facilityId)}
@@ -63,7 +67,7 @@ export default function CaliforniaCommunityIndex({
               <span className="california-community-index__metric">
                 <strong>{census === null ? "—" : census.toLocaleString()}</strong>
                 <small>{census === null ? dashboard || unavailable ? "Unavailable" : "Loading" : period ?? "Current period"}</small>
-                {census !== null && change !== null ? <small>{change > 0 ? "+" : ""}{change} vs prior</small> : null}
+                {census !== null && change !== null && priorPeriod ? <small>{change > 0 ? "+" : ""}{change} vs {priorPeriod}</small> : null}
               </span>
               <ArrowUpRight size={17} strokeWidth={1.9} aria-hidden="true" />
             </button>
