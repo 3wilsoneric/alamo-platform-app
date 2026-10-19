@@ -4131,3 +4131,29 @@ The revision is Healthy/Running at 100% traffic. Direct
 `/workflow?view=organization` returns 200. Standalone Workflow build and lint,
 Platform production build, and desktop/phone layout checks pass. This release
 replaces browser assets only.
+
+### Client-first incidents and Personnel — 2026-10-18
+
+The executive incident workspace now opens on linked clients, with incident
+records one level deeper and the portfolio history still available. Display
+aliases use “Passed on meds” and “Difficult interaction” while preserving source
+categories and the original LIC 624 form. Workforce is presented as Personnel;
+the former route redirects. The release also retains the already-live
+given-administrations-only medication presentation and the newer Workflow
+experience.
+
+- source commit: `314732a` on `codex/incident-personnel-release-20261018`
+- ACR build: `cc8v`; tag: `incident-personnel-1018-314732a`
+- image: `alamo-platform@sha256:d482a6e04fbdcccc582b3d66789e9908bf34bfa0b868a54330a381a3c0411d8b`
+- revision: `alamo-platform-prod-web--incper-1018-314732a`
+- rollback image: `alamo-platform@sha256:150a51e82b5211f9cad3d152b6de5edb510d9fd00ff100c210cf3f152379fe7c`
+- browser assets: `/assets/index-XALn5riT.js`, `/assets/index-CsdqTfOV.css`
+
+The revision is Healthy/Running at 100% traffic. `/healthz`, `/personnel`,
+`/executive/dashboard`, `/executive/licensing`, `/incidents/history`, and
+`/workflow` return 200; the served JavaScript bundle matches the tested build
+byte for byte. TypeScript, docs, build, executive desktop/mobile, Personnel
+demo, LIC 624 upload/review, portfolio incident history, mobile route,
+incident-contract, MAR, and query-intent checks pass. The broader analyst suite
+remains red on an unrelated hard-coded resident ranking assertion that no longer
+matches the live data; this release used the focused checks above.
