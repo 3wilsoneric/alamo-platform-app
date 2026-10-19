@@ -16,6 +16,19 @@
 
 ## Current Production Host
 
+### Admissions census labels made non-interactive — 2026-10-19
+
+- source commit: `4a363b1` on `codex/admissions-platform-style-20261019`
+- active image: `alamo-platform@sha256:eef986c7dc34fb4ecf1daa38f57ff2d94dc036f049fb710bb41c257b2da7bd04`
+- active revision: `alamo-platform-prod-web--admnolinks-1019-4a363b1`; Healthy/Running, one replica, 100% traffic
+- rollback image: `alamo-platform@sha256:f0e4ab9b84753d4b729c484fae237e4bf4b11511ccee36a3b1a0c3104b8fa84c`
+- build: ACR `cc98` using `Dockerfile.frontend-release` on the exact preceding production digest; only `/app/dist` changed
+- verified: focused combined-briefing and Admissions material browser checks at desktop and mobile sizes; Admissions dashboard and access checks; dependencies, docs, typecheck, build, and diff check. The deployed `/`, `/admissions`, `/chat`, CSS, and JS identity bytes match the built artifacts. Anonymous Admissions and Executive APIs return 401. Eric's signed-in production Admissions view shows all five census names as plain text without arrows or links; Pipeline client links remain.
+
+The unrelated analyst fixtures still prevent a full predeploy gate pass, as
+described in the preceding visual-alignment receipt. This was a focused
+frontend-only correction; that gate is not claimed as passing.
+
 ### Admissions weekly briefing visual alignment — 2026-10-19
 
 - source commit: `edbfb49` on `codex/admissions-platform-style-20261019`
