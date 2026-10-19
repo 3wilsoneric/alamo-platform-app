@@ -16,11 +16,24 @@
 
 ## Current Production Host
 
+### Admissions moving-clients panel temporarily removed — 2026-10-19
+
+- source commit: `0829f72` on `codex/admissions-moving-hide-20261019`, based on the preceding production source commit `9d4124a`
+- active image: `alamo-platform@sha256:6db0d4b0d045f71d1ffc99f37921f53b8451bd5c499a3eadd9044b76e136f294`
+- active revision: `alamo-platform-prod-web--adm-hide-1019-0829f72`
+- rollback image: `alamo-platform@sha256:5151185d496f7e3e6de140f3aea7554aefa6e71f0710ce6db15e6bc7f9037641`
+- build: ACR `cc93`, using `Dockerfile.frontend-release` on the exact rollback digest; only `/app/dist` changed
+- verified: Healthy/Running, 100% traffic; production smoke 4/4; `/admissions` 200 and anonymous Admissions API 401. Signed-in Admissions shows census and admitted/planned lists with no "Clients moving through" panel. Focused desktop and mobile Admissions browser checks, typecheck, docs, and build passed. The full predeploy gate failed on an unrelated live-data analyst fixture expecting an outdated resident ranking; the release was limited to the verified browser bundle.
+
+The removed panel had displayed Pipeline referral statuses alongside governed
+census without a verified referral-to-resident identity join. It remains out of
+the briefing pending reconciliation; Pipeline's own workflow is unchanged.
+
 ### Combined admissions context — 2026-10-19
 
 - source commit: `1b48456` on `codex/combined-admissions-briefing-20261019`
-- active image: `alamo-platform@sha256:7a03bb9af8c6d8eb5a83ad700ae79fc00a3cc3b2d0ebe3e481b44a707c97bc1f`
-- active revision: `alamo-platform-prod-web--admctx-1019-1b48456`
+- image: `alamo-platform@sha256:7a03bb9af8c6d8eb5a83ad700ae79fc00a3cc3b2d0ebe3e481b44a707c97bc1f`
+- revision: `alamo-platform-prod-web--admctx-1019-1b48456`
 - rollback image: `alamo-platform@sha256:510964a9ef6d0e9c3233066da2929bb045b7d7083191b80d4c2a349597a21d89`
 - build: ACR `cc91`, based on the exact rollback digest through `Dockerfile.admissions-briefing-release`
 - verified: Healthy/Running with 100% traffic; public `/healthz`, `/`, `/home`, and `/admissions` return 200; Admissions API returns 401 without authorization; `/` and `/admissions` entry bytes match the built source.
