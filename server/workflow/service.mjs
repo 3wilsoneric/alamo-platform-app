@@ -2,6 +2,7 @@ import { buildKnowledgeCatalog, atPointer, compareKnowledgeCatalogs } from "./ca
 import { assertId, documentDetail, draftNodes, fail, hash, latest, permission, predicates, proposalFreshness, shape } from "./model.mjs";
 import { mutateDocument } from "./documents.mjs";
 import { mutateConnection } from "./connections.mjs";
+import { assertDocumentEvidence } from './content-evidence.mjs';
 
 function initialState(scope) {
   return { schemaVersion: 1, revision: 0, scope, documents: {}, proposals: {}, publications: {}, retractions: {}, snapshots: {}, sources: {} };
@@ -10,6 +11,17 @@ function validateState(state, context) {
   if (state.schemaVersion !== 1 || state.scope?.tenantId !== context.scope.tenantId || state.scope?.workspace !== "workflow") fail(503, "workflow_storage_invalid", "Workflow storage failed its scope or schema check.");
   for (const key of ["documents", "proposals", "publications", "retractions", "snapshots", "sources"]) {
     if (!state[key] || typeof state[key] !== "object" || Array.isArray(state[key])) fail(503, "workflow_storage_invalid", "Workflow storage failed its integrity check.");
+  }
+  for (const history of Object.values(state.documents)) {
+    const captureDigest = history[0]?.capture?.digest;
+    for (const doc of history) {
+      assertDocumentEvidence(doc);
+      if (doc.capture?.digest !== captureDigest) fail(503, 'workflow_content_integrity', 'Retained capture evidence changed across document revisions.');
+    }
+  }
+  for (const history of Object.values(state.publications)) for (const publication of history) {
+    assertDocumentEvidence(publication.document);
+    if (publication.document.content.sop && (publication.rendering?.format !== 'structured-sop' || publication.rendering.schemaVersion !== 1 || publication.rendering.rendererVersion !== 1)) fail(503, 'workflow_content_integrity', 'This publication has an unsupported SOP renderer version.');
   }
 }
 function proposalDetail(state, id) {
@@ -105,7 +117,7 @@ export function createWorkflowService({ persistence, readSources }) {
     if (method === "GET" && pathname === "/session") result = { mode: "platform-owner-pilot", storage: persistence.kind, actor: context.actor, scope: context.scope, permissions: context.permissions };
     else if (method === "GET" && pathname === "/drafts") result = { mode: "platform-owner-pilot", documents: Object.values(state.documents).map(history => { const doc = latest(history); return { id: doc.id, revision: doc.revision, state: doc.state, updatedAt: doc.updatedAt, title: doc.content.title, kind: doc.content.kind, audience: doc.content.audience }; }) };
     else if (draftMatch && method === "GET") result = query.has("revision") ? revision(state, draftMatch[1], Number(query.get("revision"))) : documentDetail(state, draftMatch[1]);
-    else if (draftMatch && method === "PUT") { mutateDocument(state, catalog, context, draftMatch[1], input); result = documentDetail(state, draftMatch[1]); changed = true; }
+    else if (draftMatch && method === "PUT") { const mutated = mutateDocument(state, catalog, context, draftMatch[1], input); result = documentDetail(state, draftMatch[1]); changed = changed || mutated; }
     else if (method === "GET" && pathname === "/knowledge") result = graph(state, catalog);
     else if (method === "POST" && pathname === "/knowledge/evidence") result = evidence(state, input);
     else if (method === "GET" && pathname === "/knowledge/impact") {

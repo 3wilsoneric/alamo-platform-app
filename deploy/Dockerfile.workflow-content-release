@@ -7,6 +7,8 @@ FROM ${BASE_IMAGE}
 COPY --chown=node:node dist /app/dist
 COPY --chown=node:node server/workflow-api.mjs /app/server/workflow-api.mjs
 COPY --chown=node:node server/workflow /app/server/workflow
+COPY --chown=node:node src/features/workflow/legacy/src/lib/capture-contract.mjs /app/src/features/workflow/legacy/src/lib/capture-contract.mjs
+COPY --chown=node:node src/features/workflow/legacy/src/lib/sop-contract.mjs /app/src/features/workflow/legacy/src/lib/sop-contract.mjs
 COPY --chown=node:node src/features/workflow/legacy/content/roles/role-library.v1.json /app/src/features/workflow/legacy/content/roles/role-library.v1.json
 COPY --chown=node:node src/features/workflow/legacy/content/imports/alamoagent-skills.v1.json /app/src/features/workflow/legacy/content/imports/alamoagent-skills.v1.json
 COPY --chown=node:node src/features/workflow/legacy/content/assessor/procedures.v1.json /app/src/features/workflow/legacy/content/assessor/procedures.v1.json

@@ -202,6 +202,7 @@ function ownershipClass(file) {
   if (rootFiles.has(file)) return "app shell and tooling";
   if (approvedDeploymentOverlayFiles.has(file)) return "app shell and tooling";
   if (approvedDocs.has(file)) return file.startsWith("docs/reference/") ? "live specification" : "handbook";
+  if (/^src\/features\/workflow\/legacy\/src\/lib\/(?:capture|sop)-contract\.(?:mjs|d\.mts)$/.test(file)) return "pinned Workflow authoring contract";
   if (/^src\/.+\.(?:ts|tsx|css|json)$/.test(file)) return "browser runtime";
   if (/^config\/.+\.json$/.test(file)) return "data ingestion configuration";
   if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js|woff2)$/.test(file)) return "static browser asset";

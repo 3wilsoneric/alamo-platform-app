@@ -943,3 +943,19 @@ When local Entra prevents browser verification, rely on:
 - Browser-level persistence migration tests are still limited.
 - Every retained Markdown file is allowlisted, owned, linked from the handbook,
   and checked for file-level local links.
+
+## Workflow capture, SOP and publication checks
+
+Run `npm run check:workflow-publication` for the pinned contract check and service
+suite, and `npm run check:browser-workflow-publication` for the embedded desktop and
+mobile authoring flow. With the canonical source checkout present, also run
+`node scripts/workflow-authoring-contracts.mjs --strict-sources` and
+`npm run check:workflow-library`.
+
+The synthetic fixture covers incomplete guided saves, strict import validation,
+retry/lost-response recovery, source-preserving edits, independent document and
+connection approvals, exact published evidence, changed-evidence flags, later
+draft edits and legacy free-text publication/retraction. The browser harness calls
+the actual Workflow API with isolated storage and a synthetic identity. It does
+not establish real Entra sign-in, Azure managed-identity persistence or live
+availability. Screenshots are under `generated/workflow-publication-browser`.

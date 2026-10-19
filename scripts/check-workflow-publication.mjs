@@ -10,6 +10,8 @@ import { createWorkflowApiHandler } from '../server/workflow-api.mjs';
 import { createWorkflowAzurePersistence } from '../server/workflow/azure-persistence.mjs';
 import { WorkflowError } from '../server/workflow/model.mjs';
 import { patchWorkflowApi } from '../deploy/patch-workflow-api.mjs';
+import { syntheticCapture, syntheticSopContent } from './workflow-capture-fixture.mjs';
+import { sopFromCapture, renderSop } from '../src/features/workflow/legacy/src/lib/sop-contract.mjs';
 
 const claims = { oid: 'f73371d5-d2b4-48b4-a32b-1edc7c88869f', tid: '10000000-0000-4000-8000-000000000001', scp: 'access_as_user', name: 'Synthetic owner fixture' };
 const owner = workflowContext({ authenticated: true, mode: 'entra-delegated', claims });
@@ -73,8 +75,6 @@ test('permissions, owner-only gate, service identities, tenant scope, and forged
   assert.throws(() => workflowContext({ authenticated: false, mode: 'explicit-development-bypass' }), failure(401));
   assert.throws(() => workflowContext({ authenticated: true, mode: 'entra-service-principal', claims }), failure(401));
   assert.throws(() => workflowContext({ authenticated: true, mode: 'entra-delegated', claims: { ...claims, oid: randomUUID() } }), failure(404));
-  const exactOwnerGrants = JSON.stringify({ [`${claims.tid}:${claims.oid}`]: ['read', 'contribute', 'review', 'publish'] });
-  assert.throws(() => workflowContext({ authenticated: true, mode: 'entra-delegated', claims: { ...claims, oid: randomUUID(), email: 'ericwilsonalamo@outlook.com' } }, exactOwnerGrants), failure(403));
   const restricted = workflowContext({ authenticated: true, mode: 'entra-delegated', claims }, JSON.stringify({ [`${claims.tid}:${claims.oid}`]: ['read'] }));
   const f = fixture(), { id } = await prepare(f);
   await assert.rejects(f.call('PUT', `/drafts/${randomUUID()}`, { action: 'save', expectedRevision: 0, content }, restricted), failure(403));
@@ -205,4 +205,109 @@ test('release patch preserves the live API, is idempotent, and rejects an unknow
   assert.equal(patchWorkflowApi(patched), patched);
   assert.throws(() => patchWorkflowApi('export default function unrelated() {}'), /expected request-path/);
   assert.throws(() => patchWorkflowApi(patched.replace('isWorkflowApiPath(requestPath)', 'isWorkflowApiPathChanged(requestPath)')), /partial/);
+});
+
+test('captured SOPs publish exact structure, rendering version and original evidence through edits and reimport', async () => {
+  const f = fixture(), capture = syntheticCapture(), id = capture.id;
+  const imported = await f.call('PUT', `/drafts/${id}`, { action: 'import_capture', expectedRevision: 0, capture });
+  const structured = syntheticSopContent(capture, imported.document.content);
+  await f.call('PUT', `/drafts/${id}`, { action: 'save', expectedRevision: 1, content: { ...structured, body: 'Client-supplied conflicting prose.' } });
+  assert.equal((await f.call('GET', `/drafts/${id}`)).document.content.body, renderSop(structured.sop));
+  const graph = await f.call('GET', '/knowledge'), target = graph.nodes.find(node => node.id === 'role:assessor');
+  const connectionId = randomUUID(), quote = structured.sop.steps[0].action;
+  await f.call('PUT', `/knowledge/proposals/${connectionId}`, { action: 'propose', expectedRevision: 0, draftId: id, draftRevision: 2,
+    snapshotId: graph.snapshot.id, targetId: target.id, targetFingerprint: target.fingerprint, predicate: 'for_role',
+    quote, quoteStart: structured.body.indexOf(quote), rationale: 'Synthetic action names this role.' });
+  await f.call('PUT', `/drafts/${id}`, { action: 'submit', expectedRevision: 2 });
+  await f.call('PUT', `/drafts/${id}`, { action: 'approve', expectedRevision: 3, note: 'Reviewed synthetic SOP and source.' });
+  await assert.rejects(f.call('PUT', `/drafts/${id}`, { action: 'publish', expectedRevision: 4, proposalIds: [connectionId] }), failure(409));
+  await f.call('PUT', `/knowledge/proposals/${connectionId}`, { action: 'approve', expectedRevision: 1, note: 'Reviewed exact step evidence.' });
+  await f.call('PUT', `/drafts/${id}`, { action: 'publish', expectedRevision: 4, proposalIds: [connectionId] });
+  const restart = createWorkflowService({ persistence: f.persistence, readSources: async () => sources });
+  const published = await restart(owner, 'GET', `/published/${id}`);
+  assert.deepEqual(published.publication.document.capture, imported.document.capture);
+  assert.deepEqual(published.publication.document.content.sop, structured.sop);
+  assert.deepEqual(published.publication.rendering, { format: 'structured-sop', schemaVersion: 1, rendererVersion: 1 });
+  assert.equal(published.citations[0].source.excerpt, quote);
+  const version = f.persistence.states.get(owner.scope.tenantId).version;
+  const retry = await f.call('PUT', `/drafts/${id}`, { action: 'import_capture', expectedRevision: 0, capture });
+  assert.equal(retry.document.state, 'published'); assert.equal(retry.document.revision, 5);
+  assert.equal(f.persistence.states.get(owner.scope.tenantId).version, version, 'Retry must not write another aggregate revision');
+  await f.call('PUT', `/drafts/${id}`, { action: 'reopen', expectedRevision: 5 });
+  const revised = { ...structured.sop, steps: structured.sop.steps.map(step => ({ ...step, expectedResult: 'A newly proposed result.' })) };
+  await f.call('PUT', `/drafts/${id}`, { action: 'save', expectedRevision: 6, content: { ...structured, sop: revised } });
+  assert.deepEqual(await f.call('GET', `/published/${id}`), published, 'A draft successor must not mutate its publication');
+  assert.equal((await f.call('GET', '/knowledge')).proposals[0].freshness, 'needs_review');
+  await assert.rejects(f.call('PUT', `/drafts/${id}`, { action: 'import_capture', expectedRevision: 0, capture: { ...capture, title: 'Conflicting source' } }), failure(409));
+});
+
+test('SOP completeness, stable IDs, evidence references and schema boundaries are enforced by the shared service', async () => {
+  const f = fixture(), capture = syntheticCapture(), id = capture.id;
+  const imported = await f.call('PUT', `/drafts/${id}`, { action: 'import_capture', expectedRevision: 0, capture });
+  const incomplete = { ...content, sop: sopFromCapture(capture) };
+  await f.call('PUT', `/drafts/${id}`, { action: 'save', expectedRevision: 1, content: incomplete });
+  await assert.rejects(f.call('PUT', `/drafts/${id}`, { action: 'submit', expectedRevision: 2 }), error => error.code === 'review_incomplete');
+  await assert.rejects(f.call('PUT', `/drafts/${id}`, { action: 'save', expectedRevision: 2, content }), error => error.code === 'sop_required');
+  const full = syntheticSopContent(capture, imported.document.content);
+  for (const sop of [{ ...full.sop, schemaVersion: 2 }, { ...full.sop, approval: 'approved' },
+    { ...full.sop, steps: [full.sop.steps[0], full.sop.steps[0]] },
+    { ...full.sop, steps: [{ ...full.sop.steps[0], captureStepId: randomUUID() }] }]) {
+    await assert.rejects(f.call('PUT', `/drafts/${id}`, { action: 'save', expectedRevision: 2, content: { ...full, sop } }), failure(400));
+  }
+  await assert.rejects(f.call('PUT', `/drafts/${id}`, { action: 'save', expectedRevision: 2, content: full, capture }), failure(400));
+  await assert.rejects(f.call('PUT', `/drafts/${id}`, { action: 'save', expectedRevision: 2, content: { ...full, kind: 'policy' } }), failure(400));
+  await assert.rejects(f.call('PUT', `/drafts/${randomUUID()}`, { action: 'save', expectedRevision: 0, content: full }), error => error.code === 'invalid_sop_source');
+  assert.equal((await f.call('GET', `/drafts/${id}`)).document.revision, 2);
+});
+
+test('parallel capture imports and a lost write response recover without duplicate documents or lost edits', async () => {
+  const f = fixture(), capture = syntheticCapture(), input = { action: 'import_capture', expectedRevision: 0, capture }, route = `/drafts/${capture.id}`;
+  const outcomes = await Promise.allSettled(Array.from({ length: 5 }, () => f.call('PUT', route, input)));
+  assert.equal(outcomes.filter(result => result.status === 'fulfilled').length, 1);
+  assert(outcomes.filter(result => result.status === 'rejected').every(result => result.reason.status === 409));
+  const original = await f.call('PUT', route, input);
+  assert.equal(original.history.length, 1);
+  const g = fixture(), write = g.persistence.write.bind(g.persistence); let lost = true;
+  g.persistence.write = async (...args) => { await write(...args); if (lost) { lost = false; throw new Error('Synthetic lost response'); } };
+  await assert.rejects(g.call('PUT', route, input), /lost response/);
+  assert.equal((await g.call('PUT', route, input)).document.revision, 1);
+  assert.equal((await g.call('GET', '/drafts')).documents.length, 1);
+});
+
+test('capture import rejects forged fields, excessive bytes, unknown actors, other tenants and read-only grants', async () => {
+  const f = fixture(), capture = syntheticCapture(), route = `/drafts/${capture.id}`;
+  const send = value => f.call('PUT', route, { action: 'import_capture', expectedRevision: 0, capture: value });
+  await assert.rejects(send({ ...capture, origin: 'https://example.test/private?value=secret' }), failure(400));
+  await assert.rejects(send({ ...capture, inputValues: ['sensitive'] }), failure(400));
+  await assert.rejects(send({ ...capture, title: 'x'.repeat(65537) }), failure(413));
+  await assert.rejects(f.call('PUT', route, { action: 'import_capture', expectedRevision: 0, capture, actor: owner.actor }), failure(400));
+  await assert.rejects(f.call('PUT', route, { action: 'import_capture', expectedRevision: 0, capture }, { ...owner, permissions: ['read'] }), failure(403));
+  await send(capture);
+  await assert.rejects(f.call('GET', route, {}, { ...owner, scope: { ...owner.scope, tenantId: randomUUID() } }), failure(404));
+  const env = { WORKFLOW_CONTENT_ENABLED: 'true', WORKFLOW_ACCESS_GRANTS_JSON: JSON.stringify({ [`${claims.tid}:${claims.oid}`]: ['read', 'contribute', 'review', 'publish'] }) };
+  const handler = createWorkflowApiHandler({ env, readSources: async () => sources, persistence: f.persistence,
+    authenticate: async () => ({ authenticated: true, mode: 'entra-delegated', claims: { ...claims, oid: randomUUID(), preferred_username: 'ericwilsonalamo@outlook.com' } }) });
+  const response = { setHeader() {}, getHeader() {}, status(code) { this.statusCode = code; return this; }, json(value) { this.value = value; } };
+  await handler({ method: 'PUT', url: '/api/platform/workflow/v1' + route, headers: { 'content-type': 'application/json' }, body: { action: 'import_capture', expectedRevision: 0, capture } }, response);
+  assert.equal(response.statusCode, 403);
+  assert.equal((await f.call('GET', route)).history.length, 1);
+});
+
+test('stored capture, structured body and publication renderer corruption fail closed without rewriting records', async () => {
+  for (const corrupt of ['capture', 'body', 'lineage', 'renderer']) {
+    const f = fixture(), capture = syntheticCapture(), route = `/drafts/${capture.id}`;
+    const imported = await f.call('PUT', route, { action: 'import_capture', expectedRevision: 0, capture });
+    await f.call('PUT', route, { action: 'save', expectedRevision: 1, content: syntheticSopContent(capture, imported.document.content) });
+    await f.call('PUT', route, { action: 'submit', expectedRevision: 2 });
+    await f.call('PUT', route, { action: 'approve', expectedRevision: 3, note: 'Synthetic review.' });
+    await f.call('PUT', route, { action: 'publish', expectedRevision: 4, proposalIds: [] });
+    const stored = f.persistence.states.get(owner.scope.tenantId), doc = stored.value.documents[capture.id].at(-1);
+    if (corrupt === 'capture') doc.capture.bundle.steps[0].label = 'Modified source';
+    if (corrupt === 'body') doc.content.body = 'Altered instructions';
+    if (corrupt === 'lineage') delete stored.value.documents[capture.id][1].capture;
+    if (corrupt === 'renderer') stored.value.publications[capture.id][0].rendering.rendererVersion = 999;
+    const version = stored.version;
+    await assert.rejects(f.call('GET', `/published/${capture.id}`), error => error.code === 'workflow_content_integrity');
+    assert.equal(stored.version, version);
+  }
 });

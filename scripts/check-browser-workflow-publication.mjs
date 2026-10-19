@@ -4,6 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { BASE_URL, withBrowserQa } from "./browser-qa-utils.mjs";
 import { createWorkflowApiHandler } from '../server/workflow-api.mjs';
 import { WorkflowError } from '../server/workflow/model.mjs';
+import { checkCapturePublication } from './workflow-capture-browser.mjs';
 
 const artifacts = new URL('../generated/workflow-publication-browser/', import.meta.url);
 await mkdir(artifacts, { recursive: true });
@@ -73,6 +74,7 @@ try {
   await page.getByText('Saved · Revision 5', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Read published version', exact: true }).click();
   await page.getByRole('alert').filter({ hasText: 'This publication was retracted.' }).waitFor();
+  await checkCapturePublication(page, artifacts);
   assert.deepEqual(errors, []);
   console.log('Workflow browser publication passed: create, quote, submit, separate connection/document review, publish, reload, cited retrieval, mobile layout, and retract.');
 } catch (error) {

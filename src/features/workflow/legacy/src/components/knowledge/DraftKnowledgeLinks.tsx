@@ -43,7 +43,7 @@ export default function DraftKnowledgeLinks({ document, disabled, permissions, o
     const target = graph.nodes.find(node => node.id === targetId)
     if (!target) { setError('Choose a connected entity.'); return }
     const quoteStart = document.content.body.indexOf(quote)
-    if (!quote.trim() || quoteStart < 0) { setError('Copy an exact excerpt from the saved Instructions field.'); return }
+    if (!quote.trim() || quoteStart < 0) { setError(`Copy an exact excerpt from the saved ${document.content.sop ? 'guide preview' : 'Instructions field'}.`); return }
     setBusy(true); setError(''); setNotice('')
     attemptId.current ??= crypto.randomUUID()
     try {

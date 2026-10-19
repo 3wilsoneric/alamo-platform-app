@@ -4464,3 +4464,62 @@ checkout and `generated/workflow-live-checks.json` in the generated release expo
 The exact release tree is preserved in Git; unrelated development changes were
 excluded from the release. Rollback restores the recorded image and removes the
 three `WORKFLOW_*` settings added here, preserving all stored content/history.
+
+### Capture and guided SOP integration — prepared source, not deployed, 2026-10-19
+
+The integration checkout now reuses canonical Workflow's existing capture import
+and guided SOP editor within the authenticated owner review/publication flow.
+`src/features/workflow/authoring-contracts.v1.json` pins six portable validation,
+rendering and type files. Refresh them explicitly with
+`npm run workflow:refresh-authoring-contracts`; verify the imported hashes with
+`npm run check:workflow-contracts`, adding `--strict-sources` to the underlying
+`node scripts/workflow-authoring-contracts.mjs` check when the canonical sibling
+checkout is present. `WORKFLOW_AUTHORING_SOURCE_ROOT` can select that source for
+the maintenance script; it is not a server runtime dependency or setting.
+
+The API accepts bounded capture imports and optional schema-v1 SOP structure.
+It retains original evidence across revisions, derives the rendered body, checks
+required fields at review/publication, and freezes the approved structure and
+source with an explicit renderer version. An identical import returns the latest
+existing document without replacing edits or writing another revision. Conflicting
+IDs, stale writes, malformed structures, foreign capture references and corrupted
+retained evidence fail closed. Existing free-text records remain supported; no
+rewrite of existing records, library revision, identity grant or Azure setting
+was made. The 17 assessor procedures and 81 steps are unchanged.
+
+Verified in this checkout:
+
+- All 16 Workflow publication/access/storage/contract tests pass, including the
+  new capture/SOP lifecycle, concurrency, lost-response recovery and integrity cases.
+- The synthetic desktop/mobile browser flow passes import validation and retry,
+  guided editing, exact-quote proposals, separate reviews, publication/reload,
+  cited reads, mobile navigation, later draft edits and idempotent reimport. The
+  legacy free-text publication/retraction flow also passes. Desktop/mobile
+  screenshots in `generated/workflow-publication-browser` were inspected.
+- Strict contract-source checks, the 105-record library check, frontend/server
+  typechecks, source syntax, JavaScript lint, code health, retention, unused-code,
+  duplicate, tool registry, capability and presentation checks pass. The Platform
+  build passes with its existing chunk-size warning. Canonical Workflow strict
+  role/source validation, lint and build also pass.
+- `check:analyst` reaches `check:analyst-decision` and stops because this checkout
+  has no Databricks OAuth/PAT credentials. This is not a full Platform gate pass.
+- The local `linux/amd64` image `alamo-workflow-capture:verify` builds over the
+  earlier local publication verification image. It imports both APIs, validates a
+  synthetic capture, renders an SOP, retains 255 library entities/570 links and
+  returns 401 for anonymous Workflow GET/PUT/POST through the packaged API. The
+  release overlay now explicitly packages both portable runtime contract modules.
+
+This image is a local packaging check, not a release candidate: the integration
+checkout also contains unrelated work. Nothing was pushed or deployed, and the
+new format was not exercised against live Azure or with a real signed-in owner.
+The earlier owner-publication release receipt above does not establish availability
+of this addition. Screenshots, AI drafting, automatic graph extraction and agent
+consumption remain planned.
+
+Next release: read the current live digest/source, reconcile the browser and API
+changes into an isolated release tree, run the required release gates, then verify
+real-owner import/save/review/publish/retrieve and runtime storage across process
+restart. Preserve the exact owner grant. Before accepting structured writes,
+verify that the retained rollback version understands the new optional records;
+never roll back by deleting or flattening stored evidence. Keep original state
+revisions and the prior image. No staff or agent expansion is part of this slice.

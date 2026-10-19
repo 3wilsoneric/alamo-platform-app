@@ -6,16 +6,20 @@ import type { AuthoringClient, DraftAction, DraftContent, DraftDetail, DraftRevi
 import DraftKnowledgeLinks from '@/components/knowledge/DraftKnowledgeLinks'
 import WorkflowReviewPanel from './WorkflowReviewPanel'
 import { workflowSession, type WorkflowSession } from '@/lib/platform-transport'
+import CaptureImport from './CaptureImport'
+import SopEditor from './SopEditor'
+import { emptySop, renderSop, sopFromCapture, sopGaps } from '@/lib/sop-contract.mjs'
+import type { StructuredSop } from '@/lib/sop-types'
 import './drafts-workspace.css'
 
 const emptyContent: DraftContent = { title: '', kind: 'procedure', audience: '', purpose: '', sourceReference: '', body: '' }
 const stateLabel = (state: string) => ({ draft: 'Draft', in_review: 'Submitted for review', approved: 'Approved', published: 'Published' } as Record<string, string>)[state] ?? state
-const actionLabel = (action: DraftAction) => ({ save: 'Saved draft', submit: 'Submitted for review', reopen: 'Returned to draft', approve: 'Approved document', reject: 'Requested changes', publish: 'Published version', retract: 'Retracted publication' })[action]
+const actionLabel = (action: DraftAction) => ({ save: 'Saved draft', submit: 'Submitted for review', reopen: 'Returned to draft', approve: 'Approved document', reject: 'Requested changes', publish: 'Published version', retract: 'Retracted publication', import_capture: 'Imported browser capture' })[action]
 const dateLabel = (value: string) => new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'The draft could not be loaded or saved.'
 const summaryOf = (doc: DraftRevision): DraftSummary => ({ id: doc.id, revision: doc.revision, state: doc.state, updatedAt: doc.updatedAt,
   title: doc.content.title, kind: doc.content.kind, audience: doc.content.audience })
-type Destination = { type: 'new' } | { type: 'open'; id: string } | { type: 'list' }
+type Destination = { type: 'new'; guided?: boolean } | { type: 'open'; id: string } | { type: 'list' } | { type: 'capture' }
 
 export default function DraftsWorkspace({ client = authoringClient, onUnsavedChange }: {
   client?: AuthoringClient
@@ -38,10 +42,13 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
   const [pending, setPending] = useState<Destination | null>(null)
   const [historical, setHistorical] = useState<DraftRevision | null>(null)
   const [knowledgeDirty, setKnowledgeDirty] = useState(false)
+  const [captureOpen, setCaptureOpen] = useState(false)
+  const [captureDirty, setCaptureDirty] = useState(false)
   const [connectionEditorKey, setConnectionEditorKey] = useState(0)
   const titleInput = useRef<HTMLInputElement>(null)
   const dirty = id !== null && JSON.stringify(content) !== JSON.stringify(detail?.document.content ?? emptyContent)
   const locked = !!detail && detail.document.state !== 'draft'
+  const gaps = content.sop ? [...(!content.audience.trim() ? ['Audience'] : []), ...(!content.purpose.trim() ? ['Purpose'] : []), ...(!content.sourceReference.trim() ? ['Source reference'] : []), ...sopGaps(content.sop)] : []
   const visible = documents.filter(doc => (filter === 'all' || doc.state === filter) && `${doc.title} ${doc.audience}`.toLowerCase().includes(query.toLowerCase()))
 
   useEffect(() => {
@@ -51,12 +58,12 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
     return () => { active = false }
   }, [client])
 
-  useEffect(() => { onUnsavedChange?.(dirty || busy || knowledgeDirty || reviewDirty) }, [dirty, busy, knowledgeDirty, reviewDirty, onUnsavedChange])
+  useEffect(() => { onUnsavedChange?.(dirty || busy || knowledgeDirty || reviewDirty || captureDirty) }, [dirty, busy, knowledgeDirty, reviewDirty, captureDirty, onUnsavedChange])
   useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => { if (dirty || busy || knowledgeDirty || reviewDirty) { event.preventDefault(); event.returnValue = '' } }
+    const warn = (event: BeforeUnloadEvent) => { if (dirty || busy || knowledgeDirty || reviewDirty || captureDirty) { event.preventDefault(); event.returnValue = '' } }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [dirty, busy, knowledgeDirty, reviewDirty])
+  }, [dirty, busy, knowledgeDirty, reviewDirty, captureDirty])
 
   function applyDetail(result: DraftDetail) {
     setId(result.document.id)
@@ -70,11 +77,13 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
 
   async function navigate(destination: Destination) {
     setError(''); setNotice(''); setPending(null); setHistorical(null)
+    setCaptureOpen(destination.type === 'capture'); setCaptureDirty(false)
     setKnowledgeDirty(false); setReviewDirty(false); setConnectionEditorKey(current => current + 1)
     if (destination.type === 'new') {
-      setId(crypto.randomUUID()); setDetail(null); setContent({ ...emptyContent }); setConflict(false)
+      const sop = destination.guided ? emptySop() : undefined
+      setId(crypto.randomUUID()); setDetail(null); setContent({ ...emptyContent, ...(sop ? { sop, body: renderSop(sop) } : {}) }); setConflict(false)
       requestAnimationFrame(() => titleInput.current?.focus())
-    } else if (destination.type === 'list') {
+    } else if (destination.type === 'list' || destination.type === 'capture') {
       setId(null); setDetail(null); setContent(emptyContent); setConflict(false)
     } else {
       setBusy(true)
@@ -86,11 +95,11 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
 
   function go(destination: Destination) {
     if (busy) return
-    if (dirty || knowledgeDirty || reviewDirty) setPending(destination)
+    if (dirty || knowledgeDirty || reviewDirty || captureDirty) setPending(destination)
     else void navigate(destination)
   }
 
-  async function mutate(action: DraftAction, note?: string, proposalIds?: string[]): Promise<boolean> {
+  async function mutate(action: Exclude<DraftAction, 'import_capture'>, note?: string, proposalIds?: string[]): Promise<boolean> {
     if (!id || busy) return false
     setBusy(true); setError(''); setNotice('')
     try {
@@ -131,12 +140,18 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
     setNotice('Editor text downloaded. Use the published version to check the current approval and source evidence.')
   }
 
-  const update = (field: keyof DraftContent, value: string) => { setContent(current => ({ ...current, [field]: value })); setNotice('') }
+  const update = (field: Exclude<keyof DraftContent, 'sop'>, value: string) => { setContent(current => ({ ...current, [field]: value })); setNotice('') }
+  const updateSop = (sop: StructuredSop) => { setContent(current => ({ ...current, sop, body: renderSop(sop) })); setNotice('') }
+  function organizeSop() {
+    const sop = detail?.document.capture ? sopFromCapture(detail.document.capture.bundle, content.body) : { ...emptySop(), sourceNotes: content.body }
+    updateSop(sop)
+    setNotice('Guided sections added. Your previous instructions are retained in source notes; captured labels are proposed actions. Review each step before submission.')
+  }
   return (
     <section className="drafts-workspace" aria-label="Drafts and review">
       <header className="drafts-heading">
         <div><div className="drafts-eyebrow">Authoring</div><h1>Drafts & review</h1><p>Build a guide, keep its history, and prepare it for review.</p></div>
-        <button className="drafts-primary" disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'new' })}>+ New draft</button>
+        <div className="drafts-actions"><button disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'capture' })}>Import capture</button><button disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'new' })}>+ New draft</button><button className="drafts-primary" disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'new', guided: true })}>Create SOP</button></div>
       </header>
       <p className="drafts-preview">Shared Workflow · {session?.actor.name ?? 'Verifying identity…'} · {session?.storage === 'azure_blob' ? 'Azure storage' : 'Isolated test storage'} · Owner-only pilot</p>
       {error && <div className="drafts-alert" role="alert"><p>{error}</p>
@@ -150,7 +165,7 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
           <button onClick={() => void navigate(pending)}>Discard and continue</button></div></div>}
       {!ready ? <div className="drafts-empty"><h2>{error ? 'Authoring is not connected' : 'Loading saved drafts…'}</h2>
         <p>{error ? 'Your source library remains available in Documents. Your signed-in identity and shared storage must be available to create drafts.' : 'Checking the server for your saved work.'}</p></div> :
-        <div className={`drafts-layout ${id ? 'drafts-has-editor' : ''}`}>
+        <div className={`drafts-layout ${id || captureOpen ? 'drafts-has-editor' : ''}`}>
           <aside className="drafts-list" aria-label="Saved drafts">
             <label>Find a draft<input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search title or audience" /></label>
             <label>Status<select value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All drafts</option><option value="draft">Draft</option><option value="in_review">Submitted for review</option><option value="approved">Approved</option><option value="published">Published</option></select></label>
@@ -161,7 +176,7 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
               <strong>{doc.title}</strong><span>{doc.kind} · Revision {doc.revision}</span><small>{dateLabel(doc.updatedAt)}</small>
             </button>)}
           </aside>
-          {!id ? <div className="drafts-empty"><h2>{documents.length ? 'Choose a draft to continue' : 'A place to build the next guide'}</h2><p>{documents.length ? 'Open a saved draft to edit it or inspect its review history.' : 'Start with what the team needs to do, who it is for, and the source it should follow. Save a draft at any point.'}</p><button className="drafts-primary" disabled={busy || !canContribute} onClick={() => go({ type: 'new' })}>Create a draft</button></div> :
+          {captureOpen ? <div><button className="drafts-mobile-back" disabled={busy} onClick={() => go({ type: 'list' })}>← All drafts</button><CaptureImport key={connectionEditorKey} client={client} onBusyChange={setBusy} onUnsavedChange={setCaptureDirty} onCreated={result => { applyDetail(result); setCaptureDirty(false); setCaptureOpen(false); setNotice('Capture retained with the draft. Add the missing process context before review.') }} /></div> : !id ? <div className="drafts-empty"><h2>{documents.length ? 'Choose a draft to continue' : 'A place to build the next guide'}</h2><p>{documents.length ? 'Open a saved draft to edit it or inspect its review history.' : 'Start with what the team needs to do, who it is for, and the source it should follow. Save a draft at any point.'}</p><button className="drafts-primary" disabled={busy || !canContribute} onClick={() => go({ type: 'new' })}>Create a draft</button></div> :
             <div className="drafts-editor">
               <div className="drafts-editor-bar"><button className="drafts-mobile-back" disabled={busy} onClick={() => go({ type: 'list' })}>← All drafts</button>
                 <span className={`drafts-badge ${locked ? 'drafts-badge-review' : ''}`}>{detail ? stateLabel(detail.document.state) : 'New draft'}</span>
@@ -172,19 +187,34 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
               <form onSubmit={event => { event.preventDefault(); void mutate('save') }}>
                 <fieldset disabled={busy || locked || !canContribute}>
                   <label>Title<input ref={titleInput} required maxLength={160} value={content.title} onChange={event => update('title', event.target.value)} placeholder="Give the guide a clear, specific name" /></label>
-                  <div className="drafts-field-row"><label>Document type<select value={content.kind} onChange={event => update('kind', event.target.value)}><option value="procedure">Procedure</option><option value="policy">Policy draft</option><option value="tutorial">Tutorial</option></select></label>
+                  <div className="drafts-field-row"><label>Document type<select disabled={!!content.sop} value={content.kind} onChange={event => update('kind', event.target.value)}><option value="procedure">Procedure</option><option value="policy">Policy draft</option><option value="tutorial">Tutorial</option></select></label>
                     <label>Audience<input maxLength={160} value={content.audience} onChange={event => update('audience', event.target.value)} placeholder="Who will use this guide?" /></label></div>
                   <label>Purpose<textarea aria-label="Purpose" rows={2} maxLength={2000} value={content.purpose} onChange={event => update('purpose', event.target.value)} placeholder="When should someone use this, and what should they achieve?" /></label>
                   <label>Source reference<textarea aria-label="Source reference" aria-describedby="draft-source-help" rows={2} maxLength={1000} value={content.sourceReference} onChange={event => update('sourceReference', event.target.value)} placeholder="Document title, version, section, or source URL" /><small id="draft-source-help">Record the source you used. This field does not verify or import it.</small></label>
-                  <label>Instructions<textarea aria-label="Instructions" className="drafts-body" rows={12} maxLength={40000} value={content.body} onChange={event => update('body', event.target.value)} placeholder="Write the steps, expected result, and handoffs. Keep unverified details marked for review." /></label>
+                  {content.sop ? <SopEditor key={`${id}:${connectionEditorKey}`} sop={content.sop} onChange={updateSop} /> : <>
+                    <label>Instructions<textarea aria-label="Instructions" className="drafts-body" rows={12} maxLength={40000} value={content.body} onChange={event => update('body', event.target.value)} placeholder="Write the steps, expected result, and handoffs. Keep unverified details marked for review." /></label>
+                    {content.kind === 'procedure' && <div className="sop-upgrade"><button type="button" onClick={organizeSop}>Use guided SOP</button><p>Organize the procedure into context, steps, outcomes and handoffs. Your current instructions will be kept in source notes.</p></div>}
+                  </>}
                 </fieldset>
+                {content.sop && <>
+                  <section className="sop-readiness" aria-label="SOP readiness"><h3>{gaps.length ? `${gaps.length} details to add before review` : 'Ready to submit for review'}</h3>
+                    {gaps.length ? <><p>Save at any time. Complete these sections, or explain why a section does not apply.</p><ul>{gaps.slice(0, 8).map(gap => <li key={gap}>{gap}</li>)}</ul>{gaps.length > 8 && <p>Plus {gaps.length - 8} remaining details.</p>}</> : <p>Required sections are filled. A reviewer still needs to check accuracy and supporting evidence.</p>}
+                  </section>
+                  <details className="capture-preview sop-preview"><summary>Preview guide</summary><h2>{content.title || 'Untitled SOP'}</h2><p>{content.purpose || 'Purpose not provided'}</p><p>Audience: {content.audience || 'Not provided'}</p><p>Source reference: {content.sourceReference || 'Not provided'}</p><pre>{content.body}</pre></details>
+                </>}
                 <div className="drafts-save-bar"><div className="drafts-actions">
                   {!locked && canContribute && <button type="submit" className="drafts-primary" disabled={busy || conflict || (!dirty && !!detail)}>Save draft</button>}
-                  {!locked && canContribute && detail && <button type="button" disabled={busy || dirty || conflict || knowledgeDirty} onClick={() => void mutate('submit')}>Submit for review</button>}
+                  {!locked && canContribute && detail && <button type="button" disabled={busy || dirty || conflict || knowledgeDirty || gaps.length > 0} onClick={() => void mutate('submit')}>Submit for review</button>}
                   {locked && canContribute && <button type="button" className="drafts-primary" disabled={busy || reviewDirty || knowledgeDirty} onClick={() => void mutate('reopen')}>Return to draft</button>}
                   <button type="button" onClick={downloadCopy}>Download my text</button>
                 </div><small>{dirty ? 'Save your changes before submitting for review.' : 'Drafts stay separate from the procedure and learning libraries.'}</small></div>
               </form>
+              {detail?.document.capture && <details className="capture-preview"><summary>Original browser capture · {detail.document.capture.bundle.steps.length} steps</summary>
+                <p>Contributor-reviewed source labels; not independently verified activity. Editing this guide preserves the imported capture.</p>
+                <p>{detail.document.capture.bundle.origin} · {dateLabel(detail.document.capture.bundle.startedAt)}</p>
+                <ol className="capture-steps">{detail.document.capture.bundle.steps.map(step => <li key={step.id}><strong>{step.kind === 'click' ? 'Activate' : 'Change'} {step.control}: {step.label}</strong><small>{dateLabel(step.at)}</small></li>)}</ol>
+                <small>Capture {detail.document.capture.bundle.id}<br />SHA-256 {detail.document.capture.digest}</small>
+              </details>}
               {detail && <DraftKnowledgeLinks key={`knowledge:${detail.document.id}:${connectionEditorKey}`} document={detail.document} permissions={session?.permissions ?? []} disabled={dirty || busy || !!locked || conflict || !canContribute} onUnsavedChange={setKnowledgeDirty} />}
               {detail && session && <WorkflowReviewPanel key={`review:${detail.document.id}:${connectionEditorKey}`} document={detail.document} permissions={session.permissions} disabled={dirty || busy || knowledgeDirty} onAction={mutate} onUnsavedChange={setReviewDirty} />}
               {detail && <section className="drafts-history" aria-label="Revision history"><h2>Revision history</h2><p>Every accepted save and review transition is retained.</p>

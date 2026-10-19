@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { renderSop, sopGaps, validateSop } from '../../src/features/workflow/legacy/src/lib/sop-contract.mjs';
 
 export class WorkflowError extends Error {
   constructor(status, code, message) { super(message); this.status = status; this.code = code; }
@@ -20,18 +21,24 @@ export function permission(context, operation) {
 }
 export function validateContent(value) {
   const limits = { title: 160, kind: 20, audience: 160, purpose: 2000, sourceReference: 1000, body: 40000 };
-  shape(value, Object.keys(limits));
-  /** @type {Record<string,string>} */
+  shape(value, [...Object.keys(limits), 'sop']);
+  /** @type {Record<string,any>} */
   const content = {};
   for (const [key, limit] of Object.entries(limits)) {
     if (typeof value[key] !== "string" || value[key].length > limit || value[key].includes("\0")) fail(400, "invalid_content", `Invalid ${key}; maximum ${limit} characters.`);
     content[key] = value[key].trim();
   }
   if (!content.title || !["procedure", "policy", "tutorial"].includes(content.kind ?? "")) fail(400, "invalid_content", "Add a title and supported document type.");
+  if (Object.hasOwn(value, 'sop')) {
+    if (content.kind !== 'procedure') fail(400, 'invalid_sop', 'Guided SOPs must be procedures.');
+    try { content.sop = validateSop(value.sop); content.body = renderSop(content.sop); }
+    catch (error) { fail(400, 'invalid_sop', error instanceof Error ? error.message : 'Invalid SOP.'); }
+  }
   return content;
 }
 export function requireComplete(content) {
   if (!content.audience || !content.purpose || !content.sourceReference || content.body.length < 20) fail(400, "review_incomplete", "Add audience, purpose, source reference, and instructions before review.");
+  if (content.sop && sopGaps(content.sop).length) fail(400, 'review_incomplete', `Complete the SOP before review: ${sopGaps(content.sop).slice(0, 6).join('; ')}. Explain when a section does not apply.`);
 }
 export function reviewNote(value) {
   if (typeof value !== "string" || !value.trim() || value.length > 1000) fail(400, "review_note_required", "Record a review decision in 1–1,000 characters.");

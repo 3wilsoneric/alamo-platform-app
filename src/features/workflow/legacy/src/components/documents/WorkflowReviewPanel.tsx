@@ -6,7 +6,7 @@ import { authenticatedWorkflowFetch } from '@/lib/platform-transport'
 
 export default function WorkflowReviewPanel({ document, permissions, disabled, onAction, onUnsavedChange }: {
   document: DraftRevision; permissions: string[]; disabled: boolean;
-  onAction: (action: DraftAction, note: string, proposalIds: string[]) => Promise<boolean>;
+  onAction: (action: Exclude<DraftAction, 'import_capture'>, note: string, proposalIds: string[]) => Promise<boolean>;
   onUnsavedChange: (value: boolean) => void
 }) {
   const [note, setNote] = useState('')
@@ -20,7 +20,7 @@ export default function WorkflowReviewPanel({ document, permissions, disabled, o
     try { const graph = await knowledgeClient.graph(); setConnections(graph.proposals.filter(item => item.source.draftId === document.id && item.status === 'approved' && item.freshness === 'current')) }
     catch (error) { setError(error instanceof Error ? error.message : 'Could not load approved connections.') }
   }
-  async function act(action: DraftAction) {
+  async function act(action: Exclude<DraftAction, 'import_capture'>) {
     if (await onAction(action, note, selected)) { setNote(''); setSelected([]); setPublication(null) }
   }
   async function readPublication() {

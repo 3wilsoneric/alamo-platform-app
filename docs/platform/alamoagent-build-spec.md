@@ -99,3 +99,26 @@ enabled. Live health, anonymous denial and runtime managed-identity read/write
 checks pass; real-owner browser acceptance awaits sign-in. See the latest
 [deployment receipt](deployment-operations.md). No additional user or agent access
 was enabled.
+
+## Workflow capture and guided SOP integration — source implemented, 2026-10-19
+
+The integration checkout now reuses Workflow's existing text-capture importer,
+guided SOP editor and versioned validators/renderers within the authenticated
+owner publication flow. A reviewed capture becomes an editable procedure, then a
+structured SOP with retained source evidence and exact-quote knowledge proposals.
+Document and relationship approvals remain separate. Publication freezes the
+approved structure, source evidence and renderer version; later draft edits leave
+that publication intact. Legacy documents and all 17 procedures/81 steps remain.
+
+Portable contracts are pinned by `src/features/workflow/authoring-contracts.v1.json`;
+`workflow:refresh-authoring-contracts` refreshes them explicitly from canonical
+Workflow and `check:workflow-contracts` verifies their hashes. There are no sibling
+runtime imports. The owner grant, delegated identity requirement and Azure storage
+adapter remain unchanged. Sixteen service tests and the desktop/mobile capture
+and publication flow pass. This addition is not deployed; see the prepared-source
+entry in [deployment operations](deployment-operations.md).
+
+Visual capture, AI drafting, automatic entity/assertion extraction and authorized
+agent consumption remain subsequent work. The current graph uses reviewed quoted
+connections; free-text role/system labels are not automatically resolved entities.
+No agent activation, notifications, staff grants or new consumer were added.

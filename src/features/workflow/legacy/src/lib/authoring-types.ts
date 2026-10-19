@@ -1,3 +1,6 @@
+import type { CaptureEvidence, WorkflowCapture } from './capture-types'
+import type { StructuredSop } from './sop-types'
+
 export type DraftContent = {
   title: string
   kind: 'procedure' | 'policy' | 'tutorial'
@@ -5,9 +8,10 @@ export type DraftContent = {
   purpose: string
   sourceReference: string
   body: string
+  sop?: StructuredSop
 }
 
-export type DraftAction = 'save' | 'submit' | 'reopen' | 'approve' | 'reject' | 'publish' | 'retract'
+export type DraftAction = 'save' | 'submit' | 'reopen' | 'approve' | 'reject' | 'publish' | 'retract' | 'import_capture'
 export type DraftState = 'draft' | 'in_review' | 'approved' | 'published'
 export type DraftActor = { id: string; name: string }
 
@@ -24,6 +28,7 @@ export type DraftRevision = {
   updatedBy: DraftActor
   contentRevision?: number
   contentHash?: string
+  capture?: CaptureEvidence
   approval?: { actor: DraftActor; at: string; note: string } | null
 }
 
@@ -35,7 +40,8 @@ export type DraftSummary = Pick<DraftRevision, 'id' | 'revision' | 'state' | 'up
   audience: string
 }
 export type DraftList = { mode: 'platform-owner-pilot'; documents: DraftSummary[] }
-export type DraftMutation = { action: DraftAction; expectedRevision: number; content?: DraftContent; note?: string; proposalIds?: string[] }
+export type DraftMutation = { action: Exclude<DraftAction, 'import_capture'>; expectedRevision: number; content?: DraftContent; note?: string; proposalIds?: string[] }
+  | { action: 'import_capture'; expectedRevision: 0; capture: WorkflowCapture }
 
 export interface AuthoringClient {
   list(): Promise<DraftList>

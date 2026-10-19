@@ -72,3 +72,35 @@
 
 .drafts-workspace .workflow-publication-choice { flex-direction: row; align-items: center; gap: 10px; }
 .drafts-workspace .workflow-publication-choice input { width: auto; }
+
+.capture-import > p { color: #526971; }
+.capture-summary { display: flex; flex-direction: column; gap: 4px; padding: 18px; margin-top: 20px; background: #eef5f1; border-radius: 6px; overflow-wrap: anywhere; }
+.capture-steps { padding-left: 24px; margin: 20px 0; list-style: decimal; }
+.capture-steps li { padding: 8px 0; overflow-wrap: anywhere; }
+.capture-steps small { display: block; }
+.capture-preview { border-top: 1px solid #d8e0dc; padding: 18px 0; margin-top: 20px; overflow-wrap: anywhere; }
+.capture-preview summary { cursor: pointer; color: #174f46; font-weight: 600; }
+.capture-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13px; }
+.drafts-workspace label.capture-consent { flex-direction: row; align-items: start; font-weight: 400; margin: 20px 0; }
+.drafts-workspace .capture-consent input { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; }
+.capture-import .drafts-muted { margin-top: 14px; font-size: 12px; }
+.sop-intro { border-top: 1px solid #d8e0dc; padding-top: 20px; margin: 20px 0; }
+.sop-intro p, .sop-upgrade p, .sop-notes p { color: #61727a; font-size: 13px; margin: 6px 0 16px; }
+.sop-step-heading, .sop-step-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.sop-step-heading h3, .sop-step-bar h3 { margin: 0; }
+.sop-step-heading span { color: #61727a; font-weight: 400; }
+.sop-steps { list-style: none; margin: 0; padding: 0; }
+.sop-step { min-width: 0; background: #f4f7f5; border: 1px solid #d2ddd7; border-radius: 7px; padding: 18px; margin-bottom: 16px; }
+.sop-step-bar .drafts-actions { gap: 6px; }
+.sop-step-bar button { padding: 6px 10px; }
+.sop-source-note { margin: 0; padding: 10px; background: #e5eeea; color: #49645b; font-size: 12px; }
+.sop-add { margin: 12px 0 24px; }
+.sop-notes { margin: 20px 0; }
+.sop-notes summary { cursor: pointer; font-weight: 600; color: #174f46; }
+.sop-readiness { background: #eef3ee; border: 1px solid #cbdacc; padding: 16px; border-radius: 6px; margin: 20px 0; }
+.sop-readiness h3 { margin: 0 0 8px; }
+.sop-readiness p { margin: 6px 0; font-size: 13px; color: #49645b; }
+.sop-readiness ul { padding-left: 20px; list-style: disc; font-size: 13px; }
+.sop-preview { margin-bottom: 20px; }
+
+@media (max-width: 760px) { .sop-step { padding: 12px; } }

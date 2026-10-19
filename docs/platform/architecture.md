@@ -509,3 +509,29 @@ enabled. Live health, anonymous denial and runtime managed-identity read/write
 checks pass; real-owner browser acceptance awaits sign-in. See the latest
 [deployment receipt](deployment-operations.md). No additional user or agent access
 was enabled.
+
+### Capture and structured SOPs — integration source, not deployed
+
+The owner adapter additionally accepts `import_capture` at a document ID matching
+the version-1 capture bundle. It validates the 64 KiB/100-step contract, retains
+normalized evidence and its digest, and preserves that evidence through every
+revision. Repeating the same import returns the latest document without another
+write; a reused ID with different evidence conflicts. Conditional writes retain
+the existing concurrency behavior.
+
+An optional `content.sop` holds version-1 process context and stable steps. The
+server validates it and derives the quoted `body` using the pinned renderer.
+Incomplete drafts can save; submit, approve and publish enforce readiness. Capture
+step references must resolve within the original bundle, and a legacy client
+cannot silently drop structured fields. Reads check content hashes, source
+integrity, capture lineage and the rendered projection.
+
+Publications retain the complete structure and evidence with an explicit schema
+and renderer version. Existing free-text records remain readable. Structure does
+not grant authority: quoted connection review and document review are still
+separate, source changes retain the existing freshness rules, and approved
+retrieval remains owner-scoped. The six portable files are pinned in
+`src/features/workflow/authoring-contracts.v1.json`; the release overlay packages
+the two runtime contracts. No canonical Workflow server or storage adapter is
+imported. This source addition needs isolated promotion and real-owner acceptance
+before it is available on production.

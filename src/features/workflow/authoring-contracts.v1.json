@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "owner": "Alamo Workflow",
+  "contractVersion": 1,
+  "rendererVersion": 1,
+  "files": [
+    {
+      "source": "src/lib/capture-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/capture-contract.mjs",
+      "sha256": "f5614630d77e58f3c5c929b05556259eebc85ccb322c0cf24fe94c3bf5cd9972"
+    },
+    {
+      "source": "src/lib/capture-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/capture-contract.d.mts",
+      "sha256": "3ca53635b90cd45377206bd37ce0bd1a1a5882eba01d16023f43f162af330a3a"
+    },
+    {
+      "source": "src/lib/capture-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/capture-types.ts",
+      "sha256": "e8f66e85d40f10a821a564950113f676b59d494cc69c340eff6ac8eb3641c5aa"
+    },
+    {
+      "source": "src/lib/sop-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/sop-contract.mjs",
+      "sha256": "a18d0605fd0fda7b4de0cd5a091cadb024ce421f70c89f713bccfb616c430376"
+    },
+    {
+      "source": "src/lib/sop-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/sop-contract.d.mts",
+      "sha256": "5c8e9047cd587ce005bb2578d2a4f4ca8d5d109004d06d071f334195fba3f507"
+    },
+    {
+      "source": "src/lib/sop-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/sop-types.ts",
+      "sha256": "b2f91837f2287095abaa580df3bda52406091e2aae9d6111df9b1b32474dfc3e"
+    }
+  ]
+}
