@@ -333,6 +333,8 @@ function validateAdmissionsDashboardPayload(value: unknown) {
     ["clientName", "community", "owner", "status"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
     ["facilityId", "sourceName", "referringCounty", "priorPlacement"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`, { nullable: true }));
     if (!["received", "in_progress", "decision"].includes(String(row.stage))) fail(endpoint, `${path}.stage is not a known board column`);
+    if (!["needs_date", "awaiting_arrival", "intake_assessment", "decision_pending"].includes(String(row.phase))) fail(endpoint, `${path}.phase is not a known briefing phase`);
+    if (row.plannedAt !== null) assertIsoCalendarDate(row.plannedAt, endpoint, `${path}.plannedAt`);
     assertWebLink(row.pipelineUrl, `${path}.pipelineUrl`);
   };
   const portfolio = assertRecord(payload.portfolio, endpoint, "portfolio");

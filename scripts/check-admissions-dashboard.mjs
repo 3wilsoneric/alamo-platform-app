@@ -356,6 +356,8 @@ const pipelinePayload = {
       referral_id: 21,
       client_name: "Avery Clark",
       stage: "in_progress",
+      phase: "intake_assessment",
+      planned_at: null,
       status: "Assessment scheduled",
       community: "San Pablo",
       owner: "Jordan",

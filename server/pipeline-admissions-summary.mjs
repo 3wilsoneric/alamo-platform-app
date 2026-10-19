@@ -234,12 +234,14 @@ function normalizeMovingThrough(row, pipelineOrigin) {
   const referralId = count(row?.referral_id);
   const clientName = text(row?.client_name, 160);
   const stage = BOARD_COLUMNS.has(row?.stage) ? row.stage : null;
+  const phase = ["needs_date", "awaiting_arrival", "intake_assessment", "decision_pending"].includes(row?.phase) ? row.phase : null;
+  const plannedAt = row?.planned_at == null ? null : isoCalendarDate(row.planned_at);
   const status = text(row?.status, 80);
   const community = text(row?.community, 80);
   const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
-  if (referralId == null || !clientName || !stage || !status || !community || !path) return null;
+  if (referralId == null || !clientName || !stage || !phase || (row?.planned_at != null && !plannedAt) || !status || !community || !path) return null;
   return {
-    referralId, clientName, stage, status, community, facilityId: null,
+    referralId, clientName, stage, phase, plannedAt, status, community, facilityId: null,
     owner: text(row?.owner, 80) ?? "Unassigned",
     sourceName: nullableText(row?.source_name, 160),
     referringCounty: nullableText(row?.referring_county, 120),

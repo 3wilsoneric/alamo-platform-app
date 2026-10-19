@@ -21,7 +21,7 @@ main Home surface. Neither destination uses a repeated product title or KPI
 strip.
 
 - **Briefing dashboard** — the current CEO-level admissions readout. With the
-  Pipeline 3.3 journey slice, **This week** opens first and combines Platform's
+  Pipeline 3.4 journey slice, **This week** opens first and combines Platform's
   governed community census with Pipeline's recorded admits last week, planned
   admits this week, and active clients by stage. Client rows retain the source
   and referring county when recorded, and link to their Pipeline workspace.
@@ -129,11 +129,13 @@ server, never from the browser and never through Pipeline's internal APIs.
   booleans, and bounded event arrays: `recent_referrals`,
   `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. Contract 3.2
   adds `last_week_start`, `last_week_end`, `admitted_last_week`, and
-  `moving_through`, each with explicit completeness flags. Contract 3.3 adds
+  `moving_through`, each with explicit completeness flags. Contract 3.4 adds
   recorded referral origin, county, assigned assessor, and the most recent
   placement from a signed assessment to the admitted, planned, and moving
   briefing rows. Missing placement stays null; accepted active clients without
-  an admit date remain in moving-through. Platform uses Pipeline's reporting
+  an admit date remain in moving-through. Moving rows include their work phase
+  and planned date for the briefing drill-down; an overdue planned date does
+  not imply admission. Platform uses Pipeline's reporting
   week for the admissions headings so a delayed clinical snapshot cannot shift
   the listed week. Platform displays these records only after
   validating and bounding them in the server connector. The detailed dashboard
