@@ -16,6 +16,22 @@
 
 ## Current Production Host
 
+### Admissions weekly briefing visual alignment — 2026-10-19
+
+- source commit: `edbfb49` on `codex/admissions-platform-style-20261019`
+- active image: `alamo-platform@sha256:f0e4ab9b84753d4b729c484fae237e4bf4b11511ccee36a3b1a0c3104b8fa84c`
+- active revision: `alamo-platform-prod-web--admstyle-1019-edbfb49`; Healthy/Running, one replica, 100% traffic
+- rollback image: `alamo-platform@sha256:7f94313ee5f1a18171291cf6f49c9268fba10cc9388a2decba92b5cbc56462e8`
+- build: ACR `cc97` using `Dockerfile.frontend-release` on the exact preceding production digest; only `/app/dist` changed
+- verified: focused combined-briefing and broader Admissions material browser checks, Admissions data/access checks, dependency audit, docs, typecheck, build, production smoke 4/4, and exact live identity-byte matches for `/`, `/admissions`, `/chat`, and the new CSS/JS assets. Anonymous Admissions and Executive Director APIs returned 401. Eric's signed-in production Admissions view showed the weekly census and existing admitted/planned/did-not-move-in sections; computed live colors matched the reviewed blue edge, paper surface, and blue census bars, with no horizontal overflow.
+
+The full predeploy gate did not pass: its analyst suite expects a fixed resident
+ranking from older data and then an older incident-history range, while the
+current live records have changed. This was a focused frontend release of the
+already verified Admissions design only; those unrelated analyst expectations
+were not edited or treated as passing. The remaining full ship gate and signed-in
+automation are not claimed as complete.
+
 ### Home community index restored — 2026-10-19
 
 - source commit: `be77d61` on `codex/admissions-moving-hide-20261019`
