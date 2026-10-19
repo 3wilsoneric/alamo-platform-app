@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-18
+- updated: 2026-10-19
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -15,6 +15,19 @@
   - [alamo-platform-app/vercel.json](/Users/eric/CareEngineMain/alamo-platform-app/vercel.json)
 
 ## Current Production Host
+
+### Combined admissions context — 2026-10-19
+
+- source commit: `1b48456` on `codex/combined-admissions-briefing-20261019`
+- active image: `alamo-platform@sha256:7a03bb9af8c6d8eb5a83ad700ae79fc00a3cc3b2d0ebe3e481b44a707c97bc1f`
+- active revision: `alamo-platform-prod-web--admctx-1019-1b48456`
+- rollback image: `alamo-platform@sha256:510964a9ef6d0e9c3233066da2929bb045b7d7083191b80d4c2a349597a21d89`
+- build: ACR `cc91`, based on the exact rollback digest through `Dockerfile.admissions-briefing-release`
+- verified: Healthy/Running with 100% traffic; public `/healthz`, `/`, `/home`, and `/admissions` return 200; Admissions API returns 401 without authorization; `/` and `/admissions` entry bytes match the built source.
+
+The weekly Admissions view now shows the Pipeline-recorded origin, county,
+signed-assessment prior placement, and assigned assessor for client rows. Its
+week labels use Pipeline's reporting window, matching the Pipeline briefing.
 
 `www.alamoplatform.com` is served by the Azure Container App
 `alamo-platform-prod-web` in resource group `alamo-data-rg` (West US 2), using
