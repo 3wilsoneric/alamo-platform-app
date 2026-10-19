@@ -63,7 +63,10 @@ await withBrowserQa(async (browser) => {
     assert.doesNotMatch(await combined.innerText(), /Clients moving through|Jordan Example|Taylor Example|Date passed/);
     assert.match(await combined.innerText(), /Did not move in[\s\S]*Casey Example/);
     assert.equal(await combined.locator('a[href^="https://alamo-pipeline.com/"]').count(), 3);
-    assert.equal(await combined.getByRole("link", { name: "Explore San Pablo census" }).getAttribute("href"), "/communities/337?focus=census");
+    const censusSection = combined.locator('[data-admissions-census-section="true"]');
+    assert.equal(await censusSection.locator('[data-admissions-census-name="true"]').count(), 5);
+    assert.equal(await censusSection.locator("a").count(), 0, "community names must not offer a drill-down");
+    assert.doesNotMatch(await censusSection.innerText(), /↗/, "community names must not show link arrows");
     assert.equal(await page.locator('[data-admissions-executive-update="true"]').count(), 0);
     await page.getByRole("tab", { name: /Schedule/ }).click();
     assert.equal(await page.locator('[data-admissions-dashboard-page="schedule"]').count(), 1);

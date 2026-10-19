@@ -43,7 +43,7 @@ export default function CombinedAdmissionsBriefing({
         <p className="text-[13px] text-[#667168]">{census.totals.census === null ? "Total unavailable" : <><strong data-admissions-census-total="true" className="mr-1 text-[31px] tabular-nums text-[#164d7c]">{census.totals.census}</strong> residents</>}</p>
       </div>
       {communities.length ? <ul className="mt-5">{communities.map((row) => <li key={row.facilityId} className="grid grid-cols-[minmax(0,1fr)_minmax(80px,1.4fr)_auto] items-center gap-4 border-t border-[#e8ece7] py-2 max-sm:grid-cols-[minmax(0,1fr)_auto]">
-        <a href={`/communities/${encodeURIComponent(row.facilityId)}?focus=census`} className="text-[14px] font-semibold text-[#096f57] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={`Explore ${row.shortName} census`}>{row.shortName} <span aria-hidden="true">↗</span></a>
+        <span data-admissions-census-name="true" className="text-[14px] font-semibold text-[#16283a]">{row.shortName}</span>
         <span data-admissions-census-track="true" className="h-2.5 rounded-full bg-[#e4edf4] max-sm:col-span-2 max-sm:row-start-2"><span data-admissions-census-bar="true" className="block h-full rounded-full bg-[#1b5a8b]" style={{ width: `${(row.census ?? 0) / largest * 100}%` }} /></span>
         <strong className="text-right text-[17px] tabular-nums">{row.census}</strong>
       </li>)}</ul> : <p className="mt-5 text-[14px] text-[#657267]">Community census is unavailable in this snapshot.</p>}

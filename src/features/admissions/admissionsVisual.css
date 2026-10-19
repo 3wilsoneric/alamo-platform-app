@@ -814,7 +814,6 @@
   border-color: #dce3e5;
 }
 
-[data-admissions-census-section="true"] > ul > li > a,
 [data-admissions-week-list] li a {
   color: #087d64;
 }
