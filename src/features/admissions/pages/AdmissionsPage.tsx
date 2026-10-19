@@ -625,7 +625,7 @@ function AdmissionsBriefingDashboard({
     ...(combined ? [{
       key: "week" as const,
       label: "This week",
-      detail: "Census, admits, and clients moving through",
+      detail: "Census and admissions",
       icon: Building2
     }] : []),
     ...(hasScheduleContent ? [{

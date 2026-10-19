@@ -46,8 +46,8 @@ await withBrowserQa(async (browser) => {
     const combined = page.locator('[data-admissions-combined-briefing="true"]');
     await combined.waitFor({ state: "visible" });
     const combinedText = await combined.innerText();
-    if (!combinedText.includes("Census by community") || !combinedText.includes("Clients moving through")) {
-      throw new Error(`${label} combined briefing lost the census or active Pipeline work.`);
+    if (!combinedText.includes("Census by community") || combinedText.includes("Clients moving through")) {
+      throw new Error(`${label} briefing must retain census without the unreconciled moving-clients panel.`);
     }
     await page.screenshot({ path: `${screenshotDir}/${label}-briefing.png`, fullPage: true });
 
