@@ -4211,3 +4211,29 @@ dashboard checks, 72-route mobile QA, TypeScript, docs, dependency audit, and
 production build passed. The full predeploy gate stopped at the same existing
 resident-risk test that expects a fixed ranking from changing live data; neither
 that test nor the ranking runtime changed in this release.
+
+### Combined Admissions and census briefing — 2026-10-18 Pacific
+
+Platform Admissions now opens a weekly view that combines its governed community
+census with Pipeline's recorded admits last week, planned admits this week, and
+active clients by stage. Source and county appear with each client when present.
+The previous detailed Schedule, Communities, and Open fields views remain
+available. Older Pipeline feeds retain the previous Admissions narrative.
+
+- source commit: `7f59d86` on `codex/combined-admissions-briefing-20261019`
+- ACR build: `cc8y`; tag: `combined-admissions-1019-7f59d86`
+- image: `alamo-platform@sha256:510964a9ef6d0e9c3233066da2929bb045b7d7083191b80d4c2a349597a21d89`
+- revision: `alamo-platform-prod-web--combo-1019-7f59d86`
+- rollback image: `alamo-platform@sha256:04b265edc130c866da37eaa2fd6032c174eab33e1178da4a35e2bc163bd6c65e`
+- browser assets: `/assets/index-Cp8aR-SR.js`, `/assets/index-WUf3Xm9K.css`
+
+The new revision is Healthy/Running with 100% traffic and unchanged replica
+scale. Public `/healthz`, `/`, `/home`, `/admissions`, `/analytics/agent`, and
+`/personnel` return 200; anonymous Admissions API access returns 401. Root,
+Home, and Admissions entry bytes match the built candidate, as do the served
+JavaScript and CSS assets. The Admissions entry also matches under gzip and
+Brotli. The protected Pipeline bridge contract, desktop/320px/390px combined
+briefing, existing Admissions browser flows, legacy narrative fallback,
+TypeScript, server types, docs, production build, and high-severity dependency
+audit passed. The full analyst suite reached the same unrelated live-data
+resident-ranking assertion recorded above; it was not changed for this release.
