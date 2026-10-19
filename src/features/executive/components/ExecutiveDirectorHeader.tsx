@@ -19,7 +19,7 @@ export function ExecutiveDirectorHeader() {
           <div className="executive-director-header__sections">
             <ExecutiveNavLink to="/executive/dashboard" label="Community" />
             <ExecutiveNavLink to="/executive/licensing" label="Licensing" />
-            {import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo ? <ExecutiveNavLink to="/workforce" label="Workforce demo" /> : null}
+            {import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo ? <ExecutiveNavLink to="/personnel" label="Personnel demo" /> : null}
           </div>
         </div>
         <div className="executive-director-header__account-actions">

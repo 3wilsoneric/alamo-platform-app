@@ -43,7 +43,7 @@ export default function ProtectedAppShell() {
   const isExecutiveDirectorExperience = isExecutiveDirectorPath(location.pathname);
   const isPipelineHandoff = location.pathname === "/pipeline";
   const isPresentation = location.pathname === "/presentation";
-  const isDeployedWorkforceDemo = import.meta.env.VITE_WORKFORCE_DEMO === "true" && location.pathname === "/workforce";
+  const isDeployedWorkforceDemo = import.meta.env.VITE_WORKFORCE_DEMO === "true" && (location.pathname === "/personnel" || location.pathname === "/workforce");
   const isWorkflowExperience = location.pathname === "/workflow";
   const isStandaloneEditorial =
     location.pathname === "/outreach" || location.pathname === "/fiftystate";

@@ -1,18 +1,18 @@
-# Workforce Overview and Alamo Workforce Application Boundary
+# Personnel Overview and Alamo Workforce Application Boundary
 
-- purpose: define the Alamo `/workforce` overview and its boundary with the separate Alamo Workforce application
+- purpose: define the Alamo `/personnel` overview and its boundary with the separate Alamo Workforce application
 - status: current implementation and deployment contract
 - owners: product, engineering, HR operations
 - updated: 2026-09-29
 - tags: workforce, hr, hiring, recruiting, integration
 - labels: application-boundary, current-state, deployment
 
-Workforce follows the same split as Admissions and Pipeline. Alamo Platform owns
-an aggregate `/workforce` overview; the separate Alamo Workforce application
+Personnel follows the same split as Admissions and Pipeline. Alamo Platform owns
+an aggregate `/personnel` overview; the old `/workforce` URL redirects there. The separate Alamo Workforce application
 owns staff records, credential tracking, open roles, applicants, and the
 spreadsheet or Paylocity data that feeds them.
 
-## Alamo Workforce overview
+## Personnel overview
 
 The live `/api/platform/workforce-dashboard` feed remains owner-only through
 `assertPlatformKnowledgeOwner`. A separate build-flagged fictional demo can be
@@ -24,7 +24,7 @@ The page follows the Admissions board pattern: every element says what
 to do next and links to the place to do it.
 
 - two surfaces, like Admissions: **Briefing** (default) and **Hiring board**
-  (`/workforce?view=board`)
+  (`/personnel?view=board`)
 - the briefing opens with a three-sentence update typed out once per session
   (open seats and who is in offer and clearance, the longest-waiting role with
   no candidates, and scheduling blocks plus credentials expiring soon), then
@@ -59,7 +59,7 @@ server, never from the browser and never through Workforce's user APIs.
 - configuration: `WORKFORCE_SUMMARY_URL` (for example
   `https://<workforce-host>/api/platform/workforce-overview`) and
   `WORKFORCE_SUMMARY_TOKEN` (a Bearer shared secret). When either is unset the
-  page shows Workforce as not connected.
+  Personnel page shows the source as not connected.
 - Workforce side: the token's SHA-256 is set as
   `Workforce__PlatformFeed__TokenSha256`; the token grants the summary and
   nothing else. Workforce also accepts an Entra app-only token holding

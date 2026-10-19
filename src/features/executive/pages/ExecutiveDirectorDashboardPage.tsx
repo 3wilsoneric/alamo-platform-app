@@ -8,11 +8,11 @@ import { getAccountExecutiveDirectorAccess } from "../../../shared/auth/executiv
 import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot";
 import { ProgressModal } from "../../admissions/components/PipelineBoard";
 import { ExecutiveCommunityDetailModal, ExecutiveCommunityWorkspace, type ExecutiveCommunityDetailView } from "../components/ExecutiveCommunityDetailModal";
+import { ExecutiveIncidentClients, type IncidentClient } from "../components/ExecutiveIncidentClients";
 import { ExecutiveReferralStatusPill } from "../components/ExecutiveReferralStatusPill";
 import { ExecutiveTrendChart } from "../components/ExecutiveTrendChart";
 import { formatImpendingAdmissionDate, impendingAdmissionCards } from "../components/executiveAdmissions";
 import { formatExecutiveDate, formatExecutiveNumber } from "../components/executiveDashboardFormatters";
-import { executiveIncidentCategoryPeriod } from "../components/executiveIncidentCategories";
 import { fetchExecutiveDirectorCommunityDashboard, type ExecutiveDirectorCommunityDashboardResponse } from "../data/executiveDirectorApi";
 import "../executiveCommunity.css";
 
@@ -35,6 +35,7 @@ export default function ExecutiveDirectorDashboardPage() {
   const [admissionId, setAdmissionId] = useState<number | null>(null);
   const [managementId, setManagementId] = useState<number | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [selectedIncidentClient, setSelectedIncidentClient] = useState<IncidentClient | null>(null);
   const communityRef = useRef<HTMLElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
@@ -64,6 +65,7 @@ export default function ExecutiveDirectorDashboardPage() {
     setDetailView(null);
     setManagementId(null);
     setAdmissionId(null);
+    setSelectedIncidentClient(null);
     async function refresh() {
       if (inFlight || controller.signal.aborted) return;
       inFlight = true;
@@ -176,10 +178,15 @@ export default function ExecutiveDirectorDashboardPage() {
   }
   function openDetail(next: ExecutiveCommunityDetailView) {
     if (next === "medications" || next === "incidents") {
+      setSelectedIncidentClient(null);
       selectView(next === "medications" ? "mars" : "incidents");
     } else {
       setDetailView(next);
     }
+  }
+  function openIncidentClient(client: IncidentClient) {
+    setSelectedIncidentClient(client);
+    selectView("incidents");
   }
   function meetClient(card: AdmissionsBoardCard) {
     setAdmissionId(card.referralId);
@@ -213,8 +220,8 @@ export default function ExecutiveDirectorDashboardPage() {
       {loading && !response ? <div role="status" className="executive-dashboard-loading">Loading community dashboard…</div> : null}
       {!loading && dashboard?.status === "unavailable" ? <div role="status" className="executive-dashboard-message">Community measures are temporarily unavailable.</div> : null}
       <div id="executive-view-panel" data-executive-current-view={view}>
-        {dashboard && view === "overview" ? <CommunityOverview dashboard={dashboard} onOpenDetail={openDetail} /> : null}
-        {dashboard && facility && view !== "overview" ? <ExecutiveCommunityWorkspace key={view} facility={facility} dashboard={dashboard} view={view === "mars" ? "medications" : "incidents"} onBack={() => selectView("overview")} /> : null}
+        {dashboard && view === "overview" ? <CommunityOverview facilityId={facilityId} dashboard={dashboard} onOpenDetail={openDetail} onOpenIncidentClient={openIncidentClient} /> : null}
+        {dashboard && facility && view !== "overview" ? <ExecutiveCommunityWorkspace key={view} facility={facility} dashboard={dashboard} view={view === "mars" ? "medications" : "incidents"} initialIncidentClient={selectedIncidentClient} onBack={() => { setSelectedIncidentClient(null); selectView("overview"); }} /> : null}
       </div>
       {dashboard && facility && detailView ? <ExecutiveCommunityDetailModal facility={facility} dashboard={dashboard} view={detailView} initialAdmissionId={admissionId} sourceNotice={detailView === "admissions" && admissionsStale ? ADMISSIONS_STALE_MESSAGE : null} onAdmissionSelectionChange={setAdmissionId} onClose={closeDetail} onOpenAdmissionCard={(card) => { setAdmissionId(card.referralId); setDetailView(null); setManagementId(card.referralId); }} /> : null}
       {selectedCard && admissions?.status === "connected" ? <ProgressModal card={selectedCard} generatedAt={admissions.generatedAt ?? generatedAt ?? new Date().toISOString()} sourceNotice={admissionsStale ? ADMISSIONS_STALE_MESSAGE : null} onClose={closeManagement} /> : null}
@@ -222,22 +229,18 @@ export default function ExecutiveDirectorDashboardPage() {
   );
 }
 
-function CommunityOverview({ dashboard, onOpenDetail }: {
+function CommunityOverview({ facilityId, dashboard, onOpenDetail, onOpenIncidentClient }: {
+  facilityId: string;
   dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"];
   onOpenDetail: (view: ExecutiveCommunityDetailView, card?: AdmissionsBoardCard) => void;
+  onOpenIncidentClient: (client: IncidentClient) => void;
 }) {
   const census = dashboard.census.at(-1);
   const priorCensus = dashboard.census.at(-2);
   const delta = census && priorCensus ? census.census - priorCensus.census : null;
   const limit = dashboard.admissions.community?.operatingLimit ?? null;
   const occupancy = census && limit ? census.census / limit * 100 : null;
-  const incident = dashboard.incidentTrend.at(-1);
-  const priorIncident = dashboard.incidentTrend.at(-2);
-  const incidentIsMonthToDate = Boolean(incident && dashboard.generatedAt?.startsWith(incident.month));
   const medication = dashboard.medication;
-  const categoryPeriod = executiveIncidentCategoryPeriod(dashboard, incident?.month);
-  const categories = categoryPeriod.categories.slice(0, 4);
-  const categoryMaximum = Math.max(...categories.map((item) => item.count), 1);
 
   return <div data-daily-operating-summary="true" className="executive-dashboard-index">
     <DomainPanel kind="census" title="12-month census" icon={<UsersRound />} action="History" onOpen={() => onOpenDetail("census")}>
@@ -247,14 +250,8 @@ function CommunityOverview({ dashboard, onOpenDetail }: {
       </div>
       <ExecutiveTrendChart points={dashboard.census.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.census }))} accent="#174f81" height={180} compact ariaLabel="Community census history" />
     </DomainPanel>
-    <DomainPanel kind="incidents" title="Incident activity" icon={<ClipboardList />} action="View incidents" onOpen={() => onOpenDetail("incidents")}>
-      <div className="executive-incident-overview">
-        <div><div className="executive-section-meta"><span>{incident ? formatMonthLabel(incident.month, { month: "long" }) : "Latest period"}{incidentIsMonthToDate ? " · to date" : ""}</span><strong>{formatExecutiveNumber(incident?.count)} <small>incidents</small></strong></div>
-          <ExecutiveTrendChart points={dashboard.incidentTrend.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.count }))} accent="#9b3826" height={145} compact ariaLabel="Community incident history" />
-          {priorIncident ? <p className="executive-period-note">{formatMonthLabel(priorIncident.month, { month: "short" })}: {formatExecutiveNumber(priorIncident.count)} recorded in the full month.</p> : null}
-        </div>
-        <div className="executive-category-index"><div className="executive-section-meta">{categoryPeriod.complete ? "Recorded categories" : incident?.count != null && categoryPeriod.recordCount <= incident.count ? `Category detail for ${categoryPeriod.recordCount} of ${formatExecutiveNumber(incident.count)} incidents` : `${categoryPeriod.recordCount} available records`}</div>{categories.length ? <ol>{categories.map((item) => <li key={item.label}><span>{item.label}</span><strong>{formatExecutiveNumber(item.count)}</strong><i><b style={{ width: `${item.count / categoryMaximum * 100}%` }} /></i></li>)}</ol> : <CompactEmpty>No category records available for this month.</CompactEmpty>}</div>
-      </div>
+    <DomainPanel kind="incidents" title="Clients with incidents" icon={<ClipboardList />} action="View incidents" onOpen={() => onOpenDetail("incidents")}>
+      <ExecutiveIncidentClients facilityId={facilityId} compact onSelect={onOpenIncidentClient} />
     </DomainPanel>
     <DomainPanel kind="medications" title="Medication administration" icon={<Pill />} action="View MARs" onOpen={() => onOpenDetail("medications")}>
       {medication ? <>

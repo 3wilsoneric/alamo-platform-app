@@ -3,7 +3,7 @@
 - purpose: define the facility-scoped Executive Director dashboard and licensing-report intake workflow
 - status: active implementation plan and security contract
 - owners: product, operations, engineering, compliance
-- updated: 2026-10-13
+- updated: 2026-10-17
 - tags: executive-director, licensing, intake, ocr, role-access, azure
 - labels: platform-handbook, implementation-plan, security-boundary
 - related files:
@@ -31,16 +31,27 @@ anything filed.
 
 The dashboard is a repeat-use operating surface, not an introductory report.
 Its header is limited to the community, reporting period, and refresh time.
-Current census, impending admissions, incidents, and medication performance are
-integrated into four operating components without a separate KPI or stat strip.
-Each area opens the larger facility-scoped detail workspace when the user needs
-history or record detail. Components use one darker Alamo-green surface system;
-semantic referral badges remain reserved for meaningful client status.
+Current census and administrations given are the first overview components;
+client incident triage follows below them, without a separate KPI strip.
+Impending admissions arrive through the New client notification. Each area
+opens its facility-scoped detail workspace when the user needs history or
+record detail. The Alamo logo remains unchanged; domain accents distinguish
+the underlying records, while referral badges remain reserved for meaningful
+client status.
 
 Dashboard drill-downs stay facility-scoped and open in one switchable workspace.
 They expose the underlying governed records directly without repeating a KPI
-strip: census periods, monthly incident volume and categories, medication
-administration totals, or impending admissions. The executive admissions view
+strip: census periods, client-first incident history, medication
+administration totals, or impending admissions. The incident dashboard card
+shows linked clients with recent recorded signals, not a category leaderboard.
+The incident workspace starts with a searchable client list ordered by the
+latest record's provisional derived priority and date. Selecting a client
+opens their exact-ID history; All incidents remains a secondary searchable
+register. Unlinked records remain in All incidents instead of merging people
+by name. Live client summaries use the authorized facility source; when only a
+published snapshot is available, the UI explicitly labels coverage partial.
+These recorded signals are not an open-task queue or clinical severity grade.
+The executive admissions view
 does not reproduce the referral board or assessment workflow: it shows only
 clients accepted or otherwise moving toward admission, their scheduled or
 missing admission date, readiness, and a concise profile. Each client continues
@@ -128,6 +139,17 @@ The LIC 624 Rev. 4/99 form is now mapped into facility, people involved,
 incident, treatment/follow-up, approval, and notification sections. Fillable
 PDFs reach `needs_review`; image-only documents stop at `ocr_required` until
 the server-side OCR adapter is connected.
+
+The LIC 624 is a state-defined form, not a Platform incident taxonomy. Its
+field names, incident-type choices, extracted values, and uploaded original
+must remain verbatim before and during intake. The Platform may show a separate
+friendly incident data label *after* intake (for example, “Passed on meds” for
+an incident source category of “Medication Refusal” or “Difficult interaction”
+for “Aggressive Behavior”), but that label is presentation-only. Keep the raw
+category, LIC 624 selection, source document, and review audit available for
+provenance and filing. Do not infer a new incident category from free-text LIC
+624 narratives, and do not count an uploaded LIC 624 as an incident until the
+separate record-linking workflow exists.
 
 ## Current implementation slice
 

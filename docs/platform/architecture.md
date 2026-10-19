@@ -95,7 +95,7 @@ Current protected routes:
 - `/analytics`: governed report library.
 - `/analytics/questions`: guided-question workspace, answer timeline, and surfaced modules.
 - `/admissions`: CEO briefing plus the bounded Pipeline referral workspace.
-- `/workforce`: workforce operating overview.
+- `/personnel`: personnel operating overview (`/workforce` redirects here).
 - `/chat`: unlisted owner-only conversational entry to the same analyst runtime.
 - `/executive/dashboard`: facility-scoped Executive Director community dashboard.
 - `/executive/licensing`: facility-scoped Executive Director Licensing workflow.

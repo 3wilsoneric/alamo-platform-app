@@ -1,4 +1,5 @@
 import { formatMonthLabel } from "../shared/period-utils.mjs";
+import { displayIncidentLabel } from "../shared/incident-display-labels.mjs";
 
 export function formatPlanValidationErrorsForUser(errors = []) {
   const formatted = errors.map((error) => {
@@ -24,6 +25,6 @@ export function formatIncidentCategoryFilterLabel(categoryFilter) {
   const normalized = String(categoryFilter).toLowerCase().replace(/[^a-z0-9\s/]/g, " ").replace(/\s+/g, " ").trim();
   if (normalized === "awol") return "AWOL/Elopement";
   if (normalized === "substance" || normalized === "aggressive" || normalized === "other") return "Other";
-  if (normalized === "medication refusal") return "Medication Refusal";
-  return String(categoryFilter).replace(/\b\w/g, (letter) => letter.toUpperCase());
+  if (normalized === "medication refusal" || normalized === "med refusal") return "Passed on meds";
+  return displayIncidentLabel(String(categoryFilter).replace(/\b\w/g, (letter) => letter.toUpperCase()));
 }

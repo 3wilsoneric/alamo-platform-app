@@ -1,3 +1,5 @@
+import { displayIncidentLabel } from "../../../shared/incident-display-labels.mjs";
+
 export interface IncidentDetailListItem {
   id: string;
   date: string;
@@ -97,10 +99,10 @@ export function IncidentDetailListModule({
             </div>
             <div className="min-w-0">
               <div className={`truncate text-[13px] font-semibold ${dark ? "text-white/72" : "text-[#111111]"}`}>
-                {row.category || row.incidentType || "Incident"}
+                {displayIncidentLabel(row.category || row.incidentType || "Incident")}
               </div>
               <div className={`mt-0.5 truncate text-[12px] ${dark ? "text-white/46" : "text-[#595959]"}`}>
-                {row.incidentType || row.location || "No subtype listed"}
+                {displayIncidentLabel(row.incidentType || row.location || "No subtype listed")}
               </div>
             </div>
             <div className={`text-[13px] leading-5 ${dark ? "text-white/64" : "text-[#333333]"}`}>

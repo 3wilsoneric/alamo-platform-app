@@ -23,7 +23,7 @@ const historyRows = Array.from({ length: HISTORY_TOTAL }, (_, index) => ({
   client_name: index === HISTORY_TOTAL - 1 ? ARCHIVED_RESIDENT : `History Resident ${String(index + 1).padStart(3, "0")}`,
   incident_date: index === HISTORY_TOTAL - 1 ? "2024-05-19" : new Date(Date.UTC(2026, 9, 9 - index)).toISOString().slice(0, 10),
   received_at: "2026-10-09T12:00:00.000Z",
-  category: ["Fall", "Medication Refusal", "Other"][index % 3],
+  category: ["Fall", "Other", "Other"][index % 3],
   incident_type: index === HISTORY_TOTAL - 1 ? "Archived event classification" : "Recorded incident",
   location: index === HISTORY_TOTAL - 1 ? "Archive courtyard" : `Residential Unit ${index % 2 ? "A" : "B"}`,
   email_body: index === HISTORY_TOTAL - 1 ? ARCHIVED_NARRATIVE : `Synthetic incident ${index + 1} narrative.`,
@@ -54,7 +54,7 @@ async function installIncidentHistoryFixture(page, state) {
     assert.equal(request.method(), "GET", "All incidents is a read-only workflow.");
     assert.equal(url.searchParams.get("facilityId"), "337", "Incident requests must use the authenticated facility, not a route override.");
     const options = {
-      facilityId: url.searchParams.get("facilityId"), query: url.searchParams.get("q") ?? "", category: url.searchParams.get("category") ?? "",
+      facilityId: url.searchParams.get("facilityId"), query: url.searchParams.get("q") ?? "", residentId: url.searchParams.get("residentId") ?? "", clientQuery: url.searchParams.get("clientQuery") ?? "", clientOffset: Number(url.searchParams.get("clientOffset") ?? 0), category: url.searchParams.get("category") ?? "",
       from: url.searchParams.get("from") ?? "", to: url.searchParams.get("to") ?? "", cursor: url.searchParams.get("cursor") ?? undefined,
       limit: Number(url.searchParams.get("limit") ?? 25)
     };
@@ -90,6 +90,11 @@ function incidentRegister(page) {
   return page.locator('[data-executive-incident-register="true"]');
 }
 
+async function openAllIncidents(page) {
+  await page.locator('[data-executive-community-workspace="incidents"]').getByRole("button", { name: "All incidents", exact: true }).click();
+  await incidentRegister(page).waitFor({ state: "visible" });
+}
+
 function expectedIncidentPage(options = {}) {
   return buildExecutiveDirectorIncidentsResponse(historySnapshot, { facilityId: "337", limit: 25, ...options });
 }
@@ -108,6 +113,7 @@ async function auditFullIncidentHistory(page, state) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${BASE_URL}/executive/dashboard`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-daily-operating-summary="true"]').getByRole("button", { name: "View incidents", exact: true }).click();
+  await openAllIncidents(page);
   const register = incidentRegister(page);
   const search = register.getByRole("searchbox", { name: "Search incidents", exact: true });
   const category = register.getByRole("combobox", { name: "Category", exact: true });
@@ -248,10 +254,12 @@ async function auditFullIncidentHistory(page, state) {
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${BASE_URL}/executive/dashboard?view=incidents&facilityId=342`, { waitUntil: "domcontentloaded" });
+  await openAllIncidents(page);
   await waitForIncidentRows(page, firstPage);
   assert.equal(await page.locator('[data-executive-community-dashboard="true"] .executive-director-community__masthead h1').innerText(), "San Pablo", "A URL facility override must not switch the authenticated community.");
   state.mode = "partial";
   await page.reload({ waitUntil: "domcontentloaded" });
+  await openAllIncidents(page);
   await waitForIncidentRows(page, firstPage);
   assert.equal(await register.locator('[data-executive-incident-total="true"]').innerText(), "75");
   assert.equal(await register.getByText("Published incidents", { exact: true }).isVisible(), true, "A bounded snapshot's published count must not be labeled as a complete incident total.");
@@ -261,6 +269,7 @@ async function auditFullIncidentHistory(page, state) {
   assert.match(await register.locator('[data-executive-incident-coverage="partial"]').innerText(), /67 individual records.*75 incidents/);
   state.mode = "unavailable";
   await page.reload({ waitUntil: "domcontentloaded" });
+  await openAllIncidents(page);
   await register.getByRole("button", { name: "Retry incident history", exact: true }).waitFor({ state: "visible" });
   assert.equal(await register.locator('[data-executive-incident-total="true"]').innerText(), "—", "Unavailable history must not claim zero incidents.");
   assert.equal(await register.locator('[data-executive-incident-matches="true"]').innerText(), "—");
@@ -273,6 +282,7 @@ async function auditFullIncidentHistory(page, state) {
   assert.equal(await register.locator('[data-executive-incident-matches="true"]').innerText(), "0");
   state.mode = "ready";
   await page.reload({ waitUntil: "domcontentloaded" });
+  await openAllIncidents(page);
   await waitForIncidentRows(page, firstPage);
   assert.ok(state.requests.every((request) => request.facilityId === "337" && !request.ids.includes(foreignHistoryRow.id)));
   return { total: HISTORY_TOTAL, fullHistoryBeyondPreview: true, offPageSearch: true, dateCategoryReset: true, staleCursorRetryResetPage: true, expandedDetailsKeyboard: true, facilityOverrideIgnored: true, partialCoverageHonest: true, unavailableDistinctFromZero: true, viewportResults, requests: state.requests };
@@ -390,7 +400,11 @@ async function auditTablePanning(page, detail, label) {
 
 async function auditWorkspace(page, detail, workspace, label) {
   await auditTouchTargets(detail, label);
-  const monthLabels = { census: "Census month", incidents: "Incident month", medications: "Medication month" };
+  if (workspace.key === "incidents" && await page.evaluate(() => window.innerWidth < 640)) {
+    const fontSize = await detail.getByRole("searchbox", { name: "Search clients with incidents" }).evaluate((input) => Number.parseFloat(getComputedStyle(input).fontSize));
+    if (fontSize < 16) auditFindings.push({ label, issue: "Client search must avoid mobile browser zoom.", fontSize });
+  }
+  const monthLabels = { census: "Census month", medications: "Medication month" };
   if (monthLabels[workspace.key]) await auditSelectedMonth(page, detail, monthLabels[workspace.key], label);
   if (workspace.key === "admissions") {
     const tabs = detail.getByRole("tablist", { name: "Impending admits", exact: true }).getByRole("tab");
@@ -726,40 +740,36 @@ async function verifyPeriodSelection(modal, view, page) {
     await modal.getByRole("group", { name: "Monthly census history" }).getByRole("button", { name: /^Oct\b/ }).click();
   }
   if (view === "incidents") {
-    await modal.getByRole("tablist", { name: "Incident month" }).getByRole("tab", { name: /^Sep\b/ }).click();
-    const categoryPanel = modal.locator(".incident-register__categories");
-    if (!/2 available records of 397 incidents/.test(await categoryPanel.innerText()) || await categoryPanel.locator("ol > li").count() !== 2) {
-      throw new Error("Historical category mix must expose loaded-record coverage, not reuse the current month's totals.");
-    }
-    await waitForIncidentRows(page, expectedIncidentPage({ from: "2026-09-01", to: "2026-09-30" }));
-    await categoryPanel.getByRole("button", { name: /Fall.*1.*50%/ }).click();
-    await waitForIncidentRows(page, expectedIncidentPage({ category: "Fall", from: "2026-09-01", to: "2026-09-30" }));
-    assert.equal(await incidentRegister(page).getByRole("combobox", { name: "Category", exact: true }).inputValue(), "Fall");
-    assert.equal(await incidentRegister(page).locator("[data-executive-incident-row]").count(), 10, "Chart categories must query all historical records, not the one-row capped preview.");
-    await modal.getByRole("tablist", { name: "Incident month" }).getByRole("tab", { name: /^Aug\b/ }).click();
-    if (await categoryPanel.locator("ol > li").count() || !/No category records for this month are included in the loaded history/.test(await categoryPanel.innerText())) throw new Error("The category summary must not carry forward a different month's preview.");
-    await waitForIncidentRows(page, expectedIncidentPage({ from: "2026-08-01", to: "2026-08-31" }));
-    assert.equal(await incidentRegister(page).getByRole("combobox", { name: "Category", exact: true }).inputValue(), "");
-    assert.equal(await incidentRegister(page).locator('[data-executive-incident-matches="true"]').innerText(), "27", "The full register must expose August records even when its dashboard preview has none.");
-    await modal.getByRole("tablist", { name: "Incident month" }).getByRole("tab", { name: /^Oct\b/ }).click();
-    await waitForIncidentRows(page, expectedIncidentPage({ from: "2026-10-01", to: "2026-10-31" }));
+    const clients = modal.locator('[data-incident-client-triage="true"]');
+    await clients.getByRole("heading", { name: "Clients with incident records", exact: true }).waitFor({ state: "visible" });
+    assert.equal(await incidentRegister(page).count(), 0, "The incident workspace must start with clients rather than a register or category buckets.");
+    assert.equal(await clients.locator("li").count(), 20, "Client triage should show a bounded first page from the full incident source.");
+    await clients.getByRole("button", { name: "Next clients", exact: true }).click();
+    await clients.getByText("Showing 21–40 of 67 matching linked clients").waitFor({ state: "visible" });
+    assert.equal(await clients.locator("li").count(), 20, "The client list must browse beyond the first 20 without a name search.");
+    await clients.getByRole("button", { name: "Previous clients", exact: true }).click();
+    await clients.getByText("Showing 1–20 of 67 matching linked clients").waitFor({ state: "visible" });
+    const clientSearch = clients.getByRole("searchbox", { name: "Search clients with incidents" });
+    await clientSearch.fill("Archive Search Resident");
+    await clients.getByRole("button", { name: `View incidents for ${ARCHIVED_RESIDENT}` }).waitFor({ state: "visible" });
+    await clients.getByRole("button", { name: `View incidents for ${ARCHIVED_RESIDENT}` }).click();
+    const exactClient = expectedIncidentPage({ residentId: "history-resident-67" });
+    await waitForIncidentRows(page, exactClient);
+    assert.equal(await incidentRegister(page).locator("[data-executive-incident-row]").count(), 1, "Selecting a client must query exact resident ID across historical records.");
+    await modal.getByRole("button", { name: "All clients", exact: true }).click();
+    await modal.getByRole("button", { name: "All incidents", exact: true }).click();
+    await waitForIncidentRows(page, expectedIncidentPage());
+    assert.equal(await modal.locator(".incident-register__categories").count(), 0, "Category buckets must not precede the client view.");
+    await modal.getByRole("button", { name: "Clients", exact: true }).click();
   }
   if (view === "medications") {
-    const history = modal.getByRole("group", { name: "Medication compliance history" });
-    await history.getByRole("button", { name: /^Sep\b/ }).click();
+    const history = modal.getByRole("tablist", { name: "Medication month" });
+    await history.getByRole("tab", { name: /^Sep\b/ }).click();
     const composition = await modal.locator(".mar-binder__composition").innerText();
-    const watch = modal.locator(".mar-binder__watch");
-    if (!/September 2026[\s\S]*10,644[\s\S]*10,005[\s\S]*639/.test(composition) || !/September Medication Resident/.test(await watch.innerText()) || /Maria Gomez|Robert Allen/.test(await watch.innerText())) {
-      throw new Error("Historical MAR totals and resident watch must use only the selected month.");
+    if (!/September 2026[\s\S]*10,005 medication administrations were recorded as given/.test(composition) || /refus|not given|exception/i.test(await modal.innerText())) {
+      throw new Error("Historical MAR detail must show only administrations given for the selected month.");
     }
-    if (await modal.locator("tbody tr").count() !== 1 || !/September medication/.test(await modal.locator("table").innerText())) {
-      throw new Error("September MAR must show its single exception record without October rows.");
-    }
-    await history.getByRole("button", { name: /^Aug\b/ }).click();
-    if (!/No resident exception records for this month are included in the loaded history/.test(await watch.innerText()) || !/No medication exception records for this month are included in the loaded history/.test(await modal.locator("table").innerText()) || /Maria Gomez|September Medication Resident/.test(await watch.innerText())) {
-      throw new Error("A MAR month without exception detail must not fall back to another month's resident watch.");
-    }
-    await history.getByRole("button", { name: /^Oct\b/ }).click();
+    await history.getByRole("tab", { name: /^Oct\b/ }).click();
   }
 }
 

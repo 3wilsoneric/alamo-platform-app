@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import { X } from "lucide-react";
 import type {
   CommunityIncidentDetailRecord,
@@ -177,7 +178,7 @@ export function IncidentCategoryDrilldownModal({
     <>
     <ReportingDrilldownShell
       eyebrow="Incident Category"
-      title={category}
+      title={displayIncidentLabel(category)}
       subtitle={`${formatNumber(rows.length)} incident${rows.length === 1 ? "" : "s"} in ${monthLabel}. Open an event for its complete loaded report or select a resident to continue to the profile.`}
       onClose={onClose}
     >

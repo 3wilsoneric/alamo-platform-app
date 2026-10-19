@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import {
   AlertTriangle,
   ChevronDown,
@@ -687,7 +688,7 @@ export default function CommunitiesPage({
                   </div>
                   <div className="mt-1 text-[12px] leading-5 text-white/48">
                     {recentIncident
-                      ? `${recentIncident.incident_type || recentIncident.category || "Incident"} · ${formatIncidentDate(
+                      ? `${displayIncidentLabel(recentIncident.incident_type || recentIncident.category || "Incident")} · ${formatIncidentDate(
                           recentIncident.incident_date ?? recentIncident.received_at
                         )}`
                       : "Incident detail is not available for this community."}
@@ -838,7 +839,7 @@ export default function CommunitiesPage({
                         : "border-[#d9d9d9] bg-white text-[#595959] hover:border-[#111111] hover:text-[#111111]"
                     }`}
                   >
-                    {category}
+                    {displayIncidentLabel(category)}
                   </button>
                 ))}
                 <button
@@ -888,7 +889,7 @@ export default function CommunitiesPage({
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {selectedIncident.category ? <DetailPill>{selectedIncident.category}</DetailPill> : null}
+                      {selectedIncident.category ? <DetailPill>{displayIncidentLabel(selectedIncident.category)}</DetailPill> : null}
                       {selectedIncident.injury_occurred ? <DetailPill>Injury</DetailPill> : null}
                       {selectedIncident.police_called ? <DetailPill>Emergency</DetailPill> : null}
                       {selectedIncident.sentinel_event ? <DetailPill>Sentinel</DetailPill> : null}
@@ -899,7 +900,7 @@ export default function CommunitiesPage({
                       <div className="flex items-center justify-between gap-3">
                         <span>Incident type</span>
                         <span className="max-w-[220px] truncate font-medium text-[#111111]">
-                          {selectedIncident.incident_type || "—"}
+                          {displayIncidentLabel(selectedIncident.incident_type || "—")}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">

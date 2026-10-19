@@ -15,8 +15,8 @@ export function createIncidentCategoryTools({ normalizeText }) {
   function getIncidentCategoryFilter(content, rows = []) {
     const text = normalizeText(content);
     if (/\b(awol|elopement|eloped)\b/.test(text)) return "awol";
-    if (/\b(medication refusal|med refusal|refusal|refused meds?)\b/.test(text)) return "medication refusal";
-    if (/\b(substance|drug|alcohol|aggressive|aggression)\b/.test(text)) return "other";
+    if (/\b(medication refusal|med refusal|refusal|refused meds?|passed on meds?)\b/.test(text)) return "medication refusal";
+    if (/\b(substance|drug|alcohol|aggressive|aggression|difficult interaction)\b/.test(text)) return "other";
     if (/\bother\b/.test(text)) return "other";
     if (/\b(fall|falls)\b/.test(text)) return "fall";
     const discoveredCategory = [...new Set(rows.map((row) => row.category ?? row.incident_type).filter(Boolean))]

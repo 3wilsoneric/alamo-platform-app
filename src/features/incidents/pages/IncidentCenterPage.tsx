@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
@@ -140,7 +141,7 @@ function DetailPanel({
           ["Diagnosis", incident.primary_diagnosis || "—"],
           ["Physician", incident.physician || "—"],
           ["Staff", incident.staff_name || incident.sender],
-          ["Type", incident.incident_type],
+          ["Type", displayIncidentLabel(incident.incident_type)],
           ["Location", incident.location || "—"],
           ["Date", incident.incident_date || "—"],
           ["Score", incident.triage_score],
@@ -307,7 +308,7 @@ function IncidentCard({
       </div>
 
       <div style={{ fontSize: 11.5, color: "#736657", marginBottom: 8 }}>
-        {incident.incident_type || "general"} · {incident.staff_name || incident.sender}
+        {displayIncidentLabel(incident.incident_type || "general")} · {incident.staff_name || incident.sender}
       </div>
 
       {(incident.flags || []).length > 0 && (

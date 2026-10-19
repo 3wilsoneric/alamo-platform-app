@@ -6,6 +6,16 @@ import { assertExecutiveDirectorAccess, resolveExecutiveDirectorFacility } from 
 import { buildExecutiveDirectorIncidentsResponse, getExecutiveDirectorIncidents, normalizeExecutiveIncidentOptions } from "../server/executive-director-incidents.mjs";
 import { buildExecutiveIncidentLiveSql } from "../server/executive-director-incidents-live.mjs";
 import { getPlatformIncidentHistory } from "../server/platform-incident-history.mjs";
+import { displayIncidentLabel } from "../shared/incident-display-labels.mjs";
+import { LIC624_INCIDENT_TYPE_FIELDS } from "../shared/lic624-contracts.mjs";
+
+assert.equal(displayIncidentLabel("Medication Refusal"), "Passed on meds");
+assert.equal(displayIncidentLabel("Med refusal"), "Passed on meds");
+assert.equal(displayIncidentLabel("Aggressive Behavior"), "Difficult interaction");
+assert.equal(displayIncidentLabel("Aggressive behaviour"), "Difficult interaction");
+assert.equal(displayIncidentLabel("Fall"), "Fall");
+assert.equal(displayIncidentLabel("Aggressive act / another client"), "Aggressive act / another client", "State LIC 624 choices are not Platform incident-category labels.");
+assert.equal(LIC624_INCIDENT_TYPE_FIELDS.find((field) => field.key === "aggressive_client")?.label, "Aggressive act / another client", "Do not rewrite the state-defined LIC 624 form before intake.");
 
 const rows = [
   ...Array.from({ length: 75 }, (_, index) => ({
@@ -39,6 +49,10 @@ const first = buildExecutiveDirectorIncidentsResponse(snapshot, options);
 assert.equal(first.totalIncidents, 77);
 assert.equal(first.matchingIncidents, 77);
 assert.equal(first.incidents.length, 25);
+assert.equal(first.clientCount, 75);
+assert.equal(first.clients.length, 20);
+assert.equal(first.unlinkedCount, 2);
+assert.equal(first.clients.every((client) => client.facilityId === "344"), true);
 assert.equal(first.coverage.status, "partial");
 assert.equal(first.coverage.startDate, "2020-01-02");
 assert.equal(first.coverage.reportedTotal, 76);
@@ -63,6 +77,15 @@ const search = buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, q
 assert.deepEqual(search.incidents.map((row) => row.id), ["historic"]);
 assert.equal(search.totalIncidents, 77);
 assert.equal(search.matchingIncidents, 1);
+const clientSearch = buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, clientQuery: "resident-74", limit: 1 });
+assert.deepEqual(clientSearch.clients.map((client) => client.residentId), ["resident-74"]);
+assert.equal(clientSearch.clientCount, 1);
+const secondClientPage = buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, clientOffset: 20, limit: 1 });
+assert.equal(secondClientPage.clientOffset, 20);
+assert.equal(secondClientPage.clients.length, 20);
+assert.equal(secondClientPage.clients.some((client) => first.clients.some((firstClient) => firstClient.residentId === client.residentId)), false);
+assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, residentId: "resident-74" }).matchingIncidents, 1);
+assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, residentId: "resident-7" }).incidents.every((incident) => incident.residentId === "resident-7"), true, "Resident drilldown must use an exact ID, not a substring search.");
 assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, query: "Cross-community" }).matchingIncidents, 0);
 const historic = buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, from: "2020-01-02", to: "2020-01-02", category: "Historical" });
 assert.deepEqual(historic.incidents.map((row) => row.id), ["historic"]);
@@ -80,6 +103,7 @@ assert.equal(portfolio.coverage.status, "partial");
 assert.equal(buildExecutiveDirectorIncidentsResponse(snapshot, { facilityId: "all", query: "Cross-community" }, { allowPortfolio: true }).incidents[0].id, "private-other-community");
 const sameIdDifferentFacility = buildExecutiveDirectorIncidentsResponse(snapshotFor([rows[0], { ...rows[0], facility_id: "337" }]), { facilityId: "all" }, { allowPortfolio: true });
 assert.equal(sameIdDifferentFacility.totalIncidents, 2, "A source ID shared by two communities must not collapse distinct records.");
+assert.equal(sameIdDifferentFacility.clientCount, 2, "Same resident ID at another community must not merge client summaries.");
 assert.deepEqual(sameIdDifferentFacility.incidents.map((row) => row.facilityId), ["337", "344"], "Cross-community page ordering needs a stable facility tie-breaker.");
 assert.throws(() => normalizeExecutiveIncidentOptions({ facilityId: "all" }), (error) => error.statusCode === 400);
 const portfolioEndpoint = await getPlatformIncidentHistory(new URL("http://localhost/api/platform/incidents/history?facilityId=all&year=2020"), { query: async () => { throw new Error("offline"); }, readSnapshot: async () => snapshot });
@@ -93,13 +117,13 @@ assert.equal(buildExecutiveDirectorIncidentsResponse({}, options).totalIncidents
 assert.equal(buildExecutiveDirectorIncidentsResponse({}, options).status, "unavailable");
 
 for (const invalid of [
-  { facilityId: "999" }, { query: "x".repeat(161) }, { query: "line\nbreak" }, { query: 2 },
+  { facilityId: "999" }, { query: "x".repeat(161) }, { query: "line\nbreak" }, { query: 2 }, { residentId: "x".repeat(101) }, { clientQuery: "x".repeat(161) }, { clientOffset: -1 }, { clientOffset: "1x" },
   { category: "x".repeat(161) }, { incidentType: "x".repeat(161) }, { priority: "critical" }, { year: "202A" }, { sort: "nonsense" }, { from: "2026-02-30" }, { to: "invalid" },
   { from: "2026-10-09", to: "2026-10-08" }, { limit: "2x" }, { limit: 0 }, { limit: 101 }, { limit: -1 }, { limit: 1.5 },
   { cursor: "not-a-cursor" }, { cursor: Buffer.from(JSON.stringify([1, "a".repeat(64), -2])).toString("base64url") },
   { cursor: Buffer.from(JSON.stringify([2, "a".repeat(64), "b".repeat(64), 2_147_483_648])).toString("base64url") }
 ]) assert.throws(() => normalizeExecutiveIncidentOptions({ ...options, ...invalid }), (error) => error.statusCode === 400);
-for (const changed of [{ facilityId: "337" }, { query: "fall" }, { category: "Fall" }, { incidentType: "Physical fall" }, { priority: "high" }, { year: "2020" }, { sort: "date_asc" }, { to: "2026-10-01" }]) {
+for (const changed of [{ facilityId: "337" }, { query: "fall" }, { residentId: "resident-74" }, { clientQuery: "resident-74" }, { clientOffset: 20 }, { category: "Fall" }, { incidentType: "Physical fall" }, { priority: "high" }, { year: "2020" }, { sort: "date_asc" }, { to: "2026-10-01" }]) {
   assert.throws(() => buildExecutiveDirectorIncidentsResponse(snapshot, { ...options, ...changed, cursor: first.nextCursor }), (error) => error.statusCode === 409);
 }
 assert.throws(() => buildExecutiveDirectorIncidentsResponse(snapshotFor(rows.slice(1)), { ...options, cursor: first.nextCursor }), (error) => error.statusCode === 409);
@@ -116,10 +140,16 @@ const revision = "a".repeat(64);
 const generatedSql = [];
 function liveFixture(sql, revisionValue = revision, total = 77) {
   generatedSql.push(sql);
-  const offset = Number(sql.match(/OFFSET (\d+)/)?.[1] ?? 0);
-  const requested = Number(sql.match(/LIMIT (\d+) OFFSET/)?.[1]);
+  const incidentPage = sql.match(/page_rows AS \([\s\S]*?LIMIT (\d+) OFFSET (\d+)/);
+  const requested = Number(incidentPage?.[1]);
+  const offset = Number(incidentPage?.[2] ?? 0);
+  const clientOffset = Number(sql.match(/client_page AS \([\s\S]*?LIMIT 20 OFFSET (\d+)/)?.[1] ?? 0);
   return [
-    { kind: "summary", payload: JSON.stringify({ total, matching: total, start_date: total ? "2020-01-02" : null, end_date: total ? "2026-10-28" : null, revision: revisionValue }) },
+    { kind: "summary", payload: JSON.stringify({ total, matching: total, client_count: total ? 2 : 0, unlinked_count: 0, start_date: total ? "2020-01-02" : null, end_date: total ? "2026-10-28" : null, revision: revisionValue }) },
+    ...(total && clientOffset === 0 ? [
+      { kind: "client", payload: JSON.stringify({ facility_id: "344", resident_id: "resident-1", client_name: "Synthetic One", incident_count: 2, latest_date: "2026-10-28", latest_priority: "high", latest_type: "Other", latest_category: "Other" }) },
+      { kind: "client", payload: JSON.stringify({ facility_id: "344", resident_id: "resident-2", client_name: "Synthetic Two", incident_count: 1, latest_date: "2026-10-27", latest_priority: "low", latest_type: "Other", latest_category: "Other" }) }
+    ] : []),
     ...(total ? [{ kind: "category", payload: JSON.stringify({ label: "Other", count: total }) }] : []),
     ...(total ? [{ kind: "type", payload: JSON.stringify({ label: "Not recorded", count: total }) }] : []),
     ...(total ? [{ kind: "year", payload: JSON.stringify({ label: "2026", count: total }) }] : []),
@@ -135,6 +165,9 @@ assert.equal(liveFirst.coverage.status, "complete");
 assert.equal(liveFirst.freshness.warning, null);
 assert.equal(liveFirst.incidents[0].id, "live-0");
 assert.equal(liveFirst.incidents[0].emergencyServicesNotified, false);
+assert.deepEqual(liveFirst.clients.map((client) => client.residentId), ["resident-1", "resident-2"]);
+const liveClientPage = await getExecutiveDirectorIncidents({ ...options, clientOffset: 20 }, liveDependencies);
+assert.equal(liveClientPage.clients.length, 0);
 assert.equal(fallbackReads, 0);
 const liveSecond = await getExecutiveDirectorIncidents({ ...options, cursor: liveFirst.nextCursor }, liveDependencies);
 assert.equal(liveSecond.incidents[0].id, "live-25");
@@ -146,6 +179,8 @@ assert.match(portfolioSql, /priority = decode\(unhex/);
 assert.match(portfolioSql, /year\(incident_date\) = 2026/);
 assert.match(portfolioSql, /WHEN 'high' THEN 0/);
 assert.match(portfolioSql, /facility_id ASC, id ASC/);
+assert.match(portfolioSql, /PARTITION BY facility_id, resident_id/);
+assert.match(portfolioSql, /client_page AS \(/);
 assert.match(generatedSql[0], /LEFT JOIN resident_names r ON cast\(i\.Facility AS string\) = r\.facility_id AND cast\(i\.Res_Number AS string\) = r\.resident_id/);
 assert.equal((generatedSql[0].match(/= decode\(unhex\('333434'\)/g) ?? []).length, 2, "Both incident and resident-name queries must be scoped.");
 assert.doesNotMatch(generatedSql[0], /add_months|LIMIT (50|250|15000)\b|WHERE i\.Incident_Date_parsed IS NOT NULL/);
@@ -156,6 +191,9 @@ assert.match(literalSql, /instr\(lower\(concat_ws/);
 assert.equal(literalSql.includes(Buffer.from(literal).toString("hex")), true);
 assert.match(literalSql, /incident_date >= cast\(decode\(unhex/);
 assert.match(literalSql, /incident_date <= cast\(decode\(unhex/);
+const clientLiteralSql = buildExecutiveIncidentLiveSql(normalizeExecutiveIncidentOptions({ ...options, residentId: literal, clientQuery: literal }));
+assert.equal(clientLiteralSql.includes(literal), false);
+assert.match(clientLiteralSql, /resident_id = decode\(unhex/);
 const queryCount = generatedSql.length;
 await assert.rejects(() => getExecutiveDirectorIncidents({ ...options, cursor: liveFirst.nextCursor, query: "changed" }, liveDependencies), (error) => error.statusCode === 409);
 assert.equal(generatedSql.length, queryCount, "A changed-filter cursor must fail before a warehouse query.");

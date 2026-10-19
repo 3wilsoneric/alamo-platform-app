@@ -1,3 +1,5 @@
+import { displayIncidentLabel } from "../../../shared/incident-display-labels.mjs";
+
 export interface IncidentCategoryItem {
   label: string;
   count: number;
@@ -52,7 +54,7 @@ export function IncidentCategoriesModule({
           <>
             <div className="flex items-start justify-between gap-4">
               <div className={`min-w-0 break-words text-[14px] font-semibold leading-5 ${dark ? "text-white/88" : "text-[#111111]"}`}>
-                {item.label}
+                {displayIncidentLabel(item.label)}
               </div>
               <div className={`flex shrink-0 items-center gap-2 pt-0.5 text-[15px] font-semibold tabular-nums ${dark ? "text-white" : "text-[#111111]"}`}>
                 <span>{item.count.toLocaleString()}</span>
@@ -88,7 +90,7 @@ export function IncidentCategoriesModule({
             type="button"
             data-module-row="incident-category"
             data-incident-category-drilldown={item.label}
-            aria-label={`Open ${item.label} incident reports`}
+            aria-label={`Open ${displayIncidentLabel(item.label)} incident reports`}
             onClick={() => onSelect(item.label)}
             className={className}
           >

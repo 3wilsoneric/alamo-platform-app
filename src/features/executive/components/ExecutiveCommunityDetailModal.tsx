@@ -4,11 +4,11 @@ import { createPortal } from "react-dom";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 import { ExecutiveTrendChart } from "./ExecutiveTrendChart";
 import { ExecutiveIncidentRegister } from "./ExecutiveIncidentRegister";
+import { ExecutiveIncidentClients, type IncidentClient } from "./ExecutiveIncidentClients";
 import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot";
 import type { ExecutiveDirectorCommunityDashboardResponse } from "../data/executiveDirectorApi";
 import { formatImpendingAdmissionDate, impendingAdmissionCards } from "./executiveAdmissions";
 import { formatExecutiveDate, formatExecutiveNumber } from "./executiveDashboardFormatters";
-import { executiveIncidentCategoryPeriod } from "./executiveIncidentCategories";
 
 export type ExecutiveCommunityDetailView = "census" | "incidents" | "medications" | "admissions";
 
@@ -79,7 +79,7 @@ export function ExecutiveCommunityDetailModal({
         <div className="executive-material-dialog__scroll">
           {sourceNotice ? <p role="status" className="executive-client-source-notice">{sourceNotice}</p> : null}
           {view === "census" ? <CensusDetail facilityName={facility.shortName} dashboard={dashboard} onClose={onClose} closeButtonRef={closeButtonRef} /> : null}
-          {view === "incidents" ? <IncidentDetail facilityId={facility.facilityId} facilityName={facility.shortName} dashboard={dashboard} onClose={onClose} closeButtonRef={closeButtonRef} /> : null}
+          {view === "incidents" ? <IncidentDetail facilityId={facility.facilityId} facilityName={facility.shortName} onClose={onClose} closeButtonRef={closeButtonRef} /> : null}
           {view === "medications" ? <MedicationDetail facilityName={facility.shortName} dashboard={dashboard} onClose={onClose} closeButtonRef={closeButtonRef} /> : null}
           {view === "admissions" ? <AdmissionsDetail facilityName={facility.shortName} dashboard={dashboard} initialAdmissionId={initialAdmissionId ?? null} onSelectionChange={onAdmissionSelectionChange} onOpenCard={onOpenAdmissionCard} onClose={onClose} closeButtonRef={closeButtonRef} /> : null}
         </div>
@@ -93,11 +93,13 @@ export function ExecutiveCommunityWorkspace({
   facility,
   dashboard,
   view,
+  initialIncidentClient,
   onBack
 }: {
   facility: ExecutiveDirectorCommunityDashboardResponse["facility"];
   dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"];
   view: "incidents" | "medications";
+  initialIncidentClient?: IncidentClient | null;
   onBack: () => void;
 }) {
   const backButtonRef = useRef<HTMLButtonElement>(null);
@@ -109,7 +111,7 @@ export function ExecutiveCommunityWorkspace({
       className={`app-theme-root executive-material-workspace executive-material-workspace--${view}`}
     >
       {view === "incidents"
-        ? <IncidentDetail facilityId={facility.facilityId} facilityName={facility.shortName} dashboard={dashboard} onClose={onBack} closeButtonRef={backButtonRef} embedded />
+        ? <IncidentDetail facilityId={facility.facilityId} facilityName={facility.shortName} initialClient={initialIncidentClient ?? null} onClose={onBack} closeButtonRef={backButtonRef} embedded />
         : <MedicationDetail facilityName={facility.shortName} dashboard={dashboard} onClose={onBack} closeButtonRef={backButtonRef} embedded />}
     </section>
   );
@@ -223,33 +225,14 @@ function ReconciliationCell({ label, value, prefix = "", emphasis = false }: { l
   return <div className={`reconciliation-cell ${emphasis ? "is-emphasis" : ""}`}><span>{label}</span><strong>{prefix}{formatExecutiveNumber(value)}</strong></div>;
 }
 
-function IncidentDetail({ facilityId, facilityName, dashboard, onClose, closeButtonRef, embedded = false }: { facilityId: string; facilityName: string; dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"]; onClose: () => void; closeButtonRef: React.RefObject<HTMLButtonElement | null>; embedded?: boolean }) {
-  const periodPanelId = useId();
-  const [selectedMonth, setSelectedMonth] = useState(dashboard.incidentTrend.at(-1)?.month ?? null);
-  const [registerFilter, setRegisterFilter] = useState<{ category: string | null; from: string; to: string; key: number; scroll?: boolean }>();
-  const selected = dashboard.incidentTrend.find((point) => point.month === selectedMonth) ?? dashboard.incidentTrend.at(-1);
-  const categoryPeriod = executiveIncidentCategoryPeriod(dashboard, selectedMonth);
-  const categories = categoryPeriod.categories;
-  const categoryTotal = categoryPeriod.recordCount;
-  const maximum = Math.max(...categories.map((item) => item.count), 1);
-  function filterRecords(month: string | null, category: string | null, scroll = false) {
-    const [year, monthNumber] = (month ?? "").split("-").map(Number);
-    const validMonth = Boolean(year && monthNumber && monthNumber >= 1 && monthNumber <= 12);
-    const from = validMonth ? month + "-01" : "";
-    const to = validMonth ? new Date(Date.UTC(year!, monthNumber!, 0)).toISOString().slice(0, 10) : "";
-    setRegisterFilter((current) => ({ category, from, to, key: (current?.key ?? 0) + 1, scroll }));
-  }
-  function selectMonth(month: string) { setSelectedMonth(month); filterRecords(month, null); }
-  function selectCategory(category: string) { filterRecords(selectedMonth, category, true); }
+function IncidentDetail({ facilityId, facilityName, initialClient, onClose, closeButtonRef, embedded = false }: { facilityId: string; facilityName: string; initialClient?: IncidentClient | null; onClose: () => void; closeButtonRef: React.RefObject<HTMLButtonElement | null>; embedded?: boolean }) {
+  const [selectedClient, setSelectedClient] = useState<IncidentClient | null>(initialClient ?? null);
+  const [showAll, setShowAll] = useState(false);
   return <div data-executive-detail-view="incidents" data-incident-register="true" className="incident-register">
-    <div className="incident-register__book-tabs"><h1 id={embedded ? "executive-community-workspace-title" : "executive-community-dialog-title"}>{facilityName}</h1><strong><ClipboardList aria-hidden="true" />Incident register</strong><div><span>{facilityName}</span><i aria-hidden="true">/</i><span>Incidents</span><button ref={closeButtonRef} type="button" onClick={onClose} aria-label={embedded ? "Back to overview" : "Close Incidents detail"} className={embedded ? "executive-material-workspace__back" : undefined}>{embedded ? <><ArrowLeft aria-hidden="true" /><span>Back to overview</span></> : <X aria-hidden="true" />}</button></div></div>
-    <PeriodTabs months={dashboard.incidentTrend.slice(-12).map((point) => point.month)} selectedMonth={selectedMonth} onSelect={selectMonth} label="Incident month" className="incident-register__months" panelId={periodPanelId} />
-    <div className="incident-register__sheet" id={periodPanelId} role="tabpanel" aria-labelledby={selectedMonth ? `${periodPanelId}-${selectedMonth}` : undefined}>
-      <div className="incident-register__primary">
-        <section className="material-panel incident-register__chart"><div className="material-panel__title"><ClipboardList aria-hidden="true" /><h2>12-month volume</h2><strong>{formatExecutiveNumber(selected?.count)}</strong></div><OperationalLineChart points={dashboard.incidentTrend.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { fallback: item.month, month: "short" }), value: item.count }))} accent="#a33d26" selectedId={selectedMonth} onSelect={selectMonth} ariaLabel="Monthly incident volume" /></section>
-        <section className="material-panel incident-register__categories"><div className="material-panel__title"><Circle aria-hidden="true" /><h2>Category mix</h2></div><p className="mb-3 text-sm text-slate-600">{selectedMonth ? formatMonthLabel(selectedMonth, { month: "long" }) : "No period"} · {categoryPeriod.complete ? `${formatExecutiveNumber(categoryTotal)} incidents` : `${categoryPeriod.recordCount} available records${categoryPeriod.totalCount != null ? ` of ${formatExecutiveNumber(categoryPeriod.totalCount)} incidents` : ""}`}</p>{categories.length ? <ol>{categories.slice(0, 6).map((item) => <li key={item.label}><button type="button" onClick={() => selectCategory(item.label)}><span>{item.label}</span><i><b style={{ width: `${(item.count / maximum) * 100}%` }} /></i><strong>{formatExecutiveNumber(item.count)}</strong><em>{categoryTotal > 0 ? formatExecutiveNumber((item.count / categoryTotal) * 100, "%") : "—"}</em></button></li>)}</ol> : <EmptyState>No category records for this month are included in the loaded history.</EmptyState>}</section>
-      </div>
-      <ExecutiveIncidentRegister key={facilityId} facilityId={facilityId} {...(registerFilter ? { focusFilter: registerFilter } : {})} />
+    <div className="incident-register__book-tabs"><h1 id={embedded ? "executive-community-workspace-title" : "executive-community-dialog-title"}>{facilityName}</h1><strong><ClipboardList aria-hidden="true" />Incident records</strong><div><span>{facilityName}</span><i aria-hidden="true">/</i><span>Incidents</span><button ref={closeButtonRef} type="button" onClick={onClose} aria-label={embedded ? "Back to overview" : "Close Incidents detail"} className={embedded ? "executive-material-workspace__back" : undefined}>{embedded ? <><ArrowLeft aria-hidden="true" /><span>Back to overview</span></> : <X aria-hidden="true" />}</button></div></div>
+    <div className="incident-register__sheet">
+      <nav className="incident-register__navigation" aria-label="Incident record views"><button type="button" aria-current={!showAll && !selectedClient ? "page" : undefined} onClick={() => { setShowAll(false); setSelectedClient(null); }}>Clients</button><button type="button" aria-current={showAll ? "page" : undefined} onClick={() => { setShowAll(true); setSelectedClient(null); }}>All incidents</button></nav>
+      {selectedClient && !showAll ? <div className="incident-register__client-detail"><button type="button" className="incident-register__client-back" onClick={() => setSelectedClient(null)}><ArrowLeft aria-hidden="true" />All clients</button><ExecutiveIncidentRegister key={`${facilityId}:${selectedClient.residentId}`} facilityId={facilityId} resident={selectedClient} /></div> : showAll ? <ExecutiveIncidentRegister key={facilityId} facilityId={facilityId} /> : <ExecutiveIncidentClients facilityId={facilityId} onSelect={setSelectedClient} />}
     </div>
   </div>;
 }

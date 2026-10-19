@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, RefreshCw, Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import {
   fetchExecutiveDirectorIncidents,
   fetchPlatformIncidentHistory,
@@ -8,6 +9,7 @@ import {
   type ExecutiveDirectorIncidentRegister as IncidentRegisterData
 } from "../data/executiveDirectorApi";
 import { formatExecutiveNumber } from "./executiveDashboardFormatters";
+import type { IncidentClient } from "./ExecutiveIncidentClients";
 import "../executiveIncidentRegister.css";
 
 interface RegisterProps {
@@ -15,6 +17,7 @@ interface RegisterProps {
   mode?: "executive" | "platform";
   onTotal?: (total: number | null) => void;
   focusFilter?: { category: string | null; from: string; to: string; key: number; scroll?: boolean };
+  resident?: IncidentClient;
 }
 
 interface IncidentFilters {
@@ -52,7 +55,7 @@ export function ExecutiveIncidentRegister(props: RegisterProps) {
   return <IncidentRegisterContent key={props.facilityId} {...props} />;
 }
 
-function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focusFilter }: RegisterProps) {
+function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focusFilter, resident }: RegisterProps) {
   const headingId = useId();
   const rowPrefix = useId();
   const [filters, setFilters] = useState<IncidentFilters>(() => ({ ...EMPTY_FILTERS, facility: mode === "platform" && facilityId !== "all" ? facilityId : "" }));
@@ -69,7 +72,7 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
   const resultsRef = useRef<HTMLDivElement>(null);
   const cursor = cursors[page] ?? null;
   const scopeFacilityId = mode === "platform" ? filters.facility || "all" : facilityId;
-  const requestKey = JSON.stringify([scopeFacilityId, mode, filters, cursor, retry]);
+  const requestKey = JSON.stringify([scopeFacilityId, mode, resident?.residentId, filters, cursor, retry]);
   const invalidDates = Boolean(filters.from && filters.to && filters.from > filters.to);
   const activeResult = result?.key === requestKey ? result : null;
   const data = activeResult?.data?.status === "ready" ? activeResult.data : null;
@@ -78,7 +81,7 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
   const hasFilters = Boolean(filters.query || filters.facility || filters.category || filters.incidentType || filters.priority || filters.year || filters.from || filters.to || filters.sort !== "date_desc");
   const publishedCount = catalog?.coverage.status === "partial" && catalog.coverage.reportedTotal != null;
   const total = publishedCount ? catalog.coverage.reportedTotal : catalog?.totalIncidents ?? null;
-  const totalLabel = !catalog || catalog.coverage.status === "complete" ? "Total incidents" : publishedCount ? "Published incidents" : "Available records";
+  const totalLabel = resident ? "Client records" : !catalog || catalog.coverage.status === "complete" ? "Total incidents" : publishedCount ? "Published incidents" : "Available records";
 
   useEffect(() => { onTotal?.(total); }, [onTotal, total]);
 
@@ -102,7 +105,7 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
       try {
         const loader = mode === "platform" ? fetchPlatformIncidentHistory : fetchExecutiveDirectorIncidents;
         const next = await loader(scopeFacilityId, {
-          query: filters.query.trim(), category: filters.category, incidentType: filters.incidentType,
+          query: filters.query.trim(), ...(resident ? { residentId: resident.residentId } : {}), category: filters.category, incidentType: filters.incidentType,
           priority: filters.priority, year: filters.year, sort: filters.sort,
           from: filters.from, to: filters.to, ...(cursor ? { cursor } : {})
         }, controller.signal);
@@ -117,7 +120,7 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
       }
     }, filters.query ? 250 : 0);
     return () => { window.clearTimeout(timeout); controller.abort(); };
-  }, [scopeFacilityId, mode, filters, cursor, requestKey, invalidDates]);
+  }, [scopeFacilityId, mode, resident?.residentId, filters, cursor, requestKey, invalidDates]);
 
   const updateFilters = (next: IncidentFilters) => {
     setFilters(next);
@@ -147,9 +150,9 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
   return (
     <section ref={registerRef} className="executive-incident-register" data-executive-incident-register="true" data-incident-scope={mode} aria-labelledby={headingId}>
       <header className="executive-incident-register__heading">
-        <div><ClipboardList aria-hidden="true" />{mode === "platform" ? <h1 id={headingId}>Incident history</h1> : <h2 id={headingId}>All incidents</h2>}</div>
+        <div><ClipboardList aria-hidden="true" />{mode === "platform" ? <h1 id={headingId}>Incident history</h1> : <h2 id={headingId}>{resident ? `${resident.residentName} · incident history` : "All incidents"}</h2>}</div>
         <dl className="executive-incident-register__counts">
-          <div><dt>{totalLabel}{activeResult?.error && catalog ? " · Last loaded" : ""}</dt><dd data-executive-incident-total="true">{formatExecutiveNumber(total)}</dd></div>
+          <div><dt>{totalLabel}{activeResult?.error && catalog ? " · Last loaded" : ""}</dt><dd data-executive-incident-total="true">{formatExecutiveNumber(resident ? data?.matchingIncidents : total)}</dd></div>
           {publishedCount ? <div><dt>Available records</dt><dd data-executive-incident-available="true">{formatExecutiveNumber(catalog.totalIncidents)}</dd></div> : null}
           <div><dt>Matching records</dt><dd data-executive-incident-matches="true">{formatExecutiveNumber(data?.matchingIncidents)}</dd></div>
         </dl>
@@ -160,8 +163,8 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
         <button className="executive-incident-register__advanced-toggle" type="button" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen((open) => !open)}>Filters{hasFilters && !filters.query ? " · Active" : ""}<ChevronDown aria-hidden="true" /></button>
         {mode === "platform" ? <label className="executive-incident-register__advanced"><span>Community</span><select value={filters.facility} onChange={(event) => updateFilters({ ...filters, facility: event.target.value })}><option value="">All communities</option>{ALAMO_FACILITIES.map((facility) => <option key={facility.facilityId} value={facility.facilityId}>{facility.shortName}</option>)}</select></label> : null}
         <label className="executive-incident-register__advanced"><span>Year occurred</span><select value={filters.year} onChange={(event) => updateFilters({ ...filters, year: event.target.value })}><option value="">All years</option>{filters.year && !catalog?.years?.some((item) => item.label === filters.year) ? <option value={filters.year}>{filters.year}</option> : null}{catalog?.years?.map((item) => <option key={item.label} value={item.label}>{item.label === "undated" ? "Not dated" : item.label} ({formatExecutiveNumber(item.count)})</option>)}</select></label>
-        <label className="executive-incident-register__advanced executive-incident-register__category-filter"><span>Category</span><select value={filters.category} onChange={(event) => updateFilters({ ...filters, category: event.target.value })}><option value="">All categories</option>{filters.category && !catalog?.categories.some((item) => item.label === filters.category) ? <option value={filters.category}>{filters.category}</option> : null}{catalog?.categories.map((item) => <option key={item.label} value={item.label}>{item.label} ({formatExecutiveNumber(item.count)})</option>)}</select></label>
-        <label className="executive-incident-register__advanced"><span>Incident type</span><select value={filters.incidentType} onChange={(event) => updateFilters({ ...filters, incidentType: event.target.value })}><option value="">All types</option>{filters.incidentType && !catalog?.types?.some((item) => item.label === filters.incidentType) ? <option value={filters.incidentType}>{filters.incidentType}</option> : null}{catalog?.types?.map((item) => <option key={item.label} value={item.label}>{item.label} ({formatExecutiveNumber(item.count)})</option>)}</select></label>
+        <label className="executive-incident-register__advanced executive-incident-register__category-filter"><span>Category</span><select value={filters.category} onChange={(event) => updateFilters({ ...filters, category: event.target.value })}><option value="">All categories</option>{filters.category && !catalog?.categories.some((item) => item.label === filters.category) ? <option value={filters.category}>{displayIncidentLabel(filters.category)}</option> : null}{catalog?.categories.map((item) => <option key={item.label} value={item.label}>{displayIncidentLabel(item.label)} ({formatExecutiveNumber(item.count)})</option>)}</select></label>
+        <label className="executive-incident-register__advanced"><span>Incident type</span><select value={filters.incidentType} onChange={(event) => updateFilters({ ...filters, incidentType: event.target.value })}><option value="">All types</option>{filters.incidentType && !catalog?.types?.some((item) => item.label === filters.incidentType) ? <option value={filters.incidentType}>{displayIncidentLabel(filters.incidentType)}</option> : null}{catalog?.types?.map((item) => <option key={item.label} value={item.label}>{displayIncidentLabel(item.label)} ({formatExecutiveNumber(item.count)})</option>)}</select></label>
         <label className="executive-incident-register__advanced"><span>Derived priority</span><select value={filters.priority} onChange={(event) => updateFilters({ ...filters, priority: event.target.value })}><option value="">All priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option><option value="unknown">Unknown</option></select></label>
         <label className="executive-incident-register__advanced"><span>From date</span><input type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => updateFilters({ ...filters, from: event.target.value })} /></label>
         <label className="executive-incident-register__advanced"><span>To date</span><input type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => updateFilters({ ...filters, to: event.target.value })} /></label>
@@ -186,13 +189,13 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
               const expanded = expandedId === recordKey;
               const detailId = `${rowPrefix}-detail-${index}`;
               return <li key={recordKey} data-executive-incident-row={recordKey}>
-                <button type="button" className="executive-incident-register__row" aria-expanded={expanded} aria-controls={detailId} aria-label={`${expanded ? "Hide" : "View"} incident details for ${incident.residentName}, ${incidentDate(incident.date)}, ${incident.category}`} onClick={() => setExpandedId(expanded ? null : recordKey)}>
+                <button type="button" className="executive-incident-register__row" aria-expanded={expanded} aria-controls={detailId} aria-label={`${expanded ? "Hide" : "View"} incident details for ${incident.residentName}, ${incidentDate(incident.date)}, ${displayIncidentLabel(incident.category)}`} onClick={() => setExpandedId(expanded ? null : recordKey)}>
                   <span className="executive-incident-register__date">{incidentDate(incident.date)}</span>
                   <strong className="executive-incident-register__resident">{incident.residentName}</strong>
                   {mode === "platform" ? <span className="executive-incident-register__community">{FACILITY_LABELS.get(incident.facilityId) ?? "Unknown community"}</span> : null}
-                  <span className="executive-incident-register__type">{incident.incidentType || "Not recorded"}</span>
-                  <span className="executive-incident-register__category">{incident.category}</span>
-                  <span className="executive-incident-register__mobile-context">{mode === "platform" ? `${FACILITY_LABELS.get(incident.facilityId) ?? "Unknown community"} · ` : ""}{incident.category}{incident.incidentType && incident.incidentType !== incident.category ? ` · ${incident.incidentType}` : ""}</span>
+                  <span className="executive-incident-register__type">{displayIncidentLabel(incident.incidentType || "Not recorded")}</span>
+                  <span className="executive-incident-register__category">{displayIncidentLabel(incident.category)}</span>
+                  <span className="executive-incident-register__mobile-context">{mode === "platform" ? `${FACILITY_LABELS.get(incident.facilityId) ?? "Unknown community"} · ` : ""}{displayIncidentLabel(incident.category)}{incident.incidentType && incident.incidentType !== incident.category ? ` · ${displayIncidentLabel(incident.incidentType)}` : ""}</span>
                   <span className={`executive-incident-register__priority is-${incident.priority}`}>{incident.priority}</span>
                   <ChevronDown className="executive-incident-register__expand" aria-hidden="true" />
                 </button>
@@ -213,7 +216,7 @@ function IncidentDetails({ incident }: { incident: ExecutiveDirectorIncident }) 
     <dl className="executive-incident-register__facts">
       <div><dt>Occurred</dt><dd>{incidentDate(incident.date, true)}</dd></div>
       <div><dt>Received</dt><dd>{incidentDate(incident.receivedAt, true)}</dd></div>
-      <div><dt>Incident type</dt><dd>{incident.incidentType || incident.category}</dd></div>
+      <div><dt>Incident type</dt><dd>{displayIncidentLabel(incident.incidentType || incident.category)}</dd></div>
       <div><dt>Derived priority</dt><dd>{{ high: "High", medium: "Medium", low: "Low", unknown: "Unknown" }[incident.priority]}</dd></div>
       <div><dt>Location</dt><dd>{incident.location || "Not recorded"}</dd></div>
       <div><dt>Recorded by</dt><dd>{incident.staffName || "Not recorded"}</dd></div>

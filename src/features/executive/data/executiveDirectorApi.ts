@@ -301,6 +301,10 @@ export interface ExecutiveDirectorIncidentRegister {
   totalIncidents: number | null;
   matchingIncidents: number | null;
   incidents: ExecutiveDirectorIncident[];
+  clients: Array<{ facilityId: string; residentId: string; residentName: string; incidentCount: number; latestDate: string | null; latestPriority: ExecutiveDirectorIncident["priority"]; latestType: string | null; latestCategory: string }>;
+  clientCount: number;
+  clientOffset: number;
+  unlinkedCount: number;
   categories: Array<{ label: string; count: number }>;
   types: Array<{ label: string; count: number }>;
   years: Array<{ label: string; count: number }>;
@@ -315,11 +319,14 @@ export interface ExecutiveDirectorIncidentRegister {
   freshness: { stale: boolean; warning: string | null };
 }
 
-type IncidentRegisterOptions = { query?: string; category?: string; incidentType?: string; priority?: string; year?: string; sort?: string; from?: string; to?: string; cursor?: string };
+type IncidentRegisterOptions = { query?: string; residentId?: string; clientQuery?: string; clientOffset?: number; category?: string; incidentType?: string; priority?: string; year?: string; sort?: string; from?: string; to?: string; cursor?: string; limit?: number };
 
 function fetchIncidentRegister(path: string, facilityId: string, options: IncidentRegisterOptions, signal?: AbortSignal) {
-  const params = new URLSearchParams({ facilityId, limit: "25" });
+  const params = new URLSearchParams({ facilityId, limit: String(options.limit ?? 25) });
   if (options.query) params.set("q", options.query);
+  if (options.residentId) params.set("residentId", options.residentId);
+  if (options.clientQuery) params.set("clientQuery", options.clientQuery);
+  if (options.clientOffset) params.set("clientOffset", String(options.clientOffset));
   if (options.category) params.set("category", options.category);
   if (options.incidentType) params.set("type", options.incidentType);
   if (options.priority) params.set("priority", options.priority);

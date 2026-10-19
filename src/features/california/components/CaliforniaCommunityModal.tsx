@@ -1,4 +1,5 @@
 import { ArrowLeft, Search, X } from "lucide-react";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import CommunityDashboardSurface, {
@@ -159,7 +160,7 @@ export default function CaliforniaCommunityModal({
         ? "Census trend"
         : currentView.focus === "incidents"
           ? currentView.category
-            ? `${currentView.category} incidents`
+            ? `${displayIncidentLabel(currentView.category)} incidents`
             : "Incidents"
           : currentView.focus === "medications"
             ? "Medications"

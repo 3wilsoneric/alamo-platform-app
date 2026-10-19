@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import {
   PLATFORM_DATA_REFRESH_EVENT,
   fetchCommunitiesDashboard,
@@ -269,7 +270,7 @@ export default function AppHomePage() {
     return [...categoryCounts.entries()]
       .map(([category, count]) => ({
         id: category,
-        title: category,
+        title: displayIncidentLabel(category),
         ...(latestIncidentMonth ? { meta: formatMonthLabel(latestIncidentMonth) } : {}),
         value: formatNumber(count),
         tone: "red" as const,

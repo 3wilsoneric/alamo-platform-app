@@ -29,6 +29,7 @@ import {
 } from "./platform-data.mjs";
 import { buildExecutiveDirectorCommunityDashboard } from "./executive-director-dashboard.mjs";
 import { getExecutiveDirectorIncidents } from "./executive-director-incidents.mjs";
+import { readIncidentHistoryQuery } from "./incident-history-query.mjs";
 import {
   LIC624_FORM_DEFINITION,
   LIC624_INCIDENT_TYPE_FIELDS,
@@ -151,7 +152,7 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
 
     if (req.method === "GET" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/incidents`) {
       const facilityId = resolveExecutiveDirectorFacility(access, requestUrl.searchParams.get("facilityId"));
-      const allowedParameters = new Set(["facilityId", "q", "category", "type", "priority", "year", "sort", "from", "to", "cursor", "limit"]);
+      const allowedParameters = new Set(["facilityId", "q", "residentId", "clientQuery", "clientOffset", "category", "type", "priority", "year", "sort", "from", "to", "cursor", "limit"]);
       for (const key of requestUrl.searchParams.keys()) {
         if (!allowedParameters.has(key) || requestUrl.searchParams.getAll(key).length !== 1) {
           throw createHttpError(400, "executive_incidents_query_invalid", "Incident search parameters are invalid.");
@@ -159,16 +160,7 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
       }
       res.status(200).json(await getExecutiveDirectorIncidents({
         facilityId,
-        query: requestUrl.searchParams.get("q"),
-        category: requestUrl.searchParams.get("category"),
-        incidentType: requestUrl.searchParams.get("type"),
-        priority: requestUrl.searchParams.get("priority"),
-        year: requestUrl.searchParams.get("year"),
-        sort: requestUrl.searchParams.get("sort"),
-        from: requestUrl.searchParams.get("from"),
-        to: requestUrl.searchParams.get("to"),
-        cursor: requestUrl.searchParams.get("cursor"),
-        limit: requestUrl.searchParams.get("limit")
+        ...readIncidentHistoryQuery(requestUrl.searchParams)
       }));
       return;
     }

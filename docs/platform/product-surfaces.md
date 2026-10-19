@@ -278,7 +278,7 @@ that API retain the full-window viewer. Arrow keys, space, swipe, previous/next,
 navigate. F toggles full screen, S toggles speaker notes, and Close returns to
 the originating Platform page. Slide hashes support direct links. Screenshot
 slides for the Community dashboard, admissions file, Pipeline assessment, and
-Workforce have an **Open** link in the viewer controls. It opens the live route
+Personnel have an **Open** link in the viewer controls. It opens the live route
 in a separate tab without replacing the deck; the destination still enforces
 its own existing access rules. The admissions screenshot opens the Community
 dashboard, where its client notification can be selected, rather than claiming

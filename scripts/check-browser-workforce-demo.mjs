@@ -8,7 +8,7 @@ await withBrowserQa(async (browser) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   let liveFeedRequests = 0;
   page.on("request", (request) => { if (new URL(request.url()).pathname === "/api/platform/workforce-dashboard") liveFeedRequests += 1; });
-  await page.goto(`${BASE_URL}/workforce`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/personnel`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-workforce-demo="true"]').waitFor({ state: "visible" });
   assert.match(await page.locator('[data-workforce-demo="true"]').innerText(), /fictional.*not connected/i);
   assert.equal(await page.getByRole("tab", { name: "Briefing" }).getAttribute("aria-selected"), "true");

@@ -50,6 +50,13 @@ export function normalizeExecutiveIncidentOptions(options, { allowPortfolio = fa
   const facilityId = queryText(options.facilityId, "Community", 20);
   if (!FACILITY_IDS.has(facilityId) && !(allowPortfolio && facilityId === "all")) throw createHttpError(400, "executive_director_facility_invalid", "Choose a listed Alamo community.");
   const query = queryText(options.query, "Search", 160);
+  const residentId = queryText(options.residentId, "Resident", 100);
+  const clientQuery = queryText(options.clientQuery, "Client search", 160);
+  const rawClientOffset = options.clientOffset == null || options.clientOffset === "" ? "0" : String(options.clientOffset);
+  const clientOffset = Number(rawClientOffset);
+  if (!/^\d+$/.test(rawClientOffset) || !Number.isSafeInteger(clientOffset) || clientOffset > 2_147_483_647) {
+    throw createHttpError(400, "executive_incidents_client_page_invalid", "The client page is invalid.");
+  }
   const category = queryText(options.category, "Category", 160);
   const incidentType = queryText(options.incidentType, "Type", 160);
   const priority = queryText(options.priority, "Derived priority", 10);
@@ -80,7 +87,7 @@ export function normalizeExecutiveIncidentOptions(options, { allowPortfolio = fa
       throw createHttpError(400, "executive_incidents_cursor_invalid", "The incident page cursor is invalid.");
     }
   }
-  return { facilityId, query, category, incidentType, priority, year, sort, from, to, limit, page };
+  return { facilityId, query, residentId, clientQuery, clientOffset, category, incidentType, priority, year, sort, from, to, limit, page };
 }
 
 export function normalizeExecutiveIncident(row, index) {
@@ -142,10 +149,36 @@ function aggregateCoverage(snapshot, facilityId) {
   return months;
 }
 
+function clientTriage(incidents, clientQuery = "", clientOffset = 0) {
+  const byResident = new Map();
+  let unlinkedCount = 0;
+  const needle = clientQuery.toLocaleLowerCase("en-US");
+  // The caller supplies already-scoped and date-sorted records. Never merge
+  // same-name residents when a source ID is absent.
+  for (const incident of incidents) {
+    if (!incident.residentId) { unlinkedCount += 1; continue; }
+    const key = `${incident.facilityId}:${incident.residentId}`;
+    const current = byResident.get(key);
+    if (current) current.incidentCount += 1;
+    else byResident.set(key, {
+      facilityId: incident.facilityId, residentId: incident.residentId, residentName: incident.residentName,
+      incidentCount: 1, latestDate: incident.date, latestPriority: incident.priority,
+      latestType: incident.incidentType, latestCategory: incident.category
+    });
+  }
+  const priorityOrder = { high: 0, medium: 1, unknown: 2, low: 3 };
+  const clients = [...byResident.values()].filter((item) => !needle || `${item.residentName} ${item.residentId}`.toLocaleLowerCase("en-US").includes(needle));
+  clients.sort((left, right) => priorityOrder[left.latestPriority] - priorityOrder[right.latestPriority]
+    || text(right.latestDate).localeCompare(text(left.latestDate))
+    || left.residentName.localeCompare(right.residentName)
+    || left.residentId.localeCompare(right.residentId));
+  return { clients: clients.slice(clientOffset, clientOffset + 20), clientCount: clients.length, clientOffset, unlinkedCount };
+}
+
 /** Snapshot fallback only. Published detail history has a time window and row cap. */
 export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { allowPortfolio = false } = {}) {
   const filters = normalizeExecutiveIncidentOptions(options, { allowPortfolio });
-  const { facilityId, query, category, incidentType, priority, year, sort, from, to, limit, page } = filters;
+  const { facilityId, query, residentId, clientQuery, clientOffset, category, incidentType, priority, year, sort, from, to, limit, page } = filters;
   if (page && page[0] !== 1) throw createHttpError(409, "executive_incidents_cursor_stale", "Incident source changed. Refresh the list.");
   const source = sourceRows(snapshot);
   const freshness = getSnapshotFreshness(snapshot);
@@ -160,7 +193,7 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
   };
   if (!source) return {
     ...base, status: "unavailable", totalIncidents: null, matchingIncidents: null,
-    incidents: [], categories: [], types: [], years: [], nextCursor: null,
+    incidents: [], clients: [], clientCount: 0, clientOffset, unlinkedCount: 0, categories: [], types: [], years: [], nextCursor: null,
     coverage: { status: "unavailable", startDate: null, endDate: null, reportedTotal, note: "Individual incident records are unavailable. Retry when the governed incident snapshot is available." }
   };
   // Scope before normalization, indexing, search, counts, facets, and cursor construction.
@@ -172,6 +205,7 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
     if (!byId.has(key)) byId.set(key, row);
   }
   const incidents = [...byId.values()];
+  const triage = clientTriage(incidents, clientQuery, clientOffset);
   const monthCounts = new Map();
   const categoryCounts = new Map();
   const typeCounts = new Map();
@@ -190,6 +224,8 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
   const dates = incidents.map((row) => row.date).filter(Boolean).sort();
   const normalizedQuery = query.toLocaleLowerCase("en-US");
   const matching = incidents.filter((row) => (
+    (!residentId || row.residentId === residentId)
+    &&
     (!category || row.category === category)
     && (!incidentType || (row.incidentType ?? "Not recorded") === incidentType)
     && (!priority || row.priority === priority)
@@ -207,7 +243,7 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
     if (sort === "community_asc") return (ALAMO_FACILITIES.find((item) => item.facilityId === left.facilityId)?.shortName ?? "").localeCompare(ALAMO_FACILITIES.find((item) => item.facilityId === right.facilityId)?.shortName ?? "") || compareDate(left, right);
     return compareDate(left, right);
   });
-  const signature = createHash("sha256").update(JSON.stringify([facilityId, base.generatedAt, query, category, incidentType, priority, year, sort, from, to, reportedTotal, incidents])).digest("hex");
+  const signature = createHash("sha256").update(JSON.stringify([facilityId, base.generatedAt, query, residentId, clientQuery, clientOffset, category, incidentType, priority, year, sort, from, to, reportedTotal, incidents])).digest("hex");
   const offset = page?.[2] ?? 0;
   if (page && page[1] !== signature) throw createHttpError(409, "executive_incidents_cursor_stale", "Incident records or filters changed. Refresh the list.");
   if (offset > matching.length) throw createHttpError(400, "executive_incidents_cursor_invalid", "The incident page cursor is invalid.");
@@ -218,6 +254,7 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
     totalIncidents: incidents.length,
     matchingIncidents: matching.length,
     incidents: rows,
+    ...triage,
     categories: [...categoryCounts].map(([label, count]) => ({ label, count })).sort((left, right) => left.label.localeCompare(right.label)),
     types: [...typeCounts].map(([label, count]) => ({ label, count })).sort((left, right) => left.label.localeCompare(right.label)),
     years: [...yearCounts].map(([label, count]) => ({ label, count })).sort((left, right) => right.label.localeCompare(left.label)),

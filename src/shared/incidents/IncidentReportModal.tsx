@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { formatDisplayDate } from "../../../shared/display-date.mjs";
+import { displayIncidentLabel } from "../../../shared/incident-display-labels.mjs";
 import type {
   CommunityIncidentDetailRecord
 } from "../types/platformSnapshot";
@@ -186,8 +187,8 @@ export function IncidentReportModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3 sm:px-6">
           <div className="grid gap-x-5 sm:grid-cols-2 lg:grid-cols-4">
-            <ReportFact label="Category" value={incident.category || "Incident"} />
-            <ReportFact label="Type" value={incident.incidentType} />
+            <ReportFact label="Category" value={displayIncidentLabel(incident.category || "Incident")} />
+            <ReportFact label="Type" value={displayIncidentLabel(incident.incidentType)} />
             <ReportFact label="Location" value={incident.location} />
             <ReportFact label="Staff" value={incident.staff} />
           </div>

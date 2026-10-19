@@ -14,7 +14,7 @@ const PLATFORM_PAGES = [
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
   { id: "workflow", label: "Workflow", href: "/workflow", ownerOnly: true },
-  { id: "workforce", label: "Workforce", href: "/workforce", ownerOnly: true }
+  { id: "personnel", label: "Personnel", href: "/personnel", ownerOnly: true }
 ];
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
@@ -22,7 +22,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const active = pathname === "/analytics/agent" || pathname === "/everyagent" ? "everyagent" : pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" || pathname === "/licensing"
     ? "analytics"
     : pathname.startsWith("/admissions") ? "admissions"
-      : pathname.startsWith("/workforce") ? "workforce"
+      : pathname.startsWith("/personnel") || pathname.startsWith("/workforce") ? "personnel"
       : pathname.startsWith("/workflow") ? "workflow"
       : pathname.startsWith("/outreach") || pathname.startsWith("/fiftystate") ? "outreach"
       : pathname === "/" || pathname.startsWith("/home") || pathname.startsWith("/communities") ? "home" : "";
@@ -32,7 +32,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const canUseEveryAgent = useEveryAgentAccess();
   const branding = useAgentBranding();
   const { allowed: canViewDemo } = usePresentationAccess();
-  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : [...PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "workforce" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo)),
+  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : [...PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "personnel" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo)),
     ...(canUseEveryAgent ? [{ id: "everyagent", label: branding.name, href: "/analytics/agent" }] : [])];
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);

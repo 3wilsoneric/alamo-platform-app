@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import { surfaceInPlatformCanvas } from "../../../shared/canvas/canvasEvents";
 import {
   fetchAnalyticsSummary,
@@ -471,7 +472,7 @@ export default function CommunityDashboardSurface({
             <h3 className={`${compact ? "mt-1 text-[20px]" : "mt-1 text-[24px]"} font-serif font-semibold tracking-[-0.03em]`}>Incident volume</h3>
             <p className={`${compact ? "mt-1 text-[13px]" : "mt-2 text-[15px]"} leading-6 text-[#333333]`}>
               {latestIncidentLabel
-                ? `${model.selectedResidentName ? `${model.selectedResidentName} had` : `${facilityName} recorded`} ${formatNumber(model.latestIncidentTotal)}${model.selectedCategory ? ` ${model.selectedCategory}` : ""} incidents in ${latestIncidentLabel}.`
+                ? `${model.selectedResidentName ? `${model.selectedResidentName} had` : `${facilityName} recorded`} ${formatNumber(model.latestIncidentTotal)}${model.selectedCategory ? ` ${displayIncidentLabel(model.selectedCategory)}` : ""} incidents in ${latestIncidentLabel}.`
                 : `No monthly incident totals are loaded for ${facilityName}.`}
             </p>
           </div>

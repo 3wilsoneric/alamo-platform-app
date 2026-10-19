@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import {
   formatIncidentDateTime,
   incidentsShareResident,
@@ -163,7 +164,7 @@ export function ResidentIncidentHistoryDrawer({
                           ) : null}
                         </div>
                         <div className="mt-1.5 text-[14px] font-semibold text-[#111111]">
-                          {item.incident_type || "General incident"}
+                          {displayIncidentLabel(item.incident_type || "General incident")}
                         </div>
                         <div className="mt-0.5 text-[12px] text-[#595959]">
                           {formatIncidentDateTime(item.incident_date || item.received_at)} · {item.location || "No location"}

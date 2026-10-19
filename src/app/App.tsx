@@ -56,6 +56,11 @@ function LegacyOutreachRedirect() {
   return <Navigate to={`/outreach${location.search}${location.hash}`} replace />;
 }
 
+function LegacyWorkforceRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/personnel${location.search}${location.hash}`} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -82,7 +87,8 @@ export default function App() {
         <Route path="/incidents" element={withRouteBoundary(<IncidentCenterPage />)} />
         <Route path="/incidents/history" element={withRouteBoundary(<IncidentHistoryPage />)} />
         <Route path="/admissions" element={withRouteBoundary(<AdmissionsPage />)} />
-        <Route path="/workforce" element={withRouteBoundary(<WorkforcePage />)} />
+        <Route path="/personnel" element={withRouteBoundary(<WorkforcePage />)} />
+        <Route path="/workforce" element={<LegacyWorkforceRedirect />} />
         <Route path="/workflow" element={withRouteBoundary(<WorkflowPage />)} />
         <Route path="/executive" element={<Navigate to="/executive/dashboard" replace />} />
         <Route path="/executive/dashboard" element={withRouteBoundary(<ExecutiveDirectorDashboardPage />)} />

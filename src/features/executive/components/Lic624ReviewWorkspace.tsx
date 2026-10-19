@@ -317,7 +317,7 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
           </div>
         </Section>
 
-        <Section number="02" title="Incident details" note={native ? "Select the incident category and describe what happened." : "Select the incident category and verify the report narrative against the uploaded original."}>
+        <Section number="02" title="Incident details" note={native ? "Use the state-defined incident type and describe what happened." : "Verify the state-defined choices and narrative against the unchanged uploaded original. Platform incident labels are separate."}>
           <Field label="Incident type" required asGroup changed={changed(draft.incidentTypes, sourceData.incidentTypes)}>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {form.incidentTypes.map((option) => {

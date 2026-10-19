@@ -15,6 +15,7 @@ import type { DataExplorerKind, DataExplorerResponse } from "../../../shared/typ
 import { formatDisplayDate, parseDisplayDate } from "../../../../shared/display-date.mjs";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 import { toCsvCell, toSpreadsheetText } from "../../../../shared/csv.mjs";
+import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 
 const VALID_KINDS = new Set<DataExplorerKind>(["incidents", "census", "residents"]);
 const PAGE_SIZE = 100;
@@ -31,8 +32,13 @@ function displayValue(value: unknown) {
   return String(value);
 }
 
+function displayIncidentValue(value: unknown) {
+  return value == null ? value : displayIncidentLabel(String(value));
+}
+
 function rowValue(row: ExplorerRow, key: string) {
-  return displayValue(row[key]);
+  const value = row[key];
+  return displayValue(key === "category" || key === "last_incident_category" ? displayIncidentValue(value) : value);
 }
 
 function rowKey(row: ExplorerRow, index: number) {
@@ -517,7 +523,7 @@ export default function DataExplorerPage() {
           {kind === "incidents" ? (
             <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by incident category" className="h-[52px] min-w-0 w-full rounded-[18px] border border-[#ddd4c8] bg-white/88 px-4 text-[13px] font-semibold text-[#3e3429] outline-none focus:border-[#8ea2ff]">
               <option value="all">All categories</option>
-              {payload?.filters.categories.map((name) => <option key={name} value={name}>{name}</option>)}
+              {payload?.filters.categories.map((name) => <option key={name} value={name}>{displayIncidentLabel(name)}</option>)}
             </select>
           ) : kind === "residents" ? (
             <label data-explorer-filter="diagnosis" className={showMobileFilters ? "block" : "hidden sm:block"}>
@@ -575,7 +581,7 @@ export default function DataExplorerPage() {
           </summary>
           <div className="mt-3 flex flex-wrap gap-2">
             <FacetChip active={category === "all"} label="All categories" count={filteredRows.length} onClick={() => setCategory("all")} />
-            {categoryFacets.map(([name, count]) => <FacetChip key={name} active={category === name} label={name} count={count} onClick={() => setCategory(name)} />)}
+            {categoryFacets.map(([name, count]) => <FacetChip key={name} active={category === name} label={displayIncidentLabel(name)} count={count} onClick={() => setCategory(name)} />)}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <FacetChip active={community === "all"} label="All communities" onClick={() => setCommunity("all")} />
@@ -698,7 +704,7 @@ export default function DataExplorerPage() {
                                     <DetailField label="Incident ID" value={row.id} />
                                     <DetailField label="Date" value={row.incident_date} />
                                     <DetailField label="Resident" value={row.resident_name} />
-                                    <DetailField label="Category" value={row.category} />
+                                    <DetailField label="Category" value={displayIncidentValue(row.category)} />
                                     <DetailField label="Location" value={row.location} />
                                     <DetailField label="Staff" value={row.staff_name} />
                                     <DetailField label="Injury" value={row.injury_occurred} />
@@ -713,7 +719,7 @@ export default function DataExplorerPage() {
                                     <DetailField label="Community" value={row.community_name} />
                                     <DetailField label="Unit" value={row.unit} />
                                     <DetailField label="Diagnosis" value={row.primary_diagnosis} />
-                                    <DetailField label="Last incident" value={[row.last_incident_category, row.last_incident_date].filter(Boolean).join(" · ") || "-"} />
+                                    <DetailField label="Last incident" value={[displayIncidentValue(row.last_incident_category), row.last_incident_date].filter(Boolean).join(" · ") || "-"} />
                                     <DetailField label="Care level" value={row.care_level} />
                                     <DetailField label="Payor" value={row.payor} />
                                     <DetailField label="Physician" value={row.physician} />

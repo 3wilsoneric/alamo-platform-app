@@ -9,12 +9,13 @@ function sqlText(value) {
 }
 
 function filterSignature(filters) {
-  return createHash("sha256").update(JSON.stringify([filters.facilityId, filters.query, filters.category, filters.incidentType, filters.priority, filters.year, filters.sort, filters.from, filters.to])).digest("hex");
+  return createHash("sha256").update(JSON.stringify([filters.facilityId, filters.query, filters.residentId, filters.clientQuery, filters.clientOffset, filters.category, filters.incidentType, filters.priority, filters.year, filters.sort, filters.from, filters.to])).digest("hex");
 }
 
 /** Receives validated, already-authorized options from the ED API boundary. */
 export function buildExecutiveIncidentLiveSql(filters) {
   const clauses = [];
+  if (filters.residentId) clauses.push(`resident_id = ${sqlText(filters.residentId)}`);
   if (filters.category) clauses.push(`category = ${sqlText(filters.category)}`);
   if (filters.incidentType) clauses.push(`coalesce(nullif(trim(incident_type), ''), 'Not recorded') = ${sqlText(filters.incidentType)}`);
   if (filters.priority) clauses.push(`priority = ${sqlText(filters.priority)}`);
@@ -24,6 +25,9 @@ export function buildExecutiveIncidentLiveSql(filters) {
   if (filters.to) clauses.push(`incident_date <= cast(${sqlText(filters.to)} AS date)`);
   if (filters.query) clauses.push(`instr(lower(concat_ws(' ', id, resident_id, client_name, cast(incident_date AS string), cast(received_at AS string), category, incident_type, location, email_body, assistance_given, staff_name)), lower(${sqlText(filters.query)})) > 0`);
   const condition = clauses.length ? clauses.join(" AND ") : "true";
+  const clientCondition = filters.clientQuery
+    ? `instr(lower(concat_ws(' ', l.client_name, l.resident_id)), lower(${sqlText(filters.clientQuery)})) > 0`
+    : "true";
   const offset = filters.page?.[3] ?? 0;
   const facility = sqlText(filters.facilityId);
   const facilityScope = filters.facilityId === "all"
@@ -89,8 +93,25 @@ export function buildExecutiveIncidentLiveSql(filters) {
     END AS priority FROM incidents
   ), matching AS (
     SELECT * FROM prioritized WHERE ${condition}
+  ), client_latest AS (
+    SELECT facility_id, resident_id, client_name, incident_date, priority, incident_type, category,
+      row_number() OVER (PARTITION BY facility_id, resident_id ORDER BY incident_date DESC NULLS LAST, received_at DESC NULLS LAST, id ASC) AS latest_order
+    FROM prioritized WHERE resident_id IS NOT NULL AND trim(resident_id) <> ''
+  ), client_counts AS (
+    SELECT facility_id, resident_id, count(*) AS incident_count FROM prioritized
+    WHERE resident_id IS NOT NULL AND trim(resident_id) <> '' GROUP BY facility_id, resident_id
+  ), clients AS (
+    SELECT l.facility_id, l.resident_id, l.client_name, l.incident_date AS latest_date, l.priority AS latest_priority,
+      l.incident_type AS latest_type, l.category AS latest_category, c.incident_count
+    FROM client_latest l JOIN client_counts c ON l.facility_id = c.facility_id AND l.resident_id = c.resident_id
+    WHERE l.latest_order = 1 AND ${clientCondition}
+  ), client_page AS (
+    SELECT * FROM clients ORDER BY CASE latest_priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 WHEN 'unknown' THEN 2 ELSE 3 END,
+      latest_date DESC NULLS LAST, client_name ASC, facility_id ASC, resident_id ASC LIMIT 20 OFFSET ${filters.clientOffset}
   ), summary AS (
     SELECT count(*) AS total, (SELECT count(*) FROM matching) AS matching,
+      (SELECT count(*) FROM clients) AS client_count,
+      count_if(resident_id IS NULL OR trim(resident_id) = '') AS unlinked_count,
       cast(min(incident_date) AS string) AS start_date, cast(max(incident_date) AS string) AS end_date,
       sha2(concat(cast(count(*) AS string), ':', coalesce(cast(sum(cast(xxhash64(record_hash) AS decimal(38, 0))) AS string), '0')), 256) AS revision
     FROM prioritized
@@ -100,6 +121,10 @@ export function buildExecutiveIncidentLiveSql(filters) {
     LIMIT ${filters.limit + 1} OFFSET ${offset}
   )
   SELECT 'summary' AS kind, to_json(struct(*)) AS payload FROM summary
+  UNION ALL
+  SELECT 'client' AS kind, to_json(named_struct('facility_id', facility_id, 'resident_id', resident_id, 'client_name', client_name,
+    'incident_count', incident_count, 'latest_date', latest_date, 'latest_priority', latest_priority,
+    'latest_type', latest_type, 'latest_category', latest_category)) AS payload FROM client_page
   UNION ALL
   SELECT 'category' AS kind, to_json(named_struct('label', category, 'count', count(*))) AS payload FROM prioritized GROUP BY category
   UNION ALL
@@ -133,10 +158,15 @@ export async function queryExecutiveDirectorIncidentsLive(filters, { query, norm
   const types = [];
   const years = [];
   const rows = [];
+  const clients = [];
   for (const item of result) {
     const payload = typeof item.payload === "string" ? JSON.parse(item.payload) : item.payload;
     if (!payload || typeof payload !== "object") throw new Error("Invalid live incident source response.");
     if (item.kind === "summary") summaries.push(payload);
+    else if (item.kind === "client") {
+      if (!ALAMO_FACILITIES.some((facility) => facility.facilityId === String(payload.facility_id)) || (filters.facilityId !== "all" && String(payload.facility_id) !== filters.facilityId) || !payload.resident_id || !payload.client_name || !["high", "medium", "low", "unknown"].includes(payload.latest_priority)) throw new Error("Invalid live incident client.");
+      clients.push({ facilityId: String(payload.facility_id), residentId: String(payload.resident_id), residentName: String(payload.client_name), incidentCount: count(payload.incident_count), latestDate: payload.latest_date ?? null, latestPriority: payload.latest_priority, latestType: payload.latest_type ?? null, latestCategory: payload.latest_category ?? "Uncategorized" });
+    }
     else if (item.kind === "category") categories.push({ label: String(payload.label), count: count(payload.count) });
     else if (item.kind === "type") types.push({ label: String(payload.label), count: count(payload.count) });
     else if (item.kind === "year") years.push({ label: String(payload.label), count: count(payload.count) });
@@ -151,6 +181,10 @@ export async function queryExecutiveDirectorIncidentsLive(filters, { query, norm
   if (summaries.length !== 1 || !/^[a-f0-9]{64}$/.test(summary?.revision)) throw new Error("Invalid live incident summary.");
   const total = count(summary.total);
   const matching = count(summary.matching);
+  const clientCount = count(summary.client_count ?? 0);
+  const unlinkedCount = count(summary.unlinked_count ?? 0);
+  if (clients.length !== Math.min(Math.max(clientCount - filters.clientOffset, 0), 20) || unlinkedCount > total) throw new Error("Inconsistent live incident clients.");
+  clients.sort((left, right) => (["high", "medium", "unknown", "low"].indexOf(left.latestPriority) - ["high", "medium", "unknown", "low"].indexOf(right.latestPriority)) || String(right.latestDate ?? "").localeCompare(String(left.latestDate ?? "")) || left.residentName.localeCompare(right.residentName) || left.residentId.localeCompare(right.residentId));
   if (matching > total || categories.reduce((sum, item) => sum + item.count, 0) !== total || types.reduce((sum, item) => sum + item.count, 0) !== total || years.reduce((sum, item) => sum + item.count, 0) !== total || rows.length > filters.limit + 1) throw new Error("Inconsistent live incident source response.");
   if (page && page[2] !== summary.revision) throw createHttpError(409, "executive_incidents_cursor_stale", "Incident records changed. Refresh the list.");
   const offset = page?.[3] ?? 0;
@@ -164,7 +198,7 @@ export async function queryExecutiveDirectorIncidentsLive(filters, { query, norm
   return {
     version: "executive-director-incidents-v1", status: "ready", facilityId: filters.facilityId,
     generatedAt, asOfDate: generatedAt.slice(0, 10), totalIncidents: total, matchingIncidents: matching,
-    incidents, categories: categories.sort((left, right) => left.label.localeCompare(right.label)),
+    incidents, clients, clientCount, clientOffset: filters.clientOffset, unlinkedCount, categories: categories.sort((left, right) => left.label.localeCompare(right.label)),
     types: types.sort((left, right) => left.label.localeCompare(right.label)),
     years: years.sort((left, right) => right.label.localeCompare(left.label)),
     nextCursor: offset + incidents.length < matching ? Buffer.from(JSON.stringify([2, signature, summary.revision, offset + incidents.length])).toString("base64url") : null,
