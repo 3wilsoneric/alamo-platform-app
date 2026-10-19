@@ -4157,3 +4157,32 @@ demo, LIC 624 upload/review, portfolio incident history, mobile route,
 incident-contract, MAR, and query-intent checks pass. The broader analyst suite
 remains red on an unrelated hard-coded resident ranking assertion that no longer
 matches the live data; this release used the focused checks above.
+
+### Executive incident, MAR, and mobile refinement — 2026-10-18
+
+The San Pablo executive overview shows the three latest incident months above
+the client-first incident list. Medication administration shows given counts by
+month, while its MAR detail adds facility-scoped resident given counts for the
+rolling 7 and 30 days. Mobile spacing and reading order were refined in the
+executive, Personnel, analytics, and assistant surfaces. No source incident
+categories or original LIC 624 form fields were changed.
+
+- source commit: `1281ff3` on `codex/incident-personnel-release-20261018`
+- ACR build: `cc8w`; tag: `exec-mobile-1018-1281ff3`
+- image: `alamo-platform@sha256:141a41d0198c957b70b17c4480fe9bb24ba455090ea4317c28417073357894e6`
+- revision: `alamo-platform-prod-web--execmob-1018-1281ff3`
+- rollback image: `alamo-platform@sha256:d482a6e04fbdcccc582b3d66789e9908bf34bfa0b868a54330a381a3c0411d8b`
+- browser assets: `/assets/index-sXfS0zgi.js`, `/assets/index-Ddzh_mH1.css`
+
+The revision is Healthy/Running at 100% traffic. `/healthz`,
+`/executive/dashboard`, `/personnel`, `/analytics`, `/executive/licensing`,
+`/incidents/history`, and `/workflow` return 200. Root, Admissions, Chat, and
+Executive serve the same tested entry bytes; the JS and CSS bundles match the
+local build byte for byte. Anonymous executive API requests return 401 with
+`private, no-store`. A signed-in production pass confirmed the three incident
+columns and MAR resident given counts. Executive contract and responsive
+browser checks, 72-route mobile QA, Personnel demo, reports, native LIC 624,
+type, docs, dependency, source-health, and build checks passed. The full
+predeploy gate was also run with the existing local Databricks credentials and
+stopped at the same unrelated hard-coded resident-ranking assertion documented
+above; the release used the passing focused checks and live verification.
