@@ -4267,3 +4267,33 @@ the configured Pipeline endpoint returns 200 with contract 3.2 and both new
 journey arrays; it printed only status and contract metadata. The full analyst
 suite reached the same unrelated live-data resident-ranking assertion recorded
 above; it was not changed for this release.
+
+### Private census identity for Pipeline admission confirmation — 2026-10-19
+
+The governed daily snapshot now keeps resident birth dates in a private
+`clinicalIdentity` map keyed to the current census roster. Only the protected
+Pipeline clinical roster projects those dates; browser and analyst community
+rows remain unchanged. This lets Pipeline confirm an overdue planned admission
+only after matching the current resident's name, community, birth date, stable
+resident number, and actual admit date. Ambiguous or missing identities stay
+pending.
+
+- source commit: `aa4e69b` on `codex/census-birthdate-20261019`
+- ACR tag: `census-birthdate-aa4e69b`
+- image: `alamo-platform@sha256:4a1604902c2ce3935fd5c32b413cfe0ab94be35b2b249f8f7291b6e251c22139`
+- revision: `alamo-platform-prod-web--census-dob-1019-aa4e69b`
+- rollback image: `alamo-platform@sha256:6db0d4b0d045f71d1ffc99f37921f53b8451bd5c499a3eadd9044b76e136f294`
+- daily Databricks publish run: `357574830750168` (success)
+
+The release revision was Healthy/Running at 100% traffic. A later Platform
+revision, `alamo-platform-prod-web--homeidx-1019-be77d61`, became current and
+retained the exact protected clinical API file from this release. The published
+October 19 snapshot has 546 current residents and 546 private identity keys,
+with 545 birth dates; the keys match the roster exactly, and public resident
+rows contain no birth date. The live Platform service loaded that snapshot.
+Focused clinical contract, Admissions dashboard, server types, docs, Python
+syntax, and production build checks passed. The broader predeploy suite stopped
+at the existing hard-coded analyst resident-ranking assertion against changing
+live data; no assertion was changed for this release. The previous snapshot was
+saved before publishing, and Azure Blob soft deletion remains available for
+recovery.
