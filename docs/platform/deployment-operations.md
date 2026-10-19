@@ -4235,5 +4235,8 @@ JavaScript and CSS assets. The Admissions entry also matches under gzip and
 Brotli. The protected Pipeline bridge contract, desktop/320px/390px combined
 briefing, existing Admissions browser flows, legacy narrative fallback,
 TypeScript, server types, docs, production build, and high-severity dependency
-audit passed. The full analyst suite reached the same unrelated live-data
-resident-ranking assertion recorded above; it was not changed for this release.
+audit passed. A read-only probe from the running production container confirmed
+the configured Pipeline endpoint returns 200 with contract 3.2 and both new
+journey arrays; it printed only status and contract metadata. The full analyst
+suite reached the same unrelated live-data resident-ranking assertion recorded
+above; it was not changed for this release.
