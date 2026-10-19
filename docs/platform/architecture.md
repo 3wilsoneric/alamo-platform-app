@@ -492,7 +492,7 @@ relationship approval, publication and withdrawal atomic under concurrent writes
 The head selects the accepted revision; losing writers can leave unreferenced
 candidate archives, which are never served as accepted records. There is no local
 filesystem fallback. See [deployment operations](deployment-operations.md) for
-configuration, recovery, pilot limits and the explicit not-deployed status.
+configuration, recovery, pilot limits and the owner-only deployment status.
 
 Documents and quoted relationships have separate review decisions. Publication
 freezes approved content with explicitly selected approved connections. Source

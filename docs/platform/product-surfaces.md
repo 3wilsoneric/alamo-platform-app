@@ -693,7 +693,7 @@ from Key Vault and is absent from source and browser code. The page uses a compa
 report reading are separate views, long state text wraps without horizontal overflow,
 and source/download actions become full-width tap targets.
 
-## Workflow shared authoring pilot — implemented, not deployed
+## Workflow shared authoring pilot — deployed owner-only
 
 The integration source adds `Drafts & review` and `Knowledge` to `/workflow`.
 Authors save versioned documents and propose relationships with exact quotations;
@@ -703,7 +703,7 @@ cited evidence or retract it. The graph preserves draft/inferred source labels
 and flags changed evidence. The older linked-note workspace remains a demo.
 
 The Azure-backed implementation and desktop/mobile flow were verified on
-2026-10-19 using synthetic records. Production enablement remains off. The owner
+2026-10-19 using synthetic records. Production is enabled only for Eric through an exact Entra tenant/object-ID grant. The owner
 may exercise all roles in this pilot; this does not establish an independent staff
 review process or clinical policy approval. See [deployment operations](deployment-operations.md).
 

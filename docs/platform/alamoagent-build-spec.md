@@ -79,7 +79,7 @@ suite and API/worker packaging checks also pass. Release preparation uses
 to overlay only the endpoint, contract package, source snapshot and browser assets
 on the actual current Azure image. See deployment operations for live evidence.
 
-## Workflow reviewed publication adapter — 2026-10-19, not deployed
+## Workflow reviewed publication adapter — deployed owner-only, 2026-10-19
 
 Workflow now has a separate authenticated authoring/publication adapter in this
 integration checkout. It adds durable Azure revisions, explicit document and

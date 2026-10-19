@@ -4450,7 +4450,8 @@ duplicate checks, dependency audit and build passed. The full predeployment gate
 ran with configured Databricks credentials and reached the previously documented
 resident-ranking assertion in `check:copilot-tools`; the same failure was
 reproduced on unchanged production source. No ranking code or test was changed.
-The full postdeployment gate is recorded separately from the passing live checks.
+The full postdeployment gate reached the same unchanged resident-ranking
+assertion. Its result is separate from the passing live checks.
 
 Real-owner browser acceptance remains pending sign-in: saved authentication state
 could not restore its session, and the in-app browser is at Microsoft sign-in.
