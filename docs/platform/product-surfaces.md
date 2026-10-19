@@ -68,6 +68,8 @@ with the California community map on desktop and a stacked community selector
 on phones:
 
 - the user starts at `/home`
+- on Mondays in Pacific time, a dismissible Home ribbon opens the existing
+  `/admissions` briefing; dismissal lasts through that Monday only
 - five facility markers are projected from maintained city longitude/latitude coordinates;
   permanent leader lines keep the nearby Bay Area locations independently readable and clickable
 - a desktop community index beside the map exposes the same governed current census

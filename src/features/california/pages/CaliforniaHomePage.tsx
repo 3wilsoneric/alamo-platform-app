@@ -10,6 +10,7 @@ import {
 import CaliforniaCommunityMap from "../components/CaliforniaCommunityMap";
 import CaliforniaCommunityIndex from "../components/CaliforniaCommunityIndex";
 import MobileCommunityHome from "../components/MobileCommunityHome";
+import MondayAdmissionsRibbon from "../components/MondayAdmissionsRibbon";
 import CaliforniaCommunityModal from "../components/CaliforniaCommunityModal";
 import AnalyticsSectionNavigation, {
   type AnalyticsSection
@@ -137,6 +138,8 @@ export default function CaliforniaHomePage() {
           onNavigate={openAnalyticsSection}
         />
       ) : null}
+
+      {activePanel === "map" && !selectedCommunity ? <MondayAdmissionsRibbon /> : null}
 
       <div
         data-california-carousel-track="true"

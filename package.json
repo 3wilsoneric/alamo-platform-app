@@ -49,6 +49,7 @@
     "prototype:monday-census-email": "node scripts/generate-monday-census-email-prototype.mjs",
     "check:monday-census-email": "node scripts/check-monday-census-email.mjs",
     "check:browser-monday-census-email": "node scripts/check-browser-monday-census-email.mjs",
+    "check:browser-monday-admissions-ribbon": "node scripts/check-browser-monday-admissions-ribbon.mjs",
     "check:eldermark-dates": "node scripts/check-eldermark-date-contracts.mjs",
     "check:databricks-serverless": "node scripts/check-databricks-serverless.mjs",
     "check:turn-traces": "node scripts/check-turn-trace-store.mjs",
