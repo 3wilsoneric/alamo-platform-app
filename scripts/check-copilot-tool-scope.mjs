@@ -62,7 +62,7 @@ const cases = [
     prompt: "give me the top incident category of each community in May and June",
     tool: "top_incident_category_by_community",
     period: "2026-05, 2026-06",
-    textIncludes: "was the most common leading category in each selected period: \\d+ of \\d+ communities in May 2026",
+    textIncludes: "By period, .+ led \\d+ of \\d+ communities in May 2026 and .+ led \\d+ of \\d+ communities in June 2026",
     visualLabelIncludes: ["May 2026", "June 2026"],
     minimumRows: 10
   },
