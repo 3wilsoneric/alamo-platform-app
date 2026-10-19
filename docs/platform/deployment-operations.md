@@ -16,6 +16,19 @@
 
 ## Current Production Host
 
+### Home community index restored — 2026-10-19
+
+- source commit: `be77d61` on `codex/admissions-moving-hide-20261019`
+- active image: `alamo-platform@sha256:fe0400ee76f159be5426892f206b555e38527b1b568362b4c7891385bfe8f2f0`
+- active revision: `alamo-platform-prod-web--homeidx-1019-be77d61`; Healthy/Running, 100% traffic
+- rollback image: `alamo-platform@sha256:4a1604902c2ce3935fd5c32b413cfe0ab94be35b2b249f8f7291b6e251c22139`
+- build: ACR `cc95` with `Dockerfile.frontend-release` on the exact preceding production digest; only `/app/dist` changed, preserving the newer backend release
+- verified: focused Home community-index and California carousel browser checks, typecheck, unused-source check, docs, build; public `/healthz`, `/home`, and `/admissions` return 200. Signed-in production Home shows all five boxed community links and no briefing ribbon. The broader California Home browser check reaches the Analytics route but times out waiting for its unrelated network-idle condition.
+
+The Monday Home briefing ribbon is removed. The boxed community index no longer
+disappears in short desktop windows and is the primary phone Home navigation.
+Its census comparisons name the prior date instead of saying “vs prior.”
+
 ### Admissions moving-clients panel temporarily removed — 2026-10-19
 
 - source commit: `0829f72` on `codex/admissions-moving-hide-20261019`, based on the preceding production source commit `9d4124a`
