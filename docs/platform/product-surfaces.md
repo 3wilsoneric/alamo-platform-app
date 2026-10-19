@@ -692,3 +692,17 @@ connected Office 365 Outlook account through the private
 from Key Vault and is absent from source and browser code. The page uses a compact context/Updates row above the green agent entry. On phones, Updates opens as a bounded modal sheet, answer modules and
 report reading are separate views, long state text wraps without horizontal overflow,
 and source/download actions become full-width tap targets.
+
+## Workflow shared authoring pilot — implemented, not deployed
+
+The integration source adds `Drafts & review` and `Knowledge` to `/workflow`.
+Authors save versioned documents and propose relationships with exact quotations;
+reviewers decide on each relationship and the document separately. A publisher
+selects approved connections, freezes the approved version, and can read its
+cited evidence or retract it. The graph preserves draft/inferred source labels
+and flags changed evidence. The older linked-note workspace remains a demo.
+
+The Azure-backed implementation and desktop/mobile flow were verified on
+2026-10-19 using synthetic records. Production enablement remains off. The owner
+may exercise all roles in this pilot; this does not establish an independent staff
+review process or clinical policy approval. See [deployment operations](deployment-operations.md).

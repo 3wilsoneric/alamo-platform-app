@@ -1,0 +1,14 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Select the exact current live digest. Preserve its API, auth, runtime and agent
+# connector; insert only the versioned Workflow route. No app settings are enabled
+# by this image. Build dist and its compressed siblings before packaging.
+COPY --chown=node:node dist /app/dist
+COPY --chown=node:node server/workflow-api.mjs /app/server/workflow-api.mjs
+COPY --chown=node:node server/workflow /app/server/workflow
+COPY --chown=node:node src/features/workflow/legacy/content/roles/role-library.v1.json /app/src/features/workflow/legacy/content/roles/role-library.v1.json
+COPY --chown=node:node src/features/workflow/legacy/content/imports/alamoagent-skills.v1.json /app/src/features/workflow/legacy/content/imports/alamoagent-skills.v1.json
+COPY --chown=node:node src/features/workflow/legacy/content/assessor/procedures.v1.json /app/src/features/workflow/legacy/content/assessor/procedures.v1.json
+COPY --chown=node:node deploy/patch-workflow-api.mjs /app/deploy/patch-workflow-api.mjs
+RUN node /app/deploy/patch-workflow-api.mjs && node --input-type=module -e "await import('/app/api/platform.js'); await import('/app/server/workflow-api.mjs');"

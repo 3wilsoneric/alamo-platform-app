@@ -15,6 +15,8 @@ import DocumentsPage from '@/app/documents/page'
 import PoliciesPage from '@/app/policies/page'
 import RoleSkillLibraryView from '@/components/views/RoleSkillLibraryView'
 import OrganizationView from '@/components/views/OrganizationView'
+import DraftsWorkspace from '@/components/documents/DraftsWorkspace'
+import KnowledgeView from '@/components/knowledge/KnowledgeView'
 import './workflow-theme.css'
 
 const PAGE_META: Record<Exclude<NavPage, 'home' | 'incident_center' | 'eldermark_agent'>, { title: string; sub?: string }> = {
@@ -29,6 +31,8 @@ const PAGE_META: Record<Exclude<NavPage, 'home' | 'incident_center' | 'eldermark
   role_library: { title: 'Roles & skills' },
   organization: { title: 'Organization' },
   documents: { title: 'Documents' },
+  drafts: { title: 'Drafts & review' },
+  knowledge: { title: 'Knowledge' },
   settings: { title: 'Settings' },
 }
 
@@ -52,6 +56,7 @@ export default function WorkflowAppView({
   const [walkthroughContext, setWalkthroughContext] = useState<WalkthroughLaunchContext | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [compactViewport, setCompactViewport] = useState(false)
+  const [unsavedDraft, setUnsavedDraft] = useState(false)
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 900px)')
@@ -75,6 +80,9 @@ export default function WorkflowAppView({
 
   const handleWorkflowNav = (nextPage: NavPage) => {
     if (nextPage === 'home' || nextPage === 'incident_center' || nextPage === 'eldermark_agent') return
+    if (nextPage === page) return
+    if (unsavedDraft && !window.confirm('You have unsaved changes or a request in progress. Leave the editor?')) return
+    setUnsavedDraft(false)
     setPage(nextPage)
     if (compactViewport) setSidebarCollapsed(true)
   }
@@ -99,6 +107,10 @@ export default function WorkflowAppView({
         return <OrganizationView />
       case 'documents':
         return <DocumentsPage />
+      case 'drafts':
+        return <DraftsWorkspace onUnsavedChange={setUnsavedDraft} />
+      case 'knowledge':
+        return <KnowledgeView />
       case 'policies':
         return <PoliciesPage />
       case 'forms':
@@ -122,7 +134,7 @@ export default function WorkflowAppView({
         className="flex min-h-screen min-w-0 flex-1 flex-col transition-[margin-left] duration-200"
         style={{ marginLeft }}
       >
-        <Header title={meta.title} sub={meta.sub} onOpenWorkspace={page === 'dashboard' || page === 'assist' ? undefined : () => setPage('assist')} />
+        <Header title={meta.title} sub={meta.sub} sharedContent={page === 'drafts' || page === 'knowledge'} onOpenWorkspace={['dashboard', 'assist', 'drafts', 'knowledge'].includes(page) ? undefined : () => handleWorkflowNav('assist')} />
         <main className={`workflow-surface workflow-surface--${page} min-w-0 flex-1 overflow-hidden`}>{renderPage()}</main>
       </div>
     </div>

@@ -4295,3 +4295,117 @@ the configured Pipeline endpoint returns 200 with contract 3.2 and both new
 journey arrays; it printed only status and contract metadata. The full analyst
 suite reached the same unrelated live-data resident-ranking assertion recorded
 above; it was not changed for this release.
+
+### Workflow shared authoring and publication — 2026-10-19, not deployed
+
+Implemented in `/Users/eric/alamo-platform-workflow-native-20261018`. The standalone
+preview on port 3015 still uses its local adapter. No Container App image, traffic,
+Workflow enablement flag, staff grant, agent connector or email setting was changed
+for this milestone. The deployed snapshot reader remains separate.
+
+**Configured Azure storage:** private container `workflow-content` on account
+`alamodatalake`. Platform runtime identity `alamo-platform-prod-runtime`
+(principal `f71a7a56-a544-40cd-b3b4-bd5e3afacc64`) has Storage Blob Data Contributor
+only at that container's scope. Existing account/container permissions were
+preserved. Account blob/container soft deletion is seven days; blob versioning
+is not enabled. Application-managed immutable revisions provide recovery history.
+
+The adapter requires `WORKFLOW_CONTENT_ENABLED=true` and
+`WORKFLOW_STORAGE_CONTAINER=workflow-content`, plus existing Azure storage
+settings (`AZURE_STORAGE_ACCOUNT`, managed identity mode/client ID in production).
+Both Workflow settings remain absent from production. Empty
+`WORKFLOW_ACCESS_GRANTS_JSON` grants the verified owner the four pilot permissions;
+a configured JSON map keys exact lowercase `tenant-guid:object-guid` to a subset
+of `read`, `contribute`, `review`, `publish`. Missing/invalid grants deny access.
+The existing owner gate still applies even if a non-owner has a grant. Neither
+role labels nor Workforce records grant access. The owner can author and review
+in this pilot; independent reviewer separation and staff scope are future work.
+
+**Versioned contract:** `/api/platform/workflow/v1/session`, `/drafts`,
+`/drafts/:uuid`, `/knowledge`, `/knowledge/evidence`, `/knowledge/impact`,
+`/knowledge/proposals/:uuid`, `/published`, `/published/:uuid`. All require verified
+delegated Entra identity and return private, uncached responses. Development auth
+bypasses and app-only tokens are rejected. Every mutation uses an expected record
+revision and a conditional aggregate write. Review notes and actors are retained;
+forged actor/scope fields are rejected. Document and relationship decisions are
+separate. Publication freezes only an approved content version and explicitly
+selected approved connections. Published detail verifies direct target freshness;
+withdrawn relationships retract affected publications. A library target stays a
+draft reference even when its relationship is approved. Listing publication
+metadata is not a substitute for the detail endpoint's freshness checks.
+
+**Storage/recovery:** `workflow/v1/<sha256(tenant-guid)>/head.json` points to
+`revisions/<sha256(serialized-state)>.json`. Snapshot creation uses If-None-Match;
+head advancement uses If-Match (or If-None-Match for a new workspace). Only a
+successful head update accepts an operation. Losing writers may leave orphan
+candidate snapshots; do not treat all archives as accepted history. The accepted
+aggregate contains immutable document/proposal revisions, publications, retractions
+and raw source evidence. There is no local fallback, automatic pruning or deletion
+endpoint. Pilot bounds are 16 MiB per aggregate, 200 document revisions and 50
+connections per publication. Capacity errors preserve existing accepted records.
+
+If a head is missing while archives exist, requests fail closed instead of
+initializing an empty workspace. Disable the feature for recovery, preserve a
+copy of any damaged head, and recover the last known accepted head from soft
+deletion/backup or a verified recorded hash. Verify the snapshot's digest and
+tenant scope, restore the head conditionally, then check revision history and
+published evidence before re-enabling. Do not guess the accepted head from blob
+timestamps: an orphan candidate may be newer. A snapshot/hash failure requires
+operator recovery. Do not erase the container to reset the application.
+
+**Verification:** `npm run check:workflow-publication` covers separate approvals,
+permission denial, scope isolation, concurrent decisions, stale evidence,
+retraction, policy dependencies, storage failures/recovery and API release patching.
+`npm run check:browser-workflow-publication` uses the shared browser harness with
+an isolated synthetic identity/store, exercising desktop/mobile create, connect,
+submit, two review decisions, publish, reload, cited read and retract. It does not
+validate real-owner Entra sign-in. Screenshots are under
+`generated/workflow-publication-browser/`.
+
+An explicit synthetic Azure check ran against the actual dedicated container:
+`WORKFLOW_AZURE_CHECK_WRITE=true WORKFLOW_AZURE_CHECK_ACCOUNT=alamodatalake
+WORKFLOW_AZURE_CHECK_CONTAINER=workflow-content npm run check:workflow-azure`
+(as one shell command). The receipt at
+`generated/workflow-publication/azure-check.json` confirms concurrent initialization,
+conditional publication with one winner, cited retrieval in a fresh Node process,
+immutable archives, missing-head denial/recovery and withdrawal. Synthetic records
+were removed. This uses the operator's Azure CLI identity; the production runtime
+managed-identity grant is configured but must still be exercised during rollout.
+
+**Release preparation:** `deploy/Dockerfile.workflow-content-release` overlays the
+validated browser bundle, Workflow modules and three pinned content snapshots on
+an explicitly supplied current production digest. Its patcher inserts only the
+new API prefix into the existing live API handler and fails if the expected
+boundary changed. It preserves the newer `/api/platform/workflow-knowledge` reader,
+other API routes, auth and agent runtime. Build with current compressed browser
+assets; `/workflow` must remain a SPA fallback. No environment setting is enabled
+by building this image.
+
+Before promotion, reconcile the browser source with the current live release and
+unrelated work in this checkout; do not promote this working tree wholesale. On
+2026-10-19 production had advanced to `alamo-platform-prod-web--dnm-1019-dd8b554`,
+image digest `7f94313ee5f1a18171291cf6f49c9268fba10cc9388a2decba92b5cbc56462e8`.
+Re-read the live digest for any subsequent release. Targeted Workflow tests,
+typechecks, docs, retention and build pass. `check:analyst` passed syntax, lint,
+code health, retention, unused, duplicate, registry/capability and presentation
+gates, then stopped at `check:analyst-decision` because this checkout has no
+Databricks OAuth/PAT configuration. Complete that environment-dependent gate
+before claiming a full Platform release validation.
+
+A future owner-only rollout must verify real Entra sign-in, anonymous/non-owner
+denial, runtime managed-identity storage access, signed-in create/review/publish
+and exact cited retrieval across a new container process, mobile navigation,
+identity/gzip/Brotli entries, existing Workflow snapshot-reader behavior and
+Platform health. Do not invite staff or add an agent consumer as part of that
+rollout. Record image/revision, health and rollback evidence. Rollback disables
+`WORKFLOW_CONTENT_ENABLED` and restores the preceding image digest while preserving
+all Workflow storage and revision history.
+
+
+Local release-package verification succeeded against the recorded `7f94313e…`
+base. Image `alamo-workflow-publication:verify` imports both the existing live API
+and the added Workflow adapter. GET/PUT/POST anonymous Workflow calls each returned
+401 using the packaged production auth implementation. The packaged catalog has
+255 entities and 570 links; the existing snapshot-reader delegation is retained.
+This image was built locally only, not pushed or promoted. Browser source
+reconciliation and real-owner/runtime-identity acceptance remain outstanding.

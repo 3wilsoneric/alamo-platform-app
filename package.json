@@ -178,7 +178,10 @@
     "check:workflow-library": "node scripts/workflow-library-content.mjs --check",
     "check:workflow-knowledge": "node scripts/check-workflow-knowledge.mjs",
     "check:browser-workflow-knowledge": "node scripts/check-browser-workflow-knowledge.mjs",
-    "workflow:prepare-agent-release": "node scripts/prepare-workflow-agent-release.mjs"
+    "workflow:prepare-agent-release": "node scripts/prepare-workflow-agent-release.mjs",
+    "check:workflow-publication": "node --test scripts/check-workflow-publication.mjs",
+    "check:workflow-azure": "node scripts/check-workflow-azure.mjs",
+    "check:browser-workflow-publication": "node scripts/check-browser-workflow-publication.mjs"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.1.0.tgz",

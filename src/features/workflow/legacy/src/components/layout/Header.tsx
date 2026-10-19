@@ -5,6 +5,7 @@ interface HeaderProps {
     title: string
     sub?: string | undefined
     onOpenWorkspace?: (() => void) | undefined
+    sharedContent?: boolean
 }
 
 function AnimalAvatar({ size = 40 }: { size?: number }) {
@@ -34,7 +35,7 @@ function AnimalAvatar({ size = 40 }: { size?: number }) {
     )
 }
 
-export default function Header({ title, sub, onOpenWorkspace }: HeaderProps) {
+export default function Header({ title, sub, onOpenWorkspace, sharedContent = false }: HeaderProps) {
     return (
         <header className="workflow-header h-[64px] border-b flex items-center px-7 gap-5 sticky top-0 z-40">
             <div className="flex-1 min-w-0">
@@ -45,7 +46,7 @@ export default function Header({ title, sub, onOpenWorkspace }: HeaderProps) {
                         {title}
                     </span>
                     {sub && <span className="font-mono text-[9px] text-ink3 tracking-[0.1em] uppercase">{sub}</span>}
-                    <span className="ml-2 rounded border border-[#d6dfdc] bg-[#f2f6f4] px-2 py-1 font-sans text-[10px] font-semibold text-[#50665e]" title="Sample procedures and activity. No EHR writes or saved records.">Preview data</span>
+                    <span className="ml-2 rounded border border-[#d6dfdc] bg-[#f2f6f4] px-2 py-1 font-sans text-[10px] font-semibold text-[#50665e]" title={sharedContent ? 'Owner-only Workflow authoring and knowledge.' : 'Sample procedures and activity. No EHR writes or saved records.'}>{sharedContent ? 'Owner pilot' : 'Preview data'}</span>
                 </div>
             </div>
             {onOpenWorkspace && <button

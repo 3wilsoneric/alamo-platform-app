@@ -78,3 +78,16 @@ suite and API/worker packaging checks also pass. Release preparation uses
 `WORKFLOW_AGENT_BASE_IMAGE=<current digest> npm run workflow:prepare-agent-release`
 to overlay only the endpoint, contract package, source snapshot and browser assets
 on the actual current Azure image. See deployment operations for live evidence.
+
+## Workflow reviewed publication adapter — 2026-10-19, not deployed
+
+Workflow now has a separate authenticated authoring/publication adapter in this
+integration checkout. It adds durable Azure revisions, explicit document and
+relationship decisions, frozen publications and cited owner-only retrieval under
+`/api/platform/workflow/v1`. It does not replace the existing deployed snapshot
+connector, change agent grants, activate a skill or enable emails. A future
+consumer must use a separately reviewed versioned export/change contract; the
+new endpoints currently require delegated owner credentials and reject app-only
+identities. Workflow remains the content/review authority. See the canonical
+[Workflow plan](/Users/eric/alamo-workflow/docs/contributor-workflow-plan.md) and
+[deployment operations](deployment-operations.md).

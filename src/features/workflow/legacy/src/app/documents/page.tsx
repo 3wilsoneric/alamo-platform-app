@@ -281,11 +281,12 @@ export default function DocumentsPage() {
                             onClick={() => setWorkspaceOpen(true)}
                             className="rounded-full border border-[#D7E2FF] bg-[#EEF3FF] px-3.5 py-2 font-sans text-[12px] font-semibold text-navy transition-colors hover:border-navy"
                         >
-                            Open knowledge workspace
+                            Open linked-note demo
                         </button>
                         <button onClick={() => setView('intake')} className="px-4 py-1.5 bg-navy text-white font-sans text-[12.5px] font-bold tracking-[0.02em] border-none cursor-pointer hover:bg-[#004d73] transition-colors">
-                            + Add document
+                            Intake demo
                         </button>
+                        <a href="/workflow?view=drafts" className="px-4 py-1.5 bg-navy text-white font-sans text-[12.5px] font-bold">+ Add draft</a>
                     </div>
                 </div>
 

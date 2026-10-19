@@ -1,6 +1,7 @@
 import { handleWorkflowKnowledgeRequest } from "./workflow-knowledge-api.mjs";
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
 import { handleEveryAgentRequest } from "./everyagent-api.mjs";
+import { handleWorkflowApiRequest, isWorkflowApiPath } from "./workflow-api.mjs";
 import { handlePlatformAgentSourceRequest } from "./platform-agent-source-api.mjs";
 import { AGENT_SOURCE_PATH } from "../shared/everyagent-source-contracts.mjs";
 import { getPlatformIncidentHistory } from "./platform-incident-history.mjs";
@@ -116,7 +117,7 @@ function applyDevCors(req, res) {
   if (!isAllowedDevApiOrigin(origin)) return false;
 
   res.setHeader("Access-Control-Allow-Origin", origin);
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-File-Name, X-Facility-Id");
   appendResponseVaryHeader(res, "Origin");
   return true;
@@ -181,6 +182,11 @@ const server = http.createServer(async (req, res) => {
 
   if (isPipelineClinicalPath(requestUrl.pathname)) {
     await handlePipelineClinicalApiRequest(req, createVercelResponseAdapter(res));
+    return;
+  }
+
+  if (isWorkflowApiPath(requestUrl.pathname)) {
+    await handleWorkflowApiRequest(req, createVercelResponseAdapter(res));
     return;
   }
 

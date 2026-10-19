@@ -391,7 +391,7 @@ function startProcess(name, command, args, env = {}) {
   };
 }
 
-async function startManagedServers() {
+async function startManagedServers({ startApi } = {}) {
   const processes = [];
 
   try {
@@ -404,10 +404,12 @@ async function startManagedServers() {
     const shouldStartApp = CLEAN_ROOM && !REUSE_EXISTING_APP ? true : !appReady;
 
     if (shouldStartApi) {
-      processes.push(startProcess("dev-api", "node", ["--env-file=.env", "server/dev-api.mjs"], {
-        API_PORT: getApiPort(),
-        PORT: getApiPort()
-      }));
+      processes.push(startApi
+        ? await startApi({ host: new URL(API_URL).hostname, port: Number(getApiPort()) })
+        : startProcess("dev-api", "node", ["--env-file=.env", "server/dev-api.mjs"], {
+            API_PORT: getApiPort(),
+            PORT: getApiPort()
+          }));
     }
 
     if (shouldStartApp) {
@@ -1103,14 +1105,14 @@ export async function ask(page, prompt, turnIndex = 1, selection = {}) {
   };
 }
 
-export async function withBrowserQa(run) {
-  const managedProcesses = MANAGED ? await startManagedServers() : [];
-  const browser = await launchBrowser();
-
+export async function withBrowserQa(run, options = {}) {
+  const managedProcesses = MANAGED ? await startManagedServers(options) : [];
+  let browser;
   try {
+    browser = await launchBrowser();
     return await run(browser);
   } finally {
-    await browser.close().catch(() => {});
+    await browser?.close().catch(() => {});
     await Promise.allSettled(managedProcesses.map((entry) => entry.stop()));
   }
 }

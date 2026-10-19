@@ -36,6 +36,8 @@ const NAV_SECTIONS = [
         id: 'system', label: 'System',
         items: [
             { id: 'documents' as NavPage, label: 'Documents' },
+            { id: 'drafts' as NavPage, label: 'Drafts & review' },
+            { id: 'knowledge' as NavPage, label: 'Knowledge' },
             { id: 'settings' as NavPage, label: 'Settings' },
         ],
     },
@@ -114,8 +116,10 @@ export default function Sidebar({ active, onNav, collapsed, onToggle }: SidebarP
             case 'role_library':
                 return <svg {...common}><circle cx="5" cy="5" r="2" stroke="currentColor" strokeWidth="1.3" /><circle cx="11" cy="5" r="2" stroke="currentColor" strokeWidth="1.3" /><path d="M1.8 12.5c.2-2 1.3-3 3.2-3s3 1 3.2 3M8 12.5c.2-2 1.3-3 3.2-3s3 1 3.2 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
             case 'organization':
+            case 'knowledge':
                 return <svg {...common}><circle cx="8" cy="3" r="1.6" stroke="currentColor" strokeWidth="1.3" /><path d="M8 4.8v3M3 10V8h10v2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /><circle cx="3" cy="12" r="1.6" stroke="currentColor" strokeWidth="1.3" /><circle cx="8" cy="12" r="1.6" stroke="currentColor" strokeWidth="1.3" /><circle cx="13" cy="12" r="1.6" stroke="currentColor" strokeWidth="1.3" /></svg>
             case 'documents':
+            case 'drafts':
                 return <svg {...common}><path d="M4 2.8h6l2 2v8.4H4z" stroke="currentColor" strokeWidth="1.3" /><path d="M6 8h4M6 10.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
             case 'settings':
                 return <svg {...common}><path d="M8 3.2v2M8 10.8v2M12.8 8h-2M5.2 8h-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /><circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3" /></svg>

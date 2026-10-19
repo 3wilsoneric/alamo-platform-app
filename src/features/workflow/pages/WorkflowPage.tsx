@@ -25,6 +25,7 @@ export default function WorkflowPage() {
   }
 
   const params = new URLSearchParams(location.search);
-  const initialPage = params.has("document") ? "documents" : params.get("view") === "organization" ? "organization" : "dashboard";
+  const view = params.get("view");
+  const initialPage = params.has("document") ? "documents" : view === "organization" || view === "drafts" || view === "knowledge" || view === "documents" ? view : "dashboard";
   return <WorkflowAppView key={location.search} initialPage={initialPage} />;
 }

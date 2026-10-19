@@ -474,3 +474,30 @@ The server strips large historical incident detail and bounded MAR exception
 detail before sending general summary payloads to the browser when those
 rows are not needed. AH Analyst tools can use bounded tool-context rows through
 server-side logic. Future docs should keep this distinction clear.
+
+## Workflow authoring and reviewed knowledge — 2026-10-19
+
+The integration checkout implements `/api/platform/workflow/v1` in
+`server/workflow-api.mjs` and `server/workflow/*`. This is Workflow-owned content
+hosted by Platform, separate from Platform's existing knowledge plane and the
+AlamoAgent source connector. No sibling runtime or database client is imported.
+The embedded Workflow UI uses `fetchWithApiAuth`; the server verifies delegated
+Entra credentials, preserves the owner-only gate, and derives actor/tenant scope
+before accessing storage. Browser-supplied identities, scopes, development
+bypasses, and app-only credentials do not grant access.
+
+A dedicated Azure Blob container holds tenant-scoped immutable state revisions
+and an ETag-protected head. One bounded aggregate makes document approval,
+relationship approval, publication and withdrawal atomic under concurrent writes.
+The head selects the accepted revision; losing writers can leave unreferenced
+candidate archives, which are never served as accepted records. There is no local
+filesystem fallback. See [deployment operations](deployment-operations.md) for
+configuration, recovery, pilot limits and the explicit not-deployed status.
+
+Documents and quoted relationships have separate review decisions. Publication
+freezes approved content with explicitly selected approved connections. Source
+hashes and exact spans remain inspectable; changed direct evidence blocks approved
+retrieval, and withdrawing a published connection retracts its publication. Library
+nodes remain draft references even when a connection to them is approved. This
+pilot does not implement staff-wide access, independent-reviewer separation, AI
+extraction, transitive dependency validation, or a downstream change feed.
