@@ -73,6 +73,7 @@
     "check:browser-presentation": "node scripts/check-browser-presentation.mjs",
     "check:browser-workforce-demo": "node scripts/check-browser-workforce-demo.mjs",
     "presentation:prepare-release": "node scripts/prepare-presentation-release.mjs",
+    "incident-personnel:prepare-release": "node scripts/prepare-incident-personnel-release.mjs",
     "check:workforce-dashboard": "node scripts/check-workforce-dashboard.mjs",
     "check:regression-replays": "node scripts/check-regression-replays.mjs",
     "check:operator-prompts": "node scripts/check-operator-prompts.mjs",
