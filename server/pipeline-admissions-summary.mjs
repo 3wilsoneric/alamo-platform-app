@@ -206,6 +206,40 @@ function normalizeBriefingMoveIn(row, pipelineOrigin) {
     owner: text(row?.owner, 80) ?? "Unassigned",
     status,
     readiness,
+    sourceName: nullableText(row?.source_name, 160),
+    referringCounty: nullableText(row?.referring_county, 120),
+    pipelineUrl: path
+  };
+}
+
+function normalizeBriefingAdmission(row, pipelineOrigin) {
+  const referralId = count(row?.referral_id);
+  const clientName = text(row?.client_name, 160);
+  const admittedAt = isoCalendarDate(row?.admitted_at);
+  const community = text(row?.community, 80);
+  const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
+  if (referralId == null || !clientName || !admittedAt || !community || !path) return null;
+  return {
+    referralId, clientName, admittedAt, community, facilityId: null,
+    sourceName: nullableText(row?.source_name, 160),
+    referringCounty: nullableText(row?.referring_county, 120),
+    pipelineUrl: path
+  };
+}
+
+function normalizeMovingThrough(row, pipelineOrigin) {
+  const referralId = count(row?.referral_id);
+  const clientName = text(row?.client_name, 160);
+  const stage = BOARD_COLUMNS.has(row?.stage) ? row.stage : null;
+  const status = text(row?.status, 80);
+  const community = text(row?.community, 80);
+  const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
+  if (referralId == null || !clientName || !stage || !status || !community || !path) return null;
+  return {
+    referralId, clientName, stage, status, community, facilityId: null,
+    owner: text(row?.owner, 80) ?? "Unassigned",
+    sourceName: nullableText(row?.source_name, 160),
+    referringCounty: nullableText(row?.referring_county, 120),
     pipelineUrl: path
   };
 }
@@ -222,6 +256,13 @@ function normalizeBriefing(value, pipelineOrigin) {
   const plannedMoveIns = Array.isArray(value.planned_move_ins) && value.planned_move_ins.length <= MAX_WEEKLY_SCHEDULE
     ? value.planned_move_ins.map((row) => normalizeBriefingMoveIn(row, pipelineOrigin))
     : null;
+  const hasJourney = value.admitted_last_week !== undefined || value.moving_through !== undefined;
+  const admittedLastWeek = hasJourney && Array.isArray(value.admitted_last_week) && value.admitted_last_week.length <= MAX_RECENT_REFERRALS
+    ? value.admitted_last_week.map((row) => normalizeBriefingAdmission(row, pipelineOrigin))
+    : hasJourney ? null : [];
+  const movingThrough = hasJourney && Array.isArray(value.moving_through) && value.moving_through.length <= MAX_RECENT_REFERRALS
+    ? value.moving_through.map((row) => normalizeMovingThrough(row, pipelineOrigin))
+    : hasJourney ? null : [];
   const weeklyTrend = Array.isArray(value.weekly_trend) && value.weekly_trend.length <= MAX_WEEKLY_TREND
     ? value.weekly_trend.map((row) => {
       const weekStart = isoCalendarDate(row?.week_start);
@@ -236,6 +277,8 @@ function normalizeBriefing(value, pipelineOrigin) {
       recentReferrals: flag(coverage.recent_referrals_complete),
       assessments: flag(coverage.assessments_complete),
       moveIns: flag(coverage.move_ins_complete),
+      admittedLastWeek: hasJourney ? flag(coverage.admitted_last_week_complete) : false,
+      movingThrough: hasJourney ? flag(coverage.moving_through_complete) : false,
       weeklyTrend: flag(coverage.weekly_trend_complete)
     }
     : null;
@@ -247,6 +290,9 @@ function normalizeBriefing(value, pipelineOrigin) {
     !recentReferrals || recentReferrals.some((item) => !item) ||
     !upcomingAssessments || upcomingAssessments.some((item) => !item) ||
     !plannedMoveIns || plannedMoveIns.some((item) => !item) ||
+    !admittedLastWeek || admittedLastWeek.some((item) => !item) ||
+    !movingThrough || movingThrough.some((item) => !item) ||
+    (hasJourney && (!isoCalendarDate(value.last_week_start) || !isoCalendarDate(value.last_week_end))) ||
     !weeklyTrend || weeklyTrend.some((item) => !item)
   ) {
     return null;
@@ -255,10 +301,14 @@ function normalizeBriefing(value, pipelineOrigin) {
     status: "ready",
     timezone: value.timezone,
     windowEnd: value.window_end,
+    lastWeekStart: hasJourney ? value.last_week_start : null,
+    lastWeekEnd: hasJourney ? value.last_week_end : null,
     coverage: normalizedCoverage,
     recentReferrals,
     upcomingAssessments,
     plannedMoveIns,
+    admittedLastWeek,
+    movingThrough,
     weeklyTrend
   };
 }

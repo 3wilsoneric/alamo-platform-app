@@ -14,6 +14,7 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 import { readStorageItem, writeStorageItem } from "../../../shared/storage/browserStorage";
 import PipelineBoard, { ProgressModal } from "../components/PipelineBoard";
+import CombinedAdmissionsBriefing from "../components/CombinedAdmissionsBriefing";
 import "../admissionsVisual.css";
 import {
   buildAdmissionsMoveInSchedule,
@@ -65,6 +66,7 @@ export default function AdmissionsPage() {
   const pipeline = referralPipeline?.status === "connected" ? referralPipeline : null;
   const today = admissionsToday();
   const scheduledMoveIns = buildAdmissionsMoveInSchedule(pipeline, dashboard?.briefing ?? null, today);
+  const combinedBriefing = pipeline?.briefing.status === "ready" && Boolean(pipeline.briefing.lastWeekStart && pipeline.briefing.lastWeekEnd);
   const surface = searchParams.get("view") === "pipeline" ? "pipeline" : "briefing";
 
   function showSurface(next: "pipeline" | "briefing") {
@@ -162,7 +164,7 @@ export default function AdmissionsPage() {
           </section>
           ) : (
             <div id="admissions-briefing-page" role="tabpanel" aria-label="Admissions briefing" data-admissions-briefing-page="true" className="pt-5 sm:pt-6">
-              {pipeline ? <AdmissionsExecutiveUpdate pipeline={pipeline} scheduledMoveIns={scheduledMoveIns} /> : null}
+              {pipeline && !combinedBriefing ? <AdmissionsExecutiveUpdate pipeline={pipeline} scheduledMoveIns={scheduledMoveIns} /> : null}
               <AdmissionsBriefingDashboard
                 dashboard={dashboard}
                 pipeline={pipeline}
@@ -585,7 +587,7 @@ function AdmissionsBriefingDashboard({
   onOpenCard: (card: AdmissionsBoardCard) => void;
   loading: boolean;
 }) {
-  const [briefingPage, setBriefingPage] = useState<"schedule" | "communities" | "followup">("schedule");
+  const [briefingPage, setBriefingPage] = useState<"week" | "schedule" | "communities" | "followup">("week");
   if (loading) {
     return (
       <div aria-label="Loading Admissions briefing" aria-busy="true" className="grid gap-4 lg:grid-cols-12">
@@ -599,6 +601,8 @@ function AdmissionsBriefingDashboard({
     return <p className="rounded-2xl border border-[#dfe3e1] bg-white px-5 py-12 text-center text-[13px] text-[#69716c]">The weekly briefing is not available in the current snapshot.</p>;
   }
   const { briefing } = dashboard;
+  const combined = pipeline?.briefing.status === "ready" && pipeline.briefing.lastWeekStart && pipeline.briefing.lastWeekEnd
+    ? pipeline.briefing : null;
   const today = admissionsToday();
   const awaitingSchedule = pipeline?.board.cards.filter((card) => isAcceptedReferral(card.status) && !card.plannedAdmissionDate) ?? [];
   const followUpItems = buildAdmissionsFollowUpItems(pipeline);
@@ -618,6 +622,12 @@ function AdmissionsBriefingDashboard({
     community.census != null && !/unassigned|no community/i.test(`${community.shortName} ${community.communityName}`)
   ).length;
   const pages = [
+    ...(combined ? [{
+      key: "week" as const,
+      label: "This week",
+      detail: "Census, admits, and clients moving through",
+      icon: Building2
+    }] : []),
     ...(hasScheduleContent ? [{
       key: "schedule" as const,
       label: "Schedule",
@@ -656,7 +666,7 @@ function AdmissionsBriefingDashboard({
 
       <div data-admissions-briefing-dashboard="true">
         {pages.length > 1 ? <nav aria-label="Admissions dashboard sections" data-admissions-briefing-navigation="true" className="mb-5">
-          <div role="tablist" className={`grid gap-1 rounded-[16px] border border-[#e2ded6] bg-[#f3f0eb] p-1 sm:gap-2 sm:rounded-[20px] sm:p-2 ${pages.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+          <div role="tablist" className={`grid gap-1 rounded-[16px] border border-[#e2ded6] bg-[#f3f0eb] p-1 sm:gap-2 sm:rounded-[20px] sm:p-2 ${combined ? pages.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3" : pages.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
             {pages.map((page) => {
               const Icon = page.icon;
                   const active = activeBriefingPage === page.key;
@@ -681,6 +691,11 @@ function AdmissionsBriefingDashboard({
           </div>
         </nav> : null}
 
+        {activeBriefingPage === "week" && combined ? (
+          <div id="admissions-dashboard-week" role="tabpanel" aria-label="Admissions and census weekly briefing" data-admissions-dashboard-page="week">
+            <CombinedAdmissionsBriefing census={briefing} pipeline={combined} />
+          </div>
+        ) : null}
         {activeBriefingPage === "schedule" ? (
           <div id="admissions-dashboard-schedule" role="tabpanel" aria-label="Admissions schedule dashboard" data-admissions-dashboard-page="schedule">
           <AdmissionsSchedule
@@ -709,7 +724,10 @@ function AdmissionsBriefingDashboard({
   );
 }
 
-function dashboardPageTone(page: "schedule" | "communities" | "followup", active: boolean) {
+function dashboardPageTone(page: "week" | "schedule" | "communities" | "followup", active: boolean) {
+  if (page === "week") return active
+    ? "border-[#c8dbd4] bg-[#edf6f2] text-[#27584a] shadow-[0_4px_16px_rgba(50,91,76,0.10)]"
+    : "border-transparent bg-transparent text-[#686b69] hover:border-[#d1dfda] hover:bg-[#f1f6f3] hover:text-[#365f52]";
   if (page === "schedule") {
     return active
       ? "border-[#c8d7e6] bg-[#edf4fa] text-[#315a7d] shadow-[0_4px_16px_rgba(64,98,130,0.10)]"
@@ -725,7 +743,8 @@ function dashboardPageTone(page: "schedule" | "communities" | "followup", active
     : "border-transparent bg-transparent text-[#686b69] hover:border-[#eadfc8] hover:bg-[#fbf6ea] hover:text-[#765f34]";
 }
 
-function dashboardPageIconTone(page: "schedule" | "communities" | "followup") {
+function dashboardPageIconTone(page: "week" | "schedule" | "communities" | "followup") {
+  if (page === "week") return "text-[#33705d]";
   if (page === "schedule") return "text-[#47749a]";
   if (page === "communities") return "text-[#33705d]";
   return "text-[#9a6b17]";

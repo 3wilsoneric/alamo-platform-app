@@ -43,12 +43,28 @@ await withBrowserQa(async (browser) => {
       throw new Error(`${label} focus did not return to the client file after close.`);
     }
     await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
-    await page.locator('[data-admissions-executive-update="true"][data-admissions-chat-typing="false"]').waitFor({ state: "visible" });
-    const briefingText = await page.locator('[data-admissions-executive-update="true"]').innerText();
+    const combined = page.locator('[data-admissions-combined-briefing="true"]');
+    await combined.waitFor({ state: "visible" });
+    const combinedText = await combined.innerText();
+    if (!combinedText.includes("Census by community") || !combinedText.includes("Clients moving through")) {
+      throw new Error(`${label} combined briefing lost the census or active Pipeline work.`);
+    }
+    await page.screenshot({ path: `${screenshotDir}/${label}-briefing.png`, fullPage: true });
+
+    const legacyFixture = structuredClone(connectedAdmissionsFixture);
+    legacyFixture.referral_pipeline.briefing.lastWeekStart = null;
+    legacyFixture.referral_pipeline.briefing.lastWeekEnd = null;
+    const legacyContext = await browser.newContext({ viewport: { width, height }, serviceWorkers: "block" });
+    const legacyPage = await legacyContext.newPage();
+    await legacyPage.route("**/api/platform/admissions-dashboard", (route) => route.fulfill({ json: legacyFixture }));
+    await legacyPage.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
+    await legacyPage.locator('[data-admissions-executive-update="true"][data-admissions-chat-typing="false"]').waitFor({ state: "visible" });
+    const briefingText = await legacyPage.locator('[data-admissions-executive-update="true"]').innerText();
     if (!briefingText.includes("1 has been accepted") || /No community assigned has the largest|1 have been accepted/.test(briefingText)) {
       throw new Error(`${label} Briefing contains misleading workload language or singular grammar.`);
     }
-    await page.screenshot({ path: `${screenshotDir}/${label}-briefing.png`, fullPage: true });
+    await legacyPage.screenshot({ path: `${screenshotDir}/${label}-legacy-briefing.png`, fullPage: true });
+    await legacyContext.close();
     await context.close();
   }
   console.log("browser admissions material checks passed");

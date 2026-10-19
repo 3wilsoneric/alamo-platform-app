@@ -249,6 +249,32 @@ export interface AdmissionsPipelineBriefingMoveIn {
   owner: string;
   status: string;
   readiness: "ready" | "watch" | "blocked" | "unknown";
+  sourceName?: string | null;
+  referringCounty?: string | null;
+  pipelineUrl: string;
+}
+
+export interface AdmissionsPipelineBriefingAdmission {
+  referralId: number;
+  clientName: string;
+  admittedAt: string;
+  community: string;
+  facilityId: string | null;
+  sourceName: string | null;
+  referringCounty: string | null;
+  pipelineUrl: string;
+}
+
+export interface AdmissionsPipelineMovingClient {
+  referralId: number;
+  clientName: string;
+  stage: AdmissionsBoardColumnKey;
+  status: string;
+  community: string;
+  facilityId: string | null;
+  owner: string;
+  sourceName: string | null;
+  referringCounty: string | null;
   pipelineUrl: string;
 }
 
@@ -258,15 +284,21 @@ export type AdmissionsPipelineBriefing =
       status: "ready";
       timezone: "America/Los_Angeles";
       windowEnd: string;
+      lastWeekStart?: string | null;
+      lastWeekEnd?: string | null;
       coverage: {
         recentReferrals: boolean;
         assessments: boolean;
         moveIns: boolean;
+        admittedLastWeek?: boolean;
+        movingThrough?: boolean;
         weeklyTrend: boolean;
       };
       recentReferrals: AdmissionsPipelineBriefingReferral[];
       upcomingAssessments: AdmissionsPipelineBriefingAssessment[];
       plannedMoveIns: AdmissionsPipelineBriefingMoveIn[];
+      admittedLastWeek?: AdmissionsPipelineBriefingAdmission[];
+      movingThrough?: AdmissionsPipelineMovingClient[];
       weeklyTrend: Array<{ weekStart: string; received: number; accepted: number }>;
     };
 

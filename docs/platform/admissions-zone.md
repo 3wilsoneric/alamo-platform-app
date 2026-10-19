@@ -3,7 +3,7 @@
 - purpose: define the Alamo Admissions overview and the full Pipeline referral-workflow boundary
 - status: current implementation and deployment contract
 - owners: product, engineering, admissions platform
-- updated: 2026-10-04
+- updated: 2026-10-19
 - tags: admissions, pipeline, routing, authentication, integration
 - labels: application-boundary, current-state, deployment
 
@@ -20,12 +20,16 @@ The page uses the same white canvas as the
 main Home surface. Neither destination uses a repeated product title or KPI
 strip.
 
-- **Briefing dashboard** — the current CEO-level admissions readout. A short
-  analyst narrative summarizes accepted clients moving toward admission, the
-  current workload by stage, and the busiest communities. It types in only on
-  its first appearance in a browser session; returning to the page or reloading
-  it restores the complete response immediately. Three drill-down pages keep the
-  reading path bounded: **Schedule**, **Communities**, and **Open fields**.
+- **Briefing dashboard** — the current CEO-level admissions readout. With the
+  Pipeline 3.2 journey slice, **This week** opens first and combines Platform's
+  governed community census with Pipeline's recorded admits last week, planned
+  admits this week, and active clients by stage. Client rows retain the source
+  and referring county when recorded, and link to their Pipeline workspace.
+  Dates, source ages, incomplete lists, and missing coverage remain explicit.
+  **Schedule**, **Communities**, and **Open fields** retain the existing detailed
+  views. If the journey slice is not published, the previous analyst narrative
+  and detail navigation remain available. The narrative types in only on its
+  first appearance in a browser session; returning restores it immediately.
   Schedule reconciles upcoming assessments, current and future planned move-ins,
   and accepted clients without a planned date. Communities combines governed
   census with planned admits and recent referrals, then expands in place to show
@@ -123,9 +127,13 @@ server, never from the browser and never through Pipeline's internal APIs.
   producer slice, introduced in contract 3.1, carries `timezone`, `window_end`,
   explicit coverage
   booleans, and bounded event arrays: `recent_referrals`,
-  `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. The dashboard
-  presents the two forward schedules; referral-origin events and the raw weekly
-  trend remain contract data but are not displayed in the CEO briefing.
+  `upcoming_assessments`, `planned_move_ins`, and `weekly_trend`. Contract 3.2
+  adds `last_week_start`, `last_week_end`, `admitted_last_week`, and
+  `moving_through`, each with explicit completeness flags; planned move-ins
+  also carry source and county. Platform displays these records only after
+  validating and bounding them in the server connector. The detailed dashboard
+  continues to use the existing forward schedules; raw weekly trend remains
+  contract data.
   Referral rows
   carry received timestamp and origin; assessment and move-in rows carry the
   scheduled timestamp; all three carry referral ID, client name, destination
