@@ -116,7 +116,7 @@ function findResidentName(text, residents = []) {
 function parseMetric(text) {
   if (isCensusQualityIntent(text) || isWeeklyCensusIntent(text)) return "census";
   if (/\bcompare\b/.test(text) && !/\b(trends?|history|historical|over time|time series|movement|mover|movers)\b/.test(text) && /\bcommunities|community\b/.test(text) && /\b(census|occupancy|headcount|incident|incidents|los|length of stay|average los)\b/.test(text)) return "community";
-  if (/\b(incident|incidents|awol|elopement|fall|police|sentinel)\b/.test(text)) return "incidents";
+  if (/\b(incident|incidents|awol|elopement|fall|police|sentinel|passed on meds|difficult interactions?)\b/.test(text)) return "incidents";
   if (/\b(medication refusal|medical emergency|substance use|aggressive behavior|mental health crisis)\b/.test(text) && /\b(breakdown|break down|category|categories|count|counts|how many|by community|by facility)\b/.test(text)) return "incidents";
   if (/\b(category|categories)\b/.test(text) && /\b(change|changed|changes|compare|comparison|vs|versus|top|leading|largest)\b/.test(text)) return "incidents";
   if (isRosterBrowseIntent(text)) return "residents";
@@ -143,6 +143,8 @@ function parseMetricGrain(text, metric) {
 
 function parseCategory(text, categories = []) {
   if (/\b(awol|elopement)\b/.test(text)) return "AWOL/Elopement";
+  if (/\b(passed on meds|medication refusal|med refusal)\b/.test(text)) return "Medication Refusal";
+  if (/\bdifficult interactions?\b/.test(text)) return "Aggressive Behavior";
   return [...categories]
     .filter(Boolean)
     .map(String)

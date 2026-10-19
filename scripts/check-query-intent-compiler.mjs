@@ -53,6 +53,20 @@ const cases = [
     tool: "incident_detail_list"
   },
   {
+    prompt: "find passed on meds incidents ever",
+    metric: "incidents",
+    category: "Medication Refusal",
+    mode: "detail",
+    tool: "incident_detail_list"
+  },
+  {
+    prompt: "find difficult interaction incidents ever",
+    metric: "incidents",
+    category: "Aggressive Behavior",
+    mode: "detail",
+    tool: "incident_detail_list"
+  },
+  {
     prompt: "AWOL incidents by community in May and June",
     metric: "incidents",
     category: "AWOL/Elopement",
