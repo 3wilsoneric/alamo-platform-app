@@ -1,0 +1,18 @@
+FROM pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform:knowledge-hub-20260903-1db55ac
+
+USER root
+WORKDIR /app
+
+# Keep the proven Azure container runtime and snapshot adapter from the current
+# production image. Overlay the validated application/API changes and the new
+# acquisition services without packaging the local research datastore.
+COPY api ./api
+RUN rm -rf /app/dist
+COPY dist ./dist
+COPY server ./server
+COPY shared ./shared
+COPY src/features/fiftystate/data ./src/features/fiftystate/data
+
+RUN chown -R node:node /app/api /app/dist /app/server /app/shared /app/src
+
+USER node

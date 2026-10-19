@@ -1,0 +1,7 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Replace only the private, authenticated presentation package on the exact
+# current production image. The browser bundle, API routes, access controls,
+# server runtime, and environment remain unchanged.
+COPY --chown=node:node server/presentations/alamo-data-strategy /app/server/presentations/alamo-data-strategy

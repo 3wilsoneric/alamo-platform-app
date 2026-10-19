@@ -1,0 +1,7 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Overlay the validated UI and native-draft modules on the exact live digest.
+# The existing API adapter, auth, private presentations, and runtime stay intact.
+COPY --chown=node:node dist /app/dist
+COPY --chown=node:node server/executive-director-api.mjs server/executive-director-intake-storage.mjs server/lic624-native.mjs /app/server/

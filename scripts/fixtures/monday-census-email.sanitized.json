@@ -1,0 +1,101 @@
+{
+  "version": "monday-census-email-v1",
+  "mode": "prototype",
+  "report_date": "2026-08-17",
+  "data_as_of": "2026-08-14",
+  "generated_at": "2026-08-17T15:05:00.000Z",
+  "dashboard_url": "https://www.alamoplatform.com/admissions",
+  "pipeline_url": "https://alamo-pipeline.com",
+  "portfolio": {
+    "current_census": 538,
+    "prior_census": 533,
+    "operating_limit": 605
+  },
+  "communities": [
+    {
+      "facility_id": "337",
+      "community": "A & A Health Services San Pablo",
+      "current_census": 147,
+      "prior_census": 147,
+      "operating_limit": 175
+    },
+    {
+      "facility_id": "343",
+      "community": "JC Wallace House",
+      "current_census": 140,
+      "prior_census": 139,
+      "operating_limit": 150
+    },
+    {
+      "facility_id": "345",
+      "community": "Santa Clarita",
+      "current_census": 132,
+      "prior_census": 129,
+      "operating_limit": 150
+    },
+    {
+      "facility_id": "344",
+      "community": "AHS Turlock OP LLC",
+      "current_census": 77,
+      "prior_census": 77,
+      "operating_limit": 84
+    },
+    {
+      "facility_id": "342",
+      "community": "Victoria's House",
+      "current_census": 42,
+      "prior_census": 41,
+      "operating_limit": 46
+    }
+  ],
+  "pipeline": {
+    "status": "prototype",
+    "data_as_of": "2026-08-14",
+    "accepted_pending_total": 9,
+    "accepted_last_7_days": 4,
+    "expected_next_7_days": 3,
+    "without_expected_date": 2,
+    "communities": [
+      {
+        "facility_id": "337",
+        "community": "A & A Health Services San Pablo",
+        "accepted_pending": 2,
+        "accepted_last_7_days": 1,
+        "expected_next_7_days": 1,
+        "without_expected_date": 0
+      },
+      {
+        "facility_id": "343",
+        "community": "JC Wallace House",
+        "accepted_pending": 3,
+        "accepted_last_7_days": 1,
+        "expected_next_7_days": 1,
+        "without_expected_date": 1
+      },
+      {
+        "facility_id": "345",
+        "community": "Santa Clarita",
+        "accepted_pending": 2,
+        "accepted_last_7_days": 1,
+        "expected_next_7_days": 1,
+        "without_expected_date": 0
+      },
+      {
+        "facility_id": "344",
+        "community": "AHS Turlock OP LLC",
+        "accepted_pending": 1,
+        "accepted_last_7_days": 1,
+        "expected_next_7_days": 0,
+        "without_expected_date": 0
+      },
+      {
+        "facility_id": "342",
+        "community": "Victoria's House",
+        "accepted_pending": 1,
+        "accepted_last_7_days": 0,
+        "expected_next_7_days": 0,
+        "without_expected_date": 1
+      }
+    ]
+  }
+}

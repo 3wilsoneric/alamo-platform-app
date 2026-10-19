@@ -1,0 +1,13 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:69d31e0567f4424ce9fbcf45f0fa5a637bd25e1163b57fe7db850572228a917b
+FROM ${BASE_IMAGE}
+
+# Preserve the proven Azure server, API, configuration, and runtime from the
+# selected production digest. Replace only the validated Vite browser bundle.
+# Keep this to one filesystem layer. Repeated frontend-only releases inherit
+# every preceding image layer, and extra RUN/USER/WORKDIR steps eventually hit
+# the registry's maximum image depth. Fingerprinted Vite assets can safely
+# coexist with older unreferenced files. `npm run build` must stage current
+# root, /admissions, and /chat entry documents and regenerate their gzip and
+# Brotli siblings so compressed browser requests can never inherit an older
+# shell from the base image.
+COPY --chown=node:node dist /app/dist

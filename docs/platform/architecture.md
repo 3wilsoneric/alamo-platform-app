@@ -1,0 +1,503 @@
+# Platform Architecture
+
+- purpose: explain current Alamo Platform architecture and boundaries
+- status: authoritative current-state reference
+- owners: engineering, data platform
+- updated: 2026-10-06
+- tags: architecture, react, azure-container-apps, databricks, snapshot, azure
+- labels: platform-handbook, current-state
+- related files:
+  - [alamo-platform-app/src/app/App.tsx](/Users/eric/CareEngineMain/alamo-platform-app/src/app/App.tsx)
+  - [alamo-platform-app/src/shared/layout/ProtectedAppShell.tsx](/Users/eric/CareEngineMain/alamo-platform-app/src/shared/layout/ProtectedAppShell.tsx)
+  - [alamo-platform-app/server/platform-data.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-data.mjs)
+  - [alamo-platform-app/server/platform-snapshot.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-snapshot.mjs)
+  - [alamo-platform-app/server/qa-artifacts.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/qa-artifacts.mjs)
+  - [alamo-platform-app/src/features/home/hooks/useChatRequestLifecycle.ts](/Users/eric/CareEngineMain/alamo-platform-app/src/features/home/hooks/useChatRequestLifecycle.ts)
+  - [alamo-platform-app/vercel.json](/Users/eric/CareEngineMain/alamo-platform-app/vercel.json)
+
+## Purpose
+
+Give future agents and engineers a factual map of what is live now, not what an
+older spec intended to build.
+
+## System Boundaries
+
+```mermaid
+flowchart TD
+    subgraph Data["Databricks / Azure Data Layer"]
+      Raw["Raw source partitions"]
+      Silver["Silver/staged tables"]
+      Gold["Gold views"]
+      ToolContext["v_tool_* analyst views"]
+      Blob["Azure Blob platform snapshot"]
+      Knowledge["Alamo knowledge records and evidence"]
+    end
+
+    subgraph Server["Azure Container Apps / Node API modules"]
+      Snapshot["platform-snapshot.mjs"]
+      PlatformData["platform-data.mjs"]
+      ChatApi["api/chat.js"]
+      Tools["copilot-tools.mjs orchestrator + server/tools/* domains"]
+      Claude["claude-copilot.mjs"]
+      Reports["api/reports.js + governed reporting"]
+      KnowledgeApi["platform-knowledge-api.mjs"]
+    end
+
+    subgraph Client["React app"]
+      Shell["ProtectedAppShell"]
+      Home["WorkspaceHomePage chat/module canvas"]
+      Communities["Communities surfaces"]
+      Incidents["Incident Center"]
+      Admissions["Admissions briefing + pipeline"]
+      Command["Command Center"]
+    end
+
+    Raw --> Silver --> Gold --> ToolContext
+    Gold --> Blob
+    ToolContext --> Blob
+    Knowledge --> KnowledgeApi
+    Blob --> Snapshot --> PlatformData
+    PlatformData --> Client
+    PlatformData --> Admissions
+    Home --> ChatApi --> Tools
+    ChatApi --> Claude
+    Home --> Reports
+    Reports --> Tools
+    Reports --> Claude
+```
+
+The diagram shows the core operating-data path. Production also has bounded
+side paths that do not become general snapshot tables:
+
+- Pipeline supplies one versioned server-to-server Admissions summary.
+- The QA-approved client database is a separate Azure object loaded on demand
+  through a validated pointer in the snapshot.
+- Licensing monitoring and owner-only knowledge and acquisition research use
+  specialized stores and protected API contracts.
+- NetSuite, Outlook or Teams workflows, and external hospital, claims, and
+  outcome feeds are not current Platform data sources.
+
+Every source keeps its own coverage and freshness clock. The UI must not imply
+that the snapshot as-of date also describes Pipeline, the client database, or
+Licensing evidence.
+
+## Frontend Architecture
+
+The app is a Vite/React 19 single page app.
+
+Primary app entry:
+
+- [App.tsx](/Users/eric/CareEngineMain/alamo-platform-app/src/app/App.tsx)
+
+Current protected routes:
+
+- `/home`: signed-in California community map and comprehensive community-profile entrypoint.
+- `/analytics`: governed report library.
+- `/analytics/questions`: guided-question workspace, answer timeline, and surfaced modules.
+- `/admissions`: CEO briefing plus the bounded Pipeline referral workspace.
+- `/personnel`: personnel operating overview (`/workforce` redirects here).
+- `/chat`: unlisted owner-only conversational entry to the same analyst runtime.
+- `/executive/dashboard`: facility-scoped Executive Director community dashboard.
+- `/executive/licensing`: facility-scoped Executive Director Licensing workflow.
+- `/data-architecture`: URL-only, print-ready infographic of the governed data
+  paths, current production runtime, bounded integrations, available
+  capabilities, and explicit source gaps.
+- `/communities`: portfolio community overview.
+- `/communities/:facilityId`: focused community detail.
+- `/incidents`: Incident Center.
+- `/explorer/:kind`: full-screen governed incident, census, or resident data.
+- `/glossary`: definitions and metric support.
+- `/command-center`: platform health, analyst QA, intent compiler workbench.
+- `/analytics/licensing`: separately authorized Licensing library and change review.
+- `/outreach`: national market research plus an owner-only private-acquisition
+  research and valuation view.
+
+The retired `/fiftystate` URL redirects to `/outreach` so saved links continue
+to work; it is not a second product surface.
+
+Unknown paths redirect to `/home`; retired product routes are not maintained as separate aliases.
+
+## Shell
+
+[ProtectedAppShell.tsx](/Users/eric/CareEngineMain/alamo-platform-app/src/shared/layout/ProtectedAppShell.tsx)
+is the live shell. It:
+
+- requires Microsoft Entra auth before rendering protected routes
+- shows the fixed Alamo logo/home control
+- collapses brand text while chat/module flow is active
+- prefetches heavy workspace modules during idle time
+- converts expired API sessions and HTTP 401 responses into an automatic Entra
+  refresh that returns the user to the same route
+- keeps last-known-good in-session data visible during a network outage,
+  with an explicit offline/stale banner and automatic refresh on reconnect
+- renders the warm canvas background and current route outlet
+
+Retired sidebar/header prototypes were removed. Do not recreate a second shell;
+extend `ProtectedAppShell.tsx` only when a product requirement needs global
+navigation.
+
+## API Architecture
+
+Azure production runs the React application and Node API together in the
+`alamo-platform-prod-web` Container App. The handler files retain compatibility
+with the Vercel adapter, but Vercel is not the public `www.alamoplatform.com`
+host. The logical API routing is:
+
+- `/api/platform/*` -> [api/platform.js](/Users/eric/CareEngineMain/alamo-platform-app/api/platform.js)
+- `/api/integrations/pipeline/clinical/*` -> [api/platform.js](/Users/eric/CareEngineMain/alamo-platform-app/api/platform.js), isolated by [server/pipeline-clinical-api.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/pipeline-clinical-api.mjs)
+- `/api/communities/*` -> [api/communities.js](/Users/eric/CareEngineMain/alamo-platform-app/api/communities.js)
+- `/api/chat/*` -> [api/chat.js](/Users/eric/CareEngineMain/alamo-platform-app/api/chat.js)
+- `/api/reports/*` -> [api/reports.js](/Users/eric/CareEngineMain/alamo-platform-app/api/reports.js)
+- all non-API paths -> `index.html`
+
+Core API contracts:
+
+- `GET /api/platform/bootstrap`
+- `GET /api/platform/health`
+- `GET /api/platform/analyst-qa`
+- `GET /api/platform/analyst-traces`
+- `GET /api/platform/knowledge`
+- `GET /api/platform/knowledge/search?q=...&state=...&kind=...`
+- `GET /api/platform/knowledge/record?id=...`
+- `GET /api/platform/acquisition`
+- `GET /api/platform/acquisition/search?q=...&state=...&disposition=...`
+- `GET /api/platform/acquisition/operators?q=...&state=...&stage=...&fit=...&maturity=...&selectionBucket=...&ownerDecision=...`
+- `POST /api/platform/acquisition/operator-decision`
+- `GET /api/platform/acquisition/research?queue=...&q=...&state=...`
+- `POST /api/platform/acquisition/research`
+- `POST /api/platform/acquisition/valuation`
+- `GET /api/platform/snapshot-health`
+- `GET /api/platform/snapshot-metadata`
+- `GET /api/platform/executive-director/bootstrap?facilityId=...`
+- `GET /api/platform/executive-director/dashboard?facilityId=...`
+- `POST /api/platform/executive-director/licensing-intake`
+- `GET /api/platform/executive-director/licensing-intake?facilityId=...&submissionId=...`
+- `PUT /api/platform/executive-director/licensing-intake/review`
+- `GET /api/platform/executive-director/licensing-intake/submissions?facilityId=...&limit=...&cursor=...&status=...&q=...`
+- `GET /api/platform/executive-director/licensing-intake/source?facilityId=...&submissionId=...`
+- `GET /api/communities/dashboard`
+- `GET /api/communities/snapshot?facilityId=...`
+- `GET /api/home-dashboard`
+- `GET /api/incidents`
+- `GET /api/analytics-summary`
+- `POST /api/chat/claude/message`
+- `GET /api/chat/claude/health`
+- `POST /api/chat/tools`
+- `POST /api/chat/intent`
+- `POST /api/chat/session/reset`
+- `GET /api/reports/status`
+- `POST /api/reports/create`
+- `POST /api/reports/email`
+- `GET /api/reports/full/definitions`
+- `POST /api/reports/full/create`
+- `POST /api/reports/weekly/preview`
+- `GET /api/reports/weekly` with Vercel `CRON_SECRET`
+
+Every production and preview contract above, including health endpoints,
+requires a delegated Entra access token with the configured `access_as_user`
+scope. Authentication runs before route dispatch; request parsing and domain
+execution never run for an anonymous request.
+
+Executive Director batch intake keeps the existing single-file POST contract:
+new reports return 201, exact-byte duplicates return 200 with `duplicate: true`.
+The local implementation reserves a private, immutable facility/SHA-256 receipt
+before publishing the original and manifest. Retries converge on the reserved
+UUID and finish incomplete persistence without replacing existing reviewed
+manifests. Source bytes are integrity-checked again before acknowledging a
+duplicate. Azure object creation is conditional; catalog mutations retain ETag
+checks. Local create-only objects use atomic publication, and catalog writes
+use a bounded single-host process lock with dead-owner recovery. The response
+flag is not persisted as report content. The existing 8 MiB facility catalog
+remains a limit; the indexed store and background processing stages are tracked
+in the [Executive Director plan](./executive-director-workspace.md).
+
+The removed legacy assistant compatibility endpoints are not part of the API contract.
+Deterministic tools own data access; Claude is the bounded synthesis path.
+Governed reports accept only completed registered-question evidence. The
+interactive and scheduled paths share the same source validator, report
+compiler, HTML renderer, and optional server-side synthesis boundary.
+Long-form operating reports use the parallel `governed-full-report-v1`
+contract. `server/full-reporting.mjs` freezes the current snapshot inputs,
+calculates every displayed value deterministically, attaches named evidence
+slices, and emits both a renderer-neutral document and a self-contained
+print-ready HTML artifact. Claude is not required to compile a full report and
+cannot select, calculate, or alter its evidence.
+
+## Platform Knowledge Boundary
+
+The first company-knowledge read model is owned by Alamo Platform, not by a
+second application shell. [platform-knowledge-catalog.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-knowledge-catalog.mjs)
+normalizes the existing maintained 50-state, demand, buyer, and procurement
+research into one searchable seed catalog. The authenticated platform API
+returns record identity, evidence links, freshness dates, and explicit source
+boundaries. [platform-knowledge-store.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-knowledge-store.mjs)
+adds a local file-backed source registry, discovery queue, content-addressed
+archive, deterministic revision ledger, text-extraction queue, assertion review
+state, cited notes, and full-text retrieval for locally archived or extracted
+text.
+
+The repository seed plus `generated/platform-knowledge/` file store is the
+current local datastore, not the production write store. The CLI entrypoint is
+`npm run knowledge -- <command>`. Production source state, document metadata,
+assertions, approval decisions, and search projections belong inside the
+shared Alamo Azure environment, with archived bytes in Blob. A purpose-built
+frontend may use different inputs and workflows, but it must call the same
+Entra-protected Alamo APIs and preserve the same contracts. It must not create
+a parallel identity boundary or browser-side database.
+
+The knowledge routes are intentionally absent from product navigation and have
+a second authorization boundary after normal Entra verification. Only the
+configured `PLATFORM_KNOWLEDGE_OWNER_OBJECT_ID` or
+`PLATFORM_KNOWLEDGE_OWNER_EMAIL` may read them; every other authenticated
+identity receives the same generic `404 Not found` response as an absent route.
+Local development bypass remains available only outside production-like
+runtimes.
+
+## Private Acquisition Intelligence Boundary
+
+[acquisition-intelligence.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-intelligence.mjs)
+owns the first deterministic private-acquisition read model and valuation
+calculation. Its operator rows are explicitly discovery-only leads from the
+supplied workbook. Current official company sources calibrate each visible
+footprint and identify whether capacity is reported or estimated. Workbook bed
+ranges and prior enterprise-value ranges remain screening anchors rather than
+verified ownership, licensed-capacity, or transaction facts. The overview
+reports zero verified facilities, operators, and ranked targets until
+facility-level evidence supports them.
+
+The model preserves the workbook arithmetic:
+
+- base beds are the midpoint of low and high beds
+- revenue is beds times occupancy times 365 times net revenue per occupied
+  bed-day
+- normalized EBITDA is revenue times EBITDA margin
+- enterprise value is normalized EBITDA times the selected multiple
+
+The owner-facing browser presents precomputed low/base/high screening values
+from each operator's bed range and segment defaults. The valuation API still
+accepts explicit bounded inputs for future workflows and rejects invalid,
+missing, or incorrectly ordered bed ranges rather than treating them as zero.
+The API and the Outreach view use the same owner allowlist as private
+platform knowledge; other signed-in users receive a generic 404 and never see
+the acquisition view.
+
+`npm run acquisition:refresh` builds the source-of-truth national discovery
+datastore under ignored `generated/acquisition-intelligence/` storage. It
+downloads the 2024 N-SUMHSS PUF and codebook, archives raw per-state
+FindTreatment API responses, validates the configured PUF schema, preserves
+hashes and field mappings, and writes a searchable normalized facility index.
+The two source layers remain separate because the public PUF suppresses names
+and addresses and exposes no record key shared with the named directory.
+The same refresh builds a California-excluded organization-proposal index using
+all named directory records as the broad universe and the private, adult,
+residential screen as the target-candidate boundary. Shared primary domains and
+normalized names create proposals only. The derived funnel contains a broad
+universe bucketed by observable scale, service fit, and private-company
+likelihood, plus a deterministic 500-company screen and a maturity-biased
+100-company research suggestion. No discovery rule can assign high
+parent-company confidence.
+`npm run acquisition:publish:azure` publishes the raw lineage, manifest, and a
+compressed facility and operator-proposal indexes into the existing private
+Azure Blob container. The
+first production initialization may also seed the research store by setting
+`ACQUISITION_PUBLISH_RESEARCH_INITIALIZE=true`; the conditional write refuses
+to replace an existing production research store.
+
+[acquisition-research-store.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-research-store.mjs)
+adds a third, analyst-authored layer. It uses ignored
+`generated/acquisition-intelligence/research/` storage in development and an
+ETag-protected, gzip-compressed Azure Blob store in production. It creates one
+durable case for every include or review facility, preserves case status, scope
+review, ownership and license work, licensed-bed inputs, analyst notes, cited
+evidence, and an immutable Azure revision archive. Source refreshes never
+rewrite those decisions.
+[acquisition-operator-selection-store.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-operator-selection-store.mjs)
+stores the owner's company-level research, hold, and pass decisions separately
+from the generated proposal index. It uses a mode-0600 local file in
+development and conditional Azure Blob writes in production, so source
+refreshes and reranking never erase the selected 50–100 company list.
+[acquisition-research.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/acquisition-research.mjs)
+derives bounded ownership, license, scope, capacity, and Top-25 evidence-priority
+queues. Shared website domains and normalized facility names can create proposed
+operator clusters, but every cluster remains explicitly unverified.
+
+The target entity hierarchy is sponsor → operating parent → legal operator →
+brand → facility → license. The owner-facing company row resolves to the
+operating parent, while sponsor ownership remains separate metadata. A high
+confidence parent edge requires authoritative legal-entity evidence, current
+effective dates, and contradiction review; a shared domain alone cannot cross
+that gate.
+
+The facility discovery and research components are preserved in the codebase,
+and their protected APIs and Azure persistence remain operational. They are
+intentionally not rendered in the current company-level operator screen.
+
+This is not yet the verified national private facility/operator database. The
+directory screen produces include, review, and excluded-context queues, not
+ownership or license conclusions. The Azure-backed case store supports manual
+state-license matching and legal-owner resolution. Automated registry adapters,
+relational legal-entity modeling, and Top 100 generation remain later slices in
+the shared Azure knowledge plane. A ranked operator cannot exist until the
+required facility and ownership evidence passes those workflows.
+
+## Analyst Server Boundaries
+
+`copilot-tools.mjs` is the orchestration layer, not the home for domain logic.
+Domain modules under `server/tools/` own incidents, census, residents,
+medications, trends, availability, surfaces, data access, query routing,
+formatting, execution planning, result safety, certified-answer enforcement,
+and result finalization. Local QA artifact parsing and status reporting belong
+to `server/qa-artifacts.mjs`, not the warehouse-facing platform data module.
+Incident, census, and resident explorer row projection belongs to
+`server/data-explorer.mjs`; `server/platform-data.mjs` only loads the required
+snapshot and supplies its freshness status.
+Snapshot freshness, diagnostics, publish safety, and controlled unavailable
+errors belong to `server/snapshot-status.mjs`.
+The Databricks SQL client is constructed lazily in `server/databricks.mjs` so
+compiler-only and static QA processes do not create warehouse SDK handles.
+Medication summary and comparison logic belongs to
+`server/tools/medication-summaries.mjs`; exception-detail and medication tool
+registration belong to `server/tools/medications.mjs`. The orchestrator only
+wires their dependencies and registers the validated definition list.
+Portfolio context catalogs, community profiles, operating snapshots, and
+community comparisons belong to `server/tools/platform-overview.mjs` and are
+registered through one validated platform-overview definition list.
+`check:code-health`
+enforces these boundaries, a 2,300-line orchestrator budget, import-cycle checks,
+and browser-source reachability from `src/main.tsx`.
+
+The workspace page owns composition and rendering. Request cancellation,
+latest-request-wins behavior, slow-request timing, inbound prompt timers, and
+unmount cleanup belong to `useChatRequestLifecycle.ts`. This keeps thread and
+account transitions from depending on page-local timer bookkeeping.
+The workspace does not expose a history menu. Its bounded background
+conversation journal remains isolated in `chatHistory.ts`, while reload and New
+Chat always begin with a clean visible workspace. Module routes, labels, icons,
+and tool-result message projection belong to `workspaceModuleModel.ts`, leaving
+the page responsible for conversation orchestration rather than low-level models.
+
+## Shared Runtime Boundaries
+
+Cross-cutting behavior has one owner:
+
+- [period-utils.mjs](/Users/eric/CareEngineMain/alamo-platform-app/shared/period-utils.mjs)
+  owns month parsing, range expansion, display labels, and closest-valid-period
+  recovery.
+- [community-names.mjs](/Users/eric/CareEngineMain/alamo-platform-app/shared/community-names.mjs)
+  owns legacy community-name normalization for deterministic and synthesized
+  results.
+- [http-errors.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/http-errors.mjs)
+  owns API request URL parsing and controlled JSON error responses, including
+  snapshot-unavailable `503` behavior.
+- [browserDownload.ts](/Users/eric/CareEngineMain/alamo-platform-app/src/shared/files/browserDownload.ts)
+  owns browser text-file downloads.
+- [multiSeriesData.ts](/Users/eric/CareEngineMain/alamo-platform-app/src/shared/charts/multiSeriesData.ts)
+  owns multi-series sanitization used by trend and heatmap modules.
+- [counts.ts](/Users/eric/CareEngineMain/alamo-platform-app/src/shared/data/counts.ts)
+  owns top-frequency aggregation used by community surfaces.
+
+Do not recreate local versions of these algorithms. `check:code-health`,
+`check:unused`, and `check:duplicates` enforce the boundary and keep stale or
+copied implementations from accumulating.
+
+## Snapshot-First Data Rule
+
+Snapshot-backed API methods call
+[platform-data.mjs](/Users/eric/CareEngineMain/alamo-platform-app/server/platform-data.mjs),
+which requires a published snapshot for core bootstrap/dashboard/community
+surfaces. If the snapshot is missing, the API returns a controlled `503`
+instead of silently rebuilding a page from live fan-out Databricks reads.
+
+Snapshot storage behavior:
+
+- Azure Blob is required in production and read failures stop safely rather than serving a stale local file.
+- Local development fallback is `alamo-platform-app/generated/platform-snapshot/latest.json`.
+- Expected Azure paths are `snapshots/daily/latest.json` and
+  `snapshots/daily/YYYY-MM-DD.json`.
+
+## Live Incident Exception
+
+`GET /api/incidents` is deliberately different. It disables browser/CDN caching
+and tries live Databricks first because Incident Center is an operational feed.
+If live Databricks fails, it falls back to the published snapshot and includes a
+warning.
+
+`GET /api/platform/executive-director/incidents` uses the same operational
+exception for the Executive Director's searchable incident register, without
+changing the snapshot-first dashboard contract. The API authenticates the user
+and authorizes the facility before its live read. One bounded SQL statement
+returns a full-source count, matching count, category facets, revision, and a
+cursor page from `alamohealth.gold.v_incidents`, joined to facility-scoped
+resident names from `alamohealth.gold.v_tool_resident_countability_audit`.
+There is no history cutoff; undated incidents remain included unless a date
+filter is applied. Cursors bind to facility, filters, source, and revision.
+The configured service principal needs read access to these views. If that
+read is unavailable, the first page may use published incident detail, but
+coverage is always partial (publishing is bounded by age and row count).
+A live-page failure does not substitute snapshot rows. Counts distinguish
+available detail from published aggregates, and unavailable data is not zero.
+
+## Auth And Identity
+
+Frontend auth:
+
+- Microsoft Entra via MSAL.
+- Required browser-safe vars: `VITE_ENTRA_CLIENT_ID`, `VITE_ENTRA_TENANT_ID`.
+- The browser derives its Entra callback from the current origin as `/login`; cross-origin redirect overrides are not supported.
+- MSAL cache is session storage.
+- Production browser requests acquire a delegated `access_as_user` token and attach it to every `/api` request.
+
+User API authorization:
+
+- Every Vercel API handler calls the shared `server/api-auth.mjs` boundary.
+- Production and Vercel previews fail closed by default.
+- The server verifies the Entra signature, tenant issuer, API audience, and delegated scope before reading platform data.
+- The deployment can additionally require an Entra app role through `ENTRA_API_REQUIRED_ROLE`.
+- Local development bypass is allowed only when `API_AUTH_REQUIRED` is false or unset outside Vercel preview/production.
+
+Profile behavior:
+
+- First sign-in creates a lightweight local app profile from Entra token claims.
+- Stored profile key is per `homeAccountId`.
+- Profile stores display name, first/last name, email, role label, initials, and
+  default notification settings.
+
+Server/service auth:
+
+- Azure Blob uses Entra service principal or optional connection string.
+- Databricks uses OAuth client credentials in production.
+- PAT fallback exists only when explicitly allowed in development.
+
+## Data Privacy Boundary
+
+The server strips large historical incident detail and bounded MAR exception
+detail before sending general summary payloads to the browser when those
+rows are not needed. AH Analyst tools can use bounded tool-context rows through
+server-side logic. Future docs should keep this distinction clear.
+
+## Workflow authoring and reviewed knowledge — 2026-10-19
+
+The integration checkout implements `/api/platform/workflow/v1` in
+`server/workflow-api.mjs` and `server/workflow/*`. This is Workflow-owned content
+hosted by Platform, separate from Platform's existing knowledge plane and the
+AlamoAgent source connector. No sibling runtime or database client is imported.
+The embedded Workflow UI uses `fetchWithApiAuth`; the server verifies delegated
+Entra credentials, preserves the owner-only gate, and derives actor/tenant scope
+before accessing storage. Browser-supplied identities, scopes, development
+bypasses, and app-only credentials do not grant access.
+
+A dedicated Azure Blob container holds tenant-scoped immutable state revisions
+and an ETag-protected head. One bounded aggregate makes document approval,
+relationship approval, publication and withdrawal atomic under concurrent writes.
+The head selects the accepted revision; losing writers can leave unreferenced
+candidate archives, which are never served as accepted records. There is no local
+filesystem fallback. See [deployment operations](deployment-operations.md) for
+configuration, recovery, pilot limits and the explicit not-deployed status.
+
+Documents and quoted relationships have separate review decisions. Publication
+freezes approved content with explicitly selected approved connections. Source
+hashes and exact spans remain inspectable; changed direct evidence blocks approved
+retrieval, and withdrawing a published connection retracts its publication. Library
+nodes remain draft references even when a connection to them is approved. This
+pilot does not implement staff-wide access, independent-reviewer separation, AI
+extraction, transitive dependency validation, or a downstream change feed.

@@ -1,0 +1,491 @@
+/* Main Platform workspace materials. Keep these scoped to the existing routes;
+   the Executive Director workspace owns its separate document styles. */
+:root {
+  --platform-workspace-width: 1500px;
+  --platform-file-ink: #16283a;
+  --platform-file-rule: #d3d8dd;
+  --platform-file-paper: #fcfbf7;
+}
+
+[data-analytics-section-navigation="true"] [aria-current="page"] {
+  background: transparent;
+}
+
+/* The main Platform home remains a geographic entry point, but its governed
+   census is visible without hovering over five map markers. This is an index,
+   not another folder or a row of disconnected KPI cards. */
+[data-california-home-hero="true"] {
+  background: linear-gradient(135deg, #f8f9f7 4%, #eef3f5 70%, #e8eff2);
+}
+
+.california-community-index {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  top: clamp(48px, 8vh, 88px);
+  right: clamp(20px, 3vw, 48px);
+  width: clamp(300px, 24vw, 340px);
+  border: 1px solid #c9d2d1;
+  border-top: 4px solid #1c5377;
+  border-radius: 4px;
+  background: #fcfbf7;
+  box-shadow: 0 14px 35px #2036461c, inset 0 1px #fff;
+}
+
+.california-community-index__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #d0d8d8;
+}
+
+.california-community-index__header h1 {
+  margin: 0;
+  color: #16283a;
+  font: 650 24px/1.15 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -.04em;
+}
+
+.california-community-index__header span {
+  flex: none;
+  color: #536777;
+  font: 650 10px/1.3 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.california-community-index__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 18px;
+  align-items: center;
+  width: 100%;
+  min-height: 71px;
+  gap: 13px;
+  padding: 12px 17px;
+  border-bottom: 1px solid #d7dedf;
+  color: #173a53;
+  text-align: left;
+  transition: background-color .15s;
+}
+
+.california-community-index__row:last-child { border-bottom: 0; }
+.california-community-index__row:hover,
+.california-community-index__row:focus-visible,
+.california-community-index__row[data-california-index-highlighted="true"] { background: #e9f0f3; }
+.california-community-index__row:focus-visible { outline: 2px solid #164d7c; outline-offset: -3px; }
+.california-community-index__identity,
+.california-community-index__metric { display: block; min-width: 0; }
+.california-community-index__identity strong,
+.california-community-index__metric strong { display: block; font: 650 15px/1.25 "Helvetica Neue", Arial, sans-serif; }
+.california-community-index__identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.california-community-index__identity small,
+.california-community-index__metric small { display: block; margin-top: 3px; color: #647580; font: 500 11px/1.25 "Helvetica Neue", Arial, sans-serif; }
+.california-community-index__metric { text-align: right; }
+.california-community-index__metric strong { font-size: 23px; font-variant-numeric: tabular-nums; }
+.california-community-index__row > svg { color: #276584; }
+
+@media (min-width: 1320px) {
+  .california-community-index { display: block; }
+}
+
+@media (min-width: 1320px) and (max-height: 700px) {
+  .california-community-index { top: 24px; }
+  .california-community-index__header { padding-block: 12px; }
+  .california-community-index__row { min-height: 61px; padding-block: 8px; }
+}
+
+[data-mobile-community-home="true"] .california-community-index {
+  display: block;
+  position: static;
+  width: 100%;
+  box-shadow: 0 14px 35px #2036461c, inset 0 1px #fff;
+}
+
+@media (max-width: 380px) {
+  [data-mobile-community-home="true"] .california-community-index__row {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+}
+
+[data-reports-page="true"] aside,
+[data-licensing-workspace="true"] aside {
+  border-right: 1px solid #d4dbd8;
+  padding-right: 20px;
+}
+
+[data-california-carousel-panel="reports"] { background: #f2f3f0; }
+[data-reports-page="true"] { background: transparent; }
+[data-reports-page="true"] aside {
+  align-self: start;
+  border: 1px solid #cbd4d3;
+  border-top: 4px solid #1c5377;
+  border-radius: 4px;
+  background: #fcfbf7;
+  padding: 0 14px 0 0;
+  box-shadow: 0 8px 22px #1b374414;
+}
+
+[data-reports-page="true"] [data-analytics-report-option][aria-pressed="true"] {
+  color: #164d7c;
+}
+
+[data-reports-page="true"] article[data-full-report] {
+  --report-tone: #174f81;
+  min-width: 0;
+  border: 1px solid #cbd4d3;
+  border-top: 4px solid var(--report-tone);
+  border-radius: 4px;
+  background: #fcfbf7;
+  padding: clamp(18px, 2.2vw, 32px);
+  box-shadow: 0 14px 35px #1b374419, inset 0 1px #fff;
+}
+
+[data-reports-page="true"] article[data-full-report="incidents"] { --report-tone: #923621; }
+[data-reports-page="true"] article[data-full-report="medications"] { --report-tone: #68214e; }
+[data-reports-page="true"] article[data-full-report="residents"] { --report-tone: #315e4d; }
+[data-reports-page="true"] article[data-full-report] > header { border-color: var(--report-tone); }
+[data-reports-page="true"] article[data-full-report] > header > div:first-child > p:first-child,
+[data-reports-page="true"] article[data-full-report] > section > p:first-child { color: var(--report-tone); }
+[data-reports-page="true"] article[data-full-report] > header > div:last-child { border-color: var(--report-tone); }
+[data-reports-page="true"] article[data-full-report] > section { border-color: #b9c9d0; }
+[data-reports-page="true"] article[data-full-report] > div > div.grid { border-color: #b9c9d0; }
+
+[data-reports-page="true"] [data-analytics-report-option],
+[data-licensing-workspace="true"] aside li button {
+  min-height: 72px;
+}
+
+[data-reports-page="true"] [data-analytics-report-option][aria-pressed="true"],
+[data-licensing-workspace="true"] aside li button[aria-pressed="true"] {
+  border-left: 0;
+  background: #f2f5f2;
+  color: #173e35;
+}
+
+[data-licensing-workspace="true"] main[aria-label="Report reader"] {
+  min-height: 420px;
+  border: 1px solid #d7d7cc;
+  border-top: 4px solid #a7834c;
+  border-radius: 4px;
+  background: var(--platform-file-paper);
+  padding: clamp(16px, 2vw, 28px);
+  box-shadow: 0 8px 22px #48392216;
+}
+
+.licensing-report-document {
+  max-width: 900px;
+  min-width: 0;
+  border: 1px solid #d6dbd6;
+  border-top: 3px solid #a7834c;
+  background: #fffefa;
+}
+
+.licensing-brief-sections {
+  overflow-wrap: anywhere;
+}
+
+.licensing-brief-sections h3 {
+  margin: 0 0 12px;
+  color: #263c30;
+  font: 600 19px/1.35 "Helvetica Neue", Arial, sans-serif;
+}
+
+.licensing-report-document__body {
+  min-width: 0;
+  padding: 0 clamp(20px, 3vw, 40px) 32px;
+  color: #273633;
+  font: 400 16px/1.85 "Helvetica Neue", Arial, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.licensing-report-document__header {
+  padding: 28px clamp(20px, 3vw, 40px) 24px;
+  border-bottom: 1px solid #e3e5dd;
+}
+
+.licensing-report-document__header h3 {
+  color: #263c30;
+  font: 600 24px/1.3 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.licensing-report-document__header p {
+  max-width: 65ch;
+  margin-top: 10px;
+  color: #667168;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.licensing-report-page {
+  padding-top: 28px;
+}
+
+.licensing-report-page + .licensing-report-page {
+  margin-top: 28px;
+  border-top: 1px solid #e3e5dd;
+}
+
+.licensing-report-page h4 {
+  margin: 0 0 18px;
+  color: #647469;
+  font: 600 12px/1.5 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.licensing-report-prose {
+  max-width: 68ch;
+}
+
+.licensing-report-prose > * + * {
+  margin-top: 20px;
+}
+
+.licensing-report-prose h5 {
+  margin-top: 28px;
+  color: #234a3d;
+  font: 600 17px/1.6 "Helvetica Neue", Arial, sans-serif;
+}
+
+.licensing-report-prose ul {
+  padding-left: 22px;
+  list-style: disc;
+}
+
+.licensing-report-document__footer {
+  border-top: 1px solid #e3e5dd;
+  padding: 16px clamp(20px, 3vw, 40px);
+  color: #667168;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.licensing-report-document__footer button {
+  min-height: 44px;
+  color: #287261;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.licensing-agent { max-width: 900px; margin: 0 auto; }
+.agent-work-card { padding: clamp(20px, 3vw, 30px); border-radius: 12px; background: #087d64; color: white; }
+.agent-work-card__identity { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.agent-work-card__identity h1 { font: 600 20px/1.4 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.02em; }
+.agent-work-card__mode { margin-left: auto; border: 1px solid #ffffff60; border-radius: 20px; padding: 4px 10px; color: #e3f6ee; font-size: 11px; }
+.agent-work-card__status { margin-top: 22px; font-size: 23px; font-weight: 600; line-height: 1.4; }
+.agent-work-card__summary { margin-top: 8px; color: #e1f2eb; font-size: 14px; line-height: 1.7; }
+.agent-work-card__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #ffffff40; }
+.agent-work-card__facts dt { color: #d2e9df; font-size: 12px; }
+.agent-work-card__facts dd { margin-top: 6px; font-size: 14px; line-height: 1.6; font-weight: 500; }
+.agent-work-card--helper { padding: 0 0 18px; border-radius: 0; background: transparent; color: #183c32; }
+.agent-work-card--helper .agent-work-card__status { margin-top: 0; font-size: 14px; font-weight: 500; }
+.agent-work-card--helper .agent-work-card__summary { color: #586d61; font-size: 13px; }
+.agent-work-card--helper .agent-work-card__facts { margin-top: 12px; padding-top: 12px; border-color: #dce5de; gap: 12px; }
+.agent-work-card--helper .agent-work-card__facts dt { color: #67786f; }
+.agent-work-card--helper .agent-work-card__facts dd { margin-top: 3px; font-size: 13px; }
+.licensing-agent__trigger {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 0; margin-top: 10px;
+  color: #287261; font-size: 13px; font-weight: 600;
+}
+.licensing-agent__trigger:hover { color: #153c2e; }
+.licensing-agent__questions { padding: 4px 0 8px; }
+.licensing-agent__scope { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 24px 0 16px; font-size: 13px; font-weight: 600; color: #576960; }
+.licensing-agent__scope select { min-height: 44px; max-width: 100%; padding: 8px 32px 8px 12px; border: 1px solid #c9d7d0; border-radius: 6px; background: white; font-size: 16px; color: #244e3f; }
+.licensing-agent__suggestions { border-top: 1px solid #dbe4de; }
+.licensing-agent__suggestions button { display: flex; width: 100%; min-height: 56px; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 4px; border-bottom: 1px solid #dbe4de; color: #244e3f; text-align: left; font-size: 16px; line-height: 1.5; }
+.licensing-agent__suggestions button:hover { background: #f4f8f5; }
+.licensing-agent__suggestions svg { flex-shrink: 0; }
+.licensing-agent__search { margin-top: 24px; }
+.licensing-agent__search label { display: block; margin-bottom: 10px; color: #617168; font-size: 13px; line-height: 1.6; }
+.licensing-agent__search > div { display: flex; gap: 8px; border: 1px solid #a8c9ba; border-radius: 10px; padding: 6px; background: #f6faf7; }
+.licensing-agent__search input { min-width: 0; flex: 1; min-height: 44px; padding: 8px; background: transparent; font-size: 16px; }
+.licensing-agent__search button { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 7px; background: #087d64; color: white; }
+.licensing-answer { max-width: 900px; margin: 28px auto 0; padding: clamp(18px, 3vw, 32px); border: 1px solid #d5dfd8; border-top: 3px solid #0f8b73; background: #fffefa; overflow-wrap: anywhere; }
+.licensing-answer__eyebrow { color: #487160; font-size: 12px; font-weight: 600; }
+.licensing-answer h2 { margin-top: 10px; color: #243c31; font: 600 clamp(23px, 4vw, 29px)/1.3 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.025em; }
+.licensing-answer__question { margin-top: 12px; color: #53665a; font-size: 15px; }
+.licensing-answer__summary { margin-top: 16px; max-width: 70ch; color: #42564b; font-size: 16px; line-height: 1.75; }
+.licensing-answer__evidence { margin-top: 20px; padding: 16px; border-radius: 6px; background: #edf3ee; color: #305342; font-size: 14px; line-height: 1.6; }
+.licensing-answer__evidence span { display: block; margin-top: 6px; color: #657267; font-size: 12px; }
+.licensing-answer__reports { margin-top: 24px; }
+.licensing-answer__reports li { border-top: 1px solid #dce3dd; }
+.licensing-answer__reports button { display: block; width: 100%; padding: 22px 0; text-align: left; }
+.licensing-answer__reports button:hover .licensing-answer__report-title { color: #087d64; }
+.licensing-answer__report-context { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; color: #68776c; font-size: 12px; line-height: 1.6; }
+.licensing-answer__report-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; color: #273d31; font-size: 18px; font-weight: 600; line-height: 1.4; }
+.licensing-answer__report-title svg { flex-shrink: 0; }
+.licensing-answer__topics { display: block; margin-top: 8px; font-size: 13px; color: #68776c; line-height: 1.6; }
+.licensing-answer__open { display: block; margin-top: 12px; color: #287261; font-size: 13px; font-weight: 600; }
+.licensing-answer__more { min-height: 44px; color: #287261; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; }
+.licensing-answer footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #dce3dd; color: #68776c; font-size: 12px; line-height: 1.7; }
+
+[data-admissions-overview="true"] > div,
+[data-workforce-overview="true"] > div {
+  max-width: var(--platform-workspace-width);
+}
+
+[data-workforce-overview="true"] nav[aria-label="Personnel pages"] button {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+/* The connected Admissions file keeps the familiar chart content, but the
+   shell is stock and paper rather than a floating white box. */
+[data-admissions-progress-modal="true"] [data-admissions-chart-folder="true"] {
+  border-color: #b79353;
+  background: url('/materials/manila-stock-v1.webp') repeat, #e6c68a;
+  background-size: 360px 360px, auto;
+  box-shadow: 0 22px 56px #172a3c52, inset 0 1px #fff6dd !important;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-folder-tab="true"] > :first-child {
+  border-color: #b79353;
+  background: url('/materials/manila-stock-v1.webp') repeat, #e6c68a;
+  background-size: 360px 360px, auto;
+}
+
+[data-admissions-progress-modal="true"] [data-admissions-chart-paper="true"] {
+  border-color: #d7cbb7;
+  background: var(--platform-file-paper);
+  box-shadow: 0 3px 8px #44392226, inset 1px 0 #fff !important;
+}
+
+/* A community profile is a dashboard, not a file. Keep its reading surface
+   quiet and let each data domain carry its own restrained accent. */
+[data-california-community-profile] {
+  border: 1px solid #aebdc5 !important;
+  border-top: 5px solid #205576 !important;
+  border-radius: 11px !important;
+  padding: 0;
+  background: #fcfbf7 !important;
+  box-shadow: 0 24px 70px #091b2c40 !important;
+}
+
+[data-california-community-profile] > header,
+[data-california-community-profile] > div:last-child {
+  background: var(--platform-file-paper) !important;
+}
+
+[data-california-community-profile] > header {
+  border-bottom-color: #cbd4dc !important;
+  border-radius: 7px 7px 0 0;
+}
+
+[data-california-community-profile] > div:last-child {
+  border-radius: 0 0 7px 7px;
+}
+
+[data-california-community-profile] [data-community-modal-navigation="true"] {
+  border-top: 1px solid #d9dfe2;
+}
+
+[data-california-community-profile] [data-community-modal-tab][aria-current="page"] {
+  border-bottom-color: #164d7c !important;
+  color: #164d7c !important;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading {
+  --section-tone: #164d7c;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 24px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--section-tone);
+  padding-bottom: 8px;
+}
+
+[data-community-domain-section="incidents"] .community-overview-section-heading { --section-tone: #923621; }
+[data-community-domain-section="medications"] .community-overview-section-heading { --section-tone: #68214e; }
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading h3 {
+  margin: 0;
+  color: var(--section-tone);
+  font: 650 clamp(20px, 2vw, 25px)/1.2 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -0.035em;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading h3 span {
+  margin-left: 7px;
+  color: #65717d;
+  font: 500 14px/1.4 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-census-count {
+  margin-left: 9px;
+  color: #163954;
+  font-size: clamp(28px, 2.4vw, 35px);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading h3 small {
+  margin-left: 4px;
+  color: #536474;
+  font: 500 14px/1.2 "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-census-period {
+  margin: 2px 0 0;
+  color: #536474;
+  font: 500 13px/1.4 "Helvetica Neue", Arial, sans-serif;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--section-tone);
+  font: 650 13px/1.3 "Helvetica Neue", Arial, sans-serif;
+  white-space: nowrap;
+  text-underline-offset: 3px;
+}
+
+[data-community-dashboard-surface="detail"] .community-overview-section-heading button:hover { text-decoration: underline; }
+[data-community-dashboard-surface="detail"] .community-overview-section-heading button:focus-visible {
+  outline: 2px solid var(--section-tone);
+  outline-offset: 4px;
+}
+
+@media (max-width: 1023px) {
+  [data-reports-page="true"] aside,
+  [data-licensing-workspace="true"] aside {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  [data-reports-page="true"] aside { border: 0; background: transparent; box-shadow: none; }
+}
+
+@media (max-width: 639px) {
+  [data-licensing-workspace="true"] main[aria-label="Report reader"] {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  [data-california-community-profile] {
+    border-width: 5px 0 0 !important;
+    border-radius: 0 !important;
+    padding: 0;
+  }
+
+  [data-community-dashboard-surface="detail"] .community-overview-section-heading h3 span {
+    display: block;
+    margin: 3px 0 0;
+  }
+}
+
+@media print {
+  [data-california-community-profile],
+  [data-licensing-workspace="true"] main[aria-label="Report reader"] {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

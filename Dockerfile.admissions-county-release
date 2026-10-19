@@ -1,0 +1,14 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:f9d3bd282489c43ed4e43efcc93a8c69d11f207f83a8edf95a1424361cb30fb9
+FROM ${BASE_IMAGE}
+
+# Preserve the proven Azure runtime, API routes, configuration, and secrets.
+# Replace the validated browser bundle plus only the Admissions county
+# crosswalk and its server integration. Compressed static representations are
+# regenerated in the build context before this image is built.
+USER root
+WORKDIR /app
+RUN rm -rf /app/dist
+COPY dist ./dist
+COPY server/admissions-dashboard.mjs server/admissions-county-crosswalk.mjs server/platform-data.mjs ./server/
+RUN chown -R node:node /app/dist /app/server/admissions-dashboard.mjs /app/server/admissions-county-crosswalk.mjs /app/server/platform-data.mjs
+USER node

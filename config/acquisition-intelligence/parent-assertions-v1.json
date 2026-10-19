@@ -1,0 +1,3203 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-09T00:00:00.000Z",
+  "status": "curated_parent_relationship_assertions",
+  "policy": {
+    "visibleEntityLevel": "operating_parent",
+    "parentHierarchy": ["sponsor", "operating_parent", "legal_operator", "brand", "facility", "license"],
+    "highRelationshipConfidence": "A current authoritative source explicitly connects the matched brand, domain, or legal operator to the operating parent.",
+    "targetEligibility": "Only known public-company and known out-of-scope assertions are removed automatically. Unknown private ownership remains a research requirement."
+  },
+  "assertions": [
+    {
+      "id": "haven-health-management",
+      "operatingParentName": "Haven Health Management",
+      "canonicalLegalName": "Haven Health Management LLC",
+      "primaryDomain": "havenhealthmgmt.org",
+      "sponsorName": "MKH Capital Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "Use only verified core adult mental-health capacity; adjacent SUD beds remain outside the strict target valuation."
+      },
+      "matchedDomains": ["havendetoxnow.com", "treatmentindiana.com", "recoveryteam.org"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "high",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "haven-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "About Haven Health Management",
+          "url": "https://havenhealthmgmt.org/about-us/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "brand_relationships", "private_equity_sponsor", "reported_location_count"]
+        },
+        {
+          "id": "joint-commission-haven-detox",
+          "sourceType": "accreditor_registry",
+          "title": "Haven Detox Operating Subsidiary, LLC",
+          "url": "https://www.jointcommission.org/en/accreditation/behavioral-health-care-and-human-services/provider-locator/578386/578922",
+          "asOf": "2026-09-08",
+          "supports": ["legal_operator", "accreditation_parent", "high_intensity_residential_service"]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "haven-operating-vs-accreditation-parent",
+          "status": "open",
+          "description": "Haven identifies Haven Health Management LLC as the operating parent, while the Joint Commission lists Haven Health Acquisition, LLC as the parent of a Haven Detox operating subsidiary. Preserve both layers until state legal-entity evidence resolves the ownership chain."
+        }
+      ],
+      "notes": "Combines the Haven Detox Group, Indiana Center for Recovery, and The Recovery Team. Facility and bed totals remain subject to license-level deduplication."
+    },
+    {
+      "id": "newport-healthcare",
+      "operatingParentName": "Newport Healthcare",
+      "canonicalLegalName": "Monroe Capital Holdings, LLC",
+      "primaryDomain": "newporthealthcare.com",
+      "sponsorName": "Onex Partners V",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "Newport Institute is a specialty adult residential platform; value only its evidenced adult core-bed slice."
+      },
+      "matchedDomains": [
+        "newportacademy.com",
+        "newportinstitute.com",
+        "prairie-care.com",
+        "centerforfamilies.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "newport-institute-faq-2026",
+          "sourceType": "first_party_program",
+          "title": "Newport Institute Frequently Asked Questions",
+          "url": "https://www.newportinstitute.com/admissions/frequently-asked-questions/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "brand_relationship", "adult_residential_service"]
+        },
+        {
+          "id": "newport-healthcare-current-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Newport Healthcare nationwide network of programs",
+          "url": "https://www.newporthealthcare.com/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "newport_academy_relationship", "newport_institute_relationship", "prairiecare_relationship", "center_for_families_relationship", "current_program_scope"]
+        },
+        {
+          "id": "newport-hipaa-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Newport Healthcare HIPAA Privacy Notice",
+          "url": "https://www.newporthealthcare.com/legal/hipaa-privacy/",
+          "asOf": "2026-06-10",
+          "supports": ["canonical_legal_parent", "legal_operator_names", "brand_relationship"]
+        },
+        {
+          "id": "mn-adult-services-newport-irts-2026",
+          "sourceType": "state_service_registry",
+          "title": "Minnesota Adult Services — Newport Institute Monticello",
+          "url": "https://mn.gov/adresources/search/619437d7-a659-5a93-9919-c57e24be73d8/",
+          "asOf": "2026-08-11",
+          "supports": ["adult_population", "intensive_residential_treatment", "mental_illness", "high_acuity_eligibility", "co_occurring_disorders"]
+        },
+        {
+          "id": "onex-newport-majority-investment-2021",
+          "sourceType": "sponsor_transaction_announcement",
+          "title": "Onex Partners completes majority investment in Newport Healthcare",
+          "url": "https://www.onex.com/article/2021NewsRelease-OnexCompletesNewportHealthcare-July19",
+          "asOf": "2021-07-19",
+          "supports": ["majority_private_equity_ownership", "sponsor_identity", "operating_parent"]
+        },
+        {
+          "id": "onex-newport-current-board-2026",
+          "sourceType": "sponsor_team_profile",
+          "title": "Onex Newport Healthcare board representation",
+          "url": "https://www.onex.com/employee/Adam-Moore",
+          "asOf": "2026-09-08",
+          "supports": ["current_sponsor_involvement", "current_board_representation", "private_equity_ownership_continuity"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Newport Academy, Newport Institute, PrairieCare, and Center for Families are consolidated under the one Newport Healthcare operating-parent row using Newport Healthcare's current network disclosure. Only adult core services are eligible for capacity and valuation: Newport Academy's child and teen programs and Center for Families' adolescent outpatient programs remain linked context, not adult core beds. Minnesota's current service registry identifies Newport Institute Monticello as adult Intensive Residential Treatment Services for mental illness and co-occurring disorders, which clears the target-fit gate. Onex's transaction announcement establishes its majority investment, and a current Onex team profile confirms continuing Newport board representation. Two current Minnesota licenses verify 12 core beds, but portfolio capacity stays unverified until the remaining non-California adult residential locations and PrairieCare's adult-eligible service slice are reconciled."
+    },
+    {
+      "id": "discovery-behavioral-health",
+      "operatingParentName": "Discovery Behavioral Health",
+      "canonicalLegalName": "Discovery Behavioral Health, Inc.",
+      "primaryDomain": "discoverybehavioralhealth.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "Value only the current adult primary-mental-health residential capacity evidenced at the Annapolis campus. Eating-disorder, youth-only, SUD-only, outpatient, and all unresolved portfolio capacity remain excluded."
+      },
+      "matchedDomains": ["centerfordiscovery.com", "discoveryaddictionservices.com", "discoverymood.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "medium",
+        "targetFit": "high",
+        "capacity": "medium",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "discovery-family-brands-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Discovery Behavioral Health Family of Brands",
+          "url": "https://discoverybehavioralhealth.com/careers/our-family-of-brands/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "mental_health_division", "brand_domain"]
+        },
+        {
+          "id": "discovery-hps-majority-ownership-announcement-2026",
+          "sourceType": "first_party_transaction_announcement",
+          "title": "Discovery Behavioral Health announces planned HPS majority ownership",
+          "url": "https://www.prnewswire.com/news-releases/discovery-behavioral-health-announces-new-majority-ownership-leadership-appointments-to-further-strengthen-the-company-302788985.html",
+          "asOf": "2026-06-02",
+          "supports": ["private_company", "announced_pending_majority_owner", "debt_recapitalization", "reported_program_and_state_footprint"]
+        },
+        {
+          "id": "discovery-annapolis-current-program-2026",
+          "sourceType": "first_party_program",
+          "title": "Discovery Mood & Anxiety Program Annapolis residential campus",
+          "url": "https://discoverymood.com/locations/annapolis/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_adult_residential_mental_health_program",
+            "four_current_residences",
+            "primary_mental_health_conditions",
+            "co_occurring_disorders",
+            "residence_addresses"
+          ]
+        },
+        {
+          "id": "discovery-annapolis-capacity-announcement-2025",
+          "sourceType": "first_party_capacity_announcement",
+          "title": "Discovery Behavioral Health Annapolis expansion to 40 beds",
+          "url": "https://www.prnewswire.com/news-releases/discovery-behavioral-health-adds-two-flagship-residential-treatment-centers-to-expand-measurement-based-care-of-eating-and-mental-health-disorders-in-california-and-texas-302589436.html",
+          "asOf": "2025-10-20",
+          "supports": [
+            "annapolis_40_bed_operator_report",
+            "discovery_mood_brand_relationship",
+            "adult_mental_health_residential_capacity"
+          ]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "discovery-hps-closing-status",
+          "status": "open",
+          "description": "Discovery announced that HPS-managed funds would assume majority ownership upon regulatory approval, but an authoritative closing notice has not been located. HPS is therefore recorded as a pending announced owner, not the current sponsor."
+        }
+      ],
+      "notes": "The official family-of-brands page links the mental-health, eating-disorder, and substance-use domains to Discovery Behavioral Health. The current Annapolis program page verifies four operating residences serving adults 18+ with primary mental-health and co-occurring-disorder residential care; Discovery's October 2025 announcement reports that campus expanded to 40 beds. Those 40 beds are retained as medium-confidence operator-reported core capacity, not licensed capacity or a complete company total. A June 2026 company announcement supports private status and an HPS-led recapitalization, but the stated regulatory condition remains unresolved, so sponsorName stays null and acquisition eligibility stays pending. Eating-disorder, youth-only, SUD-only, outpatient, California, and unresolved capacity remain outside the valued slice."
+    },
+    {
+      "id": "erc-pathlight",
+      "operatingParentName": "ERC Pathlight",
+      "canonicalLegalName": "Eating Recovery Center, LLC",
+      "primaryDomain": "eatingrecoverycenter.com",
+      "sponsorName": "Apax Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "Value only current, adult, primary mood/anxiety residential capacity supported by license-level evidence; eating-disorder, youth-only, inpatient, PHP, IOP, virtual, California, and unresolved beds remain outside the strict target slice."
+      },
+      "matchedDomains": ["eatingrecoverycenter.com", "pathlightbh.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "erc-pathlight-privacy-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Eating Recovery Center privacy policy",
+          "url": "https://www.eatingrecoverycenter.com/privacy-policy/",
+          "asOf": "2026-09-09",
+          "supports": ["operating_parent", "pathlight_affiliate_relationship", "matched_brand_domains", "canonical_legal_parent"]
+        },
+        {
+          "id": "erc-pathlight-terms-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Eating Recovery Center terms and conditions",
+          "url": "https://www.eatingrecoverycenter.com/terms-and-conditions/",
+          "asOf": "2026-09-09",
+          "supports": ["canonical_legal_parent", "subsidiary_and_affiliate_relationship", "current_legal_identity"]
+        },
+        {
+          "id": "apax-erc-pathlight-current-portfolio-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "Apax Partners current Eating Recovery Center portfolio record",
+          "url": "https://www.apax.com/partnerships/eating-recovery-center/",
+          "asOf": "2026-09-09",
+          "supports": ["current_private_equity_ownership", "sponsor_identity", "operating_parent", "erc_pathlight_identity", "higher_levels_of_care"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Eating Recovery Center and Pathlight Mood & Anxiety Center are consolidated into one ERC Pathlight operating-parent row. Eating Recovery Center's current legal notices identify Eating Recovery Center, LLC and explicitly include Pathlight as an affiliate across the two matched domains. Apax lists the investment as current and identifies the company as ERC Pathlight, establishing private-equity-backed ownership. The combined system is mature, but its broad eating-disorder, youth, inpatient, PHP, IOP, and virtual footprint is not automatically core acquisition capacity; adult primary mood/anxiety residential programs require license-level validation before beds or value are promoted."
+    },
+    {
+      "id": "monte-nido-affiliates",
+      "operatingParentName": "Monte Nido & Affiliates",
+      "canonicalLegalName": "Monte Nido Holdings, LLC",
+      "primaryDomain": "montenido.com",
+      "sponsorName": "Revelstoke Capital Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "adjacent_dual_diagnosis",
+      "matchedDomains": ["montenido.com", "clementineprograms.com", "oliverpyattcenters.com", "rosewoodranch.com", "waldeneatingdisorders.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "monte-nido-privacy-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Monte Nido privacy policy",
+          "url": "https://www.montenido.com/privacy-policy",
+          "asOf": "2026-09-09",
+          "supports": ["canonical_legal_parent", "operating_parent", "matched_brand_domains", "affiliate_relationships"]
+        },
+        {
+          "id": "revelstoke-monte-nido-current-portfolio-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "Revelstoke Capital Partners current Monte Nido portfolio record",
+          "url": "https://revelstokecapital.com/portfolio/",
+          "asOf": "2026-09-09",
+          "supports": ["current_private_equity_ownership", "sponsor_identity", "operating_parent", "eating_disorder_treatment_platform"]
+        },
+        {
+          "id": "llcp-monte-nido-sale-to-revelstoke-2022",
+          "sourceType": "sponsor_transaction_announcement",
+          "title": "Levine Leichtman Capital Partners sale of Monte Nido to Revelstoke",
+          "url": "https://www.llcp.com/levine-leichtman-capital-partners-sells-monte-nido/",
+          "asOf": "2022-08-29",
+          "supports": ["completed_private_equity_sale", "revelstoke_sponsor_identity", "operating_parent", "brand_and_facility_scale"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Monte Nido, Clementine, Oliver-Pyatt Centers, Rosewood, and Walden are represented by one Monte Nido & Affiliates operating-parent row. The current first-party privacy policy names Monte Nido Holdings, LLC and the affiliated brand domains; Revelstoke's current portfolio and LLCP's completed-sale announcement establish current private-equity backing. The platform is retained as mature adjacent behavioral-health context because its primary service line is eating-disorder treatment; it must not be treated as a core adult SMI residential target or assigned core beds without separate license and service evidence."
+    },
+    {
+      "id": "nuway-alliance",
+      "operatingParentName": "NUWAY Alliance",
+      "canonicalLegalName": "NUWAY Alliance",
+      "primaryDomain": "nuway.org",
+      "sponsorName": null,
+      "ownershipType": "nonprofit",
+      "acquisitionEligibility": "excluded_out_of_scope",
+      "targetClassification": "excluded_out_of_scope",
+      "matchedDomains": ["nuway.org"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "excluded",
+        "capacity": "unverified",
+        "valuation": "not_applicable"
+      },
+      "sources": [
+        {
+          "id": "nuway-alliance-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "NUWAY Alliance about page",
+          "url": "https://www.nuway.org/about/",
+          "asOf": "2026-09-09",
+          "supports": ["nonprofit_status", "operating_parent", "the_gables_relationship", "managed_brand_network"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "NUWAY Alliance explicitly identifies itself as a nonprofit and states that it provides overarching leadership and management to NUWAY, Cochran Recovery Services, The Gables, Arrigoni Housing Support, and the NUWAY Mental Health Clinic. The row remains visible as market context but is removed from every private acquisition funnel and rank."
+    },
+    {
+      "id": "acadia-healthcare",
+      "operatingParentName": "Acadia Healthcare",
+      "canonicalLegalName": "Acadia Healthcare Company, Inc.",
+      "primaryDomain": "acadiahealthcare.com",
+      "sponsorName": null,
+      "ownershipType": "public_company",
+      "acquisitionEligibility": "excluded_public_company",
+      "targetClassification": "excluded_public_company",
+      "matchedDomains": ["whitedeerrun.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": ["white deer run"],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "excluded",
+        "capacity": "unverified",
+        "valuation": "not_applicable"
+      },
+      "sources": [
+        {
+          "id": "acadia-white-deer-run-2026",
+          "sourceType": "first_party_corporate",
+          "title": "White Deer Run of York",
+          "url": "https://www.acadiahealthcare.com/locations/white-deer-run-of-york-php/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "subsidiary_facility_relationship"]
+        },
+        {
+          "id": "acadia-sec-10k-2025",
+          "sourceType": "sec_filing",
+          "title": "Acadia Healthcare Company, Inc. 2025 Form 10-K",
+          "url": "https://www.sec.gov/Archives/edgar/data/1520697/000119312526078266/achc-20251231.htm",
+          "asOf": "2025-12-31",
+          "supports": ["canonical_legal_parent", "public_company_status", "ticker"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Retained in the parent universe as market context but excluded from the private-company acquisition funnel."
+    },
+    {
+      "id": "pinnacle-treatment-centers",
+      "operatingParentName": "Pinnacle Treatment Centers",
+      "canonicalLegalName": "Pinnacle Treatment Centers, Inc.",
+      "primaryDomain": "pinnacletreatment.com",
+      "sponsorName": "Linden Capital Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": [
+        "pinnacletreatment.com",
+        "pinnacletreatmentcenters.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [
+        "pinnacle treatment centers"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "pinnacle-recovery-works-2025",
+          "sourceType": "first_party_corporate",
+          "title": "Recovery Works Elizabethtown Launch",
+          "url": "https://pinnacletreatment.com/blog/elizabethtown-lir-press-release/",
+          "asOf": "2025-05-30",
+          "supports": ["operating_parent", "brand_relationship", "adult_residential_service"]
+        },
+        {
+          "id": "pinnacle-current-privacy-network-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Pinnacle Treatment Centers current privacy practices",
+          "url": "https://pinnacletreatment.com/privacy-practices/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "affiliate_facility_network",
+            "current_corporate_address",
+            "eight_state_service_scope"
+          ]
+        },
+        {
+          "id": "linden-pinnacle-current-portfolio-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "Linden Capital Partners current Pinnacle Treatment Centers investment",
+          "url": "https://www.linden.com/portfolio/investments/current/pinnacle-treatment-centers/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "current_private_equity_sponsor",
+            "private_company",
+            "operating_parent",
+            "inpatient_and_outpatient_sud_network"
+          ]
+        },
+        {
+          "id": "pinnacle-current-legal-entity-sec-2026",
+          "sourceType": "sec_regulated_investment_filing",
+          "title": "AB Private Credit current Pinnacle Treatment Centers investment schedule",
+          "url": "https://www.sec.gov/Archives/edgar/data/1634452/000119312526281296/d159211dars.pdf",
+          "asOf": "2026-06-30",
+          "supports": [
+            "pinnacle_treatment_centers_inc_legal_identity",
+            "current_operating_company",
+            "current_private_credit_facility"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Pinnacle Treatment Centers, Inc. is the current Linden-backed operating parent. Pinnacle-prefixed legal entities, the legacy pinnacletreatmentcenters.com cluster, and Recovery Works records consolidate beneath this one row. Linden's current portfolio identifies an inpatient and outpatient substance-use platform, while Pinnacle's current privacy notice covers facilities across eight states. The company is mature and private, but remains SUD-primary adjacent: only a future regulator-confirmed adult primary-mental-health residential slice could contribute core beds or value."
+    },
+    {
+      "id": "amfm-healthcare",
+      "operatingParentName": "AMFM Healthcare",
+      "canonicalLegalName": null,
+      "primaryDomain": "amfmhealthcare.com",
+      "sponsorName": "New Heritage Capital",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "AMFM's evidenced adult residential mental-health programs map to the workbook's mixed-residential assumptions."
+      },
+      "matchedDomains": ["amfmtreatment.com", "missionconnectionhealthcare.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "medium",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "amfm-healthcare-admissions-2026",
+          "sourceType": "first_party_corporate",
+          "title": "AMFM Healthcare Admissions",
+          "url": "https://amfmhealthcare.com/admissions/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "adult_residential_brand", "level_of_care"]
+        },
+        {
+          "id": "amfm-treatment-about-2026",
+          "sourceType": "first_party_program",
+          "title": "About AMFM: A Mission for Michael",
+          "url": "https://amfmtreatment.com/about/",
+          "asOf": "2026-09-08",
+          "supports": ["brand_identity", "adult_primary_mental_health", "residential_footprint"]
+        },
+        {
+          "id": "amfm-minnesota-locations-2026",
+          "sourceType": "first_party_program",
+          "title": "AMFM Minnesota residential mental-health locations",
+          "url": "https://amfmtreatment.com/locations/minnesota/",
+          "asOf": "2026-09-08",
+          "supports": ["brand_identity", "four_current_minnesota_locations", "adult_primary_mental_health", "twenty_four_hour_care"]
+        },
+        {
+          "id": "virginia-dbhds-amfm-license-2026",
+          "sourceType": "state_license_registry",
+          "title": "Virginia DBHDS A Mission for Michael provider license 4531-01-003",
+          "url": "https://vadbhdsv7prod.glsuite.us/GLSuiteWeb/Clients/vadbhds/Public/ProviderSearch/ProviderSearchSearch.aspx",
+          "asOf": "2026-09-08",
+          "supports": ["active_adult_mental_health_residential_license", "seven_licensed_residential_locations", "adult_population"]
+        },
+        {
+          "id": "new-heritage-capital-amfm-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "New Heritage Capital AMFM Healthcare portfolio record",
+          "url": "https://www.newheritagecapital.com/portfolio/amfm-healthcare/",
+          "asOf": "2026-09-08",
+          "supports": ["current_private_equity_investment", "operating_parent", "behavioral_health_sector", "current_state_footprint", "investment_year_2022"]
+        },
+        {
+          "id": "cms-nppes-amfm-virginia-2026",
+          "sourceType": "federal_provider_registry",
+          "title": "CMS NPPES Virginia Mission Health Acquisition LLC provider record",
+          "url": "https://npiregistry.cms.hhs.gov/provider-view/1558218008",
+          "asOf": "2026-09-08",
+          "supports": ["virginia_legal_operator", "amfm_brand_dba", "active_organization_identifier", "community_residential_mental_health_taxonomy"]
+        },
+        {
+          "id": "mission-connection-amfm-relationship-2026",
+          "sourceType": "first_party_program",
+          "title": "Mission Connection locations and AMFM relationship",
+          "url": "https://missionconnectionhealthcare.com/locations/",
+          "asOf": "2026-09-09",
+          "supports": ["operating_parent", "brand_relationship", "adult_outpatient_mental_health", "current_non_california_footprint"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "A Mission for Michael is the adult residential brand. Mission Connection is consolidated under AMFM as its adult outpatient/PHP/IOP service line and remains linked context rather than core residential capacity. New Heritage Capital lists AMFM as a current 2022 behavioral-health investment, establishing private-equity-backed status; whether older HCAP capital remains in the stack is not material to the private-company gate but may matter in later ownership diligence. Minnesota DHS identifies Lakeside Health Solutions LLC as legal operator of four active adult mental-health residential licenses with six beds each, producing 24 verified core beds. Virginia DBHDS lists active adult mental-health residential group-home license 4531-01-003 through September 14, 2028, with seven locations. The Virginia regulator does not expose beds, but current first-party pages report eight beds at each matching address, producing 56 operator-reported Virginia beds kept separate from licensed capacity. CMS identifies Virginia Mission Health Acquisition LLC as the current Virginia legal operator, but the ultimate canonical legal entity for AMFM Healthcare remains unresolved."
+    },
+    {
+      "id": "avenues-recovery-center",
+      "operatingParentName": "Avenues Recovery Center",
+      "canonicalLegalName": null,
+      "primaryDomain": "avenuesrecovery.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["avenuesrecovery.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "low",
+        "ownership": "low",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "avenues-terms-2018",
+          "sourceType": "first_party_legal_notice",
+          "title": "Avenues Recovery Terms of Use",
+          "url": "https://www.avenuesrecovery.com/terms-of-use/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "affiliate_and_subsidiary_relationship"]
+        },
+        {
+          "id": "avenues-locations-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Avenues Recovery Locations",
+          "url": "https://www.avenuesrecovery.com/locations/",
+          "asOf": "2026-09-08",
+          "supports": ["reported_location_count", "state_footprint", "service_mix"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Operating-company identity is supported; ultimate ownership and licensed capacity remain open. The service mix is SUD-primary and adjacent rather than core primary mental health."
+    },
+    {
+      "id": "stepworks-recovery-centers",
+      "operatingParentName": "Stepworks Recovery Centers",
+      "canonicalLegalName": "Stepworks Recovery Centers, LLC",
+      "primaryDomain": "stepworks.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["stepworks.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "low",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "stepworks-privacy-2025",
+          "sourceType": "first_party_legal_notice",
+          "title": "Stepworks Privacy Policy",
+          "url": "https://www.stepworks.com/privacy-policy/",
+          "asOf": "2025-06-09",
+          "supports": ["canonical_legal_operator", "facility_and_subsidiary_relationship"]
+        },
+        {
+          "id": "stepworks-carf",
+          "sourceType": "first_party_accreditation_summary",
+          "title": "Stepworks CARF Accreditation",
+          "url": "https://www.stepworks.com/carf-accreditation/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "facility_names", "residential_service"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The current operating entity is identified, but ultimate ownership remains unresolved. Service mix is SUD-primary."
+    },
+    {
+      "id": "royal-life-centers",
+      "operatingParentName": "Royal Life Centers",
+      "canonicalLegalName": "Royal Life Centers LLC",
+      "primaryDomain": "royallifecenters.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "adjacent_dual_diagnosis",
+      "matchedDomains": ["royallifecenters.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "low",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "royal-life-privacy-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Royal Life Centers Privacy Policy",
+          "url": "https://royallifecenters.com/privacy-policy/",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_operating_company", "network_relationship", "state_footprint"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Directory legal operators including Royal AZ LLC and Seaglass AZ LLC share the Royal Life Centers domain. Ultimate ownership remains unresolved."
+    },
+    {
+      "id": "recovery-centers-of-america",
+      "operatingParentName": "Recovery Centers of America",
+      "canonicalLegalName": "Recovery Centers of America Holdings LLC",
+      "primaryDomain": "recoverycentersofamerica.com",
+      "sponsorName": "Deerfield Management",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["recoverycentersofamerica.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "rca-leadership-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Recovery Centers of America Leadership",
+          "url": "https://recoverycentersofamerica.com/leadership/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "location_network"]
+        },
+        {
+          "id": "deerfield-rca-current",
+          "sourceType": "sponsor_portfolio",
+          "title": "Deerfield Management — Recovery Centers of America",
+          "url": "https://deerfield.com/what-we-do/investment/portfolio/companies/recovery-centers-of-america",
+          "asOf": "2026-09-08",
+          "supports": ["current_investment", "private_debt_and_equity_financing", "sponsor_relationship"]
+        },
+        {
+          "id": "maryland-rca-ownership-2015",
+          "sourceType": "state_certificate_of_need_record",
+          "title": "Recovery Centers of America Upper Marlboro ownership response",
+          "url": "https://mhcc.maryland.gov/mhcc/pages/hcfs/hcfs_con/documents/filed_2015/con_comp_resp_rca_upper_marlboro_20150831.pdf",
+          "asOf": "2015-08-31",
+          "supports": ["historical_legal_parent", "historical_ownership_chain"]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "rca-legal-structure-refresh",
+          "status": "open",
+          "description": "The holding-company name and detailed ownership chain come from a 2015 Maryland filing. Deerfield still lists RCA as a current investment, but the legal structure must be refreshed in current state corporate and license records."
+        }
+      ],
+      "notes": "RCA is retained as a private SUD-primary adjacent platform. It does not outrank core primary-mental-health ARF candidates."
+    },
+    {
+      "id": "banyan-treatment-centers",
+      "operatingParentName": "Banyan Treatment Centers",
+      "canonicalLegalName": "Banyan Treatment Centers, LLC",
+      "primaryDomain": "banyantreatmentcenter.com",
+      "sponsorName": "The Rise Fund (TPG)",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "matchedDomains": ["banyantreatmentcenter.com", "bhpalmbeach.com", "clearbrookinc.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "medium",
+        "capacity": "low",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "banyan-clearbrook-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Banyan nationwide facilities",
+          "url": "https://www.banyantreatmentcenter.com/facilities/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "brand_relationship", "facility_network"]
+        },
+        {
+          "id": "clearbrook-about-banyan-2026",
+          "sourceType": "first_party_program",
+          "title": "Clearbrook About",
+          "url": "https://clearbrook.banyantreatmentcenter.com/about/",
+          "asOf": "2026-09-08",
+          "supports": ["brand_relationship", "operating_parent"]
+        },
+        {
+          "id": "tpg-banyan-investment-2023",
+          "sourceType": "sponsor_portfolio_and_transaction",
+          "title": "The Rise Fund invests in Banyan Treatment Centers",
+          "url": "https://www.tpg.com/news-and-insights/tpgs-rise-fund-invests-banyan-treatment-centers",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_name", "private_equity_sponsor", "service_mix"]
+        }
+      ],
+      "contradictions": [],
+    "notes": "Merges Clearbrook and Banyan directory domains. The September 2026 Massachusetts BSAS workbook verifies 34 licensed beds for Clearbrook's ATS program. Clearbrook separately advertises residential mental-health cottages, but their capacity remains unverified and is not added to the 34-bed regulator total."
+    },
+    {
+      "id": "odyssey-behavioral-healthcare",
+      "operatingParentName": "Odyssey Behavioral Healthcare",
+      "canonicalLegalName": "Odyssey Behavioral Healthcare, LLC",
+      "primaryDomain": "odysseybehavioralhealth.com",
+      "sponsorName": "JLL Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "Use specialty commercial assumptions for verified adult Lifeskills residential capacity only."
+      },
+      "matchedDomains": ["lifeskillssouthflorida.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "medium",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "odyssey-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Odyssey Behavioral Healthcare network",
+          "url": "https://odysseybehavioralhealth.com/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "brand_network", "service_mix"]
+        },
+        {
+          "id": "odyssey-lifeskills-rebrand-2025",
+          "sourceType": "first_party_corporate",
+          "title": "Lifeskills South Florida rebrands as Lifeskills Behavioral Health",
+          "url": "https://odysseybehavioralhealth.com/news-and-press/lifeskills-south-florida-rebrands-as-lifeskills-behavioral-health/",
+          "asOf": "2025-10-21",
+          "supports": ["brand_relationship", "current_brand_name", "location_footprint"]
+        },
+        {
+          "id": "jll-odyssey-portfolio-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "JLL Partners — Odyssey Behavioral Healthcare",
+          "url": "https://www.jllpartners.com/our-companies/odyssey-behavioral-healthcare/",
+          "asOf": "2026-09-08",
+          "supports": ["private_equity_sponsor", "portfolio_relationship", "residential_and_outpatient_services"]
+        },
+        {
+          "id": "florida-ahca-lifeskills-deerfield-2026",
+          "sourceType": "state_license_registry",
+          "title": "Lifeskills South Florida Deerfield Beach facility profile",
+          "url": "https://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=352118",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_name", "one_hundred_percent_controlling_interest", "for_profit_status", "adult_residential_mental_health_license", "licensed_beds"]
+        },
+        {
+          "id": "florida-ahca-lifeskills-fort-lauderdale-2026",
+          "sourceType": "state_license_registry",
+          "title": "Lifeskills South Florida Fort Lauderdale facility profile",
+          "url": "https://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=530614",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_name", "one_hundred_percent_controlling_interest", "for_profit_status", "adult_residential_mental_health_license", "licensed_beds"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The current directory match covers Lifeskills only. Florida AHCA verifies three active Lifeskills adult residential mental-health licenses totaling 100 beds; two profiles directly name Odyssey Behavioral Healthcare, LLC as the 100% controlling interest. This is a verified partial portfolio subtotal, not Odyssey's national bed total. Additional Odyssey brands require explicit domain or license matches before inclusion."
+    },
+    {
+      "id": "renaissance-ranch",
+      "operatingParentName": "Renaissance Ranch",
+      "canonicalLegalName": null,
+      "primaryDomain": "renaissanceranch.net",
+      "sponsorName": null,
+      "ownershipType": "founder_or_individual_owned_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["renaissanceranch.net"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "low",
+        "ownership": "medium",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "renaissance-ranch-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "About Renaissance Ranch",
+          "url": "https://www.renaissanceranch.net/about",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "individual_ownership_claim", "adult_male_population", "sud_primary_service", "utah_and_idaho_network"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The current company site identifies an adult men's SUD-primary residential network in Utah and Idaho and says it is owned and operated by people in recovery. The exact legal parent and current ownership percentages still require state records."
+    },
+    {
+      "id": "northstar-behavioral-health-network",
+      "operatingParentName": "Northstar Behavioral Health Network",
+      "canonicalLegalName": "Northstar Behavioral Health Network, LLC",
+      "primaryDomain": "northstarbehavioralhealthmn.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["northstarbehavioralhealthmn.com", "northstarbhmn.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "low",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "northstar-current-site-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Northstar Behavioral Health About",
+          "url": "https://northstarbehavioralhealthmn.com/about-us/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "residential_service", "sud_primary_service", "mental_health_services"]
+        },
+        {
+          "id": "northstar-minnesota-parent-order-2022",
+          "sourceType": "state_administrative_order",
+          "title": "Northstar Behavioral Health Programs license appeal order",
+          "url": "https://mn.gov/cah/assets/1800-38462-northstar-behavioral-health-programs-dhs-license-denial-summary-disposition-order_tcm19-552626.pdf",
+          "asOf": "2022-12-19",
+          "supports": ["canonical_legal_name", "historical_parent_to_legal_operator_relationship"]
+        },
+        {
+          "id": "northstar-st-cloud-license-2026",
+          "sourceType": "state_license_registry",
+          "title": "Northstar Behavioral Health St Cloud license",
+          "url": "https://licensinglookup.dhs.state.mn.us/Details.aspx?l=1114046",
+          "asOf": "2026-09-08",
+          "supports": ["current_legal_operator", "active_license", "adult_population", "sud_and_co_occurring_service"]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "northstar-current-parent-chain-refresh",
+          "status": "open",
+          "description": "A 2022 Minnesota order identifies Northstar Behavioral Health Network, LLC as sole member of several NBH license entities. Current individual licenses are active, but the complete 2026 parent chain and ownership must be refreshed before legal identity or ownership becomes high confidence."
+        }
+      ],
+      "notes": "Both directory domains are merged into the same operating network. SUD is the primary service, so mental-health-capable residential records remain adjacent rather than core."
+    },
+    {
+      "id": "allendale-treatment",
+      "operatingParentName": "Allendale Treatment",
+      "canonicalLegalName": "Allendale, LLC",
+      "primaryDomain": "allendaletreatment.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "adjacent_dual_diagnosis",
+      "matchedDomains": ["allendalebehavioral.com", "allendaletreatment.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "low",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "allendale-joint-commission-2026",
+          "sourceType": "accreditor_registry",
+          "title": "Allendale, LLC accredited organization",
+          "url": "https://www.jointcommission.org/en-us/accreditation/behavioral-health-care-and-human-services/provider-locator/655996",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_name", "brand_domain", "legal_operator_relationship", "adult_high_intensity_residential_service"]
+        },
+        {
+          "id": "allendale-indiana-provider-registry-2026",
+          "sourceType": "state_provider_registry",
+          "title": "Indiana certified and licensed mental health and addiction providers",
+          "url": "https://www.in.gov/fssa/dmha/quality-assurance-quality-improvement/mental-health-and-addiction-providers/",
+          "asOf": "2026-09-08",
+          "supports": ["active_provider_status", "legal_operator_names", "indiana_locations"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The Joint Commission groups Allendale, LLC and Allendale Behavioral Health LLC under one accredited organization and links the Allendale Treatment domain. Current private ownership still requires a corporate filing or equivalent source."
+    },
+    {
+      "id": "turning-point-centers",
+      "operatingParentName": "Turning Point Centers",
+      "canonicalLegalName": null,
+      "primaryDomain": "turningpointcenters.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "adjacent_dual_diagnosis",
+      "matchedDomains": ["turningpointcenters.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "low",
+        "ownership": "low",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "turning-point-centers-leadership-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Turning Point Centers leadership",
+          "url": "https://www.turningpointcenters.com/about/staff/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "leadership", "adult_population", "sud_and_co_occurring_service"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The current company site supports adult addiction and co-occurring services. State legal identity, private ownership, and licensed bed capacity remain unresolved."
+    },
+    {
+      "id": "boca-recovery-center",
+      "operatingParentName": "Boca Recovery Center",
+      "canonicalLegalName": null,
+      "primaryDomain": "bocarecoverycenter.com",
+      "sponsorName": null,
+      "ownershipType": "founder_owned_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["bocarecoverycenter.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "low",
+        "ownership": "medium",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "boca-recovery-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "About Boca Recovery Center",
+          "url": "https://bocarecoverycenter.com/about/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "founder", "multi_state_location_network", "sud_primary_service"]
+        },
+        {
+          "id": "boca-recovery-massachusetts-bsas-2026",
+          "sourceType": "state_license_registry",
+          "title": "Massachusetts September 2026 Licensed Program and Bed Report",
+          "url": "https://www.mass.gov/doc/september-2026-licensed-program-and-bed-report/download",
+          "asOf": "2026-09-03",
+          "supports": ["massachusetts_legal_operator", "for_profit_status", "active_license", "licensed_capacity"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The founder-led operating brand reports facilities in Florida, Indiana, Massachusetts, and New Jersey. The legal parent above state-specific operators remains unresolved."
+    },
+    {
+      "id": "transformation-behavioral-health",
+      "operatingParentName": "Transformation Behavioral Health",
+      "canonicalLegalName": null,
+      "primaryDomain": "transformationhouse.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["transformationhouse.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "low",
+        "ownership": "low",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "transformation-house-parent-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Transformation House residential treatment",
+          "url": "https://transformationhouse.com/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "brand_relationship", "adult_residential_service", "sud_primary_service", "co_occurring_service"]
+        },
+        {
+          "id": "transformation-house-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "About Transformation House",
+          "url": "https://transformationhouse.com/about-us/",
+          "asOf": "2026-09-08",
+          "supports": ["residential_facility_count", "service_continuum", "founder_history"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The operating site explicitly calls Transformation House the residential program of Transformation Behavioral Health. Its residential offering is SUD-primary with co-occurring mental-health care, so it remains adjacent."
+    },
+    {
+      "id": "integrated-behavioral-health-services-nebraska",
+      "operatingParentName": "Integrated Behavioral Health Services",
+      "canonicalLegalName": "Integrated Behavioral Health Services",
+      "primaryDomain": "ibhealthservices.com",
+      "sponsorName": null,
+      "ownershipType": "founder_owned",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "long_term_psychiatric_rehabilitation",
+        "selectionBasis": "Use long-term psychiatric rehabilitation assumptions after current licensed capacity is verified."
+      },
+      "matchedDomains": ["ibhealthservices.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "ibhs-nebraska-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Integrated Behavioral Health Services About",
+          "url": "https://www.ibhealthservices.com/about",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "founder_owner", "severe_persistent_mental_illness_focus"]
+        },
+        {
+          "id": "ibhs-nebraska-residential-2026",
+          "sourceType": "first_party_program",
+          "title": "Integrated Behavioral Health Services residential program",
+          "url": "https://www.ibhealthservices.com/residential",
+          "asOf": "2026-09-08",
+          "supports": ["staffed_residential_service", "adult_population", "severe_persistent_mental_illness", "twenty_four_hour_supervision"]
+        },
+        {
+          "id": "nebraska-dhhs-ibhs-license-2026",
+          "sourceType": "state_license_registry",
+          "title": "Nebraska DHHS Center for Psychiatric Rehabilitation license",
+          "url": "https://www.nebraska.gov/LISSearch/search.cgi?new=1&stype=F",
+          "asOf": "2026-09-08",
+          "supports": ["active_facility_license", "owner_identity", "mental_health_substance_use_treatment_center"]
+        },
+        {
+          "id": "nebraska-dhhs-ibhs-historical-beds-2021",
+          "sourceType": "state_license_roster_historical",
+          "title": "Nebraska Mental Health Center Roster — Center for Psychiatric Rehabilitation",
+          "url": "https://govdocs.nebraska.gov/epubs/H8310/D007-2021.pdf",
+          "asOf": "2021-09-15",
+          "supports": ["historical_license_number", "historical_capacity_16", "current_address", "legal_operator"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "This is a genuine core lead: the company describes a staffed psychiatric residential rehabilitation program for adults with severe and persistent mental illness. The current first-party leadership page identifies Jeromie Luginbill as founder and CEO/Owner, clearing the private-ownership gate without treating him as a financial sponsor. Nebraska's current registry lists Center for Psychiatric Rehabilitation as active and owned by Integrated Behavioral Health Services at 1430 South Street; the legacy 2825 South 47th Street record closed as moved on June 12, 2023. Current licensed beds remain unresolved; a 2021 state roster reported 16 beds at the current address but is retained only as historical capacity context."
+    },
+    {
+      "id": "now-counseling-services",
+      "operatingParentName": "N.O.W. Counseling Services",
+      "canonicalLegalName": "N.O.W. Counseling Services, LLC",
+      "primaryDomain": "nowcounseling.us",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "needs_fit_validation",
+      "matchedDomains": ["nowcounseling.us"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "low",
+        "targetFit": "low",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "now-counseling-company-policy-2019",
+          "sourceType": "first_party_legal_policy",
+          "title": "N.O.W. Counseling Services company policy",
+          "url": "https://www.nowcounseling.us/?cat=1",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_name", "operating_company", "subsidiary_structure", "addiction_mental_health_forensic_mission"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The official site establishes the company identity, but the current site does not verify which discovered records are staffed adult high-acuity residential mental-health programs. Fit stays low until Indiana licenses are matched."
+    },
+    {
+      "id": "ijomah-associates-safe-journey-house",
+      "operatingParentName": "Ijomah & Associates",
+      "canonicalLegalName": "Ijomah & Associates, Inc.",
+      "primaryDomain": "safejourneyhouse1.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "crisis_subacute_step_down",
+        "selectionBasis": "Use crisis and subacute step-down assumptions only for current licensed residential crisis capacity."
+      },
+      "matchedDomains": ["safejourneyhouse1.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "low",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "safe-journey-house-carf-2026",
+          "sourceType": "accreditor_registry",
+          "title": "Ijomah & Associates, Inc. dba Safe Journey House",
+          "url": "https://carf.org/provider/ijomah-associates-inc-dba-safe-journey-house-301588/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "canonical_legal_name", "brand_relationship", "adult_mental_health_crisis_stabilization"]
+        },
+        {
+          "id": "safe-journey-house-current-services-2026",
+          "sourceType": "first_party_program",
+          "title": "Safe Journey House",
+          "url": "https://www.safejourneyhouse1.com/",
+          "asOf": "2026-09-08",
+          "supports": ["residential_crisis_service", "alternative_to_hospitalization", "multi_location_network"]
+        },
+        {
+          "id": "safe-journey-house-maryland-211-2026",
+          "sourceType": "state_211_resource_registry",
+          "title": "Safe Journey House residential mental-health treatment",
+          "url": "https://search.211md.org/search/cedc414f-09d1-5ae8-a1bc-aac6d57950f3",
+          "asOf": "2026-08-03",
+          "supports": ["adult_population", "twenty_four_hour_service", "private_residential_mental_health_crisis_service"]
+        },
+        {
+          "id": "maryland-bha-ijomah-rcs-directory-2026",
+          "sourceType": "state_license_registry",
+          "title": "Maryland BHA Residential Crisis Services Program directory",
+          "url": "https://app.smartsheet.com/b/publish?EQBCT=ff07a421bb8c49a9911ad40b7cc4a407",
+          "asOf": "2026-09-08",
+          "supports": ["five_listed_residential_crisis_sites", "mental_health_service", "displayed_license_expiration_dates"]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "ijomah-maryland-license-renewal-status",
+          "status": "open",
+          "description": "Maryland's current Residential Crisis Services directory lists five Ijomah & Associates sites, but each displayed service expiration date is July 30, 2026. Renewal or grace-period status must be confirmed before those sites are called currently licensed."
+        }
+      ],
+      "notes": "CARF explicitly names Ijomah & Associates, Inc. as the parent of Safe Journey House. Current sources support an adult private residential crisis-stabilization service, making this a core lead. Maryland lists five residential-crisis sites, but current license status, for-profit status, and licensed beds remain unresolved."
+    },
+    {
+      "id": "treatment-consultants-of-america",
+      "operatingParentName": "Treatment Consultants of America",
+      "canonicalLegalName": "Treatment Consultants of America LLC",
+      "primaryDomain": "behavioralhealth-centers.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["behavioralhealth-centers.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "medium",
+        "targetFit": "low",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "behavioral-health-centers-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Behavioral Health Centers About",
+          "url": "https://behavioralhealth-centers.com/about/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_brand", "adult_population", "founder_led_management", "sud_primary_service", "co_occurring_mental_health"]
+        },
+        {
+          "id": "florida-ahca-behavioral-health-centers-2026",
+          "sourceType": "state_license_registry",
+          "title": "Florida AHCA Behavioral Health Centers facility profile",
+          "url": "https://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=563431",
+          "asOf": "2026-09-08",
+          "supports": ["legal_operator", "controlling_parent", "one_hundred_percent_control", "for_profit_status", "active_health_care_clinic_license"]
+        },
+        {
+          "id": "florida-sunbiz-treatment-centers-of-america-2026",
+          "sourceType": "state_corporate_registry",
+          "title": "Florida Division of Corporations Treatment Centers of America LLC record",
+          "url": "https://search.sunbiz.org/Inquiry/corporationsearch/SearchResultDetail?aggregateId=flal-l17000260191-d87944e9-c2e9-450f-aac5-ff0ba1ae12a5&directionType=Initial&inquirytype=EntityName&listNameOrder=TREATMENTALTERNATIVES+L070000566190&searchNameOrder=TREATMENTCENTERSAMERICA+L170002601910&searchTerm=TREATMENT+ALTERNATIVES%2C+LLC",
+          "asOf": "2026-09-08",
+          "supports": ["active_legal_operator", "manager_identity"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Florida AHCA establishes the hierarchy Behavioral Health Centers brand to Treatment Centers of America LLC licensee to Treatment Consultants of America LLC as its 100% controlling interest. The licensed record is a health care clinic with no licensed beds, and the first-party service description is addiction-primary, so this company remains adjacent rather than a core adult mental-health target. Beneficial ownership still requires confirmation."
+    },
+    {
+      "id": "hickory-recovery-network",
+      "operatingParentName": "Hickory Recovery Network",
+      "canonicalLegalName": "Indiana ATC JV, LLC",
+      "primaryDomain": "hickorytreatmentcenters.com",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["hickorytreatmentcenters.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "low",
+        "targetFit": "low",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "hickory-recovery-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Hickory Recovery Network and Hickory Treatment Centers",
+          "url": "https://hickorytreatmentcenters.com/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_network", "residential_service", "adult_population", "sud_primary_service", "co_occurring_mental_health", "multi_location_network"]
+        },
+        {
+          "id": "indiana-dmha-hickory-providers-2026",
+          "sourceType": "state_license_registry",
+          "title": "Indiana DMHA certified and licensed mental health and addiction providers",
+          "url": "https://www.in.gov/fssa/dmha/quality-assurance-quality-improvement/mental-health-and-addiction-providers/",
+          "asOf": "2026-09-08",
+          "supports": ["multiple_active_addiction_service_facilities", "facility_names", "facility_addresses"]
+        },
+        {
+          "id": "seventh-circuit-hickory-legal-identity-2025",
+          "sourceType": "federal_court_record",
+          "title": "Chosen Consulting LLC v. Town Council of Highland opinion",
+          "url": "https://www.govinfo.gov/content/pkg/USCOURTS-ca7-24-02714/pdf/USCOURTS-ca7-24-02714-0.pdf",
+          "asOf": "2025-08-01",
+          "supports": ["hickory_recovery_network_dba", "canonical_legal_name", "related_legal_operators"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The current first-party site presents Hickory Recovery Network as a multi-location residential treatment network, and Indiana's current provider directory lists multiple active Hickory facilities. A 2025 federal appellate opinion identifies Indiana ATC JV, LLC as doing business as Hickory Recovery Network. The portfolio is addiction-primary, ownership remains unresolved, and no source-reported capacity is treated as licensed beds."
+    },
+    {
+      "id": "cirque-lodge",
+      "operatingParentName": "Cirque Lodge",
+      "canonicalLegalName": "Cirque Lodge Inc.",
+      "primaryDomain": "cirquelodge.com",
+      "sponsorName": null,
+      "ownershipType": "founder_owned_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["cirquelodge.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "low",
+        "targetFit": "low",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "cirque-lodge-about-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Cirque Lodge About",
+          "url": "https://www.cirquelodge.com/about/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_brand", "founder_identity", "two_facility_network", "twenty_four_hour_residential_care", "sud_primary_service", "dual_diagnosis_service"]
+        },
+        {
+          "id": "cms-nppes-cirque-lodge-2026",
+          "sourceType": "federal_provider_registry",
+          "title": "CMS NPPES Cirque Lodge Inc. provider record",
+          "url": "https://npiregistry.cms.hhs.gov/provider-view/1912108242",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_name", "active_organization_identifier", "substance_abuse_rehabilitation_facility_taxonomy"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The first-party site and CMS provider identity resolve the brand to Cirque Lodge Inc. and two Utah residential facilities. The service is explicitly addiction-primary with dual-diagnosis care, so it is adjacent rather than a core adult mental-health target. The founder is identified, but current beneficial ownership and licensed bed counts remain unverified."
+    },
+    {
+      "id": "palmetto-corner",
+      "operatingParentName": "Palmetto Corner",
+      "canonicalLegalName": "Palmetto Corner, LLC",
+      "primaryDomain": "palmettocorner.com",
+      "sponsorName": null,
+      "ownershipType": "founder_or_individual_owned_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "matchedDomains": ["palmettocorner.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "medium",
+        "targetFit": "low",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "palmetto-corner-program-2026",
+          "sourceType": "first_party_program",
+          "title": "Palmetto Corner residential substance-use program",
+          "url": "https://palmettocorner.com/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_company", "canonical_legal_name", "small_residential_service", "sud_primary_service", "claimed_maryland_license", "claimed_carf_accreditation"]
+        },
+        {
+          "id": "cms-nppes-palmetto-corner-2026",
+          "sourceType": "federal_provider_registry",
+          "title": "CMS NPPES Palmetto Corner LLC provider record",
+          "url": "https://npiregistry.cms.hhs.gov/provider-view/1922639558",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_name", "active_organization_identifier", "owner_name", "substance_abuse_rehabilitation_facility_taxonomy"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The first-party site and active federal provider record resolve this small Maryland residential program to Palmetto Corner, LLC and identify an individual owner in the NPPES record. A current Maryland license row and licensed capacity are still required. The program is substance-use-primary and remains adjacent to the acquisition core."
+    },
+    {
+      "id": "constellation-behavioral-health",
+      "operatingParentName": "Constellation Behavioral Health",
+      "canonicalLegalName": "Constellation Behavioral Health, LLC",
+      "primaryDomain": "constellationbehavioralhealth.com",
+      "sponsorName": "NMS Capital",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "long_term_psychiatric_rehabilitation",
+        "selectionBasis": "BrightQuest Nashville is a long-term adult residential mental-health program for complex psychiatric illness; only its non-California evidenced capacity is valued."
+      },
+      "matchedDomains": ["brightquest.com"],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "medium",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "brightquest-constellation-relationship-2026",
+          "sourceType": "first_party_corporate",
+          "title": "BrightQuest About Us",
+          "url": "https://www.brightquest.com/about-us/",
+          "asOf": "2026-09-08",
+          "supports": ["operating_parent", "brand_relationship", "adult_complex_psychiatric_treatment", "residential_continuum"]
+        },
+        {
+          "id": "brightquest-constellation-legal-notice-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "BrightQuest Website Terms of Use",
+          "url": "https://www.brightquest.com/terms-of-use/",
+          "asOf": "2026-09-08",
+          "supports": ["canonical_legal_parent", "website_operator", "subsidiary_relationship"]
+        },
+        {
+          "id": "brightquest-nashville-program-2026",
+          "sourceType": "first_party_program",
+          "title": "BrightQuest Nashville Residential Mental Health Program",
+          "url": "https://www.brightquest.com/nashville/",
+          "asOf": "2026-09-08",
+          "supports": ["adult_population", "complex_psychiatric_conditions", "twenty_four_hour_residential_care", "state_licensed_residences", "six_residents_maximum_per_home", "long_term_treatment"]
+        },
+        {
+          "id": "nms-constellation-current-portfolio-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "NMS Capital Current Portfolio — Constellation Behavioral Health",
+          "url": "https://nms-capital.com/portfolio/",
+          "asOf": "2026-09-08",
+          "supports": ["current_private_equity_ownership", "sponsor_identity", "operating_parent", "brightquest_brand_relationship", "nashville_program"]
+        },
+        {
+          "id": "nms-constellation-acquisition-2016",
+          "sourceType": "sponsor_transaction_announcement",
+          "title": "NMS Capital Acquisition of Constellation Behavioral Health",
+          "url": "https://nms-capital.com/news/new-mainstream-capital-announces-acquisition-of-constellation-behavioral-health-llc/",
+          "asOf": "2016-08-25",
+          "supports": ["private_equity_acquisition", "sponsor_identity", "canonical_legal_parent", "founder_partnership"]
+        },
+        {
+          "id": "joint-commission-hanbleceya-nashville-2026",
+          "sourceType": "accreditor_registry",
+          "title": "Joint Commission — Hanbleceya Nashville, LLC",
+          "url": "https://www.jointcommission.org/en-us/accreditation/behavioral-health-care-and-human-services/provider-locator/624650",
+          "asOf": "2026-09-08",
+          "supports": ["legal_operator", "brightquest_domain", "nashville_address", "current_accreditation"]
+        }
+      ],
+      "contradictions": [],
+      "notes": "BrightQuest is the facility brand; Constellation Behavioral Health is the operating parent and NMS Capital is the current listed sponsor. Only Nashville is counted because the other BrightQuest market is California. Tennessee's current registry lists two Nashville Adult Supportive Residential Facilities at 805 and 807 Horner Avenue. BrightQuest reports a six-resident maximum per home, producing a 12-slot operator-reported Nashville capacity observation; this is not represented as a state-verified licensed-bed total."
+    },
+    {
+      "id": "thrive-behavioral-network",
+      "operatingParentName": "Thrive Behavioral Network",
+      "canonicalLegalName": null,
+      "primaryDomain": "thrivebehavioralnetwork.com",
+      "sponsorName": null,
+      "ownershipType": "owner_operated",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "The evidenced slice consists of five adult Minnesota IRTS programs and one adult residential crisis program; only their current non-overlapping licensed capacity is valued."
+      },
+      "matchedDomains": [
+        "thrivebehavioralnetwork.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "high",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "thrive-about-portfolio-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Thrive Behavioral Network history and residential portfolio",
+          "url": "https://www.thrivebehavioralnetwork.com/about-us",
+          "asOf": "2026-09-08",
+          "supports": [
+            "operating_parent",
+            "related_operating_llcs",
+            "adult_irts_portfolio",
+            "adult_residential_crisis_portfolio",
+            "residential_capacity_context",
+            "mental_health_focus"
+          ]
+        },
+        {
+          "id": "thrive-current-programs-2026",
+          "sourceType": "first_party_program",
+          "title": "Thrive Behavioral Network current programs",
+          "url": "https://www.thrivebehavioralnetwork.com/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_operating_brand",
+            "five_irts_programs",
+            "three_crisis_service_programs",
+            "adult_foster_care_portfolio",
+            "current_program_availability"
+          ]
+        },
+        {
+          "id": "thrive-owner-disclosure-2019",
+          "sourceType": "first_party_ownership",
+          "title": "Thrive Behavioral Network owner disclosure",
+          "url": "https://www.thrivebehavioralnetwork.com/blog/2019/2/4",
+          "asOf": "2019-02-04",
+          "supports": [
+            "historical_owner_identity",
+            "owner_operated_company"
+          ]
+        },
+        {
+          "id": "findtreatment-thrive-nova-house-2024",
+          "sourceType": "federal_facility_directory",
+          "title": "FindTreatment.gov Thrive Behavioral Network / Nova House facility record",
+          "url": "https://findtreatment.gov/locator/exportsAsJson/v2",
+          "asOf": "2024-12-31",
+          "supports": [
+            "private_for_profit_directory_classification",
+            "adult_residential_treatment_center",
+            "serious_mental_illness_population",
+            "primary_mental_health_treatment"
+          ]
+        },
+        {
+          "id": "mn-dhs-thrive-license-portfolio-2026",
+          "sourceType": "state_license_registry",
+          "title": "Minnesota DHS Thrive Behavioral Network residential license portfolio",
+          "url": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_irts_licenses",
+            "current_residential_crisis_license",
+            "related_legal_operators",
+            "adult_population",
+            "licensed_capacity"
+          ]
+        },
+        {
+          "id": "mn-sos-thrive-network-ii-2026",
+          "sourceType": "state_business_registry",
+          "title": "Minnesota Secretary of State — Thrive Behavioral Network II, LLC",
+          "url": "https://mblsportal.sos.mn.gov/Business/SearchDetails?filingGuid=d123f5b0-7b70-e611-816e-00155d01c56d",
+          "asOf": "2026-09-08",
+          "supports": [
+            "active_domestic_llc",
+            "good_standing",
+            "manager_identity",
+            "principal_executive_office",
+            "renewal_due_2026"
+          ]
+        },
+        {
+          "id": "mn-sos-thrive-network-iii-2026",
+          "sourceType": "state_business_registry",
+          "title": "Minnesota Secretary of State — Thrive Behavioral Network III, LLC",
+          "url": "https://mblsportal.sos.mn.gov/Business/SearchDetails?filingGuid=ecfbc16c-7c70-e611-816e-00155d01c56d",
+          "asOf": "2026-09-08",
+          "supports": [
+            "active_domestic_llc",
+            "good_standing",
+            "manager_identity",
+            "principal_executive_office",
+            "renewal_due_2026"
+          ]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "thrive-gull-harbour-2026-licensing-actions",
+          "status": "open",
+          "description": "Minnesota DHS lists a March 17, 2026 fine order and March 24, 2026 correction order for Gull Harbour while the license remains active; the underlying findings require transaction diligence."
+        },
+        {
+          "id": "thrive-willow-haven-2026-correction-order",
+          "status": "open",
+          "description": "Minnesota DHS lists a March 24, 2026 correction order for Willow Haven while the license remains active; the underlying findings require transaction diligence."
+        },
+        {
+          "id": "thrive-milestones-2026-licensing-actions",
+          "status": "open",
+          "description": "Minnesota DHS lists an April 23, 2026 fine order and maltreatment investigative memorandum for Milestones while the license remains active; the underlying findings require transaction diligence."
+        }
+      ],
+      "notes": "Thrive's current site resolves the operating brand to a 23-program Minnesota network and identifies five IRTS programs plus crisis services. Minnesota DHS verifies six distinct active adult residential mental-health licenses totaling 72 non-overlapping beds under Thrive Behavioral Network II LLC and III LLC. The federal directory classifies Nova House as private for-profit, a first-party disclosure identifies Jeff Bradley as owner, and Minnesota's current business registry identifies him as manager of the active domestic II and III operating LLCs at the same principal executive office. Those independent sources clear the private owner-operated gate. The umbrella's ultimate canonical legal parent remains unresolved, so the known legal licensees stay attached beneath the operating-parent record rather than being collapsed into an invented holding company."
+    },
+    {
+      "id": "spruce-mountain-inn",
+      "operatingParentName": "Spruce Mountain Inn",
+      "canonicalLegalName": "Spruce Mountain Inn, Inc.",
+      "primaryDomain": "sprucemountaininn.com",
+      "sponsorName": null,
+      "ownershipType": "founder_led_private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "The evidenced slice is the operator-reported maximum of 22 young-adult residential treatment participants; the state directory does not publish licensed capacity, so the value remains a partial program-capacity indication."
+      },
+      "matchedDomains": [
+        "sprucemountaininn.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "medium",
+        "targetFit": "high",
+        "capacity": "medium",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "spruce-current-program-2026",
+          "sourceType": "first_party_program",
+          "title": "Spruce Mountain Inn residential mental-health program",
+          "url": "https://sprucemountaininn.com/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "operating_company",
+            "adult_population",
+            "residential_mental_health_treatment",
+            "twenty_four_hour_support",
+            "operator_reported_program_capacity",
+            "co_occurring_substance_use"
+          ]
+        },
+        {
+          "id": "spruce-current-team-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Spruce Mountain Inn team",
+          "url": "https://sprucemountaininn.com/residential-mental-health-treatment-program-team/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "founder_identity",
+            "current_management"
+          ]
+        },
+        {
+          "id": "vt-dlp-spruce-tcr-directory-2025",
+          "sourceType": "state_license_registry",
+          "title": "Vermont Division of Licensing and Protection therapeutic care home directory",
+          "url": "https://dlp.vermont.gov/sites/dlp/files/documents/tcr_list_by_county.pdf",
+          "asOf": "2025-03-11",
+          "supports": [
+            "state_regulator_listing",
+            "canonical_legal_name",
+            "facility_address"
+          ]
+        },
+        {
+          "id": "vt-sos-spruce-business-2026",
+          "sourceType": "state_business_registry",
+          "title": "Vermont Secretary of State — Spruce Mountain Inn, Inc.",
+          "url": "https://bizfilings.vermont.gov/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "active_domestic_business_corporation",
+            "good_standing",
+            "canonical_legal_name",
+            "principal_address",
+            "registered_agent_identity"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The current first-party site and Vermont regulator directory resolve the facility brand and 155 Towne Avenue program to active Spruce Mountain Inn, Inc.; Vermont's current business search independently returns that corporation in good standing at the same address. The site serves adults ages 18–28 with residential mental-health treatment and reports a maximum of 22 residents, but Vermont's directory publishes neither a license number nor bed count. The 22 is therefore kept as operator-reported program capacity rather than state-verified licensed beds. Candace Beardsley is identified as founder on the current site and appears on the state business record, but neither source establishes current beneficial ownership; private acquisition eligibility remains pending."
+    },
+    {
+      "id": "kelly-norton-programs",
+      "operatingParentName": "Kelly-Norton Programs",
+      "canonicalLegalName": "Kelly-Norton Programs, Inc.",
+      "primaryDomain": "kellynorton.org",
+      "sponsorName": null,
+      "ownershipType": "privately_held_for_profit",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "The evidenced slice consists of two current adult Minnesota IRTS programs licensed to Kelly-Norton Programs, Inc.; only their non-overlapping licensed capacity is valued."
+      },
+      "matchedDomains": [
+        "kellynorton.org"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "high",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "kelly-norton-current-programs-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Kelly-Norton Programs residential mental-health portfolio",
+          "url": "https://www.kellynorton.org/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "operating_parent",
+            "oasis_brand_relationship",
+            "bill_kelly_house_brand_relationship",
+            "adult_residential_mental_health_services",
+            "co_occurring_disorders",
+            "two_current_supervised_living_facilities"
+          ]
+        },
+        {
+          "id": "findtreatment-kelly-norton-portfolio-2024",
+          "sourceType": "federal_facility_directory",
+          "title": "FindTreatment.gov Kelly-Norton residential facility records",
+          "url": "https://findtreatment.gov/locator/exportsAsJson/v2",
+          "asOf": "2024-12-31",
+          "supports": [
+            "private_for_profit_directory_classification",
+            "adult_residential_treatment_center",
+            "serious_mental_illness_population",
+            "primary_mental_health_treatment",
+            "oasis_and_bill_kelly_house_facilities"
+          ]
+        },
+        {
+          "id": "mn-dhs-kelly-norton-license-portfolio-2026",
+          "sourceType": "state_license_registry",
+          "title": "Minnesota DHS Kelly-Norton Programs residential license portfolio",
+          "url": "https://licensinglookup.dhs.state.mn.us/search.aspx",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_irts_licenses",
+            "canonical_legal_operator",
+            "adult_population",
+            "licensed_capacity"
+          ]
+        },
+        {
+          "id": "mn-sos-kelly-norton-programs-2026",
+          "sourceType": "state_business_registry",
+          "title": "Minnesota Secretary of State — Kelly-Norton Programs, Inc.",
+          "url": "https://mblsportal.sos.mn.gov/Business/SearchDetails?filingGuid=ff0eb40f-9fd4-e011-a886-001ec94ffe7f",
+          "asOf": "2026-09-08",
+          "supports": [
+            "active_domestic_business_corporation",
+            "good_standing",
+            "canonical_legal_name",
+            "principal_office",
+            "chief_executive_officer",
+            "renewal_due_2026"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Kelly-Norton Programs, Inc. is the operating parent of Oasis and Bill Kelly House. Minnesota DHS verifies both as active adult IRTS programs, each licensed for 16 people, for 32 non-overlapping current core beds. The current Secretary of State record identifies the same legal company as an active domestic business corporation in good standing under Minnesota Statutes chapter 302A, and the federal facility directory independently classifies both sites as private for-profit. The current CEO is named in the state business record, but ultimate shareholder identity is not asserted because the cited records do not disclose it."
+    },
+    {
+      "id": "sb-holdings",
+      "operatingParentName": "SB Holdings",
+      "canonicalLegalName": "SB Holdings, LLC",
+      "primaryDomain": "sylviabrafman.com",
+      "sponsorName": null,
+      "ownershipType": "founder_owned_private",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "The evidenced slice is the active 50-bed Georgia adult residential mental-health facility; the Florida outpatient clinic and announced future Southeast campus are excluded from valued capacity."
+      },
+      "matchedDomains": [
+        "sylviabrafman.com",
+        "sylviabrafmangeorgia.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "high",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "sbmhc-georgia-current-program-2026",
+          "sourceType": "first_party_program",
+          "title": "Sylvia Brafman Georgia residential mental-health facility",
+          "url": "https://sylviabrafmangeorgia.com/about-us/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_georgia_program",
+            "adult_residential_mental_health_treatment",
+            "primary_mental_health_focus",
+            "dual_diagnosis_treatment",
+            "founder_identity",
+            "georgia_and_florida_platform"
+          ]
+        },
+        {
+          "id": "ga-hfrd-sbmhc-license-2026",
+          "sourceType": "state_license_registry",
+          "title": "Georgia HFRD — Georgia Mental Health Center",
+          "url": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_adult_residential_mental_health_license",
+            "georgia_program_address",
+            "licensed_capacity"
+          ]
+        },
+        {
+          "id": "joint-commission-sbmhc-georgia-2026",
+          "sourceType": "accreditor_registry",
+          "title": "Joint Commission — Georgia Mental Health Center",
+          "url": "https://www.jointcommission.org/en-us/accreditation/behavioral-health-care-and-human-services/provider-locator/667396/728167",
+          "asOf": "2026-09-08",
+          "supports": [
+            "georgia_brand_relationship",
+            "legal_operating_company",
+            "georgia_program_address",
+            "adult_high_intensity_residential_services"
+          ]
+        },
+        {
+          "id": "sb-holdings-financing-disclosure-2026",
+          "sourceType": "transaction_financing_announcement",
+          "title": "Cushman & Wakefield financing announcement for the Sylvia Brafman portfolio",
+          "url": "https://wolfmediausa.com/2026/08/27/news-release-cushman-wakefield-healthcare-capital-markets-arranges-14-1-million-financing-for-the-sylvia-brafman-mental-health-center-portfolio/",
+          "asOf": "2026-08-27",
+          "supports": [
+            "sb_holdings_owner_operator",
+            "operating_parent",
+            "georgia_and_florida_portfolio",
+            "founder_led_platform",
+            "current_expansion",
+            "georgia_flagship_address"
+          ]
+        },
+        {
+          "id": "fl-ahca-sbmhc-clinic-2026",
+          "sourceType": "state_license_registry",
+          "title": "Florida AHCA — Sylvia Brafman Mental Health Center",
+          "url": "https://quality.healthfinder.fl.gov/Facility-Provider/Profile/?LID=495694",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_florida_clinic_license",
+            "for_profit_status",
+            "legal_licensee",
+            "individual_controlling_interests",
+            "current_legal_action"
+          ]
+        },
+        {
+          "id": "fl-sunbiz-sbmhc-legal-2026",
+          "sourceType": "state_business_registry",
+          "title": "Florida Division of Corporations — The Sylvia Brafman Mental Health Treatment Center, LLC",
+          "url": "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResults?Detail=FL.DOS.Corporations.Shared.Contracts.FilingRecord&InquiryDirectionType=PreviousRecord&InquiryType=EntityName&ListNameOrder=SYLVIAAMONET+L190000726610&SearchNameOrder=SYLVIABRAZILENTERPRISES+P060000549630&SearchTerm=SYLVIA+ALICIA+CANATA+DE+OSES",
+          "asOf": "2026-09-08",
+          "supports": [
+            "active_florida_llc",
+            "canonical_legal_operating_company",
+            "current_annual_report",
+            "chief_executive_officer"
+          ]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "sbmhc-florida-2026-ahca-fine",
+          "status": "open",
+          "description": "Florida AHCA reports a $5,000 survey-related fine imposed February 25, 2026 against the current Florida clinic licensee. The underlying order and remediation require transaction diligence; no adverse action is asserted for the Georgia residential license."
+        }
+      ],
+      "notes": "The current financing disclosure identifies SB Holdings, LLC as owner and operator of The Sylvia Brafman Mental Health Center platform, while the first-party site identifies founders Jaime Blaustein and Ben Brafman and describes the Georgia and Florida footprint. Georgia's live HFRD endpoint independently lists Georgia Mental Health Center at the exact 8025 Majors Road address as an active 50-bed Adult Residential Mental Health Facility. The Joint Commission crosswalks that Georgia site to The Sylvia Brafman Mental Health Treatment Center, LLC. Florida AHCA identifies the platform's Florida clinic as for-profit and publishes controlling-interest percentages for the operating licensee; Florida corporate records show that licensee remains active. Only the 50 current Georgia licensed beds are counted. The announced future 70-bed Southeast facility is excluded until open and licensed, and the Florida outpatient clinic contributes no beds."
+    },
+    {
+      "id": "southern-live-oak-wellness",
+      "operatingParentName": "Southern Live Oak Wellness",
+      "canonicalLegalName": "Southern Live Oak Wellness, LLC",
+      "primaryDomain": "southernliveoakwellness.com",
+      "sponsorName": null,
+      "ownershipType": "founder_owned_private",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "core_adult_mental_health",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "The evidenced slice consists of two active Georgia adult residential mental-health facilities under the Southern Live Oak Wellness network; only their non-overlapping licensed capacity is valued."
+      },
+      "matchedDomains": [
+        "southernliveoakwellness.com",
+        "dunwoodybehavioralhealthcenter.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "high",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "slow-dunwoody-current-program-2026",
+          "sourceType": "first_party_program",
+          "title": "Dunwoody Behavioral Health Center residential program",
+          "url": "https://dunwoodybehavioralhealthcenter.com/programs/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "adult_residential_mental_health_program",
+            "mental_health_crisis_treatment",
+            "southern_live_oak_operating_relationship",
+            "shared_operating_contact_domain",
+            "facility_address"
+          ]
+        },
+        {
+          "id": "slow-current-network-2026",
+          "sourceType": "accreditor_registry",
+          "title": "Joint Commission — Southern Live Oak Wellness",
+          "url": "https://www.jointcommission.org/en-us/accreditation/behavioral-health-care-and-human-services/provider-locator/653418",
+          "asOf": "2026-09-08",
+          "supports": [
+            "operating_network",
+            "related_legal_entities",
+            "adult_high_intensity_residential_services",
+            "current_georgia_sites"
+          ]
+        },
+        {
+          "id": "slow-founder-portfolio-2026",
+          "sourceType": "first_party_ownership",
+          "title": "Ben Mesika behavioral-health founder portfolio",
+          "url": "https://benmesika.com/about/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "founder_identity",
+            "southern_live_oak_founder_relationship",
+            "dunwoody_behavioral_health_founder_relationship",
+            "related_georgia_behavioral_health_brands"
+          ]
+        },
+        {
+          "id": "ga-sos-slow-holding-company-2026",
+          "sourceType": "state_business_registry",
+          "title": "Georgia Secretary of State — Southern Live Oak Wellness, LLC",
+          "url": "https://ecorp.sos.ga.gov/BusinessSearch/BusinessInformation?businessId=3216808&businessType=",
+          "asOf": "2026-09-08",
+          "supports": [
+            "active_domestic_llc",
+            "canonical_legal_parent",
+            "holding_company_naics",
+            "current_compliance",
+            "annual_registration_2027"
+          ]
+        },
+        {
+          "id": "ga-hfrd-slow-residential-portfolio-2026",
+          "sourceType": "state_license_registry",
+          "title": "Georgia HFRD Southern Live Oak Wellness adult residential portfolio",
+          "url": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+          "asOf": "2026-09-08",
+          "supports": [
+            "two_current_adult_residential_mental_health_licenses",
+            "licensed_capacity",
+            "current_legal_facility_names",
+            "facility_addresses"
+          ]
+        },
+        {
+          "id": "findtreatment-slow-portfolio-2024",
+          "sourceType": "federal_facility_directory",
+          "title": "FindTreatment.gov Southern Live Oak and Dunwoody facility records",
+          "url": "https://findtreatment.gov/locator/exportsAsJson/v2",
+          "asOf": "2024-12-31",
+          "supports": [
+            "private_for_profit_directory_classification",
+            "adult_residential_treatment_center",
+            "serious_mental_illness_population",
+            "primary_mental_health_treatment"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Southern Live Oak Wellness, LLC is the operating holding company for the evidenced network slice. Georgia's current business registry classifies it as an active domestic LLC whose NAICS code is Offices of Other Holding Companies. The current Dunwoody program site uses the network's slowhcm.com contact domain and explicitly references Southern Live Oak Wellness; the Joint Commission groups related Georgia residential entities beneath the Southern Live Oak Wellness accreditation, and founder Ben Mesika identifies both Southern Live Oak Wellness and Dunwoody Behavioral Health Center among the centers he founded. Georgia's live HFRD endpoint verifies active adult residential mental-health licenses for Dunwoody Behavioral Health Center (54 beds) and Southern Live Oak Wellness Academy (8 beds), totaling 62 non-overlapping current core beds. Youth and SUD-primary network facilities are not counted in the core-bed total."
+    },
+    {
+      "id": "advanced-recovery-systems",
+      "operatingParentName": "Advanced Recovery Systems",
+      "canonicalLegalName": "Advanced Recovery Systems, LLC",
+      "primaryDomain": "advancedrecoverysystems.com",
+      "sponsorName": "Assured Healthcare Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "Only the two current non-California Georgia adult residential mental-health licenses are valued. The broader SUD-primary, outpatient, hospital, and unresolved portfolio remains outside the verified core capacity slice."
+      },
+      "matchedDomains": [
+        "therecoveryvillage.com",
+        "promisesdfw.com",
+        "recoverykansascity.com",
+        "palmerlakerecovery.com",
+        "columbusrecoverycenter.com",
+        "recoveryatlanta.com",
+        "southjerseyrecovery.com",
+        "ridgefieldrecovery.com",
+        "orlandorecovery.com",
+        "washburnhouse.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "medium",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "ahp-ars-promises-combination-2026",
+          "sourceType": "sponsor_announcement",
+          "title": "Advanced Recovery Systems and Promises Behavioral Health combine",
+          "url": "https://www.ahpartners.com/advanced-recovery-systems-and-promises-behavioral-health-combine-to-advance-behavioral-health-care-delivery/",
+          "asOf": "2026-08-28",
+          "supports": [
+            "assured_healthcare_partners_sponsor",
+            "ars_promises_combination",
+            "private_equity_backed_ownership",
+            "operating_parent_relationship"
+          ]
+        },
+        {
+          "id": "ars-current-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Advanced Recovery Systems current treatment-center network",
+          "url": "https://www.advancedrecoverysystems.com/centers/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "operating_parent",
+            "current_brand_relationships",
+            "nationwide_network",
+            "recovery_village_and_promises_locations"
+          ]
+        },
+        {
+          "id": "ars-residential-mental-health-program-2026",
+          "sourceType": "first_party_program",
+          "title": "Advanced Recovery Systems residential mental-health program",
+          "url": "https://www.advancedrecoverysystems.com/residential-mental-health-rehab/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "adult_residential_mental_health_services",
+            "subacute_psychiatric_care",
+            "serious_mental_illness_populations",
+            "south_atlanta_program_relationship"
+          ]
+        },
+        {
+          "id": "nppes-ars-south-atlanta-2026",
+          "sourceType": "federal_provider_registry",
+          "title": "NPPES Advanced Recovery Systems, LLC at South Atlanta",
+          "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1114783065",
+          "asOf": "2026-09-08",
+          "supports": [
+            "canonical_legal_name",
+            "south_atlanta_legal_operator",
+            "facility_address",
+            "residential_mental_health_provider_taxonomy"
+          ]
+        },
+        {
+          "id": "ga-hfrd-ars-promises-residential-portfolio-2026",
+          "sourceType": "state_license_registry",
+          "title": "Georgia HFRD Advanced Recovery Systems and Promises adult residential portfolio",
+          "url": "https://forms.dch.georgia.gov/HFRD/GaMap2Care.html",
+          "asOf": "2026-09-08",
+          "supports": [
+            "two_current_adult_residential_mental_health_licenses",
+            "licensed_capacity",
+            "current_facility_names",
+            "facility_addresses"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Advanced Recovery Systems and Promises Behavioral Health combined in August 2026 under Assured Healthcare Partners. Current first-party and state-regulator evidence verifies a 62-bed Georgia adult residential mental-health slice: The Recovery Village South Atlanta (22 beds) and Promises Atlanta (40 beds). Advanced Recovery Systems, LLC is independently crosswalked to the South Atlanta address through NPPES. Promises Atlanta's exact legal licensee remains unresolved, and the broader national network license crosswalk is incomplete. The 62 beds therefore represent a partial core portfolio slice, not a whole-company bed count or value. SUD-primary and other non-core locations are excluded from the core valuation."
+    },
+    {
+      "id": "pyramid-healthcare",
+      "operatingParentName": "Pyramid Healthcare",
+      "canonicalLegalName": "Pyramid Healthcare, Inc.",
+      "primaryDomain": "pyramidhc.com",
+      "sponsorName": "Nautic Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "No value is calculated until current state evidence separates adult primary-mental-health residential capacity from Pyramid's much broader SUD, eating-disorder, autism, school, outpatient, and youth portfolio."
+      },
+      "matchedDomains": [
+        "pyramidhc.com",
+        "pyramid-healthcare.com",
+        "pyramidhealthcarepa.com"
+      ],
+      "matchedNormalizedNames": [
+        "pyramid healthcare"
+      ],
+      "matchedNormalizedNamePrefixes": [
+        "pyramid healthcare"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "medium",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "pyramid-current-platform-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Pyramid Healthcare current integrated platform",
+          "url": "https://www.pyramidhc.com/about/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "operating_parent",
+            "current_family_of_companies",
+            "more_than_80_active_facilities",
+            "eight_state_footprint",
+            "mixed_behavioral_health_service_lines"
+          ]
+        },
+        {
+          "id": "pyramid-current-locations-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Pyramid Healthcare current treatment locations",
+          "url": "https://www.pyramid-healthcare.com/locations/",
+          "asOf": "2026-09-08",
+          "supports": [
+            "current_brand_domain_relationship",
+            "active_residential_programs",
+            "adult_population",
+            "multistate_network"
+          ]
+        },
+        {
+          "id": "pyramid-netsmart-enterprise-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Pyramid Healthcare enterprise EHR collaboration",
+          "url": "https://www.pyramidhc.com/pyramid-healthcare-expands-collaboration-with-netsmart-to-advance-integrated-behavioral-healthcare/",
+          "asOf": "2026-03-03",
+          "supports": [
+            "canonical_legal_name",
+            "integrated_multistate_system",
+            "more_than_80_locations",
+            "current_executive_leadership",
+            "current_operating_platform"
+          ]
+        },
+        {
+          "id": "pyramid-nautic-principal-investor-2021",
+          "sourceType": "first_party_ownership_announcement",
+          "title": "Pyramid Healthcare board announcement naming Nautic Partners",
+          "url": "https://www.pyramidhc.com/wp-content/uploads/2021/07/Press-Release-Pyramid-Healthcare-Board-of-Directors-July-27-2021.pdf",
+          "asOf": "2021-07-27",
+          "supports": [
+            "nautic_partners_principal_investor",
+            "private_equity_backing",
+            "pyramid_legal_identity",
+            "historical_ninety_location_scale"
+          ]
+        },
+        {
+          "id": "pyramid-nautic-backing-2024",
+          "sourceType": "industry_transaction_report",
+          "title": "Behavioral Health M&A report — Pyramid acquisition backed by Nautic Partners",
+          "url": "https://dakgroup.com/wp-content/uploads/2024/08/Behavioral-Health-Report-2024-Mid-Year-Update-1.pdf",
+          "asOf": "2024-08-01",
+          "supports": [
+            "nautic_backed_platform",
+            "private_equity_ownership_continuity",
+            "active_acquisition_platform"
+          ]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "pyramid-current-sponsor-confirmation",
+          "status": "open",
+          "description": "First-party evidence names Nautic Partners as Pyramid's principal investor and 2024 transaction reporting still describes Nautic as the backing sponsor, but a definitive 2026 sponsor-continuity or sale-closing announcement has not been located. Sponsor identity therefore remains medium-confidence even though the operating parent and private-company status are established."
+        }
+      ],
+      "notes": "Pyramid Healthcare, Inc. is the operating parent for the matched pyramidhc.com, pyramid-healthcare.com, and pyramidhealthcarepa.com clusters. Its current corporate site reports more than 80 active facilities and seven schools across eight states, while a March 2026 enterprise announcement describes more than 80 residential and outpatient locations across nine states and identifies the current CEO. The source universe contains only a partial subset of that footprint, so observed facility scale is a discovery signal rather than a complete portfolio count. The matched records include adult residential SUD, co-occurring, and some serious-mental-illness signals; no beds are valued until state evidence isolates primary adult mental-health residential capacity."
+    },
+    {
+      "id": "behavioral-health-group",
+      "operatingParentName": "Behavioral Health Group",
+      "canonicalLegalName": "Behavioral Health Group, Inc.",
+      "primaryDomain": "bhgrecovery.com",
+      "sponsorName": "The Vistria Group",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "excluded_out_of_scope",
+      "targetClassification": "excluded_out_of_scope",
+      "matchedDomains": [
+        "bhgrecovery.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [
+        "bhg"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "high",
+        "targetFit": "excluded",
+        "capacity": "unverified",
+        "valuation": "not_applicable"
+      },
+      "sources": [
+        {
+          "id": "bhg-current-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Behavioral Health Group current outpatient treatment network",
+          "url": "https://www.bhgrecovery.com/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "more_than_110_accredited_centers",
+            "more_than_20_state_footprint",
+            "outpatient_opioid_use_disorder_treatment"
+          ]
+        },
+        {
+          "id": "bhg-terms-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Behavioral Health Group terms of use and privacy notice",
+          "url": "https://www.bhgrecovery.com/hipaa-privacy-terms-of-use-nondiscrimination/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "behavioral_health_group_inc_legal_identity",
+            "operating_parent",
+            "current_company_domain"
+          ]
+        },
+        {
+          "id": "vistria-bhg-current-portfolio-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "The Vistria Group — Behavioral Health Group portfolio company",
+          "url": "https://vistria.com/portfolio-items/behavioral-health-group/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "current_private_equity_sponsor",
+            "private_company",
+            "outpatient_opioid_use_disorder_network"
+          ]
+        },
+        {
+          "id": "vistria-bhg-current-board-2026",
+          "sourceType": "sponsor_team_profile",
+          "title": "The Vistria Group current Behavioral Health Group board representation",
+          "url": "https://vistria.com/team/amy-christensen/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "current_sponsor_involvement",
+            "current_board_representation",
+            "private_equity_ownership_continuity"
+          ]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "bhg-legal-entity-layering",
+          "status": "open",
+          "description": "Current first-party material identifies Behavioral Health Group, Inc., Behavioral Health Group, LLC, and BHG Holdings, LLC in different corporate and legal contexts. The operating parent is resolved, but the ultimate legal holding-company chain remains open."
+        }
+      ],
+      "notes": "BHG is a mature private-equity-backed company and remains visible as market context, but its current first-party and sponsor descriptions consistently identify a large outpatient opioid-use-disorder and medication-treatment network. It is therefore removed from the adult high-acuity residential mental-health acquisition funnel. BHG-prefixed facility and legal-operator records resolve beneath the one operating-parent row; no directory bed or value signal is carried into the target model."
+    },
+    {
+      "id": "sagent-behavioral-health",
+      "operatingParentName": "Sagent Behavioral Health",
+      "canonicalLegalName": "Sagent Treatment, LLC",
+      "primaryDomain": "sagentbh.com",
+      "sponsorName": "Nautic Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "No value is calculated until current regulator evidence confirms which Sagent programs, if any, provide adult primary-mental-health residential treatment and publishes non-overlapping licensed capacity."
+      },
+      "matchedDomains": [
+        "sagentbh.com",
+        "nystromcounseling.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [
+        "sagent behavioral health",
+        "nystrom and associates"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "sagent-current-platform-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Sagent Behavioral Health current company overview",
+          "url": "https://sagentbh.com/about/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "current_service_mix",
+            "five_state_footprint",
+            "reported_patient_encounters_and_employee_scale"
+          ]
+        },
+        {
+          "id": "sagent-brand-consolidation-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Sagent Behavioral Health CEO announcement and brand consolidation",
+          "url": "https://sagentbh.com/newsroom/sagent-behavioral-health-announces-shawna-gisch-as-ceo/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "nystrom_brand_relationship",
+            "ellie_minnesota_acquisition",
+            "more_than_80_clinic_locations",
+            "five_state_footprint"
+          ]
+        },
+        {
+          "id": "sagent-current-legal-notice-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Sagent Behavioral Health notice of privacy practices",
+          "url": "https://sagentbh.com/notice-of-privacy-practices/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "sagent_treatment_llc_legal_identity",
+            "current_operating_brand",
+            "five_state_service_scope"
+          ]
+        },
+        {
+          "id": "nautic-sagent-current-involvement-2026",
+          "sourceType": "sponsor_team_profile",
+          "title": "Nautic Partners current Sagent Behavioral Health investment involvement",
+          "url": "https://nautic.com/team/christopher-j-crosby/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "nystrom_holding_company",
+            "sagent_operating_brand",
+            "current_private_equity_sponsor",
+            "outpatient_behavioral_health_platform"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Sagent is the current operating brand for Nystrom & Associates and the consolidated Midwest clinic platform. Nautic's current investment profile identifies Nystrom Holding Company, LLC as Sagent Behavioral Health and describes it as an outpatient behavioral-health provider. The source universe contains one apparent adult residential record at Big Lake, but that site has not been reconciled to a current residential license. Sagent therefore remains in the mature selection pool because the possible core slice merits fit review, while its much larger outpatient clinic count cannot contribute residential beds or valuation. Ellie Mental Health is not matched nationally because Sagent acquired only the Minnesota clinics, not the entire franchise system."
+    },
+    {
+      "id": "rha-health-services",
+      "operatingParentName": "RHA Health Services",
+      "canonicalLegalName": "RHA Health Services, LLC",
+      "primaryDomain": "rhahealthservices.org",
+      "sponsorName": "Blue Wolf Capital Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "high_acuity_smi_residential",
+        "selectionBasis": "Value only current licensed adult primary-mental-health residential or crisis capacity; IDD homes, supportive living, outpatient, SUD-primary, child, and unresolved services remain outside the strict slice."
+      },
+      "matchedDomains": [
+        "rhahealthservices.org",
+        "rhahealth.org",
+        "pahrtners.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [
+        "rha health services",
+        "rha behavioral health",
+        "salisbury behavioral health",
+        "pahrtners deaf services"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "rha-salisbury-current-relationship-2026",
+          "sourceType": "first_party_corporate",
+          "title": "RHA Health Services Pennsylvania behavioral-health services",
+          "url": "https://rhahealthservices.org/behavioral-health-services/behavioral-health-services-in-pennsylvania/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "salisbury_behavioral_health_division",
+            "2021_acquisition",
+            "pennsylvania_behavioral_health_services"
+          ]
+        },
+        {
+          "id": "rha-pahrtners-current-relationship-2026",
+          "sourceType": "first_party_corporate",
+          "title": "RHA Health Services Deaf and Hard of Hearing services",
+          "url": "https://rhahealthservices.org/services/deaf-hard-of-hearing-services/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "pahrtners_deaf_services_division",
+            "pennsylvania_service_scope"
+          ]
+        },
+        {
+          "id": "rha-current-legal-notice-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "RHA Health Services privacy policy",
+          "url": "https://rhahealthservices.org/privacy-policy/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "rha_health_services_llc_legal_identity",
+            "rha_behavioral_health_llc_legal_operator",
+            "current_corporate_group"
+          ]
+        },
+        {
+          "id": "blue-wolf-rha-acquisition-2019",
+          "sourceType": "sponsor_transaction_announcement",
+          "title": "Blue Wolf Capital acquires RHA Health Services",
+          "url": "https://www.bluewolfcapital.com/news/blue-wolf-capital-acquires-rha-health-services/",
+          "asOf": "2019-08-05",
+          "supports": [
+            "private_equity_acquisition",
+            "sponsor_identity",
+            "operating_parent"
+          ]
+        },
+        {
+          "id": "blue-wolf-rha-current-involvement-2025",
+          "sourceType": "sponsor_announcement",
+          "title": "Blue Wolf Capital current RHA Health Services investment involvement",
+          "url": "https://www.bluewolfcapital.com/news/blue-wolf-capital-announces-three-new-partners-and-firmwide-promotions/",
+          "asOf": "2025-01-14",
+          "supports": [
+            "current_sponsor_involvement",
+            "rha_investment_assignment",
+            "private_equity_ownership_continuity"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "RHA Health Services is the operating parent for the current RHA, Salisbury Behavioral Health, and PAHrtners Deaf Services records. The company is a mature multi-state platform, but much of its footprint is IDD, community support, outpatient, supportive living, or other non-core care. Current first-party material does identify adult and child facility-based behavioral-health, residential, and crisis services in North Carolina and Pennsylvania, and source-directory records contain an adult residential serious-mental-illness signal. Those facts keep RHA in the mature research pool, but no facility count, bed total, or value is treated as core until state licenses isolate the adult primary-mental-health residential slice."
+    },
+    {
+      "id": "meadows-behavioral-healthcare",
+      "operatingParentName": "Meadows Behavioral Healthcare",
+      "canonicalLegalName": null,
+      "primaryDomain": "themeadows.com",
+      "sponsorName": "Kohlberg & Company",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "Value only current non-California adult primary-mental-health residential capacity supported by license-level evidence; SUD-primary, eating-disorder, youth, outpatient, California, and unresolved capacity remain outside the strict slice."
+      },
+      "matchedDomains": [
+        "themeadows.com",
+        "themeadowsiop.com",
+        "meadowsbh.com",
+        "meadowsoutpatient.com",
+        "gentlepathmeadows.com",
+        "themeadowstexas.com"
+      ],
+      "matchedNormalizedNames": [
+        "meadows",
+        "meadows texas",
+        "gentle path at the meadows",
+        "meadows outpatient center"
+      ],
+      "matchedNormalizedNamePrefixes": [
+        "meadows outpatient center"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "high",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "meadows-current-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Meadows Behavioral Healthcare current locations and program family",
+          "url": "https://www.themeadows.com/locations/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "current_program_family",
+            "residential_and_outpatient_levels_of_care",
+            "adult_outpatient_population"
+          ]
+        },
+        {
+          "id": "meadows-current-mental-health-network-2026",
+          "sourceType": "first_party_program",
+          "title": "Meadows Behavioral Healthcare mental-health treatment network",
+          "url": "https://www.themeadows.com/treatment/mental-health/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "adult_residential_mental_health_programs",
+            "meadows_arizona_relationship",
+            "meadows_texas_relationship",
+            "gentle_path_relationship",
+            "mixed_behavioral_health_service_lines"
+          ]
+        },
+        {
+          "id": "kohlberg-meadows-acquisition-2016",
+          "sourceType": "sponsor_transaction_announcement",
+          "title": "Kohlberg & Company acquires Meadows Behavioral Healthcare",
+          "url": "https://www.kohlberg.com/kohlberg-company-adds-meadows-behavioral-healthcare-to-its-behavioral-health-services-platform-enhancing-diversity-and-scale-with-acquisition-of-leading-treatment-provider/",
+          "asOf": "2016-05-20",
+          "supports": [
+            "private_equity_acquisition",
+            "sponsor_identity",
+            "operating_parent",
+            "historical_program_family"
+          ]
+        },
+        {
+          "id": "kohlberg-meadows-current-board-2026",
+          "sourceType": "sponsor_team_profile",
+          "title": "Kohlberg & Company current Meadows Behavioral Healthcare leadership and board involvement",
+          "url": "https://www.kohlberg.com/our-team/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "current_sponsor_involvement",
+            "current_board_representation",
+            "current_meadows_ceo_affiliation",
+            "private_equity_ownership_continuity"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "The current Meadows site consolidates The Meadows Arizona, The Meadows Texas, Gentle Path, Willow, Claudia Black, Meadows outpatient centers, and related programs beneath Meadows Behavioral Healthcare. Kohlberg's current team page identifies the Meadows CEO as a Kohlberg operating partner and lists Meadows board involvement, supporting current private ownership. The portfolio is mature but mixed across trauma, addiction, eating disorders, mental health, inpatient/residential, and outpatient care. California is excluded and no beds are counted until active state licenses distinguish adult primary-mental-health residential capacity from SUD-primary, specialty-adjacent, youth, and outpatient programs. The ultimate operating legal entity remains unresolved, so legal-identity confidence stays medium."
+    },
+    {
+      "id": "embark-behavioral-health",
+      "operatingParentName": "Embark Behavioral Health",
+      "canonicalLegalName": null,
+      "primaryDomain": "embarkbh.com",
+      "sponsorName": "Consonance Capital Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "Value only current non-California young-adult primary-mental-health residential capacity supported by license-level evidence; preteen, teen, education, outpatient, virtual, and unresolved program capacity remain outside the strict slice."
+      },
+      "matchedDomains": [
+        "embarkbh.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [
+        "embark behavioral health"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "medium",
+        "ownership": "medium",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "embark-current-platform-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Embark Behavioral Health current company overview",
+          "url": "https://www.embarkbh.com/about/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "current_outpatient_and_residential_network",
+            "preteen_teen_and_young_adult_populations",
+            "primary_mental_health_services"
+          ]
+        },
+        {
+          "id": "embark-current-legal-network-2025",
+          "sourceType": "first_party_legal_notice",
+          "title": "Embark Behavioral Health notice of privacy practices",
+          "url": "https://www.embarkbh.com/wp-content/uploads/2025/04/Embark-NPP_20230701.pdf",
+          "asOf": "2025-04-01",
+          "supports": [
+            "operating_parent",
+            "legal_operator_network",
+            "brand_relationships",
+            "current_corporate_address"
+          ]
+        },
+        {
+          "id": "embark-consonance-current-backing-2025",
+          "sourceType": "current_industry_ownership_report",
+          "title": "Embark Behavioral Health expands integrated care under Consonance backing",
+          "url": "https://bhbusiness.com/2025/02/12/embark-behavioral-health-expands-into-integrated-care-offerings/",
+          "asOf": "2025-02-12",
+          "supports": [
+            "consonance_controlling_sponsor",
+            "private_equity_backing",
+            "current_youth_and_young_adult_service_scope"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Embark is a mature private platform with residential and outpatient primary-mental-health programs for preteens, teens, and young adults. It remains eligible for owner review because young-adult care is within the acquisition scope, but the youth-majority portfolio cannot be treated as adult core capacity. Only non-California licensed young-adult residential programs may eventually contribute beds or value. The first-party privacy notice connects multiple legal operators to Embark, but an ultimate umbrella legal entity and current primary sponsor source remain unresolved, so legal and ownership confidence stay medium."
+    },
+    {
+      "id": "american-addiction-centers",
+      "operatingParentName": "American Addiction Centers",
+      "canonicalLegalName": "American Addiction Centers, Inc.",
+      "primaryDomain": "americanaddictioncenters.org",
+      "sponsorName": null,
+      "ownershipType": "private_unverified",
+      "acquisitionEligibility": "pending_private_verification",
+      "targetClassification": "sud_primary_adjacent",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "No value is calculated unless current regulator evidence isolates non-California adult primary-mental-health residential capacity from AAC's SUD-primary inpatient, detox, outpatient, and recovery-residence network."
+      },
+      "matchedDomains": [
+        "americanaddictioncenters.org",
+        "adcare.com",
+        "deserthopetreatment.com",
+        "greenhousetreatment.com",
+        "oxfordtreatment.com",
+        "recoveryfirst.org",
+        "riveroakstreatment.com"
+      ],
+      "matchedNormalizedNames": [
+        "adcare hospital of worcester",
+        "adcare rhode island"
+      ],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "medium",
+        "targetFit": "medium",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "aac-current-locations-2026",
+          "sourceType": "first_party_corporate",
+          "title": "American Addiction Centers current national location network",
+          "url": "https://americanaddictioncenters.org/addresses",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "adcare_relationship",
+            "desert_hope_relationship",
+            "greenhouse_relationship",
+            "oxford_relationship",
+            "recovery_first_relationship",
+            "river_oaks_relationship",
+            "inpatient_and_outpatient_sud_network"
+          ]
+        },
+        {
+          "id": "aac-current-for-profit-status-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "American Addiction Centers current privacy policy",
+          "url": "https://americanaddictioncenters.org/privacy-policy",
+          "asOf": "2026-09-09",
+          "supports": [
+            "for_profit_status",
+            "current_company_domain",
+            "operating_company"
+          ]
+        },
+        {
+          "id": "aac-current-legal-identity-2026",
+          "sourceType": "first_party_contract_terms",
+          "title": "American Addiction Centers current 90-day brand promise",
+          "url": "https://americanaddictioncenters.org/90-day-promise",
+          "asOf": "2026-09-09",
+          "supports": [
+            "american_addiction_centers_inc_legal_identity",
+            "corporate_owned_facilities",
+            "current_operating_network"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "AdCare, Desert Hope, Greenhouse, Oxford, Recovery First, and River Oaks resolve beneath American Addiction Centers using AAC's current official location list. The current company policy explicitly describes AAC as a for-profit addiction-treatment provider, but its post-restructuring beneficial ownership has not been established from a current authoritative source. AAC therefore remains a mature SUD-primary adjacent company with private ownership pending; no SUD, detox, outpatient, recovery-residence, or California capacity is valued as core."
+    },
+    {
+      "id": "sandstone-care",
+      "operatingParentName": "Sandstone Care",
+      "canonicalLegalName": "Sandstone Care, LLC",
+      "primaryDomain": "sandstonecare.com",
+      "sponsorName": "The Vistria Group",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "mixed_core_and_adjacent",
+      "valuationModel": {
+        "segmentId": "specialty_commercial_residential",
+        "selectionBasis": "Value only current non-California licensed adult or young-adult primary-mental-health residential capacity; teen, SUD-primary, detox, outpatient, and unresolved capacity remain outside the strict slice."
+      },
+      "matchedDomains": [
+        "sandstonecare.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [
+        "sandstone care"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "sandstone-current-legal-identity-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Sandstone Care current terms of use",
+          "url": "https://www.sandstonecare.com/terms/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "sandstone_care_llc_legal_identity",
+            "operating_parent",
+            "subsidiary_relationships",
+            "current_company_domain"
+          ]
+        },
+        {
+          "id": "sandstone-current-young-adult-residential-2026",
+          "sourceType": "first_party_program",
+          "title": "Sandstone Care young-adult residential treatment",
+          "url": "https://www.sandstonecare.com/young-adults/levels-of-care/residential/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "young_adult_population",
+            "mental_health_and_substance_use_scope",
+            "residential_level_of_care",
+            "24_hour_support"
+          ]
+        },
+        {
+          "id": "vistria-sandstone-current-portfolio-2026",
+          "sourceType": "sponsor_portfolio",
+          "title": "The Vistria Group current Sandstone Care portfolio profile",
+          "url": "https://vistria.com/portfolio-items/sandstonecare/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "current_private_equity_sponsor",
+            "operating_parent",
+            "behavioral_and_mental_health_scope",
+            "young_people_population"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Sandstone Care's current legal terms identify Sandstone Care, LLC and its subsidiaries, and Vistria continues to list the company in its portfolio. The platform serves teens and young adults across mental-health, substance-use, detox, residential, and outpatient programs. Current first-party material verifies a residential program for young adults ages 18 to 35 with mental-health or substance-use needs, which makes the company a credible mixed core-and-adjacent screening candidate. Directory records are discovery evidence rather than a current location census; no beds or value are promoted until active licenses isolate the non-California adult primary-mental-health residential slice."
+    },
+    {
+      "id": "bradford-health-services",
+      "operatingParentName": "Bradford Health Services",
+      "canonicalLegalName": "Bradford Health Services, LLC",
+      "primaryDomain": "bradfordhealth.com",
+      "sponsorName": "Lee Equity Partners",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "sud_primary_adjacent",
+      "valuationModel": null,
+      "matchedDomains": [
+        "bradfordhealth.com",
+        "cornerstoneofrecovery.com",
+        "lakeviewhealth.com",
+        "parkdalecenter.com",
+        "steppingstonecenter.com",
+        "vertavahealth.com"
+      ],
+      "matchedNormalizedNames": [
+        "cornerstone of recovery",
+        "lakeview health systems",
+        "lakeview health systems womans program 1st floor",
+        "parkdale center",
+        "stepping stone center for recovery"
+      ],
+      "matchedNormalizedNamePrefixes": [
+        "bradford health services"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "bradford-current-location-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Bradford Health Services current national location network",
+          "url": "https://bradfordhealth.com/locations/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "lakeview_health_relationship",
+            "parkdale_relationship",
+            "cornerstone_relationship",
+            "stepping_stone_relationship",
+            "current_multi_state_footprint",
+            "sud_primary_service_scope"
+          ]
+        },
+        {
+          "id": "bradford-current-legal-network-2024",
+          "sourceType": "first_party_legal_notice",
+          "title": "Bradford Health Services notice of privacy practices",
+          "url": "https://bradfordhealth.com/notice-of-privacy-practices/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "bradford_health_services_llc_legal_identity",
+            "affiliated_covered_entity",
+            "common_ownership_or_control"
+          ]
+        },
+        {
+          "id": "lee-bradford-current-governance-2026",
+          "sourceType": "sponsor_current_company_update",
+          "title": "Bradford Health Services enters new phase of growth",
+          "url": "https://www.leeequity.com/news-article/bradford_health_services_enters_new_phase_of_growth_names_justin_adams_chief_operating_officer_and_adds_john_hollinsworth_to_board",
+          "asOf": "2026-08-10",
+          "supports": [
+            "current_private_equity_sponsor",
+            "current_board_involvement",
+            "operating_parent",
+            "current_behavioral_health_platform"
+          ]
+        },
+        {
+          "id": "lee-bradford-majority-acquisition-2022",
+          "sourceType": "sponsor_transaction_announcement",
+          "title": "Lee Equity Partners acquires Bradford Health Services",
+          "url": "https://www.leeequity.com/news-article/lee_equity_partners_acquires_bradford_health_services_from_centre_partners",
+          "asOf": "2022-10-28",
+          "supports": [
+            "majority_private_equity_ownership",
+            "sponsor_identity",
+            "operating_parent",
+            "sud_primary_service_scope"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Bradford Health Services is a mature addiction-treatment platform founded in 1977 and currently presents more than 28 facilities under one network. The current official location list connects Bradford, Lakeview Health, Parkdale Center, Cornerstone, Stepping Stone, and newer programs; the legal notice identifies Bradford Health Services, LLC and an affiliated covered entity under common ownership or control. Lee Equity acquired majority ownership in 2022 and its August 2026 company update supports continuing governance involvement. Bradford is deliberately classified as SUD-primary adjacent rather than adult primary-mental-health core. Its inpatient, residential, detox, outpatient, and extended-care footprint remains useful market context, but no beds or value enter the core target model without regulator-confirmed adult primary-mental-health residential capacity."
+    },
+    {
+      "id": "northpoint-recovery-holdings",
+      "operatingParentName": "Northpoint Recovery",
+      "canonicalLegalName": "Northpoint Recovery Holdings, LLC",
+      "primaryDomain": "northpointholdings.com",
+      "sponsorName": "Atigun Capital Partners and Empeiria Capital Management",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "sud_primary_adjacent",
+      "valuationModel": null,
+      "matchedDomains": [
+        "imaginebynorthpoint.com",
+        "northpointholdings.com",
+        "northpointrecovery.com"
+      ],
+      "matchedNormalizedNames": [
+        "imagine by northpoint"
+      ],
+      "matchedNormalizedNamePrefixes": [
+        "northpoint recovery"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "medium",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "northpoint-current-company-network-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Northpoint Recovery current company overview",
+          "url": "https://www.northpointholdings.com/about-us/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "current_17_center_network",
+            "adult_and_adolescent_programs",
+            "four_state_footprint",
+            "sud_and_co_occurring_mental_health_scope"
+          ]
+        },
+        {
+          "id": "northpoint-current-program-scope-2026",
+          "sourceType": "first_party_program",
+          "title": "Northpoint Recovery current program continuum",
+          "url": "https://www.northpointholdings.com/our-programs/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "adult_inpatient_sud_programs",
+            "dual_diagnosis_services",
+            "adult_outpatient_primary_mental_health_track",
+            "adolescent_outpatient_relationship"
+          ]
+        },
+        {
+          "id": "northpoint-current-legal-identity-2026",
+          "sourceType": "first_party_legal_notice",
+          "title": "Northpoint Recovery current privacy policy",
+          "url": "https://www.northpointrecovery.com/privacy-policy/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "northpoint_recovery_holdings_llc_legal_identity",
+            "current_company_domain",
+            "operating_parent"
+          ]
+        },
+        {
+          "id": "northpoint-atigun-current-chairman-2026",
+          "sourceType": "sponsor_team_profile",
+          "title": "Atigun Capital current Northpoint chairman role",
+          "url": "https://atiguncapital.com/atigun-team/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "current_atigun_governance_involvement",
+            "private_company",
+            "operating_parent"
+          ]
+        },
+        {
+          "id": "northpoint-sponsor-disclosure-2023",
+          "sourceType": "first_party_company_announcement",
+          "title": "Northpoint Recovery Holdings sponsor disclosure",
+          "url": "https://www.globenewswire.com/news-release/2023/03/21/2631754/0/en/Northpoint-Recovery-Announces-Krista-Gilbert-as-CEO.html",
+          "asOf": "2023-03-21",
+          "supports": [
+            "atigun_and_empeiria_sponsors",
+            "private_equity_backing",
+            "operating_parent",
+            "historic_15_program_footprint"
+          ]
+        }
+      ],
+      "contradictions": [
+        {
+          "id": "northpoint-current-full-cap-table",
+          "status": "open",
+          "description": "Current first-party and regulator material confirms Northpoint Recovery Holdings, LLC, while current Atigun leadership material confirms continuing governance involvement. A current authoritative source confirming Empeiria's continuing stake and the complete beneficial-ownership table has not been located, so ownership confidence remains medium."
+        }
+      ],
+      "notes": "Northpoint Recovery and Imagine by Northpoint resolve beneath Northpoint Recovery Holdings, LLC. The current company site reports 17 adult and adolescent centers across Idaho, Washington, Colorado, and Nebraska. Its residential/inpatient adult programs are presently described as addiction treatment with dual-diagnosis support; the primary adult mental-health Promise track and adolescent Imagine programs are outpatient. Northpoint is therefore a mature SUD-primary adjacent company, not a verified adult primary-mental-health residential target. The 2023 company disclosure names Atigun and Empeiria as sponsors and Atigun's current team page confirms continuing Northpoint chairmanship, but the complete current ownership table remains open."
+    },
+    {
+      "id": "praesum-healthcare",
+      "operatingParentName": "Praesum Healthcare",
+      "canonicalLegalName": "Praesum Healthcare Services, LLC",
+      "primaryDomain": "praesumhealthcare.com",
+      "sponsorName": "Mayfair Group",
+      "ownershipType": "private_equity_backed",
+      "acquisitionEligibility": "eligible_private",
+      "targetClassification": "sud_primary_adjacent",
+      "valuationModel": null,
+      "matchedDomains": [
+        "evolverecoverycenter.com",
+        "praesumhealthcare.com",
+        "sunrisedetox.com",
+        "sunrisedetoxorlando.com"
+      ],
+      "matchedNormalizedNames": [],
+      "matchedNormalizedNamePrefixes": [
+        "sunrise detox"
+      ],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "high",
+        "capacity": "unverified",
+        "valuation": "unverified"
+      },
+      "sources": [
+        {
+          "id": "praesum-current-company-overview-2026",
+          "sourceType": "first_party_corporate",
+          "title": "Praesum Healthcare current company overview",
+          "url": "https://www.praesumhealthcare.com/about-us/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "operating_parent",
+            "sunrise_detox_relationship",
+            "evolve_recovery_relationship",
+            "affinityone_relationship",
+            "counseling_center_relationship",
+            "current_30_plus_center_network",
+            "sud_primary_service_scope"
+          ]
+        },
+        {
+          "id": "praesum-current-legal-network-2025",
+          "sourceType": "first_party_legal_notice",
+          "title": "Praesum Healthcare current terms and affiliated providers",
+          "url": "https://www.praesumhealthcare.com/terms-conditions/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "praesum_operating_parent",
+            "sunrise_detox_relationship",
+            "evolve_recovery_relationship",
+            "counseling_center_relationship"
+          ]
+        },
+        {
+          "id": "praesum-mayfair-acquisition-2026",
+          "sourceType": "first_party_transaction_announcement",
+          "title": "Praesum Healthcare Services announces acquisition by Mayfair Group",
+          "url": "https://www.praesumhealthcare.com/news/acquisition-mayfair-group/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "current_private_owner",
+            "mayfair_group_acquisition",
+            "operating_parent",
+            "current_30_plus_center_network",
+            "full_sud_care_continuum"
+          ]
+        },
+        {
+          "id": "sunrise-current-praesum-relationship-2026",
+          "sourceType": "first_party_brand",
+          "title": "Sunrise Detox current Praesum relationship",
+          "url": "https://www.sunrisedetox.com/about-sunrise-detox-center/",
+          "asOf": "2026-09-09",
+          "supports": [
+            "sunrise_detox_brand",
+            "praesum_operating_parent",
+            "medical_detox_service_scope",
+            "five_state_footprint"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Sunrise Detox and Evolve Recovery Center resolve beneath Praesum Healthcare Services, LLC. Praesum reports a network of more than 30 Eastern U.S. centers spanning medical detoxification, residential addiction treatment, structured living, outpatient services, and mental-health treatment, and its current announcement identifies Mayfair Group as the new capital partner while Praesum retains day-to-day operations and regulatory oversight. The platform is mature but SUD-primary adjacent; Sunrise detox beds, Evolve residential addiction beds, outpatient programs, and structured living do not count as adult primary-mental-health residential capacity or value. Directory rows remain a partial discovery slice rather than a complete company census."
+    },
+    {
+      "id": "universal-health-services",
+      "operatingParentName": "Universal Health Services",
+      "canonicalLegalName": "Universal Health Services, Inc.",
+      "primaryDomain": "uhs.com",
+      "sponsorName": null,
+      "ownershipType": "public_company",
+      "acquisitionEligibility": "excluded_public_company",
+      "targetClassification": "excluded_public_company",
+      "matchedDomains": [
+        "emeraldcoastbehavioral.com",
+        "uhsinc.com"
+      ],
+      "matchedNormalizedNames": [
+        "emerald coast behavioral hospital"
+      ],
+      "matchedNormalizedNamePrefixes": [],
+      "confidence": {
+        "relationship": "high",
+        "legalIdentity": "high",
+        "ownership": "high",
+        "targetFit": "excluded",
+        "capacity": "unverified",
+        "valuation": "not_applicable"
+      },
+      "sources": [
+        {
+          "id": "uhs-emerald-coast-current-relationship-2026",
+          "sourceType": "first_party_corporate",
+          "title": "UHS current Emerald Coast Behavioral Hospital profile",
+          "url": "https://jobs.uhs.com/emerald-coast-behavioral-hospital",
+          "asOf": "2026-09-09",
+          "supports": [
+            "universal_health_services_parent",
+            "emerald_coast_subsidiary_relationship",
+            "current_86_bed_psychiatric_hospital",
+            "adult_and_adolescent_inpatient_services"
+          ]
+        },
+        {
+          "id": "uhs-current-public-company-2026",
+          "sourceType": "sec_filing",
+          "title": "Universal Health Services 2025 Form 10-K",
+          "url": "https://ir.uhs.com/static-files/a097d0c4-8ec9-4e76-9f64-c2579be2020b",
+          "asOf": "2025-12-31",
+          "supports": [
+            "canonical_legal_parent",
+            "public_company_status",
+            "publicly_registered_securities",
+            "current_national_behavioral_health_network"
+          ]
+        }
+      ],
+      "contradictions": [],
+      "notes": "Emerald Coast Behavioral Hospital and matched UHS-domain records resolve to Universal Health Services, Inc. The facility may be clinically relevant market context, but UHS is publicly traded and is therefore excluded from the private-company acquisition funnel. Its beds and enterprise value are never imported into the private-target model."
+    }
+  ]
+}

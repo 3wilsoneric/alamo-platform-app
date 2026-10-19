@@ -1,0 +1,11 @@
+FROM pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:1da8af905ea878d85998d10fc836699c836c6c051de0afe478406f8e05048515
+
+# This release preserves the running Azure app, API, and asset bundle. It adds
+# only iPhone-sized presentation fixes and Home Screen metadata to that image.
+USER root
+WORKDIR /app
+COPY deploy/iphone-polish.css ./dist/iphone-polish.css
+COPY deploy/inject-iphone-head.mjs /usr/local/bin/inject-iphone-head.mjs
+RUN node /usr/local/bin/inject-iphone-head.mjs
+RUN chown node:node /app/dist/index.html /app/dist/iphone-polish.css
+USER node

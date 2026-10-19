@@ -1,0 +1,83 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "EldermarkDailyPullManaged",
+      "location": "westus2",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "tags": {
+        "purpose": "eldermark-vm-lifecycle",
+        "rollback": "re-enable legacy EldermarkDailyPull workflows"
+      },
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "triggers": {
+            "Recurrence": {
+              "type": "Recurrence",
+              "recurrence": {
+                "frequency": "Day",
+                "interval": 1,
+                "startTime": "2026-08-17T02:00:00",
+                "timeZone": "Mountain Standard Time"
+              }
+            }
+          },
+          "actions": {
+            "Start_VM": {
+              "type": "Http",
+              "inputs": {
+                "method": "POST",
+                "uri": "https://management.azure.com/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/resourceGroups/ALAMO-DATA-RG/providers/Microsoft.Compute/virtualMachines/adf-ir-rg/start?api-version=2024-07-01",
+                "authentication": {
+                  "type": "ManagedServiceIdentity",
+                  "audience": "https://management.azure.com/"
+                }
+              },
+              "runAfter": {}
+            },
+            "Wait_for_ElderMark_pull": {
+              "type": "Wait",
+              "inputs": {
+                "interval": {
+                  "count": 4,
+                  "unit": "Hour"
+                }
+              },
+              "runAfter": {
+                "Start_VM": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Deallocate_VM": {
+              "type": "Http",
+              "inputs": {
+                "method": "POST",
+                "uri": "https://management.azure.com/subscriptions/84d40648-8488-4226-9e74-6b9458d0d73f/resourceGroups/ALAMO-DATA-RG/providers/Microsoft.Compute/virtualMachines/adf-ir-rg/deallocate?api-version=2024-07-01",
+                "authentication": {
+                  "type": "ManagedServiceIdentity",
+                  "audience": "https://management.azure.com/"
+                }
+              },
+              "runAfter": {
+                "Wait_for_ElderMark_pull": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {}
+      }
+    }
+  ]
+}

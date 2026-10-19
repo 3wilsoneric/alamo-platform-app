@@ -1,0 +1,48 @@
+.agent-conversation-home { color: #263b34; background: #fff; max-width: 1180px; margin: 0 auto; padding: 16px 24px; min-height: 90dvh; font-family: "Avenir Next", system-ui, sans-serif; }
+.agent-conversation-home button, .agent-conversation-home a { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; }
+.agent-conversation-home button { padding: 8px 12px; border-radius: 10px; }
+.agent-conversation-home button:hover { background: #eef5f1; }
+.agent-conversation-home button:disabled { opacity: .5; cursor: not-allowed; }
+.agent-conversation-home :focus-visible { outline: 2px solid #087d64; outline-offset: 3px; }
+.app-theme-root .agent-conversation-home [data-conversational-prompt] form { border-radius: 16px !important; }
+.agent-conversation-toolbar { display: flex; align-items: center; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid #e4eae7; }
+.agent-conversation-toolbar nav { flex: 1; display: flex; gap: 4px; }
+.agent-conversation-toolbar img { width: 32px; height: 32px; object-fit: contain; }
+.agent-conversation-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 32px; }
+.agent-conversation-layout aside { padding: 20px 0; border-right: 1px solid #e4eae7; }
+.agent-conversation-layout aside button { width: calc(100% - 12px); text-align: left; font-size: 13px; overflow-wrap: anywhere; }
+.agent-conversation-layout aside button[aria-current] { background: #edf4ef; color: #086b54; }
+.agent-conversation-layout aside p, .agent-conversation-empty { color: #728079; font-size: 13px; padding: 16px 0; }
+.agent-conversation-layout main { min-width: 0; }
+.agent-conversation-create { padding: 20px 0; border-bottom: 1px solid #e4eae7; }
+.agent-conversation-create fieldset { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 0; }
+.agent-conversation-create legend { font-size: 13px; font-weight: 600; }
+.agent-conversation-create label { display: flex; gap: 8px; align-items: center; min-height: 44px; }
+.agent-conversation-create button[type=submit] { background: #08745f; color: white; }
+.agent-conversation-scope { display: flex; flex-wrap: wrap; gap: 12px; padding: 18px 0; font-size: 12px; color: #64756d; border-bottom: 1px solid #edf0ee; }
+.agent-conversation-turn { padding: 24px 0; }
+.agent-conversation-user { margin-left: auto; max-width: 85%; width: fit-content; padding: 12px 16px; background: #f0f5f2; border-radius: 18px 18px 4px 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.agent-conversation-answer { margin-top: 24px; overflow-wrap: anywhere; }
+.agent-conversation-answer > div + div { margin-top: 18px; }
+.agent-conversation-citations { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: #08745f; margin-top: 4px; }
+.agent-conversation-sources { margin-top: 18px; font-size: 12px; color: #607067; }
+.agent-conversation-sources summary { cursor: pointer; min-height: 44px; padding-top: 12px; }
+.agent-conversation-sources li { padding: 14px 0; border-top: 1px solid #edf0ee; }
+.agent-conversation-sources li strong, .agent-conversation-sources li span { display: block; margin-bottom: 6px; }
+.agent-conversation-sources li a { margin-right: 16px; color: #08745f; }
+.agent-conversation-error { padding: 12px; margin: 12px 0; border-radius: 10px; background: #fff7ed; color: #805120; }
+.agent-conversation-progress { padding-top: 20px; color: #64756d; font-size: 13px; }
+.agent-conversation-updates article { padding: 24px 0; border-bottom: 1px solid #e4eae7; }
+.agent-conversation-updates article small { color: #64756d; }
+.agent-conversation-updates h2 { margin: 8px 0; font-size: 18px; font-weight: 600; }
+.agent-conversation-updates p { line-height: 1.7; }
+.agent-conversation-updates article > div { display: flex; flex-wrap: wrap; gap: 8px 18px; color: #08745f; font-size: 13px; margin-top: 12px; }
+@media (max-width: 700px) {
+  .agent-conversation-home { padding: 12px 16px; }
+  .agent-conversation-layout { display: flex; flex-direction: column; gap: 0; }
+  .agent-conversation-layout aside { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid #e4eae7; padding: 8px 0; max-height: 96px; }
+  .agent-conversation-layout aside button { flex: 0 0 150px; font-size: 12px; }
+  .agent-conversation-layout aside p { padding: 4px 0; }
+  .agent-conversation-toolbar { gap: 8px; padding-bottom: 8px; }
+  .agent-conversation-home button { padding: 8px; }
+}

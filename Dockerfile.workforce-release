@@ -1,0 +1,16 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:41bca5d43cdc2d22ee700b201a176f7bf91ad9028a6ec0f9aecdcae74a2e4252
+FROM ${BASE_IMAGE}
+
+# Workforce owner-only release. Production's server files differ from main (main carries
+# unreleased acquisition-operator routes), so api/platform.js and server/platform-data.mjs are
+# production's exact files from the base digest plus only the Workforce route and loader. The
+# bundle is built from this branch with production's public Entra settings and no development
+# bypass, with .gz/.br siblings regenerated. See deployment-operations.md (2026-09-30).
+USER root
+WORKDIR /app
+RUN rm -rf /app/dist
+COPY dist ./dist
+COPY api/platform.js ./api/platform.js
+COPY server/platform-data.mjs server/workforce-summary.mjs ./server/
+RUN chown -R node:node /app/dist /app/api/platform.js /app/server/platform-data.mjs /app/server/workforce-summary.mjs
+USER node

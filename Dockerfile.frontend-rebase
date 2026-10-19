@@ -1,0 +1,24 @@
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:9ee73ecb35a542b4a52f717c59645fd197c7df5f1e685ee58c39f4c4edbe8382
+FROM ${BASE_IMAGE} AS source
+
+# Flatten the exact proven production filesystem when accumulated frontend
+# overlay layers approach the registry's image-depth ceiling. The second stage
+# preserves that filesystem in one layer, then adds only the validated Vite
+# bundle. Recreate the source image's runtime configuration explicitly because
+# scratch stages do not inherit image config.
+FROM scratch
+COPY --from=source / /
+COPY --chown=1000:1000 dist /app/dist
+
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    NODE_VERSION=22.23.2 \
+    YARN_VERSION=1.22.22 \
+    HOST=0.0.0.0 \
+    NODE_ENV=production \
+    PORT=3000
+
+WORKDIR /app
+USER node
+EXPOSE 3000
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "server/app-server.mjs"]

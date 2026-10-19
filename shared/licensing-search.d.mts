@@ -1,0 +1,1 @@
+export function licensingSearchPlan(question: string): { community: string; outcome: string; citationsOnly: boolean; correctionsOnly: boolean; noDeficienciesOnly: boolean; year: string; terms: string[] };

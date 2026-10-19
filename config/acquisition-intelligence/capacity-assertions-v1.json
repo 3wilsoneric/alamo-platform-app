@@ -1,0 +1,356 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-08",
+  "scope": {
+    "description": "Curated non-regulator capacity observations for non-California acquisition research.",
+    "excludedStateCodes": ["CA"],
+    "policy": "Operator-reported and estimated capacity remain separate from active state-license capacity."
+  },
+  "sources": [
+    {
+      "id": "amfm-great-falls-capacity-2026-09",
+      "authorityName": "AMFM Mental Health Treatment",
+      "authorityType": "operator_first_party",
+      "title": "Great Falls Residential Mental Health Treatment Center",
+      "reportUrl": "https://amfmtreatment.com/locations/virginia/great-falls-kellie-jean-ct/",
+      "extractionUrl": "https://r.jina.ai/http://amfmtreatment.com/locations/virginia/great-falls-kellie-jean-ct/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "amfm-annandale-capacity-2026-09",
+      "authorityName": "AMFM Mental Health Treatment",
+      "authorityType": "operator_first_party",
+      "title": "Annandale Residential Mental Health Treatment Center",
+      "reportUrl": "https://amfmtreatment.com/locations/virginia/annandale-rebel-dr/",
+      "extractionUrl": "https://r.jina.ai/http://amfmtreatment.com/locations/virginia/annandale-rebel-dr/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "amfm-browns-mill-capacity-2026-09",
+      "authorityName": "AMFM Mental Health Treatment",
+      "authorityType": "operator_first_party",
+      "title": "Vienna Browns Mill Residential Mental Health Treatment Center",
+      "reportUrl": "https://amfmtreatment.com/locations/virginia/vienna-browns-mill-rd/",
+      "extractionUrl": "https://r.jina.ai/http://amfmtreatment.com/locations/virginia/vienna-browns-mill-rd/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "amfm-corsica-capacity-2026-09",
+      "authorityName": "AMFM Mental Health Treatment",
+      "authorityType": "operator_first_party",
+      "title": "Vienna Corsica Residential Mental Health Treatment Center",
+      "reportUrl": "https://amfmtreatment.com/locations/virginia/vienna-corsica-st/",
+      "extractionUrl": "https://r.jina.ai/http://amfmtreatment.com/locations/virginia/vienna-corsica-st/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "amfm-derbyshire-capacity-2026-09",
+      "authorityName": "AMFM Mental Health Treatment",
+      "authorityType": "operator_first_party",
+      "title": "Fairfax Station Residential Mental Health Treatment Center",
+      "reportUrl": "https://amfmtreatment.com/locations/virginia/fairfax-station-derbyshire-ln/",
+      "extractionUrl": "https://r.jina.ai/http://amfmtreatment.com/locations/virginia/fairfax-station-derbyshire-ln/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "amfm-lawyers-capacity-2026-09",
+      "authorityName": "AMFM Mental Health Treatment",
+      "authorityType": "operator_first_party",
+      "title": "Vienna Lawyers Residential Mental Health Treatment Center",
+      "reportUrl": "https://amfmtreatment.com/locations/virginia/vienna-lawyers-rd/",
+      "extractionUrl": "https://r.jina.ai/http://amfmtreatment.com/locations/virginia/vienna-lawyers-rd/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "amfm-lewinsville-capacity-2026-09",
+      "authorityName": "AMFM Mental Health Treatment",
+      "authorityType": "operator_first_party",
+      "title": "McLean Lewinsville Residential Mental Health Treatment Center",
+      "reportUrl": "https://amfmtreatment.com/locations/virginia/mclean-lewinsville-rd/",
+      "extractionUrl": "https://r.jina.ai/http://amfmtreatment.com/locations/virginia/mclean-lewinsville-rd/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "brightquest-nashville-per-home-capacity-2026-09",
+      "authorityName": "BrightQuest Treatment Centers",
+      "authorityType": "operator_first_party",
+      "title": "BrightQuest Nashville Residential Mental Health Program",
+      "reportUrl": "https://www.brightquest.com/nashville/",
+      "extractionUrl": "https://r.jina.ai/http://www.brightquest.com/nashville/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "spruce-program-capacity-2026-09",
+      "authorityName": "Spruce Mountain Inn",
+      "authorityType": "operator_first_party",
+      "title": "Spruce Mountain Inn residential mental-health program",
+      "reportUrl": "https://sprucemountaininn.com/",
+      "extractionUrl": "https://r.jina.ai/http://sprucemountaininn.com/",
+      "retrievedAt": "2026-09-08"
+    },
+    {
+      "id": "discovery-annapolis-capacity-2025-10",
+      "authorityName": "Discovery Behavioral Health",
+      "authorityType": "operator_first_party",
+      "title": "Discovery Behavioral Health Annapolis capacity announcement",
+      "reportUrl": "https://www.prnewswire.com/news-releases/discovery-behavioral-health-adds-two-flagship-residential-treatment-centers-to-expand-measurement-based-care-of-eating-and-mental-health-disorders-in-california-and-texas-302589436.html",
+      "extractionUrl": "https://r.jina.ai/https://www.prnewswire.com/news-releases/discovery-behavioral-health-adds-two-flagship-residential-treatment-centers-to-expand-measurement-based-care-of-eating-and-mental-health-disorders-in-california-and-texas-302589436.html",
+      "retrievedAt": "2026-09-08"
+    }
+  ],
+  "assertions": [
+    {
+      "id": "amfm-va-great-falls-reported-capacity",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "Great Falls - Kellie Jean",
+      "address": {
+        "street1": "11301 Kellie Jean Ct",
+        "city": "Great Falls",
+        "stateCode": "VA",
+        "zip": "22066"
+      },
+      "capacity": {
+        "reportedBeds": 8,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "amfm-great-falls-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Eight-person capacity."
+      }
+    },
+    {
+      "id": "amfm-va-annandale-reported-capacity",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "Annandale - Rebel",
+      "address": {
+        "street1": "7803 Rebel Dr",
+        "city": "Annandale",
+        "stateCode": "VA",
+        "zip": "22003"
+      },
+      "capacity": {
+        "reportedBeds": 8,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "amfm-annandale-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Eight beds for women and female-identifying individuals."
+      }
+    },
+    {
+      "id": "amfm-va-browns-mill-reported-capacity",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "Vienna - Browns Mill",
+      "address": {
+        "street1": "10305 Browns Mill Rd",
+        "city": "Vienna",
+        "stateCode": "VA",
+        "zip": "22182"
+      },
+      "capacity": {
+        "reportedBeds": 8,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "amfm-browns-mill-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Eight beds available."
+      }
+    },
+    {
+      "id": "amfm-va-corsica-reported-capacity",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "Vienna - Corsica",
+      "address": {
+        "street1": "9947 Corsica St",
+        "city": "Vienna",
+        "stateCode": "VA",
+        "zip": "22181"
+      },
+      "capacity": {
+        "reportedBeds": 8,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "amfm-corsica-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Accommodates eight individuals at a time."
+      }
+    },
+    {
+      "id": "amfm-va-derbyshire-reported-capacity",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "Fairfax Station - Derbyshire",
+      "address": {
+        "street1": "7905 Derbyshire Ln",
+        "city": "Fairfax Station",
+        "stateCode": "VA",
+        "zip": "22039"
+      },
+      "capacity": {
+        "reportedBeds": 8,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "amfm-derbyshire-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "This men’s inpatient residential facility accommodates eight male-identifying individuals at a time."
+      }
+    },
+    {
+      "id": "amfm-va-lawyers-reported-capacity",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "Vienna - Lawyers",
+      "address": {
+        "street1": "10010 Lawyers Rd",
+        "city": "Vienna",
+        "stateCode": "VA",
+        "zip": "22181"
+      },
+      "capacity": {
+        "reportedBeds": 8,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "amfm-lawyers-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Accommodates eight individuals."
+      }
+    },
+    {
+      "id": "amfm-va-lewinsville-reported-capacity",
+      "parentAssertionId": "amfm-healthcare",
+      "brandName": "A Mission for Michael",
+      "programName": "McLean - Lewinsville",
+      "address": {
+        "street1": "8522 Lewinsville Rd",
+        "city": "McLean",
+        "stateCode": "VA",
+        "zip": "22102"
+      },
+      "capacity": {
+        "reportedBeds": 8,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "amfm-lewinsville-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Eight beds, with a combination of single and double occupancy."
+      }
+    },
+    {
+      "id": "brightquest-tn-805-horner-reported-capacity",
+      "parentAssertionId": "constellation-behavioral-health",
+      "brandName": "BrightQuest Treatment Centers",
+      "programName": "BrightQuest Nashville — 805 Horner Avenue",
+      "address": {
+        "street1": "805 Horner Ave",
+        "city": "Nashville",
+        "stateCode": "TN",
+        "zip": "37204"
+      },
+      "capacity": {
+        "reportedBeds": 6,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "brightquest-nashville-per-home-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "6 Residents maximum per home"
+      }
+    },
+    {
+      "id": "brightquest-tn-807-horner-reported-capacity",
+      "parentAssertionId": "constellation-behavioral-health",
+      "brandName": "BrightQuest Treatment Centers",
+      "programName": "BrightQuest Nashville — 807 Horner Avenue",
+      "address": {
+        "street1": "807 Horner Ave",
+        "city": "Nashville",
+        "stateCode": "TN",
+        "zip": "37204"
+      },
+      "capacity": {
+        "reportedBeds": 6,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "brightquest-nashville-per-home-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "6 Residents maximum per home"
+      }
+    },
+    {
+      "id": "spruce-vt-program-reported-capacity",
+      "parentAssertionId": "spruce-mountain-inn",
+      "brandName": "Spruce Mountain Inn",
+      "programName": "Spruce Mountain Inn",
+      "address": {
+        "street1": "155 Towne Avenue",
+        "city": "Plainfield",
+        "stateCode": "VT",
+        "zip": "05667"
+      },
+      "capacity": {
+        "reportedBeds": 22,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "spruce-program-capacity-2026-09",
+        "asOf": "2026-09-08",
+        "rowFingerprint": "Our residence is intentionally small, with a maximum of 22 residents living and receiving treatment here at any given time. For over 40 years, Spruce Mountain Inn has been helping young adults"
+      }
+    },
+    {
+      "id": "discovery-md-annapolis-campus-reported-capacity",
+      "parentAssertionId": "discovery-behavioral-health",
+      "brandName": "Discovery Mood & Anxiety Program",
+      "programName": "Discovery Mood & Anxiety Program Annapolis campus — four residences",
+      "address": {
+        "street1": "2008 St Stephens Woods Drive",
+        "city": "Crownsville",
+        "stateCode": "MD",
+        "zip": "21032"
+      },
+      "capacity": {
+        "reportedBeds": 40,
+        "evidenceBasis": "operator_reported",
+        "scopeClassification": "core_target",
+        "confidence": "medium"
+      },
+      "source": {
+        "sourceId": "discovery-annapolis-capacity-2025-10",
+        "asOf": "2025-10-20",
+        "rowFingerprint": "Annapolis, Maryland, treatment center to 40 beds"
+      }
+    }
+  ]
+}

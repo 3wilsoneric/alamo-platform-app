@@ -1,0 +1,439 @@
+{
+  "dataset": "Behavioral Health Demand Atlas \u2014 50-State State-Hospital Bed Column (Volume I, national layer)",
+  "prepared_for": "Alamo (residential behavioral-health operator)",
+  "as_of": "2026-08-02",
+  "metric_definition": "State-OPERATED psychiatric hospital beds per 100,000 population. Single consistent definition across all rows. NOT all-facility, all-payer, or private beds.",
+  "source": {
+    "name": "Treatment Advocacy Center, state psychiatric hospital bed survey (fielded Apr-Aug 2023, published Jan 2024)",
+    "accessed_via": "Becker's Behavioral Health full ranking table",
+    "url": "https://www.beckersbehavioralhealth.com/behavioral-health-news/states-with-the-highest-ratio-of-state-psychiatric-beds-by-population/"
+  },
+  "benchmark": {
+    "value": 50.0,
+    "label": "TAC 'minimally adequate' state psychiatric beds per 100k",
+    "note": "Every U.S. state and DC falls below this benchmark. gap_vs_50_benchmark is negative for all rows; a larger negative number = greater scarcity."
+  },
+  "provenance_rule": "Every value transcribed verbatim from the single authoritative source above. No estimation, no interpolation, no mixed definitions. Includes DC (51 rows). This is the one behavioral-health-demand metric collected in nationally consistent form, which is why it can be completed for all states where the qualitative/legal columns cannot.",
+  "row_count": 51,
+  "extremes": {
+    "highest_supply": {
+      "state": "Delaware",
+      "value": 35.7
+    },
+    "lowest_supply": {
+      "state": "Iowa",
+      "value": 2.0
+    },
+    "all_below_benchmark": true
+  },
+  "states": [
+    {
+      "state": "Delaware",
+      "abbr": "DE",
+      "rank": 1,
+      "state_psych_beds_per_100k": 35.7,
+      "gap_vs_50_benchmark": -14.3,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Hawaii",
+      "abbr": "HI",
+      "rank": 2,
+      "state_psych_beds_per_100k": 20.6,
+      "gap_vs_50_benchmark": -29.4,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "West Virginia",
+      "abbr": "WV",
+      "rank": 3,
+      "state_psych_beds_per_100k": 16.9,
+      "gap_vs_50_benchmark": -33.1,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "California",
+      "abbr": "CA",
+      "rank": 4,
+      "state_psych_beds_per_100k": 16.8,
+      "gap_vs_50_benchmark": -33.2,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "New York",
+      "abbr": "NY",
+      "rank": 4,
+      "state_psych_beds_per_100k": 16.8,
+      "gap_vs_50_benchmark": -33.2,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "New Jersey",
+      "abbr": "NJ",
+      "rank": 4,
+      "state_psych_beds_per_100k": 16.8,
+      "gap_vs_50_benchmark": -33.2,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Oregon",
+      "abbr": "OR",
+      "rank": 7,
+      "state_psych_beds_per_100k": 16.6,
+      "gap_vs_50_benchmark": -33.4,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Montana",
+      "abbr": "MT",
+      "rank": 8,
+      "state_psych_beds_per_100k": 15.5,
+      "gap_vs_50_benchmark": -34.5,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Maryland",
+      "abbr": "MD",
+      "rank": 9,
+      "state_psych_beds_per_100k": 15.3,
+      "gap_vs_50_benchmark": -34.7,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Louisiana",
+      "abbr": "LA",
+      "rank": 10,
+      "state_psych_beds_per_100k": 15.0,
+      "gap_vs_50_benchmark": -35.0,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Missouri",
+      "abbr": "MO",
+      "rank": 11,
+      "state_psych_beds_per_100k": 14.4,
+      "gap_vs_50_benchmark": -35.6,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Virginia",
+      "abbr": "VA",
+      "rank": 12,
+      "state_psych_beds_per_100k": 14.3,
+      "gap_vs_50_benchmark": -35.7,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Connecticut",
+      "abbr": "CT",
+      "rank": 13,
+      "state_psych_beds_per_100k": 14.2,
+      "gap_vs_50_benchmark": -35.8,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Washington",
+      "abbr": "WA",
+      "rank": 14,
+      "state_psych_beds_per_100k": 13.3,
+      "gap_vs_50_benchmark": -36.7,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Mississippi",
+      "abbr": "MS",
+      "rank": 15,
+      "state_psych_beds_per_100k": 12.4,
+      "gap_vs_50_benchmark": -37.6,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Wyoming",
+      "abbr": "WY",
+      "rank": 15,
+      "state_psych_beds_per_100k": 12.4,
+      "gap_vs_50_benchmark": -37.6,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "District of Columbia",
+      "abbr": "DC",
+      "rank": 17,
+      "state_psych_beds_per_100k": 12.2,
+      "gap_vs_50_benchmark": -37.8,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Indiana",
+      "abbr": "IN",
+      "rank": 18,
+      "state_psych_beds_per_100k": 11.9,
+      "gap_vs_50_benchmark": -38.1,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Maine",
+      "abbr": "ME",
+      "rank": 19,
+      "state_psych_beds_per_100k": 11.5,
+      "gap_vs_50_benchmark": -38.5,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Rhode Island",
+      "abbr": "RI",
+      "rank": 19,
+      "state_psych_beds_per_100k": 11.5,
+      "gap_vs_50_benchmark": -38.5,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Florida",
+      "abbr": "FL",
+      "rank": 21,
+      "state_psych_beds_per_100k": 11.3,
+      "gap_vs_50_benchmark": -38.7,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "New Hampshire",
+      "abbr": "NH",
+      "rank": 22,
+      "state_psych_beds_per_100k": 11.0,
+      "gap_vs_50_benchmark": -39.0,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Illinois",
+      "abbr": "IL",
+      "rank": 23,
+      "state_psych_beds_per_100k": 10.8,
+      "gap_vs_50_benchmark": -39.2,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Pennsylvania",
+      "abbr": "PA",
+      "rank": 24,
+      "state_psych_beds_per_100k": 10.7,
+      "gap_vs_50_benchmark": -39.3,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Kansas",
+      "abbr": "KS",
+      "rank": 25,
+      "state_psych_beds_per_100k": 10.4,
+      "gap_vs_50_benchmark": -39.6,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Nebraska",
+      "abbr": "NE",
+      "rank": 26,
+      "state_psych_beds_per_100k": 9.9,
+      "gap_vs_50_benchmark": -40.1,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Georgia",
+      "abbr": "GA",
+      "rank": 27,
+      "state_psych_beds_per_100k": 9.7,
+      "gap_vs_50_benchmark": -40.3,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Ohio",
+      "abbr": "OH",
+      "rank": 28,
+      "state_psych_beds_per_100k": 9.6,
+      "gap_vs_50_benchmark": -40.4,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Massachusetts",
+      "abbr": "MA",
+      "rank": 29,
+      "state_psych_beds_per_100k": 9.5,
+      "gap_vs_50_benchmark": -40.5,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Oklahoma",
+      "abbr": "OK",
+      "rank": 30,
+      "state_psych_beds_per_100k": 9.4,
+      "gap_vs_50_benchmark": -40.6,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Kentucky",
+      "abbr": "KY",
+      "rank": 31,
+      "state_psych_beds_per_100k": 9.1,
+      "gap_vs_50_benchmark": -40.9,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Nevada",
+      "abbr": "NV",
+      "rank": 32,
+      "state_psych_beds_per_100k": 9.0,
+      "gap_vs_50_benchmark": -41.0,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Idaho",
+      "abbr": "ID",
+      "rank": 33,
+      "state_psych_beds_per_100k": 8.8,
+      "gap_vs_50_benchmark": -41.2,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Colorado",
+      "abbr": "CO",
+      "rank": 34,
+      "state_psych_beds_per_100k": 8.3,
+      "gap_vs_50_benchmark": -41.7,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Alaska",
+      "abbr": "AK",
+      "rank": 35,
+      "state_psych_beds_per_100k": 8.2,
+      "gap_vs_50_benchmark": -41.8,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Alabama",
+      "abbr": "AL",
+      "rank": 36,
+      "state_psych_beds_per_100k": 8.0,
+      "gap_vs_50_benchmark": -42.0,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "South Carolina",
+      "abbr": "SC",
+      "rank": 36,
+      "state_psych_beds_per_100k": 8.0,
+      "gap_vs_50_benchmark": -42.0,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Tennessee",
+      "abbr": "TN",
+      "rank": 38,
+      "state_psych_beds_per_100k": 7.8,
+      "gap_vs_50_benchmark": -42.2,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Wisconsin",
+      "abbr": "WI",
+      "rank": 39,
+      "state_psych_beds_per_100k": 7.6,
+      "gap_vs_50_benchmark": -42.4,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "South Dakota",
+      "abbr": "SD",
+      "rank": 40,
+      "state_psych_beds_per_100k": 7.4,
+      "gap_vs_50_benchmark": -42.6,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Utah",
+      "abbr": "UT",
+      "rank": 41,
+      "state_psych_beds_per_100k": 7.3,
+      "gap_vs_50_benchmark": -42.7,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "North Dakota",
+      "abbr": "ND",
+      "rank": 41,
+      "state_psych_beds_per_100k": 7.3,
+      "gap_vs_50_benchmark": -42.7,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "New Mexico",
+      "abbr": "NM",
+      "rank": 43,
+      "state_psych_beds_per_100k": 6.5,
+      "gap_vs_50_benchmark": -43.5,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Arkansas",
+      "abbr": "AR",
+      "rank": 44,
+      "state_psych_beds_per_100k": 6.1,
+      "gap_vs_50_benchmark": -43.9,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Michigan",
+      "abbr": "MI",
+      "rank": 45,
+      "state_psych_beds_per_100k": 5.0,
+      "gap_vs_50_benchmark": -45.0,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Texas",
+      "abbr": "TX",
+      "rank": 45,
+      "state_psych_beds_per_100k": 5.0,
+      "gap_vs_50_benchmark": -45.0,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "North Carolina",
+      "abbr": "NC",
+      "rank": 47,
+      "state_psych_beds_per_100k": 4.2,
+      "gap_vs_50_benchmark": -45.8,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Arizona",
+      "abbr": "AZ",
+      "rank": 48,
+      "state_psych_beds_per_100k": 3.5,
+      "gap_vs_50_benchmark": -46.5,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Minnesota",
+      "abbr": "MN",
+      "rank": 49,
+      "state_psych_beds_per_100k": 3.4,
+      "gap_vs_50_benchmark": -46.6,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Vermont",
+      "abbr": "VT",
+      "rank": 50,
+      "state_psych_beds_per_100k": 2.5,
+      "gap_vs_50_benchmark": -47.5,
+      "confidence": "confirmed"
+    },
+    {
+      "state": "Iowa",
+      "abbr": "IA",
+      "rank": 51,
+      "state_psych_beds_per_100k": 2.0,
+      "gap_vs_50_benchmark": -48.0,
+      "confidence": "confirmed"
+    }
+  ]
+}

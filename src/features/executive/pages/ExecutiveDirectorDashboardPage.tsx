@@ -1,0 +1,282 @@
+import { useMsal } from "@azure/msal-react";
+import { ArrowRight, Bell, ClipboardList, Pill, UsersRound } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
+import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
+import { getAccountExecutiveDirectorAccess } from "../../../shared/auth/executiveDirectorAccess";
+import type { AdmissionsBoardCard } from "../../../shared/types/platformSnapshot";
+import { ProgressModal } from "../../admissions/components/PipelineBoard";
+import { ExecutiveCommunityDetailModal, ExecutiveCommunityWorkspace, type ExecutiveCommunityDetailView } from "../components/ExecutiveCommunityDetailModal";
+import { ExecutiveIncidentClients, type IncidentClient } from "../components/ExecutiveIncidentClients";
+import { ExecutiveReferralStatusPill } from "../components/ExecutiveReferralStatusPill";
+import { ExecutiveTrendChart } from "../components/ExecutiveTrendChart";
+import { formatImpendingAdmissionDate, impendingAdmissionCards } from "../components/executiveAdmissions";
+import { formatExecutiveDate, formatExecutiveNumber } from "../components/executiveDashboardFormatters";
+import { fetchExecutiveDirectorCommunityDashboard, type ExecutiveDirectorCommunityDashboardResponse } from "../data/executiveDirectorApi";
+import "../executiveCommunity.css";
+
+const DEFAULT_PREVIEW_FACILITY_ID = "337";
+const ADMISSIONS_STALE_MESSAGE = "Updates unavailable. Showing the last connected Pipeline data.";
+
+export default function ExecutiveDirectorDashboardPage() {
+  const { accounts, instance } = useMsal();
+  const account = instance.getActiveAccount() ?? accounts[0];
+  const access = getAccountExecutiveDirectorAccess(account, isE2EAuthBypassEnabled);
+  const facilityId = access.primaryFacilityId ?? DEFAULT_PREVIEW_FACILITY_ID;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const view = requestedView === "mars" || requestedView === "incidents" ? requestedView : "overview";
+  const [response, setResponse] = useState<ExecutiveDirectorCommunityDashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [admissionsStale, setAdmissionsStale] = useState(false);
+  const [detailView, setDetailView] = useState<"census" | "admissions" | null>(null);
+  const [admissionId, setAdmissionId] = useState<number | null>(null);
+  const [managementId, setManagementId] = useState<number | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [selectedIncidentClient, setSelectedIncidentClient] = useState<IncidentClient | null>(null);
+  const communityRef = useRef<HTMLElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationPopoverRef = useRef<HTMLElement>(null);
+  const previousViewRef = useRef(view);
+
+  useEffect(() => {
+    communityRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    const previousView = previousViewRef.current;
+    previousViewRef.current = view;
+    if (view !== "overview" || previousView === "overview") return;
+    const panel = previousView === "mars" ? "medications" : "incidents";
+    const frame = globalThis.requestAnimationFrame(() => {
+      communityRef.current?.querySelector<HTMLButtonElement>(`[data-executive-panel-header="${panel}"] button`)?.focus();
+    });
+    return () => globalThis.cancelAnimationFrame(frame);
+  }, [view]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let inFlight = false;
+    setResponse(null);
+    setLoading(true);
+    setError(null);
+    setAdmissionsStale(false);
+    setNotificationsOpen(false);
+    setDetailView(null);
+    setManagementId(null);
+    setAdmissionId(null);
+    setSelectedIncidentClient(null);
+    async function refresh() {
+      if (inFlight || controller.signal.aborted) return;
+      inFlight = true;
+      try {
+        const fresh = await fetchExecutiveDirectorCommunityDashboard(facilityId, controller.signal);
+        if (controller.signal.aborted) return;
+        setAdmissionsStale(fresh.dashboard.admissions.status !== "connected");
+        setResponse((previous) => {
+          // A failed feed refresh must not dismiss a pending client's notification.
+          if (fresh.dashboard.admissions.status !== "connected" && previous?.facility.facilityId === fresh.facility.facilityId && previous.dashboard.admissions.status === "connected") {
+            return { ...fresh, dashboard: { ...fresh.dashboard, admissions: previous.dashboard.admissions } };
+          }
+          return fresh;
+        });
+        setError(null);
+      } catch (reason) {
+        if (!controller.signal.aborted) {
+          setAdmissionsStale(true);
+          setError(reason instanceof Error ? reason.message : "The community dashboard could not be refreshed.");
+        }
+      } finally {
+        inFlight = false;
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+    const refreshVisible = () => { if (document.visibilityState !== "hidden") void refresh(); };
+    void refresh();
+    const timer = window.setInterval(refreshVisible, 60_000);
+    window.addEventListener("focus", refreshVisible);
+    window.addEventListener("online", refreshVisible);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshVisible);
+      window.removeEventListener("online", refreshVisible);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
+  }, [facilityId]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    function fitPopover() {
+      const popover = notificationPopoverRef.current;
+      if (!popover) return;
+      const visualViewport = window.visualViewport;
+      const bottom = (visualViewport?.height ?? window.innerHeight) + (visualViewport?.offsetTop ?? 0);
+      popover.style.maxHeight = `${Math.max(0, bottom - popover.getBoundingClientRect().top - 12)}px`;
+    }
+    function closeOutside(event: PointerEvent) {
+      if (event.target instanceof Node && !notificationRef.current?.contains(event.target)) setNotificationsOpen(false);
+    }
+    function closeEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setNotificationsOpen(false);
+      notificationButtonRef.current?.focus();
+    }
+    window.addEventListener("pointerdown", closeOutside);
+    window.addEventListener("keydown", closeEscape);
+    window.addEventListener("resize", fitPopover);
+    window.addEventListener("scroll", fitPopover, true);
+    window.visualViewport?.addEventListener("resize", fitPopover);
+    fitPopover();
+    return () => {
+      window.removeEventListener("pointerdown", closeOutside);
+      window.removeEventListener("keydown", closeEscape);
+      window.removeEventListener("resize", fitPopover);
+      window.removeEventListener("scroll", fitPopover, true);
+      window.visualViewport?.removeEventListener("resize", fitPopover);
+    };
+  }, [notificationsOpen]);
+
+  const facility = response?.facility;
+  const dashboard = response?.dashboard;
+  const admissions = dashboard?.admissions;
+  const clients = impendingAdmissionCards(admissions?.cards ?? []);
+  const selectedCard = clients.find((card) => card.referralId === managementId) ?? null;
+  const generatedAt = [dashboard?.generatedAt, admissions?.generatedAt].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
+  const closeDetail = useCallback(() => {
+    setDetailView(null);
+    if (detailView === "admissions") {
+      setAdmissionId(null);
+      notificationButtonRef.current?.focus();
+    }
+  }, [detailView]);
+  const closeManagement = useCallback(() => {
+    setManagementId(null);
+    setDetailView("admissions");
+  }, []);
+
+  useEffect(() => {
+    if (!admissions || admissions.status !== "connected" || admissionsStale) return;
+    const pending = impendingAdmissionCards(admissions.cards);
+    if (admissionId != null && !pending.some((card) => card.referralId === admissionId)) {
+      setDetailView((current) => current === "admissions" ? null : current);
+      setManagementId(null);
+      setAdmissionId(null);
+      if (detailView === "admissions" || managementId != null) notificationButtonRef.current?.focus();
+    }
+  }, [admissions, admissionsStale, admissionId, detailView, managementId]);
+
+  function selectView(next: "overview" | "mars" | "incidents") {
+    setNotificationsOpen(false);
+    setSearchParams((current) => {
+      const params = new URLSearchParams(current);
+      if (next === "overview") params.delete("view");
+      else params.set("view", next);
+      return params;
+    });
+  }
+  function openDetail(next: ExecutiveCommunityDetailView) {
+    if (next === "medications" || next === "incidents") {
+      setSelectedIncidentClient(null);
+      selectView(next === "medications" ? "mars" : "incidents");
+    } else {
+      setDetailView(next);
+    }
+  }
+  function openIncidentClient(client: IncidentClient) {
+    setSelectedIncidentClient(client);
+    selectView("incidents");
+  }
+  function meetClient(card: AdmissionsBoardCard) {
+    setAdmissionId(card.referralId);
+    setNotificationsOpen(false);
+    setDetailView("admissions");
+  }
+
+  return (
+    <section ref={communityRef} data-executive-community-dashboard="true" className="executive-director-community">
+      <div className="executive-community-chrome">
+      <header className="executive-director-community__masthead">
+        <div><h1>{facility?.shortName ?? "Community"}</h1>{facility?.state ? <span>{facility.state}</span> : null}</div>
+        <p>{dashboard?.reportingMonth ? formatMonthLabel(dashboard.reportingMonth, { month: "long" }) : "Latest period"}{generatedAt ? ` · Updated ${formatExecutiveDate(generatedAt, true)}` : ""}</p>
+      </header>
+      <div className="executive-community-toolbar">
+        <div className="executive-client-notifications" ref={notificationRef}>
+          <button ref={notificationButtonRef} data-executive-meet-client-trigger="true" className="executive-client-notifications__trigger" type="button" aria-label="New client notifications" aria-expanded={notificationsOpen} aria-controls="executive-client-notifications" onClick={() => setNotificationsOpen((open) => !open)}>
+            <Bell aria-hidden="true" /><span>New client</span>{admissions?.status === "connected" && clients.length > 0 ? <b data-executive-notification-count="true">{clients.length}</b> : null}
+          </button>
+          {notificationsOpen ? <section ref={notificationPopoverRef} id="executive-client-notifications" data-executive-client-notifications="true" role="region" aria-label="New client notifications" className="executive-client-notifications__popover">
+            <header><h2>New client</h2>{admissions?.status === "connected" ? <span>{clients.length} pending</span> : null}</header>
+            {admissions?.status === "connected" ? <>
+              {admissionsStale ? <p role="status" className="executive-client-notifications__status">{ADMISSIONS_STALE_MESSAGE}</p> : null}
+              {clients.length ? <ul>{clients.map((card) => <li key={card.referralId}><button type="button" onClick={() => meetClient(card)}><span><strong>{card.clientName}</strong><small>{card.plannedAdmissionDate ? `Planned ${formatImpendingAdmissionDate(card.plannedAdmissionDate, false)}` : "Date pending"}</small><ExecutiveReferralStatusPill status={card.status} /></span><ArrowRight aria-hidden="true" /></button></li>)}</ul> : <p className="executive-client-notifications__status">No clients awaiting admission.</p>}
+            </> : <p className="executive-client-notifications__status">{loading ? "Loading client notifications…" : "Admissions feed unavailable."}</p>}
+          </section> : null}
+        </div>
+      </div>
+      </div>
+      {error ? <div role="alert" className="executive-dashboard-message">{error}</div> : null}
+      {loading && !response ? <div role="status" className="executive-dashboard-loading">Loading community dashboard…</div> : null}
+      {!loading && dashboard?.status === "unavailable" ? <div role="status" className="executive-dashboard-message">Community measures are temporarily unavailable.</div> : null}
+      <div id="executive-view-panel" data-executive-current-view={view}>
+        {dashboard && view === "overview" ? <CommunityOverview facilityId={facilityId} dashboard={dashboard} onOpenDetail={openDetail} onOpenIncidentClient={openIncidentClient} /> : null}
+        {dashboard && facility && view !== "overview" ? <ExecutiveCommunityWorkspace key={view} facility={facility} dashboard={dashboard} view={view === "mars" ? "medications" : "incidents"} initialIncidentClient={selectedIncidentClient} onBack={() => { setSelectedIncidentClient(null); selectView("overview"); }} /> : null}
+      </div>
+      {dashboard && facility && detailView ? <ExecutiveCommunityDetailModal facility={facility} dashboard={dashboard} view={detailView} initialAdmissionId={admissionId} sourceNotice={detailView === "admissions" && admissionsStale ? ADMISSIONS_STALE_MESSAGE : null} onAdmissionSelectionChange={setAdmissionId} onClose={closeDetail} onOpenAdmissionCard={(card) => { setAdmissionId(card.referralId); setDetailView(null); setManagementId(card.referralId); }} /> : null}
+      {selectedCard && admissions?.status === "connected" ? <ProgressModal card={selectedCard} generatedAt={admissions.generatedAt ?? generatedAt ?? new Date().toISOString()} sourceNotice={admissionsStale ? ADMISSIONS_STALE_MESSAGE : null} onClose={closeManagement} /> : null}
+    </section>
+  );
+}
+
+function CommunityOverview({ facilityId, dashboard, onOpenDetail, onOpenIncidentClient }: {
+  facilityId: string;
+  dashboard: ExecutiveDirectorCommunityDashboardResponse["dashboard"];
+  onOpenDetail: (view: ExecutiveCommunityDetailView, card?: AdmissionsBoardCard) => void;
+  onOpenIncidentClient: (client: IncidentClient) => void;
+}) {
+  const census = dashboard.census.at(-1);
+  const priorCensus = dashboard.census.at(-2);
+  const delta = census && priorCensus ? census.census - priorCensus.census : null;
+  const limit = dashboard.admissions.community?.operatingLimit ?? null;
+  const occupancy = census && limit ? census.census / limit * 100 : null;
+  const medication = dashboard.medication;
+  const incidentMonths = dashboard.incidentTrend.slice(-3);
+  const medicationMonths = (dashboard.medicationHistory ?? []).filter((item) => item.given != null).slice(-6);
+
+  return <div data-daily-operating-summary="true" className="executive-dashboard-index">
+    <DomainPanel kind="census" title="12-month census" icon={<UsersRound />} action="History" onOpen={() => onOpenDetail("census")}>
+      <div className="executive-census-overview">
+        <div className="executive-census-figure"><strong>{formatExecutiveNumber(census?.census)}</strong><span>residents</span><small>{formatExecutiveNumber(occupancy, "%")} occupied{limit ? ` · ${limit} operating limit` : ""}</small></div>
+        <div className="executive-census-change"><span>{census ? formatMonthLabel(census.month, { month: "short" }) : "No period"}</span>{delta != null ? <strong>{delta > 0 ? "+" : ""}{delta} <small>vs {formatMonthLabel(priorCensus!.month, { month: "short" })}</small></strong> : null}</div>
+      </div>
+      <ExecutiveTrendChart points={dashboard.census.slice(-12).map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.census }))} accent="#174f81" height={180} compact ariaLabel="Community census history" />
+    </DomainPanel>
+    <DomainPanel kind="incidents" title="Incident activity" icon={<ClipboardList />} action="View incidents" onOpen={() => onOpenDetail("incidents")}>
+      {incidentMonths.length ? <div className="executive-incident-months" aria-label="Recent monthly incident counts">
+        {incidentMonths.map((item, index) => <div key={item.month} className={index === incidentMonths.length - 1 ? "is-current" : undefined}>
+          <span>{formatMonthLabel(item.month, { month: "short" })}</span>
+          <strong>{formatExecutiveNumber(item.count)}</strong>
+          <small>{index === incidentMonths.length - 1 ? "Latest available" : "Recorded incidents"}</small>
+        </div>)}
+      </div> : <CompactEmpty>Incident totals are unavailable.</CompactEmpty>}
+      <div className="executive-incident-client-section"><h3>Clients with incident records</h3><ExecutiveIncidentClients facilityId={facilityId} compact onSelect={onOpenIncidentClient} /></div>
+    </DomainPanel>
+    <DomainPanel kind="medications" title="Medication administration" icon={<Pill />} action="View MARs" onOpen={() => onOpenDetail("medications")}>
+      {medication ? <>
+        <div className="executive-medication-overview"><div><strong>{formatExecutiveNumber(medication.given)}</strong><span>administrations given</span></div><span>{formatMonthLabel(medication.month, { month: "long" })}</span></div>
+        {medicationMonths.length > 1 ? <ExecutiveTrendChart points={medicationMonths.map((item) => ({ id: item.month, label: formatMonthLabel(item.month, { month: "short" }), value: item.given! }))} accent="#68214e" height={150} compact ariaLabel="Medication administrations given by month" unit="given" /> : null}
+        <p className="executive-period-note">Recorded as given in {formatMonthLabel(medication.month, { month: "long" })}. Open MARs for monthly detail.</p>
+      </> : <CompactEmpty>Medication totals unavailable.</CompactEmpty>}
+    </DomainPanel>
+  </div>;
+}
+
+function DomainPanel({ kind, title, icon, action, onOpen, children }: { kind: ExecutiveCommunityDetailView; title: string; icon: React.ReactNode; action: string; onOpen: () => void; children: React.ReactNode }) {
+  return <article data-executive-dashboard-panel={kind} className={`executive-domain-card executive-domain-card--${kind}`}>
+    <div className="executive-domain-card__paper"><header data-executive-panel-header={kind}><h2><span>{icon}</span>{title}</h2><button type="button" onClick={onOpen} aria-label={action}>{kind === "admissions" ? "Open" : action}<ArrowRight aria-hidden="true" /></button></header><div data-executive-panel-body={kind}>{children}</div></div>
+  </article>;
+}
+function CompactEmpty({ children }: { children: React.ReactNode }) {
+  return <p className="executive-inline-empty">{children}</p>;
+}

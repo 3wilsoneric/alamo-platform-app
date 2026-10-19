@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { min-height: 100%; margin: 0; background: white; }
+.agent-sign-in { min-height: 100dvh; display: grid; place-content: center; gap: 20px; font-family: system-ui, sans-serif; }
+.agent-sign-in button { padding: 12px 28px; border-radius: 12px; background: #08745f; color: white; }

@@ -1,0 +1,36 @@
+/* Additive iPhone presentation only; the Azure app and API bundle are unchanged. */
+@media (max-width: 639px) {
+  [data-california-map="true"] {
+    transform: translate(30px, -54px) scale(1.08);
+    transform-origin: center;
+  }
+
+  [data-california-community-tooltip] {
+    font-size: 10px !important;
+    font-weight: 600;
+  }
+
+  [data-california-community-dot] {
+    r: 5px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
+
+@media (max-width: 639px) and (display-mode: standalone) {
+  [data-california-workspace-brand="true"],
+  [data-california-carousel-back="true"],
+  [data-california-hero-menu="true"] {
+    top: max(16px, calc(env(safe-area-inset-top) + 8px)) !important;
+  }
+
+  [data-california-carousel-panel="questions"],
+  [data-california-carousel-panel="reports"] {
+    padding-top: calc(126px + env(safe-area-inset-top)) !important;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom)) !important;
+  }
+}

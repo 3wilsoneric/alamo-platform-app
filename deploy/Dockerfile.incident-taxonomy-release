@@ -1,0 +1,13 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Preserve the production API, authorization, and runtime. Replace only the
+# reviewed incident/reporting modules and browser bundle on the exact live base.
+USER root
+WORKDIR /app
+RUN rm -rf /app/dist
+COPY --chown=node:node dist /app/dist
+COPY --chown=node:node server/full-reporting.mjs server/tool-result-formatters.mjs /app/server/
+COPY --chown=node:node server/tools/incidents.mjs /app/server/tools/incidents.mjs
+COPY --chown=node:node shared/certified-analyst-questions.mjs /app/shared/certified-analyst-questions.mjs
+USER node

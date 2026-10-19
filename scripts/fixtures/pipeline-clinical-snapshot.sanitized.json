@@ -1,0 +1,197 @@
+{
+  "snapshot": {
+    "version": "fixture-2026-08-07T12:00:00.000Z",
+    "generated_at": "2026-08-07T12:00:00.000Z",
+    "freshness_checked_at": "2026-08-07T12:00:00.000Z",
+    "source": "published-snapshot",
+    "as_of_date": "2026-08-07"
+  },
+  "health": {
+    "ok": true,
+    "backend": "published-snapshot",
+    "analystDataQa": {
+      "status": "pass",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "warnings": 0,
+      "generatedAt": "2026-08-07T11:55:00.000Z"
+    }
+  },
+  "communities": {
+    "as_of_date": "2026-08-07",
+    "facilities": [
+      {
+        "facility_id": "337",
+        "community_name": "A & A Health Services San Pablo",
+        "city": "San Pablo",
+        "state": "CA",
+        "total_residents": 2
+      },
+      {
+        "facility_id": "343",
+        "community_name": "JC Wallace House",
+        "city": "Fresno",
+        "state": "CA",
+        "total_residents": 2
+      }
+    ],
+    "residents": [
+      {
+        "res_number": "R-100",
+        "first_name": "Avery",
+        "last_name": "Example",
+        "age": 41,
+        "admit_date": "2026-01-10",
+        "los_days": 209,
+        "facility_id": "337",
+        "facility_name": "A & A Health Services San Pablo",
+        "unit_number": "A-1",
+        "care_level": "Level 2",
+        "payor": "Example Plan",
+        "primary_diagnosis": "Sanitized diagnosis",
+        "physician": "Example Clinician",
+        "diet": "Regular"
+      },
+      {
+        "res_number": "R-101",
+        "first_name": "Jordan",
+        "last_name": "Fixture",
+        "age": 52,
+        "admit_date": "2025-11-01",
+        "los_days": 279,
+        "facility_id": "337",
+        "facility_name": "A & A Health Services San Pablo",
+        "unit_number": "B-2",
+        "care_level": "Level 1",
+        "payor": null,
+        "primary_diagnosis": null,
+        "physician": null,
+        "diet": null
+      },
+      {
+        "res_number": "R-100",
+        "first_name": "Morgan",
+        "last_name": "Sample",
+        "age": 36,
+        "admit_date": "2026-02-15",
+        "los_days": 173,
+        "facility_id": "343",
+        "facility_name": "JC Wallace House",
+        "unit_number": "C-3",
+        "care_level": "Level 3",
+        "payor": "Example Plan",
+        "primary_diagnosis": "Sanitized diagnosis",
+        "physician": "Example Clinician",
+        "diet": "Vegetarian"
+      },
+      {
+        "res_number": "R-102",
+        "first_name": "Taylor",
+        "last_name": "Test",
+        "age": null,
+        "admit_date": null,
+        "los_days": null,
+        "facility_id": "343",
+        "facility_name": "JC Wallace House",
+        "unit_number": null,
+        "care_level": null,
+        "payor": null,
+        "primary_diagnosis": null,
+        "physician": null,
+        "diet": null
+      }
+    ],
+    "incidents": [],
+    "incidentDetails": [],
+    "census": [
+      { "facility_id": "337", "census": 2, "month_bucket": "2026-08" },
+      { "facility_id": "343", "census": 3, "month_bucket": "2026-08" }
+    ]
+  },
+  "incidents": { "incidents": [] },
+  "reportsSummary": {
+    "census": [],
+    "medicationCompliance": [],
+    "refusalByMedication": [],
+    "documentationGaps": [],
+    "toolContext": {
+      "version": 8,
+      "manifest": [
+        { "slice_name": "medication_compliance_monthly", "row_count": 2 },
+        { "slice_name": "mar_monthly_by_community_medication", "row_count": 2 }
+      ],
+      "tables": {
+        "medication_compliance_monthly": [
+          {
+            "facility_id": "337",
+            "facility_name": "A & A Health Services San Pablo",
+            "month_bucket": "2026-08",
+            "total_scheduled": 100,
+            "given": 96,
+            "not_given": 4,
+            "compliance_pct": 96
+          },
+          {
+            "facility_id": "343",
+            "facility_name": "JC Wallace House",
+            "month_bucket": "2026-08",
+            "total_scheduled": 80,
+            "given": 76,
+            "not_given": 4,
+            "compliance_pct": 95
+          }
+        ],
+        "mar_monthly_by_community_medication": [
+          {
+            "facility_id": "337",
+            "facility_name": "A & A Health Services San Pablo",
+            "month_bucket": "2026-08",
+            "medication_name": "Sanitized medication A",
+            "administration_count": 100,
+            "scheduled_count": 100,
+            "given_count": 96,
+            "not_given_count": 4,
+            "refusal_count": 2,
+            "prn_given_count": 0,
+            "awol_count": 0,
+            "hospital_count": 0,
+            "unknown_count": 0,
+            "resident_count": 2,
+            "compliance_pct": 96
+          },
+          {
+            "facility_id": "343",
+            "facility_name": "JC Wallace House",
+            "month_bucket": "2026-08",
+            "medication_name": "Sanitized medication B",
+            "administration_count": 80,
+            "scheduled_count": 80,
+            "given_count": 76,
+            "not_given_count": 4,
+            "refusal_count": 1,
+            "prn_given_count": 0,
+            "awol_count": 0,
+            "hospital_count": 0,
+            "unknown_count": 0,
+            "resident_count": 2,
+            "compliance_pct": 95
+          }
+        ]
+      },
+      "analystDataQa": [
+        {
+          "run_id": "fixture-run",
+          "generated_at": "2026-08-07T11:55:00.000Z",
+          "check_id": "fixture-check",
+          "domain": "clinical",
+          "severity": "ERROR",
+          "status": "PASS",
+          "expected": "valid",
+          "actual": "valid",
+          "detail": "Sanitized fixture QA row"
+        }
+      ]
+    }
+  }
+}

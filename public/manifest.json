@@ -1,0 +1,45 @@
+{
+  "id": "/",
+  "name": "Alamo Health Management",
+  "short_name": "Alamo",
+  "description": "Alamo Health Management operating platform",
+  "start_url": "/home",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#08745f",
+  "categories": ["business", "medical", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa/alamo-app-icon-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/alamo-app-icon-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/alamo-app-icon-1024-v2.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/alamo-app-icon-maskable-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa/alamo-app-icon-maskable-1024-v2.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
