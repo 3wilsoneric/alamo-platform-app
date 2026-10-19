@@ -390,7 +390,8 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
           upcomingAssessments: pipeline.briefing.upcomingAssessments.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
           plannedMoveIns: pipeline.briefing.plannedMoveIns.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
           admittedLastWeek: pipeline.briefing.admittedLastWeek.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
-          movingThrough: pipeline.briefing.movingThrough.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) }))
+          movingThrough: pipeline.briefing.movingThrough.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
+          didNotMoveIn: (pipeline.briefing.didNotMoveIn ?? []).map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) }))
         }
         : pipeline.briefing
     }

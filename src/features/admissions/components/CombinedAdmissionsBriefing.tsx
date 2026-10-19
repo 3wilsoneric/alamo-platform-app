@@ -26,6 +26,7 @@ export default function CombinedAdmissionsBriefing({
   const largest = Math.max(1, ...communities.map((row) => row.census ?? 0));
   const admitted = pipeline.admittedLastWeek ?? [];
   const planned = pipeline.plannedMoveIns;
+  const didNotMoveIn = pipeline.didNotMoveIn ?? [];
   const hasLastWeek = pipeline.lastWeekStart && pipeline.lastWeekEnd;
   const coverage = pipeline.coverage;
 
@@ -53,12 +54,16 @@ export default function CombinedAdmissionsBriefing({
       <WeekList title="Planned admits this week" period={`${dateLabel(pipeline.weekStart)}–${dateLabel(pipeline.weekEnd)}`} complete={coverage.moveIns} empty="No planned admits this week." rows={planned.map((row) => ({ key: row.referralId, name: row.clientName, date: row.plannedAt, detail: `${row.community} · ${row.readiness === "blocked" ? "Requirements open" : row.readiness === "watch" ? "Review requirements" : "Ready"}`, context: contextLabel(row), url: row.pipelineUrl }))} />
     </div>
 
+    {coverage.didNotMoveIn !== undefined ? <div className="border-b border-[#e2e6e1]">
+      <WeekList title="Did not move in" period="Recorded in the past 30 days" complete={coverage.didNotMoveIn} empty="No placements were recorded as did not move in during this period." standalone rows={didNotMoveIn.map((row) => ({ key: row.referralId, name: row.clientName, date: row.cancelledAt, detail: `${row.community} · ${row.status}`, context: contextLabel(row), url: row.pipelineUrl }))} />
+    </div> : null}
+
     <footer className="border-t border-[#e2e6e1] px-5 py-4 text-[12px] text-[#68746b] sm:px-9">Census: Platform clinical snapshot. Admissions: Pipeline referral records updated {dateLabel(pipeline.windowEnd)}. Planned dates are not confirmed arrivals.</footer>
   </article>;
 }
 
-function WeekList({ title, period, complete, empty, rows }: { title: string; period: string; complete: boolean; empty: string; rows: Array<{ key: number; name: string; date: string; detail: string; context: string; url: string }> }) {
-  return <section aria-label={title} className="min-w-0 px-5 py-7 sm:px-9 lg:first:border-r lg:first:border-[#e2e6e1]">
+function WeekList({ title, period, complete, empty, rows, standalone = false }: { title: string; period: string; complete: boolean; empty: string; standalone?: boolean; rows: Array<{ key: number; name: string; date: string; detail: string; context: string; url: string }> }) {
+  return <section aria-label={title} className={`min-w-0 px-5 py-7 sm:px-9 ${standalone ? "" : "lg:first:border-r lg:first:border-[#e2e6e1]"}`}>
     <div className="flex items-end justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#087c64]">{period}</p><h3 className="mt-1 text-[25px] font-semibold tracking-[-0.04em]">{title}</h3></div><strong className="text-[30px] tabular-nums text-[#087c64]">{!complete && !rows.length ? "—" : `${rows.length}${complete ? "" : "+"}`}</strong></div>
     {rows.length ? <ul className="mt-4">{rows.map((row) => <li key={row.key} className="border-t border-[#e8ece7] py-3 text-[12px] leading-5"><div className="flex flex-wrap items-baseline justify-between gap-x-3"><a href={row.url} className="text-[14px] font-semibold text-[#096f57] hover:underline">{row.name}</a><time className="text-[#68746b]">{dateLabel(row.date)}</time></div><p className="text-[#506057]">{row.detail}</p><p className="break-words text-[#68746b]">{row.context}</p></li>)}</ul> : <p className="mt-5 text-[13px] text-[#67756b]">{complete ? empty : "Admissions records are unavailable."}</p>}
     {!complete ? <p className="mt-3 text-[12px] text-[#7a6845]">The list is capped or unavailable; this is not a complete count.</p> : null}

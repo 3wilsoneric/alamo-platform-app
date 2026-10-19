@@ -268,6 +268,20 @@ export interface AdmissionsPipelineBriefingAdmission {
   pipelineUrl: string;
 }
 
+export interface AdmissionsPipelineDidNotMoveIn {
+  referralId: number;
+  clientName: string;
+  cancelledAt: string;
+  status: "Did not move in";
+  community: string;
+  facilityId: string | null;
+  sourceName: string | null;
+  referringCounty: string | null;
+  priorPlacement: string | null;
+  owner: string;
+  pipelineUrl: string;
+}
+
 export interface AdmissionsPipelineMovingClient {
   referralId: number;
   clientName: string;
@@ -300,6 +314,7 @@ export type AdmissionsPipelineBriefing =
         moveIns: boolean;
         admittedLastWeek?: boolean;
         movingThrough?: boolean;
+        didNotMoveIn?: boolean;
         weeklyTrend: boolean;
       };
       recentReferrals: AdmissionsPipelineBriefingReferral[];
@@ -307,6 +322,7 @@ export type AdmissionsPipelineBriefing =
       plannedMoveIns: AdmissionsPipelineBriefingMoveIn[];
       admittedLastWeek?: AdmissionsPipelineBriefingAdmission[];
       movingThrough?: AdmissionsPipelineMovingClient[];
+      didNotMoveIn?: AdmissionsPipelineDidNotMoveIn[];
       weeklyTrend: Array<{ weekStart: string; received: number; accepted: number }>;
     };
 

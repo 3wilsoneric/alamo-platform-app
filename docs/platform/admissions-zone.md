@@ -137,6 +137,9 @@ server, never from the browser and never through Pipeline's internal APIs.
   briefing rows. Missing placement stays null; accepted active clients without
   an admit date remain in the contract's moving-through data, but Platform does
   not display that panel until referral-to-resident reconciliation is reliable.
+  Contract 3.5 adds a separate, bounded `did_not_move_in` slice for placements
+  cancelled in the past 30 days. These outcomes appear in both Admissions
+  briefings and remain excluded from active work, planned admits, and census.
   An overdue planned date does not imply admission. Platform uses Pipeline's reporting
   week for the admissions headings so a delayed clinical snapshot cannot shift
   the listed week. Platform displays these records only after

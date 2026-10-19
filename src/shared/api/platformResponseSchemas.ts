@@ -337,6 +337,16 @@ function validateAdmissionsDashboardPayload(value: unknown) {
     if (row.plannedAt !== null) assertIsoCalendarDate(row.plannedAt, endpoint, `${path}.plannedAt`);
     assertWebLink(row.pipelineUrl, `${path}.pipelineUrl`);
   };
+  const assertDidNotMoveIn = (value: unknown, path: string) => {
+    const row = assertRecord(value, endpoint, path);
+    assertNumber(row.referralId, endpoint, `${path}.referralId`);
+    ["clientName", "community", "owner"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`));
+    ["facilityId", "sourceName", "referringCounty", "priorPlacement"].forEach((field) => assertString(row[field], endpoint, `${path}.${field}`, { nullable: true }));
+    if (row.status !== "Did not move in") fail(endpoint, `${path}.status is not a known placement outcome`);
+    assertString(row.cancelledAt, endpoint, `${path}.cancelledAt`);
+    if (!Number.isFinite(Date.parse(String(row.cancelledAt)))) fail(endpoint, `${path}.cancelledAt must be an ISO timestamp`);
+    assertWebLink(row.pipelineUrl, `${path}.pipelineUrl`);
+  };
   const portfolio = assertRecord(payload.portfolio, endpoint, "portfolio");
   ["census", "censusChange", "operatingLimit", "occupancyPct"].forEach((field) => assertNumber(portfolio[field], endpoint, `portfolio.${field}`, { nullable: true }));
   ["monthToDate", "lastMonth", "recentWeeks"].forEach((field) => assertTotals(portfolio[field], `portfolio.${field}`));
@@ -417,7 +427,7 @@ function validateAdmissionsDashboardPayload(value: unknown) {
       assertIsoCalendarDate(pipelineBriefing.weekEnd, endpoint, "referral_pipeline.briefing.weekEnd");
       const coverage = assertRecord(pipelineBriefing.coverage, endpoint, "referral_pipeline.briefing.coverage");
       ["recentReferrals", "assessments", "moveIns", "weeklyTrend"].forEach((field) => assertBoolean(coverage[field], endpoint, `referral_pipeline.briefing.coverage.${field}`));
-      for (const field of ["admittedLastWeek", "movingThrough"]) {
+      for (const field of ["admittedLastWeek", "movingThrough", "didNotMoveIn"]) {
         if (coverage[field] !== undefined) assertBoolean(coverage[field], endpoint, `referral_pipeline.briefing.coverage.${field}`);
       }
       for (const field of ["lastWeekStart", "lastWeekEnd"]) {
@@ -440,6 +450,11 @@ function validateAdmissionsDashboardPayload(value: unknown) {
         const rows = assertArray(pipelineBriefing.movingThrough, endpoint, "referral_pipeline.briefing.movingThrough");
         if (rows.length > 500) fail(endpoint, "referral_pipeline.briefing.movingThrough exceeds the 500-item limit");
         rows.forEach((row, index) => assertMovingThrough(row, `referral_pipeline.briefing.movingThrough[${index}]`));
+      }
+      if (pipelineBriefing.didNotMoveIn !== undefined) {
+        const rows = assertArray(pipelineBriefing.didNotMoveIn, endpoint, "referral_pipeline.briefing.didNotMoveIn");
+        if (rows.length > 500) fail(endpoint, "referral_pipeline.briefing.didNotMoveIn exceeds the 500-item limit");
+        rows.forEach((row, index) => assertDidNotMoveIn(row, `referral_pipeline.briefing.didNotMoveIn[${index}]`));
       }
       const weeklyTrend = assertArray(pipelineBriefing.weeklyTrend, endpoint, "referral_pipeline.briefing.weeklyTrend");
       if (weeklyTrend.length > 12) fail(endpoint, "referral_pipeline.briefing.weeklyTrend exceeds the 12-item limit");

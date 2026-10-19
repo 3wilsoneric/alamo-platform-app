@@ -250,6 +250,23 @@ function normalizeMovingThrough(row, pipelineOrigin) {
   };
 }
 
+function normalizeDidNotMoveIn(row, pipelineOrigin) {
+  const referralId = count(row?.referral_id);
+  const clientName = text(row?.client_name, 160);
+  const cancelledAt = isoTimestamp(row?.cancelled_at);
+  const community = text(row?.community, 80);
+  const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
+  if (referralId == null || !clientName || !cancelledAt || row?.status !== "Did not move in" || !community || !path) return null;
+  return {
+    referralId, clientName, cancelledAt, status: "Did not move in", community, facilityId: null,
+    owner: text(row?.owner, 80) ?? "Unassigned",
+    sourceName: nullableText(row?.source_name, 160),
+    referringCounty: nullableText(row?.referring_county, 120),
+    priorPlacement: nullableText(row?.prior_placement, 160),
+    pipelineUrl: path
+  };
+}
+
 function normalizeBriefing(value, pipelineOrigin) {
   if (value === undefined) return { status: "not_supported" };
   if (!value || typeof value !== "object") return null;
@@ -269,6 +286,10 @@ function normalizeBriefing(value, pipelineOrigin) {
   const movingThrough = hasJourney && Array.isArray(value.moving_through) && value.moving_through.length <= MAX_RECENT_REFERRALS
     ? value.moving_through.map((row) => normalizeMovingThrough(row, pipelineOrigin))
     : hasJourney ? null : [];
+  const hasDidNotMoveIn = value.did_not_move_in !== undefined;
+  const didNotMoveIn = hasDidNotMoveIn && Array.isArray(value.did_not_move_in) && value.did_not_move_in.length <= MAX_RECENT_REFERRALS
+    ? value.did_not_move_in.map((row) => normalizeDidNotMoveIn(row, pipelineOrigin))
+    : hasDidNotMoveIn ? null : [];
   const weeklyTrend = Array.isArray(value.weekly_trend) && value.weekly_trend.length <= MAX_WEEKLY_TREND
     ? value.weekly_trend.map((row) => {
       const weekStart = isoCalendarDate(row?.week_start);
@@ -285,6 +306,7 @@ function normalizeBriefing(value, pipelineOrigin) {
       moveIns: flag(coverage.move_ins_complete),
       admittedLastWeek: hasJourney ? flag(coverage.admitted_last_week_complete) : false,
       movingThrough: hasJourney ? flag(coverage.moving_through_complete) : false,
+      ...(hasDidNotMoveIn ? { didNotMoveIn: flag(coverage.did_not_move_in_complete) } : {}),
       weeklyTrend: flag(coverage.weekly_trend_complete)
     }
     : null;
@@ -300,6 +322,7 @@ function normalizeBriefing(value, pipelineOrigin) {
     !plannedMoveIns || plannedMoveIns.some((item) => !item) ||
     !admittedLastWeek || admittedLastWeek.some((item) => !item) ||
     !movingThrough || movingThrough.some((item) => !item) ||
+    !didNotMoveIn || didNotMoveIn.some((item) => !item) ||
     (hasJourney && (!isoCalendarDate(value.last_week_start) || !isoCalendarDate(value.last_week_end))) ||
     !weeklyTrend || weeklyTrend.some((item) => !item)
   ) {
@@ -319,6 +342,7 @@ function normalizeBriefing(value, pipelineOrigin) {
     plannedMoveIns,
     admittedLastWeek,
     movingThrough,
+    didNotMoveIn,
     weeklyTrend
   };
 }
