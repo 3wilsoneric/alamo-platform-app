@@ -47,6 +47,16 @@ await withBrowserQa(async (browser) => {
     await page.goto(`${BASE_URL}/admissions`, { waitUntil: "domcontentloaded" });
     const combined = page.locator('[data-admissions-combined-briefing="true"]');
     await combined.waitFor({ state: "visible", timeout: 60_000 });
+    const colors = await combined.evaluate((element) => ({
+      topBorder: getComputedStyle(element).borderTopColor,
+      paper: getComputedStyle(element).backgroundColor,
+      censusTotal: getComputedStyle(element.querySelector('[data-admissions-census-total="true"]')).color,
+      censusBar: getComputedStyle(element.querySelector('[data-admissions-census-bar="true"]')).backgroundColor
+    }));
+    assert.equal(colors.topBorder, "rgb(22, 77, 124)", `${width}px report should use the Platform blue edge`);
+    assert.equal(colors.paper, "rgb(252, 251, 247)", `${width}px report should use Platform paper`);
+    assert.equal(colors.censusTotal, "rgb(22, 77, 124)", `${width}px census total should use Platform blue`);
+    assert.equal(colors.censusBar, "rgb(27, 90, 139)", `${width}px census bars should use Platform blue`);
     assert.match(await combined.innerText(), /Census by community/);
     assert.match(await combined.innerText(), /Alex Example[\s\S]*Morgan Example/);
     assert.match(await combined.innerText(), /Origin: County referral · County: Contra Costa · Prior placement: Acute hospital · Assessor: Alex Assessor/);

@@ -752,3 +752,108 @@
   .admissions-referral-file { transition: none; }
   .admissions-referral-file:hover { transform: none; }
 }
+
+/* The weekly Admissions report is a Platform reading sheet, not another
+   referral file. Reuse the blue census, warm paper, and restrained rules of
+   the neighboring Schedule and Community views without changing its data. */
+[data-admissions-combined-briefing="true"] {
+  max-width: 1360px;
+  overflow: hidden;
+  border: 1px solid #c4d2dc;
+  border-top: 5px solid var(--admissions-blue);
+  border-radius: 7px;
+  background: var(--admissions-paper);
+  color: var(--admissions-ink);
+  box-shadow: 0 8px 20px #172a3c16;
+}
+
+[data-admissions-combined-briefing="true"] > header {
+  border-bottom: 1px solid #c9d5de;
+  background: linear-gradient(90deg, #e8f0f6, #fcfbf7 72%);
+}
+
+[data-admissions-combined-briefing="true"] > header p:first-child,
+[data-admissions-census-section="true"] > div:first-child p:first-child,
+[data-admissions-week-list] > div:first-child p:first-child {
+  color: #1c5a83;
+}
+
+[data-admissions-combined-briefing="true"] > header h2 {
+  color: #173f62;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(34px, 3.2vw, 46px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+[data-admissions-combined-briefing="true"] > header p:last-child {
+  color: #5d6c77;
+}
+
+[data-admissions-census-section="true"] {
+  border-bottom: 1px solid var(--admissions-rule);
+  background: #fffefa;
+}
+
+[data-admissions-census-section="true"] h3,
+[data-admissions-week-list] h3 {
+  color: #173f62;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -.025em;
+}
+
+[data-admissions-census-total="true"],
+[data-admissions-week-count="true"] {
+  color: var(--admissions-blue);
+}
+
+[data-admissions-census-section="true"] > ul > li,
+[data-admissions-week-list] li {
+  border-color: #dce3e5;
+}
+
+[data-admissions-census-section="true"] > ul > li > a,
+[data-admissions-week-list] li a {
+  color: #087d64;
+}
+
+[data-admissions-census-track="true"] { background: #e4edf4; }
+[data-admissions-census-bar="true"] { background: #1b5a8b; }
+
+[data-admissions-week-lists="true"] {
+  border-bottom: 1px solid var(--admissions-rule);
+  background: var(--admissions-paper);
+}
+
+[data-admissions-week-lists="true"] > section:first-child {
+  border-color: var(--admissions-rule);
+}
+
+[data-admissions-week-list] p,
+[data-admissions-week-list] time {
+  color: #5d6c77;
+}
+
+[data-admissions-did-not-move="true"] {
+  border-bottom: 1px solid var(--admissions-rule);
+  background: #faf7f0;
+}
+
+[data-admissions-did-not-move="true"] [data-admissions-week-list] > div:first-child p:first-child,
+[data-admissions-did-not-move="true"] [data-admissions-week-count="true"] {
+  color: #8d6733;
+}
+
+[data-admissions-combined-briefing="true"] > footer {
+  border-top: 0;
+  background: #f3f5f3;
+  color: #5d6c77;
+}
+
+@media (max-width: 639px) {
+  [data-admissions-combined-briefing="true"] > header h2 { font-size: 34px; }
+  [data-admissions-census-section="true"] h3,
+  [data-admissions-week-list] h3 { font-size: 25px; }
+}
