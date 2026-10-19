@@ -91,3 +91,11 @@ new endpoints currently require delegated owner credentials and reject app-only
 identities. Workflow remains the content/review authority. See the canonical
 [Workflow plan](/Users/eric/alamo-workflow/docs/contributor-workflow-plan.md) and
 [deployment operations](deployment-operations.md).
+
+
+The shared Workflow pilot was deployed owner-only on 2026-10-19. Exact Entra
+tenant/object-ID grants, the existing owner gate and private Azure storage are
+enabled. Live health, anonymous denial and runtime managed-identity read/write
+checks pass; real-owner browser acceptance awaits sign-in. See the latest
+[deployment receipt](deployment-operations.md). No additional user or agent access
+was enabled.

@@ -4409,3 +4409,57 @@ and the added Workflow adapter. GET/PUT/POST anonymous Workflow calls each retur
 255 entities and 570 links; the existing snapshot-reader delegation is retained.
 This image was built locally only, not pushed or promoted. Browser source
 reconciliation and real-owner/runtime-identity acceptance remain outstanding.
+
+
+### Owner-only Workflow authoring and publication — deployed 2026-10-19
+
+At the user's explicit request, the shared Workflow pilot is now enabled only
+for Eric through Platform. The server requires delegated Entra sign-in, the
+existing owner gate, and an explicit grant for tenant
+`d72d9036-cff8-4f5f-a6fa-d698f621d420` / user object ID
+`f73371d5-d2b4-48b4-a32b-1edc7c88869f`. No other user, group, or app-only consumer
+was granted access. Role labels and matching email addresses cannot substitute
+for that exact grant. Existing agent snapshot reading remains separate.
+
+- Release source: `f3ea3fe8e174a137dadb78a02397a8cef8fc8bb9` on
+  `codex/workflow-owner-publication-20261019`, based on current Platform source
+  `4a363b1`. The latest Admissions UI and Workflow citation behavior are retained.
+- Image: `alamo-platform@sha256:54bb80c29f1606a21d2015feb85ccd245373dc803d200577a28ea5fbe6f2288e`
+  (tag `workflow-owner-20261019`; built locally and pushed to ACR).
+- Revision: `alamo-platform-prod-web--wfowner-1019-f3ea3fe`.
+- Status: Healthy / Running, 100% traffic, unchanged application replica settings.
+- Rollback image: `alamo-platform@sha256:eef986c7dc34fb4ecf1daa38f57ff2d94dc036f049fb710bb41c257b2da7bd04`.
+- Runtime settings: `WORKFLOW_CONTENT_ENABLED=true`, dedicated private
+  `WORKFLOW_STORAGE_CONTAINER=workflow-content`, and a one-entry
+  `WORKFLOW_ACCESS_GRANTS_JSON` granting Eric read/contribute/review/publish.
+
+Verified the public `/workflow?view=drafts`, `/workflow?view=knowledge`, `/home`,
+`/admissions` and `/chat` entry documents against the built bytes using identity,
+gzip and Brotli responses. Served JS/CSS hashes match. `/healthz` returns 200.
+Anonymous Workflow GET/PUT/POST and invalid bearer tokens return 401; responses
+are private and uncached. Existing protected Admissions and Workflow snapshot
+endpoints still reject invalid tokens. Inside the actual running revision, the
+managed identity wrote/read/deleted an isolated synthetic blob in the private
+container, and the configured access policy accepted only the exact owner ID.
+The synthetic probe was removed; no operational SOP was created or approved.
+
+The 11 publication/access/storage/patch tests, full desktop/mobile publication
+flow, existing Workflow citation flow at 1440/390px, Workflow source integrity,
+Platform API boundaries, types, docs, source health, lint, retention, unused code,
+duplicate checks, dependency audit and build passed. The full predeployment gate
+ran with configured Databricks credentials and reached the previously documented
+resident-ranking assertion in `check:copilot-tools`; the same failure was
+reproduced on unchanged production source. No ranking code or test was changed.
+The full postdeployment gate is recorded separately from the passing live checks.
+
+Real-owner browser acceptance remains pending sign-in: saved authentication state
+could not restore its session, and the in-app browser is at Microsoft sign-in.
+Do not describe the full signed-in publish/retrieve loop as verified on production
+until that session is completed. The synthetic browser loop and actual managed
+identity storage probe establish their respective boundaries only.
+
+Receipts: `generated/workflow-publication/deployment.json` in the integration
+checkout and `generated/workflow-live-checks.json` in the generated release export.
+The exact release tree is preserved in Git; unrelated development changes were
+excluded from the release. Rollback restores the recorded image and removes the
+three `WORKFLOW_*` settings added here, preserving all stored content/history.

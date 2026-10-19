@@ -706,3 +706,11 @@ The Azure-backed implementation and desktop/mobile flow were verified on
 2026-10-19 using synthetic records. Production enablement remains off. The owner
 may exercise all roles in this pilot; this does not establish an independent staff
 review process or clinical policy approval. See [deployment operations](deployment-operations.md).
+
+
+The shared Workflow pilot was deployed owner-only on 2026-10-19. Exact Entra
+tenant/object-ID grants, the existing owner gate and private Azure storage are
+enabled. Live health, anonymous denial and runtime managed-identity read/write
+checks pass; real-owner browser acceptance awaits sign-in. See the latest
+[deployment receipt](deployment-operations.md). No additional user or agent access
+was enabled.

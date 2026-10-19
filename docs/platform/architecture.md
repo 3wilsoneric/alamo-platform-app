@@ -501,3 +501,11 @@ retrieval, and withdrawing a published connection retracts its publication. Libr
 nodes remain draft references even when a connection to them is approved. This
 pilot does not implement staff-wide access, independent-reviewer separation, AI
 extraction, transitive dependency validation, or a downstream change feed.
+
+
+The shared Workflow pilot was deployed owner-only on 2026-10-19. Exact Entra
+tenant/object-ID grants, the existing owner gate and private Azure storage are
+enabled. Live health, anonymous denial and runtime managed-identity read/write
+checks pass; real-owner browser acceptance awaits sign-in. See the latest
+[deployment receipt](deployment-operations.md). No additional user or agent access
+was enabled.
