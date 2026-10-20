@@ -16,6 +16,21 @@
 
 ## Current Production Host
 
+### Admissions weekly title band removed — 2026-10-19
+
+- source commit: `6714727` on `codex/admissions-banner-current-20261019`, based on newer Workflow production source `22069f8`
+- active image: `alamo-platform@sha256:eb5337a19c9ea124a57b9d9b46731dd3dbd04f7dfbf8943bbdf0b497e3f2db8f`
+- active revision: `alamo-platform-prod-web--admnobanner-1019-6714727`; Healthy/Running, one replica, 100% traffic
+- rollback image: `alamo-platform@sha256:f60f29ba5397063124efdbb5bd75821ac583e7f288b35a63e77a3335f458147c`
+- build: ACR `cc9d`, a single-layer overlay on the exact latest production image; only the root, Admissions, and Chat entry HTML (including gzip/Brotli siblings) and one new scoped CSS file changed. The existing JS/CSS bundle, API, and CareConnector `/poc` assets were preserved.
+- verified: source-level desktop/phone combined-briefing and Admissions material browser checks, Admissions dashboard/access checks, docs, typecheck, build, and compressed-overlay parity. Live entry and overlay CSS bytes match the reviewed artifacts; existing JS/CSS, `/poc/`, and health routes return 200; anonymous Admissions and Executive APIs return 401. Eric's signed-in production Admissions view starts directly with Census by community, with no title band or empty gap.
+
+The full analyst suite remains red on its unrelated fixed resident-ranking
+expectation against current live records. This scoped presentation release did
+not change that test or claim the full gate passed. The source removes the
+banner structurally; the production overlay hides only that exact legacy
+header while retaining newer deployed Platform and point-of-care code.
+
 ### Admissions weekly briefing visual alignment — 2026-10-19
 
 - source commit: `edbfb49` on `codex/admissions-platform-style-20261019`
