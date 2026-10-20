@@ -4,4 +4,4 @@ FROM ${BASE_IMAGE}
 # Overlay only reviewed LIC 624 OCR/readiness code on the exact live digest.
 # Keep the deployed API adapter, auth, clinical data adapters, and runtime intact.
 COPY --chown=node:node dist /app/dist
-COPY --chown=node:node server/executive-director-api.mjs server/executive-director-intake-storage.mjs server/lic624-extraction.mjs server/lic624-ocr.mjs server/lic624-native.mjs /app/server/
+COPY --chown=node:node server/executive-director-api.mjs server/executive-director-intake-storage.mjs server/lic624-extraction.mjs server/lic624-ocr.mjs server/lic624-review.mjs server/lic624-native.mjs /app/server/

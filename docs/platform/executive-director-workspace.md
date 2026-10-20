@@ -197,6 +197,17 @@ not a confirmed inventory of available LIC 624 documents.
 
 #### Five-director operating readiness (October 19)
 
+The October 20 scan-review audit is live as revision
+`alamo-platform-prod-web--lic624-audit-1019` (digest
+`sha256:41f46c5c9c8f149aedfec48409e95181bb2312aef141aa4a344d4ce320fa0468`).
+It fixes a false extracted-field count, retains up to four OCR-recognized
+people involved, keeps low-confidence OCR text in private evidence, and sends
+fillable PDFs with only unrelated fields through OCR. A partially readable
+AcroForm keeps its recognized fields if OCR is unavailable. Synthetic
+regressions and the production smoke/access checks passed; the platform-wide
+analyst gate still fails on an unrelated older resident-ranking fixture.
+Director sign-in is still gated on the deferred Entra app-role assignments.
+
 The immediate target is five Executive Directors uploading ten existing LIC 624
 files apiece. A synthetic, network-disabled test now runs 50 distinct fillable
 PDFs concurrently through the same local intake persistence path, ten in each

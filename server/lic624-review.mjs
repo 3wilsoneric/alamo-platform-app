@@ -128,6 +128,19 @@ export function getLic624ReviewIssues(data) {
   return issues;
 }
 
+/** Count values actually carried into the editable form, not raw OCR/PDF keys. */
+export function countLic624ExtractedFields(data) {
+  const populated = (value) => typeof value === "string" && value.trim().length > 0;
+  return Object.values(data.facility).filter(populated).length
+    + data.residents.reduce((count, resident) => count + Object.values(resident).filter(populated).length, 0)
+    + data.incidentTypes.length
+    + [data.eventNarrative, data.observers, data.immediateAction, data.plannedAction, data.supervisorComments, data.attendingPhysician].filter(populated).length
+    + (data.treatment.necessary === null ? 0 : 1)
+    + Object.entries(data.treatment).filter(([key, value]) => key !== "necessary" && populated(value)).length
+    + Object.values(data.submission).filter(populated).length
+    + data.notifications.reduce((count, item) => count + (item.selected ? 1 : 0) + (populated(item.detail) ? 1 : 0), 0);
+}
+
 export function validateLic624ReviewRequest(value) {
   const root = object(value, "Review request");
   const submissionId = text(root.submissionId, "Submission ID", 64);

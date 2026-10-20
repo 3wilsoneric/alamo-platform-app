@@ -1,6 +1,6 @@
 import { ManagedIdentityCredential } from "@azure/identity";
 import { LIC624_FORM_DEFINITION, LIC624_INCIDENT_TYPE_FIELDS } from "../shared/lic624-contracts.mjs";
-import { getLic624ReviewIssues, validateLic624ReviewData } from "./lic624-review.mjs";
+import { countLic624ExtractedFields, getLic624ReviewIssues, validateLic624ReviewData } from "./lic624-review.mjs";
 
 const API_VERSION = "2024-11-30";
 const MODEL = "prebuilt-layout";
@@ -79,11 +79,16 @@ function recognizedPairs(analysis) {
     value: clean(pair.value?.content),
     confidence: Number(pair.confidence ?? 0),
     page: Number(pair.value?.boundingRegions?.[0]?.pageNumber ?? pair.key?.boundingRegions?.[0]?.pageNumber ?? 0)
-  })).filter((pair) => pair.key && pair.value && pair.confidence >= 0.85);
+  })).filter((pair) => pair.key && pair.value);
 }
 
 function findValue(pairs, ...patterns) {
   return pairs.find((pair) => patterns.some((pattern) => pattern.test(pair.key)) && !/^:(?:selected|unselected):$/.test(pair.value))?.value ?? "";
+}
+
+function findValues(pairs, ...patterns) {
+  return pairs.filter((pair) => patterns.some((pattern) => pattern.test(pair.key)) && !/^:(?:selected|unselected):$/.test(pair.value))
+    .map((pair) => pair.value).slice(0, 4);
 }
 
 function pageLines(analysis, index) {
@@ -136,12 +141,21 @@ function selectIncidentTypes(pairs) {
 
 /** Deterministic LIC 624 mapping. Every field remains subject to human review. */
 export function mapLic624OcrResult(analysis) {
-  const pairs = recognizedPairs(analysis);
+  const evidencePairs = recognizedPairs(analysis);
+  const pairs = evidencePairs.filter((pair) => pair.confidence >= 0.85);
   const first = pageLines(analysis, 0);
   const second = pageLines(analysis, 1);
   const dates = pairs.filter((pair) => pair.key === "date" && /\d/.test(pair.value)).map((pair) => pair.value);
   const treatmentChoice = pairs.find((pair) => pair.key === "yes" && pair.value === ":selected:")
     ? true : pairs.find((pair) => pair.key === "no" && pair.value === ":selected:") ? false : null;
+  const residentColumns = {
+    names: findValues(pairs, /^(?:clients residents involved|name)$/),
+    dates: findValues(pairs, /^date occurred$/),
+    ages: findValues(pairs, /^age$/),
+    sexes: findValues(pairs, /^sex$/),
+    admissions: findValues(pairs, /^(?:date of admission|admitted)$/)
+  };
+  const residentCount = Math.min(4, Math.max(0, ...Object.values(residentColumns).map((values) => values.length)));
   const raw = {
     facility: {
       name: findValue(pairs, /^(?:name of )?facility$/),
@@ -150,13 +164,13 @@ export function mapLic624OcrResult(analysis) {
       address: findValue(pairs, /^address$/),
       cityStateZip: findValue(pairs, /^city state zip$/)
     },
-    residents: [{
-      name: findValue(pairs, /^(?:clients residents involved|name)$/),
-      dateOccurred: findValue(pairs, /^date occurred$/),
-      age: findValue(pairs, /^age$/),
-      sex: findValue(pairs, /^sex$/),
-      admissionDate: findValue(pairs, /^(?:date of admission|admitted)$/)
-    }],
+    residents: Array.from({ length: residentCount }, (_, index) => ({
+      name: residentColumns.names[index] ?? "",
+      dateOccurred: residentColumns.dates[index] ?? "",
+      age: residentColumns.ages[index] ?? "",
+      sex: residentColumns.sexes[index] ?? "",
+      admissionDate: residentColumns.admissions[index] ?? ""
+    })),
     incidentTypes: selectIncidentTypes(pairs),
     eventNarrative: readSection(pairs, first, [/^describe event or incident/], /^describe event or incident$|^what happened$/, { multiline: true }),
     observers: readSection(pairs, first, [/^person s who observed/], /^persons who observed$|^person s who observed/),
@@ -181,9 +195,9 @@ export function mapLic624OcrResult(analysis) {
   };
   const data = validateLic624ReviewData(raw);
   const reviewIssues = getLic624ReviewIssues(data);
-  const extractedFieldCount = pairs.filter((pair) => !/^:(?:selected|unselected):$/.test(pair.value)).length + data.incidentTypes.length;
+  const extractedFieldCount = countLic624ExtractedFields(data);
   if (extractedFieldCount < 3) return null;
-  const lowConfidence = pairs.some((pair) => pair.confidence < 0.9);
+  const lowConfidence = evidencePairs.some((pair) => pair.confidence < 0.9);
   if (lowConfidence) reviewIssues.push("Some scanned fields have lower confidence. Compare every value with the original.");
   return {
     form: LIC624_FORM_DEFINITION.id,
@@ -196,7 +210,7 @@ export function mapLic624OcrResult(analysis) {
     ocrEvidence: {
       model: MODEL, apiVersion: API_VERSION, pageCount: analysis.pages?.length ?? 0,
       content: String(analysis.content ?? "").slice(0, 60_000),
-      keyValuePairs: pairs.slice(0, 300)
+      keyValuePairs: evidencePairs.slice(0, 300)
     }
   };
 }

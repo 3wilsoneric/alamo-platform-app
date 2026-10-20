@@ -16,6 +16,25 @@
 
 ## Current Production Host
 
+### LIC 624 scan-review audit — 2026-10-20
+
+- active image: `alamo-platform@sha256:41f46c5c9c8f149aedfec48409e95181bb2312aef141aa4a344d4ce320fa0468`
+- active revision: `alamo-platform-prod-web--lic624-audit-1019`; Healthy/Running, 100% traffic
+- rollback image: `alamo-platform@sha256:0ebaee1e9621c91ac5335ceb55a9db07f910d9cdd2a77a1eecf0d5a876b2b596`
+- build: ACR `cc9f`, using `deploy/Dockerfile.lic624-ocr-release` on the exact preceding production digest; the overlay adds the LIC 624 review helper used by extraction
+- verified: synthetic OCR mapping for multiple people and low-confidence evidence, unrelated/partial fillable PDF fallback, 50-file/five-facility batch isolation, Executive Director access tests, desktop and mobile browser checks, documentation, type checks, server syntax/lint, production build, production smoke 4/4, `/executive/licensing` HTTP 200, anonymous intake and OCR-retry HTTP 401
+
+The scan review now counts only fields that reached the editable LIC 624, not
+unmapped OCR/PDF text; low-confidence pairs remain in private evidence for
+staff comparison. Scans with several involved people retain up to four rows.
+PDFs with unrelated fillable fields no longer bypass OCR. If OCR is unavailable,
+partial recognized LIC 624 fields remain available for manual review rather
+than being discarded. The original document and review requirement remain
+unchanged. The full analyst suite was not green: `check:copilot-tools` still
+expects an older resident ranking from live data. This focused release did
+not activate the deferred Entra Director roles, mailbox intake, historical
+backfill, or transactional database.
+
 ### Admissions weekly briefing visual alignment — 2026-10-19
 
 - source commit: `edbfb49` on `codex/admissions-platform-style-20261019`

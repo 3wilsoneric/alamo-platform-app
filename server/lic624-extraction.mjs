@@ -11,6 +11,7 @@ import {
   LIC624_INCIDENT_TYPE_FIELDS
 } from "../shared/lic624-contracts.mjs";
 import { extractLic624Scan } from "./lic624-ocr.mjs";
+import { countLic624ExtractedFields } from "./lic624-review.mjs";
 
 function clean(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
@@ -147,10 +148,11 @@ export async function extractLic624Report(bytes, contentType) {
   if (!data.submission.submittedBy || !data.submission.submittedDate) reviewIssues.push("Submitter or submission date is missing.");
   if (!data.submission.reviewedBy || !data.submission.reviewedDate) reviewIssues.push("Reviewer or review date is missing.");
 
-  const extractedFieldCount = [...values.values()].filter(Boolean).length +
-    [...checked.values()].filter(Boolean).length;
+  const extractedFieldCount = countLic624ExtractedFields(data);
   if (extractedFieldCount < 3) {
-    return await extractLic624Scan(bytes) ?? ocrRequired("No readable LIC 624 fields were found. Retry OCR or enter details from the preserved original.");
+    const scanned = await extractLic624Scan(bytes);
+    if (scanned && scanned.extractedFieldCount > extractedFieldCount) return scanned;
+    if (!extractedFieldCount) return ocrRequired("No readable LIC 624 fields were found. Retry OCR or enter details from the preserved original.");
   }
   return {
     form: LIC624_FORM_DEFINITION.id,

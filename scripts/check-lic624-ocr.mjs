@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { PDFDocument } from "pdf-lib";
 import { analyzeLic624Scan, mapLic624OcrResult } from "../server/lic624-ocr.mjs";
+import { extractLic624Report } from "../server/lic624-extraction.mjs";
+import { countLic624ExtractedFields } from "../server/lic624-review.mjs";
 
 const pair = (key, value, confidence = 0.99) => ({ key: { content: key }, value: { content: value }, confidence });
 const line = (content, x, y) => ({ content, polygon: [x, y, x + 0.2, y, x + 0.2, y + 0.02, x, y + 0.02] });
@@ -50,6 +53,28 @@ assert.equal(mapped?.data.submission.submittedBy, "Demo Reporter");
 assert.equal(mapped?.data.submission.reviewedDate, "10/02/2026");
 assert.equal(mapped?.ocrEvidence.pageCount, 2);
 assert.equal(mapped?.reviewIssues.length, 0);
+assert.equal(mapped?.extractedFieldCount, countLic624ExtractedFields(mapped.data));
+
+const multipleResidents = structuredClone(analysis);
+multipleResidents.keyValuePairs.push(
+  pair("NAME", "Second Synthetic Resident"),
+  pair("DATE OCCURRED", "10/02/2026"),
+  pair("AGE", "42"),
+  pair("SEX", "N/A"),
+  pair("ADMITTED", "02/10/2026")
+);
+const multipleMapped = mapLic624OcrResult(multipleResidents);
+assert.equal(multipleMapped?.data.residents.length, 2, "OCR must retain all people involved, not only the first row.");
+assert.equal(multipleMapped?.data.residents[1].name, "Second Synthetic Resident");
+assert.equal(multipleMapped?.data.residents[1].dateOccurred, "10/02/2026");
+
+const noisyAnalysis = structuredClone(analysis);
+noisyAnalysis.keyValuePairs.push(pair("Unrelated print on form", "Not a field", 0.99));
+noisyAnalysis.keyValuePairs.push(pair("Uncertain scribble", "Cannot safely map", 0.5));
+const noisyMapped = mapLic624OcrResult(noisyAnalysis);
+assert.equal(noisyMapped?.extractedFieldCount, mapped.extractedFieldCount, "Unmapped OCR text must not inflate the form's extracted-field count.");
+assert.ok(noisyMapped?.reviewIssues.some((issue) => issue.includes("lower confidence")));
+assert.ok(noisyMapped?.ocrEvidence.keyValuePairs.some((item) => item.key === "uncertain scribble"), "Low-confidence text remains private evidence for review.");
 
 const previous = process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
 process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = "https://alamo-docreader.cognitiveservices.azure.com/";
@@ -74,4 +99,27 @@ try {
   if (previous === undefined) delete process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
   else process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = previous;
 }
-console.log("LIC 624 OCR mapping, managed-identity request, and two-page scan fixtures passed.");
+
+delete process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
+try {
+  const unrelatedDocument = await PDFDocument.create();
+  unrelatedDocument.addPage([612, 792]);
+  const unrelatedForm = unrelatedDocument.getForm();
+  for (let index = 0; index < 4; index += 1) unrelatedForm.createTextField(`unrelated-${index}`).setText(`visible-but-not-624-${index}`);
+  const unrelated = await extractLic624Report(Buffer.from(await unrelatedDocument.save()), "application/pdf");
+  assert.equal(unrelated.method, "ocr_required", "Unrelated PDF fields must not bypass scan extraction or create an empty reviewed form.");
+
+  const partialDocument = await PDFDocument.create();
+  partialDocument.addPage([612, 792]);
+  const partialForm = partialDocument.getForm();
+  partialForm.createTextField("Facility").setText("Synthetic Partial Facility");
+  for (let index = 0; index < 4; index += 1) partialForm.createTextField(`unrelated-${index}`).setText(`not-a-624-field-${index}`);
+  const partial = await extractLic624Report(Buffer.from(await partialDocument.save()), "application/pdf");
+  assert.equal(partial.method, "pdf_acroform", "A partial fillable form must retain its mapped fields when OCR is unavailable.");
+  assert.equal(partial.extractedFieldCount, 1);
+  assert.equal(partial.data.facility.name, "Synthetic Partial Facility");
+} finally {
+  if (previous === undefined) delete process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
+  else process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = previous;
+}
+console.log("LIC 624 OCR mapping, multi-person extraction, fillable-PDF fallback, and managed-identity fixtures passed.");
