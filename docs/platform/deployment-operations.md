@@ -4336,7 +4336,8 @@ Platform image layers and browser assets are retained unchanged.
 - candidate ACR run: `cc9a`
 - candidate image: `alamo-platform@sha256:8deeaaf8af3d9cb5bc8b9b888a739c2e06f406f378de4581c9e9729656943653`
 - reviewed production base/rollback: `alamo-platform@sha256:6c19bb5a99fb57fade969ec986a2e2c9fe20861962aa3a93ceacdbdaa5db1faa`
-- deployment status: prepared; production cutover has not occurred
+- deployment status: prepared; all CareConnector checks passed; production cutover
+  awaits the user's explicit exception to the Databricks-dependent full Platform gate
 
 `npm run check:poc` checks route isolation, auth-header/cookie forwarding, CSRF
 rejection, uploads, SSE, cache policy, traversal rejection and the Microsoft
@@ -4351,6 +4352,15 @@ unauthenticated checks (Microsoft config, unregistered browser, API/PIN 401).
 No production clinical responses were requested. The full predeploy gate stopped
 in the existing analyst-decision check because Databricks OAuth credentials were
 unavailable. No Databricks/Eldermark access or configuration was changed.
+
+CareConnector's 546 .NET tests, root and mounted auth suites, Surface and Inbox
+browser checks, lint/build and all ten native fleet scenarios passed. The first
+fleet attempt had long clock gaps and timing failures; an unchanged-code rerun
+with the machine kept awake passed completely. CareConnector retains both logs
+and `sim-runs/20261019-181116-suite.md`. The candidate's runtime source is in
+commit `065ee9b`, with additional built-MSAL verification in `04fae7c`. Before
+cutover, verify that the production image still matches the recorded base;
+rebuild the bounded overlay if another release has landed in the meantime.
 
 The CareConnector SPA registration now also permits exactly
 `https://www.alamoplatform.com/poc/app/redirect.html`; all prior redirect URIs
