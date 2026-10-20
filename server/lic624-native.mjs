@@ -13,7 +13,9 @@ export function validateLic624CreateRequest(value) {
   return { creationId: assertLic624SubmissionId(value.creationId).toLowerCase() };
 }
 
-function blankReport(facility) {
+export function createBlankLic624Report(facilityId) {
+  const facility = ALAMO_FACILITIES.find((item) => item.facilityId === facilityId);
+  if (!facility) throw createHttpError(400, "lic624_create_scope_invalid", "Choose a listed Alamo community.");
   return validateLic624ReviewData({
     facility: { name: facility.communityName, cityStateZip: `${facility.city}, ${facility.state}` },
     residents: [{ name: "", dateOccurred: "", age: "", sex: "", admissionDate: "" }],
@@ -56,7 +58,7 @@ export async function persistNativeLic624Draft({ facilityId, creationId, actor }
       storage: { manifestObject, creationObject, sourceObject: null },
       extraction: null, reviewRevision: 0, reviewedAt: null, filedAt: null,
       review: {
-        version: "lic624-review-v1", revision: 0, data: blankReport(facility),
+        version: "lic624-review-v1", revision: 0, data: createBlankLic624Report(facilityId),
         updatedAt: createdAt, updatedBy: actor, confirmedAt: null, confirmedBy: null
       }
     };

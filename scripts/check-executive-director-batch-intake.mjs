@@ -13,6 +13,7 @@ import {
   getExecutiveDirectorIntakeOverview,
   getExecutiveDirectorIntakeSource,
   getExecutiveDirectorIntakeSubmission,
+  queryExecutiveDirectorIntakeSubmissions,
   saveExecutiveDirectorIntakeReview,
   toExecutiveDirectorSubmissionDetail
 } from "../server/executive-director-intake-storage.mjs";
@@ -337,6 +338,74 @@ try {
   await assert.rejects(() => upload(pdf), (error) => error.statusCode === 500 && error.code === "licensing_source_integrity_failed");
   assert.deepEqual(await fileInventory(), corruptBefore, "A duplicate must not silently replace a failed-integrity original or its reviewed manifest.");
   completed.push("failed-integrity originals are not replaced by duplicate retries");
+
+  // Tomorrow's operating load: five separately scoped facilities uploading ten
+  // distinct reports each at the same time. This remains local and synthetic.
+  const facilityIds = ["337", "342", "343", "344", "345"];
+  const totalsBefore = new Map(await Promise.all(facilityIds.map(async (facilityId) =>
+    [facilityId, (await getExecutiveDirectorIntakeOverview(facilityId)).summary.total])));
+  const workload = await Promise.all(facilityIds.flatMap((facilityId) =>
+    Array.from({ length: 10 }, async (_, index) => {
+      const name = `readiness-${facilityId}-${index + 1}.pdf`;
+      const bytes = await fixturePdf(name);
+      const result = await upload(bytes, { facilityId, name });
+      assert.equal(result.facilityId, facilityId);
+      assert.equal(result.status, "needs_review");
+      assert.deepEqual((await getExecutiveDirectorIntakeSource(facilityId, result.submissionId)).bytes, bytes);
+      return { facilityId, result, bytes, name };
+    })));
+  assert.equal(new Set(workload.map(({ result }) => result.submissionId)).size, 50);
+  for (const facilityId of facilityIds) {
+    const overview = await getExecutiveDirectorIntakeOverview(facilityId);
+    assert.equal(overview.summary.total, totalsBefore.get(facilityId) + 10);
+    const sample = workload.find((item) => item.facilityId === facilityId);
+    assert.equal((await upload(sample.bytes, { facilityId, name: sample.name })).duplicate, true);
+    const otherFacility = facilityIds.find((id) => id !== facilityId);
+    await assert.rejects(() => getExecutiveDirectorIntakeSubmission(otherFacility, sample.result.submissionId), (error) => error.statusCode === 404);
+  }
+  completed.push("five simultaneous facility queues × ten PDFs retain originals, deduplicate retries, and isolate access");
+
+  const demoPdf = await fixturePdf("explicit-demo-marker");
+  const demo = await createExecutiveDirectorIntakeSubmission({
+    req: requestFor(demoPdf, "SYNTHETIC-LIC624-San-Pablo-999.pdf"),
+    facilityId: "337",
+    authContext: { authenticated: true, claims: { tid: "synthetic", oid: "synthetic-demo-seed" } }
+  });
+  const liveSameName = await upload(await fixturePdf("real-same-filename"), {
+    facilityId: "337", name: "SYNTHETIC-LIC624-San-Pablo-998.pdf"
+  });
+  const livePage = await getExecutiveDirectorIntakeOverview("337");
+  const demoPage = await queryExecutiveDirectorIntakeSubmissions({ facilityId: "337", collection: "demo" });
+  assert.equal(livePage.submissions.some((item) => item.submissionId === demo.submissionId), false);
+  assert.equal(demoPage.submissions.some((item) => item.submissionId === demo.submissionId), true);
+  assert.equal(livePage.submissions.some((item) => item.submissionId === liveSameName.submissionId), true);
+  await assert.rejects(() => queryExecutiveDirectorIntakeSubmissions({ facilityId: "337", collection: "all" }), (error) => error.statusCode === 400);
+  completed.push("explicit demo provenance separates production demo reports from the live queue without filename-only classification");
+
+  const scanBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZkAAAAASUVORK5CYII=", "base64");
+  const scan = await upload(scanBytes, { facilityId: "343", name: "synthetic-scan.png", contentType: "image/png" });
+  assert.equal(scan.status, "ocr_required");
+  const manual = toExecutiveDirectorSubmissionDetail(scan);
+  assert.equal(manual.sourceData, null, "Manual entry must not fabricate extracted fields.");
+  assert.equal(manual.draftData.facility.name.length > 0, true);
+  assert.equal(manual.draftData.residents[0].name, "");
+  assert.deepEqual((await getExecutiveDirectorIntakeSource("343", scan.submissionId)).bytes, scanBytes);
+  const manualData = structuredClone(manual.draftData);
+  manualData.facility.fileNumber = "SYNTHETIC-343";
+  manualData.residents[0].name = "Synthetic Person";
+  manualData.residents[0].dateOccurred = "10/19/2026";
+  manualData.incidentTypes = [{ key: "other", label: "Other" }];
+  manualData.eventNarrative = "Synthetic manual transcription from preserved image.";
+  manualData.immediateAction = "Synthetic follow-up.";
+  manualData.submission.submittedBy = "Synthetic Submitter";
+  manualData.submission.submittedDate = "10/19/2026";
+  manualData.submission.reviewedBy = "Synthetic Reviewer";
+  manualData.submission.reviewedDate = "10/19/2026";
+  const manualConfirmed = await saveExecutiveDirectorIntakeReview({ facilityId: "343", submissionId: scan.submissionId, expectedRevision: 0, data: manualData, confirm: true, authContext });
+  assert.equal(manualConfirmed.status, "ready_to_file");
+  assert.equal(manualConfirmed.extraction.method, "ocr_required", "Review does not turn manual transcription into OCR evidence.");
+  assert.equal(toExecutiveDirectorSubmissionDetail(manualConfirmed).sourceData, null);
+  completed.push("scanned source remains immutable while manual transcription is reviewed and audited without fabricated OCR");
 
   console.log(JSON.stringify({ passed: true, syntheticOnly: true, networkRequests: 0, checks: completed }, null, 2));
 } finally {

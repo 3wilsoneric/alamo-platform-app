@@ -9,7 +9,7 @@ import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { extractLic624Report, summarizeLic624Extraction } from "./lic624-extraction.mjs";
 import { createAzureIntakeObjectStore, createLocalIntakeObjectStore } from "./executive-director-intake-objects.mjs";
 import { persistIdempotentIntakeUpload } from "./executive-director-intake-receipts.mjs";
-import { persistNativeLic624Draft } from "./lic624-native.mjs";
+import { createBlankLic624Report, persistNativeLic624Draft } from "./lic624-native.mjs";
 import { withLocalIntakeCatalogLock } from "./executive-director-intake-lock.mjs";
 import {
   assertLic624SubmissionId,
@@ -527,7 +527,7 @@ export function toExecutiveDirectorSubmissionDetail(manifest) {
     : null;
   const draftData = manifest.review?.data
     ? validateLic624ReviewData(manifest.review.data)
-    : sourceData;
+    : sourceData ?? (manifest.extraction?.method === "ocr_required" ? createBlankLic624Report(manifest.facilityId) : null);
   return {
     ...toExecutiveDirectorSubmissionSummary(manifest),
     sourceData,
@@ -564,6 +564,58 @@ export async function saveExecutiveDirectorIntakeReview(request) {
   return withLocalIntakeCatalogLock(path.join(localRoot(), ".review-locks", request.facilityId), submissionId, () => saveIntakeReview(request));
 }
 
+/** Retry OCR only before anyone has saved a transcription or reviewed draft. */
+export async function retryExecutiveDirectorIntakeOcr({ facilityId, submissionId, authContext }) {
+  const run = async () => {
+    const stored = await findStoredManifest(facilityId, submissionId);
+    if (stored.manifest.origin === "native" || stored.manifest.status !== "ocr_required"
+      || Number(stored.manifest.reviewRevision ?? 0) !== 0 || stored.manifest.review) {
+      throw createHttpError(409, "lic624_ocr_retry_unavailable", "This scan has already moved into review. Reload it before making changes.");
+    }
+    const source = await getExecutiveDirectorIntakeSource(facilityId, submissionId);
+    const extraction = await extractLic624Report(source.bytes, source.contentType);
+    const attemptedAt = new Date().toISOString();
+    const next = { ...stored.manifest, extraction, status: extraction.status, ocrRetriedAt: attemptedAt };
+    const audit = {
+      version: "lic624-ocr-attempt-v1", facilityId, submissionId,
+      sourceSha256: source.sha256, attemptedAt, attemptedBy: reviewIdentity(authContext),
+      method: extraction.method, status: extraction.status,
+      extractedFieldCount: extraction.extractedFieldCount
+    };
+    const root = stored.location.kind === "azure"
+      ? stored.location.blobName.slice(0, -("manifest.json".length))
+      : path.dirname(stored.location.manifestPath);
+    const auditName = `ocr-attempts/${attemptedAt.replace(/[:.]/g, "-")}-${randomUUID()}.json`;
+    if (stored.location.kind === "azure") {
+      const container = getAzureContainer();
+      await container.getBlockBlobClient(`${root}${auditName}`).uploadData(Buffer.from(`${JSON.stringify(audit)}\n`), {
+        blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" },
+        conditions: { ifNoneMatch: "*" }
+      });
+      try {
+        await container.getBlockBlobClient(stored.location.blobName).uploadData(Buffer.from(`${JSON.stringify(next, null, 2)}\n`), {
+          blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" },
+          conditions: { ifMatch: stored.location.etag }
+        });
+      } catch (error) {
+        if (isStorageConflict(error)) throw createHttpError(409, "lic624_ocr_retry_conflict", "This scan changed while OCR was running. Reload it.");
+        throw error;
+      }
+    } else {
+      await mkdir(path.join(root, "ocr-attempts"), { recursive: true });
+      await writeFile(path.join(root, auditName), `${JSON.stringify(audit)}\n`, { flag: "wx" });
+      const temporaryPath = `${stored.location.manifestPath}.${randomUUID()}.tmp`;
+      await writeFile(temporaryPath, `${JSON.stringify(next, null, 2)}\n`, { flag: "wx" });
+      await rename(temporaryPath, stored.location.manifestPath);
+    }
+    await mutateCatalog(facilityId, (catalog) => withCatalogRecord(catalog, next));
+    return next;
+  };
+  return shouldUseAzure()
+    ? run()
+    : withLocalIntakeCatalogLock(path.join(localRoot(), ".review-locks", facilityId), submissionId, run);
+}
+
 async function saveIntakeReview({
   facilityId,
   submissionId,
@@ -579,8 +631,9 @@ async function saveIntakeReview({
   if (currentRevision !== expectedRevision) {
     throw createHttpError(409, "lic624_review_conflict", "This review changed in another session. Reload it before saving again.");
   }
-  if (stored.manifest.origin !== "native" && (stored.manifest.extraction?.method !== "pdf_acroform" || !stored.manifest.extraction?.data)) {
-    throw createHttpError(409, "lic624_review_unavailable", "This report requires OCR before its fields can be reviewed.");
+  if (stored.manifest.origin !== "native" && stored.manifest.extraction?.method !== "ocr_required"
+    && (!new Set(["pdf_acroform", "document_intelligence"]).has(stored.manifest.extraction?.method) || !stored.manifest.extraction?.data)) {
+    throw createHttpError(409, "lic624_review_unavailable", "This report cannot be reviewed until its source is available.");
   }
 
   const reviewIssues = getLic624ReviewIssues(data);
@@ -644,7 +697,8 @@ export function toExecutiveDirectorSubmissionSummary(manifest) {
     status: manifest.status,
     extractionSummary,
     reviewedAt: manifest.reviewedAt,
-    filedAt: manifest.filedAt
+    filedAt: manifest.filedAt,
+    demo: manifest.submittedBy?.objectId === "synthetic-demo-seed"
   };
 }
 
@@ -658,6 +712,10 @@ function summarizeCatalogRecords(records) {
     filed: records.filter((item) => item.status === "filed").length,
     failed: records.filter((item) => item.status === "failed").length
   };
+}
+
+function isSyntheticDemoRecord(record) {
+  return record.demo === true;
 }
 
 async function ensureCatalog(facilityId) {
@@ -702,6 +760,7 @@ function decodePageCursor(value) {
  *   cursor?: string | null;
  *   status?: string | null;
  *   query?: string | null;
+ *   collection?: string | null;
  * }} options
  */
 export async function queryExecutiveDirectorIntakeSubmissions({
@@ -709,18 +768,25 @@ export async function queryExecutiveDirectorIntakeSubmissions({
   limit = DEFAULT_PAGE_LIMIT,
   cursor = null,
   status = null,
-  query = null
+  query = null,
+  collection = "live"
 }) {
   const catalog = await ensureCatalog(facilityId);
   const pageLimit = parsePageLimit(limit);
   const pageCursor = decodePageCursor(cursor);
   const normalizedStatus = String(status ?? "").trim().toLowerCase();
   const normalizedQuery = String(query ?? "").trim().toLowerCase().slice(0, 120);
+  const normalizedCollection = String(collection ?? "live").trim().toLowerCase();
+  if (!new Set(["live", "demo"]).has(normalizedCollection)) {
+    throw createHttpError(400, "licensing_collection_invalid", "Choose live reports or demo reports.");
+  }
   const allowedStatuses = new Set(["draft", "awaiting_form_definition", "ocr_required", "needs_review", "ready_to_file", "filed", "failed"]);
   if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
     throw createHttpError(400, "licensing_status_invalid", "Choose a valid licensing queue status.");
   }
   const filtered = catalog.submissions.filter((record) => (
+    (normalizedCollection === "demo" ? isSyntheticDemoRecord(record) : !isSyntheticDemoRecord(record))
+    &&
     (!normalizedStatus || record.status === normalizedStatus)
     && (!normalizedQuery || String(record.originalFileName).toLowerCase().includes(normalizedQuery))
   ));
@@ -741,7 +807,8 @@ export async function queryExecutiveDirectorIntakeSubmissions({
     facilityId,
     catalogRevision: catalog.revision,
     updatedAt: catalog.updatedAt,
-    summary: summarizeCatalogRecords(catalog.submissions),
+    summary: summarizeCatalogRecords(catalog.submissions.filter((record) => normalizedCollection === "demo" ? isSyntheticDemoRecord(record) : !isSyntheticDemoRecord(record))),
+    collection: normalizedCollection,
     filteredTotal: filtered.length,
     submissions: page.map(catalogRecordForResponse),
     nextCursor: hasMore && page.length ? encodePageCursor(page.at(-1)) : null

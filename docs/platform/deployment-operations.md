@@ -77,6 +77,18 @@ Azure Container Registry `pipelineprodacra6qdvl6ebenac`. The Container App is
 in single-revision mode; a new image update promotes the new revision. Confirm
 the current image and revision with `az containerapp show` before every change.
 
+October 19 LIC 624 OCR/readiness overlay: `deploy/Dockerfile.lic624-ocr-release`
+was built on exact preceding digest
+`sha256:eb5337a19c9ea124a57b9d9b46731dd3dbd04f7dfbf8943bbdf0b497e3f2db8f`.
+The active revision `alamo-platform-prod-web--lic624ocr-1019` uses digest
+`sha256:0ebaee1e9621c91ac5335ceb55a9db07f910d9cdd2a77a1eecf0d5a876b2b596`.
+The overlay adds the browser bundle plus the LIC 624 OCR/extraction, intake,
+native draft, and API modules. The existing `alamo-docreader` resource is
+configured by `AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT`; the Platform managed
+identity has Cognitive Services User at that resource scope. Rollback is an
+image update to the preceding digest and removal of the OCR endpoint setting.
+The five Director app-role assignments are deliberately deferred.
+
 The Vercel variables, API adapter, and cron settings below describe that
 deployment target, not the current public `www` host. Do not treat a Vercel
 promotion as an Azure production release. The September 2026 iPhone polish

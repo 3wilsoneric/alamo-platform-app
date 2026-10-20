@@ -9,6 +9,7 @@ import {
   LIC624_NOTIFICATION_FIELDS
 } from "../shared/lic624-contracts.mjs";
 import { extractLic624Report, summarizeLic624Extraction } from "../server/lic624-extraction.mjs";
+import { createBlankLic624Report } from "../server/lic624-native.mjs";
 import { getLic624ReviewIssues, validateLic624ReviewData, validateLic624ReviewRequest } from "../server/lic624-review.mjs";
 import { BASE_URL, attachPageDiagnostics, prepareArtifactDirs, withBrowserQa } from "./browser-qa-utils.mjs";
 
@@ -57,28 +58,31 @@ async function createFixturePdf() {
 }
 
 const sourceBytes = await createFixturePdf();
+const scanBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZkAAAAASUVORK5CYII=", "base64");
 const extraction = await extractLic624Report(sourceBytes, "application/pdf");
 assert.equal(extraction.status, "needs_review");
 const sourceData = validateLic624ReviewData(extraction.data);
 assert.deepEqual(sourceData.incidentTypes, [{ key: "unauthorized_absence", label: "Unauthorized absence" }]);
 
 function createSubmission(index, originalFileName, status = "needs_review") {
-  const reviewable = status !== "ocr_required";
+  const extracted = status !== "ocr_required";
+  const bytes = extracted ? sourceBytes : scanBytes;
+  const manualDraft = extracted ? null : createBlankLic624Report(FACILITY.facilityId);
   return {
     submissionId: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
     facilityId: FACILITY.facilityId,
     originalFileName,
-    contentType: reviewable ? "application/pdf" : "image/png",
-    byteLength: sourceBytes.byteLength,
-    sha256: createHash("sha256").update(sourceBytes).digest("hex"),
+    contentType: extracted ? "application/pdf" : "image/png",
+    byteLength: bytes.byteLength,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
     createdAt: new Date(Date.UTC(2026, 9, 10 - index, 16)).toISOString(),
     status,
-    extractionSummary: reviewable ? summarizeLic624Extraction(extraction) : { form: "LIC624", method: "ocr_required", status, confidence: null, extractedFieldCount: 0, reviewIssueCount: 1 },
+    extractionSummary: extracted ? summarizeLic624Extraction(extraction) : { form: "LIC624", method: "ocr_required", status, confidence: null, extractedFieldCount: 0, reviewIssueCount: 1 },
     reviewedAt: null,
     filedAt: null,
-    sourceData: reviewable ? structuredClone(sourceData) : null,
-    draftData: reviewable ? structuredClone(sourceData) : null,
-    reviewIssues: reviewable ? getLic624ReviewIssues(sourceData) : ["Image uploads require the server-side OCR stage."],
+    sourceData: extracted ? structuredClone(sourceData) : null,
+    draftData: extracted ? structuredClone(sourceData) : manualDraft,
+    reviewIssues: extracted ? getLic624ReviewIssues(sourceData) : getLic624ReviewIssues(manualDraft),
     reviewRevision: 0,
     reviewUpdatedAt: null,
     confirmedAt: null
@@ -144,12 +148,14 @@ async function installFixtures(context, state) {
       if (method === "GET" && url.pathname === `${API_PREFIX}/licensing-intake/submissions`) {
         const status = url.searchParams.get("status") ?? "";
         const query = (url.searchParams.get("q") ?? "").toLowerCase();
-        const filtered = sortedSubmissions(state).filter((row) => (!status || row.status === status) && row.originalFileName.toLowerCase().includes(query));
+        const collection = url.searchParams.get("collection") ?? "live";
+        assert.ok(["live", "demo"].includes(collection));
+        const filtered = sortedSubmissions(state).filter((row) => Boolean(row.demo) === (collection === "demo") && (!status || row.status === status) && row.originalFileName.toLowerCase().includes(query));
         const start = Number(url.searchParams.get("cursor") ?? 0);
         const limit = Number(url.searchParams.get("limit") ?? 25);
         const rows = filtered.slice(start, start + limit);
-        state.listRequests.push({ status, query, cursor: url.searchParams.get("cursor"), catalogRevision: state.catalogRevision });
-        return json({ version: "executive-director-intake-catalog-v1", facilityId: FACILITY.facilityId, catalogRevision: state.catalogRevision, updatedAt: FIXTURE_TIME, summary: intakeSummary(state.submissions), filteredTotal: filtered.length, submissions: rows.map(summarizeSubmission), nextCursor: start + rows.length < filtered.length ? String(start + rows.length) : null });
+        state.listRequests.push({ status, query, collection, cursor: url.searchParams.get("cursor"), catalogRevision: state.catalogRevision });
+        return json({ version: "executive-director-intake-catalog-v1", facilityId: FACILITY.facilityId, catalogRevision: state.catalogRevision, updatedAt: FIXTURE_TIME, summary: intakeSummary(state.submissions), collection, filteredTotal: filtered.length, submissions: rows.map(summarizeSubmission), nextCursor: start + rows.length < filtered.length ? String(start + rows.length) : null });
       }
       if (method === "POST" && url.pathname === `${API_PREFIX}/licensing-intake`) {
         const fileName = request.headers()["x-file-name"];
@@ -183,11 +189,27 @@ async function installFixtures(context, state) {
         if (state.openGate) await state.openGate;
         return json({ version: "executive-director-licensing-review-v1", submission, form: FORM });
       }
+      if (method === "POST" && url.pathname === `${API_PREFIX}/licensing-intake/ocr-retry`) {
+        const submissionId = request.postDataJSON()?.submissionId;
+        const previous = state.submissions.get(submissionId);
+        assert.ok(previous && previous.status === "ocr_required" && previous.reviewRevision === 0);
+        const next = {
+          ...previous,
+          status: "needs_review",
+          extractionSummary: { form: "LIC624", method: "document_intelligence", status: "needs_review", confidence: "medium", extractedFieldCount: 19, reviewIssueCount: 0 },
+          sourceData: structuredClone(sourceData),
+          draftData: structuredClone(sourceData),
+          reviewIssues: getLic624ReviewIssues(sourceData)
+        };
+        state.submissions.set(submissionId, next);
+        state.catalogRevision += 1;
+        return json({ version: "executive-director-licensing-review-v1", submission: next, form: FORM });
+      }
       if (method === "GET" && url.pathname === `${API_PREFIX}/licensing-intake/source`) {
         const submission = state.submissions.get(url.searchParams.get("submissionId"));
         assert.ok(submission, "Only fixture originals may be opened.");
         state.sources.push(submission.submissionId);
-        return route.fulfill({ status: 200, contentType: submission.contentType, headers: { "X-Content-SHA256": submission.sha256, "Content-Disposition": `inline; filename="${submission.originalFileName}"` }, body: sourceBytes });
+        return route.fulfill({ status: 200, contentType: submission.contentType, headers: { "X-Content-SHA256": submission.sha256, "Content-Disposition": `inline; filename="${submission.originalFileName}"` }, body: submission.contentType === "image/png" ? scanBytes : sourceBytes });
       }
       if (method === "PUT" && url.pathname === `${API_PREFIX}/licensing-intake/review`) {
         const review = validateLic624ReviewRequest(request.postDataJSON());
@@ -583,8 +605,8 @@ async function checkBatchIntake(browser) {
   await verifyView(page, "Upload");
   assert.equal(state.uploads.length, 4);
   assert.equal(state.maxActiveUploads, 1);
-  assert.equal(await entry(files[1].name).getByRole("button", { name: "Review form", exact: true }).count(), 0, "Scans must remain Awaiting OCR, not claim an extracted digital form.");
-  await entry(files[1].name).getByText(/Awaiting OCR/).waitFor({ state: "visible" });
+  await entry(files[1].name).getByRole("button", { name: "Enter from original", exact: true }).waitFor({ state: "visible" });
+  await entry(files[1].name).getByText(/Manual entry needed/).waitFor({ state: "visible" });
   await entry(files[2].name).getByText("Already received; existing report retained.", { exact: true }).waitFor({ state: "visible" });
   assert.equal(await entry(files[2].name).getByRole("heading", { name: files[2].name, exact: true }).isVisible(), true, "A duplicate row must retain the selected filename so its result can be matched to the batch.");
   assert.deepEqual(state.submissions.get(existingId), preservedExisting);
@@ -658,6 +680,12 @@ await withBrowserQa(async (browser) => {
   const review = page.locator('[data-lic624-review-workspace="true"]');
   await workspace.waitFor({ state: "visible" });
   await reports.getByText(REPORT_NAMES[0], { exact: true }).waitFor({ state: "visible" });
+  const collectionFilter = reports.getByRole("combobox", { name: "Report collection", exact: true });
+  await collectionFilter.selectOption("demo");
+  await reports.getByRole("heading", { name: "No demo reports", exact: true }).waitFor({ state: "visible" });
+  assert.equal(state.listRequests.at(-1).collection, "demo");
+  await collectionFilter.selectOption("live");
+  await reports.getByText(REPORT_NAMES[0], { exact: true }).waitFor({ state: "visible" });
   assert.match(await workspace.getAttribute("class"), /executive-licensing/);
   assert.deepEqual(await tabs.getByRole("tab").allTextContents(), ["Reports", "Upload"]);
   await verifyView(page, "Reports");
@@ -699,7 +727,15 @@ await withBrowserQa(async (browser) => {
   await search.fill("");
   await statusFilter.selectOption("ocr_required");
   await waitForReportNames(page, [REPORT_NAMES[2]]);
-  assert.equal(await reports.getByRole("button", { name: "Review form", exact: true }).count(), 0, "An OCR-only record must not claim to have a digital review form.");
+  await reports.getByRole("button", { name: "Enter from original", exact: true }).click();
+  await verifyView(page, "Review");
+  await review.getByText("OCR could not extract this report. Enter details from the uploaded original.", { exact: true }).waitFor({ state: "visible" });
+  assert.equal(state.submissions.get("00000000-0000-4000-8000-000000000003").sourceData, null);
+  await review.getByRole("button", { name: "Retry OCR", exact: true }).click();
+  await review.getByText("Scanned fields were read by OCR. Compare each value with the unchanged original before confirming.", { exact: true }).waitFor({ state: "visible" });
+  assert.equal(state.submissions.get("00000000-0000-4000-8000-000000000003").extractionSummary.method, "document_intelligence");
+  await review.getByRole("button", { name: "Close digital form", exact: true }).click();
+  await verifyView(page, "Reports");
   await statusFilter.selectOption("");
   await waitForReportNames(page, initialNames.slice(0, 25));
   state.catalogRevision += 1;
@@ -710,7 +746,7 @@ await withBrowserQa(async (browser) => {
   await reports.getByRole("button", { name: "Load more reports", exact: true }).click();
   await revisionRefreshPromise;
   await waitForReportNames(page, initialNames.slice(0, 25));
-  assert.deepEqual(state.listRequests.slice(-2).map(({ cursor, catalogRevision }) => ({ cursor, catalogRevision })), [{ cursor: "25", catalogRevision: 2 }, { cursor: null, catalogRevision: 2 }], "A changed catalog revision must refresh the first page instead of appending mismatched rows.");
+  assert.deepEqual(state.listRequests.slice(-2).map(({ cursor, catalogRevision }) => ({ cursor, catalogRevision })), [{ cursor: "25", catalogRevision: state.catalogRevision }, { cursor: null, catalogRevision: state.catalogRevision }], "A changed catalog revision must refresh the first page instead of appending mismatched rows.");
 
   await tabs.getByRole("tab", { name: "Upload", exact: true }).click();
   await verifyView(page, "Upload");

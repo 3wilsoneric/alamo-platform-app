@@ -99,7 +99,7 @@ export function useLicensingUploadBatch(facilityId: string) {
           if (result.submission.facilityId !== facilityId) throw new Error("The receipt did not match this community. Please retry.");
           update(entry.id, {
             status: result.duplicate ? "duplicate" : "received", file: null,
-            receipt: { submissionId: result.submission.submissionId, status: result.submission.status, reviewable: Boolean(result.submission.draftData && result.submission.sourceData) }
+            receipt: { submissionId: result.submission.submissionId, status: result.submission.status, reviewable: Boolean(result.submission.draftData) }
           });
           if (current.entries.length === 1) singleResult = result;
         } catch (error) {

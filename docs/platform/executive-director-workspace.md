@@ -125,7 +125,9 @@ The formal automated signed-in suite still requires a saved Playwright session.
 2. **Preserve:** validate the signature, calculate a checksum, store the exact
    source in the private Azure container, and write an audit manifest.
 3. **Extract:** strip fillable LIC 624 PDF fields into the versioned logical
-   record. Image-only PDFs, JPGs, and PNGs move to the OCR-required queue.
+   record. Send flattened PDFs, JPGs, and PNGs through Azure Document
+   Intelligence layout/key-value OCR, then map recognized values into the same
+   review record. A scan that cannot be read remains visibly `ocr_required`.
 4. **Review:** open a digital LIC 624 immediately after fillable-PDF extraction,
    or reopen it from the queue. The reviewer checks every section, edits the
    structured draft, saves versioned changes, and may confirm only when the
@@ -137,8 +139,9 @@ The formal automated signed-in suite still requires a saved Playwright session.
 
 The LIC 624 Rev. 4/99 form is now mapped into facility, people involved,
 incident, treatment/follow-up, approval, and notification sections. Fillable
-PDFs reach `needs_review`; image-only documents stop at `ocr_required` until
-the server-side OCR adapter is connected.
+PDFs and successfully read scans reach `needs_review`. OCR never confirms or
+files a report. Failed scans retain their original and can be retried or
+transcribed manually with an explicit non-OCR method.
 
 The LIC 624 is a state-defined form, not a Platform incident taxonomy. Its
 field names, incident-type choices, extracted values, and uploaded original
@@ -159,7 +162,8 @@ separate record-linking workflow exists.
   and facility-filtered referral, assessment, and move-in activity
 - private scanned-report upload with type, size, signature, checksum, identity,
   facility, and timestamp metadata
-- direct LIC 624 AcroForm extraction into a private structured draft
+- direct LIC 624 AcroForm extraction and managed-identity Azure Document
+  Intelligence scan extraction into private structured drafts
 - Pipeline-style digital LIC 624 review with editable facility, people,
   incident, treatment, notification, supervisor, and signature sections
 - explicit edited-field cues, missing-required-field checks, draft saving,
@@ -191,6 +195,67 @@ not a confirmed inventory of available LIC 624 documents.
 
 ### 1. Safe batch intake — deployed upload/review milestone
 
+#### Five-director operating readiness (October 19)
+
+The immediate target is five Executive Directors uploading ten existing LIC 624
+files apiece. A synthetic, network-disabled test now runs 50 distinct fillable
+PDFs concurrently through the same local intake persistence path, ten in each
+facility. It verifies source bytes, durable catalog counts, retry deduplication,
+and cross-facility denial. This is a load/isolation check, not proof that five
+people can sign in or that scanned forms are extracted in production.
+
+The 100 user-approved synthetic San Pablo examples remain in private production
+storage for demonstrations. Their verified seed identity is recorded in the
+catalog as `demo: true`; the Licensing queue defaults to **Live reports**, with
+an explicit **Demo reports** view. A real upload cannot become a demo merely by
+using a similar filename. The one-time catalog projection update has a private
+recoverable backup; immutable originals, manifests, reviews, and receipts are
+unchanged. Using the running production app's managed identity, the other four
+facilities' empty private catalogs were created and read back as zero reports;
+this verifies the current runtime's storage write/read path for those scopes,
+without adding synthetic reports to their live queues. Never count demo reports
+as operational work.
+
+October 19 OCR/readiness release: Azure Container App revision
+`alamo-platform-prod-web--lic624ocr-1019` uses image digest
+`sha256:0ebaee1e9621c91ac5335ceb55a9db07f910d9cdd2a77a1eecf0d5a876b2b596`,
+overlaid on preceding digest
+`sha256:eb5337a19c9ea124a57b9d9b46731dd3dbd04f7dfbf8943bbdf0b497e3f2db8f`.
+The existing Document Intelligence resource has a resource-scoped
+`Cognitive Services User` assignment for the Platform runtime identity;
+`AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT` points to `alamo-docreader`. A live
+production-runtime read of a synthetic flattened two-page scan returned
+`document_intelligence`, `needs_review`, two pages, 19 recognized fields,
+and the expected synthetic facility, resident, narrative, action, and reviewer.
+The temporary private QA blob was deleted after verification. The revision was
+Healthy with 100% traffic; production smoke passed 4/4, unauthorized report
+list/retry probes returned 401, and the live queue showed 0 reports in all
+five communities while San Pablo's demo view showed exactly 100. Focused
+OCR, batch, Executive Director, browser/mobile, docs, type, and build checks
+passed. The platform-wide analyst suite still fails on an unrelated
+hard-coded resident-ranking expectation against newer live data. No Entra
+Director roles, incoming mailbox, historical import, automatic filing, or
+separate transactional database were activated by this release.
+
+Tomorrow's sign-in gate remains explicit: register the five existing
+`Alamo.ExecutiveDirector.*` application roles in Microsoft Entra, assign one
+appropriate role to each director, refresh their tokens, and verify each account
+can upload and review only its assigned facility. The registration currently
+has no director roles, so do **not** describe five-person production access as
+ready before that check. The Platform owner exception is not a substitute.
+
+Fillable PDFs extract fields for review. Flattened PDFs, JPGs, and PNGs now
+use the existing `alamo-docreader` service's prebuilt layout/key-value model
+through the Platform managed identity. A flattened two-page synthetic LIC 624
+pilot yielded the facility, resident, incident choice, narrative, immediate
+action, treatment, and sign-off values in the digital review form. OCR text,
+recognized pairs, confidence, and page references stay with the private
+source manifest; the unchanged original remains available beside the draft.
+Staff must compare every field before confirmation. Failed scans retain
+`ocr_required`, allow a guarded OCR retry, and still permit clearly labeled
+manual transcription. Mailbox intake, bulk historical import, automatic
+filing, and a transactional database remain off.
+
 Deployed October 9: up to 100 selected files, sequential upload, per-file
 receipts, failed-file retry, and facility-scoped exact-byte duplicate protection.
 The single-file editable form remains the same. On October 9 the user selected
@@ -211,9 +276,8 @@ remain deferred and unconnected.
 - Only server-acknowledged files are durable. Pending browser files remain in
   memory, are not stored in localStorage/IndexedDB, and need reselection after
   leaving the page. This is not an autonomous background OCR queue.
-- Fillable PDFs still extract to review; scans remain explicitly
-  `ocr_required`. No automatic filing, incident creation, mail, or cloud
-  provisioning is part of this milestone.
+- This October 9 milestone predated OCR activation. No automatic filing,
+  incident creation, or incoming mail is included in the later OCR release.
 
 Acceptance: mixed batches, one-file review, exact duplicates, same-file
 concurrency, different-community isolation, failed-file retry, interrupted-write
@@ -233,7 +297,8 @@ For this release only, the user explicitly authorized a limited deployment on
 October 9 using focused upload/review, mobile, access-control, production-build,
 and live verification, with rollback if those checks fail. This exception does
 not relax later release gates or authorize unrelated analyst runtime changes.
-Database provisioning, OCR, incoming mail, and outbound notifications remain off.
+At that release, database provisioning, OCR, incoming mail, and outbound
+notifications remained off. The subsequent OCR setup is documented above.
 
 ### 2. Durable processing and the large report index
 
@@ -264,14 +329,13 @@ forms, rotated/low-quality pages, attachments, and PDFs containing several
 reports. Preserve page order and page-to-report provenance; uncertain document
 boundaries require review rather than silently merging or splitting incidents.
 
-Connect the server-side OCR adapter to the existing logical LIC 624 schema.
-Azure Document Intelligence remains the candidate already identified below,
-not an activated Platform integration. Read-only setup verification found the
-existing `alamo-docreader` service in `alamo-data-rg`; Platform has no configured
-OCR endpoint or processing permission yet. Preserve raw extraction separately from the reviewed
-draft, with source page references and field-level confidence. Unreadable or
-missing values stay unfilled. Treat document text as untrusted data, never as
-instructions. Validate file/page/resource limits and isolate document parsing.
+The server-side OCR adapter now maps the existing `alamo-docreader` prebuilt
+layout/key-value result into the LIC 624 schema. Its managed identity has the
+resource-scoped Cognitive Services User role. Preserve recognized text and
+pair-level confidence/page references in the private manifest, separate from
+the versioned human review. Unreadable or missing values stay unfilled; text
+is untrusted data, never instructions. The synthetic two-page pilot is not a
+validation of handwriting, poor scans, multipacket PDFs, or historical volume.
 
 Match only within the verified community, using resident identity and incident
 date/details as evidence. Present ambiguous and unmatched reports for review;
@@ -313,11 +377,12 @@ separate; do not repurpose or activate them for incoming LIC 624 attachments.
 
 ### Rollout boundaries
 
-Build and test locally first. No production import, mailbox permission,
-external OCR submission, cloud provisioning, or deployment follows merely from
-the local implementation. Agree the data-handling/retention and operator rules,
-approve the configured services, run a small controlled pilot, then import in
-restartable batches with received/reviewed/failed reconciliation.
+The approved limited upload/review deployment did not authorize a historical
+import, incoming mailbox, or database provisioning. The later explicit OCR
+request authorizes activating the existing Document Intelligence service for
+new uploads only. Agree the remaining retention and operator rules, run a
+representative real-scan pilot, then import history in restartable batches
+with received/reviewed/failed reconciliation.
 
 Duplicate protection requires every server writer to use the receipt-aware
 implementation. Reconcile any older duplicate/orphaned submissions during the
@@ -327,7 +392,7 @@ retention/reconciliation policy before the backfill.
 
 ## Remaining operator definitions
 
-Before OCR and final filing are implemented, collect representative scanned
+Before broader OCR backfill and final filing are implemented, collect representative scanned
 LIC 624 reports and answer these questions:
 
 - Which fields are required on every report?
@@ -339,9 +404,8 @@ LIC 624 reports and answer these questions:
   extracted records?
 
 Those answers finish the confidence rules, sorting behavior, and filing
-contract. Azure Document Intelligence is the likely server-side OCR
-service for image-only reports, but service selection follows the sample-scan
-evaluation rather than preceding it.
+contract. The current Azure Document Intelligence adapter does not waive the
+real-scan accuracy pilot or make historical import production-ready.
 
 ## Guardrails
 

@@ -25,7 +25,7 @@
 .lic624-review__status.is-reviewed { color: var(--lic624-forest); border-color: #adbdae; background: #edf0e7; }
 .lic624-review .lic624-review__header h2 { margin: 5px 0 0; font-size: 25px; line-height: 1.2; overflow-wrap: anywhere; }
 .lic624-review__preservation { margin-top: 6px; color: var(--lic624-muted); font-size: 12px; }
-.lic624-review__header-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 12px; }
+.lic624-review__header-actions { display: flex; align-items: center; flex: 0 0 auto; flex-wrap: wrap; gap: 12px; }
 .lic624-review__revision { display: grid; gap: 2px; padding-right: 4px; text-align: right; }
 .lic624-review__revision > span { font-size: 12px; color: var(--lic624-muted); }
 .lic624-review__revision > strong { font: 600 19px/1.2 var(--lic624-serif); }

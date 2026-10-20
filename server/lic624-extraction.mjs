@@ -10,6 +10,7 @@ import {
   LIC624_FORM_DEFINITION,
   LIC624_INCIDENT_TYPE_FIELDS
 } from "../shared/lic624-contracts.mjs";
+import { extractLic624Scan } from "./lic624-ocr.mjs";
 
 function clean(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
@@ -40,23 +41,23 @@ function ocrRequired(reason) {
 
 export async function extractLic624Report(bytes, contentType) {
   if (contentType !== "application/pdf") {
-    return ocrRequired("Image uploads require the server-side OCR stage.");
+    return await extractLic624Scan(bytes) ?? ocrRequired("OCR could not extract this image. Enter the details from the preserved original.");
   }
 
   let document;
   try {
     document = await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false });
   } catch {
-    return ocrRequired("The PDF could not be read as a fillable LIC 624 form and requires OCR.");
+    return await extractLic624Scan(bytes) ?? ocrRequired("OCR could not extract this PDF. Enter the details from the preserved original.");
   }
 
   let fields;
   try {
     fields = document.getForm().getFields();
   } catch {
-    return ocrRequired("No readable form fields were found; the report requires OCR.");
+    return await extractLic624Scan(bytes) ?? ocrRequired("OCR could not extract this PDF. Enter the details from the preserved original.");
   }
-  if (!fields.length) return ocrRequired("No fillable fields were found; the report requires OCR.");
+  if (!fields.length) return await extractLic624Scan(bytes) ?? ocrRequired("OCR could not extract this PDF. Enter the details from the preserved original.");
 
   const values = new Map();
   const checked = new Map();
@@ -148,6 +149,9 @@ export async function extractLic624Report(bytes, contentType) {
 
   const extractedFieldCount = [...values.values()].filter(Boolean).length +
     [...checked.values()].filter(Boolean).length;
+  if (extractedFieldCount < 3) {
+    return await extractLic624Scan(bytes) ?? ocrRequired("No readable LIC 624 fields were found. Retry OCR or enter details from the preserved original.");
+  }
   return {
     form: LIC624_FORM_DEFINITION.id,
     method: "pdf_acroform",

@@ -98,6 +98,7 @@ const approvedDeploymentOverlayFiles = new Set([
   "deploy/Dockerfile.incident-history-release",
   "deploy/Dockerfile.incident-taxonomy-release",
   "deploy/Dockerfile.lic624-native-release",
+  "deploy/Dockerfile.lic624-ocr-release",
   "deploy/patch-chat-entry.mjs",
   "deploy/inject-iphone-head.mjs",
   "deploy/iphone-polish.css",
@@ -212,6 +213,7 @@ function ownershipClass(file) {
   if (/^server\/presentations\/alamo-data-strategy\/(?:deck\.json|fonts\.json|slides\/[a-z0-9-]+\.html|images\/[a-z0-9-]+\.png|fonts\/[a-zA-Z0-9-]+\.(?:ttf|woff2|txt))$/.test(file)) return "private presentation assets";
   if (/^shared\/.+\.(?:mjs|d\.mts)$/.test(file)) return "shared contract";
   if (["scripts/licensing/collect.py", "scripts/licensing/check_collect.py", "scripts/licensing/restore.py"].includes(file)) return "verification and operations";
+  if (file === "scripts/generate-synthetic-lic624-batch.py") return "verification and operations";
   if (/^scripts\/.+\.(?:mjs|json|ps1)$/.test(file)) return "verification and operations";
   if (/^databricks\/notebooks\/.+\.py$/.test(file)) return "data publishing notebook";
   if (/^databricks\/workflows\/.+\.json$/.test(file)) return "data publishing workflow";

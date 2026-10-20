@@ -9,6 +9,7 @@ import {
   fetchExecutiveDirectorSubmission,
   fetchExecutiveDirectorSubmissions,
   fetchExecutiveDirectorSubmissionSource,
+  retryExecutiveDirectorLic624Ocr,
   saveExecutiveDirectorLicensingReview,
   type ExecutiveDirectorBootstrap,
   type ExecutiveDirectorSubmissionCatalog,
@@ -26,7 +27,7 @@ import "../executiveLicensing.css";
 const DEFAULT_PREVIEW_FACILITY_ID = "337";
 const PENDING_NAVIGATION_MESSAGE = "Wait for the current report action to finish before leaving Licensing.";
 type LicensingView = "reports" | "upload" | "review";
-type LicensingOperation = { kind: "create" | "upload" | "open" | "save"; controller: AbortController };
+type LicensingOperation = { kind: "create" | "upload" | "open" | "save" | "ocr"; controller: AbortController };
 
 function formatFileSize(bytes: number) {
   return bytes >= 1024 * 1024 ? (bytes / (1024 * 1024)).toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
@@ -38,7 +39,7 @@ function formatDate(value: string | null) {
 function statusLabel(status: ExecutiveDirectorSubmission["status"]) {
   if (status === "draft") return "Draft";
   if (status === "awaiting_form_definition") return "Mapping required";
-  if (status === "ocr_required") return "OCR required";
+  if (status === "ocr_required") return "Manual entry needed";
   if (status === "needs_review") return "Needs review";
   if (status === "ready_to_file") return "Ready to file";
   if (status === "filed") return "Filed";
@@ -71,6 +72,7 @@ export default function ExecutiveDirectorPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
+  const [collection, setCollection] = useState<"live" | "demo">("live");
   const [catalogRefresh, setCatalogRefresh] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -133,7 +135,7 @@ export default function ExecutiveDirectorPage() {
     setCatalogError(null);
     setCatalog(null);
     const timer = window.setTimeout(() => {
-      void fetchExecutiveDirectorSubmissions(facilityId, { status, query: query.trim() }, controller.signal)
+      void fetchExecutiveDirectorSubmissions(facilityId, { status, query: query.trim(), collection }, controller.signal)
         .then((result) => { if (!controller.signal.aborted) setCatalog(result); })
         .catch((error: unknown) => { if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : "Reports could not be loaded."); })
         .finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); });
@@ -143,7 +145,7 @@ export default function ExecutiveDirectorPage() {
       moreController.current?.abort();
       window.clearTimeout(timer);
     };
-  }, [facilityId, status, query, catalogRefresh]);
+  }, [facilityId, status, query, collection, catalogRefresh]);
 
   useEffect(() => {
     if (!reviewDirty && !workspaceBusy) return;
@@ -183,7 +185,7 @@ export default function ExecutiveDirectorPage() {
     setLoadingMore(true);
     setCatalogError(null);
     try {
-      const next = await fetchExecutiveDirectorSubmissions(facilityId, { status, query: query.trim(), cursor: catalog.nextCursor }, controller.signal);
+      const next = await fetchExecutiveDirectorSubmissions(facilityId, { status, query: query.trim(), collection, cursor: catalog.nextCursor }, controller.signal);
       if (controller.signal.aborted || generation !== listGeneration.current) return;
       if (next.catalogRevision !== catalog.catalogRevision) { refreshCatalog(); return; }
       setCatalog((previous) => previous ? { ...next, submissions: [...previous.submissions, ...next.submissions.filter((item) => !previous.submissions.some((existing) => existing.submissionId === item.submissionId))] } : next);
@@ -224,6 +226,7 @@ export default function ExecutiveDirectorPage() {
       setForm(result.form);
       setActiveSubmission(result.submission);
       setReviewDirty(false);
+      setCollection("live");
       focusViewRef.current = "review";
       setView("review");
       refreshCatalog();
@@ -245,14 +248,14 @@ export default function ExecutiveDirectorPage() {
       const completed = await batch.upload(retryFailed, controller.signal);
       if (controller.signal.aborted) return;
       const result = completed?.singleResult;
-      if (result?.submission.draftData && result.submission.sourceData) {
+      if (result?.submission.draftData) {
         setForm(result.form);
         setActiveSubmission(result.submission);
         setReviewDirty(false);
         focusViewRef.current = "review";
         setView("review");
       }
-      if (completed) refreshCatalog();
+      if (completed) { setCollection("live"); refreshCatalog(); }
     } catch (error) {
       if (!controller.signal.aborted) setReviewError(error instanceof Error ? error.message : "The upload batch could not be completed.");
     } finally {
@@ -272,7 +275,7 @@ export default function ExecutiveDirectorPage() {
     try {
       const result = await fetchExecutiveDirectorSubmission(facilityId, submissionId, controller.signal);
       if (controller.signal.aborted) return;
-      if (!result.submission.draftData || (!result.submission.sourceData && result.submission.origin !== "native")) throw new Error("This report requires extraction before the digital form is available.");
+      if (!result.submission.draftData) throw new Error("The digital form is not available for this report.");
       setForm(result.form);
       setActiveSubmission(result.submission);
       setReviewDirty(false);
@@ -331,6 +334,25 @@ export default function ExecutiveDirectorPage() {
       if (operationRef.current === operation) operationRef.current = null;
     }
   };
+  const retryOcr = async () => {
+    const controller = workspaceController.current;
+    if (!controller || controller.signal.aborted || !activeSubmission || activeSubmission.facilityId !== facilityId || reviewDirty || operationRef.current) {
+      throw new Error("Save or discard your current changes before retrying OCR.");
+    }
+    const operation: LicensingOperation = { kind: "ocr", controller };
+    operationRef.current = operation;
+    try {
+      const result = await retryExecutiveDirectorLic624Ocr(facilityId, activeSubmission.submissionId, controller.signal);
+      if (controller.signal.aborted) throw new DOMException("The licensing workspace changed.", "AbortError");
+      setForm(result.form);
+      setActiveSubmission(result.submission);
+      refreshCatalog();
+      if (result.submission.status === "ocr_required") throw new Error("OCR still could not read this scan. You can retry or enter it from the original.");
+      return result.submission;
+    } finally {
+      if (operationRef.current === operation) operationRef.current = null;
+    }
+  };
   const tabs = [
     { id: "reports" as const, label: "Reports", icon: FileText },
     { id: "upload" as const, label: "Upload", icon: Upload },
@@ -364,8 +386,9 @@ export default function ExecutiveDirectorPage() {
             <div className="licensing-reports__filters">
               <button className="licensing-button is-primary licensing-new-report" type="button" disabled={workspaceBusy || loading || !bootstrap} onClick={() => void createReport()}>{creating ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Plus aria-hidden="true" />}{creating ? "Starting report" : "New LIC 624"}</button>
               <label className="licensing-search"><Search aria-hidden="true" /><input aria-label="Search reports" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search reports" /></label>
+              <select aria-label="Report collection" value={collection} onChange={(event) => setCollection(event.target.value as "live" | "demo")}><option value="live">Live reports</option><option value="demo">Demo reports</option></select>
               <select aria-label="Report status" value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="">All reports</option><option value="draft">Drafts</option><option value="needs_review">Needs review</option><option value="ocr_required">OCR required</option><option value="ready_to_file">Ready to file</option><option value="filed">Filed</option><option value="failed">Processing failed</option><option value="awaiting_form_definition">Mapping required</option>
+                <option value="">All reports</option><option value="draft">Drafts</option><option value="needs_review">Needs review</option><option value="ocr_required">Manual entry needed</option><option value="ready_to_file">Ready to file</option><option value="filed">Filed</option><option value="failed">Processing failed</option><option value="awaiting_form_definition">Mapping required</option>
               </select>
               {catalog ? <p className="licensing-reports__count">{catalog.filteredTotal} {catalog.filteredTotal === 1 ? "report" : "reports"}{query || status ? " matching" : ""}</p> : null}
             </div>
@@ -374,15 +397,15 @@ export default function ExecutiveDirectorPage() {
               <div className="licensing-report-list__columns" aria-hidden="true"><span>Report</span><span>Created</span><span>Status</span><span>Open</span></div>
               {catalogLoading ? <p role="status" className="licensing-empty"><LoaderCircle className="animate-spin" aria-hidden="true" />Loading reports…</p> : null}
               {!catalogLoading && catalog?.submissions.map((submission) => <article data-licensing-report={submission.submissionId} key={submission.submissionId} className="licensing-report-row">
-                <div className="licensing-report-row__file"><FileText aria-hidden="true" /><div><h3>{submission.originalFileName}</h3><p>{submission.origin === "native" ? "Created in app" : formatFileSize(submission.byteLength)}{submission.extractionSummary?.method === "pdf_acroform" ? " · " + submission.extractionSummary.extractedFieldCount + " fields extracted" : ""}</p></div></div>
+                <div className="licensing-report-row__file"><FileText aria-hidden="true" /><div><h3>{submission.originalFileName}</h3><p>{submission.origin === "native" ? "Created in app" : formatFileSize(submission.byteLength)}{["pdf_acroform", "document_intelligence"].includes(submission.extractionSummary?.method ?? "") ? " · " + submission.extractionSummary?.extractedFieldCount + " fields extracted" : ""}</p></div></div>
                 <time dateTime={submission.createdAt}>{formatDate(submission.createdAt)}</time>
                 <span className={"licensing-report-status is-" + submission.status}>{statusLabel(submission.status)}</span>
                 <div className="licensing-report-row__actions">
                   {submission.origin !== "native" ? <button className="licensing-button" type="button" disabled={Boolean(openingSourceId)} onClick={() => void openOriginal(submission)}><ExternalLink aria-hidden="true" />{openingSourceId === submission.submissionId ? "Opening" : "Original"}</button> : null}
-                  {submission.origin === "native" || submission.extractionSummary?.method === "pdf_acroform" ? <button className="licensing-button is-review" type="button" disabled={workspaceBusy || loading} onClick={() => void openSubmission(submission.submissionId)}><PencilLine aria-hidden="true" />{openingSubmissionId === submission.submissionId ? "Opening" : submission.origin === "native" || submission.status === "ready_to_file" ? "Open form" : "Review form"}</button> : null}
+                  {submission.origin === "native" || submission.extractionSummary?.method === "pdf_acroform" || submission.extractionSummary?.method === "document_intelligence" || submission.extractionSummary?.method === "ocr_required" ? <button className="licensing-button is-review" type="button" disabled={workspaceBusy || loading} onClick={() => void openSubmission(submission.submissionId)}><PencilLine aria-hidden="true" />{openingSubmissionId === submission.submissionId ? "Opening" : submission.extractionSummary?.method === "ocr_required" && submission.status === "ocr_required" ? "Enter from original" : submission.origin === "native" || submission.status === "ready_to_file" ? "Open form" : "Review form"}</button> : null}
                 </div>
               </article>)}
-              {!catalogLoading && !catalogError && !catalog?.submissions.length ? <div className="licensing-empty"><FileScan aria-hidden="true" /><h3>{query || status ? "No matching reports" : "No reports yet"}</h3><p>{query || status ? "Try another report name or status." : "Start a new LIC 624 above, or upload an existing report."}</p>{!query && !status ? <button className="licensing-button" type="button" disabled={workspaceBusy} onClick={() => selectView("upload")}>Upload report</button> : null}</div> : null}
+              {!catalogLoading && !catalogError && !catalog?.submissions.length ? <div className="licensing-empty"><FileScan aria-hidden="true" /><h3>{query || status ? "No matching reports" : collection === "demo" ? "No demo reports" : "No reports yet"}</h3><p>{query || status ? "Try another report name or status." : collection === "demo" ? "This community has no synthetic demonstration reports." : "Start a new LIC 624 above, or upload an existing report."}</p>{!query && !status && collection === "live" ? <button className="licensing-button" type="button" disabled={workspaceBusy} onClick={() => selectView("upload")}>Upload report</button> : null}</div> : null}
             </div>
             {catalog?.nextCursor ? <footer className="licensing-reports__footer"><span>{catalog.submissions.length} of {catalog.filteredTotal} reports</span><button className="licensing-button" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Loading" : "Load more reports"}</button></footer> : null}
           </section>
@@ -390,7 +413,7 @@ export default function ExecutiveDirectorPage() {
             <LicensingBulkUpload key={facilityId} batch={batch} busy={workspaceBusy} ready={Boolean(bootstrap)} onUpload={(retryFailed) => void submit(retryFailed)} onReview={(submissionId) => void openSubmission(submissionId)} />
           </section>
           {activeSubmission && form ? <section id="licensing-panel-review" role="tabpanel" aria-labelledby="licensing-tab-review" hidden={view !== "review"} inert={Boolean(openingSubmissionId) || uploading || creating} aria-busy={Boolean(openingSubmissionId) || uploading || creating}>
-            <Lic624ReviewWorkspace submission={activeSubmission} form={form} onClose={closeReview} onSave={saveReview} onDirtyChange={setReviewDirty} onBusyChange={setReviewBusy} {...(activeSubmission.origin !== "native" ? { onOpenOriginal: () => void openOriginal(activeSubmission) } : {})} />
+            <Lic624ReviewWorkspace submission={activeSubmission} form={form} onClose={closeReview} onSave={saveReview} onDirtyChange={setReviewDirty} onBusyChange={setReviewBusy} {...(activeSubmission.origin !== "native" ? { onOpenOriginal: () => void openOriginal(activeSubmission) } : {})} {...(activeSubmission.status === "ocr_required" ? { onRetryOcr: retryOcr } : {})} />
           </section> : null}
         </div>
       </div>

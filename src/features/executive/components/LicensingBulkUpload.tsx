@@ -16,7 +16,7 @@ function fileSize(bytes: number) {
 }
 
 function receiptLabel(entry: LicensingUploadEntry) {
-  if (entry.receipt?.status === "ocr_required") return "Awaiting OCR";
+  if (entry.receipt?.status === "ocr_required") return "Manual entry needed";
   if (entry.receipt?.status === "ready_to_file") return "Ready to file";
   if (entry.receipt?.status === "filed") return "Filed";
   if (entry.receipt?.status === "needs_review") return "Needs review";
@@ -60,7 +60,7 @@ export default function LicensingBulkUpload({ batch, busy, ready, onUpload, onRe
             <span className="licensing-batch__file-icon" aria-hidden="true">{entry.status === "uploading" ? <LoaderCircle className="animate-spin" /> : entry.status === "received" ? <CheckCircle2 /> : entry.status === "duplicate" ? <CopyCheck /> : <FileText />}</span>
             <div className="licensing-batch__file"><h4>{entry.name}</h4><p>{fileSize(entry.byteLength)}{receiptLabel(entry) ? ` · ${receiptLabel(entry)}` : ""}</p>{entry.error ? <p className="licensing-batch__error">{entry.error}</p> : null}{entry.status === "duplicate" ? <p>Already received; existing report retained.</p> : null}</div>
             <span className={`licensing-batch__state is-${entry.status}`}>{entry.status === "queued" ? "Queued" : entry.status === "uploading" ? "Uploading" : entry.status === "received" ? "Received" : entry.status === "duplicate" ? "Duplicate" : "Failed"}</span>
-            <div className="licensing-batch__actions">{entry.receipt?.reviewable ? <button className="licensing-button is-review" type="button" disabled={busy} onClick={() => { if (entry.receipt) onReview(entry.receipt.submissionId); }}><PencilLine aria-hidden="true" />Review form</button> : null}{!entry.receipt ? <button type="button" disabled={busy} aria-label={batch.entries.length === 1 ? "Remove selected file" : `Remove ${entry.name} from batch`} onClick={() => { batch.remove(entry.id); focusPicker(); }}><X aria-hidden="true" /></button> : null}</div>
+            <div className="licensing-batch__actions">{entry.receipt?.reviewable ? <button className="licensing-button is-review" type="button" disabled={busy} onClick={() => { if (entry.receipt) onReview(entry.receipt.submissionId); }}><PencilLine aria-hidden="true" />{entry.receipt.status === "ocr_required" ? "Enter from original" : "Review form"}</button> : null}{!entry.receipt ? <button type="button" disabled={busy} aria-label={batch.entries.length === 1 ? "Remove selected file" : `Remove ${entry.name} from batch`} onClick={() => { batch.remove(entry.id); focusPicker(); }}><X aria-hidden="true" /></button> : null}</div>
           </li>)}
         </ol>
         <div className="licensing-batch__submit">
@@ -68,7 +68,7 @@ export default function LicensingBulkUpload({ batch, busy, ready, onUpload, onRe
           {retryable ? <button className="licensing-button" type="button" aria-label="Retry failed files" disabled={busy || !ready} onClick={() => onUpload(true)}><RotateCcw aria-hidden="true" />Retry failed files ({retryable})</button> : null}
         </div>
       </section> : null}
-      <p className="licensing-upload__note">Fillable PDFs can be reviewed after receipt. Scans are stored as Awaiting OCR; extraction is not yet automatic.</p>
+      <p className="licensing-upload__note">Fillable PDFs extract for review. For scans, open the preserved original and enter the fields manually; OCR is not automatic.</p>
       <p className="licensing-upload__note licensing-batch__session-note">Keep this tab open while uploading. Closing it cancels files not yet sent; received files stay on the server. Reselect unconfirmed files to retry; the server checks for duplicates.</p>
     </div>
   </div>;

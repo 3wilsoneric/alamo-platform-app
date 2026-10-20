@@ -11,6 +11,7 @@ import {
   getExecutiveDirectorIntakeSource,
   getExecutiveDirectorIntakeSubmission,
   queryExecutiveDirectorIntakeSubmissions,
+  retryExecutiveDirectorIntakeOcr,
   saveExecutiveDirectorIntakeReview,
   toExecutiveDirectorSubmissionDetail
 } from "./executive-director-intake-storage.mjs";
@@ -175,7 +176,8 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
         limit: requestUrl.searchParams.get("limit"),
         cursor: requestUrl.searchParams.get("cursor"),
         status: requestUrl.searchParams.get("status"),
-        query: requestUrl.searchParams.get("q")
+        query: requestUrl.searchParams.get("q"),
+        collection: requestUrl.searchParams.get("collection")
       });
       res.status(200).json(page);
       return;
@@ -229,6 +231,18 @@ export async function handleExecutiveDirectorApiRequest(req, res) {
       res.status(submission.duplicate ? 200 : 201).json({
         version: "executive-director-licensing-intake-v1",
         duplicate: submission.duplicate,
+        submission: toExecutiveDirectorSubmissionDetail(submission),
+        form: getLic624FormContract()
+      });
+      return;
+    }
+
+    if (req.method === "POST" && requestUrl.pathname === `${EXECUTIVE_DIRECTOR_API_PREFIX}/licensing-intake/ocr-retry`) {
+      const facilityId = resolveExecutiveDirectorFacility(access, getHeader(req, "x-facility-id"));
+      const body = await readValidatedJsonRequest(req, (value) => ({ submissionId: assertLic624SubmissionId(value?.submissionId) }), 1024);
+      const submission = await retryExecutiveDirectorIntakeOcr({ facilityId, submissionId: body.submissionId, authContext });
+      res.status(200).json({
+        version: "executive-director-licensing-review-v1",
         submission: toExecutiveDirectorSubmissionDetail(submission),
         form: getLic624FormContract()
       });

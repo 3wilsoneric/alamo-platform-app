@@ -31,7 +31,7 @@ export interface ExecutiveDirectorSubmission {
   status: ExecutiveDirectorIntakeStatus;
   extractionSummary: {
     form: "LIC624";
-    method: "pdf_acroform" | "ocr_required";
+    method: "pdf_acroform" | "document_intelligence" | "ocr_required";
     status: "needs_review" | "ocr_required";
     confidence: "high" | "medium" | null;
     extractedFieldCount: number;
@@ -39,6 +39,7 @@ export interface ExecutiveDirectorSubmission {
   } | null;
   reviewedAt: string | null;
   filedAt: string | null;
+  demo?: boolean;
 }
 
 export interface Lic624Resident {
@@ -358,17 +359,19 @@ export interface ExecutiveDirectorSubmissionCatalog {
   filteredTotal: number;
   submissions: ExecutiveDirectorSubmission[];
   nextCursor: string | null;
+  collection: "live" | "demo";
 }
 
 export function fetchExecutiveDirectorSubmissions(
   facilityId: string,
-  options: { status?: string; query?: string; cursor?: string } = {},
+  options: { status?: string; query?: string; cursor?: string; collection?: "live" | "demo" } = {},
   signal?: AbortSignal
 ) {
   const params = new URLSearchParams({ facilityId, limit: "25" });
   if (options.status) params.set("status", options.status);
   if (options.query) params.set("q", options.query);
   if (options.cursor) params.set("cursor", options.cursor);
+  if (options.collection) params.set("collection", options.collection);
   return fetchWithApiAuth<ExecutiveDirectorSubmissionCatalog>(
     `/api/platform/executive-director/licensing-intake/submissions?${params.toString()}`,
     signal ? { signal } : {},
@@ -414,10 +417,26 @@ export function uploadExecutiveDirectorLicensingReport(
       }
     },
     {
-      timeoutMs: 60_000,
+      timeoutMs: 180_000,
       consume: (response) => readApiJson<ExecutiveDirectorUploadResponse>(response)
     }
   );
+}
+
+export function retryExecutiveDirectorLic624Ocr(facilityId: string, submissionId: string, signal?: AbortSignal) {
+  return fetchWithApiAuth<{
+    version: "executive-director-licensing-review-v1";
+    submission: ExecutiveDirectorSubmissionDetail;
+    form: Lic624FormContract;
+  }>("/api/platform/executive-director/licensing-intake/ocr-retry", {
+    method: "POST",
+    body: JSON.stringify({ submissionId }),
+    ...(signal ? { signal } : {}),
+    headers: { "Content-Type": "application/json", "X-Facility-Id": facilityId }
+  }, {
+    timeoutMs: 180_000,
+    consume: (response) => readApiJson(response)
+  });
 }
 
 export function fetchExecutiveDirectorSubmission(

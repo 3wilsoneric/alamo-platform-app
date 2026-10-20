@@ -25,6 +25,7 @@ interface Lic624ReviewWorkspaceProps {
   onDirtyChange?: (dirty: boolean) => void;
   onBusyChange?: (busy: boolean) => void;
   onOpenOriginal?: () => void;
+  onRetryOcr?: () => Promise<ExecutiveDirectorSubmissionDetail>;
 }
 
 const INPUT_CLASS = "lic624-review__input";
@@ -105,12 +106,14 @@ function Section({ number, title, note, children }: { number: string; title: str
   );
 }
 
-export default function Lic624ReviewWorkspace({ submission, form, onClose, onSave, onDirtyChange, onBusyChange, onOpenOriginal }: Lic624ReviewWorkspaceProps) {
+export default function Lic624ReviewWorkspace({ submission, form, onClose, onSave, onDirtyChange, onBusyChange, onOpenOriginal, onRetryOcr }: Lic624ReviewWorkspaceProps) {
   const savedData = submission.draftData;
   const native = submission.origin === "native";
-  const sourceData = submission.sourceData ?? (native ? savedData : null);
+  const manualEntry = !native && submission.extractionSummary?.method === "ocr_required";
+  const sourceData = submission.sourceData ?? (native || manualEntry ? savedData : null);
   const [draft, setDraft] = useState<Lic624ReviewData | null>(savedData ? copyData(savedData) : null);
   const [saving, setSaving] = useState<"draft" | "confirm" | null>(null);
+  const [retryingOcr, setRetryingOcr] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reviewRef = useRef<HTMLElement>(null);
@@ -127,15 +130,15 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
 
   const issues = useMemo(() => draft ? getReviewIssues(draft) : [], [draft]);
   const unsaved = Boolean(draft && savedData && !dataEqual(draft, savedData));
-  const changedFromSource = Boolean(draft && sourceData && !dataEqual(draft, sourceData));
+  const changedFromSource = !manualEntry && Boolean(draft && sourceData && !dataEqual(draft, sourceData));
 
   useEffect(() => {
     onDirtyChange?.(unsaved);
   }, [onDirtyChange, unsaved]);
 
   useEffect(() => {
-    onBusyChange?.(Boolean(saving));
-  }, [onBusyChange, saving]);
+    onBusyChange?.(Boolean(saving || retryingOcr));
+  }, [onBusyChange, saving, retryingOcr]);
 
   if (!draft || !sourceData) return null;
 
@@ -212,11 +215,11 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
             <div className="lic624-review__eyebrow">
               <p>Digital LIC 624</p>
               <span className={`lic624-review__status${submission.status === "ready_to_file" ? " is-reviewed" : ""}`}>
-                {submission.status === "ready_to_file" ? "Reviewed" : native ? "Draft" : "Check extraction"}
+                {submission.status === "ready_to_file" ? "Reviewed" : native ? "Draft" : manualEntry ? "Manual entry" : "Check extraction"}
               </span>
             </div>
             <h2>{submission.originalFileName}</h2>
-            <p className="lic624-review__preservation">{native ? "Created in app. Save your work as a draft before leaving." : "The uploaded original stays unchanged."}</p>
+            <p className="lic624-review__preservation">{native ? "Created in app. Save your work as a draft before leaving." : manualEntry ? "OCR could not extract this report. Enter details from the uploaded original." : submission.extractionSummary?.method === "document_intelligence" ? "Scanned fields were read by OCR. Compare each value with the unchanged original before confirming." : "The uploaded original stays unchanged."}</p>
           </div>
         </div>
         <div className="lic624-review__header-actions">
@@ -225,6 +228,11 @@ export default function Lic624ReviewWorkspace({ submission, form, onClose, onSav
             <strong>{submission.reviewRevision || (native ? "New draft" : "Original")}</strong>
           </div>
           {onOpenOriginal ? <button type="button" onClick={onOpenOriginal} className="lic624-review__button"><FileText size={17} aria-hidden="true" /> Original</button> : null}
+          {manualEntry && onRetryOcr ? <button type="button" disabled={Boolean(saving || retryingOcr || unsaved)} onClick={() => {
+            setRetryingOcr(true);
+            setError(null);
+            void onRetryOcr().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "OCR could not be retried.")).finally(() => setRetryingOcr(false));
+          }} className="lic624-review__button"><RotateCcw size={17} aria-hidden="true" />{retryingOcr ? "Reading scan" : "Retry OCR"}</button> : null}
         </div>
         <button type="button" disabled={Boolean(saving)} onClick={() => { if (!savingRef.current) onClose(); }} aria-label="Close digital form" className="lic624-review__close">
           <X size={20} aria-hidden="true" />
