@@ -569,7 +569,7 @@ async function main() {
       .getByRole("link", { name: "Back to California map" })
       .waitFor({ state: "visible", timeout: 5_000 });
 
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await page
       .locator('[data-certified-question-guide="true"]')
       .waitFor({ state: "visible", timeout: 5_000 });
@@ -690,7 +690,7 @@ async function main() {
     await page
       .locator('[data-fifty-state-page="true"][data-fifty-state-embedded="false"]')
       .waitFor({ state: "visible", timeout: 10_000 });
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await page
       .locator('[data-fifty-state-page="true"][data-fifty-state-embedded="false"]')
       .waitFor({ state: "visible", timeout: 10_000 });
