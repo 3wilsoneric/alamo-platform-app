@@ -69,7 +69,7 @@ function MedroomDashboard() {
         <div className="medroom-dashboard__period"><span>MAR period</span><strong>{monthLabel(current?.month)}</strong><small>Incident period: {monthLabel(incidentMonth)}</small></div>
       </header>
       {note ? <p className="medroom-dashboard__notice" role="status">{note}</p> : null}
-      {detail ? <p className="medroom-dashboard__source" role="status">Daily MAR: {detail.source_coverage}. {detail.latest_administration_date ? `Latest administration ${detail.latest_administration_date}.` : "No daily administration date available."} Rolling windows end {detail.as_of_date ?? "at the next governed snapshot"}.</p> : null}
+      {detail ? <p className="medroom-dashboard__source" role="status">Daily MAR: {detail.source_coverage}. {detail.latest_administration_date ? `Latest completed administration day ${detail.latest_administration_date}.` : "No complete daily administration window available."} Rolling windows exclude the current business day.</p> : null}
       {detail?.monthly_reconciliation && !detail.monthly_reconciliation.matches ? <p className="medroom-dashboard__notice" role="alert">Monthly and daily MAR totals do not reconcile for {monthLabel(detail.medication_month)}. Monthly: {number(detail.monthly_reconciliation.monthly_given)} given / {number(detail.monthly_reconciliation.monthly_scheduled)} scheduled; daily: {number(detail.monthly_reconciliation.daily_given)} / {number(detail.monthly_reconciliation.daily_scheduled)}. Review source definitions before using the breakdown.</p> : null}
 
       <section className="medroom-dashboard__section" aria-labelledby="medroom-snapshot">
@@ -77,7 +77,7 @@ function MedroomDashboard() {
         <div className="medroom-dashboard__metrics">
           <Metric label="Overall compliance" value="Not scored" detail="No approved composite definition" />
           <Metric label="eMAR" value={detail?.daily_available ? "Daily detail available" : medication ? "Monthly summary available" : "Unavailable"} detail={detail?.latest_administration_date ? `Administration data through ${detail.latest_administration_date}` : "Daily publisher not yet available"} />
-          <Metric label="Med pass" value={percent(current?.completion)} detail={current ? `${number(current.given)} given / ${number(current.scheduled)} scheduled` : "No current MAR period"} tone="plum" />
+          <Metric label="Med pass" value={percent(current?.completion)} detail={current ? `${number(current.given)} given / ${number(current.scheduled)} scheduled through the last completed day` : "No current MAR period"} tone="plum" />
           <Metric label="Incidents" value={number(incidentCount)} detail={monthLabel(incidentMonth)} tone="rust" />
           <Metric label="Review signals" value={detail ? number(detail.watch.length) : "Unavailable"} detail="From connected sources only; not clinical risk grades" />
           <Metric label="Survey readiness" value="Not scored" detail="Evidence is available; no approved survey rubric" />
@@ -100,7 +100,7 @@ function MedroomDashboard() {
       <section className="medroom-dashboard__section" aria-labelledby="medroom-medications">
         <div className="medroom-dashboard__section-head"><h2 id="medroom-medications">Medication compliance</h2><span>03 / 06</span></div>
         <div className="medroom-dashboard__med-summary"><div><span>Administrations given</span><strong>{number(current?.given)}</strong></div><div><span>Scheduled</span><strong>{number(current?.scheduled)}</strong></div><div><span>Not given</span><strong>{number(current?.notGiven)}</strong></div></div>
-        <p className="medroom-dashboard__scope">{monthDetail ? `Daily eMAR detail for ${monthLabel(current?.month)}. Categories reflect recorded source outcomes; they are not a composite compliance score.` : "Daily eMAR detail has not been published for this month. Monthly given/scheduled totals remain available above."} {detail?.prn_followup ? `${number(detail.prn_followup.documented)} of ${number(detail.prn_followup.administrations)} PRN administrations have documented effectiveness follow-up.` : "PRN follow-up coverage is unavailable."}</p>
+        <p className="medroom-dashboard__scope">{monthDetail ? `Completed-day eMAR detail for ${monthLabel(current?.month)}. Today's unresolved scheduled doses are excluded; categories reflect recorded source outcomes, not a composite compliance score.` : "Completed-day eMAR detail has not been published for this month. Monthly given/scheduled totals remain available above."} {detail?.prn_followup ? `${number(detail.prn_followup.documented)} of ${number(detail.prn_followup.administrations)} PRN administrations have documented effectiveness follow-up.` : "PRN follow-up coverage is unavailable."}</p>
         <div className="medroom-dashboard__breakdown">{breakdown.map(row => <div key={row.label} title={row.description}><span>{row.label}</span><strong>{row.value == null ? "Unavailable" : number(row.value)}</strong><small>{row.description}</small></div>)}</div>
       </section>
 

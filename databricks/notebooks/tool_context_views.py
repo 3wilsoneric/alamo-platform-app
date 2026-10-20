@@ -1530,7 +1530,10 @@ create_view(
       sum(CASE WHEN is_prn = 0 AND outcome_category = 'other_not_given' THEN 1 ELSE 0 END) AS other_not_given_count,
       sum(CASE WHEN is_prn = 1 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS prn_given_count
     FROM {target}.v_mar_administration_detail
-    WHERE administration_date BETWEEN date_sub({WINDOW_AS_OF_SQL}, 89) AND {WINDOW_AS_OF_SQL}
+    -- The source monthly measure excludes the snapshot business day. Keep
+    -- rolling windows on 90 completed days so future scheduled doses cannot
+    -- lower the apparent administration rate or break reconciliation.
+    WHERE administration_date BETWEEN date_sub({WINDOW_AS_OF_SQL}, 90) AND date_sub({WINDOW_AS_OF_SQL}, 1)
     GROUP BY facility_id, administration_date
     """
 )

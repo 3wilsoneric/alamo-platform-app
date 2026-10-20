@@ -34,8 +34,8 @@ const dashboard = {
 };
 const medroom = {
   as_of_date: "2026-10-20", medication_month: "2026-10", daily_available: true,
-  latest_administration_date: "2026-10-20", source_coverage: "15 community-day rows; 15 published",
-  windows: Object.fromEntries([7, 30, 60, 90].map(days => [days, { from: "2026-10-01", through: "2026-10-20", scheduled_count: 900, given_count: 855, not_given_count: 35, pending_count: 10, missed_count: 2, late_given_count: 3, refused_count: 4, held_count: 5, other_not_given_count: 8, prn_given_count: 7, completion_pct: 95 }])),
+  latest_administration_date: "2026-10-19", source_coverage: "450 community-day rows across 90 completed days; 450 published",
+  windows: Object.fromEntries([7, 30, 60, 90].map(days => [days, { from: "2026-10-01", through: "2026-10-19", scheduled_count: 900, given_count: 855, not_given_count: 35, pending_count: 10, missed_count: 2, late_given_count: 3, refused_count: 4, held_count: 5, other_not_given_count: 8, prn_given_count: 7, completion_pct: 95 }])),
   current_month: { scheduled_count: 900, given_count: 855, not_given_count: 35, pending_count: 10, missed_count: 2, late_given_count: 3, refused_count: 4, held_count: 5, other_not_given_count: 8, prn_given_count: 7 },
   community_month: [], prn_followup: { administrations: 7, documented: 6 }, possible_duplicate_orders: 2,
   watch: [{ code: "pending_outcome", count: 10, label: "Unresolved administration outcomes" }],
