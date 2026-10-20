@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:4e39ca10164067286c4bd6b9fcb7a3fbf9e5741b284e6df5d0ef6385ff27ca0e
+ARG BASE_IMAGE=pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:d622054ab9f77b08c722e70eb8ba8e0413c6c6e306b29099f37865f4c5d311da
 FROM ${BASE_IMAGE}
 
 # Preserve the exact running Azure app and its API adapter. Replace only the
