@@ -55,6 +55,10 @@ assert.equal(mapped?.ocrEvidence.pageCount, 2);
 assert.equal(mapped?.reviewIssues.length, 0);
 assert.equal(mapped?.extractedFieldCount, countLic624ExtractedFields(mapped.data));
 
+const combinedOcr = structuredClone(analysis);
+combinedOcr.pages.push(structuredClone(analysis.pages[0]));
+assert.equal(mapLic624OcrResult(combinedOcr), null, "OCR must not merge a third page into one LIC 624 draft.");
+
 const multipleResidents = structuredClone(analysis);
 multipleResidents.keyValuePairs.push(
   pair("NAME", "Second Synthetic Resident"),
@@ -95,6 +99,19 @@ try {
   assert.equal(requests.length, 2);
   assert.equal(requests[0].method, "POST");
   assert.equal(requests[0].authorization, "Bearer test-token");
+
+  await assert.rejects(
+    analyzeLic624Scan(Buffer.from("synthetic bytes"), {
+      credential: { getToken: async () => ({ token: "test-token" }) },
+      fetchImpl: async () => ({
+        status: 202,
+        headers: new Headers({ "operation-location": "https://alamo-docreader.cognitiveservices.azure.com/documentintelligence/documentModels/prebuilt-layout/analyzeResults/11111111-1111-4111-8111-111111111111?api-version=2024-11-30" })
+      }),
+      analysisTimeoutMs: 10
+    }),
+    /abort|timed out/i,
+    "The overall OCR deadline must stop a long-running analysis."
+  );
 } finally {
   if (previous === undefined) delete process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
   else process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = previous;
@@ -111,15 +128,24 @@ try {
 
   const partialDocument = await PDFDocument.create();
   partialDocument.addPage([612, 792]);
+  partialDocument.addPage([612, 792]);
   const partialForm = partialDocument.getForm();
   partialForm.createTextField("Facility").setText("Synthetic Partial Facility");
   for (let index = 0; index < 4; index += 1) partialForm.createTextField(`unrelated-${index}`).setText(`not-a-624-field-${index}`);
   const partial = await extractLic624Report(Buffer.from(await partialDocument.save()), "application/pdf");
-  assert.equal(partial.method, "pdf_acroform", "A partial fillable form must retain its mapped fields when OCR is unavailable.");
+  assert.equal(partial.method, "pdf_acroform", "A two-page partial fillable form must retain its mapped fields when OCR is unavailable.");
   assert.equal(partial.extractedFieldCount, 1);
   assert.equal(partial.data.facility.name, "Synthetic Partial Facility");
+
+  const combinedDocument = await PDFDocument.create();
+  for (let index = 0; index < 3; index += 1) combinedDocument.addPage([612, 792]);
+  combinedDocument.getForm().createTextField("Facility").setText("Synthetic Combined Facility");
+  const combined = await extractLic624Report(Buffer.from(await combinedDocument.save()), "application/pdf");
+  assert.equal(combined.method, "ocr_required", "Combined PDFs must not become a single structured report.");
+  assert.equal(combined.data, null);
+  assert.match(combined.reviewIssues[0], /more than two pages/i);
 } finally {
   if (previous === undefined) delete process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
   else process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = previous;
 }
-console.log("LIC 624 OCR mapping, multi-person extraction, fillable-PDF fallback, and managed-identity fixtures passed.");
+console.log("LIC 624 OCR mapping, multi-person extraction, two-page boundary, deadline, fillable-PDF fallback, and managed-identity fixtures passed.");

@@ -1,4 +1,5 @@
 import { ManagedIdentityCredential } from "@azure/identity";
+import { setTimeout as sleep } from "node:timers/promises";
 import { LIC624_FORM_DEFINITION, LIC624_INCIDENT_TYPE_FIELDS } from "../shared/lic624-contracts.mjs";
 import { countLic624ExtractedFields, getLic624ReviewIssues, validateLic624ReviewData } from "./lic624-review.mjs";
 
@@ -6,7 +7,7 @@ const API_VERSION = "2024-11-30";
 const MODEL = "prebuilt-layout";
 const MAX_RESULT_BYTES = 2 * 1024 * 1024;
 const MAX_POLLS = 45;
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const MAX_ANALYSIS_MS = 120_000;
 const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 const label = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const KNOWN_HEADING = /^(?:date|yes|no|what happened|persons who observed|person s who observed|immediate action|explain what immediate action|nature of treatment|where administered|administered by|follow up treatment|action taken planned|action taken or planned|supervisor comments|attending physician|submitted by|reviewed by|submission and review|notifications|medical treatment necessary|fictional test data)/;
@@ -23,24 +24,26 @@ function endpoint() {
 
 async function boundedJson(response) {
   const body = await response.text();
-  if (body.length > MAX_RESULT_BYTES) throw new Error("Document Intelligence result exceeded its size limit.");
+  if (Buffer.byteLength(body, "utf8") > MAX_RESULT_BYTES) throw new Error("Document Intelligence result exceeded its size limit.");
   return JSON.parse(body);
 }
 
-async function requestWithThrottleRetry(fetchImpl, url, options) {
+async function requestWithThrottleRetry(fetchImpl, url, options, deadlineSignal) {
   for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (deadlineSignal.aborted) throw new Error("Document Intelligence analysis timed out.");
     const response = await fetchImpl(url, options);
     if (![429, 503].includes(response.status) || attempt === 3) return response;
     const retryAfter = Number(response.headers?.get?.("retry-after"));
-    await sleep(Math.min(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1_000 : 1_000 * (2 ** attempt), 8_000));
+    await sleep(Math.min(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1_000 : 1_000 * (2 ** attempt), 8_000), undefined, { signal: deadlineSignal });
   }
   throw new Error("Document Intelligence remained unavailable.");
 }
 
 /** Analyze with the Platform's managed identity. No subscription key is used by the app. */
-export async function analyzeLic624Scan(bytes, { fetchImpl = fetch, credential = null } = {}) {
+export async function analyzeLic624Scan(bytes, { fetchImpl = fetch, credential = null, analysisTimeoutMs = MAX_ANALYSIS_MS } = {}) {
   const origin = endpoint();
   if (!origin) return null;
+  const deadlineSignal = AbortSignal.timeout(Math.max(1, Math.min(analysisTimeoutMs, MAX_ANALYSIS_MS)));
   const clientId = process.env.AZURE_CLIENT_ID?.trim();
   if (!credential && !clientId) throw new Error("Document Intelligence managed identity is not configured.");
   const identity = credential ?? new ManagedIdentityCredential(clientId || "");
@@ -51,8 +54,8 @@ export async function analyzeLic624Scan(bytes, { fetchImpl = fetch, credential =
     method: "POST",
     headers: { Authorization: authorization, "Content-Type": "application/octet-stream" },
     body: bytes,
-    signal: AbortSignal.timeout(40_000)
-  });
+    signal: AbortSignal.any([AbortSignal.timeout(40_000), deadlineSignal])
+  }, deadlineSignal);
   if (start.status !== 202) throw new Error(`Document Intelligence analyze request failed (${start.status}).`);
   const operation = start.headers.get("operation-location");
   const resultUrl = operation && new URL(operation);
@@ -60,11 +63,11 @@ export async function analyzeLic624Scan(bytes, { fetchImpl = fetch, credential =
     throw new Error("Document Intelligence returned an invalid result location.");
   }
   for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-    await sleep(attempt < 3 ? 1_000 : 2_000);
+    await sleep(attempt < 3 ? 1_000 : 2_000, undefined, { signal: deadlineSignal });
     const response = await requestWithThrottleRetry(fetchImpl, resultUrl, {
       headers: { Authorization: authorization },
-      signal: AbortSignal.timeout(20_000)
-    });
+      signal: AbortSignal.any([AbortSignal.timeout(20_000), deadlineSignal])
+    }, deadlineSignal);
     if (!response.ok) throw new Error(`Document Intelligence result request failed (${response.status}).`);
     const result = await boundedJson(response);
     if (result.status === "succeeded") return result.analyzeResult;
@@ -141,6 +144,7 @@ function selectIncidentTypes(pairs) {
 
 /** Deterministic LIC 624 mapping. Every field remains subject to human review. */
 export function mapLic624OcrResult(analysis) {
+  if ((analysis?.pages?.length ?? 0) > 2) return null;
   const evidencePairs = recognizedPairs(analysis);
   const pairs = evidencePairs.filter((pair) => pair.confidence >= 0.85);
   const first = pageLines(analysis, 0);

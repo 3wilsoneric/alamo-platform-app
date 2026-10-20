@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-19
+- updated: 2026-10-20
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -15,6 +15,30 @@
   - [alamo-platform-app/vercel.json](/Users/eric/CareEngineMain/alamo-platform-app/vercel.json)
 
 ## Current Production Host
+
+### LIC 624 pre-role capacity safeguards — 2026-10-20
+
+- active image: `alamo-platform@sha256:4e39ca10164067286c4bd6b9fcb7a3fbf9e5741b284e6df5d0ef6385ff27ca0e`
+- active revision: `alamo-platform-prod-web--lic624-preroles-1020`; Healthy/Running, 100% traffic
+- rollback image: `alamo-platform@sha256:41f46c5c9c8f149aedfec48409e95181bb2312aef141aa4a344d4ce320fa0468`
+- build: ACR `cc9g`, using `deploy/Dockerfile.lic624-ocr-release` on the exact rollback digest
+- verified: five concurrent synthetic two-page analyzes through the production managed identity completed within six seconds; LIC 624 OCR mapping/two-page/deadline fixtures; 50-file/five-facility persistence and isolation; Executive Director access contracts; 1440/768/390/320px and zoom-equivalent Licensing browser checks; native-form browser checks; docs, client/server types, syntax, lint, build; production smoke 4/4; `/executive/licensing` 200; anonymous intake list/upload/OCR-retry 401 with `private, no-store`
+
+The OCR operation now has a 120-second overall deadline so stalled analysis can
+return before the browser's 180-second upload timeout. Three-or-more-page PDFs
+are preserved for manual review but are not automatically mapped as one LIC 624;
+this prevents a combined packet from silently mixing separate reports. The
+native two-page form and two-page AcroForm extraction remain supported. The
+five-concurrent production OCR check exercised only synthetic sources and did
+not create queue records or prove handwritten scan accuracy. Staff still must
+review each extracted field. There is no durable background OCR worker, and
+the Blob catalog is not a 20,000-report historical-import store.
+
+The full analyst gate remains red at `check:copilot-tools` because its fixed
+resident-ranking expectation names a different resident than current live
+data; this is unrelated to the LIC 624 modules and was not changed to force a
+pass. Director role registration/assignment, signed-in five-user verification,
+mailbox intake, transactional database, and historical backfill remain off.
 
 ### LIC 624 scan-review audit — 2026-10-20
 

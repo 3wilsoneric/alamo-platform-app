@@ -3,7 +3,7 @@
 - purpose: define the facility-scoped Executive Director dashboard and licensing-report intake workflow
 - status: active implementation plan and security contract
 - owners: product, operations, engineering, compliance
-- updated: 2026-10-17
+- updated: 2026-10-20
 - tags: executive-director, licensing, intake, ocr, role-access, azure
 - labels: platform-handbook, implementation-plan, security-boundary
 - related files:
@@ -214,6 +214,19 @@ PDFs concurrently through the same local intake persistence path, ten in each
 facility. It verifies source bytes, durable catalog counts, retry deduplication,
 and cross-facility denial. This is a load/isolation check, not proof that five
 people can sign in or that scanned forms are extracted in production.
+
+Before role assignments, the production managed identity successfully analyzed
+five separate synthetic, two-page PDFs concurrently against `alamo-docreader`;
+all five returned two pages within six seconds. This checks the live OCR path,
+not five authorized browser sessions or a 50-file scanned batch. The inline OCR
+call now has a 120-second overall deadline, leaving time for the browser's
+180-second request timeout to receive a result. If OCR is slow or unavailable,
+the file still needs an explicit retry; there is no durable background worker.
+The original LIC 624 has two pages. PDFs longer than two pages are retained but
+not automatically extracted into one draft, because a combined packet could
+silently merge separate reports. Staff should split combined reports into one
+LIC 624 per file; a genuine report with attachments can still be transcribed
+from its preserved original until attachment-aware parsing is built.
 
 The 100 user-approved synthetic San Pablo examples remain in private production
 storage for demonstrations. Their verified seed identity is recorded in the

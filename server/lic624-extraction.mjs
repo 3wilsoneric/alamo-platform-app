@@ -52,6 +52,12 @@ export async function extractLic624Report(bytes, contentType) {
     return await extractLic624Scan(bytes) ?? ocrRequired("OCR could not extract this PDF. Enter the details from the preserved original.");
   }
 
+  // LIC 624 is a two-page form. A longer PDF may contain several reports or
+  // attachments; OCRing all of it into one draft could combine distinct events.
+  if (document.getPageCount() > 2) {
+    return ocrRequired("This PDF has more than two pages. Check for combined LIC 624 reports and upload one report per file. The original is preserved for manual review.");
+  }
+
   let fields;
   try {
     fields = document.getForm().getFields();
