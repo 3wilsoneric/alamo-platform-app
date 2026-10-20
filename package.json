@@ -17,6 +17,7 @@
     "dev": "vite",
     "dev:api": "node --watch --env-file=.env server/dev-api.mjs",
     "dev:all": "node scripts/dev-all.mjs",
+    "prepare:admissions-banner-release": "node scripts/prepare-admissions-banner-overlay.mjs",
     "snapshot:generate": "node scripts/generate-platform-snapshot.mjs",
     "snapshot:publish": "PLATFORM_SNAPSHOT_PUBLISH_AZURE=true node scripts/generate-platform-snapshot.mjs",
     "knowledge": "node scripts/platform-knowledge.mjs",

@@ -1,0 +1,4 @@
+/* Remove only the redundant title band above the weekly census panel. */
+[data-admissions-combined-briefing="true"] > header {
+  display: none !important;
+}
