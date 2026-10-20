@@ -4341,7 +4341,9 @@ Platform image layers and browser assets are retained unchanged.
 `npm run check:poc` checks route isolation, auth-header/cookie forwarding, CSRF
 rejection, uploads, SSE, cache policy, traversal rejection and the Microsoft
 bridge. `npm run check:browser-poc` runs the built UI and actual proxy against an
-invented upstream; it covers Supervisor/PIN, Roster/history routing, persistent
+invented upstream and identity provider; it exercises the real MSAL popup/PKCE
+bridge under the shipped CSP, remembered secure cookie, discarded enrollment
+bearer, Supervisor/PIN, Roster/history routing, persistent
 Surface/Desktop/rotation state, mobile fit, lock and CSP. Both passed, as did
 types, source syntax, lint, unused-code, code-health, docs and production build.
 The actual candidate container passed public route checks and live-upstream
