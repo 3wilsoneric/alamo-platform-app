@@ -302,7 +302,9 @@ async function runChatFlow(page, screenshotDir) {
   if (!persistedBeforeReload?.sessionId || !persistedBeforeReload?.frame?.metric) {
     failures.push("analysis context was not persisted before the reload isolation check");
   }
-  await page.reload({ waitUntil: "networkidle" });
+  // The chat workspace can keep background requests open after hydration;
+  // waiting for network-idle makes this reload isolation check nondeterministic.
+  await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => {
     const raw = window.sessionStorage.getItem("alamo-platform:analysis-session-v1");
     if (!raw) return false;
