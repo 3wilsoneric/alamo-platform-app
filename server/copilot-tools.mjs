@@ -1007,7 +1007,7 @@ function validateScopedToolResult(content, result, communities, reportsSummary) 
     });
   }
 
-  if (!["incident_breakdown", "incident_detail_list"].includes(result.tool)) return result;
+  if (!["incident_breakdown", "incident_detail_list"].includes(result.tool) || result.safeRefusal || result.truthState === "not_loaded") return result;
   const categoryFilter = getIncidentCategoryFilter(content, [...incidentRows, ...detailRows]);
   const expectedCategory = formatIncidentCategoryFilterLabel(categoryFilter);
   const periodText = String(result.trace?.period ?? "");

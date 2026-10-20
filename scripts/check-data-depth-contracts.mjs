@@ -888,8 +888,11 @@ function assertCensusTransformContracts() {
     fencedSnapshotCensusReads.length >= 2,
     "snapshot publish should cap direct census payload reads to the requested snapshot month"
   );
+  const clinicalIdentityBlock = snapshotSource.match(/def build_clinical_identity\(current_residents\):[\s\S]*?(?=\ndef build_blob_service_client\()/)?.[0] ?? "";
+  assert.match(clinicalIdentityBlock, /SELECT p\.Res_Number, p\.Facility, r\.BirthDate\s+FROM alamohealth\.gold\.v_tool_resident_profile p\s+LEFT JOIN alamohealth\.gold\.v_active_residents r/, "clinical identity may read birth dates only through the governed current roster");
+  assert.match(clinicalIdentityBlock, /set\(birth_dates\) != current_keys/, "clinical identity must reconcile exactly to the governed current roster");
   assert.doesNotMatch(
-    snapshotSource,
+    snapshotSource.replace(clinicalIdentityBlock, ""),
     /\b(?:FROM|JOIN)\s+alamohealth\.gold\.v_active_residents\b/,
     "snapshot publish should not use raw active residents for visible resident/community data"
   );

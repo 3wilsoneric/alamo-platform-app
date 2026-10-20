@@ -60,6 +60,8 @@ import {
 
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
 import { assertLicensingAccess } from "../server/licensing-access.mjs";
+import { getMedroomDashboard } from "../server/medroom-dashboard.mjs";
+import { assertMedroomAccess } from "../server/medroom-access.mjs";
 import { getPlatformIncidentHistory } from "../server/platform-incident-history.mjs";
 import {
   handleExecutiveDirectorApiRequest,
@@ -82,6 +84,10 @@ const PLATFORM_GET_ROUTES = Object.freeze({
   "/api/platform/licensing/updates": ({ authContext }) => {
     assertLicensingAccess(authContext);
     return getLicensingUpdates();
+  },
+  "/api/platform/medroom": ({ authContext }) => {
+    assertMedroomAccess(authContext);
+    return getMedroomDashboard();
   },
   "/api/platform/admissions-dashboard": () => getAdmissionsDashboardData(),
   // Owner-only until Workforce is connected to live HR data.

@@ -183,7 +183,7 @@ const missions = [
         visualType: "table",
         critical: true
       }),
-      turn("give me the top category of each community in incidents November of last year", {
+      turn("give me the top category of each community in incidents November 2020", {
         tools: ["top_incident_category_by_community", "data_availability"],
         truthStates: ["not_loaded", "stale"],
         textIncludes: ["not available"],

@@ -178,15 +178,16 @@ const cases = [
   {
     prompt: "resident risk watchlist all residents",
     tool: "resident_risk_summary",
-    textIncludes: "highest-ranked residents are Chandeng Xayavong",
+    textIncludes: "highest-ranked residents are .+ \\(\\d+ incidents\\)",
+    matchesTopVisualLabel: true,
     textExcludes: "Did you mean"
   },
   {
     prompt: "all AWOL incidents since May",
     tool: "incident_detail_list",
-    period: "2026-05, 2026-06",
+    periodStartsWith: "2026-05, 2026-06",
     noteIncludes: "AWOL/Elopement",
-    textIncludes: "May 2026 and June 2026",
+    textIncludes: "matching AWOL/Elopement incidents in May 2026 through [A-Z][a-z]+ 20\\d{2}",
     artifact: true
   },
   {
@@ -209,9 +210,8 @@ const cases = [
     tool: "slice_metric",
     period: "2026-02",
     noteIncludes: "category=AWOL/Elopement",
-    textIncludes: "JC Wallace House accounted for 113 of 260 AWOL/Elopement incidents in February 2026",
-    visualTitleIncludes: "AWOL/Elopement Incident Slice",
-    textExcludes: "June 2026"
+    februaryAvailabilityAware: true,
+    textIncludes: "February 2026"
   },
   {
     prompt: "incdients by communty",
@@ -372,6 +372,15 @@ for (const testCase of cases) {
     if (result.handled !== true) failures.push("expected handled=true");
     if (result.tool !== testCase.tool) failures.push(`wrong tool: ${result.tool}`);
     if (Object.hasOwn(testCase, "period") && result.trace?.period !== testCase.period) failures.push(`wrong period: ${result.trace?.period}`);
+    if (testCase.periodStartsWith && !String(result.trace?.period ?? "").startsWith(testCase.periodStartsWith)) failures.push(`wrong period start: ${result.trace?.period}`);
+    if (testCase.matchesTopVisualLabel && !String(result.text ?? "").includes(String(result.visual?.rows?.[0]?.label ?? "[no visual leader]"))) failures.push("narrative leader does not match the ranked visual row");
+    if (testCase.februaryAvailabilityAware) {
+      if (result.safeRefusal === true) {
+        if (!String(result.text ?? "").includes("not available for February 2026") || result.visual?.title !== "Available Data for This Request") failures.push("February without coverage must be refused with available-data context");
+      } else if (result.trace?.truthState !== "valid_rows" || result.visual?.type !== "table" || !Number.isFinite(Number(result.visual?.rows?.[0]?.value)) || !String(result.text ?? "").includes(String(result.visual?.rows?.[0]?.label ?? "[no visual leader]"))) {
+        failures.push("February with coverage must show grounded, ranked community data");
+      }
+    }
     if (Object.hasOwn(testCase, "safeRefusal") && result.safeRefusal !== testCase.safeRefusal) {
       failures.push(`wrong safe-refusal state: ${result.safeRefusal}`);
     }

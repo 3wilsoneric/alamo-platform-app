@@ -116,6 +116,18 @@ Pass the same explicit `date_partition=<business-date-YYYY-MM-DD>` into
 should be anchored to the intended business date instead of the notebook run
 time.
 
+For the owner-only med-room dashboard, `tool_context_views` also creates
+`v_tool_mar_daily_by_community_90d`: one row per facility and administration
+date, no resident or medication identifiers. It counts scheduled, given,
+not-given, unresolved/pending, explicitly recorded missed, given over 60 minutes late, recorded refusal,
+held, other-not-given, and PRN-given outcomes. `snapshot_publish` requires this
+slice and its exact manifest row count before a new snapshot is accepted. The
+server projects exact inclusive 7/30/60/90-day windows from those daily rows
+and refuses malformed or incomplete daily coverage. Older published snapshots
+still render monthly summaries but mark the rolling windows unavailable.
+Inventory, validated prediction, and an approved survey-readiness rubric remain
+separate source/clinical-governance dependencies, not inferred from MAR rows.
+
 ## Published Snapshot Contract
 
 Notebook:

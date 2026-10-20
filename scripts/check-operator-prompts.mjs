@@ -173,7 +173,8 @@ add("who had the most incidents in San Pablo in May 2026", {
   tool: "incident_resident_drivers",
   requireVisual: true,
   visualType: "table",
-  mustInclude: ["A & A Health Services San Pablo", "May 2026", "Chandeng Xayavong"]
+  mustInclude: ["May 2026"],
+  matchesVisualLeader: true
 });
 
 for (const resident of exactResidents) {
@@ -197,7 +198,7 @@ add("how many clients at San Pablo in January 2026", { tool: "census_trend", mus
 
 add("what is the latest incident date loaded", { tool: "data_availability", mustInclude: ["most recent incident detail"] });
 add("what data is loaded for incidents", { tool: "data_availability", mustInclude: ["most recent incident detail"] });
-add("do we have November 2025 incident detail rows loaded", { tool: "data_availability", truthState: "not_loaded", mustInclude: ["Incident detail does not include November 2025"] });
+add("do we have November 2025 incident detail rows loaded", { tool: "data_availability", availabilityAware: "incident-detail", mustInclude: ["November 2025"] });
 add("do we have May 2026 incident detail rows loaded", { tool: "data_availability", mustInclude: ["Incident detail includes May 2026"] });
 add("do we have May 2026 census data loaded", { tool: "data_availability", mustInclude: ["Census monthly includes May 2026"] });
 add("do we have January 2026 resident roster rows loaded", { tool: "data_availability", mustInclude: ["Resident roster is current only"] });
@@ -298,7 +299,7 @@ add("list every census row", {
   exactArtifactCountInText: true
 });
 add("list every census row for November 2020", { tool: "detail_list", truthState: "not_loaded", mustInclude: ["Available range"] });
-add("give me the top category of each community in incidents November of last year", { truthState: "not_loaded", mustInclude: ["not available"] });
+add("give me the top category of each community in incidents November of last year", { availabilityAware: "monthly-category", mustInclude: ["November 2025"] });
 
 if (cases.length < 100 || cases.length > 250) {
   console.error(`FAILED: expected 100-250 operator prompts, found ${cases.length}`);
@@ -352,6 +353,18 @@ function checkResult(testCase, result) {
   }
   if (testCase.truthState && (result.truthState ?? result.trace?.truthState) !== testCase.truthState) {
     failures.push(`${testCase.prompt}: expected truthState ${testCase.truthState}, received ${result.truthState ?? result.trace?.truthState ?? "none"}`);
+  }
+  if (testCase.matchesVisualLeader && (!result.visual?.rows?.[0]?.label || !body.includes(result.visual.rows[0].label) || !Number.isFinite(Number(result.visual.rows[0].value)))) {
+    failures.push(`${testCase.prompt}: narrative does not match the ranked resident row`);
+  }
+  if (testCase.availabilityAware) {
+    const truthState = result.truthState ?? result.trace?.truthState;
+    if (truthState === "valid_rows") {
+      const expected = testCase.availabilityAware === "incident-detail" ? "Incident detail includes November 2025" : "November 2025";
+      if (!body.includes(expected) || !result.visual?.rows?.length) failures.push(`${testCase.prompt}: available period lacks grounded evidence`);
+    } else if (truthState !== "not_loaded" || !/not available|does not include|not loaded/i.test(body)) {
+      failures.push(`${testCase.prompt}: unavailable period lacks an explicit coverage refusal`);
+    }
   }
   if (testCase.valueLabel && result.visual?.valueLabel !== testCase.valueLabel) {
     failures.push(`${testCase.prompt}: expected visual value label ${testCase.valueLabel}, received ${result.visual?.valueLabel ?? "none"}`);

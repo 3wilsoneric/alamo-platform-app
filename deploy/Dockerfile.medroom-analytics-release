@@ -1,0 +1,13 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Preserve the exact running Azure app and its API adapter. Replace only the
+# reviewed browser bundle, med-room modules, and incident-period fixes.
+USER root
+COPY --chown=node:node dist /app/dist
+COPY --chown=node:node server/medroom-access.mjs server/medroom-dashboard.mjs server/copilot-tools.mjs /app/server/
+COPY --chown=node:node server/tools/incidents.mjs server/tools/answer-formatting.mjs server/tools/tool-data-access.mjs /app/server/tools/
+COPY --chown=node:node shared/medroom-access.mjs /app/shared/
+COPY deploy/patch-medroom-platform-api.mjs /tmp/patch-medroom-platform-api.mjs
+RUN node /tmp/patch-medroom-platform-api.mjs /app/api/platform.js && chown node:node /app/api/platform.js
+USER node

@@ -46,7 +46,8 @@ export default function AnalyticsSectionNavigation({
           active={active === "agent"}
           label={branding.name}
           onClick={() => onNavigate("agent")}
-        /> : canViewLicensing ? <SectionButton
+        /> : null}
+        {canViewLicensing ? <SectionButton
           section="licensing"
           active={active === "licensing"}
           label="Licensing"

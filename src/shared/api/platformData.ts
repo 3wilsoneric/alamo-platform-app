@@ -623,6 +623,44 @@ export function fetchAnalyticsSummary(signal?: AbortSignal) {
   return fetchJson<ReportsSummaryResponse>("/api/analytics-summary", signal, platformResponseValidators.analyticsSummary);
 }
 
+export interface MedroomCounts {
+  scheduled_count: number;
+  given_count: number;
+  not_given_count: number;
+  pending_count: number;
+  missed_count: number;
+  late_given_count: number;
+  refused_count: number;
+  held_count: number;
+  other_not_given_count: number;
+  prn_given_count: number;
+}
+
+export interface MedroomDashboardResponse {
+  as_of_date: string | null;
+  medication_month: string | null;
+  daily_available: boolean;
+  latest_administration_date: string | null;
+  source_coverage: string;
+  windows: Record<string, (MedroomCounts & { from: string; through: string; completion_pct: number | null }) | null>;
+  current_month: MedroomCounts | null;
+  monthly_reconciliation: { matches: boolean; monthly_scheduled: number; daily_scheduled: number; monthly_given: number; daily_given: number } | null;
+  community_month: Array<Partial<MedroomCounts> & { facility_id: string; name: string; completion_pct: number | null }>;
+  prn_followup: { administrations: number; documented: number } | null;
+  possible_duplicate_orders: number | null;
+  watch: Array<{ code: string; count: number; label: string }>;
+  definitions: Record<string, string>;
+}
+
+export function fetchMedroomDashboard(signal?: AbortSignal) {
+  return fetchJson<MedroomDashboardResponse>("/api/platform/medroom", signal, (value) => {
+    if (!value || typeof value !== "object" || !("daily_available" in value) || !("windows" in value) || !("watch" in value)) {
+      throw new Error("Med-room dashboard response is invalid.");
+    }
+    return value as MedroomDashboardResponse;
+  });
+}
+
 export function readCachedAnalyticsSummary() {
   return readCachedJson(
     "/api/analytics-summary",

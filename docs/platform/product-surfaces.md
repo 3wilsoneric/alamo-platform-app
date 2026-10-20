@@ -33,9 +33,10 @@ browser status area.
 Analytics keeps Reports and Ask a question in a separate row below the header.
 AlamoAgent is an Eric Wilson-only preview: only his verified tenant-local object
 ID receives its navigation, embedded launcher, workspace, API access, and worker
-assignments. Betty Dominici and Raj Thandi instead see Licensing in that row,
-opening the existing report library at `/analytics/licensing` without the agent
-identity or launcher. They retain their previous Licensing API access. No other
+assignments. Licensing is a separate Analytics destination for Eric Wilson,
+Betty Dominici, and Raj Thandi, opening the state-report checker and library at
+`/analytics/licensing`. Betty and Raj do not receive the agent identity or
+launcher. They retain their previous Licensing API access. No other
 account, including a platform administrator, receives Licensing access.
 Andrew Dominici has a saved, inactive personal brand profile: Wilson with the
 user-supplied red face mark. It matches his exact tenant/object ID and affects
@@ -594,12 +595,26 @@ uses a durable heartbeat after cutover. This candidate is locally verified,
 not part of the current production release; conversation remains separate.
 
 Licensing remains a read-only library of the four-community CCLD baseline for
-Betty Dominici, Raj Thandi, and Eric. For Eric, `?skill=licensing` opens its rich
-module and the legacy `/licensing` and `/analytics/licensing` routes preserve
-query parameters while redirecting to that skill. Raj and Betty retain the
-standalone Licensing library at `/analytics/licensing`, without agent navigation,
-launcher, API access, or worker assignments. Other accounts return to Analytics
-before Licensing or agent data mounts.
+Betty Dominici, Raj Thandi, and Eric. The standalone state-site checker and
+report library open at `/analytics/licensing` for all three; the legacy
+`/licensing` route preserves query parameters while redirecting there. Eric can
+also open the Licensing skill through AlamoAgent, but the Analytics Licensing
+tab no longer redirects into that skill. Raj and Betty do not receive agent
+navigation, launcher, API access, or worker assignments. Other accounts return
+to Analytics before Licensing or agent data mounts.
+
+The med-room dashboard at `/analytics/medroom` is a separate owner-only Platform
+view (Eric's verified Entra tenant and object ID). It is not part of Raj's or
+Betty's Licensing access. Its six sections are executive snapshot, transparent
+review signals, medication compliance, community performance, trends, and a
+link to governed questions. Monthly MAR and incident summaries remain visible
+when the newer daily aggregate is absent; 7/30/60/90-day calculations and
+recorded outcome categories then show unavailable, never zero. The protected
+`/api/platform/medroom` response contains only aggregates and coverage metadata;
+resident, order, medication, and narrative rows remain server-side. Survey
+readiness and overall compliance are not scored, predictions are not produced,
+and inventory awaits an actual on-hand source. The current view is local until
+the notebook, snapshot, and Platform release are published and verified.
 
 The Licensing skill opens with compact collection status and the latest report
 module. It shows the real last-check status, archived report count, community

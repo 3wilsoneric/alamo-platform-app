@@ -244,8 +244,7 @@ await withBrowserQa(async (browser) => {
       if (CAPTURE_VISUALS && viewport.name === "standard-phone" && !loadFailure) {
         await page.screenshot({ path: path.join(OUTPUT_DIR, "screenshots", `${route.name}-390.png`), fullPage: false });
       }
-      // The owner opens Licensing as an Agent skill; the legacy deep link redirects there.
-      const expectedPathname = route.name === "licensing" ? "/analytics/agent" : route.pathname;
+      const expectedPathname = route.pathname;
       if (layout.pathname !== expectedPathname) routeFailures.push(`Expected ${expectedPathname}, rendered ${layout.pathname}`);
       if (layout.rootOverflow > 2 || layout.bodyOverflow > 2) routeFailures.push(`Document overflowed by ${layout.rootOverflow}px root / ${layout.bodyOverflow}px body`);
       if (layout.clippedControls.length) routeFailures.push(`Clipped controls: ${JSON.stringify(layout.clippedControls)}`);

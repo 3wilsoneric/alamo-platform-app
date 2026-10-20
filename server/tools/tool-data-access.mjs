@@ -251,7 +251,8 @@ export function createToolDataAccess({ normalizeText }) {
   }
 
   function getIncidentRows(communities, reportsSummary) {
-    const prepared = reportsSummary.toolContext?.incidentMonthlyByCommunityCategory;
+    const prepared = reportsSummary.toolContext?.incidentMonthlyByCommunityCategory ??
+      reportsSummary.toolContext?.tables?.incident_monthly_by_community_category;
     if (Array.isArray(prepared) && prepared.length) {
       return prepared.map((row) => ({
         facility_id: String(firstPresent(row, ["facility_id", "Facility", "facility", "facilityId"]) ?? ""),

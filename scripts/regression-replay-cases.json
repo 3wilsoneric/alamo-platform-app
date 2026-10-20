@@ -156,7 +156,7 @@
       "source": "historical failure: November request silently answered June",
       "turns": [
         {
-          "prompt": "give me the top category of each community in incidents November of last year",
+          "prompt": "give me the top category of each community in incidents November 2020",
           "expect": {
             "truthState": "not_loaded",
             "includes": ["not available"],

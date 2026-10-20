@@ -99,6 +99,8 @@ const approvedDeploymentOverlayFiles = new Set([
   "deploy/Dockerfile.incident-taxonomy-release",
   "deploy/Dockerfile.lic624-native-release",
   "deploy/Dockerfile.lic624-ocr-release",
+  "deploy/Dockerfile.medroom-analytics-release",
+  "deploy/patch-medroom-platform-api.mjs",
   "deploy/patch-chat-entry.mjs",
   "deploy/inject-iphone-head.mjs",
   "deploy/iphone-polish.css",

@@ -900,6 +900,15 @@ def build_tool_context_summary():
         """
     )
 
+    mar_daily_rows = required_rows(
+        """
+        SELECT *
+        FROM alamohealth.gold.v_tool_mar_daily_by_community_90d
+        ORDER BY administration_date DESC, facility_id
+        """,
+        "v_tool_mar_daily_by_community_90d",
+    )
+
     mar_prn_effectiveness_rows = optional_rows(
         """
         SELECT *
@@ -1302,6 +1311,25 @@ def build_tool_context_summary():
         for row in mar_monthly_rows
     ]
 
+    mar_daily_by_community_90d = [
+        {
+            "facility_id": normalize_str(row["facility_id"]),
+            "facility_name": normalize_str(row["facility_name"]),
+            "administration_date": iso_value(row["administration_date"]),
+            "scheduled_count": normalize_int(row["scheduled_count"]),
+            "given_count": normalize_int(row["given_count"]),
+            "not_given_count": normalize_int(row["not_given_count"]),
+            "pending_count": normalize_int(row["pending_count"]),
+            "missed_count": normalize_int(row["missed_count"]),
+            "late_given_count": normalize_int(row["late_given_count"]),
+            "refused_count": normalize_int(row["refused_count"]),
+            "held_count": normalize_int(row["held_count"]),
+            "other_not_given_count": normalize_int(row["other_not_given_count"]),
+            "prn_given_count": normalize_int(row["prn_given_count"]),
+        }
+        for row in mar_daily_rows
+    ]
+
     mar_resident_summary = [
         {
             "resident_id": normalize_str(row["resident_id"]),
@@ -1478,6 +1506,7 @@ def build_tool_context_summary():
             "medication_refusal_summary": medication_refusal_summary,
             "medication_compliance_monthly": medication_compliance_monthly,
             "mar_monthly_by_community_medication": mar_monthly_by_community_medication,
+            "mar_daily_by_community_90d": mar_daily_by_community_90d,
             "mar_resident_summary": mar_resident_summary,
             "mar_exception_detail_90d": mar_exception_details,
             "mar_prn_effectiveness_90d": mar_prn_effectiveness,
@@ -1910,6 +1939,7 @@ def build_payload_size_report(payload):
 def build_payload(client_database_pointer):
     generated_at = datetime.now(timezone.utc).isoformat()
     communities = build_communities_dashboard()
+    clinical_identity = build_clinical_identity(communities["residents"])
     reports_summary = build_reports_summary()
     incidents = build_incident_center_summary(generated_at)
     health = build_platform_health(
@@ -1931,10 +1961,46 @@ def build_payload(client_database_pointer):
         "incidents": incidents,
         "homeDashboard": home_dashboard,
         "communities": communities,
+        "clinicalIdentity": clinical_identity,
         "reportsSummary": reports_summary,
         "communitySnapshots": community_snapshots,
         "clientDatabase": client_database_pointer,
     }
+
+
+def build_clinical_identity(current_residents):
+    resident_rows = required_rows(
+        """
+        SELECT p.Res_Number, p.Facility, r.BirthDate
+        FROM alamohealth.gold.v_tool_resident_profile p
+        LEFT JOIN alamohealth.gold.v_active_residents r
+          ON p.Res_Number = r.Res_Number AND p.Facility = r.Facility
+        """,
+        "current governed clinical identity",
+    )
+    birth_dates = {}
+    for row in resident_rows:
+        key = f"{normalize_str(row['Facility'])}:{normalize_str(row['Res_Number'])}"
+        if key in birth_dates:
+            raise RuntimeError("The governed resident profile has a duplicate clinical identity key.")
+        raw_date = normalize_str(row["BirthDate"])
+        if not raw_date or raw_date.lower() in {"0!0!0", "none", "nan", "null", "n/a", "na"}:
+            birth_dates[key] = None
+        elif "!" in raw_date:
+            try:
+                day, month, year = (int(part) for part in raw_date.split("!"))
+                birth_dates[key] = date(year, month, day).isoformat()
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError("A governed resident birth date is invalid.") from exc
+        else:
+            try:
+                birth_dates[key] = date.fromisoformat(raw_date[:10]).isoformat()
+            except ValueError as exc:
+                raise RuntimeError("A governed resident birth date is invalid.") from exc
+    current_keys = {f"{row['facility_id']}:{row['res_number']}" for row in current_residents}
+    if set(birth_dates) != current_keys or len(current_keys) != len(current_residents):
+        raise RuntimeError("The governed birth dates do not match the current resident roster.")
+    return {"resident_birth_dates": birth_dates}
 
 
 def build_blob_service_client(storage_account, tenant_id, client_id, client_secret):
@@ -2042,6 +2108,25 @@ def validate_snapshot_payload(payload, expected_as_of_date=None):
         if normalize_str(row.get("slice_name"))
     }
     expected_month = expected_as_of_date[:7] if expected_as_of_date else None
+    resident_birth_dates = payload.get("clinicalIdentity", {}).get("resident_birth_dates")
+    if not isinstance(resident_birth_dates, dict):
+        raise RuntimeError("The protected clinical identity projection is missing.")
+    roster = payload.get("communities", {}).get("residents", [])
+    roster_keys = {f"{row['facility_id']}:{row['res_number']}" for row in roster}
+    if set(resident_birth_dates) != roster_keys or len(roster_keys) != len(roster):
+        raise RuntimeError("The protected birth dates do not match the current governed roster.")
+    for row in roster:
+        value = resident_birth_dates[f"{row['facility_id']}:{row['res_number']}"]
+        if not value:
+            if row.get("age"):
+                raise RuntimeError("A current resident has an age but no governed birth date.")
+            continue
+        try:
+            birth_date = date.fromisoformat(value)
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError("A governed birth date is invalid.") from exc
+        if expected_as_of_date and birth_date > date.fromisoformat(expected_as_of_date):
+            raise RuntimeError("A governed birth date is after the snapshot date.")
 
     def min_value(records, field):
         values = [normalize_str(row.get(field)) for row in records if normalize_str(row.get(field))]
@@ -2066,6 +2151,7 @@ def validate_snapshot_payload(payload, expected_as_of_date=None):
         or tables.get("mar_exception_detail_90d")
         or []
     )
+    mar_daily = tables.get("mar_daily_by_community_90d") or []
     mar_prn_effectiveness = tables.get("mar_prn_effectiveness_90d") or []
     mar_medication_orders = tables.get("mar_medication_orders_current") or []
     incident_monthly = (
@@ -2142,9 +2228,11 @@ def validate_snapshot_payload(payload, expected_as_of_date=None):
         "mar_monthly_rows": len(mar_monthly),
         "mar_resident_rows": len(mar_residents),
         "mar_exception_rows": len(mar_exceptions),
+        "mar_daily_rows": len(mar_daily),
         "mar_prn_effectiveness_rows": len(mar_prn_effectiveness),
         "mar_medication_order_rows": len(mar_medication_orders),
         "manifest_mar_exception_rows": manifest_counts.get("mar_exception_detail_90d"),
+        "manifest_mar_daily_rows": manifest_counts.get("mar_daily_by_community_90d"),
         "manifest_mar_prn_effectiveness_rows": manifest_counts.get("mar_prn_effectiveness_90d"),
         "manifest_mar_medication_order_rows": manifest_counts.get("mar_medication_orders_current"),
         "incident_monthly_rows": len(incident_monthly),
@@ -2192,7 +2280,10 @@ def validate_snapshot_payload(payload, expected_as_of_date=None):
         failures.append("MAR resident summary rows are missing from payload")
     if audit["mar_medication_order_rows"] <= 0:
         failures.append("Current MAR medication order rows are missing from payload")
+    if audit["mar_daily_rows"] <= 0:
+        failures.append("Daily MAR community rows are missing from payload")
     for audit_key, manifest_key, label in [
+        ("mar_daily_rows", "manifest_mar_daily_rows", "daily MAR community aggregate"),
         ("mar_exception_rows", "manifest_mar_exception_rows", "MAR exception detail"),
         ("mar_prn_effectiveness_rows", "manifest_mar_prn_effectiveness_rows", "MAR PRN effectiveness detail"),
         ("mar_medication_order_rows", "manifest_mar_medication_order_rows", "current MAR medication orders"),

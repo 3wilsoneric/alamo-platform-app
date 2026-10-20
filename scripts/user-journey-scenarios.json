@@ -286,7 +286,7 @@
       "description": "Unsupported historical asks should fail closed, name the available range, and offer the closest valid rerun.",
       "turns": [
         {
-          "prompt": "give me the top category of each community in incidents November of last year",
+          "prompt": "give me the top category of each community in incidents November 2020",
           "expect": {
             "tools": ["top_incident_category_by_community", "data_availability"],
             "truthStates": ["not_loaded", "stale"],
@@ -869,7 +869,7 @@
       "description": "Unsupported historical data should fail closed, then a valid period rerun should answer without carrying the invalid month forward.",
       "turns": [
         {
-          "prompt": "give me the top category of each community in incidents November of last year",
+          "prompt": "give me the top category of each community in incidents November 2020",
           "expect": {
             "tools": ["top_incident_category_by_community", "data_availability"],
             "truthStates": ["not_loaded", "stale"],
@@ -889,7 +889,7 @@
             "tools": ["top_incident_category_by_community"],
             "period": "2026-05",
             "textIncludes": ["May 2026", "communities"],
-            "textExcludes": ["November 2025", "not available", "Victoria's Place"],
+            "textExcludes": ["November 2020", "not available", "Victoria's Place"],
             "visual": {
               "minRows": 5
             },

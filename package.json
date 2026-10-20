@@ -160,6 +160,8 @@
     "licensing:check-updates": "node scripts/check-licensing-updates.mjs",
     "check:licensing": "node scripts/check-licensing.mjs",
     "check:licensing-mobile": "node scripts/check-browser-licensing-mobile.mjs",
+    "check:browser-medroom-dashboard": "node scripts/check-browser-medroom-dashboard.mjs",
+    "check:medroom-dashboard": "node scripts/check-medroom-dashboard.mjs",
     "licensing:publish": "node scripts/publish-licensing.mjs",
     "licensing:prepare-release": "node scripts/prepare-licensing-release.mjs",
     "executive-director:prepare-release": "node scripts/prepare-executive-director-release.mjs",

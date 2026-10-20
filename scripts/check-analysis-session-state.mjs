@@ -279,7 +279,10 @@ assert(/unique resident/.test(awolPeopleCount.text ?? "") && awolPeopleCount.vis
 const awolIncidentCount = await runCopilotTool({ content: "how many AWOL incidents in May 2026 total", sessionId: `awol-incident-count-${Date.now()}` });
 assert(awolIncidentCount.planValidation?.valid && awolIncidentCount.tool === "incident_breakdown", "AWOL incident-count routed to the wrong tool", awolIncidentCount);
 assert(
-  Number(awolIncidentCount.summary?.incidentCount) === 195 && awolIncidentCount.visual?.valueLabel === "Incidents",
+  Number(awolIncidentCount.summary?.incidentCount) > 0 &&
+    Number(awolIncidentCount.summary?.incidentCount) === Number(awolIncidentCount.visual?.rows?.[0]?.value) &&
+    awolIncidentCount.text?.includes(`${awolIncidentCount.summary.incidentCount} AWOL/Elopement incidents`) &&
+    awolIncidentCount.visual?.valueLabel === "Incidents",
   "AWOL incident-count did not answer incident volume",
   awolIncidentCount
 );

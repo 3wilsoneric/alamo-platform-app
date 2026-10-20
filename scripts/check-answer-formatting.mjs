@@ -53,7 +53,8 @@ const cases = [
     prompt: "how many AWOL incidents in May 2026 total",
     tool: "incident_breakdown",
     visualValueLabel: "Incidents",
-    mustInclude: ["Answer\n", "The portfolio recorded 195 AWOL/Elopement incidents in May 2026."],
+    mustInclude: ["Answer\n", "AWOL/Elopement incidents in May 2026."],
+    matchesVisualIncidentTotal: true,
     mustExclude: ["unique residents"]
   },
   {
@@ -489,6 +490,11 @@ for (const testCase of cases) {
 
   if (testCase.visualValueLabel && result.visual?.valueLabel !== testCase.visualValueLabel) {
     failures.push(`${testCase.prompt}: expected visual value label ${testCase.visualValueLabel}, received ${result.visual?.valueLabel ?? "none"}`);
+  }
+  if (testCase.matchesVisualIncidentTotal && (!Number.isSafeInteger(result.visual?.rows?.[0]?.value) ||
+      text !== `The portfolio recorded ${result.visual.rows[0].value} AWOL/Elopement incidents in May 2026.` ||
+      result.trace?.rowCount !== result.visual.rows[0].value)) {
+    failures.push(`${testCase.prompt}: incident narrative, visual, and trace counts do not reconcile`);
   }
 
   if (testCase.artifact && !result.artifact?.content) {

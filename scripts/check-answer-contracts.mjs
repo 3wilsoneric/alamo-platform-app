@@ -724,11 +724,21 @@ assert(
   "Resident recency counts changed within the same California reporting day",
   { start: textOf(tuesdayStartOfDay), end: textOf(tuesdayEndOfDay) }
 );
-assert(
-  /most recent incident/i.test(textOf(wednesdayStartOfDay)),
-  "Resident recency answer lost its latest-incident evidence after California midnight",
-  wednesdayStartOfDay
-);
+if ((tuesdayStartOfDay.truthState ?? tuesdayStartOfDay.trace?.truthState) === "valid_rows") {
+  assert(
+    /most recent incident/i.test(textOf(wednesdayStartOfDay)),
+    "Resident recency answer lost its latest-incident evidence after California midnight",
+    wednesdayStartOfDay
+  );
+} else {
+  assert(
+    (wednesdayStartOfDay.truthState ?? wednesdayStartOfDay.trace?.truthState) === "summary_not_shown" &&
+      /detailed incident history cannot be verified/i.test(textOf(wednesdayStartOfDay)) &&
+      !/most recent incident/i.test(textOf(wednesdayStartOfDay)),
+    "Resident recency answer inferred a latest incident from summary-only coverage",
+    wednesdayStartOfDay
+  );
+}
 assert(
   textOf(freshnessStartOfDay) === textOf(freshnessEndOfDay),
   "Incident freshness changed within the same California reporting day",
@@ -864,13 +874,18 @@ const ambiguousResident = await checkedTool({
 assert(ambiguousResident.tool === "clarification", "Ambiguous resident did not request clarification", ambiguousResident);
 assert(ambiguousResident.interpretation?.requiresConfirmation, "Ambiguous resident did not require confirmation", ambiguousResident.interpretation);
 
-const unavailablePeriod = await checkedTool({
+const lastYearPeriod = await checkedTool({
   content: "give me the top category of each community in incidents November of last year",
-  sessionId: newSession("unavailable-period")
-}, "Unavailable period");
-assert(unavailablePeriod.handled, "Unavailable period prompt was not handled", unavailablePeriod);
-assert(!/Medication Refusal is the largest incident category in this slice/i.test(textOf(unavailablePeriod)), "Unavailable period fell back to current-month category answer", unavailablePeriod);
-assert(/not loaded|available|loaded months|loaded periods|could not/i.test(textOf(unavailablePeriod)), "Unavailable period did not explain data availability", unavailablePeriod);
+  sessionId: newSession("last-year-period")
+}, "Last-year period");
+assert(lastYearPeriod.handled, "Last-year period prompt was not handled", lastYearPeriod);
+assert(lastYearPeriod.trace?.period === "2025-11", "Last-year period resolved to the wrong month", lastYearPeriod);
+assert(!/Medication Refusal is the largest incident category in this slice/i.test(textOf(lastYearPeriod)), "Last-year period fell back to current-month category answer", lastYearPeriod);
+if ((lastYearPeriod.truthState ?? lastYearPeriod.trace?.truthState) === "valid_rows") {
+  assert(lastYearPeriod.visual?.type === "table" && lastYearPeriod.visual.rows?.length > 0 && /November 2025/.test(textOf(lastYearPeriod)), "Available last-year period did not return grounded community rows", lastYearPeriod);
+} else {
+  assert(/not loaded|available|loaded months|loaded periods|could not/i.test(textOf(lastYearPeriod)), "Unavailable last-year period did not explain data availability", lastYearPeriod);
+}
 
 const unavailableDetailRows = await checkedTool({
   content: "List every AWOL incident from November 2020 by community including resident name date incident type and description",

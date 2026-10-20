@@ -155,7 +155,7 @@ const fixedRegressionCases = [
   },
   {
     family: "unsupported-period",
-    prompt: "give me the top category of each community in incidents November of last year",
+    prompt: "give me the top category of each community in incidents November 2020",
     expect: {
       tools: ["top_incident_category_by_community", "data_availability"],
       truthStates: ["not_loaded", "stale"],
@@ -558,7 +558,7 @@ function makeTrustCase() {
     },
     {
       family: "unsupported-period",
-      prompt: "top category each community November 2025",
+      prompt: "top category each community November 2020",
       expect: {
         tools: ["top_incident_category_by_community", "data_availability"],
         truthStates: ["not_loaded", "stale"],

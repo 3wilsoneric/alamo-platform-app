@@ -245,7 +245,7 @@ const questionMarathonCases = [
     }
   },
   {
-    prompt: "give me the top category of each community in incidents November of last year",
+    prompt: "give me the top category of each community in incidents November 2020",
     expect: {
       tools: ["top_incident_category_by_community", "data_availability"],
       truthStates: ["not_loaded", "stale"],

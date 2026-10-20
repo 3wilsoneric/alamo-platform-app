@@ -6,6 +6,8 @@ import { handlePlatformAgentSourceRequest } from "./platform-agent-source-api.mj
 import { AGENT_SOURCE_PATH } from "../shared/everyagent-source-contracts.mjs";
 import { getPlatformIncidentHistory } from "./platform-incident-history.mjs";
 import { assertLicensingAccess } from "./licensing-access.mjs";
+import { getMedroomDashboard } from "./medroom-dashboard.mjs";
+import { assertMedroomAccess } from "./medroom-access.mjs";
 import http from "node:http";
 import {
   getCommunitySnapshotData,
@@ -408,6 +410,11 @@ const server = http.createServer(async (req, res) => {
     if (requestUrl.pathname === "/api/platform/licensing/updates") {
       assertLicensingAccess(authContext);
       sendJson(res, 200, await getLicensingUpdates());
+      return;
+    }
+    if (requestUrl.pathname === "/api/platform/medroom") {
+      assertMedroomAccess(authContext);
+      sendJson(res, 200, await getMedroomDashboard());
       return;
     }
     if (requestUrl.pathname === "/api/platform/presentation/access") {

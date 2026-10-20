@@ -260,12 +260,7 @@ export function createAnswerFormattingTools({
       const rowCount = result.artifact?.rowCount ?? result.visual?.originalRowCount ?? result.trace?.rowCount ?? result.visual?.rows?.length ?? 0;
       const category = String(result.trace?.note ?? "").match(/category=([^;]+)/i)?.[1]?.trim();
       const scope = result.trace?.communityName ?? "Portfolio";
-      const period = String(result.trace?.period ?? "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .map(formatMonthLabel)
-        .join(" and ");
+      const period = formatTracePeriodRange(result.trace?.period);
       const categoryText = category ? ` for the ${category} category` : "";
       const periodText = period ? ` in ${period}` : "";
       const summary = result.summary ?? {};

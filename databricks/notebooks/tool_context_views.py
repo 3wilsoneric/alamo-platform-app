@@ -1507,6 +1507,36 @@ create_view(
 
 # COMMAND ----------
 
+# Portfolio-safe daily grain. This is the denominator for exact rolling windows;
+# resident and medication identifiers never leave the protected source views.
+create_view(
+    "v_tool_mar_daily_by_community_90d",
+    f"""
+    SELECT
+      facility_id,
+      max(facility_name) AS facility_name,
+      administration_date,
+      sum(CASE WHEN is_prn = 0 THEN 1 ELSE 0 END) AS scheduled_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS given_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'not_given' THEN 1 ELSE 0 END) AS not_given_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'unknown' THEN 1 ELSE 0 END) AS pending_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'not_given'
+        AND (lower(coalesce(not_given_reason, '')) RLIKE '(^|[^a-z])miss(ed)?([^a-z]|$)'
+          OR lower(coalesce(missed_or_held_reason, '')) RLIKE '(^|[^a-z])miss(ed)?([^a-z]|$)')
+        THEN 1 ELSE 0 END) AS missed_count,
+      sum(CASE WHEN is_prn = 0 AND is_over_60_minutes_late = 1 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS late_given_count,
+      sum(CASE WHEN is_prn = 0 AND outcome_category = 'refused' THEN 1 ELSE 0 END) AS refused_count,
+      sum(CASE WHEN is_prn = 0 AND outcome_category = 'held' THEN 1 ELSE 0 END) AS held_count,
+      sum(CASE WHEN is_prn = 0 AND outcome_category = 'other_not_given' THEN 1 ELSE 0 END) AS other_not_given_count,
+      sum(CASE WHEN is_prn = 1 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS prn_given_count
+    FROM {target}.v_mar_administration_detail
+    WHERE administration_date BETWEEN date_sub({WINDOW_AS_OF_SQL}, 89) AND {WINDOW_AS_OF_SQL}
+    GROUP BY facility_id, administration_date
+    """
+)
+
+# COMMAND ----------
+
 create_view(
     "v_tool_mar_prn_effectiveness_90d",
     f"""
@@ -1950,6 +1980,19 @@ create_view(
       'facility_id,facility_name,month_bucket,medication_name,administration_count,scheduled_count,given_count,not_given_count,refusal_count,prn_given_count,awol_count,hospital_count,unknown_count,resident_count,compliance_pct' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_mar_monthly_by_community_medication
+
+    UNION ALL
+
+    SELECT
+      'mar_daily_by_community_90d' AS slice_name,
+      'community_day' AS grain,
+      count(*) AS row_count,
+      cast(min(administration_date) AS string) AS min_period,
+      cast(max(administration_date) AS string) AS max_period,
+      concat_ws(',', sort_array(collect_set(facility_id))) AS facility_ids,
+      'facility_id,facility_name,administration_date,scheduled_count,given_count,not_given_count,pending_count,missed_count,late_given_count,refused_count,held_count,other_not_given_count,prn_given_count' AS fields,
+      current_timestamp() AS generated_at
+    FROM {target}.v_tool_mar_daily_by_community_90d
 
     UNION ALL
 

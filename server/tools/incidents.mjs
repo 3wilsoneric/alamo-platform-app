@@ -536,24 +536,27 @@ export function createIncidentDetailTools(dependencies) {
     const label = facility?.community_name ?? "Portfolio";
     const portfolioDetailRows = getIncidentDetailRows(communities, reportsSummary);
     const portfolioAggregateRows = getIncidentRows(communities, reportsSummary);
+    const categoryFilter = getIncidentCategoryFilter(content, [...portfolioDetailRows, ...portfolioAggregateRows]);
     const sourceDetailRows = filterByFacility(portfolioDetailRows, facility);
     const sourceAggregateRows = filterByFacility(portfolioAggregateRows, facility);
-    const categoryFilter = getIncidentCategoryFilter(content, [...portfolioDetailRows, ...portfolioAggregateRows]);
     const detailRows = filterIncidentsByCategory(sourceDetailRows, categoryFilter);
     const aggregateRows = filterIncidentsByCategory(sourceAggregateRows, categoryFilter);
+    // A category with zero events still has a covered month. Resolve relative
+    // ranges against source coverage, not only months containing that category.
     const allMonths = [...new Set([
-      ...aggregateRows.map((row) => row.month_bucket).filter(Boolean),
-      ...detailRows.map((row) => row.month_bucket).filter(Boolean)
+      ...sourceAggregateRows.map((row) => row.month_bucket).filter(Boolean),
+      ...sourceDetailRows.map((row) => row.month_bucket).filter(Boolean)
     ])].sort();
     const requestedMonths = getRequestedMonthBuckets(content, allMonths);
     const detailMonths = [...new Set(detailRows.map((row) => row.month_bucket).filter(Boolean))].sort();
+    const baseDetailMonths = [...new Set(sourceDetailRows.map((row) => row.month_bucket).filter(Boolean))].sort();
     const allLoadedDetailIntent = /\b(ever|all[-\s]?time|all loaded|loaded history|full history|entire history|all incident history|all incidents|every incident)\b/i.test(String(content ?? ""));
     const activeMonths = requestedMonths.length
       ? requestedMonths
       : allLoadedDetailIntent
         ? detailMonths
         : [detailMonths.at(-1) ?? latestMonth(aggregateRows)].filter(Boolean);
-    const missingRequestedMonths = requestedMonths.filter((month) => !detailMonths.includes(month));
+    const missingRequestedMonths = requestedMonths.filter((month) => !baseDetailMonths.includes(month));
     const details = detailRows
       .filter((incident) => !activeMonths.length || activeMonths.includes(incident.month_bucket))
       .sort((left, right) => String(right.incident_date ?? right.received_at ?? "").localeCompare(String(left.incident_date ?? left.received_at ?? "")));
@@ -565,7 +568,6 @@ export function createIncidentDetailTools(dependencies) {
       : 0;
     const categoryLabel = formatIncidentCategoryFilterLabel(categoryFilter);
     const titleSubject = categoryLabel ? `${categoryLabel} incidents` : "incidents";
-    const baseDetailMonths = [...new Set(sourceDetailRows.map((row) => row.month_bucket).filter(Boolean))].sort();
     const zeroDetailMonth = categoryLabel && activeMonths.length === 1 && baseDetailMonths.includes(activeMonths[0]) && !detailMonths.includes(activeMonths[0])
       ? activeMonths[0]
       : null;
@@ -670,7 +672,9 @@ export function createIncidentDetailTools(dependencies) {
       .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
       .slice(0, 3)
       .map(([name, count]) => ({ name, count }));
-    const periodLabel = activeMonths.map(formatMonthLabel).join(" and ") || "latest available period";
+    const periodLabel = activeMonths.length > 2
+      ? `${formatMonthLabel(activeMonths[0])} through ${formatMonthLabel(activeMonths.at(-1))}`
+      : activeMonths.map(formatMonthLabel).join(" and ") || "latest available period";
     const tableRows = details.map((incident) => {
       const description = incident.email_body || incident.description || incident.summary || incident.notes || incident.assistance_given || "—";
       return {
