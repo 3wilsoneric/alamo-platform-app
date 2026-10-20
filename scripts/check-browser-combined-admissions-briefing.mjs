@@ -57,6 +57,8 @@ await withBrowserQa(async (browser) => {
     assert.equal(colors.paper, "rgb(252, 251, 247)", `${width}px report should use Platform paper`);
     assert.equal(colors.censusTotal, "rgb(22, 77, 124)", `${width}px census total should use Platform blue`);
     assert.equal(colors.censusBar, "rgb(27, 90, 139)", `${width}px census bars should use Platform blue`);
+    assert.equal(await combined.locator(":scope > header").count(), 0, "briefing should start with census, not a title banner");
+    assert.doesNotMatch(await combined.innerText(), /Platform admissions · Weekly briefing|Admissions & census|Current residents and admission activity/);
     assert.match(await combined.innerText(), /Census by community/);
     assert.match(await combined.innerText(), /Alex Example[\s\S]*Morgan Example/);
     assert.match(await combined.innerText(), /Origin: County referral · County: Contra Costa · Prior placement: Acute hospital · Assessor: Alex Assessor/);

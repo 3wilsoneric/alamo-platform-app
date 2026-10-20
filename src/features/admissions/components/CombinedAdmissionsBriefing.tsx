@@ -30,13 +30,7 @@ export default function CombinedAdmissionsBriefing({
   const hasLastWeek = pipeline.lastWeekStart && pipeline.lastWeekEnd;
   const coverage = pipeline.coverage;
 
-  return <article data-admissions-combined-briefing="true" aria-labelledby="combined-admissions-title" className="mx-auto border border-[#c4d2dc] border-t-[5px] border-t-[#164d7c] bg-[#fcfbf7] text-[#16283a]">
-    <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[#c9d5de] px-5 py-7 sm:px-9">
-      <div><p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1c5a83]">Platform admissions · Weekly briefing</p>
-        <h2 id="combined-admissions-title" className="mt-1 text-[32px] font-bold tracking-[-0.05em] sm:text-[44px]">Admissions &amp; census</h2>
-        <p className="mt-1 text-[14px] text-[#617067]">Week of {dateLabel(pipeline.weekStart)} · Current residents and admission activity.</p></div>
-    </header>
-
+  return <article data-admissions-combined-briefing="true" aria-label="Admissions and census weekly briefing" className="mx-auto border border-[#c4d2dc] border-t-[5px] border-t-[#164d7c] bg-[#fcfbf7] text-[#16283a]">
     <section aria-labelledby="combined-census-title" data-admissions-census-section="true" className="border-b border-[#e2e6e1] px-5 py-7 sm:px-9">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1c5a83]">Current census · {dateLabel(census.asOfDate)}</p><h3 id="combined-census-title" className="mt-1 text-[27px] font-semibold tracking-[-0.04em]">Census by community</h3></div>
