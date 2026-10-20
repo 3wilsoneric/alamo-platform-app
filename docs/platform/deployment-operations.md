@@ -4309,7 +4309,7 @@ journey arrays; it printed only status and contract metadata. The full analyst
 suite reached the same unrelated live-data resident-ranking assertion recorded
 above; it was not changed for this release.
 
-### CareConnector live `/poc` mount — prepared 2026-10-19
+### CareConnector live `/poc` mount — published 2026-10-19
 
 The requested standalone `/poc` surface hosts the live CareConnector application
 inside its Surface/Desktop presenter. It has no Platform navigation. The inner
@@ -4333,11 +4333,13 @@ output. It copies only `dist/poc/**`, the new proxy module, and three additions 
 the current production server (import, factory, early route dispatch). All other
 Platform image layers and browser assets are retained unchanged.
 
-- candidate ACR run: `cc9a`
-- candidate image: `alamo-platform@sha256:8deeaaf8af3d9cb5bc8b9b888a739c2e06f406f378de4581c9e9729656943653`
+- ACR run: `cc9a`
+- published image: `alamo-platform@sha256:8deeaaf8af3d9cb5bc8b9b888a739c2e06f406f378de4581c9e9729656943653`
 - reviewed production base/rollback: `alamo-platform@sha256:6c19bb5a99fb57fade969ec986a2e2c9fe20861962aa3a93ceacdbdaa5db1faa`
-- deployment status: prepared; all CareConnector checks passed; production cutover
-  awaits the user's explicit exception to the Databricks-dependent full Platform gate
+- revision: `alamo-platform-prod-web--poc-1019-065ee9b`
+- deployment status: Healthy/Running, Provisioned, 100% traffic
+- authorization: user replied “publish” to the scoped exception request for the
+  Databricks-dependent full Platform gate; no source-system changes were made
 
 `npm run check:poc` checks route isolation, auth-header/cookie forwarding, CSRF
 rejection, uploads, SSE, cache policy, traversal rejection and the Microsoft
@@ -4358,9 +4360,21 @@ browser checks, lint/build and all ten native fleet scenarios passed. The first
 fleet attempt had long clock gaps and timing failures; an unchanged-code rerun
 with the machine kept awake passed completely. CareConnector retains both logs
 and `sim-runs/20261019-181116-suite.md`. The candidate's runtime source is in
-commit `065ee9b`, with additional built-MSAL verification in `04fae7c`. Before
-cutover, verify that the production image still matches the recorded base;
-rebuild the bounded overlay if another release has landed in the meantime.
+commit `065ee9b`, with additional built-MSAL verification in `04fae7c`. Immediately
+before the image-only cutover, a fresh check confirmed production still matched
+the reviewed base. The previous revision was
+`alamo-platform-prod-web--wfcap-1019-22069f8`.
+
+Postdeployment public checks passed for `/poc`, `/poc/`, `/poc/app/`, nested app
+routes and the Microsoft redirect bridge. Entry and JS/CSS bytes match the tested
+candidate; the existing Platform root bytes are unchanged. Health, canonical-host
+redirect, Microsoft configuration, anonymous API protection and origin/PIN guards
+passed. A fresh unauthenticated browser verified the live sign-in gate, absent
+Platform navigation and Surface/Desktop/rotation switching without reloading the
+iframe. No page crashes, CSP violations or resident API requests occurred. The
+CareConnector release artifacts retain the public verification log, deployment
+receipt and a sign-in-only screenshot. Real-record acceptance remains private to
+the authorized user.
 
 The CareConnector SPA registration now also permits exactly
 `https://www.alamoplatform.com/poc/app/redirect.html`; all prior redirect URIs
