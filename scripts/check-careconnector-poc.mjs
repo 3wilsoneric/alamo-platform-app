@@ -10,7 +10,7 @@ test("mounted live CareConnector preserves auth, streaming, and Platform boundar
   const distRoot = await mkdtemp(path.join(os.tmpdir(), "poc-check-"));
   await mkdir(path.join(distRoot, "poc/app/assets"), { recursive: true });
   await writeFile(path.join(distRoot, "poc/index.html"), "<title>Surface presenter</title>");
-  await writeFile(path.join(distRoot, "poc/app/index.html"), "<title>CareConnector</title>");
+  await writeFile(path.join(distRoot, "poc/app/index.html"), "<title>AlamoPOC</title>");
   await writeFile(path.join(distRoot, "poc/app/redirect.html"), "<title>Microsoft bridge</title>");
   await writeFile(path.join(distRoot, "poc/app/assets/app.js"), "// built application");
   const received = [];
@@ -47,7 +47,7 @@ test("mounted live CareConnector preserves auth, streaming, and Platform boundar
       assert.equal(response.headers.get("x-frame-options"), "SAMEORIGIN");
       assert.match(response.headers.get("cache-control"), /no-store/);
     }
-    assert.equal(await (await read("/poc/app/services")).text(), "<title>CareConnector</title>");
+    assert.equal(await (await read("/poc/app/services")).text(), "<title>AlamoPOC</title>");
     assert.equal(await (await read("/poc/app/redirect.html")).text(), "<title>Microsoft bridge</title>");
     assert.match((await read("/poc/app/assets/app.js")).headers.get("cache-control"), /immutable/);
     for (const route of ["/poc/missing", "/poc/app/assets/missing.js", "/poc/app/unknown.js", "/poc/app/device/status", "/poc/app/sw.js"]) assert.equal((await read(route)).status, 404);

@@ -21,8 +21,13 @@ const exec = promisify(execFile);
 await exec(process.execPath, ["--test", path.join(root, "scripts/check-careconnector-poc.mjs")]);
 const { stdout } = await exec("docker", ["create", "--platform", "linux/amd64", base]);
 const container = stdout.trim();
+let installedProxy = null;
 try {
   await exec("docker", ["cp", `${container}:/app/server/app-server.mjs`, path.join(overlay, "server/app-server.mjs")]);
+  if ((await readFile(path.join(overlay, "server/app-server.mjs"), "utf8")).includes("createPocHandler")) {
+    await exec("docker", ["cp", `${container}:/app/server/careconnector-poc.mjs`, path.join(overlay, "server/careconnector-poc.mjs")]);
+    installedProxy = await readFile(path.join(overlay, "server/careconnector-poc.mjs"), "utf8");
+  }
 } finally { await exec("docker", ["rm", container]); }
 const serverPath = path.join(overlay, "server/app-server.mjs");
 const original = await readFile(serverPath, "utf8");
@@ -30,11 +35,20 @@ const digest = createHash("sha256").update(original).digest("hex");
 if (digest !== process.env.POC_REVIEWED_SERVER_SHA256) throw new Error("Base server differs from the reviewed source; reconcile before releasing.");
 const rootMarker = 'const DIST_ROOT = path.resolve(__dirname, "../dist");';
 const handlerMarker = 'async function handleRequest(req, res) {';
-if (original.includes("createPocHandler") || original.split(rootMarker).length !== 2 || original.split(handlerMarker).length !== 2) throw new Error("Unexpected base server; inspect its route ownership before releasing.");
-await writeFile(serverPath, 'import { createPocHandler } from "./careconnector-poc.mjs";\n' + original
-  .replace(rootMarker, `${rootMarker}\nconst handlePoc = createPocHandler({ distRoot: DIST_ROOT });`)
-  .replace(handlerMarker, `${handlerMarker}\n  if (await handlePoc(req, res)) return;`));
-await cp(path.join(root, "server/careconnector-poc.mjs"), path.join(overlay, "server/careconnector-poc.mjs"));
+if (original.split(rootMarker).length !== 2 || original.split(handlerMarker).length !== 2) throw new Error("Unexpected base server; inspect its route ownership before releasing.");
+const proxySource = await readFile(path.join(root, "server/careconnector-poc.mjs"), "utf8");
+if (installedProxy !== null) {
+  // Branding/assets updates preserve the already-reviewed production proxy byte for byte.
+  for (const marker of ['import { createPocHandler } from "./careconnector-poc.mjs";', `${rootMarker}\nconst handlePoc = createPocHandler({ distRoot: DIST_ROOT });`, `${handlerMarker}\n  if (await handlePoc(req, res)) return;`]) {
+    if (original.split(marker).length !== 2) throw new Error("Existing POC mount differs from the reviewed route integration.");
+  }
+  if (installedProxy !== proxySource) throw new Error("Installed POC proxy differs from the reviewed source; reconcile before releasing.");
+} else {
+  await writeFile(serverPath, 'import { createPocHandler } from "./careconnector-poc.mjs";\n' + original
+    .replace(rootMarker, `${rootMarker}\nconst handlePoc = createPocHandler({ distRoot: DIST_ROOT });`)
+    .replace(handlerMarker, `${handlerMarker}\n  if (await handlePoc(req, res)) return;`));
+  await cp(path.join(root, "server/careconnector-poc.mjs"), path.join(overlay, "server/careconnector-poc.mjs"));
+}
 const pocRoot = path.join(overlay, "dist/poc");
 await cp(assets, path.join(pocRoot, "app"), { recursive: true });
 await writeFile(path.join(pocRoot, "index.html"), presenter);
@@ -59,5 +73,5 @@ async function compress(directory) {
 await compress(pocRoot);
 await writeFile(path.join(destination, "Dockerfile"), `FROM ${base}\nCOPY --chown=node:node overlay /app\n`);
 await writeFile(path.join(root, "generated/poc-release/context.txt"), destination);
-await writeFile(path.join(destination, "receipt.json"), JSON.stringify({ base, baseServerSha256: digest, changed: ["server/app-server.mjs (three additions)", "server/careconnector-poc.mjs", "dist/poc/**"] }, null, 2));
+await writeFile(path.join(destination, "receipt.json"), JSON.stringify({ base, baseServerSha256: digest, changed: installedProxy === null ? ["server/app-server.mjs (three additions)", "server/careconnector-poc.mjs", "dist/poc/**"] : ["dist/poc/**"], existingServerPreserved: installedProxy !== null }, null, 2));
 console.log(destination);

@@ -119,8 +119,8 @@ try {
   assert.equal(await app.locator("html").evaluate(() => navigator.serviceWorker.getRegistrations().then((registrations) => registrations.length)), 0);
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await app.getByRole("button", { name: "Lock CareConnector" }).click();
-  await app.getByRole("heading", { name: "Who’s using CareConnector?" }).waitFor();
+  await app.getByRole("button", { name: "Lock AlamoPOC" }).click();
+  await app.getByRole("heading", { name: "Who’s using AlamoPOC?" }).waitFor();
   assert.equal(await app.locator(".p-main").count(), 0);
   assert.deepEqual(errors, []);
   assert.deepEqual(violations, []);
