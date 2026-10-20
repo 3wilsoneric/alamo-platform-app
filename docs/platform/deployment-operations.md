@@ -4308,3 +4308,50 @@ the configured Pipeline endpoint returns 200 with contract 3.2 and both new
 journey arrays; it printed only status and contract metadata. The full analyst
 suite reached the same unrelated live-data resident-ranking assertion recorded
 above; it was not changed for this release.
+
+### CareConnector live `/poc` mount — prepared 2026-10-19
+
+The requested standalone `/poc` surface hosts the live CareConnector application
+inside its Surface/Desktop presenter. It has no Platform navigation. The inner
+app lives at `/poc/app/`; a fixed-upstream streaming proxy forwards its API and
+browser-auth requests to the existing CareConnector production service. This is
+not a synthetic public demo or a new resident database. Existing CareConnector
+roles, assignments, PIN sessions, record authorization and audit remain in force.
+
+`server/careconnector-poc.mjs` owns this boundary. It rejects foreign origins and
+ambiguous paths, forwards only CareConnector credentials, never forwards Platform
+cookies, and never buffers or logs clinical request/response bodies. API and auth
+responses are private/no-store. Static entry pages allow only same-origin framing.
+The mounted browser build does not register a service worker. The bare hostname
+redirects `/poc` requests to `www.alamoplatform.com` so PIN enrollment has one origin.
+
+Source branch: `codex/careconnector-poc-20261019`. The reproducible release command
+is `npm run poc:prepare-release`, with `POC_BASE_IMAGE` set to the freshly verified
+current production digest, `POC_REVIEWED_SERVER_SHA256` set to its reviewed server
+hash, and `POC_WEB_DIRECTORY` pointing at CareConnector's `vite.poc.config.ts`
+output. It copies only `dist/poc/**`, the new proxy module, and three additions to
+the current production server (import, factory, early route dispatch). All other
+Platform image layers and browser assets are retained unchanged.
+
+- candidate ACR run: `cc9a`
+- candidate image: `alamo-platform@sha256:8deeaaf8af3d9cb5bc8b9b888a739c2e06f406f378de4581c9e9729656943653`
+- reviewed production base/rollback: `alamo-platform@sha256:6c19bb5a99fb57fade969ec986a2e2c9fe20861962aa3a93ceacdbdaa5db1faa`
+- deployment status: prepared; production cutover has not occurred
+
+`npm run check:poc` checks route isolation, auth-header/cookie forwarding, CSRF
+rejection, uploads, SSE, cache policy, traversal rejection and the Microsoft
+bridge. `npm run check:browser-poc` runs the built UI and actual proxy against an
+invented upstream; it covers Supervisor/PIN, Roster/history routing, persistent
+Surface/Desktop/rotation state, mobile fit, lock and CSP. Both passed, as did
+types, source syntax, lint, unused-code, code-health, docs and production build.
+The actual candidate container passed public route checks and live-upstream
+unauthenticated checks (Microsoft config, unregistered browser, API/PIN 401).
+No production clinical responses were requested. The full predeploy gate stopped
+in the existing analyst-decision check because Databricks OAuth credentials were
+unavailable. No Databricks/Eldermark access or configuration was changed.
+
+The CareConnector SPA registration now also permits exactly
+`https://www.alamoplatform.com/poc/app/redirect.html`; all prior redirect URIs
+were preserved. The new origin needs one browser enrollment, then uses the
+existing account's four-digit PIN. No user/role assignments changed. Signed-in
+real-record acceptance belongs to the authorized user.
