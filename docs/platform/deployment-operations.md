@@ -4578,3 +4578,49 @@ restart. Preserve the exact owner grant. Before accepting structured writes,
 verify that the retained rollback version understands the new optional records;
 never roll back by deleting or flattening stored evidence. Keep original state
 revisions and the prior image. No staff or agent expansion is part of this slice.
+
+### Analytics Licensing and owner-only med-room release — 2026-10-20
+
+Release source: `e5ebd5b`, `aa2990e`, `43ce900`, `a01ae5c`, `90129a1`, and
+`3ac85d6`. The image overlay was based on the exact then-live
+`alamo-platform@sha256:d622054ab9f77b08c722e70eb8ba8e0413c6c6e306b29099f37865f4c5d311da`
+and preserved its point-of-care files and unchanged production API adapter. It
+adds the owner-only med-room API route, reviewed browser build and narrow
+analyst period fixes. No Entra assignment, email, or inventory connection was
+changed.
+
+Databricks full run `1097343955655963` succeeded, followed by corrected
+completed-day view, QA, audit and publish run `467409596120612`. Published
+snapshot `2026-10-20T19:57:45.791905+00:00` has 450 daily MAR rows for five
+communities, latest completed day 2026-10-19. October daily scheduled/given
+counts exactly reconcile to the monthly 90,816/84,277 counts. The app reads the
+published snapshot; its own service principal still lacks direct SELECT on the
+new Databricks view, which is not used by this dashboard route.
+
+Predeployment full-profile stages passed cumulatively. The first two browser
+runs exposed `networkidle` reload waits in the test harness; those now wait for
+rendered state, and their failed stages passed on replay. The browser mission
+assertion was updated to the approved given-only medication wording and passed.
+All remaining stages, including guided answers in four viewports, accessibility,
+mobile, regression, performance and production build, passed. Focused med-room
+aggregate/access/PHI checks and browser navigation also passed.
+
+Pushed `alamo-platform:medroom-analytics-3ac85d6-1020` at digest
+`sha256:8168b42300a3c28f0d5b97f4598de5e6c20ca205781d3152b871614a82dcc097`.
+Revision `alamo-platform-prod-web--medroom-analytics-1020` provisioned and took
+100% traffic. Public `/healthz`, `/analytics/licensing`, `/analytics/medroom`,
+and `/poc/app/` returned 200; anonymous `/api/platform/medroom` returned 401.
+Using Eric's existing Microsoft account in Chrome, the live Licensing monitor
+showed 96 archived state reports and its scheduled check, and the med-room page
+loaded the published 450-row completed-day coverage and 84,277/90,816 October
+medication figures. Local contract tests denied non-owner AlamoAgent and
+med-room access; Raj/Betty Licensing access passed locally. Non-owner live
+sign-in was not available for an end-to-end production role probe.
+
+The automated signed-in production script could not run because this checkout
+does not contain `.auth/alamo-production-storage-state.json`; it reported a
+skip. Direct signed-in Chrome verification above is separate evidence, not a
+claim that the full `check:ship` postdeployment command passed. If a later
+production check fails, restore the exact preceding image digest above, then
+re-run health and signed-in navigation checks. No data rollback is needed for
+the additive published daily MAR slice.
