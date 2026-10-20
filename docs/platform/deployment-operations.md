@@ -4381,3 +4381,36 @@ The CareConnector SPA registration now also permits exactly
 were preserved. The new origin needs one browser enrollment, then uses the
 existing account's four-digit PIN. No user/role assignments changed. Signed-in
 real-record acceptance belongs to the authorized user.
+
+### AlamoPOC product rename — 2026-10-19
+
+The existing `/poc` product is now **AlamoPOC**, including browser titles, Surface/
+Desktop presenter, in-app copy, name/PIN screens, accessible labels and install
+manifest. The URL and existing proxy/authentication boundary remain stable.
+
+- source/tooling commit: `a9a9c5e` on `codex/careconnector-poc-20261019`
+- ACR run: `cc9c`
+- image: `alamo-platform@sha256:f60f29ba5397063124efdbb5bd75821ac583e7f288b35a63e77a3335f458147c`
+- revision: `alamo-platform-prod-web--alamopoc-1019-a9a9c5e`, Healthy/Running, 100% traffic
+- rollback: `alamo-platform@sha256:8deeaaf8af3d9cb5bc8b9b888a739c2e06f406f378de4581c9e9729656943653`
+
+The release overlays the freshly verified current image. Its existing server and
+proxy bytes and all base layers are preserved. Only `/poc` assets change; Platform
+root bytes still match the previous release. Proxy contracts, built MSAL/PIN and
+presenter checks, actual-container checks, docs and public byte/auth guard checks
+passed. Fresh browsers verified the AlamoPOC sign-in gates, manifests and Surface/
+Desktop/rotation at the live addresses without authenticated record access.
+The user's scoped `/poc` release-gate exception continues to apply; the full
+Databricks-dependent Platform gate was not rerun for this branding update.
+
+The unchanged upstream address now runs the same renamed product at revision
+`careconnector-prod-web--alamopoc-1019`, image
+`careconnectorprodsina6pve.azurecr.io/careconnector-api@sha256:213bbc6f52511e6a43bceb5646365fede138f5a2bb5d2fe53748512c3c8f034d`
+(ACR `cc2`). Its image-only cutover preserved all other runtime configuration and
+identity. CareConnector's 546 .NET tests, web lint/build, root/mounted auth and
+Surface checks passed. ARM64 and x64 Windows preview payloads were rebuilt with
+AlamoPOC display names; they remain unsigned. Existing Microsoft registrations and
+Enterprise Application display names/consent text were renamed while IDs, roles,
+permissions and redirects were preserved. No database, Databricks or Eldermark
+changes occurred. The CareConnector repository retains detailed receipts in
+`docs/handoff/alamo-platform-poc-hosting.md` and `artifacts/alamopoc-release/`.
