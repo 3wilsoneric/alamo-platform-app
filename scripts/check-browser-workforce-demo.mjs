@@ -8,7 +8,7 @@ await withBrowserQa(async (browser) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   let liveFeedRequests = 0;
   page.on("request", (request) => { if (new URL(request.url()).pathname === "/api/platform/workforce-dashboard") liveFeedRequests += 1; });
-  await page.goto(`${BASE_URL}/personnel`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/workforce`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-workforce-demo="true"]').waitFor({ state: "visible" });
   assert.match(await page.locator('[data-workforce-demo="true"]').innerText(), /fictional.*not connected/i);
   assert.equal(await page.getByRole("tab", { name: "Briefing" }).getAttribute("aria-selected"), "true");
@@ -29,9 +29,12 @@ await withBrowserQa(async (browser) => {
   await page.locator('[data-workforce-demo="true"]').waitFor({ state: "visible" });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, "Mobile Workforce must not overflow horizontally");
   const actionWidths = await page.locator('[data-workforce-action-primary="true"]').evaluateAll((elements) => elements.map((element) => Math.round(element.getBoundingClientRect().width)));
-  assert.ok(actionWidths.length > 0 && actionWidths.every((width) => width >= 200), `Personnel action text must keep a readable phone-width column: ${actionWidths.join(", ")}`);
+  assert.ok(actionWidths.length > 0 && actionWidths.every((width) => width >= 200), `Workforce action text must keep a readable phone-width column: ${actionWidths.join(", ")}`);
   assert.equal(await page.locator('[data-workforce-staffing="true"] article dl').first().isVisible(), true, "Phone staffing must show explicit counts rather than relying on tiny dots");
   await page.screenshot({ path: `${screenshotDir}/workforce-mobile.png`, fullPage: true });
+  await page.goto(`${BASE_URL}/personnel?view=board#legacy-link`, { waitUntil: "domcontentloaded" });
+  await page.waitForURL("**/workforce?view=board#legacy-link");
+  await page.getByRole("tab", { name: "Hiring board" }).waitFor({ state: "visible" });
   await page.close();
   console.log("Workforce demo browser checks passed: labeled fictional fixture, briefing, board filters, and mobile layout.");
 });

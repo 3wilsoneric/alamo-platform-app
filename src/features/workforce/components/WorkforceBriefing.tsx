@@ -33,10 +33,10 @@ export default function WorkforceBriefing({ workforce }: { workforce: ConnectedW
 
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-[18px] font-semibold tracking-[-0.025em] text-[#202623]">Personnel brief</h2>
+          <h2 className="text-[18px] font-semibold tracking-[-0.025em] text-[#202623]">Workforce brief</h2>
           <p className="mt-1 text-[13px] text-[#5e6b64]">What needs someone’s attention this week</p>
         </div>
-        <p className="text-[12px] text-[#68736d]">Personnel data through {formatDate(workforce.asOf)}</p>
+        <p className="text-[12px] text-[#68736d]">Workforce data through {formatDate(workforce.asOf)}</p>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -186,7 +186,7 @@ function BriefingUpdate({ lines }: { lines: Line[] }) {
   return (
     <section
       data-workforce-executive-update="true"
-      aria-label="Personnel briefing"
+      aria-label="Workforce briefing"
       aria-busy={typing}
       className="mb-6 w-full rounded-[24px] border border-[#e2ded4] bg-[linear-gradient(135deg,#faf6ef_0%,#f2f7f5_58%,#f5f3f8_100%)] px-5 py-5 text-[#46504b] shadow-[0_10px_30px_rgba(65,59,48,0.05)] sm:px-8 sm:py-7 lg:px-10 lg:py-8"
     >

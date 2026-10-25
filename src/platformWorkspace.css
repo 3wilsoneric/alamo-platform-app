@@ -328,7 +328,7 @@
   max-width: var(--platform-workspace-width);
 }
 
-[data-workforce-overview="true"] nav[aria-label="Personnel pages"] button {
+[data-workforce-overview="true"] nav[aria-label="Workforce pages"] button {
   min-height: 48px;
   font-size: 15px;
 }

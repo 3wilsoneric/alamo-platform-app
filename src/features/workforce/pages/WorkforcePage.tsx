@@ -46,7 +46,7 @@ export default function WorkforcePage() {
   const isOwner = usePlatformOwnerAccess();
   const demoAccess = usePresentationAccess();
   if (!isOwner && !isE2EAuthBypassEnabled && !deployedDemo) return <Navigate to="/home" replace />;
-  if (!isOwner && !isE2EAuthBypassEnabled && demoAccess.pending) return <p role="status" className="p-8">Checking Personnel demo access…</p>;
+  if (!isOwner && !isE2EAuthBypassEnabled && demoAccess.pending) return <p role="status" className="p-8">Checking Workforce demo access…</p>;
   if (!isOwner && !isE2EAuthBypassEnabled && !demoAccess.allowed) return <Navigate to="/home" replace />;
   return <WorkforceOverview allowLiveFeed={isOwner && !deployedDemo} />;
 }
@@ -81,7 +81,7 @@ function WorkforceOverview({ allowLiveFeed }: { allowLiveFeed: boolean }) {
       className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-[#fbfaf7] px-3 pb-14 text-[#171918] sm:px-6 lg:px-10"
     >
       <div className="mx-auto w-full max-w-[1540px] pt-4 sm:pt-6">
-        <h1 className="sr-only">Personnel</h1>
+        <h1 className="sr-only">Workforce</h1>
         {displayed ? (
           <>
             {demo ? (
@@ -93,18 +93,18 @@ function WorkforceOverview({ allowLiveFeed }: { allowLiveFeed: boolean }) {
             <WorkforceSurfaces workforce={displayed} />
           </>
         ) : loading ? (
-          <p role="status" className="py-16 text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-[#737b77]">Loading personnel</p>
+          <p role="status" className="py-16 text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-[#737b77]">Loading workforce</p>
         ) : (
           <div role="alert" className="rounded-xl border border-[#e4d1ca] bg-white px-4 py-8">
             <p className="text-[14px] font-bold text-[#a04436]">
               {loadFailed || workforce?.status === "unavailable"
-                ? "Personnel data is temporarily unavailable."
-                : "Personnel data is not connected yet."}
+                ? "Workforce data is temporarily unavailable."
+                : "Workforce data is not connected yet."}
             </p>
             <p className="mt-2 text-[12px] leading-5 text-[#737373]">
               {workforce?.status === "not_connected"
                 ? "Set WORKFORCE_SUMMARY_URL and WORKFORCE_SUMMARY_TOKEN on the Alamo server to show hiring and staffing here."
-                : "Alamo retries the personnel feed automatically. The Alamo Workforce app itself remains available."}
+                : "Alamo retries the workforce feed automatically. The Alamo Workforce app itself remains available."}
             </p>
           </div>
         )}
@@ -129,7 +129,7 @@ function WorkforceSurfaces({ workforce }: { workforce: ConnectedWorkforce }) {
 
   return (
     <>
-      <nav aria-label="Personnel pages" className="mb-5 border-b border-[#d9dfdb] bg-[#fbfaf7]">
+      <nav aria-label="Workforce pages" className="mb-5 border-b border-[#d9dfdb] bg-[#fbfaf7]">
         <div role="tablist" className="flex items-end gap-7">
           {(["briefing", "board"] as const).map((item) => (
             <button
@@ -145,7 +145,7 @@ function WorkforceSurfaces({ workforce }: { workforce: ConnectedWorkforce }) {
           ))}
         </div>
       </nav>
-      <div role="tabpanel" aria-label={surface === "briefing" ? "Personnel briefing" : "Hiring board"}>
+      <div role="tabpanel" aria-label={surface === "briefing" ? "Workforce briefing" : "Hiring board"}>
         {surface === "briefing" ? <WorkforceBriefing workforce={workforce} /> : <WorkforceBoard workforce={workforce} />}
       </div>
     </>

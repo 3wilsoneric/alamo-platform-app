@@ -87,12 +87,12 @@ const [app, navigation, platformApi, devApi, pageSource, briefingSource, staffin
   readFile(path.join(root, "src/features/workforce/components/StaffingMap.tsx"), "utf8")
 ]);
 const page = [pageSource, briefingSource, staffingSource].join("\n");
-assert.match(app, /path="\/personnel"/);
-assert.match(app, /path="\/workforce" element=\{<LegacyWorkforceRedirect \/>\}/);
-assert.match(app, /to=\{`\/personnel\$\{location\.search\}\$\{location\.hash\}`\}/);
+assert.match(app, /path="\/workforce"/);
+assert.match(app, /path="\/personnel" element=\{<LegacyPersonnelRedirect \/>\}/);
+assert.match(app, /to=\{`\/workforce\$\{location\.search\}\$\{location\.hash\}`\}/);
 // The live feed remains owner-only; the separately labeled fixture may be shown to Andrew.
-assert.match(navigation, /id: "personnel", label: "Personnel", href: "\/personnel", ownerOnly: true/);
-assert.match(pageSource, /<h1 className="sr-only">Personnel<\/h1>/);
+assert.match(navigation, /id: "workforce", label: "Workforce", href: "\/workforce", ownerOnly: true/);
+assert.match(pageSource, /<h1 className="sr-only">Workforce<\/h1>/);
 assert.match(platformApi, /"\/api\/platform\/workforce-dashboard": \(\{ authContext \}\) => \{\s+assertPlatformKnowledgeOwner\(authContext\);\s+return getWorkforceDashboardData\(\);/);
 assert.match(devApi, /"\/api\/platform\/workforce-dashboard"\) \{\s+assertPlatformKnowledgeOwner\(authContext\);/);
 assert.match(pageSource, /return <WorkforceOverview allowLiveFeed=\{isOwner && !deployedDemo\} \/>/);
