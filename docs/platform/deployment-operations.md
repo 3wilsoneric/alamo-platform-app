@@ -4624,3 +4624,39 @@ claim that the full `check:ship` postdeployment command passed. If a later
 production check fails, restore the exact preceding image digest above, then
 re-run health and signed-in navigation checks. No data rollback is needed for
 the additive published daily MAR slice.
+
+### Workforce naming restoration — deployed 2026-10-25
+
+The Platform navigation and Workforce overview are again labeled **Workforce**.
+`/workforce` is canonical; `/personnel` redirects there while preserving the
+query string and fragment. The owner/demo authorization boundary is unchanged.
+The source and release preparation are in commit `f713c29` on
+`codex/lic624-director-readiness-20261019`.
+
+This browser-only overlay was prepared against the exact then-live Point of Care
+commands image, not against the older source checkout. The first candidate based
+on the preceding `b7be5fdf…` image was never promoted: production advanced
+before cutover, so the overlay was rebuilt on `6b837854…`. The API handler,
+server entry and package lock hashes match that current base byte-for-byte.
+
+- Production image: `alamo-platform@sha256:b622dfc558bfc600cb2922b73e0ffa1947103d74ff62a4cc8842b5bae39b6498`
+  (tag `workforce-rename-1025-f713c29-r2`).
+- Revision: `alamo-platform-prod-web--workforce-1025-f713c29`, Healthy/Running,
+  100% traffic.
+- Rollback image: `alamo-platform@sha256:6b8378541113436e3377dc7925a834ab7037ae18b0ad6dd78692b3f49089ebb5`.
+- Live assets: `index-workforce-cd8885cbc422.js` and
+  `index-workforce-7c7d11c2fb1c.css`. Both live identity hashes match the
+  release package; gzip and Brotli variants return 200.
+
+Local Workforce contracts, desktop/mobile browser demo (including legacy-link
+redirect), docs, typecheck, build, and release-bundle syntax passed. Public
+`/healthz`, `/workforce`, `/personnel`, `/analytics/licensing`, and `/poc/app/`
+responded successfully; anonymous Workforce API access remained 401. A new
+Chrome tab reached Microsoft sign-in, so authenticated production UI acceptance
+was not claimed. The pre- and postdeployment full ship commands stopped at an
+already-present production dependency audit: `@azure/msal-node` 6.0.1 has a
+high-severity advisory, propagated to `@azure/identity` and
+`@alamo/agent-runtime`. This overlay does not change those packages, but the
+full ship gate is **not green**; resolve the advisory in a separate runtime
+release. If live verification fails, restore the exact rollback image above and
+recheck health and signed-in navigation.
