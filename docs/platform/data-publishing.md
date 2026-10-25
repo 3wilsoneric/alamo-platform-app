@@ -484,3 +484,11 @@ Do not solve that symptom by changing frontend code.
 
 Also confirm nothing has run `npm run snapshot:publish` or set
 `PLATFORM_SNAPSHOT_PUBLISH_AZURE=true` outside the Databricks publish path.
+
+## Carebook daily source contract
+
+The downstream `carebook_daily_publish` task follows a successful governed `snapshot_publish` on the same partition. Its shared pure contract is `carebook_source_contract.py`. It uses the existing private snapshot container under `snapshots/carebook/v1/`, immutable content-addressed resident gzip files and manifests, and an ETag-guarded latest pointer. Every selected table must have matching raw and transform partition receipts; all five facilities and twelve daily domains are required. Only current countable residents and recent discharges are included. Unknown optional flag text is retained; invalid historical clocks retain source date/time without manufacturing a timestamp.
+
+The service-only `/api/integrations/pipeline/clinical/carebook` endpoint requires the dedicated `CAREBOOK_SYNC_CLIENT_ID` and `Carebook.Sync.Read.All` application role. Delegated Platform users cannot call it. Each resident request is bound to an immutable manifest member and checksum; bounded decompression, no-store responses and sanitized errors apply. No bulk clinical content is sent to a model or written into local debugging artifacts. The consumer stages immutable references privately and activates only complete runs. Operational census, scheduled care and signed native records are outside this write path.
+
+Run `npm run check:carebook-source` for the independent synthetic source-contract and private-endpoint checks. Photos, individual service events, assessment binaries, vitals and care-team records are explicitly not part of this daily contract.

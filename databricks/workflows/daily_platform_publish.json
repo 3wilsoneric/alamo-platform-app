@@ -143,11 +143,11 @@
       "notebook_task": {
         "notebook_path": "/Workspace/Shared/alamo-platform/snapshot_publish",
         "base_parameters": {
-            "storage_account": "alamodatalake",
-            "container": "alamo-platform-snapshots",
-            "snapshot_root": "snapshots/daily",
-            "client_database_pointer_blob": "snapshots/client-database/release-pointer.json",
-            "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}",
+          "storage_account": "alamodatalake",
+          "container": "alamo-platform-snapshots",
+          "snapshot_root": "snapshots/daily",
+          "client_database_pointer_blob": "snapshots/client-database/release-pointer.json",
+          "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}",
           "entra_tenant_id": "<entra-tenant-id>",
           "entra_client_id": "<entra-client-id>",
           "entra_secret_scope": "alamo-platform-production",
@@ -155,6 +155,29 @@
         }
       },
       "existing_cluster_id": "<existing-job-cluster-id>"
+    },
+    {
+      "task_key": "carebook_daily_publish",
+      "depends_on": [
+        {
+          "task_key": "snapshot_publish"
+        }
+      ],
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/alamo-platform/carebook_daily_publish",
+        "base_parameters": {
+          "storage_account": "alamodatalake",
+          "container": "alamo-platform-snapshots",
+          "date_partition": "{{tasks.select_latest_raw_partition.values.date_partition}}",
+          "entra_tenant_id": "<entra-tenant-id>",
+          "entra_client_id": "<entra-client-id>",
+          "entra_secret_scope": "alamo-platform-production",
+          "entra_client_secret_key": "snapshot-entra-client-secret"
+        }
+      },
+      "timeout_seconds": 3600,
+      "max_retries": 1,
+      "min_retry_interval_millis": 60000
     }
   ]
 }

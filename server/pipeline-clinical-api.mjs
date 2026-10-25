@@ -1,3 +1,4 @@
+import { CAREBOOK_SOURCE_PREFIX, handleCarebookSourceRequest } from './carebook-source-api.mjs';
 import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../shared/community-names.mjs";
 import { createHash } from "node:crypto";
 import { normalizeDisplayDateKey } from "../shared/display-date.mjs";
@@ -1236,6 +1237,7 @@ function assertResponseSize(body) {
 }
 
 export async function handlePipelineClinicalApiRequest(req, res) {
+  if (getRequestUrl(req).pathname.startsWith(CAREBOOK_SOURCE_PREFIX + "/")) return handleCarebookSourceRequest(req, res);
   applyProtectedApiHeaders(res);
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed." });

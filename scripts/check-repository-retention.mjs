@@ -207,7 +207,7 @@ function ownershipClass(file) {
   if (/^server\/.+\.mjs$/.test(file)) return "server domain";
   if (/^server\/presentations\/alamo-data-strategy\/(?:deck\.json|fonts\.json|slides\/[a-z0-9-]+\.html|images\/[a-z0-9-]+\.png|fonts\/[a-zA-Z0-9-]+\.(?:ttf|woff2|txt))$/.test(file)) return "private presentation assets";
   if (/^shared\/.+\.(?:mjs|d\.mts)$/.test(file)) return "shared contract";
-  if (["scripts/licensing/collect.py", "scripts/licensing/check_collect.py", "scripts/licensing/restore.py"].includes(file)) return "verification and operations";
+  if (["scripts/licensing/collect.py", "scripts/licensing/check_collect.py", "scripts/carebook/source_contract_test.py", "scripts/licensing/restore.py"].includes(file)) return "verification and operations";
   if (/^scripts\/.+\.(?:mjs|json|ps1)$/.test(file)) return "verification and operations";
   if (/^databricks\/notebooks\/.+\.py$/.test(file)) return "data publishing notebook";
   if (/^databricks\/workflows\/.+\.json$/.test(file)) return "data publishing workflow";
@@ -308,7 +308,7 @@ for (const workflowFile of files.filter((file) => /^databricks\/workflows\/.+\.j
 }
 for (const file of files.filter((candidate) => /^databricks\/notebooks\/.+\.py$/.test(candidate))) {
   const notebookName = path.basename(file, ".py");
-  if (!workflowNotebookNames.has(notebookName) && !manualDatabricksDiagnostics.has(file)) {
+  if (!workflowNotebookNames.has(notebookName) && !(file === 'databricks/notebooks/carebook_source_contract.py' && workflowNotebookNames.has('carebook_daily_publish')) && !manualDatabricksDiagnostics.has(file)) {
     failures.push(`${file}: notebook is neither workflow-owned nor an approved diagnostic`);
   }
 }

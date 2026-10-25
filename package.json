@@ -181,7 +181,8 @@
     "workflow:prepare-agent-release": "node scripts/prepare-workflow-agent-release.mjs",
     "check:poc": "node --test scripts/check-careconnector-poc.mjs",
     "poc:prepare-release": "node scripts/prepare-careconnector-poc-release.mjs",
-    "check:browser-poc": "BROWSER_MISSION_MANAGED=false node scripts/check-browser-careconnector-poc.mjs"
+    "check:browser-poc": "BROWSER_MISSION_MANAGED=false node scripts/check-browser-careconnector-poc.mjs",
+    "check:carebook-source": "node --test scripts/carebook/source-api.test.mjs && PYTHONDONTWRITEBYTECODE=1 python3 scripts/carebook/source_contract_test.py"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.1.0.tgz",
