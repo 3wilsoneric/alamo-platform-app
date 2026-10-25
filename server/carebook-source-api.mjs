@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
-import { ClientSecretCredential } from '@azure/identity';
+import { ClientSecretCredential, ManagedIdentityCredential } from '@azure/identity';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { requireApiUser } from './api-auth.mjs';
 import { getRequestUrl } from './http-errors.mjs';
@@ -15,6 +15,24 @@ const facilities = ['337','342','343','344','345'];
 const sha = body => createHash('sha256').update(body).digest('hex');
 const fail = (code, statusCode = 502) => Object.assign(new Error(code), { statusCode, sourceCode: code });
 const maximum = { manifest: 4 * 1024 * 1024, compressed: 8 * 1024 * 1024, resident: 32 * 1024 * 1024 };
+let storage;
+
+export function createCarebookStorage(env = process.env, types = { ClientSecretCredential, ManagedIdentityCredential, BlobServiceClient }) {
+  const account = env.AZURE_STORAGE_ACCOUNT?.trim(), container = env.AZURE_STORAGE_CONTAINER?.trim();
+  if (!account || !container) throw fail('source_storage_unconfigured', 503);
+  const mode = env.AZURE_STORAGE_AUTH_MODE?.trim().toLowerCase();
+  let credential;
+  if (mode === 'managed-identity') {
+    const clientId = env.AZURE_CLIENT_ID?.trim();
+    if (!clientId) throw fail('source_storage_unconfigured', 503);
+    credential = new types.ManagedIdentityCredential(clientId);
+  } else if (!mode || mode === 'entra-client-secret') {
+    const tenant = env.ENTRA_TENANT_ID?.trim(), client = env.ENTRA_CLIENT_ID?.trim(), secret = env.ENTRA_CLIENT_SECRET?.trim();
+    if (!tenant || !client || !secret) throw fail('source_storage_unconfigured', 503);
+    credential = new types.ClientSecretCredential(tenant, client, secret);
+  } else throw fail('source_storage_unconfigured', 503);
+  return new types.BlobServiceClient(`https://${account}.blob.core.windows.net`, credential).getContainerClient(container);
+}
 
 export function assertCarebookIdentity(auth, allowedClientId) {
   if (!allowedClientId || !auth?.authenticated || auth.mode !== 'entra-service-principal' || auth.claims?.scp ||
@@ -36,11 +54,8 @@ export function validateCarebookManifest(raw, expectedHash, now = new Date()) {
   return m;
 }
 async function readBlob(name, limit) {
-  const account = process.env.AZURE_STORAGE_ACCOUNT?.trim(), container = process.env.AZURE_STORAGE_CONTAINER?.trim();
-  const tenant = process.env.ENTRA_TENANT_ID?.trim(), client = process.env.ENTRA_CLIENT_ID?.trim(), secret = process.env.ENTRA_CLIENT_SECRET;
-  if (!account || !container || !tenant || !client || !secret) throw fail('source_storage_unconfigured', 503);
-  const service = new BlobServiceClient(`https://${account}.blob.core.windows.net`, new ClientSecretCredential(tenant, client, secret));
-  const response = await service.getContainerClient(container).getBlobClient(root + name).download(0, undefined, { abortSignal: AbortSignal.timeout(25_000) });
+  storage ??= createCarebookStorage();
+  const response = await storage.getBlobClient(root + name).download(0, undefined, { abortSignal: AbortSignal.timeout(25_000) });
   if (typeof response.contentLength !== 'number' || !Number.isFinite(response.contentLength) || response.contentLength > limit || !response.readableStreamBody) throw fail('source_size_invalid');
   const pieces = []; let length = 0;
   for await (const piece of response.readableStreamBody) {
