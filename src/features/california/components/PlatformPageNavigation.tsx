@@ -13,6 +13,7 @@ const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
+  { id: "poc", label: "Carelog", href: "/poc?platform=1" },
   { id: "workflow", label: "Workflow", href: "/workflow", ownerOnly: true },
   { id: "personnel", label: "Personnel", href: "/personnel", ownerOnly: true }
 ];
@@ -63,17 +64,17 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
         <Link to={restricted ? "/admissions" : "/home"} aria-label={restricted ? "Admissions home" : "Back to California map"} aria-current={active === "home" ? "page" : undefined} data-platform-page-target="home" data-platform-page-side="left" data-california-carousel-back="true" className="flex min-h-11 min-w-0 items-center">
           <PlatformWordmark compact />
         </Link>
-        <div className="hidden h-full items-center gap-1.5 md:flex" data-platform-primary-links="true">
+        <div className="hidden h-full items-center gap-1.5 lg:flex" data-platform-primary-links="true">
           <div className="flex h-full items-stretch gap-1">
           {pages.filter((page) => page.id !== "home").map((page) => (
-            <Link key={page.id} to={page.href} aria-current={active === page.id ? "page" : undefined} data-platform-page-target={page.id} data-platform-page-side="right" data-california-hero-action={page.id} data-platform-page-active={active === page.id ? page.id : undefined} className={`inline-flex min-h-11 items-center border-b-[3px] px-4 text-[14px] font-semibold transition-[background-color,border-color,color] ${active === page.id ? "border-[#087d64] text-[#086c57]" : "border-transparent text-[#56636b] hover:bg-[#f4f6f3] hover:text-[#132f33]"}`}>
+            <Link key={page.id} to={page.id === "poc" && canViewOwnerWorkspace ? "/poc" : page.href} reloadDocument={page.id === "poc"} aria-current={active === page.id ? "page" : undefined} data-platform-page-target={page.id} data-platform-page-side="right" data-california-hero-action={page.id} data-platform-page-active={active === page.id ? page.id : undefined} className={`inline-flex min-h-11 items-center border-b-[3px] px-4 text-[14px] font-semibold transition-[background-color,border-color,color] ${active === page.id ? "border-[#087d64] text-[#086c57]" : "border-transparent text-[#56636b] hover:bg-[#f4f6f3] hover:text-[#132f33]"}`}>
               {page.label}
             </Link>
           ))}
           </div>
           <PlatformUserIdentity className="ml-3" nameSide="bottom" />
         </div>
-        <button type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="platform-mobile-menu" onClick={() => setMenuOpen((open) => !open)} className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-sm font-semibold text-[#315b54] md:hidden">
+        <button type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="platform-mobile-menu" onClick={() => setMenuOpen((open) => !open)} className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-sm font-semibold text-[#315b54] lg:hidden">
           <span>Menu</span>{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
         </button>
       </nav>
@@ -82,13 +83,14 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
           id="platform-mobile-menu"
           aria-label="Mobile platform pages"
           data-platform-mobile-menu="true"
-          className="fixed inset-x-0 bottom-0 top-[var(--platform-header-height)] z-50 flex flex-col overflow-y-auto bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4 md:hidden"
+          className="fixed inset-x-0 bottom-0 top-[var(--platform-header-height)] z-50 flex flex-col overflow-y-auto bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4 lg:hidden"
         >
           <div className="overflow-hidden rounded-2xl border border-[#dfe3e0] bg-white">
             {pages.map((page) => (
               <Link
                 key={page.id}
-                to={page.href}
+                to={page.id === "poc" && canViewOwnerWorkspace ? "/poc" : page.href}
+                reloadDocument={page.id === "poc"}
                 onClick={() => setMenuOpen(false)}
                 aria-current={active === page.id ? "page" : undefined}
                 className={`flex min-h-16 items-center justify-between border-b border-[#e1e5e2] px-4 text-[18px] font-medium tracking-[-0.025em] transition-colors last:border-b-0 ${active === page.id ? "bg-[#eaf5ef] text-[#086c57]" : "text-[#242a27] hover:bg-[#f7f9f8] hover:text-[#086c57]"}`}
