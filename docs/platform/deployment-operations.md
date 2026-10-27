@@ -16,6 +16,15 @@
 
 ## Current Production Host
 
+### Carelog touch UI and restored Platform entry — October 27, 2026
+
+- Platform revision `alamo-platform-prod-web--poc-touch-79ccadd` is Healthy and serves 100% traffic. Image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:ab9d0cc15f62ee47e30d38d041305ff7336f9d4af4ee85c480e5cd07d3833053` (ACR `ccbk`). Paired API revision `careconnector-prod-web--touch-79ccadd`, image digest `sha256:086e317828ce41e00f3f2e5a3cbd8b76f239c0e2d64833fb42a5315051b2f300`, is also Healthy at 100%.
+- Latest Carelog sign-in and finger-touch surfaces are live. The active Platform bundle had lost the Carelog page-list entry; the reviewed overlay restores that one item and retains the existing owner/restricted routing, Pipeline, ProForma, Workforce and med-room behavior. The link uses full-document `/poc?platform=1` navigation for ordinary Platform viewers and `/poc` for the owner/staff entry. Preserve this item in future full Platform builds. Source correction: `a32c4ec` on `codex/careconnector-poc-20261019`.
+- The existing approved viewer was checked against the directory: account enabled, invitation accepted, app enabled, delegated scope preauthorized and login redirect registered. No permissions or runtime configuration changed. Actual interactive Microsoft/MFA acceptance must be completed by that person; no real resident responses were read.
+- Source and exact extracted header passed three roles at five widths; viewer MSAL reuse, iframe reload, lock/unlock, read-only controls, rejected-account handling and staff PIN paths passed with invented data. Exact live assets, compressed image files, all three Platform entry HTML files, public sign-in/Platform entry and guards passed. Server/proxy/bridge, base layers and runtime identities/configuration are unchanged. The scoped `/poc` release exception applies; no full Databricks gate is claimed.
+- Rollback Platform image digest: `sha256:b18fd8b95dd04b858d6efae179badd162dc565559b78eb974b3829619c4ccd68`. Model remains disabled in Carelog. Windows installers remain 0.1.10.0; this publication updated web only. No GitHub workflow or billing change.
+- Full receipt: CareConnector `docs/handoff/touch-platform-release.md`; ignored evidence `artifacts/touch-platform-release/`. UI source `79ccadd`, reproducible overlay helper `0005cde`. All source changes are pushed.
+
 ### Admissions census labels made non-interactive — 2026-10-19
 
 - source commit: `4a363b1` on `codex/admissions-platform-style-20261019`
