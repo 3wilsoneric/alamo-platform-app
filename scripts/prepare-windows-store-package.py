@@ -65,6 +65,7 @@ def inspect_package(archive_bytes, package_id, publisher, version):
         if not store_name or not sideload_name:
             raise ValueError("The generator did not return both Store and sideload packages.")
         with checked_zip(outer.read(store_name)) as bundle:
+            store_signed = "AppxSignature.p7x" in bundle.namelist()
             bundle_xml = parse_xml(bundle.read("AppxMetadata/AppxBundleManifest.xml"))
             bundle_identity = next(element for element in bundle_xml.iter() if element.tag.endswith("}Identity"))
             if bundle_identity.get("Name") != package_id or bundle_identity.get("Publisher") != publisher or bundle_identity.get("Version") != expected_version:
@@ -100,6 +101,7 @@ def inspect_package(archive_bytes, package_id, publisher, version):
                 "sideload_package": sideload_name,
                 "identity": identity.attrib,
                 "target": target.attrib,
+                "store_signed": store_signed,
                 "sideload_signed": signed,
             }
 
@@ -151,19 +153,36 @@ def main():
     if len(archive) > 50_000_000:
         raise ValueError("Package generator response is unexpectedly large.")
     inspected = inspect_package(archive, args.package_id, args.publisher_cn, args.version)
+    if inspected["store_signed"]:
+        raise ValueError("Expected an unsigned Store candidate before the controlled signing step.")
+    with checked_zip(archive) as outer:
+        bundle = outer.read(inspected["store_package"])
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=args.output.parent, delete=False) as temporary:
         temporary.write(archive)
         temporary_path = Path(temporary.name)
     temporary_path.replace(args.output)
+    bundle_name = f"AlamoHealthPlatform-{args.version}.0.msixbundle"
+    bundle_path = args.output.parent / bundle_name
+    with tempfile.NamedTemporaryFile(dir=args.output.parent, delete=False) as temporary:
+        temporary.write(bundle)
+        temporary_path = Path(temporary.name)
+    temporary_path.replace(bundle_path)
     receipt = {
         "status": "candidate_only",
         "source_origin": ORIGIN,
+        "source_commit": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, check=True, text=True).stdout.strip(),
+        "run_id": os.getenv("GITHUB_RUN_ID"),
+        "run_attempt": os.getenv("GITHUB_RUN_ATTEMPT"),
         "manifest_start_url": manifest["start_url"],
         "generator": GENERATOR,
         "archive_sha256": hashlib.sha256(archive).hexdigest(),
         "archive_bytes": len(archive),
+        "bundle_file": bundle_name,
+        "bundle_publisher": args.publisher_cn,
+        "bundle_sha256": hashlib.sha256(bundle).hexdigest(),
+        "bundle_bytes": len(bundle),
         **inspected,
     }
     args.output.with_suffix(".receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")

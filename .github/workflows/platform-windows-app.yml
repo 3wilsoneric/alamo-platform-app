@@ -1,0 +1,134 @@
+name: Platform Windows app
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/platform-windows-app.yml'
+      - 'scripts/prepare-windows-store-package.py'
+      - 'scripts/complete-windows-release.ps1'
+      - 'public/manifest.json'
+      - 'docs/platform/desktop-distribution.md'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Three-part package version (for example 1.0.0)
+        default: '1.0.0'
+        required: true
+      sign:
+        description: Sign the verified package using the Platform release identity
+        type: boolean
+        default: false
+      publish_base_url:
+        description: HTTPS download directory for the update feed
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      PACKAGE_VERSION: ${{ inputs.version || '1.0.0' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Generate and inspect hosted Windows package
+        shell: pwsh
+        run: python scripts/prepare-windows-store-package.py --version $env:PACKAGE_VERSION --output .data/windows-package/pwabuilder.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: platform-windows-candidate
+          path: |
+            .data/windows-package/AlamoHealthPlatform-*.msixbundle
+            .data/windows-package/pwabuilder.receipt.json
+          retention-days: 30
+
+  sign:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign
+    needs: package
+    runs-on: windows-latest
+    timeout-minutes: 15
+    environment: windows-release
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DOWNLOAD_BASE: ${{ inputs.publish_base_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: platform-windows-candidate
+          path: .data/windows-package
+      - name: Verify exact build provenance before signing
+        shell: pwsh
+        run: |
+          $r = Get-Content .data/windows-package/pwabuilder.receipt.json -Raw | ConvertFrom-Json
+          $hash = (Get-FileHash ".data/windows-package/$($r.bundle_file)" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($r.source_commit -cne $env:GITHUB_SHA -or $r.run_id -ne $env:GITHUB_RUN_ID -or $r.run_attempt -ne $env:GITHUB_RUN_ATTEMPT -or $r.store_signed -or $r.bundle_sha256 -cne $hash) { throw 'Build provenance mismatch.' }
+          if ([string]::IsNullOrWhiteSpace($env:DOWNLOAD_BASE)) { throw 'An HTTPS download directory is required for a signed release.' }
+      - uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3.0.0
+        with:
+          client-id: ${{ vars.SIGNING_CLIENT_ID }}
+          tenant-id: ${{ vars.SIGNING_TENANT_ID }}
+          subscription-id: ${{ vars.SIGNING_SUBSCRIPTION_ID }}
+      - uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2
+        with:
+          endpoint: ${{ vars.SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.SIGNING_CERTIFICATE_PROFILE }}
+          files-folder: ${{ github.workspace }}\.data\windows-package
+          files-folder-filter: msixbundle
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+      - name: Verify trusted signature and create update feed
+        shell: pwsh
+        run: ./scripts/complete-windows-release.ps1 -StageRoot .data/windows-package -PublishBaseUrl $env:DOWNLOAD_BASE
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: platform-windows-signed
+          path: |
+            .data/windows-package/AlamoHealthPlatform-*.msixbundle
+            .data/windows-package/AlamoHealthPlatform.appinstaller
+            .data/windows-package/pwabuilder.receipt.json
+            .data/windows-package/signed-release.json
+          retention-days: 30
+
+  install:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.sign
+    needs: sign
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: platform-windows-signed
+          path: package
+      - name: Install trusted package and verify Windows registration
+        shell: pwsh
+        run: |
+          $r = Get-Content package/signed-release.json -Raw | ConvertFrom-Json
+          $file = (Resolve-Path "package/$($r.bundle_file)").Path
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+          if (-not $r.signed -or $r.bundle_sha256 -cne $hash) { throw 'Signed package provenance mismatch.' }
+          if (Get-AppxPackage -Name $r.package_id) { throw 'Expected a clean hosted test account.' }
+          Add-AppxPackage -Path $file -ErrorAction Stop
+          try {
+            $installed = Get-AppxPackage -Name $r.package_id
+            if (-not $installed -or $installed.Version -ne $r.version -or $installed.Publisher -cne $r.publisher -or $installed.Status -ne 'Ok') { throw 'Installed identity or status mismatch.' }
+            @{ version=$installed.Version.ToString(); name=$installed.Name; architecture=$env:PROCESSOR_ARCHITECTURE; status=$installed.Status.ToString(); installed=$true; realSignInTested=$false } | ConvertTo-Json | Set-Content package/windows-install-check.json
+          } finally { Get-AppxPackage -Name $r.package_id | Remove-AppxPackage -ErrorAction Stop }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: platform-windows-install-${{ matrix.runner }}
+          path: package/windows-install-check.json

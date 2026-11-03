@@ -3,7 +3,7 @@
 - purpose: document the installable Alamo Health desktop application, its security boundary, installation, verification, and rollback
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-09-03
+- updated: 2026-11-02
 - tags: desktop, pwa, azure, entra, installability, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -49,10 +49,10 @@ sign in, and choose the browser's **Install Alamo Health** action. The installed
 application uses the green-and-gray AH icon in the desktop launcher, taskbar,
 and application switcher.
 
-For managed Windows distribution, an administrator may package the same live
-URL with PWABuilder and distribute the resulting MSIX through Intune. That
-package remains a launcher for the same Azure-hosted application and does not
-change the authentication or data boundary.
+For managed Windows distribution, the Platform's Windows release workflow
+packages the same live URL. A signed bundle can be tested on Windows and then
+published through an approved download channel or submitted to the Microsoft
+Store. It uses the same Azure-hosted application and Entra sign-in.
 
 ## Windows Store Candidate
 
@@ -73,8 +73,23 @@ The Microsoft Store account must complete identity verification before a
 product name can be reserved and those final values copied from Partner Center.
 The candidate is not a Store listing or an approved installer. The generated
 sideload package is unsigned; do not give it to staff as a signed release.
-Validate installation, Entra sign-in, deep links, update behavior, and rollback
-on a Windows test device before distribution.
+
+The `Platform Windows app` GitHub workflow builds and inspects an unsigned
+candidate on pull requests. A manual run on `main` with `sign=true` signs only
+the verified bundle through the Platform-specific federated Azure identity and
+checks its Windows trust. It then creates an `.appinstaller` update feed and
+tests installation on Windows x64 and ARM64 runners. Its artifacts are staged
+only; publish the immutable signed bundle before publishing the update feed.
+The signing identity requires the certificate-profile signer role at the exact
+certificate profile scope. The `windows-release` GitHub environment contains
+the Platform identity and profile settings. It must never use Pipeline's or
+Carelog's release identity. `publish_base_url` must be the approved HTTPS
+download directory for Platform.
+
+Before staff distribution, verify installation, Entra sign-in, deep links,
+updates, and rollback on a managed Windows test device. The hosted install
+checks cannot test a real user session. Store submission also requires a
+reserved Partner Center identity and Microsoft certification.
 
 This route provides Windows installation and Store distribution of the existing
 Platform. The broader enterprise application work still needs a shared client

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const rootFiles = new Set([
+  ".github/workflows/platform-windows-app.yml",
   ".env.example",
   ".dockerignore",
   ".gitignore",
@@ -101,7 +102,7 @@ const manualDatabricksDiagnostics = new Set([
   "databricks/notebooks/overview_report_extract.py"
 ]);
 
-const ignoredPhysicalDirs = new Set([".auth", ".git", ".vercel", "dist", "generated", "node_modules"]);
+const ignoredPhysicalDirs = new Set([".auth", ".data", ".git", ".vercel", "dist", "generated", "node_modules"]);
 const rejectedPathParts = [
   /^docs\/code-bible\//,
   /^public\/strategy\//,
