@@ -1,7 +1,7 @@
 // Carelog owns its own access checks. This is a Platform navigation shortcut only.
 (() => {
   const viewers = new Set(["betty dominici", "andrew dominici", "eric wilson"]);
-  const link = "/carelog.html";
+  const link = "/poc?platform=1&view=surface";
   const selector = ".platform-poc-launcher";
   const styles = `
     .platform-poc-launcher{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;padding:4px 10px 4px 5px;border:1px solid #c6d8d1;border-radius:999px;background:#f5faf7;color:#164b43;text-decoration:none;font:700 13px/1 Arial,Helvetica,sans-serif;white-space:nowrap;box-shadow:0 2px 7px rgba(19,68,55,.08);transition:background .16s ease,transform .16s ease,box-shadow .16s ease}
