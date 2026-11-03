@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { useMsal } from "@azure/msal-react";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
+import { useLicensingAccess } from "../../../shared/auth/licensingAccess";
+import { fetchLicensingUpdates } from "../../licensing/licensingApi";
 
 const PLATFORM_PAGES = [
   { id: "home", label: "Communities", href: "/home" },
@@ -23,7 +26,32 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const canViewOwnerWorkspace = usePlatformOwnerAccess();
+  const canViewLicensing = useLicensingAccess();
+  const { accounts, instance } = useMsal();
+  const accountId = (instance.getActiveAccount() ?? accounts[0])?.idTokenClaims?.oid ?? null;
   const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace);
+
+  useEffect(() => {
+    if (restricted || !canViewLicensing || !accountId) return;
+    const controller = new AbortController();
+    let busy = false;
+    const refresh = () => {
+      if (busy || controller.signal.aborted) return;
+      busy = true;
+      void fetchLicensingUpdates(controller.signal).then((feed) => {
+        if (!controller.signal.aborted) window.dispatchEvent(new CustomEvent("alamo:licensing-feed", {
+          detail: {
+            accountId,
+            alerts: feed.alerts.map((alert) => ({ id: alert.id, at: alert.at })),
+            lastSuccessful: feed.lastSuccessful
+          }
+        }));
+      }).catch(() => {}).finally(() => { busy = false; });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 60_000);
+    return () => { controller.abort(); window.clearInterval(timer); };
+  }, [accountId, canViewLicensing, restricted]);
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {
