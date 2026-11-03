@@ -134,6 +134,7 @@
     "build": "vite build && node scripts/stage-spa-route-indexes.mjs",
     "release:resident-flow:prepare": "node scripts/prepare-resident-flow-release.mjs",
     "release:client-flow-scope:prepare": "node scripts/prepare-client-flow-scope-release.mjs",
+    "release:poc-header:prepare": "node scripts/prepare-poc-header-release.mjs",
     "check:resident-flow": "node scripts/check-resident-flow-report.mjs",
     "preview": "vite preview",
     "licensing:import": "node scripts/import-licensing-baseline.mjs",
