@@ -1,5 +1,6 @@
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
 import { assertLicensingAccess } from "./licensing-access.mjs";
+import { getResidentFlowReport } from "./resident-flow-report.mjs";
 import http from "node:http";
 import {
   getCommunitySnapshotData,
@@ -393,6 +394,10 @@ const server = http.createServer(async (req, res) => {
 
     if (requestUrl.pathname === "/api/platform/admissions-dashboard") {
       sendJson(res, 200, await getAdmissionsDashboardData());
+      return;
+    }
+    if (requestUrl.pathname === "/api/platform/resident-flow-report") {
+      sendJson(res, 200, await getResidentFlowReport());
       return;
     }
 
