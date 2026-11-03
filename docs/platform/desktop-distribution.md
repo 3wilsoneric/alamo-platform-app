@@ -54,6 +54,34 @@ URL with PWABuilder and distribute the resulting MSIX through Intune. That
 package remains a launcher for the same Azure-hosted application and does not
 change the authentication or data boundary.
 
+## Windows Store Candidate
+
+Run `npm run check:desktop` and then `npm run desktop:package:candidate` to
+generate an ignored candidate archive and inspection receipt under
+`generated/platform-windows-store/`. The packaging script reads only the public
+production manifest and service worker, sends the public URL and publisher
+details to PWABuilder, and checks the returned Windows package identity,
+version, target family, and production origin. It does not access Platform
+records or credentials. Python 3 and `curl` are required to run the script.
+
+The default `AlamoHealth.Platform` identity and individual publisher are
+**provisional**. Before a Store submission, replace them with the exact identity
+and publisher from the reserved Partner Center product, then rebuild. The
+script accepts `--package-id`, `--publisher-name`, `--publisher-cn`, and a
+three-part `--version` through `npm run desktop:package:candidate -- <options>`.
+The Microsoft Store account must complete identity verification before a
+product name can be reserved and those final values copied from Partner Center.
+The candidate is not a Store listing or an approved installer. The generated
+sideload package is unsigned; do not give it to staff as a signed release.
+Validate installation, Entra sign-in, deep links, update behavior, and rollback
+on a Windows test device before distribution.
+
+This route provides Windows installation and Store distribution of the existing
+Platform. The broader enterprise application work still needs a shared client
+identity, role-aware handoffs, common work queue, and explicit data contracts
+between Platform, Pipeline, and Carelog. Carelog's native offline care engine
+must remain in its own product boundary; packaging Platform does not acquire it.
+
 ## Verification
 
 Run:
