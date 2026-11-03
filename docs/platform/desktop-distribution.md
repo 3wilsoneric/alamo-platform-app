@@ -56,6 +56,25 @@ Store. It uses the same Azure-hosted application and Entra sign-in.
 
 ## Windows Store Candidate
 
+### Current Windows pilot
+
+The first Platform-only signed Windows package is `AlamoHealth.Platform`
+version `1.0.0.0`, published at
+`https://alamoplatformdownloads.z5.web.core.windows.net/AlamoHealthPlatform.appinstaller`.
+Download the `.appinstaller` file and open it with Windows App Installer. The
+bundle and update feed have the required MIME types, and hosted x64 and ARM64
+install checks passed. A separate Windows check installed through the public
+HTTPS feed. These checks did not sign in as a real Platform user or test a
+managed staff device. The package is a hosted pilot, not a Microsoft Store
+listing. Its provisional individual publisher is Eric Wilson; a final Store
+identity may require a new package and reinstall.
+
+Do not use an `ms-appinstaller:` web link for the pilot: Windows disables that
+protocol by default. The direct `.appinstaller` download is the supported
+route until a Store listing or managed-device assignment is ready.
+
+### Building the next candidate
+
 Run `npm run check:desktop` and then `npm run desktop:package:candidate` to
 generate an ignored candidate archive and inspection receipt under
 `generated/platform-windows-store/`. The packaging script reads only the public
