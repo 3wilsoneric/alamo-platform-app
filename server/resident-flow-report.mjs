@@ -43,7 +43,12 @@ function completeMonths(rows, asOfDate) {
   return months;
 }
 
-export function buildResidentFlowReport(snapshot) {
+/** @param {any} snapshot @param {string | null} [facilityId] */
+export function buildResidentFlowReport(snapshot, facilityId = null) {
+  const selectedFacilityId = facilityId == null || facilityId === "" ? null : String(facilityId);
+  if (selectedFacilityId && !facilities.has(selectedFacilityId)) {
+    throw createHttpError(400, "invalid_community", "Unknown community for client flow.");
+  }
   const source = snapshot?.reportsSummary?.toolContext?.tables;
   const asOfDate = String(snapshot?.snapshot?.as_of_date ?? "");
   const flowRows = source?.resident_flow_monthly_by_community;
@@ -117,13 +122,15 @@ export function buildResidentFlowReport(snapshot) {
   if (!weeklyPoints.length || weeklyMatches !== weeklyPoints.length) {
     throw createHttpError(503, "resident_census_mismatch", "Resident stays and weekly census do not reconcile.");
   }
+  const scopedSites = selectedFacilityId ? sites.filter((site) => site.facilityId === selectedFacilityId) : sites;
+  const scopedEpisodes = selectedFacilityId ? validEpisodes.filter((row) => row.facilityId === selectedFacilityId) : validEpisodes;
   const monthly = months.map((month) => {
     const year = Number(month.slice(0, 4));
     const index = Number(month.slice(5, 7));
     const monthStart = Date.UTC(year, index - 1, 1);
     const monthEnd = Date.UTC(year, index, 1);
-    const bedDays = validEpisodes.reduce((sum, row) => sum + Math.max(0, (Math.min(row.discharged ?? monthEnd, monthEnd) - Math.max(row.admitted, monthStart)) / DAY_MS), 0);
-    const rows = selectedFlow.filter((row) => row.month_bucket === month);
+    const bedDays = scopedEpisodes.reduce((sum, row) => sum + Math.max(0, (Math.min(row.discharged ?? monthEnd, monthEnd) - Math.max(row.admitted, monthStart)) / DAY_MS), 0);
+    const rows = selectedFlow.filter((row) => row.month_bucket === month && (!selectedFacilityId || String(row.facility_id) === selectedFacilityId));
     return {
       month,
       admissions: rows.reduce((sum, row) => sum + Number(row.admissions), 0),
@@ -132,11 +139,14 @@ export function buildResidentFlowReport(snapshot) {
       averageDailyCensus: Math.round((bedDays / ((monthEnd - monthStart) / DAY_MS)) * 10) / 10
     };
   });
-  const total = (key) => sites.reduce((sum, site) => sum + site[key], 0);
-  const completed = validEpisodes.flatMap((row) => row.discharged !== null && row.discharged >= start && row.discharged < exclusiveEnd ? [(row.discharged - row.admitted) / DAY_MS] : []);
+  const total = (key) => scopedSites.reduce((sum, site) => sum + site[key], 0);
+  const completed = scopedEpisodes.flatMap((row) => row.discharged !== null && row.discharged >= start && row.discharged < exclusiveEnd ? [(row.discharged - row.admitted) / DAY_MS] : []);
   const periodDays = (exclusiveEnd - start) / DAY_MS;
   return {
     status: "complete",
+    scope: selectedFacilityId
+      ? { kind: "community", facilityId: selectedFacilityId, label: facilities.get(selectedFacilityId)?.shortName ?? "Community" }
+      : { kind: "portfolio", facilityId: null, label: "All communities" },
     period: { start: new Date(start).toISOString().slice(0, 10), through: new Date(exclusiveEnd - DAY_MS).toISOString().slice(0, 10), year: Number(firstMonth.slice(0, 4)), completeMonths: months.length, days: periodDays },
     snapshot: { asOfDate, generatedAt: snapshot.snapshot.generated_at },
     totals: {
@@ -146,14 +156,19 @@ export function buildResidentFlowReport(snapshot) {
       averageCompletedStayDays: completed.length ? Math.round(completed.reduce((sum, value) => sum + value, 0) / completed.length * 10) / 10 : null,
       medianCompletedStayDays: median(completed)
     },
-    monthly, sites,
-    reconciliation: { weeklyCensusPoints: weeklyMatches, movementRows: selectedFlow.length, communities: facilities.size },
+    monthly, sites: scopedSites,
+    reconciliation: {
+      weeklyCensusPoints: selectedFacilityId ? weeklyPoints.filter((row) => String(row.facility_id) === selectedFacilityId).length : weeklyMatches,
+      movementRows: selectedFacilityId ? months.length : selectedFlow.length,
+      communities: scopedSites.length
+    },
     method: "Admission day counted; discharge day excluded. Length of stay uses stays discharged in the period. Historical occupancy percentage is omitted because dated operating limits are unavailable."
   };
 }
 
-export async function getResidentFlowReport() {
+/** @param {string | null} [facilityId] */
+export async function getResidentFlowReport(facilityId = null) {
   const snapshot = await readPlatformSnapshot();
   if (!snapshot) throw createHttpError(503, "resident_flow_unavailable", "The governed snapshot is unavailable.");
-  return buildResidentFlowReport(snapshot);
+  return buildResidentFlowReport(snapshot, facilityId);
 }

@@ -6,6 +6,7 @@ type Site = { facilityId: string; community: string; admissions: number; dischar
 type Month = { month: string; admissions: number; discharges: number; bedDays: number; averageDailyCensus: number };
 type Report = {
   status: "complete";
+  scope: { kind: "portfolio" | "community"; facilityId: string | null; label: string };
   period: { start: string; through: string; year: number; completeMonths: number; days: number };
   snapshot: { asOfDate: string; generatedAt: string };
   totals: { admissions: number; discharges: number; net: number; bedDays: number; averageDailyCensus: number; completedStayCount: number; averageCompletedStayDays: number | null; medianCompletedStayDays: number | null };
@@ -19,33 +20,66 @@ const number = (value: number) => new Intl.NumberFormat("en-US").format(value);
 const monthName = (value: string) => new Date(`${value}-01T12:00:00Z`).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
 const dateLabel = (value: string) => new Date(`${value}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-export default function ResidentFlowReport() {
+export default function ResidentFlowReport({ facilityId = null }: { facilityId?: string | null }) {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    fetchWithApiAuth("/api/platform/resident-flow-report", { signal: controller.signal }, {
+    const url = `/api/platform/resident-flow-report${facilityId ? `?facilityId=${encodeURIComponent(facilityId)}` : ""}`;
+    fetchWithApiAuth(url, { signal: controller.signal }, {
       consume: async (response) => {
         if (!response.ok) throw new Error(`Client flow unavailable (${response.status})`);
         return await response.json() as Report;
       }
     }).then(setReport).catch(() => { if (!controller.signal.aborted) setError(true); });
     return () => controller.abort();
-  }, []);
+  }, [facilityId]);
+
   if (error) return <p className="resident-flow-error" role="status">Client flow is temporarily unavailable.</p>;
-  if (!report) return <p className="resident-flow-error" role="status">Loading client flow…</p>;
+  if (!report || report.scope.facilityId !== facilityId) return <p className="resident-flow-error" role="status">Loading client flow…</p>;
+
   const { totals, period } = report;
-  const maxCensus = Math.max(...report.monthly.map((row) => row.averageDailyCensus));
+  const values = report.monthly.map((row) => row.averageDailyCensus);
+  const baseline = Math.floor(Math.min(...values) / 25) * 25;
+  const range = Math.max(1, Math.max(...values) - baseline);
+  const place = report.scope.kind === "community" ? `at ${report.scope.label}` : "across the portfolio";
+
   return (
-    <section className="resident-flow-report" aria-labelledby="resident-flow-title" data-resident-flow-report="complete">
-      <div className="resident-flow-head"><h2 id="resident-flow-title">Client flow</h2><span>{`Jan–${monthName(report.monthly.at(-1)!.month)} ${period.year}`} · {report.reconciliation.communities} communities · updated {dateLabel(report.snapshot.asOfDate)}</span></div>
-      <p className="resident-flow-lede"><strong>{number(totals.admissions)} people moved in</strong> and <strong>{number(totals.discharges)} moved out</strong> through {monthName(report.monthly.at(-1)!.month)}. That added <strong>{number(totals.net)} clients</strong> across the portfolio. The communities delivered <strong>{number(totals.bedDays)} occupied bed-days</strong>—an average daily census of <strong>{totals.averageDailyCensus}</strong>.</p>
-      <div className="resident-flow-body">
-        <div className="resident-flow-chart"><div className="resident-flow-section-label">Average clients per day</div><div className="resident-flow-bars" role="img" aria-label={report.monthly.map((row) => `${monthName(row.month)}: ${row.averageDailyCensus}`).join(", ")}>{report.monthly.map((row) => <div className="resident-flow-bar" key={row.month}><strong>{row.averageDailyCensus}</strong><i style={{ height: `${Math.max(8, row.averageDailyCensus / maxCensus * 100)}%` }} /><span>{monthName(row.month)}</span></div>)}</div></div>
-        <aside className="resident-flow-stay"><span className="resident-flow-section-label">Completed stays</span><strong>{totals.medianCompletedStayDays ?? "—"} days</strong><span>median length of stay</span><p>Among {number(totals.completedStayCount)} people discharged in this period, the average stay was {totals.averageCompletedStayDays ?? "—"} days. These are full stays, including days before {period.year}.</p></aside>
+    <section className="resident-flow-report" aria-labelledby="resident-flow-title" data-resident-flow-report={report.scope.kind}>
+      <div className="resident-flow-head">
+        <h2 id="resident-flow-title">Client flow</h2>
+        <span>{report.scope.label} · Jan–{monthName(report.monthly.at(-1)!.month)} {period.year} · updated {dateLabel(report.snapshot.asOfDate)}</span>
       </div>
-      <div className="resident-flow-table-wrap"><table><caption>Movement and occupied days by community</caption><thead><tr><th>Community</th><th>Moved in</th><th>Moved out</th><th>Net</th><th>Occupied bed-days</th><th>Daily average</th><th>Median completed stay</th></tr></thead><tbody>{report.sites.map((site) => <tr key={site.facilityId}><th scope="row">{site.community}</th><td>{number(site.admissions)}</td><td>{number(site.discharges)}</td><td>{site.net > 0 ? "+" : ""}{site.net}</td><td>{number(site.bedDays)}</td><td>{site.averageDailyCensus}</td><td>{site.medianCompletedStayDays} days</td></tr>)}</tbody></table></div>
-      <p className="resident-flow-foot">Through {dateLabel(period.through)}. Admission day is counted; discharge day is excluded. Monthly movement reconciles with stay records, and {report.reconciliation.weeklyCensusPoints} weekly census points match. Historical occupancy percentage is omitted because dated operating limits are unavailable.</p>
+      <p className="resident-flow-lede"><strong>{number(totals.admissions)} people moved in</strong> and <strong>{number(totals.discharges)} moved out</strong> through {monthName(report.monthly.at(-1)!.month)}. That added <strong>{number(totals.net)} clients</strong> {place}. Occupied bed-days totaled <strong>{number(totals.bedDays)}</strong>, with <strong>{totals.averageDailyCensus}</strong> clients present on an average day.</p>
+
+      <div className="resident-flow-body">
+        <div className="resident-flow-chart">
+          <div className="resident-flow-chart-head">
+            <span className="resident-flow-section-label">Average clients per day</span>
+            <span className="resident-flow-scale">Scale starts at {number(baseline)}</span>
+          </div>
+          <div className="resident-flow-bars" role="img" aria-label={`Average clients per day, scale starts at ${baseline}. ${report.monthly.map((row) => `${monthName(row.month)}: ${row.averageDailyCensus}`).join(", ")}`}>
+            {report.monthly.map((row) => (
+              <div className="resident-flow-bar" key={row.month}>
+                <strong>{row.averageDailyCensus}</strong>
+                <span className="resident-flow-bar-track"><i style={{ height: `${Math.max(8, (row.averageDailyCensus - baseline) / range * 100)}%` }} /></span>
+                <span>{monthName(row.month)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <aside className="resident-flow-stay">
+          <span className="resident-flow-section-label">Completed stays</span>
+          <strong>{totals.medianCompletedStayDays ?? "—"} days</strong>
+          <span>Median length of stay</span>
+          <p>Among {number(totals.completedStayCount)} people discharged in this period, the average completed stay was {totals.averageCompletedStayDays ?? "—"} days. Full stays can begin before {period.year}.</p>
+        </aside>
+      </div>
+
+      {report.scope.kind === "portfolio" ? (
+        <div className="resident-flow-table-wrap"><table><caption>Movement and occupied days by community</caption><thead><tr><th>Community</th><th>Moved in</th><th>Moved out</th><th>Net</th><th>Occupied bed-days</th><th>Daily average</th><th>Median completed stay</th></tr></thead><tbody>{report.sites.map((site) => <tr key={site.facilityId}><th scope="row">{site.community}</th><td>{number(site.admissions)}</td><td>{number(site.discharges)}</td><td>{site.net > 0 ? "+" : ""}{site.net}</td><td>{number(site.bedDays)}</td><td>{site.averageDailyCensus}</td><td>{site.medianCompletedStayDays == null ? "—" : `${site.medianCompletedStayDays} days`}</td></tr>)}</tbody></table></div>
+      ) : null}
+      <p className="resident-flow-foot">Through {dateLabel(period.through)}. Admission day counts; discharge day does not. Monthly movement reconciles with stay records, and {report.reconciliation.weeklyCensusPoints} weekly census points match. Historical occupancy percentage is omitted because dated operating limits are unavailable.</p>
     </section>
   );
 }

@@ -299,7 +299,7 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
         <MetricGrid items={report.metrics} />
       </div>
 
-      {report.reportId === "residents" && report.scope.kind === "portfolio" ? <ResidentFlowReport /> : null}
+      {report.reportId === "residents" ? <ResidentFlowReport facilityId={report.scope.kind === "community" ? report.scope.facilityId ?? null : null} /> : null}
 
       {report.sections.map((section, sectionIndex) => (
         <section

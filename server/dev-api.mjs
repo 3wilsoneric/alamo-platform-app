@@ -397,7 +397,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (requestUrl.pathname === "/api/platform/resident-flow-report") {
-      sendJson(res, 200, await getResidentFlowReport());
+      sendJson(res, 200, await getResidentFlowReport(requestUrl.searchParams.get("facilityId")));
       return;
     }
 

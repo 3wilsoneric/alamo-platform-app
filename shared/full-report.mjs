@@ -55,7 +55,7 @@ export const FULL_REPORT_DEFINITIONS = Object.freeze([
     cadence: "Monthly",
     audience: "Clinical leadership",
     scope: "portfolio",
-    showInAnalyticsNav: true,
+    showInAnalyticsNav: false,
     description: "Monthly scheduled-administration trend, community performance, period-aligned refusals, and current resident medication burden when complete."
   },
   {
