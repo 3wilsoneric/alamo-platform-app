@@ -31,6 +31,11 @@ The same verified owner identity can open the unlisted `/chat` route. That
 route is intentionally absent from desktop and mobile navigation and redirects
 every other signed-in identity to `/home`; the owner claim, not knowledge of
 the URL, is the access boundary.
+Eric Wilson, Andrew Dominici, and Betty Dominici see the Carelog header entry.
+It opens a separate same-origin tab with their existing Platform session. The
+desktop entry shows the Surface presenter; the phone entry waits for landscape
+and fits the full Carelog work surface to the phone. Carelog enforces its own
+viewer and staff access on every API request.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
 analysis live in the profiles. Phone Admissions keeps Briefing and Pipeline as

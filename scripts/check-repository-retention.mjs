@@ -193,7 +193,7 @@ function ownershipClass(file) {
   if (approvedDocs.has(file)) return file.startsWith("docs/reference/") ? "live specification" : "handbook";
   if (/^src\/.+\.(?:ts|tsx|css|json)$/.test(file)) return "browser runtime";
   if (/^config\/.+\.json$/.test(file)) return "data ingestion configuration";
-  if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js)$/.test(file)) return "static browser asset";
+  if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js|css)$/.test(file)) return "static browser asset";
   if (/^api\/.+\.js$/.test(file)) return "Vercel API";
   if (/^server\/.+\.mjs$/.test(file)) return "server domain";
   if (/^shared\/.+\.(?:mjs|d\.mts)$/.test(file)) return "shared contract";

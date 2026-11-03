@@ -1,0 +1,50 @@
+/* Short, unscaled presentation windows retain the rail and natural touch size. */
+@media (orientation: landscape) and (min-width: 600px) and (max-height: 600px) {
+  html[data-presented]:not([data-phone-surface]) {
+    .p-shell { grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+    .p-rail { order: 0; flex-direction: column; align-items: stretch; gap: 2px; padding: 4px; overflow-y: auto; }
+    .p-rail-brand { display: none; }
+    .p-rail-spacer { display: block; }
+    .p-rail > :is(.p-rail-item, .p-rail-more, .p-profile) { flex: none; }
+    .p-rail-item { min-height: 48px; padding: 2px; gap: 2px; font-size: 12px; }
+    .p-rail-item svg { width: 22px; height: 22px; }
+    .p-rail-more, .p-rail > .p-profile { position: static; }
+    .p-menu.p-more-menu, .p-profile-panel { position: fixed; left: 80px; right: auto; top: auto; bottom: 8px; width: min(304px, calc(100vw - 96px)); max-height: calc(100dvh - 16px); }
+    .p-strip { min-height: 56px; padding: 4px 16px; gap: 8px; }
+    .p-command-launch { min-height: 56px; margin-block: -4px; }
+    .p-page { padding-block: 16px; }
+  }
+}
+
+/* The phone presenter uses the Surface's 1098px layout, with its own scrolling body.
+   Compensate controls for scaling so a finger still gets a 48px displayed target. */
+html[data-phone-surface] {
+  --p-target-size: calc(48px / var(--p-presentation-scale, 1));
+  --p-control-font: max(16px, calc(14px / var(--p-presentation-scale, 1)));
+  --p-control-font-sm: var(--p-control-font);
+  .p-shell { grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  .p-rail { order: 0; flex-direction: column; align-items: stretch; gap: 4px; padding: 6px; overflow-y: auto; }
+  .p-rail > :is(.p-rail-item, .p-rail-more, .p-profile) { flex: none; }
+  .p-rail-item { min-height: max(56px, var(--p-target-size)); }
+  .p-rail-spacer { display: block; }
+  .p-rail-more, .p-rail > .p-profile { position: static; }
+  .p-menu.p-more-menu, .p-profile-panel { position: fixed; left: 104px; right: auto; top: auto; bottom: 8px; max-height: calc(100dvh - 16px); }
+  :is(.p-button, .p-icon-button, .p-input, .p-search input, .p-select, .p-tab, .p-segmented button, .p-menu-item, .p-command-launch, .p-command-send, .p-command-new, .p-floor-area-picker) { min-height: var(--p-target-size); }
+  :is(.p-button, .p-icon-button, .p-tab, .p-segmented button, .p-command-send, .p-command-new) { min-width: var(--p-target-size); }
+  :is(.p-input, .p-search input, .p-select, .p-textarea) { font-size: max(16px, calc(16px / var(--p-presentation-scale, 1))); }
+  .p-strip { flex-wrap: nowrap; }
+}
+@media (max-height: 500px) {
+  html[data-phone-surface] .p-rail-brand { display: none; }
+}
+
+/* Leave room for the composer when a landscape keyboard occupies most of the phone. */
+@media (max-height: 320px) {
+  html[data-phone-surface] {
+    .p-work-panel:has(> dialog[data-docked][open]) { padding: 12px 8px 4px; }
+    .p-dialog[data-surface='conversation'] > .p-dialog-head { min-height: var(--p-target-size); padding-block: 0; }
+    .p-dialog[data-surface='conversation'] > .p-dialog-body { padding-block: 0; }
+    .p-dialog[data-surface='conversation'] > .p-dialog-foot { padding: 4px; }
+    .p-dialog[data-surface='conversation'] .p-command-composer .p-textarea { min-height: var(--p-target-size); max-height: var(--p-target-size); }
+  }
+}
