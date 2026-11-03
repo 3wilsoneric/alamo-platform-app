@@ -9,7 +9,7 @@
       turn.hidden = false;
       return;
     }
-    window.location.replace("/poc?platform=1&view=surface");
+    window.location.replace(phone() ? "/carelog.html?phone=1" : "/poc?platform=1&view=surface");
   }
   window.addEventListener("resize", openWhenReady);
   window.addEventListener("orientationchange", openWhenReady);

@@ -24,7 +24,7 @@ const oldLauncher = fromImage("point-of-care-launcher.js");
 if (hash(oldLauncher) !== hash(fromLive("point-of-care-launcher.js"))) throw Error("The live launcher does not match the pinned image.");
 const newLauncher = await readFile("public/point-of-care-launcher.js");
 await writeCompressed("point-of-care-launcher.js", newLauncher);
-for (const relative of ["carelog.html", "carelog-launch.js", "carelog-demo.html", "carelog-demo-launch.js"]) {
+for (const relative of ["carelog.html", "carelog-launch.js", "carelog-phone.css", "carelog-demo.html", "carelog-demo-launch.js"]) {
   await writeCompressed(relative, await readFile(path.join("public", relative)));
 }
 const version = `header-${hash(newLauncher).slice(0, 12)}`;
@@ -35,8 +35,8 @@ for (const relative of ["index.html", "admissions/index.html", "chat/index.html"
   const updated = /<script defer src="\/point-of-care-launcher\.js(?:\?[^\"]*)?"\s*><\/script>/.test(original)
     ? original.replace(/<script defer src="\/point-of-care-launcher\.js(?:\?[^\"]*)?"\s*><\/script>/, script)
     : original.replace("</body>", `  ${script}\n  </body>`);
-  if (updated === original || !updated.includes(script)) throw Error(`Could not add launcher to ${relative}`);
-  await writeCompressed(relative, Buffer.from(updated));
+  if (!updated.includes(script)) throw Error(`Could not add launcher to ${relative}`);
+  if (updated !== original) await writeCompressed(relative, Buffer.from(updated));
 }
 await writeFile(path.join(output, "Dockerfile"), `FROM ${baseImage}\nCOPY --chown=node:node overlay/dist /app/dist\n`);
 console.log(JSON.stringify({ baseImage, output, version, launcherSha256: hash(newLauncher) }));
