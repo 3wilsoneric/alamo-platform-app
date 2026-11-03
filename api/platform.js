@@ -54,12 +54,14 @@ import {
 
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "../server/licensing-library.mjs";
 import { assertLicensingAccess } from "../server/licensing-access.mjs";
+import { getResidentFlowReport } from "../server/resident-flow-report.mjs";
 import {
   handleExecutiveDirectorApiRequest,
   isExecutiveDirectorApiPath
 } from "../server/executive-director-api.mjs";
 
 const PLATFORM_GET_ROUTES = Object.freeze({
+  "/api/platform/resident-flow-report": () => getResidentFlowReport(),
   "/api/platform/licensing": ({ requestUrl, authContext }) => {
     assertLicensingAccess(authContext);
     return getLicensingLibrary(requestUrl);
