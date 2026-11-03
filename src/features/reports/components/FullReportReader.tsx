@@ -1,4 +1,5 @@
 import { useChartWidth } from "../../../shared/charts/useChartWidth";
+import ResidentFlowReport from "../../admissions/components/ResidentFlowReport";
 import type {
   FullReportBlock,
   FullReportDocument,
@@ -297,6 +298,8 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
       <div className="mt-5">
         <MetricGrid items={report.metrics} />
       </div>
+
+      {report.reportId === "residents" && report.scope.kind === "portfolio" ? <ResidentFlowReport /> : null}
 
       {report.sections.map((section, sectionIndex) => (
         <section

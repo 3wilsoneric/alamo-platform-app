@@ -43,8 +43,9 @@ let component = sourceComponent
   .replace(/\buseEffect\b/g, "V.useEffect")
   .replace(/\buseState\b/g, "V.useState");
 if (component.includes("fetchWithApiAuth") || !component.includes('to("/api/platform/resident-flow-report"')) throw Error("Could not adapt the source component.");
-const compiled = ts.transpileModule(component, { compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, jsxFactory: "V.createElement", module: ts.ModuleKind.None } });
+const compiled = ts.transpileModule(component, { compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, jsxFactory: "V.createElement", jsxFragmentFactory: "V.Fragment", module: ts.ModuleKind.None } });
 if (compiled.diagnostics?.length) throw Error(`Component transpile diagnostics: ${compiled.diagnostics.length}`);
+if (compiled.outputText.includes("React.")) throw Error("Compiled component refers to an unbound React global.");
 let bundle = oldBundle.toString("utf8");
 if (firstRelease) {
   bundle = replaceOnce(bundle, "function z_(){", `${compiled.outputText}\nfunction z_(){`);
@@ -54,6 +55,24 @@ if (firstRelease) {
   const componentEnd = bundle.indexOf("function z_(){", componentStart);
   if (componentStart < 0 || componentEnd < 0 || bundle.indexOf("const number = (value)", componentStart + 1) !== -1) throw Error("Existing resident-flow component boundary changed.");
   bundle = bundle.slice(0, componentStart) + compiled.outputText + "\n" + bundle.slice(componentEnd);
+}
+if (followupRelease) {
+  bundle = replaceOnce(bundle, ",(0,H.jsx)(ResidentFlowReport,{}),c&&u?", ",c&&u?");
+  bundle = replaceOnce(bundle,
+    ',(0,H.jsx)(`p`,{"data-report-mobile-summary":`true`,className:`hidden`,children:e.summary}),e.sections.map(',
+    ',e.reportId===`residents`&&e.scope.kind===`portfolio`?(0,H.jsx)(ResidentFlowReport,{}):null,(0,H.jsx)(`p`,{"data-report-mobile-summary":`true`,className:`hidden`,children:e.summary}),e.sections.map('
+  );
+  bundle = replaceOnce(bundle, 'id:`residents`,label:`Residents`,path:`/analytics/residents`', 'id:`residents`,label:`Clients`,path:`/analytics/residents`');
+  bundle = replaceOnce(bundle, 'id:`residents`,title:`Resident population`', 'id:`residents`,title:`Clients`');
+  if (bundle.split('`Residents`').length !== 8) throw Error("Client navigation labels changed.");
+  bundle = bundle.replaceAll('`Residents`', '`Clients`');
+  for (const [before, after] of [
+    ['`Longest Stay Residents`', '`Longest-stay clients`'],
+    ['`Resident roster`', '`Client roster`'],
+    ['`Search residents`', '`Search clients`']
+  ]) bundle = replaceOnce(bundle, before, after);
+  if (bundle.split('`Resident search`').length !== 3) throw Error("Client search labels changed.");
+  bundle = bundle.replaceAll('`Resident search`', '`Client search`');
 }
 const newJs = `index-resident-flow-${hash(bundle).slice(0, 12)}.js`;
 await writeCompressed(`dist/assets/${newJs}`, Buffer.from(bundle));
@@ -76,5 +95,23 @@ await mkdir(path.join(overlay, "api"), { recursive: true });
 await mkdir(path.join(overlay, "server"), { recursive: true });
 await writeFile(path.join(overlay, "api/platform.js"), api);
 await writeFile(path.join(overlay, "server/resident-flow-report.mjs"), await readFile("server/resident-flow-report.mjs"));
-await writeFile(path.join(output, "Dockerfile"), `FROM ${baseImage}\nCOPY --chown=node:node overlay/dist /app/dist\nCOPY --chown=node:node overlay/api/platform.js /app/api/platform.js\nCOPY --chown=node:node overlay/server/resident-flow-report.mjs /app/server/resident-flow-report.mjs\n`);
+let fullReporting = fromImage("server/full-reporting.mjs").toString("utf8");
+for (const [before, after] of [
+  ["current resident profile rows.", "current client profile rows."],
+  ["`${scopeLabel} resident population`", "`${scopeLabel} clients`"],
+  ['label: "Current resident population"', 'label: "Current clients"'],
+  ['title: "Community population profile"', 'title: "Community client profile"'],
+  ["Current resident-profile rows support", "Current client-profile rows support"],
+  ["no resident-level names are included.", "no client names are included."]
+]) fullReporting = replaceOnce(fullReporting, before, after);
+const currentClientCount = '`${integer(population.overOneYear)} current residents`';
+if (fullReporting.split(currentClientCount).length !== 3) throw Error("Current profile count text changed.");
+fullReporting = fullReporting.replaceAll(currentClientCount, '`${integer(population.overOneYear)} current clients`');
+await writeFile(path.join(overlay, "server/full-reporting.mjs"), fullReporting);
+await mkdir(path.join(overlay, "shared"), { recursive: true });
+let fullReportDefinitions = fromImage("shared/full-report.mjs").toString("utf8");
+fullReportDefinitions = replaceOnce(fullReportDefinitions, 'title: "Resident population"', 'title: "Clients"');
+fullReportDefinitions = replaceOnce(fullReportDefinitions, 'description: "Current profile coverage, diagnosis mix', 'description: "Current client profile coverage, diagnosis mix');
+await writeFile(path.join(overlay, "shared/full-report.mjs"), fullReportDefinitions);
+await writeFile(path.join(output, "Dockerfile"), `FROM ${baseImage}\nCOPY --chown=node:node overlay/dist /app/dist\nCOPY --chown=node:node overlay/api/platform.js /app/api/platform.js\nCOPY --chown=node:node overlay/server/resident-flow-report.mjs /app/server/resident-flow-report.mjs\nCOPY --chown=node:node overlay/server/full-reporting.mjs /app/server/full-reporting.mjs\nCOPY --chown=node:node overlay/shared/full-report.mjs /app/shared/full-report.mjs\n`);
 console.log(JSON.stringify({ baseImage, oldJs, newJs, output, bundleSha256: hash(bundle) }));

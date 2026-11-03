@@ -14,7 +14,6 @@ import type {
 } from "../../../shared/types/platformSnapshot";
 import { readStorageItem, writeStorageItem } from "../../../shared/storage/browserStorage";
 import PipelineBoard, { ProgressModal } from "../components/PipelineBoard";
-import ResidentFlowReport from "../components/ResidentFlowReport";
 import {
   buildAdmissionsMoveInSchedule,
   isAcceptedReferral,
@@ -170,7 +169,6 @@ export default function AdmissionsPage() {
                 loading={loading && !dashboard}
                 onOpenCard={setBriefingCard}
               />
-              <ResidentFlowReport />
             </div>
           )}
         </div>

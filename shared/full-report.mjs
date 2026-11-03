@@ -60,12 +60,12 @@ export const FULL_REPORT_DEFINITIONS = Object.freeze([
   },
   {
     id: "residents",
-    title: "Resident population",
+    title: "Clients",
     cadence: "Current population",
     audience: "Clinical and executive teams",
     scope: "portfolio",
     showInAnalyticsNav: true,
-    description: "Current profile coverage, diagnosis mix, age, valid length-of-stay measures when complete, and community comparisons without substituting profile rows for census."
+    description: "Current client profile coverage, diagnosis mix, age, valid length-of-stay measures when complete, and community comparisons without substituting profile rows for census."
   }
 ]);
 
