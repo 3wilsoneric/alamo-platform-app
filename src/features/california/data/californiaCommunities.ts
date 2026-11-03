@@ -22,7 +22,6 @@ const MAP_POSITIONS: Record<
   string,
   Pick<
     CaliforniaCommunity,
-    | "city"
     | "longitude"
     | "latitude"
     | "markerOffsetY"
@@ -34,7 +33,6 @@ const MAP_POSITIONS: Record<
   >
 > = {
   "337": {
-    city: "San Pablo",
     longitude: -122.3456,
     latitude: 37.9622,
     markerOffsetY: -2,
@@ -45,7 +43,6 @@ const MAP_POSITIONS: Record<
     elbowY: 241
   },
   "342": {
-    city: "San Francisco",
     longitude: -122.4194,
     latitude: 37.7749,
     markerOffsetY: 2,
@@ -56,9 +53,8 @@ const MAP_POSITIONS: Record<
     elbowY: 267
   },
   "343": {
-    city: "San Bernardino",
-    longitude: -117.2898,
-    latitude: 34.1083,
+    longitude: -117.3137,
+    latitude: 34.0339,
     labelX: 442,
     labelY: 361,
     labelAnchor: "start",
@@ -66,7 +62,6 @@ const MAP_POSITIONS: Record<
     elbowY: 361
   },
   "344": {
-    city: "Turlock",
     longitude: -120.849,
     latitude: 37.5057,
     labelX: 410,
@@ -76,7 +71,6 @@ const MAP_POSITIONS: Record<
     elbowY: 270
   },
   "345": {
-    city: "Santa Clarita",
     longitude: -118.5426,
     latitude: 34.3917,
     labelX: 292,
@@ -99,6 +93,7 @@ export const CALIFORNIA_COMMUNITIES: CaliforniaCommunity[] = ALAMO_FACILITIES.ma
       facilityId: facility.facilityId,
       communityName: facility.communityName,
       shortName: facility.shortName,
+      city: facility.city,
       ...position,
       mapX: mapPoint.x,
       mapY: mapPoint.y

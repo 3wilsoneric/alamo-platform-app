@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { ALAMO_FACILITIES } from "../shared/community-names.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
@@ -374,22 +375,31 @@ for (const facilityId of ["337", "342", "343", "344", "345"]) {
   }
 }
 
+requireText(
+  communities,
+  /city: facility\.city/,
+  "California map does not use the canonical facility city"
+);
+for (const [facilityId, expectedCity] of [["342", "San Francisco"], ["343", "Grand Terrace"]]) {
+  if (ALAMO_FACILITIES.find((facility) => facility.facilityId === facilityId)?.city !== expectedCity) {
+    failures.push(`Canonical city for facility ${facilityId} is not ${expectedCity}`);
+  }
+}
+
 for (const [facilityId, coordinates] of Object.entries({
   "337": [
-    'city: "San Pablo",',
     "longitude: -122.3456,",
     "latitude: 37.9622,",
     "markerOffsetY: -2,"
   ],
   "342": [
-    'city: "San Francisco",',
     "longitude: -122.4194,",
     "latitude: 37.7749,",
     "markerOffsetY: 2,"
   ],
-  "343": ['city: "San Bernardino",', "longitude: -117.2898,", "latitude: 34.1083,"],
-  "344": ['city: "Turlock",', "longitude: -120.849,", "latitude: 37.5057,"],
-  "345": ['city: "Santa Clarita",', "longitude: -118.5426,", "latitude: 34.3917,"]
+  "343": ["longitude: -117.3137,", "latitude: 34.0339,"],
+  "344": ["longitude: -120.849,", "latitude: 37.5057,"],
+  "345": ["longitude: -118.5426,", "latitude: 34.3917,"]
 })) {
   const facilityBlock = communities.match(
     new RegExp(`"${facilityId}": \\{([\\s\\S]*?)\\n  \\}`)
