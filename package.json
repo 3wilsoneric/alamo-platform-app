@@ -142,6 +142,7 @@
     "executive-director:prepare-release": "node scripts/prepare-executive-director-release.mjs",
     "licensing:cloud-job": "node scripts/licensing/run-cloud-job.mjs",
     "check:licensing-job": "node scripts/check-licensing-job.mjs && PYTHONDONTWRITEBYTECODE=1 python3 scripts/licensing/check_collect.py",
+    "check:point-of-care-launcher": "node scripts/check-point-of-care-launcher.mjs",
     "licensing:deploy-alert-workflow": "node scripts/deploy-licensing-alert-workflow.mjs",
     "licensing:deploy-job": "node scripts/deploy-licensing-job.mjs",
     "licensing:prepare-job": "node scripts/prepare-licensing-job.mjs"

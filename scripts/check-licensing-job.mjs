@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
-import { LICENSING_SCHEDULE, isLicensingScheduledTime } from "./licensing/job-schedule.mjs";
+import { LICENSING_SCHEDULE, isLicensingScheduledTime, licensingCheckedToday, licensingScheduleSlot } from "./licensing/job-schedule.mjs";
 import { withLicensingLease, readBlob } from "./licensing/cloud-storage.mjs";
 import { validateLicensingUpdates } from "../shared/licensing-contracts.mjs";
 import {
@@ -14,10 +14,17 @@ import {
 
 for (const value of ["2026-09-28T16:00:00Z", "2026-09-30T16:00:00Z", "2026-11-02T17:00:00Z", "2026-11-04T17:00:00Z", "2027-03-15T16:00:00Z", "2027-03-17T16:00:00Z"]) {
   assert.ok(isLicensingScheduledTime(new Date(value)), `Pacific 9 a.m. must run: ${value}`);
+  assert.equal(licensingScheduleSlot(new Date(value)), "primary");
 }
-for (const value of ["2026-09-28T17:00:00Z", "2026-11-02T16:00:00Z", "2026-09-29T16:00:00Z", "2026-10-01T16:00:00Z"]) {
+for (const value of ["2026-09-28T17:00:00Z", "2026-11-02T18:00:00Z", "2027-03-15T17:00:00Z"]) {
+  assert.equal(licensingScheduleSlot(new Date(value)), "retry", `Pacific 10 a.m. must retry: ${value}`);
+}
+for (const value of ["2026-09-28T18:00:00Z", "2026-11-02T16:00:00Z", "2026-09-29T16:00:00Z", "2026-10-01T16:00:00Z"]) {
   assert.ok(!isLicensingScheduledTime(new Date(value)), `Wrong slot must skip: ${value}`);
 }
+assert.equal(licensingCheckedToday("2026-11-02T17:40:00Z", new Date("2026-11-02T18:00:00Z")), true);
+assert.equal(licensingCheckedToday("2026-11-01T18:00:00Z", new Date("2026-11-02T18:00:00Z")), false);
+assert.equal(licensingCheckedToday("invalid", new Date("2026-11-02T18:00:00Z")), false);
 let held = false;
 let releases = 0;
 const client = { getBlobLeaseClient: () => ({ leaseId: "lease-test",
@@ -122,7 +129,7 @@ assert.equal(workflow.properties.definition.actions.send_licensing_change_email.
 assert.match(workflow.properties.definition.actions.send_licensing_change_email.inputs.host.connection.name, /office365/);
 const job = JSON.parse(await readFile(new URL("./azure/licensing-job.json", import.meta.url), "utf8"));
 assert.equal(job.properties.configuration.secrets[0].keyVaultUrl, "https://alamo-platform-kv-6jtpmf.vault.azure.net/secrets/licensing-alert-webhook-url");
-assert.equal(job.properties.configuration.scheduleTriggerConfig.cronExpression, "0 16,17 * * 1,3");
+assert.equal(job.properties.configuration.scheduleTriggerConfig.cronExpression, "0 16,17,18 * * 1,3");
 assert.equal(job.properties.template.containers[0].env.find((entry) => entry.name === "LICENSING_ALERT_NOTIFICATIONS_ENABLED")?.value, "false");
 assert.equal(job.properties.template.containers[0].env.find((entry) => entry.name === "LICENSING_ALERT_WEBHOOK_URL")?.secretRef, "licensing-alert-webhook-url");
 

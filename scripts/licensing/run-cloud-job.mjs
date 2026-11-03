@@ -8,7 +8,7 @@ import { validateLicensingBundle } from "../../server/licensing-validation.mjs";
 import { LICENSING_BLOB_PATH, LICENSING_MAX_BYTES } from "../../server/licensing-storage.mjs";
 import { licensingContainer, readBlob } from "./cloud-storage.mjs";
 import { withLicensingLease } from "./cloud-storage.mjs";
-import { LICENSING_SCHEDULE, isLicensingScheduledTime } from "./job-schedule.mjs";
+import { LICENSING_SCHEDULE, licensingCheckedToday, licensingScheduleSlot } from "./job-schedule.mjs";
 import { deliverPendingLicensingNotifications, queueLicensingChangeNotification } from "./update-notifications.mjs";
 
 const exec = promisify(execFile);
@@ -17,12 +17,16 @@ const container = licensingContainer();
 const current = container.getBlockBlobClient(LICENSING_BLOB_PATH);
 try {
   const recoveredNotifications = await deliverPendingLicensingNotifications(container);
-  if (process.argv.includes("--scheduled") && !isLicensingScheduledTime()) {
+  const scheduleSlot = process.argv.includes("--scheduled") ? licensingScheduleSlot() : null;
+  if (process.argv.includes("--scheduled") && !scheduleSlot) {
     console.log(JSON.stringify({ status: "skipped", reason: "Outside Monday/Wednesday 9 a.m. Pacific.", notifications: recoveredNotifications }));
   } else {
     const result = await withLicensingLease(current, async (leaseId, signal) => {
       const previous = await readBlob(current, LICENSING_MAX_BYTES);
       const saved = validateLicensingBundle(JSON.parse(previous.bytes));
+      if (scheduleSlot === "retry" && licensingCheckedToday(saved.updates.lastSuccessful)) {
+        return { status: "skipped", reason: "Today's licensing collection already completed." };
+      }
       const destination = path.join(root, "generated/licensing");
       await mkdir(destination, { recursive: true });
       try {

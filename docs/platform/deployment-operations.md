@@ -1418,11 +1418,13 @@ changing that job setting to exactly `true`; complete all three in one verified
 release. A pending envelope must be reviewed before launch because enabling
 delivery will retry it.
 
-The twice-weekly schedule is Monday and Wednesday at 9 a.m.
-America/Los_Angeles. Azure evaluates
-cron in UTC, so the job is triggered at both candidate UTC hours and the worker
-checks Pacific local time before contacting the source. Exactly one slot runs
-in either standard time or daylight time. See Microsoft's
+The twice-weekly primary schedule is Monday and Wednesday at 9 a.m.
+America/Los_Angeles, with a 10 a.m. recovery slot that runs only if that day's
+collection has not completed. Azure evaluates cron in UTC, so the job is
+triggered at the three candidate UTC hours and the worker checks Pacific local
+time before contacting the source. This preserves the last complete collection
+through a temporary state-site failure and retries the same day without
+duplicating a successful scan. See Microsoft's
 [Container Apps jobs documentation](https://learn.microsoft.com/en-us/azure/container-apps/jobs).
 
 The published library atomically points to the complete collector evidence
