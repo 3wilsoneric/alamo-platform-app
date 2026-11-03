@@ -80,6 +80,12 @@ the verified bundle through the Platform-specific federated Azure identity and
 checks its Windows trust. It then creates an `.appinstaller` update feed and
 tests installation on Windows x64 and ARM64 runners. Its artifacts are staged
 only; publish the immutable signed bundle before publishing the update feed.
+After publishing the bundle, `signed-release.json`, and then the update feed,
+run the workflow on `main` with `verify_published=true`, `sign=false`, and the
+same `publish_base_url`. That check downloads the public files, verifies MIME
+types, lengths, package hash, repository provenance, and installs through the
+published App Installer feed on a clean Windows runner.
+
 The signing identity requires the certificate-profile signer role at the exact
 certificate profile scope. The `windows-release` GitHub environment contains
 the Platform identity and profile settings. It must never use Pipeline's or
