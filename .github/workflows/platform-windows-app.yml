@@ -159,7 +159,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Published release was not built from this repository history.' }
           foreach ($item in @(@{name=$release.bundle_file; mime='application/msixbundle'}, @{name='AlamoHealthPlatform.appinstaller'; mime='application/appinstaller'})) {
             $head = Invoke-WebRequest -Method Head -Uri ($base + $item.name)
-            if ($head.StatusCode -ne 200 -or $head.Headers['Content-Type'] -cne $item.mime -or [int64]$head.Headers['Content-Length'] -le 0) { throw "Invalid delivery headers: $($item.name)" }
+            $contentType = [string]($head.Headers['Content-Type'] | Select-Object -First 1)
+            $contentLength = [string]($head.Headers['Content-Length'] | Select-Object -First 1)
+            if ($head.StatusCode -ne 200 -or $contentType -cne $item.mime -or [int64]$contentLength -le 0) { throw "Invalid delivery headers: $($item.name)" }
           }
           Invoke-WebRequest -Uri ($base + $release.bundle_file) -OutFile bundle.msixbundle
           $hash = (Get-FileHash bundle.msixbundle -Algorithm SHA256).Hash.ToLowerInvariant()
