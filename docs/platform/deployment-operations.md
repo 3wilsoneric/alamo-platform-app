@@ -16,6 +16,29 @@
 
 ## Current Production Host
 
+### Licensing access for four viewers — 2026-11-03
+
+Betty Dominici, Andrew Dominici, Raj Thandi, and Eric Wilson are the four
+tenant-local Entra accounts allowed to open Platform Licensing and its update
+feed. Andrew's object ID was verified against the Alamo tenant before release.
+The client and API use the same exact-ID policy. No tenant role assignment,
+other Platform access, collector behavior, or outbound mail recipient changed.
+
+- active revision: `alamo-platform-prod-web--lic-four-viewers-1103`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:57d4d4becfccb1501cf8487c49e6c18845b085d0952bfbadf3b5a7d0a599f4fa`
+- preceding image for rollback: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:c1684bb8ef92775ac081380587a9f34cc3e1a381e272ecdb6bdd246a3e8d4d20`
+- preparation: `scripts/prepare-licensing-four-viewers-release.mjs` with
+  `LICENSING_VIEWERS_BASE_IMAGE` set to the preceding digest; it verifies the
+  serving entry and bundle hashes before patching the client allowlist and
+  replacing the shared server policy.
+- verification: signed-token tests for all four accounts and denial cases,
+  `check:docs`, `typecheck`, `build`, image policy hash, production revision
+  health, serving asset name, and anonymous API denial. Individual sessions
+  for Betty, Andrew, and Raj were not available for visual account testing.
+  The unrelated full `check:analyst` sequence reached `check:analyst-decision`
+  and stopped because local Databricks OAuth credentials were unavailable.
+
+
 ### Licensing navigation alert — 2026-11-03
 
 The Platform navigation now shows a red bell and count when the latest
