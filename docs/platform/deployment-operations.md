@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-10-08
+- updated: 2026-11-03
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -15,6 +15,27 @@
   - [alamo-platform-app/vercel.json](/Users/eric/CareEngineMain/alamo-platform-app/vercel.json)
 
 ## Current Production Host
+
+### Licensing navigation alert — 2026-11-03
+
+The Platform navigation now shows a red bell and count when the latest
+successful state licensing check adds reports. Opening **Updates** on the
+Licensing page acknowledges the listed updates. The acknowledgement persists
+across reloads for the signed-in Entra account in that browser; it is not yet
+synchronized between browsers or devices. The collector and its notification
+email behavior were not changed.
+
+- active revision: `alamo-platform-prod-web--lic-nav-alert-1103`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:c1684bb8ef92775ac081380587a9f34cc3e1a381e272ecdb6bdd246a3e8d4d20`
+- preceding image for rollback: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a481e26fff9ce70f3696d7b145de752f776b557d5564b44fc455e579d59aba0c`
+- release preparation: `scripts/prepare-licensing-nav-alert-release.mjs` with
+  `LICENSING_NAV_BASE_IMAGE` set to the preceding image. It verifies the
+  current production image and live entry/bundle hashes before creating an
+  exact-base browser overlay.
+- checks: `npm run check:licensing-nav-alert`, `npm run check:docs`,
+  `npm run typecheck`, `npm run build`, and live signed-in browser verification
+  of unread, acknowledge, and reload behavior.
+
 
 `www.alamoplatform.com` is served by the Azure Container App
 `alamo-platform-prod-web` in resource group `alamo-data-rg` (West US 2), using
