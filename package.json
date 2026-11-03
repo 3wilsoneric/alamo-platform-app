@@ -104,6 +104,7 @@
     "check:production-signed-in-smoke": "node scripts/check-production-signed-in-smoke.mjs",
     "check:production-responsive": "node scripts/check-production-responsive.mjs",
     "check:desktop": "node scripts/check-desktop-readiness.mjs",
+    "desktop:package:candidate": "python3 scripts/prepare-windows-store-package.py",
     "check:production-guided-questions": "node scripts/check-production-guided-questions.mjs",
     "check:platform-ready": "node scripts/check-platform-ready.mjs",
     "check:release": "BROWSER_QA_CLEAN_ROOM=true PRODUCTION_SIGNED_IN_REQUIRED=true PLATFORM_READY_PROFILE=release npm run check:platform-ready",
