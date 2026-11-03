@@ -141,8 +141,9 @@ occurred.
 
 `/admissions` is the aggregate Admissions overview inside Alamo. It opens on a
 Briefing, with Pipeline as the second page-level view. Briefing keeps the
-active intake first and follows it with a compact governed resident-flow report.
-The report covers complete months of the current year, with admissions,
+active intake first. The Clients page at `/analytics/residents` includes the
+governed client-flow report beneath the current population measures for the
+portfolio. The report covers complete months of the current year, with admissions,
 discharges, occupied bed-days, daily average census, and length of stay for the
 discharged cohort. It shows the actual covered period and reconciliation; it
 does not infer historical occupancy from the current operating limit.

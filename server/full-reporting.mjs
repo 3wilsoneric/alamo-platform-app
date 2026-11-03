@@ -2278,7 +2278,7 @@ function buildFocusedReport(context) {
     ...(hasSpectrumProfile ? [{ key: "spectrum", label: "Schizophrenia-spectrum" }] : [])
   ];
   const populationSummaryText = [
-    `${scopeLabel} has ${integer(population.residents.length)} current resident profile rows.`,
+    `${scopeLabel} has ${integer(population.residents.length)} current client profile rows.`,
     ...(population.averageAge == null
       ? []
       : [`Average age is ${decimalFormatter.format(population.averageAge)} years.`]),
@@ -2292,10 +2292,10 @@ function buildFocusedReport(context) {
   return buildBaseReport({
     request,
     definition,
-    title: request.facilityId ? `${scopeLabel} resident population` : definition.title,
+    title: request.facilityId ? `${scopeLabel} clients` : definition.title,
     summary: populationSummaryText,
     scope,
-    period: { value: request.period ?? home.reporting_month, label: "Current resident population" },
+    period: { value: request.period ?? home.reporting_month, label: "Current clients" },
     generatedAt,
     dataThrough,
     freshness,
@@ -2305,7 +2305,7 @@ function buildFocusedReport(context) {
         ...item,
         label: item.label === "Stay over one year" ? "Stays over one year" : item.label,
         detail: item.label === "Stay over one year"
-          ? `${integer(population.overOneYear)} current residents`
+          ? `${integer(population.overOneYear)} current clients`
           : "Current profile"
       })),
       ...(population.diagnosisRecordedPercentage == null ? [] : [{
@@ -2323,8 +2323,8 @@ function buildFocusedReport(context) {
       },
       ...(communityProfiles.length ? [{
         id: "community-profile",
-        title: "Community population profile",
-        intro: `Current resident-profile rows support age measures and length-of-stay measures where every source value is nonnegative. ${hasCommunityCensus ? `Governed census for ${formatMonthLabel(currentCensus.period, { fallback: "the latest loaded month" })} is shown separately and is not derived from profile-row counts.` : "Profile-row counts are not treated as census."}`,
+        title: "Community client profile",
+        intro: `Current client-profile rows support age measures and length-of-stay measures where every source value is nonnegative. ${hasCommunityCensus ? `Governed census for ${formatMonthLabel(currentCensus.period, { fallback: "the latest loaded month" })} is shown separately and is not derived from profile-row counts.` : "Profile-row counts are not treated as census."}`,
         blocks: [table(
           communityProfileColumns,
           communityProfiles.map((row) => ({
@@ -2349,7 +2349,7 @@ function buildFocusedReport(context) {
       ...(stayDistribution.length ? [{
         id: "length-of-stay-distribution",
         title: "Length-of-stay distribution",
-        intro: "Current profile rows are grouped into non-overlapping length-of-stay bands; no resident-level names are included.",
+        intro: "Current profile rows are grouped into non-overlapping length-of-stay bands; no client names are included.",
         blocks: [barList(stayDistribution)]
       }] : [])
     ],
