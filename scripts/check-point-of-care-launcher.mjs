@@ -44,7 +44,7 @@ try {
     assert.equal(await desktop.locator(".platform-poc-launcher").count(), 2);
     assert.equal(await desktop.locator("[data-platform-primary-links] > .platform-poc-launcher").count(), 1);
     assert.equal(await desktop.locator("[data-platform-page-navigation] > .platform-poc-launcher").count(), 1);
-    assert.equal(await desktop.locator(".platform-poc-launcher").first().getAttribute("href"), "/carelog.html");
+    assert.equal(await desktop.locator(".platform-poc-launcher").first().getAttribute("href"), "/poc?platform=1&view=surface");
     assert.equal(await desktop.locator(".platform-poc-launcher").first().getAttribute("target"), null);
   }
   await desktop.goto(`http://127.0.0.1:${port}/analytics?name=Eric%20Wilson`);
@@ -62,7 +62,7 @@ try {
   assert.equal(await phone.locator(".platform-poc-turn-overlay").count(), 0);
   await phone.locator("[data-platform-poc-surface='mobile']").click();
   await phone.setViewportSize({ width: 844, height: 390 });
-  await phone.waitForURL("**/carelog.html");
+  await phone.waitForURL("**/poc?platform=1&view=surface");
   await desktop.goto(`http://127.0.0.1:${port}/carelog.html`);
   await desktop.locator("#app-screen[src='/poc/app/now?platform=1']").waitFor();
   assert.equal(await desktop.locator("#turn").isHidden(), true);
