@@ -24,6 +24,18 @@ assert.equal(report.reconciliation.weeklyCensusPoints, 5);
 assert.equal(JSON.stringify(report).includes("resident_id"), false);
 assert.equal(JSON.stringify(report).includes("admit_date"), false);
 
+const community = ALAMO_FACILITIES[0];
+const scoped = buildResidentFlowReport(snapshot, community.facilityId);
+assert.equal(scoped.scope.kind, "community");
+assert.equal(scoped.scope.label, community.shortName);
+assert.equal(scoped.sites.length, 1);
+assert.equal(scoped.totals.admissions, 1);
+assert.equal(scoped.totals.discharges, 1);
+assert.equal(scoped.totals.bedDays, 31);
+assert.equal(scoped.monthly[0].bedDays, 31);
+assert.equal(scoped.reconciliation.weeklyCensusPoints, 1);
+assert.throws(() => buildResidentFlowReport(snapshot, "unknown"), /Unknown community/i);
+
 const mismatch = structuredClone(snapshot);
 mismatch.reportsSummary.toolContext.tables.census_weekly_by_community[0].census = 2;
 assert.throws(() => buildResidentFlowReport(mismatch), /weekly census do not reconcile/i);

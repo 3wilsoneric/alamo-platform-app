@@ -61,7 +61,7 @@ import {
 } from "../server/executive-director-api.mjs";
 
 const PLATFORM_GET_ROUTES = Object.freeze({
-  "/api/platform/resident-flow-report": () => getResidentFlowReport(),
+  "/api/platform/resident-flow-report": ({ requestUrl }) => getResidentFlowReport(requestUrl.searchParams.get("facilityId")),
   "/api/platform/licensing": ({ requestUrl, authContext }) => {
     assertLicensingAccess(authContext);
     return getLicensingLibrary(requestUrl);

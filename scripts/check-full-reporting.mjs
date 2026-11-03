@@ -382,12 +382,14 @@ assert(
   getFullReportDefinitions().reports
     .filter((definition) => definition.showInAnalyticsNav)
     .map((definition) => definition.id)
-    .join(",") === "overview,census,incidents,medications,residents" &&
+    .join(",") === "overview,census,incidents,residents" &&
     getFullReportDefinitions().reports.find((definition) => definition.id === "community")
       ?.showInAnalyticsNav === false &&
     getFullReportDefinitions().reports.find((definition) => definition.id === "effectiveness")
+      ?.showInAnalyticsNav === false &&
+    getFullReportDefinitions().reports.find((definition) => definition.id === "medications")
       ?.showInAnalyticsNav === false,
-  "Analytics navigation must show only five finished report families while retaining hidden community and effectiveness services"
+  "Analytics navigation shows four report pages while retaining hidden community, effectiveness, and medication services"
 );
 assert(
   validateFullReportRequest({ reportId: "effectiveness", audience: "county" }).reportId ===
