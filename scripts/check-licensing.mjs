@@ -136,6 +136,7 @@ try {
 const tenantId = "d72d9036-cff8-4f5f-a6fa-d698f621d420";
 const licensedUsers = [
   "424b21d4-605a-43a6-8dff-2a89a846e698",
+  "e9f39185-d751-45c0-bcf5-c24d3565bdd9",
   "75099b5b-5f7d-437f-8e3b-181f1fea1653",
   "f73371d5-d2b4-48b4-a32b-1edc7c88869f"
 ];
@@ -147,7 +148,7 @@ for (const claims of [null, {}, { oid: licensedUsers[0] }, { tid: "another-tenan
   { tid: tenantId, oid: "11111111-1111-4111-8111-111111111111", roles: ["Alamo.Admissions.Admin"] },
   { tid: tenantId, name: "Betty Dominici", email: "betty@aaahealthservices.com" },
   { tid: tenantId, name: "Raj Thandi", preferred_username: "raj@aaahealthservices.com" }]) {
-  assert.equal(hasLicensingAccess(claims), false, "only the three exact tenant-local object IDs may match");
+  assert.equal(hasLicensingAccess(claims), false, "only the four exact tenant-local object IDs may match");
   assert.throws(() => assertLicensingAccess({ authenticated: true, mode: "entra-delegated", claims }), (e) => e.statusCode === 404);
 }
 for (const context of [null, { authenticated: false, mode: "explicit-development-bypass" },
@@ -192,7 +193,7 @@ try {
   }
   for (const oid of licensedUsers) {
     const result = await licensingApiResponse("/api/platform/licensing/report?id=invalid", { tid: tenantId, oid, scp: "access_as_user" });
-    assert.equal(result.statusCode, 400, "Betty, Raj, and Eric must reach the report loader after authenticated authorization");
+    assert.equal(result.statusCode, 400, "the four named viewers must reach the report loader after authenticated authorization");
     assert.equal(result.body.code, "licensing_report_invalid");
   }
 } finally {
@@ -201,4 +202,4 @@ try {
     if (savedEnvironment[key] === undefined) delete process.env[key]; else process.env[key] = savedEnvironment[key];
   }
 }
-console.log("Licensing checks passed: archive integrity, search, analysis, and signed-token access limited to Betty, Raj, and Eric across all three APIs.");
+console.log("Licensing checks passed: archive integrity, search, analysis, and signed-token access limited to Betty, Andrew, Raj, and Eric across all three APIs.");

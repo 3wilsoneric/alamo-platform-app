@@ -145,6 +145,7 @@
     "check:point-of-care-launcher": "node scripts/check-point-of-care-launcher.mjs",
     "check:licensing-nav-alert": "node scripts/check-licensing-nav-alert.mjs",
     "prepare:licensing-nav-alert-release": "node scripts/prepare-licensing-nav-alert-release.mjs",
+    "prepare:licensing-four-viewers-release": "node scripts/prepare-licensing-four-viewers-release.mjs",
     "licensing:deploy-alert-workflow": "node scripts/deploy-licensing-alert-workflow.mjs",
     "licensing:deploy-job": "node scripts/deploy-licensing-job.mjs",
     "licensing:prepare-job": "node scripts/prepare-licensing-job.mjs"

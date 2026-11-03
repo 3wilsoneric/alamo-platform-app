@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-10-06
+- updated: 2026-11-03
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -22,7 +22,7 @@ full-page phone menu begins below that complete header rather than beneath the
 browser status area.
 
 Analytics keeps Reports and Ask a question in a separate row below the header.
-Betty Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
+Betty Dominici, Andrew Dominici, Raj Thandi, and Eric Wilson also see Licensing in that row. No
 other account, including a platform administrator, receives Licensing access.
 The owner-only Outreach workspace remains available by its direct route but is
 absent from shared desktop and mobile navigation; the workspace and its APIs
