@@ -56,11 +56,14 @@ bundle = replaceOnce(bundle, '{id:`medications`,label:`Medications`,path:`/analy
 bundle = replaceOnce(bundle, 'id:`medications`,title:`Medication performance report`,cadence:`Monthly`,audience:`Clinical leadership`,scope:`portfolio`,showInAnalyticsNav:!0', 'id:`medications`,title:`Medication performance report`,cadence:`Monthly`,audience:`Clinical leadership`,scope:`portfolio`,showInAnalyticsNav:!1');
 const newJs = `index-client-flow-scope-${hash(bundle).slice(0, 12)}.js`;
 await writeCompressed(`dist/assets/${newJs}`, Buffer.from(bundle));
+const cssBytes = await readFile("src/features/admissions/components/resident-flow-report.css");
+const cssUrl = `/resident-flow-report.css?v=${hash(cssBytes).slice(0, 12)}`;
 for (const relative of ["dist/index.html", "dist/admissions/index.html"]) {
   const original = fromImage(relative).toString("utf8");
-  await writeCompressed(relative, Buffer.from(replaceOnce(original, `/assets/${oldJs}`, `/assets/${newJs}`)));
+  const withJs = replaceOnce(original, `/assets/${oldJs}`, `/assets/${newJs}`);
+  await writeCompressed(relative, Buffer.from(replaceOnce(withJs, "/resident-flow-report.css", cssUrl)));
 }
-await writeCompressed("dist/resident-flow-report.css", await readFile("src/features/admissions/components/resident-flow-report.css"));
+await writeCompressed("dist/resident-flow-report.css", cssBytes);
 let api = fromImage("api/platform.js").toString("utf8");
 api = replaceOnce(api, '"/api/platform/resident-flow-report": () => getResidentFlowReport()', '"/api/platform/resident-flow-report": ({ requestUrl }) => getResidentFlowReport(requestUrl.searchParams.get("facilityId"))');
 await mkdir(path.join(overlay, "api"), { recursive: true });
