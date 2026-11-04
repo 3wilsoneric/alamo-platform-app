@@ -3,6 +3,46 @@
   const viewers = new Set(["betty dominici", "andrew dominici", "eric wilson"]);
   const desktopLink = "/carelog-demo.html";
   const phoneLink = "/carelog.html?phone=1";
+  const popupBrokerUrl = "/carelog-popup-token.js?v=phone-handoff-1104";
+  const phonePopups = new Set();
+  let preparedToken = null;
+  let preparingToken = null;
+  let lastPrepareAttempt = 0;
+  function prepareToken() {
+    if (preparedToken?.expires > Date.now() + 60_000 || preparingToken || Date.now() - lastPrepareAttempt < 30_000) return;
+    lastPrepareAttempt = Date.now();
+    preparingToken = import(popupBrokerUrl).then(({ acquireExistingPlatformToken }) => acquireExistingPlatformToken())
+      .then((token) => {
+        if (token?.token && token.expires > Date.now() + 60_000) {
+          preparedToken = token;
+          document.querySelectorAll(".platform-poc-launcher").forEach((link) => { link.dataset.platformTokenReady = "true"; });
+        }
+      }).catch(() => { preparedToken = null; }).finally(() => { preparingToken = null; });
+  }
+  window.addEventListener("message", async (event) => {
+    if (event.origin !== location.origin || !phonePopups.has(event.source)
+      || event.data?.type !== "carelog-platform-connect" || event.ports.length !== 1) return;
+    const port = event.ports[0];
+    phonePopups.delete(event.source);
+    try {
+      const { acquireExistingPlatformToken } = await import(popupBrokerUrl);
+      port.onmessage = async ({ data }) => {
+        if (data?.type !== "carelog-platform-token-request" || typeof data.requestId !== "string"
+          || !data.requestId || data.requestId.length > 64) return;
+        try {
+          port.postMessage({ type: "carelog-platform-token", requestId: data.requestId,
+            ...await acquireExistingPlatformToken() });
+        } catch {
+          port.postMessage({ type: "carelog-platform-token", requestId: data.requestId,
+            error: "platform_no_session" });
+        }
+      };
+      port.start();
+      port.postMessage({ type: "carelog-platform-ready" });
+    } catch {
+      port.postMessage({ type: "carelog-platform-unavailable" });
+    }
+  });
   const selector = ".platform-poc-launcher";
   const styles = `
     .platform-poc-launcher{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;padding:4px 10px 4px 5px;border:1px solid #c6d8d1;border-radius:999px;background:#f5faf7;color:#164b43;text-decoration:none;font:700 13px/1 Arial,Helvetica,sans-serif;white-space:nowrap;box-shadow:0 2px 7px rgba(19,68,55,.08);transition:background .16s ease,transform .16s ease,box-shadow .16s ease}
@@ -34,6 +74,21 @@
     anchor.setAttribute("aria-label", "Open Carelog Point of Care");
     anchor.title = "Open Carelog Point of Care";
     anchor.innerHTML = `<span class="platform-poc-launcher__icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M11 5v9a5 5 0 0 0 10 0V5"/><path d="M8 5h3m10 0h3M16 19v4a5 5 0 0 0 10 0v-3"/><circle cx="26" cy="18" r="2"/></svg></span><span class="platform-poc-launcher__label">Carelog</span>`;
+    if (surface === "mobile") anchor.addEventListener("click", (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      const popup = window.open("about:blank", "_blank");
+      if (popup) {
+        phonePopups.add(popup);
+        try {
+          if (preparedToken?.expires > Date.now() + 60_000) {
+            popup.sessionStorage.setItem("carelog-platform-handoff-v1", JSON.stringify(preparedToken));
+          }
+        } catch { /* The live MessagePort handoff remains available. */ }
+        popup.location.replace(anchor.href);
+      }
+      else window.location.assign(anchor.href);
+    });
     return anchor;
   }
 
@@ -48,6 +103,7 @@
       if (!allowed || (parent !== header && parent !== desktop)) existing.remove();
     }
     if (!allowed || !header) return;
+    prepareToken();
     if (desktop && !desktop.querySelector(":scope > .platform-poc-launcher")) {
       desktop.insertBefore(launcher("desktop"), desktop.lastElementChild);
     }

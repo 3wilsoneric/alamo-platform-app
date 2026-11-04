@@ -6,3 +6,10 @@ await build({
   output: { file: output, format: "iife", minify: true }
 });
 console.log(`Built ${output}`);
+if (!process.argv[2]) {
+  await build({
+    input: "src/carelog/popupTokenBroker.ts",
+    output: { file: "public/carelog-popup-token.js", format: "es", minify: true }
+  });
+  console.log("Built public/carelog-popup-token.js");
+}

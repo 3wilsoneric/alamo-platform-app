@@ -26,6 +26,11 @@ const server = createServer((request, response) => {
     response.end(realBridge);
     return;
   }
+  if (request.url === "/carelog-popup-token.js" || request.url?.startsWith("/carelog-popup-token.js?")) {
+    response.writeHead(200, { "content-type": "text/javascript" });
+    response.end("export async function acquireExistingPlatformToken(){return {token:sessionStorage.getItem('platform-session-check'),expires:Date.now()+3600000}}");
+    return;
+  }
   if (request.url === "/poc/app/auth/config") {
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ platform: { tenantId: "d72d9036-cff8-4f5f-a6fa-d698f621d420", clientId: "40283155-592b-4565-bd3c-c730a34feaaa", scope: "api://40283155-592b-4565-bd3c-c730a34feaaa/access_as_user" } }));
@@ -76,10 +81,13 @@ const server = createServer((request, response) => {
     response.end("window.addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='poc-platform-token-request')return;event.source.postMessage({type:'poc-platform-token',requestId:event.data.requestId,token:sessionStorage.getItem('platform-session-check'),expires:Date.now()+3600000},location.origin)})");
     return;
   }
-  const name = new URL(request.url, "http://localhost").searchParams.get("name") ?? "Eric Wilson";
+  const requestUrl = new URL(request.url, "http://localhost");
+  const name = requestUrl.searchParams.get("name") ?? "Eric Wilson";
+  const seed = requestUrl.searchParams.get("seed") === "1";
   response.writeHead(200, { "content-type": "text/html" });
   response.end(`<!doctype html><html><head></head><body>
     <header data-platform-page-navigation><a href="/home">Alamo</a><div data-platform-primary-links><a href="/analytics">Analytics</a><div data-platform-user-identity aria-label="Signed in as ${name}"></div></div><button aria-controls="platform-mobile-menu">Menu</button></header>
+    ${seed ? "<script>sessionStorage.setItem('platform-session-check','retained')</script>" : ""}
     <script src="/point-of-care-launcher.js"></script></body></html>`);
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -124,6 +132,8 @@ try {
   // The application is already loaded behind the portrait prompt.
   await phonePopup.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
   await phonePopup.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.token === "retained");
+  assert.equal(await phonePopup.locator("script[src*='carelog-platform-session.js']").count(), 0);
+  await phonePopup.locator("#loading").waitFor({ state: "hidden" });
   assert.equal(new URL(phone.url()).pathname, "/home");
   await phonePopup.setViewportSize({ width: 844, height: 390 });
   await phonePopup.locator("#turn").waitFor({ state: "hidden" });
@@ -133,8 +143,20 @@ try {
   await phonePopup.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.documentElement.hasAttribute("data-phone-surface"));
   await phonePopup.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.token === "retained");
   assert.equal(await phonePopup.locator("#app-screen").evaluate((frame) => frame.style.width), "1098px");
+  const fittedFrame = await phonePopup.locator("#app-screen").boundingBox();
+  assert.ok(fittedFrame && fittedFrame.width >= 800 && fittedFrame.height >= 370);
   assert.equal(await phonePopup.locator("#app-screen").evaluate((frame) => frame.contentDocument?.getElementById("carelog-phone-viewport")?.getAttribute("href")), "/carelog-phone.css?v=phone-surface-1103");
   assert.equal(new URL(phone.url()).pathname, "/home");
+  const preparedPhone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await preparedPhone.goto(`http://127.0.0.1:${port}/home?name=Eric%20Wilson&seed=1`);
+  await preparedPhone.locator("[data-platform-poc-surface='mobile'][data-platform-token-ready='true']").waitFor();
+  const preparedPopupPromise = preparedPhone.waitForEvent("popup");
+  await preparedPhone.locator("[data-platform-poc-surface='mobile']").click();
+  const preparedPopup = await preparedPopupPromise;
+  await preparedPopup.waitForURL("**/carelog.html?phone=1");
+  assert.equal(await preparedPopup.locator("html").getAttribute("data-carelog-handoff"), "ready");
+  await preparedPopup.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.token === "retained");
+  assert.equal(await preparedPopup.evaluate(() => sessionStorage.getItem("carelog-platform-handoff-v1")), null);
   await desktop.goto(`http://127.0.0.1:${port}/carelog.html`);
   await desktop.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
   assert.equal(await desktop.locator("#turn").isHidden(), true);
@@ -142,6 +164,7 @@ try {
   await portrait.goto(`http://127.0.0.1:${port}/carelog.html`);
   await portrait.locator("#turn:visible").waitFor();
   await portrait.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
+  await portrait.locator("#loading").waitFor({ state: "hidden" });
   await portrait.locator("#continue-upright").click();
   await portrait.locator("#turn").waitFor({ state: "hidden" });
   await portrait.setViewportSize({ width: 844, height: 390 });
