@@ -16,6 +16,22 @@
 
 ## Current Production Host
 
+### Carelog phone zoom renderer — 2026-11-04
+
+The phone shell now fits the mounted Carelog work surface with CSS `zoom`
+instead of a transform on the iframe. This keeps the 1098px Surface layout
+while avoiding a transformed iframe during physical rotation. The shell gives
+the work surface its logical height so the navigation fills the landscape
+viewport. If CSS zoom is unavailable, Carelog remains at its native width.
+
+- active revision: `alamo-platform-prod-web--carelog-zoom-1104`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:2adf69995e38e5a1712bacd6927635194542842cfc9f5dba0cec1d08868f0519`
+- preceding image for rollback: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:d0a0b35f8dd359158b73769adb11bd70908694069ba1edbcd71e1f5203f46333`
+- verification: Chromium and WebKit launcher checks; production Carelog app
+  rendered with invented Platform identity and API responses in WebKit at
+  844 × 390; typecheck and build; Healthy production revision; byte-identical
+  live shell script. Physical iPhone rendering awaits the owner's recheck.
+
 ### Carelog phone work-surface readiness — 2026-11-03
 
 The Platform Carelog phone shell now leaves sign-in and access messages visible

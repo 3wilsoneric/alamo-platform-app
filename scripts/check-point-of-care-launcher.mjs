@@ -143,6 +143,8 @@ try {
   await phonePopup.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.documentElement.hasAttribute("data-phone-surface"));
   await phonePopup.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.token === "retained");
   assert.equal(await phonePopup.locator("#app-screen").evaluate((frame) => frame.style.width), "1098px");
+  assert.equal(await phonePopup.locator("#app-screen").evaluate((frame) => frame.style.transform), "");
+  assert.ok(Number(await phonePopup.locator("#app-screen").evaluate((frame) => frame.style.zoom)) > 0);
   const fittedFrame = await phonePopup.locator("#app-screen").boundingBox();
   assert.ok(fittedFrame && fittedFrame.width >= 800 && fittedFrame.height >= 370);
   assert.equal(await phonePopup.locator("#app-screen").evaluate((frame) => frame.contentDocument?.getElementById("carelog-phone-viewport")?.getAttribute("href")), "/carelog-phone.css?v=phone-surface-1103");
@@ -195,6 +197,7 @@ try {
   await signingIn.setViewportSize({ width: 844, height: 390 });
   await signingIn.locator("#turn").waitFor({ state: "hidden" });
   assert.equal(await signingIn.locator("#app-screen").evaluate((frame) => frame.style.width), "1098px");
+  assert.equal(await signingIn.locator("#app-screen").evaluate((frame) => frame.style.transform), "");
   await desktop.goto(`http://127.0.0.1:${port}/real-bridge`);
   await desktop.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.error === "platform_no_session");
   console.log("Point of Care header and mobile entry checks passed.");

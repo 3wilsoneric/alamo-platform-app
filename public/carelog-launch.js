@@ -35,6 +35,7 @@
         const root = frame.contentDocument?.documentElement;
         root?.removeAttribute("data-phone-surface");
         root?.style.removeProperty("--p-presentation-scale");
+        frame.contentDocument?.querySelector(".p-shell")?.style.removeProperty("height");
       } catch { /* A navigation can temporarily make the frame unavailable. */ }
       return;
     }
@@ -43,9 +44,18 @@
     const availableWidth = surface.clientWidth || window.visualViewport?.width || window.innerWidth;
     const availableHeight = surface.clientHeight || window.visualViewport?.height || window.innerHeight;
     const scale = Math.min(1, Math.max(200, availableWidth) / 1098);
+    // WebKit can leave a transformed iframe white after a physical rotation.
+    // CSS zoom scales its layout without putting the iframe on that compositor
+    // path. If zoom is unavailable, keep Carelog visible at its native width.
+    if (!CSS.supports("zoom", String(scale))) {
+      frame.removeAttribute("style");
+      delete frame.dataset.surfaceScale;
+      return;
+    }
+    const logicalHeight = Math.max(1, availableHeight) / scale;
     frame.style.width = "1098px";
-    frame.style.height = `${Math.max(1, availableHeight) / scale}px`;
-    frame.style.transform = `scale(${scale})`;
+    frame.style.height = `${logicalHeight}px`;
+    frame.style.zoom = String(scale);
     frame.dataset.surfaceScale = String(scale);
     let root;
     try { root = frame.contentDocument?.documentElement; } catch { return; }
@@ -53,6 +63,11 @@
     root.setAttribute("data-presented", "");
     root.setAttribute("data-phone-surface", "");
     root.style.setProperty("--p-presentation-scale", String(scale));
+    // WebKit reports 100dvh as the visible height inside a zoomed iframe.
+    // Give the work surface its logical height so the navigation reaches the
+    // bottom of the physical phone instead of ending early.
+    const work = root.querySelector(".p-shell");
+    if (work) work.style.height = `${logicalHeight}px`;
     if (!root.querySelector("#carelog-phone-viewport")) {
       const stylesheet = frame.contentDocument.createElement("link");
       stylesheet.id = "carelog-phone-viewport";
