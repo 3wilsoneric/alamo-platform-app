@@ -9,7 +9,6 @@ const baseImage = process.env.POC_HEADER_BASE_IMAGE;
 if (!/^pipelineprodacra6qdvl6ebenac\.azurecr\.io\/alamo-platform@sha256:[a-f0-9]{64}$/.test(baseImage ?? "")) throw Error("Set POC_HEADER_BASE_IMAGE to the current production image digest.");
 const current = execFileSync("az", ["containerapp", "show", "-n", "alamo-platform-prod-web", "-g", "alamo-data-rg", "--query", "properties.template.containers[0].image", "-o", "tsv"], { encoding: "utf8" }).trim();
 if (current !== baseImage) throw Error("Production image changed. Rebase the overlay.");
-execFileSync("node", ["scripts/build-carelog-platform-bridge.mjs"], { stdio: "inherit" });
 const output = path.join(process.cwd(), "generated", "poc-header-release", "context");
 const overlay = path.join(output, "overlay", "dist");
 await rm(output, { recursive: true, force: true });
@@ -25,7 +24,7 @@ const oldLauncher = fromImage("point-of-care-launcher.js");
 if (hash(oldLauncher) !== hash(fromLive("point-of-care-launcher.js"))) throw Error("The live launcher does not match the pinned image.");
 const newLauncher = await readFile("public/point-of-care-launcher.js");
 await writeCompressed("point-of-care-launcher.js", newLauncher);
-for (const relative of ["carelog.html", "carelog-launch.js", "carelog-platform-session.js", "carelog-popup-token.js", "carelog-phone.css", "carelog-demo.html", "carelog-demo-launch.js"]) {
+for (const relative of ["carelog-demo.html", "carelog-demo-launch.js"]) {
   await writeCompressed(relative, await readFile(path.join("public", relative)));
 }
 const version = `header-${hash(newLauncher).slice(0, 12)}`;

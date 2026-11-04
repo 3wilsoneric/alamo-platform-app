@@ -16,6 +16,24 @@
 
 ## Current Production Host
 
+### Desktop Carelog Surface entry — 2026-11-04
+
+Betty Dominici, Andrew Dominici, and Eric Wilson see a Carelog shortcut in the
+desktop Platform header. It opens the existing Carelog Surface presenter in a
+new tab. The same-origin redirect retains the signed-in Platform MSAL session
+for Carelog's Platform token bridge, then releases its opener; Carelog applies
+its own identity, role, and facility checks. Phone and narrow-tablet navigation
+remain without the shortcut.
+
+- active revision: `alamo-platform-prod-web--carelog-desktop-1104`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:b3515d2d15001c1a7e760773543d7dc212351134b7cdbfda360d4b66ee6f2617`
+- rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:41b85d562bee427214009e73d11a3597be54d79239165bc3ece4a327185980c9`
+- verification: Chromium and WebKit new-tab session handoff for all three
+  configured people; no link for other accounts or phone widths; docs,
+  TypeScript, and build checks; live healthy revision, entry asset hashes,
+  Surface route, and Platform health. Human sign-in confirmation by Betty and
+  Andrew remains separate from these synthetic checks.
+
 ### Phone Client flow and shortcut withdrawal — 2026-11-04
 
 The broken Carelog shortcut is absent from Platform navigation on Analytics,
