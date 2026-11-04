@@ -169,6 +169,15 @@ try {
   await portrait.locator("#turn").waitFor({ state: "hidden" });
   await portrait.setViewportSize({ width: 844, height: 390 });
   assert.equal(await portrait.locator("#app-screen").getAttribute("src"), "/poc/app/now?platform=1&presented=1");
+  // Safari may report no innerText even after a frame loads. The shell must
+  // reveal the frame so Carelog can display its own loading or error state.
+  const emptyFrame = await browser.newPage({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  await emptyFrame.route("**/poc/app/now?*", (route) => route.fulfill({
+    status: 200, contentType: "text/html", body: "<!doctype html><html><body></body></html>",
+  }));
+  await emptyFrame.goto(`http://127.0.0.1:${port}/carelog.html?phone=1`);
+  await emptyFrame.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
+  await emptyFrame.locator("#loading").waitFor({ state: "hidden" });
   await desktop.goto(`http://127.0.0.1:${port}/real-bridge`);
   await desktop.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.error === "platform_no_session");
   console.log("Point of Care header and mobile entry checks passed.");

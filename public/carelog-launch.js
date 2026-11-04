@@ -11,6 +11,7 @@
     window.matchMedia("(any-pointer: coarse)").matches && Math.min(window.screen.width, window.screen.height) <= 600;
   let bridgeReady = false;
   let opened = false;
+  let frameLoaded = false;
   let continueUpright = false;
   let usingLocalBridge = false;
   let handoff = null;
@@ -127,18 +128,13 @@
   }
 
   frame.addEventListener("load", () => {
+    if (frame.getAttribute("src") === "about:blank") return;
+    frameLoaded = true;
     fitPhoneSurface();
-    let body;
-    try { body = frame.contentDocument?.body; } catch { return; }
-    if (!body) return;
-    const reveal = () => {
-      if (!body.innerText?.trim()) return;
-      loading.hidden = true;
-      observer.disconnect();
-    };
-    const observer = new MutationObserver(reveal);
-    observer.observe(body, { childList: true, subtree: true, characterData: true });
-    reveal();
+    // iOS Safari can report empty innerText for a painted iframe, especially
+    // after rotation. The frame load is the reliable handoff to Carelog's own
+    // loading and sign-in states; do not cover them with a second loader.
+    loading.hidden = true;
   });
   continueButton.addEventListener("click", () => { continueUpright = true; update(); });
   window.addEventListener("resize", update);
@@ -148,7 +144,8 @@
   window.visualViewport?.addEventListener("resize", update);
   new ResizeObserver(fitPhoneSurface).observe(surface);
   window.setTimeout(() => {
-    if (!loading.hidden) loading.textContent = "Carelog is taking longer than expected. Close this tab and open it again from Platform.";
+    if (frameLoaded) return;
+    loading.textContent = "Carelog did not open. Return to Platform and tap Carelog again.";
   }, 12_000);
   connectToPlatformTab();
   update();
