@@ -3,6 +3,7 @@
   "entry": [
     "src/main.tsx",
     "src/carelog/platformSessionBridge.ts",
+    "src/carelog/popupTokenBroker.ts",
     "api/**/*.js",
     "scripts/**/*.mjs"
   ],

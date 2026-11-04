@@ -25,7 +25,7 @@ const oldLauncher = fromImage("point-of-care-launcher.js");
 if (hash(oldLauncher) !== hash(fromLive("point-of-care-launcher.js"))) throw Error("The live launcher does not match the pinned image.");
 const newLauncher = await readFile("public/point-of-care-launcher.js");
 await writeCompressed("point-of-care-launcher.js", newLauncher);
-for (const relative of ["carelog.html", "carelog-launch.js", "carelog-platform-session.js", "carelog-phone.css", "carelog-demo.html", "carelog-demo-launch.js"]) {
+for (const relative of ["carelog.html", "carelog-launch.js", "carelog-platform-session.js", "carelog-popup-token.js", "carelog-phone.css", "carelog-demo.html", "carelog-demo-launch.js"]) {
   await writeCompressed(relative, await readFile(path.join("public", relative)));
 }
 const version = `header-${hash(newLauncher).slice(0, 12)}`;
