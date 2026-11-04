@@ -55,7 +55,7 @@
 
   const bridge = document.createElement("script");
   bridge.type = "module";
-  bridge.src = "/poc/app/platform-session.js";
+  bridge.src = "/carelog-platform-session.js?v=phone-bridge-1104";
   bridge.addEventListener("load", () => { bridgeReady = true; update(); });
   bridge.addEventListener("error", () => { status.textContent = "Carelog sign-in could not load. Reload this page."; });
   document.head.append(bridge);
