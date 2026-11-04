@@ -3,7 +3,7 @@
 - purpose: document the current user-facing platform routes and modules
 - status: authoritative current-state reference
 - owners: product, frontend
-- updated: 2026-11-03
+- updated: 2026-11-04
 - tags: product, routes, workspace, modules, ui
 - labels: platform-handbook, current-state
 - related files:
@@ -31,8 +31,11 @@ The same verified owner identity can open the unlisted `/chat` route. That
 route is intentionally absent from desktop and mobile navigation and redirects
 every other signed-in identity to `/home`; the owner claim, not knowledge of
 the URL, is the access boundary.
-The Carelog header shortcut is withdrawn while its phone route is repaired.
-The Platform does not present a Carelog launcher in shared navigation.
+Betty Dominici, Andrew Dominici, and Eric Wilson see a desktop Carelog shortcut
+in shared navigation at widths of 1024px or more. It opens the existing Surface
+presenter in a new tab using the signed-in Platform Microsoft session. Carelog
+continues to enforce its own facility and role access. The shortcut is absent
+from phone and narrow-tablet navigation while the phone route is repaired.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
 analysis live in the profiles. Phone Admissions keeps Briefing and Pipeline as
