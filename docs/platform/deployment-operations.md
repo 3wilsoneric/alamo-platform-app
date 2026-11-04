@@ -16,6 +16,23 @@
 
 ## Current Production Host
 
+### Carelog phone frame reveal — 2026-11-03
+
+The Platform Carelog phone shell now uncovers its embedded Carelog page as soon
+as the frame loads. The former overlay waited for `iframe` `innerText`, which
+can remain empty in iOS Safari after rotation even when Carelog has painted.
+If the frame does not load, the shell changes to a recovery message after 12
+seconds. This release changes only the shell and its browser check.
+
+- active revision: `alamo-platform-prod-web--carelog-reveal-1104`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:b25c43f07f49bbfc143834d3ab983f7ba57da8c6b5d46613dec34330659890d6`
+- preceding image for rollback: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a217359cc2e0123a7c44acd46ff48f3de895809484ab661f55d8f3c8bc3726a3`
+- verification: Chromium and WebKit launcher checks, including a loaded frame
+  with no readable text; TypeScript, docs, build; healthy production revision
+  at 100% traffic; byte-identical live shell script; anonymous live WebKit
+  phone rendering without JavaScript errors. A signed-in physical iPhone
+  session was not available for automated verification.
+
 ### Licensing access for four viewers — 2026-11-03
 
 Betty Dominici, Andrew Dominici, Raj Thandi, and Eric Wilson are the four
