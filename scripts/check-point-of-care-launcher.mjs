@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 const script = await readFile(new URL("../public/point-of-care-launcher.js", import.meta.url), "utf8");
 const launchScript = await readFile(new URL("../public/carelog-launch.js", import.meta.url), "utf8");
@@ -63,7 +63,7 @@ const server = createServer((request, response) => {
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const port = server.address().port;
-const browser = await chromium.launch({ headless: true });
+const browser = await (process.env.POC_BROWSER === "webkit" ? webkit : chromium).launch({ headless: true });
 try {
   const desktop = await browser.newPage();
   for (const name of ["Betty Dominici", "Andrew Dominici", "Eric Wilson"]) {
@@ -93,15 +93,19 @@ try {
 
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await phone.goto(`http://127.0.0.1:${port}/home?name=Eric%20Wilson`);
+  assert.equal(await phone.locator("[data-platform-poc-surface='mobile']").getAttribute("href"), "/carelog.html?phone=1");
   await phone.evaluate(() => sessionStorage.setItem("platform-session-check", "retained"));
   const phonePopupPromise = phone.waitForEvent("popup");
   await phone.locator("[data-platform-poc-surface='mobile']").click();
   const phonePopup = await phonePopupPromise;
+  await phonePopup.waitForURL("**/carelog.html?phone=1");
   await phonePopup.locator("#turn:visible").waitFor();
-  assert.equal(new URL(phonePopup.url()).pathname, "/carelog-demo.html");
+  // The application is already loaded behind the portrait prompt.
+  await phonePopup.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
+  await phonePopup.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.token === "retained");
   assert.equal(new URL(phone.url()).pathname, "/home");
   await phonePopup.setViewportSize({ width: 844, height: 390 });
-  await phonePopup.waitForURL("**/carelog.html?phone=1");
+  await phonePopup.locator("#turn").waitFor({ state: "hidden" });
   assert.equal(await phonePopup.evaluate(() => sessionStorage.getItem("platform-session-check")), "retained");
   assert.equal(await phonePopup.evaluate(() => window.opener === null), true);
   await phonePopup.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
@@ -116,9 +120,11 @@ try {
   const portrait = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await portrait.goto(`http://127.0.0.1:${port}/carelog.html`);
   await portrait.locator("#turn:visible").waitFor();
-  assert.equal(await portrait.locator("#app-screen").getAttribute("src"), "about:blank");
-  await portrait.setViewportSize({ width: 844, height: 390 });
   await portrait.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
+  await portrait.locator("#continue-upright").click();
+  await portrait.locator("#turn").waitFor({ state: "hidden" });
+  await portrait.setViewportSize({ width: 844, height: 390 });
+  assert.equal(await portrait.locator("#app-screen").getAttribute("src"), "/poc/app/now?platform=1&presented=1");
   console.log("Point of Care header and mobile entry checks passed.");
 } finally {
   await browser.close();

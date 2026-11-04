@@ -13,13 +13,16 @@
       #turn[hidden]{display:none}
       #turn h1{margin:0 0 10px;font-size:clamp(26px,7vw,40px);line-height:1.1}
       #turn p{max-width:360px;margin:0;color:#d7e6e2;font-size:17px;line-height:1.5}
+      #turn button{min-height:48px;margin-top:24px;padding:11px 20px;border:1px solid #a9d4c8;border-radius:7px;background:#f8fffc;color:#103f38;font:700 16px/1 Arial,Helvetica,sans-serif}
       #turn svg{display:block;width:76px;height:76px;margin:0 auto 24px;stroke:#9cdbc4;fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
       #status{position:fixed;inset:auto 20px 20px;z-index:3;color:#8c261f;text-align:center}
+      @media (orientation: portrait){html[data-phone]:not([data-continue-upright]) #turn{display:grid!important}}
+      @media (orientation: landscape){html[data-phone] #turn{display:none!important}}
     </style>
-    <script defer src="/carelog-launch.js?v=phone-surface-1103"></script>
+    <script defer src="/carelog-launch.js?v=phone-surface-1104"></script>
   </head>
   <body>
-    <div id="turn" role="status" hidden><div><svg viewBox="0 0 80 80" aria-hidden="true"><rect x="11" y="25" width="58" height="34" rx="5"/><path d="M25 16a25 25 0 0 1 40 5m-1-10 2 12-12-1"/></svg><h1>Turn your phone sideways</h1><p>Carelog will open when your screen is in landscape. Turn off Portrait Orientation Lock if it stays upright.</p></div></div>
+    <div id="turn" role="status" hidden><div><svg viewBox="0 0 80 80" aria-hidden="true"><rect x="11" y="25" width="58" height="34" rx="5"/><path d="M25 16a25 25 0 0 1 40 5m-1-10 2 12-12-1"/></svg><h1>Turn your phone sideways</h1><p>Carelog is ready. If it stays here after you turn, switch off Portrait Orientation Lock or continue upright.</p><button id="continue-upright" type="button">Continue upright</button></div></div>
     <div id="surface"><iframe id="app-screen" title="Carelog Point of Care" src="about:blank" allow="fullscreen"></iframe></div>
     <div id="status" role="alert"></div>
   </body>
