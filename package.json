@@ -134,6 +134,8 @@
     "build": "vite build && node scripts/stage-spa-route-indexes.mjs",
     "release:resident-flow:prepare": "node scripts/prepare-resident-flow-release.mjs",
     "release:client-flow-scope:prepare": "node scripts/prepare-client-flow-scope-release.mjs",
+    "release:mobile-client-flow:prepare": "node scripts/prepare-mobile-client-flow-release.mjs",
+    "release:remove-carelog-shortcut:prepare": "node scripts/prepare-remove-carelog-shortcut-release.mjs",
     "release:poc-header:prepare": "node scripts/prepare-poc-header-release.mjs",
     "build:carelog-platform-bridge": "node scripts/build-carelog-platform-bridge.mjs",
     "check:resident-flow": "node scripts/check-resident-flow-report.mjs",
