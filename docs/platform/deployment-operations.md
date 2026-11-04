@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-11-03
+- updated: 2026-11-04
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -15,6 +15,23 @@
   - [alamo-platform-app/vercel.json](/Users/eric/CareEngineMain/alamo-platform-app/vercel.json)
 
 ## Current Production Host
+
+### Phone Client flow and shortcut withdrawal — 2026-11-04
+
+The broken Carelog shortcut is absent from Platform navigation on Analytics,
+Admissions, and Chat. The Client flow report now presents monthly census as
+readable horizontal rows and community movement as compact facts on phones;
+desktop retains the chart and comparison table. Narrow Admissions cards and
+their client chart tabs have more room for names, decisions, and timing.
+
+- active revision: `alamo-platform-prod-web--mobile-flow-1104`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:41b85d562bee427214009e73d11a3597be54d79239165bc3ece4a327185980c9`
+- rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:752a061ef7f6591a02d4b2e29efb508953a917fa5d7128d1ec2d97d22352a5e3`
+- active browser bundle: `/assets/index-mobile-flow-4eae97ee2520.js`
+- verification: TypeScript, production build, resident-flow contracts, Admissions
+  browser checks, 72 mobile route and viewport checks, 320px visual inspection,
+  and live asset and revision checks. The release keeps the prior production
+  image as its base; no API or data-source code changed.
 
 ### Carelog phone work-surface readiness — 2026-11-03
 

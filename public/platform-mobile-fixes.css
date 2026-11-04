@@ -1,0 +1,28 @@
+@media (max-width: 760px) {
+  [data-admissions-card-fact="timing"] {
+    grid-column: 1 / -1;
+  }
+
+  [data-admissions-chart-name-tab] {
+    height: 48px;
+    padding: 6px;
+  }
+
+  [data-admissions-decision-tab] {
+    height: 36px;
+    padding-inline: 10px;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+}
+
+@media (max-width: 360px) {
+  [data-admissions-board-card] > div:first-child {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  [data-admissions-card-fact="planned-admission"] {
+    grid-column: 1 / -1;
+  }
+}
