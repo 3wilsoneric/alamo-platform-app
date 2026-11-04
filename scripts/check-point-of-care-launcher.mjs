@@ -9,7 +9,28 @@ const launchHtml = await readFile(new URL("../public/carelog.html", import.meta.
 const demoScript = await readFile(new URL("../public/carelog-demo-launch.js", import.meta.url), "utf8");
 const demoHtml = await readFile(new URL("../public/carelog-demo.html", import.meta.url), "utf8");
 const phoneCss = await readFile(new URL("../public/carelog-phone.css", import.meta.url), "utf8");
+const realBridge = await readFile(new URL("../public/carelog-platform-session.js", import.meta.url), "utf8");
 const server = createServer((request, response) => {
+  if (request.url === "/real-bridge") {
+    response.writeHead(200, { "content-type": "text/html" });
+    response.end('<!doctype html><html><body><iframe id="app-screen" src="about:blank"></iframe><script type="module" src="/real-platform-session.js" onload="document.getElementById(\'app-screen\').src=\'/real-frame\'"></script></body></html>');
+    return;
+  }
+  if (request.url === "/real-frame") {
+    response.writeHead(200, { "content-type": "text/html" });
+    response.end('<!doctype html><html><body><script>addEventListener("message",e=>{if(e.data?.type==="poc-platform-token")document.body.dataset.error=e.data.error});parent.postMessage({type:"poc-platform-token-request",requestId:"real-test",interactive:false},location.origin)</script></body></html>');
+    return;
+  }
+  if (request.url === "/real-platform-session.js") {
+    response.writeHead(200, { "content-type": "text/javascript" });
+    response.end(realBridge);
+    return;
+  }
+  if (request.url === "/poc/app/auth/config") {
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ platform: { tenantId: "d72d9036-cff8-4f5f-a6fa-d698f621d420", clientId: "40283155-592b-4565-bd3c-c730a34feaaa", scope: "api://40283155-592b-4565-bd3c-c730a34feaaa/access_as_user" } }));
+    return;
+  }
   if (request.url === "/point-of-care-launcher.js") {
     response.writeHead(200, { "content-type": "text/javascript" });
     response.end(script);
@@ -50,7 +71,7 @@ const server = createServer((request, response) => {
     response.end('<!doctype html><html><body><div id="demo-hand">Carelog Surface demo</div></body></html>');
     return;
   }
-  if (request.url === "/poc/app/platform-session.js") {
+  if (request.url === "/carelog-platform-session.js" || request.url?.startsWith("/carelog-platform-session.js?")) {
     response.writeHead(200, { "content-type": "text/javascript" });
     response.end("window.addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='poc-platform-token-request')return;event.source.postMessage({type:'poc-platform-token',requestId:event.data.requestId,token:sessionStorage.getItem('platform-session-check'),expires:Date.now()+3600000},location.origin)})");
     return;
@@ -125,6 +146,8 @@ try {
   await portrait.locator("#turn").waitFor({ state: "hidden" });
   await portrait.setViewportSize({ width: 844, height: 390 });
   assert.equal(await portrait.locator("#app-screen").getAttribute("src"), "/poc/app/now?platform=1&presented=1");
+  await desktop.goto(`http://127.0.0.1:${port}/real-bridge`);
+  await desktop.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.error === "platform_no_session");
   console.log("Point of Care header and mobile entry checks passed.");
 } finally {
   await browser.close();

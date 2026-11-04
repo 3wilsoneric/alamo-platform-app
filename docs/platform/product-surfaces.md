@@ -36,7 +36,9 @@ It opens a separate same-origin tab with their existing Platform session. The
 desktop entry shows the Surface presenter; the phone entry loads Carelog behind
 a portrait turn prompt, then reveals the full fitted work surface in landscape.
 The prompt also offers Continue upright when device orientation is locked.
-Carelog enforces its own
+Its same-origin phone shell loads one bundled Platform token bridge before the
+Carelog iframe. This avoids a second module request during mobile startup and
+uses the existing delegated Platform session. Carelog still checks its own
 viewer and staff access on every API request.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
