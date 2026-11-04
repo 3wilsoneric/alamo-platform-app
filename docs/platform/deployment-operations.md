@@ -16,6 +16,23 @@
 
 ## Current Production Host
 
+### Carelog phone work-surface readiness — 2026-11-03
+
+The Platform Carelog phone shell now leaves sign-in and access messages visible
+at the phone's natural width. It shows the turn prompt only after Carelog's
+authenticated `.p-shell` mounts, then fits that surface to the landscape
+viewport. This avoids resizing a tall portrait iframe during authentication
+and fixes a CSS rule that previously forced the turn prompt over sign-in.
+
+- active revision: `alamo-platform-prod-web--carelog-ready-1104`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:d0a0b35f8dd359158b73769adb11bd70908694069ba1edbcd71e1f5203f46333`
+- preceding image for rollback: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:b25c43f07f49bbfc143834d3ab983f7ba57da8c6b5d46613dec34330659890d6`
+- verification: Chromium and WebKit entry checks cover sign-in, work-surface
+  mount, turn, and landscape fit; a WebKit run of the production Carelog app
+  with invented API responses rendered the authenticated landscape surface;
+  production served the byte-identical shell script and a Healthy revision.
+  A signed-in physical iPhone session remains unverified.
+
 ### Carelog phone frame reveal — 2026-11-03
 
 The Platform Carelog phone shell now uncovers its embedded Carelog page as soon
