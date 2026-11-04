@@ -33,8 +33,10 @@ every other signed-in identity to `/home`; the owner claim, not knowledge of
 the URL, is the access boundary.
 Eric Wilson, Andrew Dominici, and Betty Dominici see the Carelog header entry.
 It opens a separate same-origin tab with their existing Platform session. The
-desktop entry shows the Surface presenter; the phone entry waits for landscape
-and fits the full Carelog work surface to the phone. Carelog enforces its own
+desktop entry shows the Surface presenter; the phone entry loads Carelog behind
+a portrait turn prompt, then reveals the full fitted work surface in landscape.
+The prompt also offers Continue upright when device orientation is locked.
+Carelog enforces its own
 viewer and staff access on every API request.
 The report catalog becomes a selector below 1024px, preserving a full-width
 reader on portrait tablets. Phone home is a five-community list; census and
