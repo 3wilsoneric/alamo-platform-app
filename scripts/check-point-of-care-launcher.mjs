@@ -178,6 +178,23 @@ try {
   await emptyFrame.goto(`http://127.0.0.1:${port}/carelog.html?phone=1`);
   await emptyFrame.locator("#app-screen[src='/poc/app/now?platform=1&presented=1']").waitFor();
   await emptyFrame.locator("#loading").waitFor({ state: "hidden" });
+  const signingIn = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await signingIn.route("**/poc/app/now?*", (route) => route.fulfill({
+    status: 200, contentType: "text/html", body: "<!doctype html><html><body><div class='p-lock'>Sign in</div></body></html>",
+  }));
+  await signingIn.goto(`http://127.0.0.1:${port}/carelog.html?phone=1`);
+  await signingIn.locator("#loading").waitFor({ state: "hidden" });
+  assert.equal(await signingIn.locator("#turn").isHidden(), true);
+  assert.equal(await signingIn.locator("#app-screen").evaluate((frame) => frame.getBoundingClientRect().width), 390);
+  await signingIn.locator("#app-screen").evaluate((frame) => {
+    const work = frame.contentDocument.createElement("div");
+    work.className = "p-shell";
+    frame.contentDocument.body.append(work);
+  });
+  await signingIn.locator("#turn:visible").waitFor();
+  await signingIn.setViewportSize({ width: 844, height: 390 });
+  await signingIn.locator("#turn").waitFor({ state: "hidden" });
+  assert.equal(await signingIn.locator("#app-screen").evaluate((frame) => frame.style.width), "1098px");
   await desktop.goto(`http://127.0.0.1:${port}/real-bridge`);
   await desktop.waitForFunction(() => document.querySelector("#app-screen")?.contentDocument?.body.dataset.error === "platform_no_session");
   console.log("Point of Care header and mobile entry checks passed.");

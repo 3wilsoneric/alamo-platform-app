@@ -12,6 +12,8 @@
   let bridgeReady = false;
   let opened = false;
   let frameLoaded = false;
+  let appReady = false;
+  let frameObserver = null;
   let continueUpright = false;
   let usingLocalBridge = false;
   let handoff = null;
@@ -25,7 +27,17 @@
   if (handoff) document.documentElement.setAttribute("data-carelog-handoff", "ready");
 
   function fitPhoneSurface() {
-    if (!isPhone()) return;
+    const sideways = window.matchMedia("(orientation: landscape)").matches || window.innerWidth > window.innerHeight;
+    if (!isPhone() || !appReady || !sideways) {
+      frame.removeAttribute("style");
+      delete frame.dataset.surfaceScale;
+      try {
+        const root = frame.contentDocument?.documentElement;
+        root?.removeAttribute("data-phone-surface");
+        root?.style.removeProperty("--p-presentation-scale");
+      } catch { /* A navigation can temporarily make the frame unavailable. */ }
+      return;
+    }
     // Match Carelog's tested phone presenter: retain its 1098px Surface layout,
     // then fit it to the landscape phone without shrinking its work area.
     const availableWidth = surface.clientWidth || window.visualViewport?.width || window.innerWidth;
@@ -34,6 +46,7 @@
     frame.style.width = "1098px";
     frame.style.height = `${Math.max(1, availableHeight) / scale}px`;
     frame.style.transform = `scale(${scale})`;
+    frame.dataset.surfaceScale = String(scale);
     let root;
     try { root = frame.contentDocument?.documentElement; } catch { return; }
     if (!root || frame.getAttribute("src") === "about:blank") return;
@@ -54,7 +67,9 @@
     document.documentElement.toggleAttribute("data-phone", phone);
     document.documentElement.toggleAttribute("data-continue-upright", continueUpright);
     const sideways = window.matchMedia("(orientation: landscape)").matches || window.innerWidth > window.innerHeight;
-    const waiting = phone && !sideways && !continueUpright;
+    // Sign-in and access errors must remain usable in portrait. Only the
+    // authenticated work surface asks the user to turn the phone.
+    const waiting = phone && appReady && !sideways && !continueUpright;
     turn.hidden = !waiting;
     // Load the app beneath the turn prompt. Rotation only reveals an already
     // running surface, so a delayed or missing iOS resize cannot strand users.
@@ -130,7 +145,22 @@
   frame.addEventListener("load", () => {
     if (frame.getAttribute("src") === "about:blank") return;
     frameLoaded = true;
-    fitPhoneSurface();
+    frameObserver?.disconnect();
+    appReady = false;
+    let body;
+    try { body = frame.contentDocument?.body; } catch { /* Carelog owns its own error page. */ }
+    if (body) {
+      const checkReady = () => {
+        const ready = !!body.querySelector(".p-shell");
+        if (ready === appReady) return;
+        appReady = ready;
+        update();
+      };
+      frameObserver = new MutationObserver(checkReady);
+      frameObserver.observe(body, { childList: true, subtree: true });
+      checkReady();
+    }
+    update();
     // iOS Safari can report empty innerText for a painted iframe, especially
     // after rotation. The frame load is the reliable handoff to Carelog's own
     // loading and sign-in states; do not cover them with a second loader.
