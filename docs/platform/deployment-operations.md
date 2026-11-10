@@ -16,6 +16,23 @@
 
 ## Current Production Host
 
+### Carelog Demo header button — 2026-11-09
+
+The desktop Platform header now shows a text-only **Carelog Demo** button for
+Betty Dominici, Andrew Dominici, and Eric Wilson. It keeps the existing new-tab
+Carelog Surface route and Platform session handoff. The release changes only the
+launcher asset and its cache-busted entry references; the current Carelog
+redirect, bridge, application, and backend remain on the preceding image.
+
+- active revision: `alamo-platform-prod-web--poc-nav-1109-bc614b3`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:3c22d06850bc1947f513315738c443eae22fa79488b09d2cd30106a241c360ea`
+- rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:5de0f5f40c6203e592fb01d723ef8c7b445d1489827fcdc2ae3bc7bcbc6efd7f`
+- source commit: `bc614b3`
+- verification: launcher browser test including new-tab session handoff and
+  text-only rendering; docs, TypeScript, and build checks; live launcher hash
+  `7b1fca1a2a25`, HTML reference, `/carelog-demo.html` and `/poc` HTTP 200;
+  revision healthy, running, and serving 100% traffic.
+
 ### Desktop Carelog Surface entry — 2026-11-04
 
 Betty Dominici, Andrew Dominici, and Eric Wilson see a Carelog shortcut in the
