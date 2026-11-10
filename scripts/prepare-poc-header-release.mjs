@@ -24,9 +24,8 @@ const oldLauncher = fromImage("point-of-care-launcher.js");
 if (hash(oldLauncher) !== hash(fromLive("point-of-care-launcher.js"))) throw Error("The live launcher does not match the pinned image.");
 const newLauncher = await readFile("public/point-of-care-launcher.js");
 await writeCompressed("point-of-care-launcher.js", newLauncher);
-for (const relative of ["carelog-demo.html", "carelog-demo-launch.js"]) {
-  await writeCompressed(relative, await readFile(path.join("public", relative)));
-}
+// Preserve the current production Carelog redirect and session bridge. This
+// release changes only the header launcher and its cache-busted entry reference.
 const version = `header-${hash(newLauncher).slice(0, 12)}`;
 for (const relative of ["index.html", "admissions/index.html", "chat/index.html"]) {
   const original = fromImage(relative).toString("utf8");

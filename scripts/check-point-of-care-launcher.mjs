@@ -65,6 +65,9 @@ try {
     assert.equal(await link.getAttribute("href"), "/carelog-demo.html");
     assert.equal(await link.getAttribute("target"), "_blank");
     assert.equal(await link.getAttribute("rel"), "opener");
+    assert.equal(await link.textContent(), "Carelog Demo");
+    assert.equal(await link.locator("svg, .platform-poc-launcher__icon").count(), 0);
+    assert.equal(await link.getAttribute("aria-label"), "Open Carelog Demo in a new tab");
     await page.evaluate(() => sessionStorage.setItem("platform-session-check", "existing-platform-session"));
     const opened = page.waitForEvent("popup");
     await link.click();
