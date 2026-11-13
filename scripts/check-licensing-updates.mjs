@@ -4,6 +4,7 @@ import { readFile, writeFile, rename, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { LICENSING_SCHEDULE } from "./licensing/job-schedule.mjs";
+import { formatLicensingProcessError } from "./licensing/process-error.mjs";
 import { LICENSING_COMMUNITIES } from "../shared/licensing-contracts.mjs";
 
 const exec = promisify(execFile);
@@ -14,12 +15,14 @@ const replay = process.argv.includes("--refresh-feed-only");
 let failure = false;
 if (!replay) {
   try {
-    await exec("python3", ["scripts/licensing/collect.py"], { cwd: root, timeout: 600_000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } });
+    await exec("python3", ["scripts/licensing/collect.py"], { cwd: root, timeout: 900_000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } });
     await exec(process.execPath, ["scripts/import-licensing-baseline.mjs"], { cwd: root, timeout: 60_000 });
   } catch (error) {
     failure = true;
     await mkdir(destination, { recursive: true });
-    await writeFile(path.join(destination, "last-check-error.log"), String(error instanceof Error ? error.message : error).slice(0, 8000));
+    const detail = formatLicensingProcessError(error);
+    await writeFile(path.join(destination, "last-check-error.log"), detail);
+    console.error(`Licensing collection/import failed: ${detail}`);
   }
 }
 const python = `import sqlite3,json,sys

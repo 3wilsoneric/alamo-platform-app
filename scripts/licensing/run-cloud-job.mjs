@@ -9,10 +9,12 @@ import { LICENSING_BLOB_PATH, LICENSING_MAX_BYTES } from "../../server/licensing
 import { licensingContainer, readBlob } from "./cloud-storage.mjs";
 import { withLicensingLease } from "./cloud-storage.mjs";
 import { LICENSING_SCHEDULE, licensingCheckedToday, licensingScheduleSlot } from "./job-schedule.mjs";
+import { formatLicensingProcessError } from "./process-error.mjs";
 import { deliverPendingLicensingNotifications, queueLicensingChangeNotification } from "./update-notifications.mjs";
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL("../../", import.meta.url));
+const destination = path.join(root, "generated/licensing");
 const container = licensingContainer();
 const current = container.getBlockBlobClient(LICENSING_BLOB_PATH);
 try {
@@ -27,7 +29,6 @@ try {
       if (scheduleSlot === "retry" && licensingCheckedToday(saved.updates.lastSuccessful)) {
         return { status: "skipped", reason: "Today's licensing collection already completed." };
       }
-      const destination = path.join(root, "generated/licensing");
       await mkdir(destination, { recursive: true });
       try {
         const evidenceHash = saved.collector?.evidenceSha256 ?? process.env.LICENSING_INITIAL_EVIDENCE_SHA256;
@@ -46,7 +47,7 @@ try {
         await writeFile(path.join(destination, "baseline.json"), JSON.stringify(saved.baseline));
         await writeFile(path.join(destination, "updates.json"), JSON.stringify(saved.updates));
         const { stdout } = await exec(process.execPath, ["scripts/check-licensing-updates.mjs", "--publish"], {
-          cwd: root, timeout: 900_000, maxBuffer: 4 * 1024 * 1024, signal,
+          cwd: root, timeout: 1_050_000, maxBuffer: 4 * 1024 * 1024, signal,
           env: { ...process.env, LICENSING_CLOUD_JOB: "true", LICENSING_EXPECTED_ETAG: previous.etag, LICENSING_LEASE_ID: leaseId }
         });
         process.stdout.write(stdout);
@@ -60,6 +61,10 @@ try {
         });
         return { status: "complete", schedule: LICENSING_SCHEDULE, notification };
       } catch (error) {
+        try {
+          const detail = await readFile(path.join(destination, "last-check-error.log"), "utf8");
+          console.error(`Licensing source failure: ${detail.slice(-8_000)}`);
+        } catch { /* The failure happened before the collector wrote a diagnostic. */ }
         // Preserve the last published collection and expose failure in Updates.
         // This also covers restore/import/publish failures, not just HTTP errors.
         if (!signal.aborted) {
@@ -80,6 +85,6 @@ try {
     console.log(JSON.stringify({ ...result, notifications: [...recoveredNotifications, ...deliveredNotifications] }));
   }
 } catch (error) {
-  console.error(`Licensing cloud check failed: ${error.message}`);
+  console.error(`Licensing cloud check failed: ${formatLicensingProcessError(error)}`);
   process.exitCode = 1;
 }

@@ -1561,7 +1561,16 @@ its immutable digest with
 `npm run licensing:deploy-job -- --image=<digest>`. Use `--manual` for initial
 verification before enabling the schedule. `az containerapp job start` runs a
 manual execution; for a scheduled definition, supply an execution template with
-the `--scheduled` argument removed to run outside the weekly time window.
+the `--scheduled` argument removed to run outside the weekly time window. The
+execution template must include the current container image, command, resources,
+and every environment variable. `az containerapp job start --args ''` alone can
+drop those settings and report a successful no-op; confirm a real run by its
+console result and a changed `updates.lastChecked` value in the private library.
+When a date looks stale, compare `baseline.collectedAt` with
+`updates.lastChecked` and the latest execution logs. The baseline advances only
+after all four state inventories and their report evidence verify. A failed
+source request must retain the last complete baseline and show its HTTP or
+timeout detail in the job logs.
 Run `npm run check:licensing-job` for DST, overlap, failure, restore, and atomic
 history checks. The first cloud execution and a fresh-container repeat must
 succeed before retiring the former Codex automation.
