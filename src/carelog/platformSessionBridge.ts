@@ -1,35 +1,14 @@
-import { InteractionRequiredAuthError, PublicClientApplication } from "@azure/msal-browser";
+import { createPlatformClientSession } from "./platformClientSession";
+import { readStorageItem, removeStorageItem } from "../shared/storage/browserStorage";
+import { InteractionRequiredAuthError } from "@azure/msal-browser";
 
 // This runs in the Platform-owned Carelog phone shell. It sends the existing
 // delegated Platform token only to that shell's same-origin Carelog iframe.
 const frame = document.getElementById("app-screen") as HTMLIFrameElement | null;
 const errorKey = "carelog.platform-signin-error";
-let session: Promise<{ client: PublicClientApplication; scope: string }> | null = null;
 let redirecting = false;
 
-function platformClient() {
-  session ??= (async () => {
-    const response = await fetch("/poc/app/auth/config", { cache: "no-store", credentials: "omit" });
-    if (!response.ok) throw new Error("Carelog sign-in configuration is unavailable.");
-    const { platform } = await response.json() as { platform?: { tenantId: string; clientId: string; scope: string } };
-    if (!platform?.tenantId || !platform.clientId || !platform.scope) throw new Error("Platform sign-in is unavailable.");
-    const client = new PublicClientApplication({
-      auth: {
-        clientId: platform.clientId,
-        authority: `https://login.microsoftonline.com/${platform.tenantId}`,
-        redirectUri: `${location.origin}/poc/app/platform-login.html`,
-        postLogoutRedirectUri: location.origin,
-        navigateToLoginRequestUrl: false
-      },
-      cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
-    });
-    await client.initialize();
-    const result = await client.handleRedirectPromise();
-    if (result?.account) client.setActiveAccount(result.account);
-    return { client, scope: platform.scope };
-  })().catch((error) => { session = null; throw error; });
-  return session;
-}
+const platformClient = createPlatformClientSession("/poc/app/platform-login.html", location.origin);
 
 window.addEventListener("message", async (event) => {
   if (!frame || window.parent !== window || event.origin !== location.origin || event.source !== frame.contentWindow
@@ -43,8 +22,8 @@ window.addEventListener("message", async (event) => {
   try {
     const { client, scope } = await platformClient();
     if (redirecting) return;
-    const cancelled = sessionStorage.getItem(errorKey);
-    sessionStorage.removeItem(errorKey);
+    const cancelled = readStorageItem(errorKey, { kind: "session" });
+    if (!removeStorageItem(errorKey, { kind: "session" })) throw new Error("Sign-in state is unavailable.");
     if (cancelled && event.data.interactive !== true) { reply({ error: "platform_sign_in_cancelled" }); return; }
     const accounts = client.getAllAccounts();
     const account = client.getActiveAccount() ?? (accounts.length === 1 ? accounts[0] : null);

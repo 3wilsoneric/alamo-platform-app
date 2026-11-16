@@ -471,6 +471,24 @@ failed QA, invalid facilities, malformed dates, duplicate community-qualified
 resident keys, and impossible census counts fail closed instead of being
 normalized into plausible-looking output.
 
+The census response also exposes `weekly_movement`, a bounded projection of the
+same governed community/week resident-flow table used by Platform Admissions.
+It contains up to 12 Monday–Sunday periods, community identifiers/names,
+admission and discharge counts, and an explicit `complete` flag. A period is
+complete only after its Sunday has passed in the source business date and every
+approved census community has exactly one valid row. Missing or duplicate rows
+remain unknown; they are not zero-filled here. An older snapshot without the
+table returns an empty list. No resident names or new authentication scopes are
+added. Pipeline must select its exact prior-week period and preserve the census
+snapshot date separately from that movement period.
+
+The Pipeline census projection also publishes each community's
+`operating_capacity`, `licensed_capacity`, and `capacity_as_of` from the shared
+`ALAMO_FACILITIES` configuration used by Platform Admissions. Pipeline occupancy
+bars use the operating limit as their denominator. The licensed maximum remains
+available as source context. Consumers must not infer capacity from census or
+apply a capacity effective date to earlier snapshots.
+
 The enhanced client database is optional enrichment. If its published pointer
 cannot be loaded or validated, `/clients/*` fails closed while the independently
 validated health, census, roster, resident, and medication-summary projections
@@ -732,3 +750,9 @@ The platform should be judged on four things:
 - whether failures are contained, diagnosed, repaired, verified, and retained
 
 That is the base another EHR, eMAR, or analytics product can build on.
+
+The 2026-11-16 census-feed release overlays only `pipeline-clinical-api.mjs` and
+`pipeline-weekly-movement.mjs` on the exact serving image. Existing Carebook
+routing, governed birth-date projection, browser bundles, environment, and
+scale are preserved. Carelog build-entry and client-session consolidation in
+the source checkout are validation repairs, not part of this runtime overlay.

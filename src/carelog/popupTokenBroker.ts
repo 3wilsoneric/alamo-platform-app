@@ -1,29 +1,6 @@
-import { PublicClientApplication } from "@azure/msal-browser";
+import { createPlatformClientSession } from "./platformClientSession";
 
-let session: Promise<{ client: PublicClientApplication; scope: string }> | null = null;
-
-function platformClient() {
-  session ??= (async () => {
-    const response = await fetch("/poc/app/auth/config", { cache: "no-store", credentials: "omit" });
-    if (!response.ok) throw new Error("Carelog sign-in configuration is unavailable.");
-    const { platform } = await response.json() as { platform?: { tenantId: string; clientId: string; scope: string } };
-    if (!platform?.tenantId || !platform.clientId || !platform.scope) throw new Error("Platform sign-in is unavailable.");
-    const client = new PublicClientApplication({
-      auth: {
-        clientId: platform.clientId,
-        authority: `https://login.microsoftonline.com/${platform.tenantId}`,
-        redirectUri: `${location.origin}/login-callback.html`,
-        navigateToLoginRequestUrl: false
-      },
-      cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
-    });
-    await client.initialize();
-    const result = await client.handleRedirectPromise();
-    if (result?.account) client.setActiveAccount(result.account);
-    return { client, scope: platform.scope };
-  })().catch((error) => { session = null; throw error; });
-  return session;
-}
+const platformClient = createPlatformClientSession("/login-callback.html");
 
 export async function acquireExistingPlatformToken(): Promise<{ token: string; expires: number }> {
   const { client, scope } = await platformClient();

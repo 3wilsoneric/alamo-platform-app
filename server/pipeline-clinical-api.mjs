@@ -1,5 +1,6 @@
 import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../shared/community-names.mjs";
 import { createHash } from "node:crypto";
+import { pipelineWeeklyMovement } from "./pipeline-weekly-movement.mjs";
 import { normalizeDisplayDateKey } from "../shared/display-date.mjs";
 import { requireApiUser } from "./api-auth.mjs";
 import { createHttpError, getApiError, getRequestUrl } from "./http-errors.mjs";
@@ -383,6 +384,9 @@ function buildCensusResponse(snapshot, context, now) {
         city: facility.city,
         state: facility.state,
         current_census: currentCensus,
+        operating_capacity: facility.operatingLimit,
+        licensed_capacity: facility.licensedCapacity,
+        capacity_as_of: facility.capacityAsOf,
         roster_count: rosterCount,
         reconciliation_status: currentCensus === null ? "unavailable" : delta === 0 ? "matched" : "mismatch",
         delta
@@ -399,6 +403,7 @@ function buildCensusResponse(snapshot, context, now) {
     ...metadata,
     communities,
     portfolio_census_total: portfolioCensusTotal,
+    weekly_movement: pipelineWeeklyMovement(snapshot, communities, context.dataAsOf),
     roster_count: rosterCount,
     reconciliation_status: portfolioCensusTotal === null ? "unavailable" : delta === 0 ? "matched" : "mismatch",
     delta
