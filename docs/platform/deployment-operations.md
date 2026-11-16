@@ -3,7 +3,7 @@
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
-- updated: 2026-11-04
+- updated: 2026-11-15
 - tags: deployment, azure-container-apps, vercel, local-dev, entra, databricks, operations
 - labels: platform-handbook, current-state
 - related files:
@@ -16,7 +16,7 @@
 
 ## Current Production Host
 
-### Fleet navigation candidate — 2026-11-15 (not deployed)
+### Fleet navigation — 2026-11-15
 
 Source `984047c` adds **Fleet** to the existing desktop navigation and mobile menu,
 and **Tablets** to each known community profile. Both open Carelog's deployed
@@ -24,13 +24,21 @@ and **Tablets** to each known community profile. Both open Carelog's deployed
 Existing pilot shortcut visibility remains; Carelog owns actual authorization.
 This does not add single sign-on, grants, remote help or device telemetry.
 
-The release candidate is an exact-base static overlay on
+The deployed release is an exact-base static overlay on
 `sha256:69aa6e201c077fd8f3d9fe67a3db7796db67ea986d7e110aadbcedd418cdaea2`.
 Only `point-of-care-launcher.js` and its cache-busted references in root,
 Admissions and Chat entry documents change, with their compressed companions.
 No server, other app assets, public Carelog presentation or runtime setting changes.
 Preparation uses `scripts/prepare-poc-header-release.mjs`; ACR run `ccep`.
-Candidate evidence is in `generated/fleet-entry-review/` (ignored).
+Candidate and release evidence is in `generated/fleet-entry-review/` (ignored).
+
+- active revision: `alamo-platform-prod-web--fleet-entry-1115-984047c`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:5b3c96058021e41ffb7bbfac764e69ca4307430daf47837d107001b755dccea1`
+- rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:69aa6e201c077fd8f3d9fe67a3db7796db67ea986d7e110aadbcedd418cdaea2`
+- live verification: healthy, running, active and serving 100% traffic; runtime
+  configuration and identities unchanged. Launcher and entry documents match
+  candidate bytes. `/poc`, `/poc/app/admin/fleet` and `/carelog-demo.html` retain
+  their pre-release hashes; anonymous fleet API requests still return HTTP 401.
 
 Checks: source syntax, docs/retention, frontend TypeScript and build pass. Browser
 review of isolated navigation markup at 1280px and 390px verifies all-community and
@@ -43,9 +51,10 @@ The broader `check:analyst` gate stops on three pre-existing code-health finding
 `src/carelog/platformSessionBridge.ts` and `popupTokenBroker.ts` are considered
 unreachable from `src/main.tsx`, and the former accesses browser storage outside
 the shared wrapper. Those source files and the checker are unchanged from this
-branch's base. The full predeployment gate is therefore not green. The ship
-checklist prohibits promotion on a failed gate; a scoped navigation-only exception
-has not been approved for this candidate. Production remains unchanged.
+branch's base. The full predeployment gate is therefore not green. The owner
+explicitly approved deploying this navigation-only release despite these three
+existing findings. That exception covers this exact static overlay only; it does
+not waive the gate for future releases or resolve the existing findings.
 
 
 ### Carelog Demo header button — 2026-11-09
