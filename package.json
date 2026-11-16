@@ -155,7 +155,8 @@
     "prepare:licensing-four-viewers-release": "node scripts/prepare-licensing-four-viewers-release.mjs",
     "licensing:deploy-alert-workflow": "node scripts/deploy-licensing-alert-workflow.mjs",
     "licensing:deploy-job": "node scripts/deploy-licensing-job.mjs",
-    "licensing:prepare-job": "node scripts/prepare-licensing-job.mjs"
+    "licensing:prepare-job": "node scripts/prepare-licensing-job.mjs",
+    "release:fleet:prepare": "node scripts/prepare-fleet-standalone-release.mjs"
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",

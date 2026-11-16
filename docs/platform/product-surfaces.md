@@ -44,19 +44,26 @@ and a compact dashboard-section control inside Briefing. Chart geometry follows 
 tables no longer force horizontal scrolling. Larger comparison tables retain
 bounded horizontal scrolling.
 
-## Carelog fleet navigation
+## Fleet
 
 The existing Carelog pilot viewers have a **Fleet** entry in Platform's desktop
-navigation and mobile menu. It opens `/poc/app/admin/fleet` in the current tab.
+navigation and mobile menu. It opens `/fleet/index.html` in the current tab.
 Community profiles have a **Tablets** entry that carries the canonical facility ID
 and `view=tablets` to the same workspace. Browser Back returns to Platform.
 
-This is navigation only. The launcher follows the existing Carelog pilot entry
-visibility; its display-name check is not an authorization boundary. Carelog still
-requires its own signed-in Supervisor/Administrator and enforces community scope.
-No shared session, new grant, device package or remote assistance is supplied by
-this entry. Unknown community IDs do not produce a scoped link. No operational
-status or client data is loaded by the launcher.
+This is a standalone, full-width Platform page using Carelog's shared fleet
+component. It has no Carelog toolbar, clinical navigation or embedded app frame.
+The existing Platform Microsoft session supplies the delegated token; the API
+still requires Supervisor/Administrator access and enforces community scope.
+Missing or expired sign-in offers the existing Microsoft flow and returns to Fleet.
+No new grant, device package or remote assistance is supplied by this entry.
+
+The launcher follows existing pilot visibility; its display-name check is not an
+authorization boundary. Unknown community IDs do not produce a scoped link.
+The page reads authorized enrollment/health only, every ten seconds while visible.
+On connection failure it marks the retained observation disconnected; on loss of
+authorization it clears device/staff details. It does not persist operational data
+or invent devices. A small back control returns to Platform.
 
 ## Product Model
 

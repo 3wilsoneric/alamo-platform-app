@@ -55,7 +55,7 @@
 (() => {
   const viewers = new Set(["betty dominici", "andrew dominici", "eric wilson"]);
   const communities = new Set(["337", "342", "343", "344", "345"]);
-  const route = "/poc/app/admin/fleet";
+  const route = "/fleet/index.html";
   const selector = "[data-platform-fleet-link]";
   const icon = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 16h4"/></svg>';
   const style = document.createElement("style");
@@ -84,7 +84,7 @@
       parent.insertBefore(anchor, identity);
     }
     if (anchor.getAttribute("href") !== href) anchor.setAttribute("href", href);
-    const label = community ? "Open this community’s tablets in Carelog" : "Open Carelog fleet";
+    const label = community ? "Open this community’s tablets" : "Open Fleet";
     if (anchor.getAttribute("aria-label") !== label) anchor.setAttribute("aria-label", label);
   }
 
