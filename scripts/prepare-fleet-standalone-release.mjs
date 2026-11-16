@@ -28,7 +28,7 @@ await stage("fleet/index.html", fleet);
 await stage("poc/app/platform-login.html", callback);
 const assets = await readdir(path.join(source, "assets"));
 for (const name of assets) {
-  if (!/^[\w.-]+\.(?:js|css|woff2)$/.test(name)) throw Error(`Unexpected Fleet build output: ${name}`);
+  if (!/^[\w.-]+\.(?:js|css|woff2|png|svg)$/.test(name)) throw Error(`Unexpected Fleet build output: ${name}`);
   const bytes = await readFile(path.join(source, "assets", name));
   if (/\.(?:js|css)$/.test(name) && bytes.includes(Buffer.from("fictional-local-only"))) throw Error("Review fixture in production output.");
   await stage(`fleet/assets/${name}`, bytes);
