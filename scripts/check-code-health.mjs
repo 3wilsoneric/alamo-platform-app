@@ -210,7 +210,15 @@ for (const cycle of findCycles(runtimeGraph)) {
 }
 
 const browserEntrypoint = path.join(root, "src/main.tsx");
-const browserReachableFiles = findReachableFiles(graph, [browserEntrypoint]);
+// Carelog's standalone sign-in scripts are separate, real browser bundles.
+// Read their build inputs rather than treating them as unused SPA modules.
+const bridgeBuild = await readFile(path.join(root, "scripts/build-carelog-platform-bridge.mjs"), "utf8");
+const bridgeEntrypoints = [...bridgeBuild.matchAll(/input:\s*["'](src\/[^"']+)["']/g)]
+  .map((match) => path.join(root, match[1]));
+for (const entrypoint of bridgeEntrypoints) {
+  if (!graph.has(entrypoint)) failures.push(`Missing Carelog browser build input: ${path.relative(root, entrypoint)}`);
+}
+const browserReachableFiles = findReachableFiles(graph, [browserEntrypoint, ...bridgeEntrypoints]);
 for (const file of files) {
   const relativePath = path.relative(root, file);
   if (!relativePath.startsWith("src/") || relativePath.endsWith(".d.ts")) continue;

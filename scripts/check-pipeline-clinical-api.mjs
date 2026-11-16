@@ -1,3 +1,4 @@
+import { ALAMO_FACILITIES } from "../shared/community-names.mjs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -147,6 +148,13 @@ check("census preserves reconciliation and source metadata", () => {
   equal(response.body.delta, 1);
   equal(response.body.reconciliation_status, "mismatch");
   equal(response.body.communities[0].city, "San Pablo");
+  for (const community of response.body.communities) {
+    const facility = ALAMO_FACILITIES.find(item => item.facilityId === community.community_id);
+    assert(facility);
+    equal(community.operating_capacity, facility.operatingLimit);
+    equal(community.licensed_capacity, facility.licensedCapacity);
+    equal(community.capacity_as_of, facility.capacityAsOf);
+  }
 });
 
 check("missing census remains unavailable instead of becoming zero", () => {
@@ -156,6 +164,19 @@ check("missing census remains unavailable instead of becoming zero", () => {
   equal(response.body.communities.find((row) => row.community_id === "343").current_census, null);
   equal(response.body.portfolio_census_total, null);
   equal(response.body.reconciliation_status, "unavailable");
+});
+
+check("census publishes governed weekly flow without resident data", () => {
+  const weekly = structuredClone(fixture);
+  weekly.reportsSummary.toolContext.tables.resident_flow_weekly_by_community = request("/census").body.communities.map(community => ({
+    facility_id: community.community_id, week_start: "2026-07-27", admissions: 2, discharges: 1, resident_names: "MUST NOT LEAK"
+  }));
+  const response = request("/census", weekly);
+  equal(response.body.weekly_movement[0].complete, true);
+  equal(response.body.weekly_movement[0].week_end, "2026-08-02");
+  equal(response.body.weekly_movement[0].communities[0].admissions, 2);
+  assert(!JSON.stringify(response.body).includes("MUST NOT LEAK"));
+  equal(request("/census").body.weekly_movement.length, 0);
 });
 
 check("roster search is deterministic, bounded, and cursor based", () => {
