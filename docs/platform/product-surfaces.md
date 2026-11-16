@@ -44,6 +44,20 @@ and a compact dashboard-section control inside Briefing. Chart geometry follows 
 tables no longer force horizontal scrolling. Larger comparison tables retain
 bounded horizontal scrolling.
 
+## Carelog fleet navigation
+
+The existing Carelog pilot viewers have a **Fleet** entry in Platform's desktop
+navigation and mobile menu. It opens `/poc/app/admin/fleet` in the current tab.
+Community profiles have a **Tablets** entry that carries the canonical facility ID
+and `view=tablets` to the same workspace. Browser Back returns to Platform.
+
+This is navigation only. The launcher follows the existing Carelog pilot entry
+visibility; its display-name check is not an authorization boundary. Carelog still
+requires its own signed-in Supervisor/Administrator and enforces community scope.
+No shared session, new grant, device package or remote assistance is supplied by
+this entry. Unknown community IDs do not produce a scoped link. No operational
+status or client data is loaded by the launcher.
+
 ## Product Model
 
 The current public Azure product is not primarily a sidebar app. It begins
