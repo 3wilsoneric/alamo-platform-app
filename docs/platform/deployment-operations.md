@@ -16,6 +16,44 @@
 
 ## Current Production Host
 
+### Standalone Fleet page — 2026-11-15
+
+The owner corrected Fleet's placement: the dashboard is its own full-width
+Platform page at `/fleet/index.html`, without Carelog's shell or an app iframe.
+The main **Fleet** and community **Tablets** links now open that document.
+It renders the same shared community/tablet/multiview component as the preview,
+using authorized enrollment and health data rather than fictional devices.
+
+- Platform source: `71774f2` (navigation `2b1bc56`); Carelog UI: `8dc5486`.
+- active revision: `alamo-platform-prod-web--fleet-page-1115-71774f2`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a9950a54ba0d34dd29d6cb8b220fc25c0e0b5b98251f069c835cab1ab56aae99`
+- rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:5b3c96058021e41ffb7bbfac764e69ca4307430daf47837d107001b755dccea1`
+- ACR run: `cceq`; healthy, active, running and serving 100% traffic.
+
+The exact-base overlay changes 37 static files including compressed companions:
+the Fleet document/assets, launcher/entry references and the existing Platform
+sign-in callback document. The callback consumes only an allowlisted Fleet
+return path; other sign-ins retain their Carelog destination. The standalone
+page uses the existing Platform MSAL session, delegated scope and API role/scope
+checks. Runtime configuration, identity, server files and the API image are
+unchanged; no access grant or tablet package was released.
+
+Verification: all 37 image files match prepared bytes; image config and prior
+layers match. After readiness, 17 uncompressed public files match the candidate.
+The public presentation, old fleet entry, demo redirect and sign-in configuration
+retain their baseline hashes. Anonymous fleet reads return 401. A fresh browser
+loads the standalone Fleet sign-in screen without console errors. Authenticated
+production operator acceptance is not claimed.
+
+The frontend build, docs, types, lint and ten Fleet unit checks pass, as do
+Carelog's 748 unit and 82 architecture tests. A loopback harness with fictional
+data verified desktop/390px layout, communities, Back, multiview, retained stale
+observations on outage and removal of data after 403. The three existing Platform
+code-health findings recorded below remain unchanged; the broader analyst gate
+is not green. This is the owner's requested correction to Fleet's static entry,
+not a broader Platform/runtime release. Evidence is under
+`generated/fleet-entry-review/standalone/` (ignored).
+
 ### Fleet navigation — 2026-11-15
 
 Source `984047c` adds **Fleet** to the existing desktop navigation and mobile menu,
