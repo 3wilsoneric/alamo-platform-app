@@ -16,6 +16,37 @@
 
 ## Current Production Host
 
+### Fleet native health and remote lock — 2026-11-15
+
+The standalone `/fleet/index.html` consumes Carelog's independently signed native device
+heartbeat, including locked state, queue counts, app version and battery. A currently
+connected tablet can receive an audited **Lock Carelog** command; the UI distinguishes
+requested, acknowledged and expired. Clinical records and remote screen streaming are
+not part of these health observations.
+
+- Carelog source: `dacad6319148f75f695258405974a20a3b57e26c`.
+- active revision: `alamo-platform-prod-web--fleet-ops-1115-dacad63`
+- image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:6b12d01c2cec6b049f6ca734434d981b8d71aa5d772dd09d0d11f2f78d51e9e0`
+- rollback: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a9950a54ba0d34dd29d6cb8b220fc25c0e0b5b98251f069c835cab1ab56aae99`
+- ACR: `ccer`; healthy/running, active, 100% traffic.
+
+Exactly nine static Fleet files (HTML, JS, CSS and compressed companions) overlay the
+running image. All previous layers, server files, runtime configuration, identity and
+other app assets are unchanged. Candidate image bytes and three uncompressed public
+files were verified. Anonymous identity/Fleet requests remain denied. A loopback browser
+with fictional tablets verified lock/ack, stale/locked disabled controls, desktop/390px
+layout and clearing after authorization loss. Authenticated physical-device acceptance
+is not claimed.
+
+The full Platform predeployment gate passed docs then stopped on existing high-severity
+`@azure/identity` and `@azure/msal-node` dependency advisories. On 2026-11-15 the owner
+explicitly approved this isolated nine-file Fleet deployment despite those findings.
+This does not waive future releases or resolve the advisories. Previously documented
+code-health failures also remain; no broader Platform gate is represented as green.
+Carelog's own build, lint, 758 unit/82 architecture tests and 12 Fleet checks passed.
+Evidence: `generated/fleet-operations-release/` (ignored). Native tablets require the
+new signed package before reporting while locked; see Carelog's fleet operations handoff.
+
 ### Standalone Fleet page — 2026-11-15
 
 The owner corrected Fleet's placement: the dashboard is its own full-width
