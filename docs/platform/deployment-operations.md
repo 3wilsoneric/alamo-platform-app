@@ -16,6 +16,38 @@
 
 ## Current Production Host
 
+### Fleet navigation candidate — 2026-11-15 (not deployed)
+
+Source `984047c` adds **Fleet** to the existing desktop navigation and mobile menu,
+and **Tablets** to each known community profile. Both open Carelog's deployed
+`/poc/app/admin/fleet`; community entry preserves its facility ID and tablet view.
+Existing pilot shortcut visibility remains; Carelog owns actual authorization.
+This does not add single sign-on, grants, remote help or device telemetry.
+
+The release candidate is an exact-base static overlay on
+`sha256:69aa6e201c077fd8f3d9fe67a3db7796db67ea986d7e110aadbcedd418cdaea2`.
+Only `point-of-care-launcher.js` and its cache-busted references in root,
+Admissions and Chat entry documents change, with their compressed companions.
+No server, other app assets, public Carelog presentation or runtime setting changes.
+Preparation uses `scripts/prepare-poc-header-release.mjs`; ACR run `ccep`.
+Candidate evidence is in `generated/fleet-entry-review/` (ignored).
+
+Checks: source syntax, docs/retention, frontend TypeScript and build pass. Browser
+review of isolated navigation markup at 1280px and 390px verifies all-community and
+community destinations, changing community, browser Back, account changes, invalid
+community rejection, and 44px/64px targets. This is not signed-in production or
+whole-Platform browser acceptance. The existing Carelog destination was verified
+protected in the preceding fleet release.
+
+The broader `check:analyst` gate stops on three pre-existing code-health findings:
+`src/carelog/platformSessionBridge.ts` and `popupTokenBroker.ts` are considered
+unreachable from `src/main.tsx`, and the former accesses browser storage outside
+the shared wrapper. Those source files and the checker are unchanged from this
+branch's base. The full predeployment gate is therefore not green. The ship
+checklist prohibits promotion on a failed gate; a scoped navigation-only exception
+has not been approved for this candidate. Production remains unchanged.
+
+
 ### Carelog Demo header button — 2026-11-09
 
 The desktop Platform header now shows a text-only **Carelog Demo** button for
