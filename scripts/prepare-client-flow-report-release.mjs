@@ -1,0 +1,56 @@
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import ts from "typescript";
+import { brotliCompressSync, gzipSync } from "node:zlib";
+const base = process.env.CLIENT_FLOW_BASE_IMAGE;
+if (!/^pipelineprodacra6qdvl6ebenac\.azurecr\.io\/alamo-platform@sha256:[a-f0-9]{64}$/.test(base ?? "")) throw Error("Pin the current Platform image.");
+const live = execFileSync("az", ["containerapp", "show", "-n", "alamo-platform-prod-web", "-g", "alamo-data-rg", "--query", "properties.template.containers[0].image", "-o", "tsv"], { encoding: "utf8" }).trim();
+if (live !== base) throw Error("Production changed; reconcile before preparing release.");
+const out = path.resolve("generated/client-flow/release");
+const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
+const readImage = (name) => execFileSync("docker", ["run", "--rm", "--platform", "linux/amd64", "--entrypoint", "cat", base, `/app/${name}`], { maxBuffer: 32 * 1024 * 1024 });
+const replace = (text, before, after) => { if (text.split(before).length !== 2) throw Error(`Release boundary changed: ${before.slice(0, 70)}`); return text.replace(before, after); };
+async function write(name, bytes, compressed = false) {
+  const target = path.join(out, "overlay", name); await mkdir(path.dirname(target), { recursive: true }); await writeFile(target, bytes);
+  if (compressed) await Promise.all([writeFile(`${target}.gz`, gzipSync(bytes)), writeFile(`${target}.br`, brotliCompressSync(bytes))]);
+}
+const index = readImage("dist/index.html").toString();
+const oldJs = index.match(/\/assets\/(index-[\w-]+\.js)/)?.[1];
+if (!oldJs) throw Error("Browser entry missing.");
+const prior = readImage(`dist/assets/${oldJs}`).toString();
+const publicBytes = execFileSync("curl", ["-fsSL", `https://www.alamoplatform.com/assets/${oldJs}`], { maxBuffer: 32 * 1024 * 1024 });
+if (hash(prior) !== hash(publicBytes)) throw Error("Live browser bytes differ from pinned image.");
+let source = await readFile("src/features/admissions/components/ResidentFlowReport.tsx", "utf8");
+source = source.replace(/^import .*?;\n/gm, "").replace("export default function ResidentFlowReport", "function ResidentFlowReport");
+const fetchStart = source.indexOf("const result = await fetchWithApiAuth(");
+const fetchEnd = source.indexOf("\n        if (!controller.signal.aborted)", fetchStart);
+if (fetchStart < 0 || fetchEnd < 0) throw Error("Authenticated fetch boundary changed.");
+source = source.slice(0, fetchStart) + "const result = await to(url, controller.signal);" + source.slice(fetchEnd);
+source = source.replace(/\b(useEffect|useRef|useState)\b/g, "V.$1");
+const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, jsxFactory: "V.createElement", jsxFragmentFactory: "V.Fragment", module: ts.ModuleKind.None }, reportDiagnostics: true });
+if (compiled.diagnostics?.length || compiled.outputText.includes("fetchWithApiAuth") || compiled.outputText.includes("React.")) throw Error("Component compilation failed.");
+const start = prior.indexOf("const number = (value)");
+const end = prior.indexOf("function z_(){", start);
+if (start < 0 || end < 0 || prior.indexOf("const number = (value)", start + 1) !== -1) throw Error("Existing flow component boundary changed.");
+const replacement = `/* CLIENT_FLOW_START */\nconst ResidentFlowReport=(()=>{${compiled.outputText}\nreturn ResidentFlowReport;})();\n/* CLIENT_FLOW_END */\n`;
+const bundle = prior.slice(0, start) + replacement + prior.slice(end);
+const newJs = `index-client-flow-${hash(bundle).slice(0, 12)}.js`;
+await write(`dist/assets/${newJs}`, bundle, true);
+const css = await readFile("src/features/admissions/components/resident-flow-report.css");
+await write("dist/resident-flow-report.css", css, true);
+for (const name of ["dist/index.html", "dist/admissions/index.html"]) {
+  let html = replace(readImage(name).toString(), `/assets/${oldJs}`, `/assets/${newJs}`);
+  const oldCss = html.match(/\/resident-flow-report\.css(?:\?v=[a-f0-9]+)?/)?.[0];
+  if (!oldCss) throw Error("Flow stylesheet is missing.");
+  html = replace(html, oldCss, `/resident-flow-report.css?v=${hash(css).slice(0, 12)}`);
+  await write(name, html, true);
+}
+let api = readImage("api/platform.js").toString();
+api = replace(api, 'getResidentFlowReport(requestUrl.searchParams.get("facilityId"))', 'getResidentFlowReport(requestUrl.searchParams.get("facilityId"), requestUrl.searchParams.get("year"))');
+await write("api/platform.js", api);
+await write("server/resident-flow-report.mjs", await readFile("server/resident-flow-report.mjs"));
+await writeFile(path.join(out, "Dockerfile"), `FROM ${base}\nCOPY --chown=node:node overlay/dist /app/dist\nCOPY --chown=node:node overlay/api/platform.js /app/api/platform.js\nCOPY --chown=node:node overlay/server/resident-flow-report.mjs /app/server/resident-flow-report.mjs\n`);
+await writeFile(path.join(out, "receipt.json"), JSON.stringify({ base, oldJs, newJs, sourceHash: hash(source), bundleHash: hash(bundle), preservedPrefix: hash(prior.slice(0, start)), preservedSuffix: hash(prior.slice(end)) }, null, 2));
+console.log(JSON.stringify({ out, oldJs, newJs }));

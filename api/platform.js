@@ -1,3 +1,4 @@
+import { getResidentFlowReport } from "../server/resident-flow-report.mjs";
 import { handleWorkflowKnowledgeRequest } from "../server/workflow-knowledge-api.mjs";
 import { handleEveryAgentRequest } from "../server/everyagent-api.mjs";
 import { handleWorkflowApiRequest, isWorkflowApiPath } from "../server/workflow-api.mjs";
@@ -73,6 +74,7 @@ const PLATFORM_GET_ROUTES = Object.freeze({
   "/api/platform/presentation/access": ({ req, authContext }) => ({ allowed: hasPresentationAccess(authContext, { remoteAddress: req.socket?.remoteAddress }) }),
   "/api/platform/presentation": ({ req, authContext }) => getPresentation(authContext, { remoteAddress: req.socket?.remoteAddress }),
   "/api/platform/presentation/asset": ({ req, requestUrl, authContext }) => getPresentationAsset(requestUrl, authContext, { remoteAddress: req.socket?.remoteAddress }),
+  "/api/platform/resident-flow-report": ({ requestUrl }) => getResidentFlowReport(requestUrl.searchParams.get("facilityId"), requestUrl.searchParams.get("year")),
   "/api/platform/licensing": ({ requestUrl, authContext }) => {
     assertLicensingAccess(authContext);
     return getLicensingLibrary(requestUrl);

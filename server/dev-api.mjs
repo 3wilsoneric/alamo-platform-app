@@ -1,3 +1,4 @@
+import { getResidentFlowReport } from "./resident-flow-report.mjs";
 import { handleWorkflowKnowledgeRequest } from "./workflow-knowledge-api.mjs";
 import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./licensing-library.mjs";
 import { handleEveryAgentRequest } from "./everyagent-api.mjs";
@@ -438,6 +439,10 @@ const server = http.createServer(async (req, res) => {
 
     if (requestUrl.pathname === "/api/platform/admissions-dashboard") {
       sendJson(res, 200, await getAdmissionsDashboardData());
+      return;
+    }
+    if (requestUrl.pathname === "/api/platform/resident-flow-report") {
+      sendJson(res, 200, await getResidentFlowReport(requestUrl.searchParams.get("facilityId"), requestUrl.searchParams.get("year")));
       return;
     }
 

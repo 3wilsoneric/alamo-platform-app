@@ -281,6 +281,15 @@ mar_age_days = int(
 
 add_check("manifest-present", "context", "critical", manifest_count >= 22, ">=22 slices", manifest_count, "Tool context manifest includes the governed resident, county, incident, census, and MAR slices.")
 add_check("resident-profile-present", "residents", "critical", resident_count > 0, ">0 rows", resident_count, "Current resident profile rows are available.")
+episode_duplicate_count = int(scalar(f"SELECT count(*) - count(DISTINCT episode_id) AS value FROM {target}.v_tool_resident_episode_history") or 0)
+resolution_conflicts = int(scalar(f"""SELECT count(*) AS value FROM (
+  SELECT history_id, facility_id, resident_id, admit_date
+  FROM {target}.report_admission_county_resolutions
+  GROUP BY history_id, facility_id, resident_id, admit_date
+  HAVING count(DISTINCT county) > 1
+)""") or 0)
+add_check("admission-episodes-unique", "residents", "critical", episode_duplicate_count == 0, "0 duplicate stay keys", episode_duplicate_count, "County enrichment must preserve one record per admission episode.")
+add_check("admission-county-resolutions-consistent", "residents", "critical", resolution_conflicts == 0, "0 conflicting reviewed counties", resolution_conflicts, "Reviewed county evidence cannot assign different counties to the same source admission.")
 add_check("resident-admit-date-normalized", "residents", "critical", resident_admit_date_failures == 0, "0 missing or malformed admission dates", resident_admit_date_failures, "Current residents have valid ISO admission dates for county and length-of-stay joins.")
 add_check("current-resident-county-present", "residents", "critical", current_resident_county_count == resident_count, resident_count, current_resident_county_count, "Every current resident is represented once in the county census, including County not recorded.")
 add_check("current-resident-county-reconciles", "residents", "critical", current_resident_county_reconciliation_failures == 0, "0 community mismatches", current_resident_county_reconciliation_failures, "County census totals reconcile to the governed current roster for every community.")

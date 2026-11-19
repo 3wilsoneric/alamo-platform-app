@@ -416,6 +416,12 @@ def create_resident_countability_audit_view() -> None:
 
 
 def create_resident_episode_views() -> None:
+    # Reviewed missing-county resolutions are private data, never source-code literals.
+    # Match the exact source admission; a later ElderMark value always wins.
+    spark.sql(f"""CREATE TABLE IF NOT EXISTS {target}.report_admission_county_resolutions (
+      history_id STRING, facility_id STRING, resident_id STRING, admit_date DATE,
+      county STRING, evidence STRING, reviewed_at TIMESTAMP
+    ) USING DELTA""")
     columns = table_columns("res_admittance_history")
     if not columns:
         create_empty_view(
@@ -430,6 +436,9 @@ def create_resident_episode_views() -> None:
                 ("discharge_date", "date"),
                 ("discharge_reason", "string"),
                 ("discharge_destination", "string"),
+                ("admission_county", "string"),
+                ("county_source", "string"),
+                ("prior_placement", "string"),
                 ("episode_status", "string"),
                 ("month_bucket", "string"),
                 ("source_table", "string"),
@@ -442,6 +451,10 @@ def create_resident_episode_views() -> None:
         discharge_expr = sql_date("a", columns, ["Discharge_Date", "Discharged_Date", "End_Date", "Move_Out_Date"])
         reason_expr = sql_value("a", columns, ["Discharge_Reason", "Discharge_Reason_Text", "Reason", "Status"])
         destination_expr = sql_value("a", columns, ["Discharge_To", "Discharged_To", "Discharge_Destination", "Destination"])
+        county_expr = sql_value("a", columns, ["County_Admitted_From"])
+        history_expr = sql_value("a", columns, ["Unique_ID"])
+        placement_expr = sql_value("a", columns, ["Previous_Living_Status"])
+
 
         create_view(
             "v_tool_resident_episode_history",
@@ -453,7 +466,10 @@ def create_resident_episode_views() -> None:
                 {admit_expr} AS admit_date,
                 {discharge_expr} AS discharge_date,
                 {reason_expr} AS discharge_reason,
-                {destination_expr} AS discharge_destination
+                {destination_expr} AS discharge_destination,
+                {history_expr} AS history_id,
+                nullif(trim({county_expr}), '') AS admission_county,
+                {placement_expr} AS prior_placement
               FROM {source}.res_admittance_history a
             )
             SELECT
@@ -470,10 +486,22 @@ def create_resident_episode_views() -> None:
               b.discharge_date,
               b.discharge_reason,
               b.discharge_destination,
+              coalesce(b.admission_county, r.county) AS admission_county,
+              CASE WHEN b.admission_county IS NOT NULL THEN 'ElderMark admission'
+                   WHEN r.county IS NOT NULL THEN r.evidence ELSE NULL END AS county_source,
+              b.prior_placement,
               CASE WHEN b.discharge_date IS NULL THEN 'active_or_unknown' ELSE 'discharged' END AS episode_status,
               date_format(b.admit_date, 'yyyy-MM') AS month_bucket,
               'res_admittance_history' AS source_table
             FROM base b
+            LEFT JOIN (
+              SELECT history_id, facility_id, resident_id, admit_date,
+                CASE WHEN count(DISTINCT county) = 1 THEN max(county) ELSE NULL END AS county,
+                max(evidence) AS evidence
+              FROM {target}.report_admission_county_resolutions
+              GROUP BY history_id, facility_id, resident_id, admit_date
+            ) r ON b.history_id = r.history_id AND b.Facility = r.facility_id
+               AND b.Res_Number = r.resident_id AND b.admit_date = r.admit_date
             LEFT JOIN {target}.v_tool_resident_countability_audit q
               ON b.Res_Number = q.Res_Number
              AND (b.Facility = q.Facility OR b.Facility IS NULL)
