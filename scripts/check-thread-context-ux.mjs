@@ -166,7 +166,10 @@ async function runThreadContextUx(page, screenshotDir) {
   if (!historyBeforeReload.length) failures.push("chat history did not save before reload");
 
   const sessionBeforeReload = await storedAnalysisSession(page);
-  await page.reload({ waitUntil: "networkidle" });
+  // Background refresh may keep the network busy after the workspace is ready.
+  // Keep the saved-session and clean-context assertions below as the barrier.
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator('[data-chat-workspace-panel="true"]').waitFor({ state: "visible", timeout: TIMEOUT_MS });
   await waitForStoredFrame(page, (session) => typeof session?.sessionId === "string" && session?.frame === null, "reload did not create a clean active workspace");
   const sessionAfterReload = await storedAnalysisSession(page);
   const reloadChat = await chatSnapshot(page);
