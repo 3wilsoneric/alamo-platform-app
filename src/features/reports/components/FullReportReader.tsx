@@ -1,3 +1,4 @@
+import ReportHeading from "./ReportHeading";
 import ResidentFlowReport from "../../admissions/components/ResidentFlowReport";
 import { useChartWidth } from "../../../shared/charts/useChartWidth";
 import type {
@@ -270,35 +271,7 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
             "This report uses the latest available governed snapshot, which is older than the platform freshness target."}
         </div>
       ) : null}
-      <header className="grid items-start gap-5 border-b-2 border-[#111111] pb-5 xl:grid-cols-[minmax(0,8fr)_minmax(220px,3fr)] xl:gap-8">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0f8b73]">
-            {report.scope.label}
-          </p>
-          <h2
-            id="full-report-title"
-            className="mt-2 max-w-[900px] !font-sans text-[30px] font-bold leading-[1.04] tracking-[-0.055em] sm:text-[37px] xl:text-[42px]"
-          >
-            {report.title}
-          </h2>
-          <p className="mt-4 hidden max-w-[850px] font-sans text-[14px] leading-[1.65] text-[#333333] sm:block sm:text-[16px]">
-            {report.summary}
-          </p>
-        </div>
-        <div className="hidden border-l-[3px] border-[#0f8b73] pl-4 text-[12px] leading-5 text-[#595959] sm:block xl:mt-1">
-          <p className="font-bold uppercase tracking-[0.12em] text-[#111111]">Coverage</p>
-          <p className="mt-1">{report.period.label}</p>
-          <p className="mt-3 font-bold uppercase tracking-[0.12em] text-[#111111]">Data through</p>
-          <p className="mt-1">{report.dataThrough}</p>
-          <p className="mt-3 font-bold uppercase tracking-[0.12em] text-[#111111]">Snapshot updated</p>
-          <p className="mt-1">{report.generatedAtLabel}</p>
-        </div>
-        <div className="border-l-[3px] border-[#0f8b73] pl-3 text-[12px] leading-5 text-[#4f5b55] sm:hidden">
-          <p><strong className="font-semibold text-[#243b32]">Data through</strong> {report.dataThrough}</p>
-          <p>Updated {report.generatedAtLabel}</p>
-          <details className="mt-1"><summary className="min-h-11 cursor-pointer py-2 font-semibold text-[#17684f]">Coverage details</summary><p className="pb-2">{report.period.label}</p></details>
-        </div>
-      </header>
+      <ReportHeading report={report} />
 
       <div className="mt-5">
         <MetricGrid items={report.metrics} />
@@ -316,9 +289,9 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
           <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#0f8b73]">
             {String(sectionIndex + 1).padStart(2, "0")}
           </p>
-          <h3 className="mt-1 !font-sans text-[23px] font-bold leading-tight tracking-[-0.04em] sm:text-[26px]">
+          <h2 className="mt-1 !font-sans text-[23px] font-bold leading-tight tracking-[-0.04em] sm:text-[26px]">
             {section.title}
-          </h3>
+          </h2>
           {section.intro ? (
             <p className="mt-2 max-w-[860px] font-sans text-[13px] leading-[1.65] text-[#3f3f3f] sm:text-[14px]">
               {section.intro}

@@ -51,12 +51,25 @@ bundle=replace(bundle,'{id:`incidents`,label:`Incidents`,path:`/analytics/incide
 bundle=replace(bundle,'licAccount=licensingAccountOid(),l=e?', 'licAccount=licensingAccountOid(),platformOwner=ws(),l=e?');
 bundle=replace(bundle,'"data-platform-header":`true`,className:', '"data-platform-header":`true`,"data-platform-owner":platformOwner&&!e?`true`:`false`,className:');
 bundle=replace(bundle,'r=t===`/analytics/community`||t===`/analytics`?', 'r=t.startsWith(`/incidents`)?`incidents`:t===`/analytics/community`||t===`/analytics`?');
+// The live reader has a compact header; reuse the canonical heading without
+// replacing its report bodies, filters, or independently released flow module.
+const headingSource=await readFile('src/features/reports/components/ReportHeading.tsx','utf8');
+const headingStart=bundle.indexOf('(0,H.jsxs)(`header`,{"data-report-compact-header":');
+const headingEnd=bundle.indexOf(',(0,H.jsx)(`div`,{className:`mt-3`',headingStart);
+if(headingStart<0||headingEnd<0) throw Error('Compact report heading boundary changed.');
+bundle=bundle.slice(0,headingStart)+'V.createElement(PlatformReportHeading,{report:e})'+bundle.slice(headingEnd);
+bundle+='\nconst PlatformReportHeading=(()=>{'+compile(headingSource)+';return ReportHeading;})();';
+bundle=replace(bundle,'(0,H.jsx)(`h3`,{className:`mt-1 !font-sans text-[23px] font-bold leading-tight tracking-[-0.04em] sm:text-[26px]`,children:e.title})','(0,H.jsx)(`h2`,{className:`mt-1 !font-sans text-[23px] font-bold leading-tight tracking-[-0.04em] sm:text-[26px]`,children:e.title})');
+const workspaceCss=await readFile('src/platformWorkspace.css','utf8');
+const hierarchyCss=workspaceCss.match(/\/\* BEGIN REPORT HIERARCHY[\s\S]*?\/\* END REPORT HIERARCHY \*\//)?.[0];
+if(!hierarchyCss) throw Error('Report hierarchy styles missing.');
 const newJs=`index-incident-cards-${hash(bundle).slice(0,12)}.js`;
 const css=await readFile('src/features/incidents/incidentCenter.css');
 const launcher=await readFile('public/point-of-care-launcher.js');
 await rm(path.join(out,'overlay'),{recursive:true,force:true});
 await write(`dist/assets/${newJs}`,bundle);
 await write('dist/incident-cards.css',css);
+await write('dist/platform-report-hierarchy.css',hierarchyCss);
 await write('dist/point-of-care-launcher.js',launcher);
 for(const name of ['dist/index.html','dist/admissions/index.html','dist/chat/index.html']) {
   let html=readImage(name).toString();
@@ -65,12 +78,12 @@ for(const name of ['dist/index.html','dist/admissions/index.html','dist/chat/ind
   // Chat still points at the preceding release; update it to the same current
   // shell so its owner marker and menu cannot diverge from the other entries.
   html=replace(html,`/assets/${entryJs}`,`/assets/${newJs}`);
-  html=replace(html,'</head>',`<link rel="stylesheet" href="/incident-cards.css?v=${hash(css).slice(0,12)}" /></head>`);
+  html=replace(html,'</head>',`<link rel="stylesheet" href="/incident-cards.css?v=${hash(css).slice(0,12)}" /><link rel="stylesheet" href="/platform-report-hierarchy.css?v=${hash(hierarchyCss).slice(0,12)}" /></head>`);
   const launcherPath=html.match(/\/point-of-care-launcher\.js(?:\?[^" ]*)?/)?.[0];
   if(!launcherPath) throw Error(`Launcher missing: ${name}`);
   html=replace(html,launcherPath,`/point-of-care-launcher.js?v=${hash(launcher).slice(0,12)}`);
   await write(name,html);
 }
 await writeFile(path.join(out,'Dockerfile'),`FROM ${base}\nCOPY --chown=node:node overlay/dist /app/dist\n`);
-await writeFile(path.join(out,'receipt.json'),JSON.stringify({base,oldJs,newJs,bundleHash:hash(bundle),sourceHashes:sources.map(hash),cssHash:hash(css),launcherHash:hash(launcher),scope:'Incident cards and owner-only navigation; no server or data changes.'},null,2));
+await writeFile(path.join(out,'receipt.json'),JSON.stringify({base,oldJs,newJs,bundleHash:hash(bundle),sourceHashes:sources.map(hash),cssHash:hash(css),launcherHash:hash(launcher),headingHash:hash(headingSource),hierarchyCssHash:hash(hierarchyCss),scope:'Incident cards, owner-only navigation and report hierarchy; no server or data changes.'},null,2));
 console.log(JSON.stringify({out,newJs}));

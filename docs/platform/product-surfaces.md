@@ -38,6 +38,37 @@ reconciled if the production entry changes; the script fails instead of guessing
 The prepared overlay is not a deployment.
 
 
+### November 19 title/container audit — implemented locally
+
+The shared Overview, community, Clients, monthly Incidents, and medication
+report reader had an inverted hierarchy: its live 20px title was smaller than
+26px section headings. The framed outer paper, metric-cell borders, decorative
+section numbers, uppercase labels, and repeated data-through date competed with
+the report content. The reader now has one semantic h1 (29–38px), 23px section
+headings, sentence-case metric labels, and a flat reading surface with one domain
+accent. Period and update time remain separate; an already printed data-through
+date is not repeated. Source warnings, report periods, numbers, filters, and
+record drilldowns are retained.
+
+`ReportHeading.tsx` owns the report identity. `platformWorkspace.css` owns the
+shared hierarchy and extracts the same scoped rules into the pinned release
+candidate; the independent resident-flow module remains intact. Its section
+heading is subordinate to the Clients page heading rather than a second hero.
+
+Audit coverage also included the mobile community home, restored incident cards,
+live Admissions, and live Licensing. Home already has one community heading and
+ruled rows. Incident cards have distinct page/priority/client levels. Licensing
+uses one visible result heading with quieter collection context. Those did not
+need another title wrapper. Admissions retains its live narrative and intake
+visualization; its introductory paragraphs before “Active intake” remain a
+separate copy/composition issue, not rewritten by these shared report styles.
+
+This pass is local, not deployed. The earlier full analyst suite passed; the
+heading/style follow-up is checked with typecheck/build, focused lint/docs, and
+320/390/768/1440px browser inspection of the production-shell preview. These are
+presentation changes; they do not certify new data or change admission logic.
+
+
 `/workflow` is the owner-only native Platform-hosted Workflow preview. It uses the shared
 authenticated header, then a Workflow-specific rail for the dashboard,
 point-of-care workspace, procedures, walkthroughs, policies, training, roles,
