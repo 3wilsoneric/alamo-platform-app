@@ -4623,3 +4623,28 @@ three new enrichment fields. All 412 admissions have a known county. The new
 report's local desktop/phone, keyboard, search, pagination, scope-change, failed
 refresh, and recovery paths were inspected; the source build and focused report
 and API checks pass. Application cutover remains subject to the full release gate.
+
+Application cutover completed at the owner's explicit follow-up instruction to
+"just deploy" after the separate automation sign-in could not be captured. The
+existing signed-in Chrome session was used for the live verification; no
+production authentication setting was changed.
+
+- Revision: `alamo-platform-prod-web--client-flow-1119-b7a7c2d`.
+- Image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:e2a0e3b24e9596530ac83cb1bf1e281739fe43ebe5dbf31b49c694b867a8652f`.
+- Azure reports Healthy/Running, one replica. Live JavaScript and stylesheet
+  bytes match the prepared overlay. Public smoke passes 4/4; anonymous access to
+  the report API returns 401.
+- Eric's existing session shows the updated Clients report, all five expected
+  community admission/discharge totals, San Pablo's 80-discharge list, seven
+  Contra Costa admissions, and the 126-stay moved-in-and-out list. No browser
+  console errors were observed. Private proof is `generated/client-flow/live-report.jpg`.
+- This is not a claim of a completed automated full ship gate. The first ten
+  predeploy stages passed. The chat reload test then timed out waiting for
+  unrelated agent network activity; its route-ready and unchanged session-reset
+  assertions pass after replacing the network-idle wait. Stages 12–14 passed,
+  including 72 mobile route checks and 58 desktop/mobile question-family checks.
+  The remaining suffix continues separately. The fresh signed-in automation
+  was not captured; manual signed-in verification above is recorded explicitly.
+- The local auth recorder now reports its non-sensitive route/state and fails
+  promptly if its temporary window closes. This test-only change is not part
+  of the production image. The prior immutable image above remains the rollback.

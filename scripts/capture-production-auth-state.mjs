@@ -127,11 +127,17 @@ async function main() {
     await page.goto(buildUrl("/home"), { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
     const deadline = Date.now() + TIMEOUT_MS;
     let clickedLogin = false;
+    let lastState = "";
 
     while (Date.now() < deadline) {
-      for (const candidate of context.pages()) {
+      const pages = context.pages();
+      if (!pages.length) throw new Error("The test browser window closed before its signed-in session was saved.");
+      for (const candidate of pages) {
         const state = await getPageState(candidate);
         if (!state) continue;
+        const location = new URL(state.url);
+        const status = `${location.origin}${location.pathname} · workspace=${state.hasWorkspace} · sign-in=${state.isMicrosoftLogin || state.isAppLogin}`;
+        if (status !== lastState) { console.log(`Auth capture: ${status}`); lastState = status; }
 
         if (state.hasWorkspace && !state.isMicrosoftLogin && !state.isAppLogin) {
           await saveSignedInState(context, candidate);
