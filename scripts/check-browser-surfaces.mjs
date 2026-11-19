@@ -48,10 +48,10 @@ const surfaceCases = [
     route: "/incidents",
     prompt: "Can you open the Incident Center module?",
     expect: [
-      /Latest two loaded incident days/i,
+      /\bIncidents\b/i,
       /Received today|Latest received/i,
       /Previous loaded day|[0-9]{1,2} [A-Z][a-z]+ 20[0-9]{2}/i,
-      /[1-9][0-9]* reports in this stream/i,
+      /[1-9][0-9]* active/i,
       /\bHigh\b/i,
       /\bMedium\b/i,
       /\bLow\b/i
@@ -471,6 +471,14 @@ async function runCase(page, testCase, index, screenshotDir) {
 
   const failures = [];
   if (expected.missing.length) failures.push(`missing expected text: ${expected.missing.join(", ")}`);
+  if (testCase.route === "/incidents") {
+    // Verify the two-day stream through its controls, not retired instructions.
+    const center = page.locator('[data-chat-module-content-id]').last().locator('[data-incident-center]');
+    if (await center.locator('[data-incident-date-window]').count() !== 2) failures.push("incident stream lost one of its two date controls");
+    if (await center.locator('[data-incident-date-window="latest"][aria-pressed="true"]').count() !== 1) failures.push("latest incident day is not selected");
+    if (await center.locator('.incident-priority-heading').count() !== 3) failures.push("incident stream lost a priority group");
+    if (await center.locator('[data-incident-card]').count() < 1) failures.push("incident stream has no record cards");
+  }
   if (!testCase.allowNoRenderable && !renderable.present) failures.push("no surfaced or generated module was rendered");
   if (renderable.present && renderable.rect.height < 110) failures.push(`rendered module is too short (${renderable.rect.height}px)`);
   if (renderable.present && renderable.rect.width < 760) failures.push(`rendered module is too narrow (${renderable.rect.width}px)`);
