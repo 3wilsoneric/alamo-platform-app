@@ -38,6 +38,15 @@ reconciled if the production entry changes; the script fails instead of guessing
 The overlay was deployed as `alamo-platform-prod-web--formatting-1119-e875f72`;
 see the November 19 receipt in [deployment operations](deployment-operations.md).
 
+The subsequent signed-in live phone-width audit covered all five community
+reports at 320/390/430px, community/period filters, horizontal table scrolling,
+the mobile menu, incident priorities, expanded cards, and resident history.
+No page overflow or clipped names was observed. One narrow history label split
+midword; `ResidentDetailRow` now keeps labels from shrinking while values wrap.
+The focused browser check asserts that Diagnosis stays on one line without
+overlapping its value or extending outside the dialog. This is browser viewport
+evidence, not a physical iOS/Android device certification.
+
 
 ### November 19 title/container audit — deployed
 

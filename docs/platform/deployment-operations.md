@@ -16,6 +16,39 @@
 
 ## Current Production Host
 
+### Live mobile audit and incident-history label — 2026-11-19
+
+- Source: `7323fba`; ACR build `ccfh`.
+- Active revision: `alamo-platform-prod-web--mobile-label-1119-7323fba`;
+  Healthy/Running, one replica, 100% traffic.
+- Active image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:9d25e0be6f874e7fc44440d651e20b4bf850ddfabd67094ea5c1e8c425929ef5`.
+- Rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:c8033e1d2c994636db1ae240e1580af761b1fbfb40fb5a17b2040435eaff6420`
+  (preceding formatting revision below).
+
+Eric's existing signed-in Chrome session checked all five live community
+reports at 320/390/430px, their community/period controls and independently
+scrollable tables, the mobile menu, and incident priority/date/community
+filters, expanded cards, Show all, and resident history. No page overflow,
+clipped names/headings, or undersized controls was observed. One history label
+split midword at 320px. The sole runtime change adds `shrink-0` to the canonical
+fact label, allowing the adjacent value to wrap without crowding the label.
+
+The overlay preserves the exact preceding image and changes only that browser
+bundle statement, its hashed entry references, and compressed representations.
+The focused incident-card regression at 320/390/768/1440px, typecheck, and source
+build passed. The broader unchanged release evidence is recorded below; it was
+not rerun for this one-class correction. Production smoke passed 4/4; all 12
+identity/gzip/Brotli image and served-asset checks matched. The live corrected
+320px dialog has a one-line Diagnosis label, no overlap, and no overflow;
+Escape closes it and returns focus. The authenticated session survived reload,
+with no console errors. Browser width was restored after testing.
+
+Evidence: `generated/live-mobile-review-20261119/live-audit.json`,
+`live-community-390.jpg`, `live-history-fixed-320.jpg`, and `release/` in that
+directory. These are browser viewport checks, not physical-device testing.
+Rollback uses the pinned image above and the same health/traffic/asset checks;
+no migration or data rollback is involved.
+
 
 ### Platform formatting, incident cards, and mobile navigation — 2026-11-19
 
