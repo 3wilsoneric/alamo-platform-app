@@ -27,6 +27,7 @@ export default function ResidentFlowReport({ facilityId = null }: { facilityId?:
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const detailRef = useRef<HTMLElement>(null);
+  const communityRef = useRef<HTMLSelectElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   useEffect(() => { setSelectedFacility(facilityId); }, [facilityId]);
   useEffect(() => { setSelection(null); setSearch(""); setPage(0); }, [selectedFacility, year]);
@@ -64,7 +65,7 @@ export default function ResidentFlowReport({ facilityId = null }: { facilityId?:
     setSelection(next); setSearch(""); setPage(0);
     window.requestAnimationFrame(() => { detailRef.current?.focus({ preventScroll: true }); detailRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" }); });
   };
-  const changeCommunity = (id: string) => { setSelectedFacility(id || null); };
+  const changeCommunity = (id: string) => { setSelectedFacility(id || null); communityRef.current?.focus(); };
   const title = selection?.kind === "county" ? `${selection.county} admissions` : selection?.kind === "discharges" ? "Discharges" : selection?.kind === "churn" ? "Moved in and out" : selection?.kind === "short" ? "Left within 30 days" : "Admissions";
   const matching = ready && selection ? report.records.filter((row) => {
     const included = selection.kind === "admissions" ? row.admittedInPeriod : selection.kind === "county" ? row.admittedInPeriod && row.county === selection.county : selection.kind === "churn" ? row.admittedInPeriod && row.dischargedInPeriod : selection.kind === "short" ? row.dischargedInPeriod && row.stayDays !== null && row.stayDays <= 30 : row.dischargedInPeriod;
@@ -77,7 +78,7 @@ export default function ResidentFlowReport({ facilityId = null }: { facilityId?:
       <header className="resident-flow-head">
         <div><h2 id="resident-flow-title">Admissions & resident flow</h2><p>{ready ? `Jan 1–${dateLabel(report.period.through)} · Updated daily` : "Updated daily"}</p></div>
         <div className="resident-flow-filters">
-          <select aria-label="Client flow community" value={selectedFacility ?? ""} onChange={(event) => changeCommunity(event.target.value)}><option value="">All communities</option>{communityOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>
+          <select ref={communityRef} aria-label="Client flow community" value={selectedFacility ?? ""} onChange={(event) => changeCommunity(event.target.value)}><option value="">All communities</option>{communityOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>
           <select aria-label="Client flow year" value={year || report?.period.year || ""} onChange={(event) => setYear(event.target.value)}>{report ? report.years.map((value) => <option key={value} value={value}>{value}</option>) : <option value="">This year</option>}</select>
         </div>
       </header>
