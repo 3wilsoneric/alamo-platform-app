@@ -13,7 +13,7 @@
 
 ## Shared navigation and responsive layout
 
-### November 19 incident/mobile update — implemented locally
+### November 19 incident/mobile update — deployed
 
 The shared Incidents entry returns to `/incidents` daily cards, with the existing
 `community` query retained. Its five-community selector uses the canonical
@@ -35,10 +35,11 @@ failed-refresh recovery, and owner/non-owner launchers. The isolated release
 preparer (`npm run release:incident-cards:prepare`) retains the pinned production
 image and changes only browser assets. Its explicit bundle bindings must be
 reconciled if the production entry changes; the script fails instead of guessing.
-The prepared overlay is not a deployment.
+The overlay was deployed as `alamo-platform-prod-web--formatting-1119-e875f72`;
+see the November 19 receipt in [deployment operations](deployment-operations.md).
 
 
-### November 19 title/container audit — implemented locally
+### November 19 title/container audit — deployed
 
 The shared Overview, community, Clients, monthly Incidents, and medication
 report reader had an inverted hierarchy: its live 20px title was smaller than
@@ -76,10 +77,13 @@ Neither preview changes production access or data. The release preparer extracts
 the canonical surface rules alongside the report hierarchy and fails if the
 pinned live-shell boundary changes.
 
-This pass is local, not deployed. The earlier full analyst suite passed; the
-heading/style follow-up is checked with typecheck/build, focused lint/docs, and
-320/390/768/1440px browser inspection of the production-shell preview. These are
-presentation changes; they do not certify new data or change admission logic.
+This pass is deployed in `alamo-platform-prod-web--formatting-1119-e875f72`.
+The full analyst suite, source build, focused checks, and 320/390/768/1440px
+production-shell preview inspection passed. Live assets match the reviewed
+image; Eric's existing Chrome session verified the affected pages. The release
+receipt records the resumed browser gate and the expired isolated sign-in test
+session separately. These presentation changes do not certify new data or
+change admission logic.
 
 
 `/workflow` is the owner-only native Platform-hosted Workflow preview. It uses the shared

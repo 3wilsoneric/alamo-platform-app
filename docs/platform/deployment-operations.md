@@ -16,6 +16,63 @@
 
 ## Current Production Host
 
+
+### Platform formatting, incident cards, and mobile navigation — 2026-11-19
+
+- App source: `e875f72156f42d443d1bbbda33582d41a5ccce9b`; verification-only
+  follow-ups through `68d2798`. ACR build `ccfg`.
+- Active revision: `alamo-platform-prod-web--formatting-1119-e875f72`;
+  Healthy/Running, one replica, 100% traffic.
+- Active image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:c8033e1d2c994636db1ae240e1580af761b1fbfb40fb5a17b2040435eaff6420`.
+- Rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:e2a0e3b24e9596530ac83cb1bf1e281739fe43ebe5dbf31b49c694b867a8652f`
+  (prior revision `alamo-platform-prod-web--client-flow-1119-b7a7c2d`).
+
+The release overlays eight canonical browser assets and their compressed
+representations on the exact previous production image. It restores the daily
+Incidents entry, scopes Fleet/Carelog/Tablets navigation to the canonical owner,
+and applies the reviewed report hierarchy, text surfaces, and mobile gutters.
+Server code, authentication configuration, data, and independent application
+runtimes are unchanged. The full source build is validation only; it was not
+used to replace the accumulated production overlays.
+
+Verification:
+
+- Full analyst/type/lint/contracts gate, dependency audit, regression and user
+  missions, focused incident-card/owner checks, and production build passed.
+- Predeploy browser stages completed through resumed runs, including 72 mobile
+  route cases, 116 guided answers, context resets, accessibility, scrolling,
+  community navigation, 5 browser missions, and performance. Test expectations
+  were corrected for the approved Incidents entry and the existing governed
+  medication-given measure. Reload tests now wait for visible route controls
+  instead of unrelated background network idleness; semantic assertions remain.
+- One first-run journey scenario stalled while compiling a report. The full
+  unchanged seeded rerun passed 11/11 turns across eight sessions. The original
+  result is retained in `generated/platform-mobile-review/journey-first-run.json`.
+  The replay command reported no current failure after the successful rerun;
+  it is not counted as an additional executed scenario.
+- Production smoke passed 4/4. All 24 served identity/gzip/Brotli asset checks
+  matched the reviewed image; health returned 200 and anonymous protected
+  incident/Admissions requests returned 401.
+- Eric's existing signed-in Chrome session survived refresh and verified Home,
+  Overview, community incident filtering/details, Admissions client-file open/
+  close, Clients community flow, and Licensing reader/return navigation. The
+  Overview title is 38px, desktop overflow is zero, and no console errors were
+  observed. Proof: `generated/platform-mobile-review/live-formatting.jpg`.
+
+The saved isolated Microsoft test session had expired. Its fresh-login capture
+was stopped at the owner's request; production signed-in verification used the
+existing Chrome session. Automated signed-in/guided production scripts are not
+claimed as passed, and authentication settings were not relaxed. The source
+predeploy evidence and production manual checks above are separate evidence.
+Release recipe, image hashes, live bytes, and cutover receipt are in
+`generated/platform-mobile-review/release/`.
+
+To roll back, update `alamo-platform-prod-web` in `alamo-data-rg` to the exact
+rollback digest above with a fresh revision suffix, then verify Healthy/Running,
+100% traffic, public smoke, and the existing signed-in session. No data rollback
+or migration is involved.
+
+
 ### LIC 624 pre-role capacity safeguards — 2026-10-20
 
 - active image: `alamo-platform@sha256:4e39ca10164067286c4bd6b9fcb7a3fbf9e5741b284e6df5d0ef6385ff27ca0e`
