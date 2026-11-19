@@ -91,6 +91,17 @@ def add_check(check_id, domain, severity, passed, expected, actual, detail):
 
 manifest_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_context_manifest") or 0)
 resident_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_resident_profile") or 0)
+resident_admit_date_failures = int(
+    scalar(
+        f"""
+        SELECT count(*) AS value
+        FROM {target}.v_tool_resident_profile p
+        WHERE try_cast(p.Admit_Date AS date) IS NULL
+           OR p.Admit_Date NOT RLIKE '^\\\\d{{4}}-\\\\d{{2}}-\\\\d{{2}}$'
+        """
+    )
+    or 0
+)
 current_resident_county_count = int(
     scalar(f"SELECT coalesce(sum(resident_count), 0) AS value FROM {target}.v_tool_current_resident_county_by_community") or 0
 )
@@ -270,6 +281,7 @@ mar_age_days = int(
 
 add_check("manifest-present", "context", "critical", manifest_count >= 22, ">=22 slices", manifest_count, "Tool context manifest includes the governed resident, county, incident, census, and MAR slices.")
 add_check("resident-profile-present", "residents", "critical", resident_count > 0, ">0 rows", resident_count, "Current resident profile rows are available.")
+add_check("resident-admit-date-normalized", "residents", "critical", resident_admit_date_failures == 0, "0 missing or malformed admission dates", resident_admit_date_failures, "Current residents have valid ISO admission dates for county and length-of-stay joins.")
 add_check("current-resident-county-present", "residents", "critical", current_resident_county_count == resident_count, resident_count, current_resident_county_count, "Every current resident is represented once in the county census, including County not recorded.")
 add_check("current-resident-county-reconciles", "residents", "critical", current_resident_county_reconciliation_failures == 0, "0 community mismatches", current_resident_county_reconciliation_failures, "County census totals reconcile to the governed current roster for every community.")
 add_check("census-history-present", "census", "critical", census_count > 0, ">0 rows", census_count, "Monthly census history is available.")

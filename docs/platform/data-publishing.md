@@ -498,3 +498,24 @@ Do not solve that symptom by changing frontend code.
 
 Also confirm nothing has run `npm run snapshot:publish` or set
 `PLATFORM_SNAPSHOT_PUBLISH_AZURE=true` outside the Databricks publish path.
+
+## Admission county normalization
+
+The governed resident profile normalizes ElderMark's `day!month!year` admission
+values through the existing `sql_safe_date` helper before publishing ISO dates.
+County matching remains exact on facility, resident number, and current admission
+date; an earlier stay or the same resident number at another community cannot
+supply the county. The daily QA gate rejects missing or malformed roster dates.
+
+County labels normalize capitalization, the trailing `County` suffix, and the
+source spelling `San Bernadino`. Private-pay and self-pay entries are not
+geographic counties and remain outside the known-county totals. Source values
+stay intact in ElderMark and silver. Document mentions of insurance county,
+former residence, court venue, or an unrelated client do not override the
+current admission's county.
+
+`scripts/county-feed-regression.py` emits a read-only Spark SQL fixture from the
+actual profile and county view definitions. Before publishing either definition,
+run that query on the governed SQL warehouse and require zero failures. It checks
+bang dates, repeat stays, shared resident numbers across communities, duplicate
+history rows, excluded residents, blank counties, and private-pay entries.

@@ -1266,7 +1266,7 @@ create_view(
       r.First_Name,
       r.Last_Name,
       cast(r.Age AS int) AS Age,
-      r.Admit_Date,
+      cast({sql_safe_date("r", "Admit_Date")} AS string) AS Admit_Date,
       cast(r.LOS_Days AS int) AS LOS_Days,
       cast(r.Facility AS string) AS Facility,
       r.Facility_Name,
@@ -1314,8 +1314,9 @@ create_view(
         Facility_Name,
         Res_Number,
         CASE
-          WHEN source_county IS NULL THEN NULL
-          ELSE trim(regexp_replace(source_county, '(?i)\\s+county$', ''))
+          WHEN source_county IS NULL OR lower(source_county) IN ('private pay', 'self pay', 'n/a', 'unknown') THEN NULL
+          WHEN lower(trim(regexp_replace(source_county, '(?i)\\\\s+county$', ''))) = 'san bernadino' THEN 'San Bernardino'
+          ELSE initcap(trim(regexp_replace(source_county, '(?i)\\\\s+county$', '')))
         END AS client_county
       FROM ranked_admission_history
       WHERE rn = 1

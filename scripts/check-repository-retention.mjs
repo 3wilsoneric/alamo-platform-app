@@ -216,6 +216,7 @@ function ownershipClass(file) {
   if (/^shared\/.+\.(?:mjs|d\.mts)$/.test(file)) return "shared contract";
   if (["scripts/licensing/collect.py", "scripts/licensing/check_collect.py", "scripts/licensing/restore.py"].includes(file)) return "verification and operations";
   if (file === "scripts/generate-synthetic-lic624-batch.py") return "verification and operations";
+  if (file === "scripts/county-feed-regression.py") return "verification and operations";
   if (/^scripts\/.+\.(?:mjs|json|ps1)$/.test(file)) return "verification and operations";
   if (/^databricks\/notebooks\/.+\.py$/.test(file)) return "data publishing notebook";
   if (/^databricks\/workflows\/.+\.json$/.test(file)) return "data publishing workflow";

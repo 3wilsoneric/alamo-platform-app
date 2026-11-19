@@ -140,6 +140,19 @@ assert(
   "tool context views must anchor rolling windows to the explicit publish date partition when supplied"
 );
 
+// The roster is the shared owner of the admission date used by county and LOS joins.
+const profileStart = toolContextViews.indexOf('"v_tool_resident_profile",');
+const profileEnd = toolContextViews.indexOf('"v_tool_current_resident_county_by_community",', profileStart);
+assert(
+  toolContextViews.slice(profileStart, profileEnd).includes('cast({sql_safe_date("r", "Admit_Date")} AS string) AS Admit_Date'),
+  "resident profiles must publish the normalized date instead of the raw ElderMark bang date"
+);
+const analystQa = readRepoFile("databricks/notebooks/analyst_context_qa.py");
+assert(
+  analystQa.includes('"resident-admit-date-normalized"') && analystQa.includes("try_cast(p.Admit_Date AS date) IS NULL"),
+  "daily publication must reject missing or malformed roster admission dates"
+);
+
 const censusQualityAudit = readRepoFile("databricks/notebooks/census_quality_audit.py");
 assert(
   censusQualityAudit.includes("minimum_reasonable_admit_date") &&
