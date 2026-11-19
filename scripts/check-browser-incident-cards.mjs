@@ -51,6 +51,17 @@ await withBrowserQa(async (browser) => {
     await center.locator('[data-incident-resident-link]').first().click();
     const dialog = page.getByRole('dialog'); await dialog.waitFor();
     assert.ok(await dialog.evaluate(el=>el.contains(document.activeElement)));
+    const diagnosisLabel = dialog.getByText('Diagnosis', { exact: true });
+    const factLayout = await diagnosisLabel.evaluate(el => {
+      const range = document.createRange(); range.selectNodeContents(el);
+      const value = el.nextElementSibling;
+      return { labelLines: range.getClientRects().length,
+        labelRight: el.getBoundingClientRect().right, valueLeft: value.getBoundingClientRect().left,
+        valueRight: value.getBoundingClientRect().right, dialogRight: el.closest('dialog').getBoundingClientRect().right };
+    });
+    assert.equal(factLayout.labelLines, 1, `${width}: incident fact label wraps mid-word`);
+    assert.ok(factLayout.labelRight < factLayout.valueLeft, `${width}: fact value overlaps its label`);
+    assert.ok(factLayout.valueRight <= factLayout.dialogRight, `${width}: fact value escapes dialog`);
     await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' });
     await page.screenshot({ path: `${screenshotDir}/${width}.png`, fullPage: false });
   }

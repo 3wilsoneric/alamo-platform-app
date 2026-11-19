@@ -24,7 +24,7 @@ interface ResidentIncidentHistoryDrawerProps {
 function ResidentDetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-[#d9d9d9] py-3 last:border-b-0">
-      <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#595959]">{label}</div>
+      <div className="shrink-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#595959]">{label}</div>
       <div className="max-w-[65%] text-right text-[13px] font-medium leading-5 text-[#111111]">{value}</div>
     </div>
   );
