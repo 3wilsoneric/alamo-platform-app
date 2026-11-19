@@ -197,7 +197,9 @@
     "workflow:refresh-authoring-contracts": "node scripts/workflow-authoring-contracts.mjs --write",
     "check:workflow-contracts": "node scripts/workflow-authoring-contracts.mjs",
     "release:client-flow-report:prepare": "node scripts/prepare-client-flow-report-release.mjs",
-    "check:resident-flow": "node scripts/check-resident-flow-report.mjs"
+    "check:resident-flow": "node scripts/check-resident-flow-report.mjs",
+    "check:browser-incident-cards": "node scripts/check-browser-incident-cards.mjs",
+    "release:incident-cards:prepare": "node scripts/prepare-platform-incident-cards-release.mjs"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.1.0.tgz",

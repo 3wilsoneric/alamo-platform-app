@@ -13,6 +13,31 @@
 
 ## Shared navigation and responsive layout
 
+### November 19 incident/mobile update — implemented locally
+
+The shared Incidents entry returns to `/incidents` daily cards, with the existing
+`community` query retained. Its five-community selector uses the canonical
+facility directory, scopes the latest/previous received dates, and carries the
+same scope into full history. The monthly report remains at
+`/analytics/incidents`. Desktop has three priority lanes; phones have one
+keyboard-operable priority tab at a time. Names wrap, controls have 44px minimum
+targets, and resident history uses a native modal dialog with Escape/focus return.
+
+Fleet, community Tablets, and Carelog navigation is visible only when the
+canonical Platform owner check is true. The public launcher reads the React
+header's owner marker; display names never grant visibility. This changes
+Platform navigation, not the standalone Carelog service's staff authorization.
+The mobile menu breakpoint is 1024px to avoid crowding the header on tablets.
+
+`npm run check:browser-incident-cards` verifies synthetic long-name records at
+320/390/768/1440px, scope/date changes, controls, keyboard/dialog behavior,
+failed-refresh recovery, and owner/non-owner launchers. The isolated release
+preparer (`npm run release:incident-cards:prepare`) retains the pinned production
+image and changes only browser assets. Its explicit bundle bindings must be
+reconciled if the production entry changes; the script fails instead of guessing.
+The prepared overlay is not a deployment.
+
+
 `/workflow` is the owner-only native Platform-hosted Workflow preview. It uses the shared
 authenticated header, then a Workflow-specific rail for the dashboard,
 point-of-care workspace, procedures, walkthroughs, policies, training, roles,

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { displayIncidentLabel } from "../../../../shared/incident-display-labels.mjs";
 import {
@@ -35,6 +36,13 @@ export function ResidentIncidentHistoryDrawer({
   priorityConfig,
   onClose
 }: ResidentIncidentHistoryDrawerProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!incident || !dialog) return;
+    dialog.showModal();
+    return () => dialog.close();
+  }, [incident?.id]);
   if (!incident) return null;
 
   const history = incidents
@@ -53,13 +61,9 @@ export function ResidentIncidentHistoryDrawer({
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 px-3 py-5 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-label={`${incident.client_name || "Unknown resident"} incident history`}>
-      <button
-        type="button"
-        aria-label="Close resident drilldown"
-        className="absolute inset-0 h-full w-full cursor-default"
-        onClick={onClose}
-      />
+    <dialog ref={dialogRef} className="incident-history-dialog" onCancel={onClose}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      aria-label={`${incident.client_name || "Unknown resident"} incident history`}>
       <div className="relative mx-auto flex max-h-[calc(100vh-40px)] w-full max-w-[920px] flex-col overflow-hidden border border-[#111111] bg-white shadow-[0_28px_72px_-44px_rgba(0,0,0,0.32)]">
         <div className="border-b border-[#111111] px-5 py-4 sm:px-6">
           <div className="flex items-start justify-between gap-4">
@@ -67,7 +71,7 @@ export function ResidentIncidentHistoryDrawer({
               <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">
                 Resident incident history
               </div>
-              <h2 className="mt-1.5 truncate font-serif text-[26px] font-semibold tracking-[-0.035em] text-[#111111]">
+              <h2 className="mt-1.5 break-words font-serif text-[26px] font-semibold tracking-[-0.035em] text-[#111111]">
                 {incident.client_name || "Unknown Client"}
               </h2>
               <div className="mt-1 text-[13px] text-[#595959]">
@@ -78,7 +82,8 @@ export function ResidentIncidentHistoryDrawer({
               type="button"
               aria-label="Close resident drilldown"
               onClick={onClose}
-              className="grid h-10 w-10 shrink-0 place-items-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73]"
+              autoFocus
+              className="grid h-11 w-11 shrink-0 place-items-center border border-[#d9d9d9] bg-white text-[#595959] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73]"
             >
               <X size={16} />
             </button>
@@ -195,6 +200,6 @@ export function ResidentIncidentHistoryDrawer({
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

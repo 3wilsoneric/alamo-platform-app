@@ -97,14 +97,6 @@ export function formatIncidentDateKey(value?: string) {
   return formatDisplayDate(value, { fallback: "Date unavailable" });
 }
 
-export function daysBetweenDateKeys(left?: string, right?: string) {
-  if (!left || !right) return null;
-  const leftDate = new Date(`${left}T00:00:00Z`);
-  const rightDate = new Date(`${right}T00:00:00Z`);
-  if (Number.isNaN(leftDate.getTime()) || Number.isNaN(rightDate.getTime())) return null;
-  return Math.round((rightDate.getTime() - leftDate.getTime()) / 86_400_000);
-}
-
 export function incidentsShareResident(left: IncidentRecord, right: IncidentRecord) {
   return incidentsMatchResident(left, right);
 }
