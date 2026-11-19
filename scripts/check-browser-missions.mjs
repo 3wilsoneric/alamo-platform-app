@@ -94,8 +94,9 @@ const missions = [
       },
       {
         prompt: "Show San Pablo's medication profile.",
-        expect: [/A & A Health Services San Pablo/i, /medication/i, /compliance|scheduled/i],
-        surface: /Medication Profile|Compliance/i
+        // The governed profile reports administrations given, not a compliance rate.
+        expect: [/A & A Health Services San Pablo/i, /medication administrations given/i, /Recorded administrations/i],
+        surface: /A & A Health Services San Pablo Medication Profile/i
       }
     ]
   }
