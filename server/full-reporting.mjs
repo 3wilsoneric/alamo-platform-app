@@ -1029,6 +1029,7 @@ function buildCommunityReport(context) {
       }
     : null;
 
+  const reportPeriod = request.period ?? censusRows.period ?? community.reporting_month;
   const censusStatement = latestCensus == null
     ? `A census point is not available for ${formatMonthLabel(censusRows.period ?? request.period, { fallback: "the selected period" })}.`
     : `${facilityName} reported a census of ${integer(latestCensus)} for ${formatMonthLabel(censusRows.period, { fallback: "the latest census period" })}.`;
@@ -1044,8 +1045,8 @@ function buildCommunityReport(context) {
     summary: summaryText,
     scope: { kind: "community", label: facilityName, facilityId },
     period: {
-      value: request.period ?? censusRows.period ?? community.reporting_month,
-      label: formatMonthLabel(request.period ?? censusRows.period ?? community.reporting_month, {
+      value: reportPeriod,
+      label: formatMonthLabel(reportPeriod, {
         fallback: "Latest governed period"
       })
     },
@@ -1055,20 +1056,24 @@ function buildCommunityReport(context) {
     metrics: [
       {
         label: "Census",
-        value: latestCensus == null ? "Not available" : integer(latestCensus),
-        detail: formatMonthLabel(censusRows.period ?? request.period, { fallback: "Selected period" })
+        value: latestCensus == null ? "Not available" : integer(latestCensus)
       },
-      { label: "Incidents", value: integer(incidentCount), detail: formatMonthLabel(incidentPeriod, { fallback: "Latest month" }) },
+      {
+        label: "Incidents",
+        value: integer(incidentCount),
+        ...(incidentPeriod && incidentPeriod !== reportPeriod
+          ? { detail: formatMonthLabel(incidentPeriod) }
+          : {})
+      },
       ...(flowRows.rows.length ? [{
         label: "Net resident flow",
         value: signed(flowTotals.net),
         detail: `${integer(flowTotals.admissions)} admissions and ${integer(flowTotals.discharges)} discharges`
       }] : []),
-      { label: "Average stay", value: averageStay == null ? "Not available" : `${integer(averageStay)} days`, detail: "Current governed profile" },
+      { label: "Average stay", value: averageStay == null ? "Not available" : `${integer(averageStay)} days` },
       ...(population.medianStay == null ? [] : [{
         label: "Median stay",
-        value: `${integer(population.medianStay)} days`,
-        detail: "Current governed profile"
+        value: `${integer(population.medianStay)} days`
       }]),
       ...(population.overOneYearPercentage == null ? [] : [{
         label: "Stays over one year",
@@ -1078,7 +1083,9 @@ function buildCommunityReport(context) {
       {
         label: "Administrations given",
         value: compliance ? integer(compliance.given) : "Not available",
-        detail: formatMonthLabel(complianceRows.period ?? request.period, { fallback: "Selected period" })
+        ...(complianceRows.period && complianceRows.period !== reportPeriod
+          ? { detail: formatMonthLabel(complianceRows.period) }
+          : {})
       },
       ...(currentCapacity ? [{
         label: "Weekly operating utilization",

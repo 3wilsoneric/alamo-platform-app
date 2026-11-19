@@ -50,6 +50,13 @@ evidence, not a physical iOS/Android device certification.
 
 ### November 19 title/container audit — deployed
 
+Community headline metrics omit repeated report-month captions and the internal
+"Current governed profile" captions. The report header retains its period and
+update date. A metric still identifies its month when that differs from the
+report period; admissions/discharges, resident counts, and open-bed context
+remain attached to the relevant figure. The community report builder owns this
+cleanup, so the screen and HTML export share it without changing calculations.
+
 The shared Overview, community, Clients, monthly Incidents, and medication
 report reader had an inverted hierarchy: its live 20px title was smaller than
 26px section headings. The framed outer paper, metric-cell borders, decorative
