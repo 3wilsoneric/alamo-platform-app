@@ -16,6 +16,41 @@
 
 ## Current Production Host
 
+### Community metric caption cleanup — 2026-11-19
+
+- Source: `e488476`; ACR build `ccfj`.
+- Active revision: `alamo-platform-prod-web--community-copy-1119-e488476`;
+  Healthy/Running, one replica, 100% traffic.
+- Active image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:1f2470f950e8317f0e0c1a276bc274e41068214f07307961116ab689b7aec117`.
+- Rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:9d25e0be6f874e7fc44440d651e20b4bf850ddfabd67094ea5c1e8c425929ef5`
+  (preceding mobile-label revision below).
+
+The community report builder removes repeated headline-metric month captions
+and "Current governed profile" captions. A metric covering a different month
+still names that month. The report header, figures, calculations, supporting
+counts, source context, and HTML export remain consistent. Seven exact source
+hunks were applied to the pinned production report module, preserving its
+existing client terminology and all other runtime/browser/data files.
+
+Verification: full source analyst suite, report browser checks, dependency
+audit, docs, type checks, and source build passed. Nine image-level report
+comparisons cover all report families, historical community reporting, and
+different source months: every field matches the prior image except the
+specified captions. The general source fixture's navigation-catalog assertion
+also fails unchanged on the prior production image; that pre-existing source/
+production catalog difference was retained and recorded separately, not counted
+as a passed image test. Production smoke passed 4/4, health returned 200, and
+anonymous report creation remained 401.
+
+Preview checks covered 320/390/1440px and historical selection. Eric's existing
+signed-in Chrome session reloaded successfully and verified all five live
+community pages at 390px, without repeated internal captions or horizontal
+overflow. The desktop viewport was restored. Evidence and rollback receipts:
+`generated/community-copy-cleanup-20261119/`; visual proof:
+`live-community-clean.jpg`. Revert by updating the app to the pinned rollback
+digest and checking health, traffic, and the signed-in community report; no
+data rollback is required.
+
 ### Live mobile audit and incident-history label — 2026-11-19
 
 - Source: `7323fba`; ACR build `ccfh`.
