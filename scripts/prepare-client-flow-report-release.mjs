@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import ts from "typescript";
 import { brotliCompressSync, gzipSync } from "node:zlib";
@@ -37,6 +37,7 @@ if (start < 0 || end < 0 || prior.indexOf("const number = (value)", start + 1) !
 const replacement = `/* CLIENT_FLOW_START */\nconst ResidentFlowReport=(()=>{${compiled.outputText}\nreturn ResidentFlowReport;})();\n/* CLIENT_FLOW_END */\n`;
 const bundle = prior.slice(0, start) + replacement + prior.slice(end);
 const newJs = `index-client-flow-${hash(bundle).slice(0, 12)}.js`;
+await rm(path.join(out, "overlay"), { recursive: true, force: true });
 await write(`dist/assets/${newJs}`, bundle, true);
 const css = await readFile("src/features/admissions/components/resident-flow-report.css");
 await write("dist/resident-flow-report.css", css, true);
