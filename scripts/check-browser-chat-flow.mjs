@@ -302,7 +302,10 @@ async function runChatFlow(page, screenshotDir) {
   if (!persistedBeforeReload?.sessionId || !persistedBeforeReload?.frame?.metric) {
     failures.push("analysis context was not persisted before the reload isolation check");
   }
-  await page.reload({ waitUntil: "networkidle" });
+  // The agent companion refreshes independently of chat. Verify the route and
+  // analysis session below instead of waiting for unrelated network activity.
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator('[data-owner-chat-route="true"]').waitFor({ state: "visible", timeout: 10_000 });
   await page.waitForFunction(() => {
     const raw = window.sessionStorage.getItem("alamo-platform:analysis-session-v1");
     if (!raw) return false;
