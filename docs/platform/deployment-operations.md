@@ -4578,3 +4578,48 @@ restart. Preserve the exact owner grant. Before accepting structured writes,
 verify that the retained rollback version understands the new optional records;
 never roll back by deleting or flattening stored evidence. Keep original state
 revisions and the prior image. No staff or agent expansion is part of this slice.
+
+## Client flow community and county report — 2026-11-19 candidate
+
+The Clients report now has a year-to-date admission/discharge equation, community
+comparison, ranked admission counties, discharge timing, and searchable stay
+lists. Selecting a community scopes every section of this report. The source
+includes the current partial month through the published snapshot date.
+
+The source change is isolated from existing production overlays. Prepare with
+`CLIENT_FLOW_BASE_IMAGE=<current immutable production image>` and
+`npm run release:client-flow-report:prepare`. The preparer verifies that the live
+browser bytes match the pinned image, replaces only the existing flow component,
+and preserves the surrounding bundle prefix and suffix. Its Docker overlay
+contains the flow stylesheet, two entry documents, the new browser bundle, the
+report owner, and the existing API route's year argument. It does not rebuild or
+replace Carelog, Fleet, Workflow, or other application runtime files.
+
+Data publication extends the existing daily episode history with admission
+county, county provenance, and prior placement. Two privately documented reviewed
+resolutions fill blank counties only; matching requires the original history ID,
+resident, facility, and admission date. The resolution table is private governed
+data and is never packaged into the browser or repository. Raw ElderMark values
+win when populated. The QA step checks duplicate episode keys and conflicting
+resolution rows before publishing. An initial QA execution failed because two
+aggregate queries lacked the scalar helper's required column alias; both aliases
+were corrected and the failed tasks were repaired without publishing the failed
+run.
+
+The prepared overlay base and rollback image is
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:8eaf6e2bb6361663992e44fcd7ecb853f9fe086bfeb87caa9f41ca365423add3`.
+Preparation is not deployment. Final gate results, snapshot verification, and
+cutover status are recorded below when completed. Private evidence is under
+`generated/client-flow/`; it includes the exact source backups, checksums,
+publication run, SQL fixture, API checks, and release recipe. Restore the three
+prior notebook sources and rerun the governed publication path if data rollback
+is required. The added fields are backward compatible with the existing app.
+
+Data publication completed successfully in Databricks run `238701591367497`
+(repair `725545725086097`). Snapshot `2026-11-19T18:02:19.219916+00:00` has
+412 admissions, 286 discharges, 18 admission counties, and five reconciled
+community scopes. The stay spine is byte-for-byte equivalent after omitting the
+three new enrichment fields. All 412 admissions have a known county. The new
+report's local desktop/phone, keyboard, search, pagination, scope-change, failed
+refresh, and recovery paths were inspected; the source build and focused report
+and API checks pass. Application cutover remains subject to the full release gate.

@@ -29,7 +29,7 @@ const exactResidents = [
   "Audrey West",
   "Frank Romero",
   "Tuesday Woo",
-  "Chandeng Xayavong"
+  "Chendeng Xayavong"
 ];
 
 const forbiddenPatterns = [

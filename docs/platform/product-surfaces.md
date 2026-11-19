@@ -729,3 +729,30 @@ enabled. Live health, anonymous denial and runtime managed-identity read/write
 checks pass; real-owner browser acceptance awaits sign-in. See the latest
 [deployment receipt](deployment-operations.md). No additional user or agent access
 was enabled.
+
+## Daily client flow report
+
+The Clients page at `/analytics/residents` includes admissions and resident flow
+from January 1 through the latest published source date, including the current
+partial month. Community selection filters admissions, discharges, net movement,
+occupied bed-days, county totals, and stay length together. A community row opens
+that scope; admission, discharge, county, and churn figures open searchable client
+stays in the report. Each return admission is another stay.
+
+“Moved in and out” counts stays admitted and discharged within the selected year.
+“Left within 30 days” counts this period’s discharges whose full stay was at most
+30 days. Mean and median use all stays discharged in the period. County is the
+admission/referral county, not the geographic location of a previous facility.
+
+The existing daily governed publication supplies episode history. The page checks
+for updates every minute while visible and on return to the tab; the server’s
+five-minute snapshot cache remains in place. This is daily source data, not a
+transactional real-time census. Failed refreshes retain the last good same-scope
+report with a warning; community changes never show old-scope records as new data.
+Mobile layouts use community rows, wrapping names, and bounded record pages.
+
+Episode enrichment adds admission county and prior-placement fields without
+changing dates or stay keys. Reviewed missing-county resolutions require an exact
+history, resident, facility, and admission-date match. Populated ElderMark county
+values take precedence. Conflicting resolutions and duplicate episode keys fail
+the governed quality gate. Original ElderMark records remain unchanged.

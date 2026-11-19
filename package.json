@@ -11,7 +11,8 @@
     "basic-ftp": "6.2.2",
     "durable-functions": {
       "uuid": "11.1.1"
-    }
+    },
+    "@azure/identity": "$@azure/identity"
   },
   "scripts": {
     "dev": "vite",
@@ -201,7 +202,7 @@
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.1.0.tgz",
     "@alamo/agent-workflow-knowledge": "file:vendor/alamo-agent-workflow-knowledge-0.17.0.tgz",
-    "@azure/identity": "^4.13.1",
+    "@azure/identity": "^4.14.1",
     "@azure/msal-browser": "^4.26.0",
     "@azure/msal-react": "^3.0.20",
     "@azure/storage-blob": "^12.33.0",

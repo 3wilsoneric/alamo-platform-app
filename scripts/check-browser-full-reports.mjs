@@ -104,10 +104,10 @@ async function assertReportSemantics(report, reportId) {
       const rows = Array.from(table.querySelectorAll("tbody tr"));
       return {
         headerCount: headers.length,
-        rowCellCounts: rows.map((row) => row.querySelectorAll("td").length),
+        rowCellCounts: rows.map((row) => row.cells.length),
         emptyColumnLabels: headers
           .map((header, columnIndex) => {
-            const values = rows.map((row) => row.querySelectorAll("td")[columnIndex]?.textContent?.trim());
+            const values = rows.map((row) => row.cells[columnIndex]?.textContent?.trim());
             return values.length > 0 && values.every((value) =>
               !value || value === "Not available" || value === "Not reported"
             )

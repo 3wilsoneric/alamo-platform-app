@@ -769,7 +769,8 @@ const protectedHandlerCases = [
   ["data-explorer", dataExplorerHandler, "/api/data-explorer?kind=incidents"],
   ["home-dashboard", homeDashboardHandler, "/api/home-dashboard"],
   ["incidents", incidentsHandler, "/api/incidents"],
-  ["platform", platformHandler, "/api/platform/health"]
+  ["platform", platformHandler, "/api/platform/health"],
+  ["client-flow", platformHandler, "/api/platform/resident-flow-report?facilityId=337&year=2026"]
 ];
 
 process.env.API_AUTH_REQUIRED = "true";
