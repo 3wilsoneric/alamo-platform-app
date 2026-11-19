@@ -348,7 +348,9 @@ async function runAction(page, action) {
 
   if (action === "reload") {
     const before = await storedAnalysisSession(page);
-    await page.reload({ waitUntil: "networkidle" });
+    // Refresh traffic can continue after the ready workspace has reset its state.
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.locator('[data-chat-workspace-panel="true"]').waitFor({ state: "visible" });
     await waitForStoredFrame(page, (frame) => frame === null, "reload should start clean");
     const after = await storedAnalysisSession(page);
     if (before?.sessionId && after?.sessionId === before.sessionId) {
