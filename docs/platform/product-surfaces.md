@@ -56,6 +56,11 @@ update date. A metric still identifies its month when that differs from the
 report period; admissions/discharges, resident counts, and open-bed context
 remain attached to the relevant figure. The community report builder owns this
 cleanup, so the screen and HTML export share it without changing calculations.
+Community section introductions likewise omit repeated figures, explanations
+of the interface, and internal reconciliation language. Retained notes identify
+the operating-limit effective date, a coverage denominator, missing data,
+different source months, or current resident context in a historical report.
+Sections, metrics, charts, tables, and completeness gates are unchanged.
 
 The shared Overview, community, Clients, monthly Incidents, and medication
 report reader had an inverted hierarchy: its live 20px title was smaller than

@@ -1097,7 +1097,7 @@ function buildCommunityReport(context) {
       ...(currentCapacity ? [{
         id: "capacity-position",
         title: "Capacity position",
-        intro: `${facilityName} is using ${percent(currentCapacity.operationalUtilization)} of its ${integer(currentCapacity.operatingLimit)}-resident operating limit based on the weekly operating census of ${integer(currentCapacity.census)}. This point-in-time limit is effective ${formatDisplayDate(currentCapacity.capacityAsOf, { fallback: "for the current period" })} and is not applied to historical census periods.`,
+        intro: `Operating limit effective ${formatDisplayDate(currentCapacity.capacityAsOf, { fallback: "date unavailable" })}.`,
         blocks: [{
           type: "metric_grid",
           items: [
@@ -1112,9 +1112,11 @@ function buildCommunityReport(context) {
       {
         id: "census-and-residents",
         title: "Census and resident profile",
-        intro: latestCensus == null
-          ? `No governed census point was substituted for the selected period. Current resident profiles are shown only as supporting clinical context.`
-          : `${facilityName} has ${integer(latestCensus)} residents in the selected census period. The separate current resident-profile extract supplies age, length of stay, and diagnosis context and is not substituted for census.`,
+        ...(latestCensus == null
+          ? { intro: "Census unavailable for this period. Age, stay and diagnosis reflect current residents." }
+          : request.period
+            ? { intro: "Age, stay and diagnosis reflect current residents." }
+            : {}),
         blocks: [
           ...(communityResidents.length ? [{
             type: "metric_grid",
@@ -1127,7 +1129,9 @@ function buildCommunityReport(context) {
       ...(flowRows.rows.length ? [{
         id: "resident-flow",
         title: "Admissions and discharges",
-        intro: `${formatMonthLabel(flowRows.period, { fallback: "The latest month" })} resident movement is shown separately from the census point and current resident profile.`,
+        ...(flowRows.period && flowRows.period !== reportPeriod
+          ? { intro: formatMonthLabel(flowRows.period) }
+          : {}),
         blocks: [{
           type: "metric_grid",
           items: [
@@ -1140,7 +1144,9 @@ function buildCommunityReport(context) {
       {
         id: "incident-pattern",
         title: "Incident pattern",
-        intro: `${integer(incidentCount)} incidents are represented for ${formatMonthLabel(incidentPeriod, { fallback: "the selected period" })}.`,
+        ...(incidentPeriod && incidentPeriod !== reportPeriod
+          ? { intro: formatMonthLabel(incidentPeriod) }
+          : {}),
         blocks: [
           barList(incidentCategories),
           table(
@@ -1165,7 +1171,6 @@ function buildCommunityReport(context) {
       ...(incidentSeverity ? [{
         id: "incident-severity",
         title: "Incident severity indicators",
-        intro: `All ${integer(incidentSeverity.rows.length)} incident details reconcile to the governed incident total for ${formatMonthLabel(incidentPeriod, { fallback: "the selected period" })}.`,
         blocks: [{
           type: "metric_grid",
           items: [
@@ -1179,9 +1184,11 @@ function buildCommunityReport(context) {
       {
         id: "medication-performance",
         title: "Medication performance",
-        intro: compliance
-          ? `${facilityName} recorded ${integer(compliance.given)} medication administrations as given in ${formatMonthLabel(complianceRows.period, { fallback: "the latest month" })}.`
-          : `Medication performance is summarized from the latest governed community records.`,
+        ...(!compliance
+          ? { intro: "Medication administration data unavailable." }
+          : complianceRows.period && complianceRows.period !== reportPeriod
+            ? { intro: formatMonthLabel(complianceRows.period) }
+            : {}),
         blocks: [
           ...(compliance ? [{
             type: "metric_grid",
@@ -1194,7 +1201,7 @@ function buildCommunityReport(context) {
       ...(documentationSummary ? [{
         id: "care-delivery-coverage",
         title: "Care delivery coverage",
-        intro: `Documentation status is complete for all ${integer(documentationSummary.residentCount)} current governed resident profiles in this community.`,
+        intro: `${integer(documentationSummary.residentCount)} current residents.`,
         blocks: [{
           type: "metric_grid",
           items: [
@@ -1206,7 +1213,6 @@ function buildCommunityReport(context) {
       ...(burden ? [{
         id: "medication-burden",
         title: "Current medication burden",
-        intro: "Current medication orders are shown separately from the monthly administration count.",
         blocks: [{
           type: "metric_grid",
           items: medicationBurdenItems(burden)
@@ -1215,7 +1221,6 @@ function buildCommunityReport(context) {
       ...(documentation.length || longestStayResidents.length ? [{
         id: "resident-watch",
         title: "Resident watch",
-        intro: "Long stays and documentation gaps are shown together so operating and clinical leaders can move directly from the community result to the residents driving it.",
         blocks: [
           table(
             [
