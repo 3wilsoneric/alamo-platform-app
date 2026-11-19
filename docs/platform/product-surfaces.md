@@ -55,13 +55,26 @@ shared hierarchy and extracts the same scoped rules into the pinned release
 candidate; the independent resident-flow module remains intact. Its section
 heading is subordinate to the Clients page heading rather than a second hero.
 
-Audit coverage also included the mobile community home, restored incident cards,
-live Admissions, and live Licensing. Home already has one community heading and
-ruled rows. Incident cards have distinct page/priority/client levels. Licensing
-uses one visible result heading with quieter collection context. Those did not
-need another title wrapper. Admissions retains its live narrative and intake
-visualization; its introductory paragraphs before “Active intake” remain a
-separate copy/composition issue, not rewritten by these shared report styles.
+The follow-up container pass removes frames around Licensing's result list,
+summary prose, and correction-plan text. The archived source remains a distinct
+paper document. Licensing's Analytics parent already owns page gutters; removing
+the second inset restores the same reading width as other pages on phones.
+Collection status and Explore share a row when space permits. Report metrics are
+ruled rows without filled cells, the mobile community index loses its floating
+shadow, and the incident page has a flat canvas around its actual record cards.
+Admissions exposes its existing page title and removes the outer frame around
+its narrative and journey. Its selected-client file keeps a boundary. Existing
+copy, source warnings, controls, navigation, and data behavior are unchanged.
+
+The container checks cover six populated pages (Home, Overview, Admissions,
+Incidents, Clients, Licensing) at 320, 390, 768, and 1440px: no page overflow or
+clipped headings. Licensing's findings, correction plans, source jump/focus,
+and expand/collapse controls were inspected separately, as was the Admissions
+client-file dialog. The local Admissions preview uses the repository's validated
+synthetic fixture; Licensing uses the existing archived public state reports.
+Neither preview changes production access or data. The release preparer extracts
+the canonical surface rules alongside the report hierarchy and fails if the
+pinned live-shell boundary changes.
 
 This pass is local, not deployed. The earlier full analyst suite passed; the
 heading/style follow-up is checked with typecheck/build, focused lint/docs, and

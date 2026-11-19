@@ -63,6 +63,8 @@ bundle=replace(bundle,'(0,H.jsx)(`h3`,{className:`mt-1 !font-sans text-[23px] fo
 const workspaceCss=await readFile('src/platformWorkspace.css','utf8');
 const hierarchyCss=workspaceCss.match(/\/\* BEGIN REPORT HIERARCHY[\s\S]*?\/\* END REPORT HIERARCHY \*\//)?.[0];
 if(!hierarchyCss) throw Error('Report hierarchy styles missing.');
+const surfaceCss=workspaceCss.match(/\/\* BEGIN SURFACE FORMATTING[\s\S]*?\/\* END SURFACE FORMATTING \*\//)?.[0];
+if(!surfaceCss) throw Error('Surface formatting styles missing.');
 const newJs=`index-incident-cards-${hash(bundle).slice(0,12)}.js`;
 const css=await readFile('src/features/incidents/incidentCenter.css');
 const launcher=await readFile('public/point-of-care-launcher.js');
@@ -70,6 +72,7 @@ await rm(path.join(out,'overlay'),{recursive:true,force:true});
 await write(`dist/assets/${newJs}`,bundle);
 await write('dist/incident-cards.css',css);
 await write('dist/platform-report-hierarchy.css',hierarchyCss);
+await write('dist/platform-surface-formatting.css',surfaceCss);
 await write('dist/point-of-care-launcher.js',launcher);
 for(const name of ['dist/index.html','dist/admissions/index.html','dist/chat/index.html']) {
   let html=readImage(name).toString();
@@ -78,12 +81,12 @@ for(const name of ['dist/index.html','dist/admissions/index.html','dist/chat/ind
   // Chat still points at the preceding release; update it to the same current
   // shell so its owner marker and menu cannot diverge from the other entries.
   html=replace(html,`/assets/${entryJs}`,`/assets/${newJs}`);
-  html=replace(html,'</head>',`<link rel="stylesheet" href="/incident-cards.css?v=${hash(css).slice(0,12)}" /><link rel="stylesheet" href="/platform-report-hierarchy.css?v=${hash(hierarchyCss).slice(0,12)}" /></head>`);
+  html=replace(html,'</head>',`<link rel="stylesheet" href="/incident-cards.css?v=${hash(css).slice(0,12)}" /><link rel="stylesheet" href="/platform-report-hierarchy.css?v=${hash(hierarchyCss).slice(0,12)}" /><link rel="stylesheet" href="/platform-surface-formatting.css?v=${hash(surfaceCss).slice(0,12)}" /></head>`);
   const launcherPath=html.match(/\/point-of-care-launcher\.js(?:\?[^" ]*)?/)?.[0];
   if(!launcherPath) throw Error(`Launcher missing: ${name}`);
   html=replace(html,launcherPath,`/point-of-care-launcher.js?v=${hash(launcher).slice(0,12)}`);
   await write(name,html);
 }
 await writeFile(path.join(out,'Dockerfile'),`FROM ${base}\nCOPY --chown=node:node overlay/dist /app/dist\n`);
-await writeFile(path.join(out,'receipt.json'),JSON.stringify({base,oldJs,newJs,bundleHash:hash(bundle),sourceHashes:sources.map(hash),cssHash:hash(css),launcherHash:hash(launcher),headingHash:hash(headingSource),hierarchyCssHash:hash(hierarchyCss),scope:'Incident cards, owner-only navigation and report hierarchy; no server or data changes.'},null,2));
+await writeFile(path.join(out,'receipt.json'),JSON.stringify({base,oldJs,newJs,bundleHash:hash(bundle),sourceHashes:sources.map(hash),cssHash:hash(css),launcherHash:hash(launcher),headingHash:hash(headingSource),hierarchyCssHash:hash(hierarchyCss),surfaceCssHash:hash(surfaceCss),scope:'Incident cards, owner-only navigation, report hierarchy, and scoped text surfaces; no server or data changes.'},null,2));
 console.log(JSON.stringify({out,newJs}));

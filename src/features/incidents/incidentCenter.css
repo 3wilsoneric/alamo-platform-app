@@ -3,7 +3,7 @@
   --incident-tone: #923621;
   --incident-muted: #65717d;
   color: var(--platform-file-ink);
-  background: var(--platform-file-paper);
+  background: transparent;
   border-top: 3px solid var(--incident-tone);
   padding: clamp(16px, 2.4vw, 28px);
   font: 400 14px/1.5 "Helvetica Neue", Arial, sans-serif;
@@ -13,7 +13,7 @@
 .incident-center button { cursor: pointer; }
 .incident-center button:disabled { opacity: .45; cursor: not-allowed; }
 .incident-center-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 20px; margin-bottom: 14px; }
-.incident-center-heading :is(h1,h3) { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 650; letter-spacing: -.035em; }
+.incident-center-heading :is(h1,h3) { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif !important; font-size: 26px; line-height: 1.2; font-weight: 650; letter-spacing: -.035em; }
 .incident-center-heading a { display: inline-flex; align-items: center; gap: 6px; color: var(--incident-tone); font-weight: 600; text-decoration: none; }
 .incident-center-heading a:hover { text-decoration: underline; }
 .incident-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
