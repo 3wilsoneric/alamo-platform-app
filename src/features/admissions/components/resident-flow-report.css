@@ -15,3 +15,46 @@
 
 .resident-flow-site-list{display:none}
 @media(max-width:600px){.resident-flow-table-wrap{display:none}.resident-flow-site-list{display:block;margin-top:24px}.resident-flow-site-list button{display:block;width:100%;padding:16px 0;text-align:left;border:0;border-bottom:1px solid var(--flow-rule);background:transparent}.resident-flow-site-list strong{font-size:16px;font-weight:500;color:var(--flow-blue);display:block}.resident-flow-site-list i{float:right;font-style:normal}.resident-flow-site-list span{display:block;font-size:13px;color:var(--flow-muted);margin-top:4px}}
+
+/* Main Platform: the period belongs to the heading; rules define the sections. */
+[data-reports-page] article[data-full-report="residents"] > .resident-flow-report {
+  --flow-ink: var(--platform-file-ink); --flow-rule: var(--platform-file-rule);
+  --flow-muted: var(--platform-muted-ink); --flow-paper: var(--canvas-bg);
+  --flow-blue: var(--platform-census-ink); --flow-action: var(--ap-accent);
+  margin-top: 16px; padding: 24px; border: 2px solid var(--platform-file-ink); font-family: var(--ap-sans);
+}
+[data-full-report="residents"] .resident-flow-report :is(h2,h3,caption) { font: 650 18px/1.4 var(--ap-sans) !important; letter-spacing: normal !important; color: var(--flow-ink); }
+.resident-flow-head { gap: 4px 24px; padding-bottom: 16px; border-bottom: 2px solid var(--flow-ink); }
+.resident-flow-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; min-width: 0; }
+.resident-flow-year { position: relative; display: inline-flex; align-items: center; min-height: 44px; font-weight: 650; }
+.resident-flow-year > span { display: flex; align-items: center; gap: 8px; }
+.resident-flow-year select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.resident-flow-year:is(:hover,:focus-within) { box-shadow: inset 0 -2px var(--flow-ink); }
+.resident-flow-year:has(:focus-visible) { outline: 2px solid var(--flow-action); outline-offset: 4px; }
+.resident-flow-filters { align-items: center; flex-wrap: wrap; }
+.resident-flow-head p { margin: 0; }
+.resident-flow-movement { margin-top: 0; border-top: 0; }
+.resident-flow-movement strong { font-size: 34px; }
+.resident-flow-movement button:hover { background: transparent; box-shadow: inset 0 -2px var(--flow-ink); }
+.resident-flow-ending small { position: static; display: block; }
+.resident-flow-table-wrap { margin-bottom: 24px; }
+.resident-flow-detail-grid { gap: 32px; padding-top: 24px; border-top: 2px solid var(--flow-ink); }
+.resident-flow-counties ol { margin-top: 12px; }
+.resident-flow-counties button { padding-block: 12px; }
+.resident-flow-churn > button { padding-block: 20px; }
+.resident-flow-churn > button > strong { font-size: 30px; }
+.resident-flow-records { border: 2px solid var(--flow-ink); background: var(--flow-paper); }
+.resident-flow-foot { margin-top: 24px; padding-top: 12px; align-items: baseline; }
+.resident-flow-foot summary { min-height: 44px; padding-block: 12px; }
+@media(max-width:600px) {
+  [data-reports-page] article[data-full-report="residents"] > .resident-flow-report { padding: 16px; }
+  .resident-flow-head { display: flex; }
+  .resident-flow-filters { margin: 0; }
+  .resident-flow-movement { margin-top: 16px; }
+  .resident-flow-movement > div, .resident-flow-movement > button { padding: 16px 10px !important; }
+  .resident-flow-movement strong { font-size: 30px; }
+  .resident-flow-ending small { position: static; }
+  .resident-flow-counties ol { grid-template-columns: minmax(0,1fr); }
+  .resident-flow-counties button { grid-template-columns: minmax(0,1fr) auto; }
+  .resident-flow-records { padding: 12px; }
+}

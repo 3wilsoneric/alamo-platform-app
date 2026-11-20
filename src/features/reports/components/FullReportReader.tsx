@@ -1,3 +1,4 @@
+import ClientProfileReport from "./ClientProfileReport";
 import OverviewReportDashboard from "./OverviewReportDashboard";
 import CommunityReportDashboard from "./CommunityReportDashboard";
 import ReportHeading from "./ReportHeading";
@@ -287,13 +288,14 @@ export default function FullReportReader({ report, hideHeading = false, onCommun
             ? <LineChart {...block} height={220} />
             : <ReportBlock block={block} />}
         />
-      ) : report.reportId === "overview" ? <OverviewReportDashboard report={report} renderBlock={block => <ReportBlock block={block} />} /> : <>
+      ) : report.reportId === "overview" ? <OverviewReportDashboard report={report} renderBlock={block => <ReportBlock block={block} />} /> : report.reportId === "residents" ? <>
+        <ResidentFlowReport {...(flowYear !== undefined ? { selectedYear: flowYear } : {})} {...(onFlowYearChange ? { onYearChange: onFlowYearChange } : {})} {...(onCommunityChange ? { onCommunityChange } : {})} facilityId={report.scope.kind === "community" ? report.scope.facilityId ?? null : null} />
+        <ClientProfileReport report={report} renderBlock={block => <ReportBlock block={block} />} />
+      </> : <>
       <div className="mt-5">
         <MetricGrid items={report.metrics} />
       </div>
       <p data-report-mobile-summary="true" className="mt-5 border-b border-[#d9d9d9] pb-5 font-sans text-[14px] leading-[1.65] text-[#333333] sm:hidden">{report.summary}</p>
-
-      {report.reportId === "residents" ? <ResidentFlowReport {...(flowYear !== undefined ? { selectedYear: flowYear } : {})} {...(onFlowYearChange ? { onYearChange: onFlowYearChange } : {})} {...(onCommunityChange ? { onCommunityChange } : {})} facilityId={report.scope.kind === "community" ? report.scope.facilityId ?? null : null} /> : null}
 
       {report.sections.map((section, sectionIndex) => (
         <section

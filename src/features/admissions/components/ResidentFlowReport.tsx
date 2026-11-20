@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { fetchWithApiAuth } from "../../../shared/api/authenticatedFetch";
 import "./resident-flow-report.css";
 
@@ -81,10 +82,16 @@ export default function ResidentFlowReport({ facilityId = null, onCommunityChang
   return (
     <section className="resident-flow-report" aria-labelledby="resident-flow-title" data-resident-flow-report={ready ? report.scope.kind : "loading"}>
       <header className="resident-flow-head">
-        <div><h2 id="resident-flow-title">Admissions & resident flow</h2><p>{ready ? `Jan 1–${dateLabel(report.period.through)} · Updated daily` : "Updated daily"}</p></div>
+        <div className="resident-flow-title-row">
+          <h2 id="resident-flow-title">Admissions & resident flow</h2>
+          <label className="resident-flow-year">
+            <span aria-hidden="true">{year || report?.period.year || "This year"}<ChevronDown size={16} /></span>
+            <select aria-label="Client flow year" value={year || report?.period.year || ""} onChange={(event) => setYear(event.target.value)}>{report ? report.years.map((value) => <option key={value} value={value}>{value}</option>) : <option value="">This year</option>}</select>
+          </label>
+        </div>
         <div className="resident-flow-filters">
           {!onCommunityChange && <select ref={communityRef} aria-label="Client flow community" value={selectedFacility ?? ""} onChange={(event) => changeCommunity(event.target.value)}><option value="">All communities</option>{communityOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>}
-          <select aria-label="Client flow year" value={year || report?.period.year || ""} onChange={(event) => setYear(event.target.value)}>{report ? report.years.map((value) => <option key={value} value={value}>{value}</option>) : <option value="">This year</option>}</select>
+          {ready && <p>Jan 1–{dateLabel(report.period.through)}</p>}
         </div>
       </header>
       {error ? <div className="resident-flow-error" role="status">{ready ? "Update delayed. Showing the last loaded report." : "Client flow is temporarily unavailable."} <button type="button" onClick={() => setRetry((value) => value + 1)}>Retry</button></div> : null}
@@ -92,8 +99,8 @@ export default function ResidentFlowReport({ facilityId = null, onCommunityChang
         {report.snapshot.stale ? <p className="resident-flow-error" role="status">Data update delayed · Latest source: {dateLabel(report.snapshot.asOfDate)}</p> : null}
         <div className="resident-flow-movement">
           <div><span>Starting census</span><strong>{number(report.totals.openingCensus)}</strong></div>
-          <button type="button" onClick={() => open({ kind: "admissions" })}><span>Admissions <i aria-hidden="true">→</i></span><strong>+{number(report.totals.admissions)}</strong></button>
-          <button type="button" onClick={() => open({ kind: "discharges" })}><span>Discharges <i aria-hidden="true">→</i></span><strong>−{number(report.totals.discharges)}</strong></button>
+          <button type="button" onClick={() => open({ kind: "admissions" })}><span>Admissions </span><strong>+{number(report.totals.admissions)}</strong></button>
+          <button type="button" onClick={() => open({ kind: "discharges" })}><span>Discharges </span><strong>−{number(report.totals.discharges)}</strong></button>
           <div className="resident-flow-ending"><span>Ending census</span><strong>{number(report.totals.closingCensus)}</strong><small>{signed(report.totals.net)} net</small></div>
         </div>
         <div className="resident-flow-occupancy"><p><strong>{number(report.totals.bedDays)}</strong> occupied bed-days</p><p><strong>{number(report.totals.averageDailyCensus)}</strong> clients per day, on average</p></div>
@@ -114,7 +121,7 @@ export default function ResidentFlowReport({ facilityId = null, onCommunityChang
           {!matching.length ? <p>No matching clients.</p> : <ul>{matching.slice(currentPage * 12, (currentPage + 1) * 12).map((row) => <li key={row.id}><div><strong>{row.name}</strong><span>{row.community} · {row.county}</span></div><dl><div><dt>Admitted</dt><dd>{dateLabel(row.admitted)}</dd></div><div><dt>Discharged</dt><dd>{row.discharged && row.discharged <= report.period.through ? dateLabel(row.discharged) : "Still in community"}</dd></div>{row.dischargedInPeriod ? <div><dt>Stay</dt><dd>{number(row.stayDays ?? 0)} {row.stayDays === 1 ? "day" : "days"}</dd></div> : null}</dl>{row.priorPlacement ? <p>From {row.priorPlacement}</p> : null}</li>)}</ul>}
           {matching.length > 12 ? <nav aria-label="Client detail pages"><button type="button" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>Previous</button><span>{currentPage + 1} of {lastPage + 1}</span><button type="button" disabled={currentPage === lastPage} onClick={() => setPage(currentPage + 1)}>Next</button></nav> : null}
         </section> : null}
-        <footer className="resident-flow-foot"><span>Source through {dateLabel(report.snapshot.asOfDate)}</span><details><summary>Counting</summary><p>Each admission and discharge counts once per stay. Returning clients count again. Bed-days include the admission day and exclude the discharge day. County is the admission/referral county, which may differ from the previous facility’s location.</p></details></footer>
+        <footer className="resident-flow-foot">{report.snapshot.asOfDate !== report.period.through && <span>Source through {dateLabel(report.snapshot.asOfDate)}</span>}<details><summary>Counting</summary><p>Each admission and discharge counts once per stay. Returning clients count again. Bed-days include the admission day and exclude the discharge day. County is the admission/referral county, which may differ from the previous facility’s location.</p></details></footer>
       </>}
     </section>
   );

@@ -28,7 +28,7 @@ export default function ReportHeading({ report, title, communityAsTitle = false,
       </div>
       {report && <div className="report-heading__context">
         <p>
-          {periodControl ? <>Data through {report.dataThrough}</> : <>{periodLabel}{!periodIncludesDate ? <> · Data through {report.dataThrough}</> : null}</>}
+          {periodControl || report.reportId === "residents" ? <>Data through {report.dataThrough}</> : <>{periodLabel}{!periodIncludesDate ? <> · Data through {report.dataThrough}</> : null}</>}
         </p>
         <p className="report-heading__updated">Updated {report.generatedAtLabel}</p>
       </div>}

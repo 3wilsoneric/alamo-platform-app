@@ -565,13 +565,6 @@ export function readCachedWorkforceDashboard() {
   );
 }
 
-export function readCachedAdmissionsDashboard() {
-  return readCachedJson(
-    "/api/platform/admissions-dashboard",
-    platformResponseValidators.admissionsDashboard
-  );
-}
-
 export function readCachedHomeDashboard() {
   return readCachedJson(
     "/api/home-dashboard",

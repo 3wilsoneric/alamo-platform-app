@@ -53,6 +53,40 @@ These corrections were deployed on November 19 as `contrast-1119-9954d00`.
 They preserve the report values, filters, incident matching, and access behavior.
 Verification and rollback are recorded in [Deployment and Operations](deployment-operations.md).
 
+### Clients and Admissions consistency — local candidate, November 19
+
+- Clients leads with admissions and resident flow. Its year is a native selector
+  beside the section title. One community scope still controls both the flow
+  and current-profile report. Current-profile metrics, diagnosis labels, and
+  community comparisons sit in one disclosure below the historical flow;
+  their definitions remain available without repeated introductory paragraphs.
+- Admissions uses named, selectable rows and a stage selector in the list
+  heading. Community scope sits beside the page title and applies to the list,
+  counts, selected file, and source/assessor breakdown. The existing read-only
+  client-file dialog, active/closed rules, incomplete-feed guard, and request
+  cancellation/retry behavior are preserved.
+- Both use the compact navigation typography, white panels, 2px ink boundaries,
+  quiet interior rules, native selectors, and at least 44px interactive targets.
+  Long names wrap at 320px; the page itself never scrolls horizontally.
+- The deployed Admissions journey was missing from this checkout's source.
+  `AdmissionsPage` now owns that live surface; the obsolete Briefing/board
+  composition and unused board-only helpers were removed. `ProgressModal`
+  retains its clinical detail and access behavior. This does not change APIs,
+  persisted data, census aggregation, admission decisions, or access grants.
+- Evidence: Active-intake logic is exercised by
+  `scripts/check-active-intake-journey.mjs`; the dashboard check imports it.
+  `check:browser-admissions` now verifies the current production journey,
+  including empty/partial feeds, names, scope, stage filtering, focus return,
+  and 320/390px layouts. `check:browser-full-reports` verifies the flow-first
+  Clients hierarchy and the retained detail/definitions.
+
+This candidate is not deployed. The local preview is assembled against the
+verified `contrast-1119-9954d00` production shell; other report renderers and
+server code stay pinned. The full frontend must not replace that shell until
+its remaining routing overlays have been reconciled. A release of this change
+must preserve the pinned image, production auth guard, and compressed-asset
+parity, then rerun the applicable release checks.
+
 Audit scope: map/index, Overview, community dashboard, Admissions, Clients,
 Incidents and history, Licensing, desktop and narrow layouts. Implemented in
 this local pass: overview comparisons, compact shared titles and motion,
@@ -63,9 +97,9 @@ Remaining design findings:
 
 | Surface | Finding | Next concrete work |
 | --- | --- | --- |
-| Admissions | Individual referrals are anonymous person glyphs until inspected. This requires recall and hover rather than recognition; empty lanes take too much space. | Restore the deployed journey's canonical source, then replace glyphs with named compact records while preserving selection, permissions, and stage semantics. The current checkout's older `PipelineBoard` is not that deployed implementation. |
+| Admissions | Named records and shared title controls are implemented and checked locally. | Ship the pinned candidate after release validation; production still has person glyphs until then. |
 | Home | Dates and zero-change comparisons repeat on all five community rows. | Consolidate only when every displayed row has the same dated observation; keep exceptions explicit. |
-| Clients | Flow is clearer than the large current-profile and diagnosis blocks that follow it. | Group secondary profile detail under concise disclosure after validating all current/historical labels. |
+| Clients | Secondary profile detail is grouped under a disclosure in the local candidate. | Ship after release validation; preserve the current-profile / historical-flow distinction. |
 | Packaging | Production contains multiple reviewed overlays not represented by this checkout's root routing source. | Reconcile the production shell before attempting a whole-app frontend replacement. The pinned preparation script preserves the live routing and access behavior for this local candidate. |
 
 ## Use this before changing the style

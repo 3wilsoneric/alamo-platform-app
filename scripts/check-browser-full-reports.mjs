@@ -84,6 +84,11 @@ async function waitForReport(page, reportId) {
 }
 
 async function assertReportSemantics(report, reportId) {
+  if (reportId === "residents") {
+    const profile = report.locator('.client-profile-report');
+    assert(await profile.count() === 1, "Clients must group current-profile detail in one disclosure");
+    if (!(await profile.getAttribute('open') !== null)) await profile.locator('summary').first().click();
+  }
   const expectations = reportSectionExpectations[reportId];
   for (const sectionId of expectations.required) {
     // Overview renders the operating comparison as a dashboard and the current
@@ -509,6 +514,13 @@ async function runMobile(browser, screenshotDir) {
         context: element.querySelector('.overview-dashboard__context').getBoundingClientRect().top
       }));
       assert(hierarchy.census < hierarchy.detail && hierarchy.detail < hierarchy.context, "phone overview must lead with census and flow before definitions");
+    } else if (reportId === "residents") {
+      const hierarchy = await report.evaluate(element => ({
+        flow: element.querySelector('.resident-flow-report').getBoundingClientRect().top,
+        profile: element.querySelector('.client-profile-report').getBoundingClientRect().top,
+        columns: getComputedStyle(element.querySelector('.client-profile-metrics')).gridTemplateColumns.split(' ').length
+      }));
+      assert(hierarchy.flow < hierarchy.profile && hierarchy.columns === 2, "phone Clients must lead with flow and keep the secondary profile readable in two columns");
     } else {
       const mobileHierarchy = await report.evaluate((element) => {
         const metrics = element.querySelector('[data-report-metrics="true"]');

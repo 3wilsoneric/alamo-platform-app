@@ -505,9 +505,10 @@ validators.admissionsDashboard(connected);
 validators.admissionsDashboard(crosswalkDashboard);
 assert.throws(() => validators.admissionsDashboard({ ...dashboard, referral_pipeline: { status: "bogus" } }));
 
-const admissionsPageSource = await readFile(new URL("../src/features/admissions/pages/AdmissionsPage.tsx", import.meta.url), "utf8");
-assert.match(admissionsPageSource, /pipeline\.metrics\.activeReferrals/, "the executive update must use the explicit active-referral metric");
-assert.match(admissionsPageSource, /activeCards = pipeline\.board\.cards\.filter/, "the executive workload must exclude declined cards");
+const intakeJourneySource = await readFile(new URL("../src/features/admissions/components/ActiveIntakeJourney.tsx", import.meta.url), "utf8");
+assert.match(intakeJourneySource, /all\.length !== pipeline\.metrics\.activeReferrals/, "the visible population must reconcile to the feed's active-referral total");
+assert.match(intakeJourneySource, /pipeline\.board\.truncated/, "a partial feed must not be charted as a total");
+await import("./check-active-intake-journey.mjs");
 
 console.log("admissions dashboard checks passed");
 
