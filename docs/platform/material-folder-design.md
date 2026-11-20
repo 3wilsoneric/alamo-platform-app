@@ -53,7 +53,7 @@ These corrections were deployed on November 19 as `contrast-1119-9954d00`.
 They preserve the report values, filters, incident matching, and access behavior.
 Verification and rollback are recorded in [Deployment and Operations](deployment-operations.md).
 
-### Clients and Admissions consistency — local candidate, November 19
+### Clients and Admissions consistency — deployed November 19
 
 - Clients leads with admissions and resident flow. Its year is a native selector
   beside the section title. One community scope still controls both the flow
@@ -80,12 +80,13 @@ Verification and rollback are recorded in [Deployment and Operations](deployment
   and 320/390px layouts. `check:browser-full-reports` verifies the flow-first
   Clients hierarchy and the retained detail/definitions.
 
-This candidate is not deployed. The local preview is assembled against the
-verified `contrast-1119-9954d00` production shell; other report renderers and
-server code stay pinned. The full frontend must not replace that shell until
-its remaining routing overlays have been reconciled. A release of this change
-must preserve the pinned image, production auth guard, and compressed-asset
-parity, then rerun the applicable release checks.
+Deployed as `clients-1119-1fde4b0` on the verified `contrast-1119-9954d00`
+production shell. Other report renderers and server code stay pinned. Release
+checks and signed-in desktop/mobile verification passed; the deployment and
+rollback receipt is recorded in `deployment-operations.md`. The full frontend
+must not replace that shell until its remaining routing overlays have been
+reconciled. Future releases must preserve the pinned image, production auth
+guard, and compressed-asset parity.
 
 Audit scope: map/index, Overview, community dashboard, Admissions, Clients,
 Incidents and history, Licensing, desktop and narrow layouts. Implemented in

@@ -16,6 +16,55 @@
 
 ## Current Production Host
 
+### Platform Clients and Admissions consistency — 2026-11-19
+
+- Runtime source: `1fde4b0`; release-test correction: `41187ae`; ACR build `ccfp`.
+- Active revision: `alamo-platform-prod-web--clients-1119-1fde4b0`;
+  Healthy/Running, one replica, 100% traffic.
+- Active image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639`.
+- Rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:0c3798779c63d731e11377ceeaecdb34356d255cf0eef95f57d5789a28822cf7`.
+
+Clients now leads with resident flow, a year selector in its heading, and an
+expandable current-client profile. Admissions uses readable named rows, a stage
+selector in the list heading, and community scope beside the page title. Both
+use compact typography, clearer component boundaries, and less repeated copy.
+
+The image adds one frontend layer to the exact preceding production digest.
+All 15 packaged files and their gzip/Brotli representations matched. Runtime
+configuration, authentication guard, server, and data layers are preserved.
+No data migration or record mutation occurred.
+
+Verification reused the passing analyst, type, docs, focused Admissions/Clients
+browser, and build checks from the unchanged runtime candidate. Fresh desktop,
+dependency, regression-replay, and mission checks passed. All 19 browser/build
+release stages passed, including 72 mobile route/viewport checks and 116 catalog
+renders across four widths. The initial mobile gate expected retired
+Briefing/Pipeline tabs; its corrected assertion requires the approved community
+selector, 44px touch geometry, and scoped route changes. The original failure
+and passing resumed run are retained separately. No runtime change was needed.
+
+After cutover, public smoke passed 4/4; all 15 served-asset/encoding comparisons
+matched; health returned 200; protected incident and Admissions APIs returned
+401 anonymously. Eric's existing signed-in Chrome session verified reload,
+Clients community scope and detail close/focus return, current-profile expansion,
+Admissions stage/community filters, the original client-file dialog, and Escape
+focus return. The 320px/390px layouts had no page overflow or clipped names;
+selectors met 44px targets. No browser console errors were captured, and the
+viewport was restored. The separate fresh-session suite was not rerun, following
+the owner's direction to use the existing Chrome session.
+
+The before/after totals matched: 39 active referrals (28 being assessed, 1 under
+review, 10 accepted awaiting move-in); 412 admissions, 286 discharges, 545 ending
+census, and 160,712 occupied bed-days for January 1–November 19.
+
+Receipts: `generated/platform-consistency-20261119/deployment-1fde4b0/`.
+Visual proof: `generated/platform-consistency-20261119/live-clients.jpg`.
+Rollback: update the app to the pinned rollback digest with a fresh revision
+suffix, then verify health, traffic, served assets, and signed-in navigation.
+No data rollback is required. Continue using the pinned production shell;
+the root build must not replace its remaining route overlays wholesale.
+
+
 ### Compact controls and resident history — 2026-11-19
 
 - Runtime source: `9954d00`; ACR build `ccfn`.
