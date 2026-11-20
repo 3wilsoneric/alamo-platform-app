@@ -199,7 +199,8 @@
     "release:client-flow-report:prepare": "node scripts/prepare-client-flow-report-release.mjs",
     "check:resident-flow": "node scripts/check-resident-flow-report.mjs",
     "check:browser-incident-cards": "node scripts/check-browser-incident-cards.mjs",
-    "release:incident-cards:prepare": "node scripts/prepare-platform-incident-cards-release.mjs"
+    "release:incident-cards:prepare": "node scripts/prepare-platform-incident-cards-release.mjs",
+    "release:community-dashboard:prepare": "node scripts/prepare-community-dashboard-release.mjs"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.1.0.tgz",

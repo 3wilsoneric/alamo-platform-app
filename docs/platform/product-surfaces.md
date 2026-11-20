@@ -48,6 +48,29 @@ overlapping its value or extending outside the dialog. This is browser viewport
 evidence, not a physical iOS/Android device certification.
 
 
+### November 19 community dashboard — local preview
+
+The community reader now groups census/capacity, admissions and discharges,
+incidents, client profile, medication performance, and record detail. It removes
+the detached headline metrics and replaces the monthly number strip with the
+existing responsive line chart. White panels and thin rules establish grouping;
+there are no filled colored panels or tinted headers. Color is confined to data
+marks. Capacity retains both operating and licensed limits, with license detail
+in a disclosure. Incident records, additional diagnoses, monthly census values,
+and resident-watch tables remain available through native keyboard-accessible
+disclosures. Historical reports do not show today's operating capacity.
+
+`CommunityReportDashboard` consumes the existing full-report document; no new
+fetch, clinical calculation, access rule, or data write was introduced. Other
+report families keep the shared reader. The HTML export retains its existing
+linear format. The production-overlay preparer preserves the pinned live shell
+and applies only this presentation plus the reviewed section-copy patch. This
+redesign is **not deployed**. Final source typecheck/build and the full-report
+browser suite passed; the local candidate was reviewed at 320, 390, 768 and
+1440 pixels, including all five community filters, a historical period, keyboard
+disclosures, and horizontal fit. A full release gate is still required before
+publishing this candidate.
+
 ### November 19 title/container audit — deployed
 
 Community headline metrics omit repeated report-month captions and the internal
@@ -56,11 +79,12 @@ update date. A metric still identifies its month when that differs from the
 report period; admissions/discharges, resident counts, and open-bed context
 remain attached to the relevant figure. The community report builder owns this
 cleanup, so the screen and HTML export share it without changing calculations.
-Community section introductions likewise omit repeated figures, explanations
+The pending community update also removes repeated figures, explanations
 of the interface, and internal reconciliation language. Retained notes identify
 the operating-limit effective date, a coverage denominator, missing data,
 different source months, or current resident context in a historical report.
-Sections, metrics, charts, tables, and completeness gates are unchanged.
+This section-copy update is not deployed. Calculations and completeness gates
+are unchanged.
 
 The shared Overview, community, Clients, monthly Incidents, and medication
 report reader had an inverted hierarchy: its live 20px title was smaller than

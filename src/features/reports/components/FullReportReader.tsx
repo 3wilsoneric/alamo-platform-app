@@ -1,3 +1,4 @@
+import CommunityReportDashboard from "./CommunityReportDashboard";
 import ReportHeading from "./ReportHeading";
 import ResidentFlowReport from "../../admissions/components/ResidentFlowReport";
 import { useChartWidth } from "../../../shared/charts/useChartWidth";
@@ -46,9 +47,11 @@ function MetricGrid({ items }: { items: FullReportMetric[] }) {
 
 function LineChart({
   label,
-  items
+  items,
+  height = 280
 }: {
   label?: string;
+  height?: number;
   items: Array<{ label: string; value: number; displayValue?: string }>;
 }) {
   const { ref: chartRef, width } = useChartWidth<HTMLElement>(860);
@@ -60,7 +63,6 @@ function LineChart({
     );
   }
 
-  const height = 280;
   const left = 48;
   const right = 40;
   const top = 28;
@@ -273,6 +275,14 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
       ) : null}
       <ReportHeading report={report} />
 
+      {report.reportId === "community" ? (
+        <CommunityReportDashboard
+          report={report}
+          renderBlock={block => block.type === "line_chart"
+            ? <LineChart {...block} height={220} />
+            : <ReportBlock block={block} />}
+        />
+      ) : <>
       <div className="mt-5">
         <MetricGrid items={report.metrics} />
       </div>
@@ -303,6 +313,7 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
         </section>
       ))}
 
+      </>}
       <details data-report-evidence="true" className="mt-10 border-t border-[#111111] pt-3 text-[10px] leading-5 text-[#737373]">
         <summary className="cursor-pointer font-semibold text-[#595959]">Evidence used</summary>
         <p className="mt-2">
