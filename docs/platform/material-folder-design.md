@@ -49,8 +49,9 @@ their own materials. This work is local; it is not a deployment receipt.
   columns or stretched tiles. The dialog fits a 320px viewport and returns
   keyboard focus to the resident opener when closed.
 
-These corrections are local and awaiting deployment. They preserve the report
-values, filters, incident matching, and access behavior.
+These corrections were deployed on November 19 as `contrast-1119-9954d00`.
+They preserve the report values, filters, incident matching, and access behavior.
+Verification and rollback are recorded in [Deployment and Operations](deployment-operations.md).
 
 Audit scope: map/index, Overview, community dashboard, Admissions, Clients,
 Incidents and history, Licensing, desktop and narrow layouts. Implemented in

@@ -16,6 +16,47 @@
 
 ## Current Production Host
 
+### Compact controls and resident history — 2026-11-19
+
+- Runtime source: `9954d00`; ACR build `ccfn`.
+- Active revision: `alamo-platform-prod-web--contrast-1119-9954d00`;
+  Healthy/Running, one replica, 100% traffic.
+- Active image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:0c3798779c63d731e11377ceeaecdb34356d255cf0eef95f57d5789a28822cf7`.
+- Rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:117d807c10bd16cc9dd0b0fddf8ba16c60611cc3a750bc7354d4d983f0da34d2`.
+
+The community title is now its native community selector, with period selection
+beside it. Dashboard components have stronger boundaries. Admissions, discharges,
+and net use aligned labeled rows. Resident incident history uses a compact facts
+grid and one severity-count row, with keyboard focus restored after closing.
+
+The image extends the exact previous production image with one frontend layer.
+All 15 packaged files and their gzip/Brotli representations matched their
+receipts. Runtime configuration and base layers are identical, and the development
+authentication bypass remains disabled. No server or data files were replaced.
+
+Verification reused the passing analyst, type, documentation, report-browser,
+incident-browser, stress, and build evidence from the unchanged implementation.
+Fresh desktop, dependency, regression-replay, and mission checks passed. The
+remaining 19 browser/build release stages passed, including 72 mobile route checks
+and 116 catalog renders across four screen sizes. Updated report-browser assertions
+cover the approved Overview layout and title location rather than retired markup.
+
+After cutover, public smoke passed 4/4; all 15 live asset/encoding comparisons
+matched; health returned 200; protected incident and Admissions APIs returned 401
+without authentication. Eric's existing signed-in Chrome session verified the
+community-title selector, historical period selection, portfolio return, Clients,
+and resident history at desktop, 390px, and 320px widths. The dialog had no horizontal
+overflow, severity labels stayed on one line, the close target was 44px, and Escape
+restored focus. No browser console errors were captured. The viewport was restored.
+The separate fresh-session signed-in suite was not rerun, following the owner's
+instruction to verify through the existing Chrome session.
+
+Receipts: `generated/community-contrast-20261119/deployment-9954d00/`.
+Visual proof: `generated/community-contrast-20261119/live-platform-design.jpg`.
+Rollback: update the app to the pinned rollback digest under a new revision suffix,
+then verify health, traffic, served assets, and signed-in navigation. No data
+rollback is required.
+
 ### Platform title motion and dashboard hierarchy — 2026-11-19
 
 - Runtime source: `3602e3a`; release-test correction: `5784df4`; ACR build `ccfm`.
