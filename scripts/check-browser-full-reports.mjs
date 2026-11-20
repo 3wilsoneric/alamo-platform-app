@@ -86,10 +86,18 @@ async function waitForReport(page, reportId) {
 async function assertReportSemantics(report, reportId) {
   const expectations = reportSectionExpectations[reportId];
   for (const sectionId of expectations.required) {
+    // Overview renders the operating comparison as a dashboard and the current
+    // resident context as a disclosure; both still need their full content.
+    const section = reportId === "overview" && sectionId === "community-operating-position"
+      ? report.getByRole("region", { name: "Census", exact: true })
+      : reportId === "overview" && sectionId === "current-resident-context"
+        ? report.locator("details").filter({ hasText: /^Current resident context/ })
+        : report.locator(`section#${sectionId}`);
     assert(
-      (await report.locator(`section#${sectionId}`).count()) === 1,
+      (await section.count()) === 1,
       `${reportId} is missing the required ${sectionId} section`
     );
+    assert((await section.textContent()).trim().length > 50, `${reportId} has an empty ${sectionId} section`);
   }
   for (const sectionId of expectations.forbidden) {
     assert(
@@ -312,7 +320,9 @@ async function runDesktop(browser, screenshotDir) {
   for (const [reportId, title] of reportFamilies) {
     await page.getByRole("button", { name: new RegExp(`^${title}`) }).click();
     const report = await waitForReport(page, reportId);
-    const titleText = await report.locator("#full-report-title").innerText();
+    const reportTitle = page.locator("h1#full-report-title");
+    assert(await reportTitle.count() === 1, `${reportId} must have one report title`);
+    const titleText = await reportTitle.innerText();
     assert(titleText.trim().length > 5, `${reportId} has no useful title`);
     assert(
       !(await report.getByRole("button", { name: /Export PDF|Download HTML/i }).count()) &&
@@ -484,13 +494,30 @@ async function runMobile(browser, screenshotDir) {
     await assertReportSemantics(report, reportId);
     await assertDocumentFits(page, `mobile ${reportId} report`);
     await assertContainedReader(page, `mobile ${reportId} report`);
-    const mobileHierarchy = await report.evaluate((element) => {
-      const metrics = element.querySelector('[data-report-metrics="true"]');
-      const summary = element.querySelector('[data-report-mobile-summary="true"]');
-      const columns = metrics ? getComputedStyle(metrics).gridTemplateColumns.split(" ").length : 0;
-      return { columns, metricsTop: metrics?.getBoundingClientRect().top ?? 0, summaryTop: summary?.getBoundingClientRect().top ?? 0 };
-    });
-    assert(mobileHierarchy.columns === 2 && mobileHierarchy.metricsTop < mobileHierarchy.summaryTop, `${reportId} phone reader must lead with two-column measures before narrative`);
+    if (reportId === "overview") {
+      const comparisonLayout = await report.locator('.overview-dashboard__census li').evaluateAll(rows => rows.map(row => {
+        const name = row.querySelector(':scope > strong').getBoundingClientRect();
+        const capacity = row.querySelector('.overview-dashboard__capacity').getBoundingClientRect();
+        const open = row.querySelector('.overview-dashboard__open')?.getBoundingClientRect();
+        return { name, capacity, open };
+      }));
+      assert(comparisonLayout.length === 5, "phone overview must show all five community comparisons");
+      assert(comparisonLayout.every(({name, capacity, open}) => capacity.top >= name.bottom && (!open || open.left >= capacity.right)), "phone census must keep names above capacity and open beds alongside");
+      const hierarchy = await report.evaluate(element => ({
+        census: element.querySelector('.overview-dashboard__census').getBoundingClientRect().top,
+        detail: element.querySelector('.overview-dashboard__details').getBoundingClientRect().top,
+        context: element.querySelector('.overview-dashboard__context').getBoundingClientRect().top
+      }));
+      assert(hierarchy.census < hierarchy.detail && hierarchy.detail < hierarchy.context, "phone overview must lead with census and flow before definitions");
+    } else {
+      const mobileHierarchy = await report.evaluate((element) => {
+        const metrics = element.querySelector('[data-report-metrics="true"]');
+        const summary = element.querySelector('[data-report-mobile-summary="true"]');
+        const columns = metrics ? getComputedStyle(metrics).gridTemplateColumns.split(" ").length : 0;
+        return { columns, metricsTop: metrics?.getBoundingClientRect().top ?? 0, summaryTop: summary?.getBoundingClientRect().top ?? 0 };
+      });
+      assert(mobileHierarchy.columns === 2 && mobileHierarchy.metricsTop < mobileHierarchy.summaryTop, `${reportId} phone reader must lead with two-column measures before narrative`);
+    }
     await page.screenshot({
       path: path.join(screenshotDir, `full-report-${reportId}-mobile.png`),
       fullPage: true

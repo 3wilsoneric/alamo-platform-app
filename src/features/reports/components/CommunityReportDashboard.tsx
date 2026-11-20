@@ -56,7 +56,6 @@ export default function CommunityReportDashboard({ report, renderBlock }: { repo
   const arrivals = flowMetrics.find(item => item.label === "Admissions");
   const departures = flowMetrics.find(item => item.label === "Discharges");
   const net = flowMetrics.find(item => item.label === "Net movement");
-  const flowMaximum = Math.max(numeric(arrivals?.value) ?? 0, numeric(departures?.value) ?? 0, 1);
   const incidentCount = report.metrics.find(item => item.label === "Incidents");
   const longStayDetail = report.metrics.find(metric => metric.label === "Stays over one year")?.detail;
   const diagnosis = population?.blocks.find(block => block.type === "bar_list");
@@ -93,13 +92,11 @@ export default function CommunityReportDashboard({ report, renderBlock }: { repo
 
       {flow && <section className="community-dashboard__panel community-dashboard__flow" id={flow.id} aria-labelledby="community-flow-heading">
         <header><h2 id="community-flow-heading">{flow.title}</h2>{flow.intro && <span>{flow.intro}</span>}</header>
-        <div className="community-dashboard__flow-body">
-          {[arrivals, departures].map((item, i) => item && <div className="community-dashboard__movement" data-direction={i === 0 ? "in" : "out"} key={item.label}>
-            <div><span aria-hidden="true">{i === 0 ? "↘" : "↗"}</span><span>{item.label}</span><strong>{item.value}</strong></div>
-            <div className="community-dashboard__track" aria-hidden="true"><span style={{ width: `${(numeric(item.value) ?? 0) / flowMaximum * 100}%` }} /></div>
+        <dl className="community-dashboard__flow-body">
+          {[arrivals, departures, net].map(item => item && <div className={`community-dashboard__movement${item === net ? " community-dashboard__net" : ""}`} key={item.label}>
+            <dt>{item.label}</dt><dd>{item.value}</dd>
           </div>)}
-          {net && <div className="community-dashboard__net"><span>{net.label}</span><strong>{net.value}</strong></div>}
-        </div>
+        </dl>
       </section>}
     </div>
 

@@ -48,7 +48,8 @@ await withBrowserQa(async (browser) => {
     assert.deepEqual(layout.controls, [], `${width}: undersized controls`);
     await center.getByRole('button', { name: 'Close incident details' }).click();
     assert.equal(await details.evaluate(el=>el===document.activeElement), true);
-    await center.locator('[data-incident-resident-link]').first().click();
+    const residentLink = center.locator('[data-incident-resident-link]').first();
+    await residentLink.press('Enter');
     const dialog = page.getByRole('dialog'); await dialog.waitFor();
     assert.ok(await dialog.evaluate(el=>el.contains(document.activeElement)));
     const diagnosisLabel = dialog.getByText('Diagnosis', { exact: true });
@@ -56,13 +57,21 @@ await withBrowserQa(async (browser) => {
       const range = document.createRange(); range.selectNodeContents(el);
       const value = el.nextElementSibling;
       return { labelLines: range.getClientRects().length,
-        labelRight: el.getBoundingClientRect().right, valueLeft: value.getBoundingClientRect().left,
+        labelBottom: el.getBoundingClientRect().bottom, valueTop: value.getBoundingClientRect().top,
         valueRight: value.getBoundingClientRect().right, dialogRight: el.closest('dialog').getBoundingClientRect().right };
     });
     assert.equal(factLayout.labelLines, 1, `${width}: incident fact label wraps mid-word`);
-    assert.ok(factLayout.labelRight < factLayout.valueLeft, `${width}: fact value overlaps its label`);
+    assert.ok(factLayout.labelBottom <= factLayout.valueTop, `${width}: fact value overlaps its label`);
     assert.ok(factLayout.valueRight <= factLayout.dialogRight, `${width}: fact value escapes dialog`);
+    const priorityLayout = await dialog.locator('.incident-history-priorities dt').evaluateAll(labels => labels.map(label => {
+      const range = document.createRange(); range.selectNodeContents(label);
+      return { text: label.textContent, lines: range.getClientRects().length };
+    }));
+    assert.ok(priorityLayout.every(label => label.lines === 1), `${width}: priority labels wrap: ${JSON.stringify(priorityLayout)}`);
+    assert.ok(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth), `${width}: dialog overflows horizontally`);
     await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => document.activeElement?.hasAttribute('data-incident-resident-link'));
+    assert.equal(await residentLink.evaluate(el => el === document.activeElement), true);
     await page.screenshot({ path: `${screenshotDir}/${width}.png`, fullPage: false });
   }
   await center.locator('[data-incident-date-window="previous"]').click();

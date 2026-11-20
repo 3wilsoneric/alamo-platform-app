@@ -36,6 +36,22 @@ their own materials. This work is local; it is not a deployment receipt.
   content headings introduce the question. Source documents may retain serif
   typography; operational controls should not change font families mid-flow.
 
+### Evening corrections — November 19
+
+- The community name is the community selector. Place the period beside it;
+  do not duplicate the title in a separate filter box. Native selects keep
+  keyboard and mobile-picker behavior, a visible focus state, and 44px targets.
+- Dashboard components use a 2px ink boundary and header divider. Interior
+  rows remain quieter. Admissions, discharges, and net are aligned labeled
+  values; decorative direction arrows and miniature comparison bars are gone.
+- Resident incident history uses a compact fact grid, with diagnosis on its
+  own row. History and severity counts form one short line, without filled
+  columns or stretched tiles. The dialog fits a 320px viewport and returns
+  keyboard focus to the resident opener when closed.
+
+These corrections are local and awaiting deployment. They preserve the report
+values, filters, incident matching, and access behavior.
+
 Audit scope: map/index, Overview, community dashboard, Admissions, Clients,
 Incidents and history, Licensing, desktop and narrow layouts. Implemented in
 this local pass: overview comparisons, compact shared titles and motion,

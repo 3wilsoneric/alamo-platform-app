@@ -23,9 +23,9 @@ interface ResidentIncidentHistoryDrawerProps {
 
 function ResidentDetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[#d9d9d9] py-3 last:border-b-0">
-      <div className="shrink-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#595959]">{label}</div>
-      <div className="max-w-[65%] text-right text-[13px] font-medium leading-5 text-[#111111]">{value}</div>
+    <div className="incident-resident-fact" data-field={label}>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
 }
@@ -40,8 +40,14 @@ export function ResidentIncidentHistoryDrawer({
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!incident || !dialog) return;
+    const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.showModal();
-    return () => dialog.close();
+    return () => {
+      dialog.close();
+      requestAnimationFrame(() => {
+        if (returnFocus?.isConnected && !document.querySelector("dialog[open]")) returnFocus.focus();
+      });
+    };
   }, [incident?.id]);
   if (!incident) return null;
 
@@ -64,14 +70,14 @@ export function ResidentIncidentHistoryDrawer({
     <dialog ref={dialogRef} className="incident-history-dialog" onCancel={onClose}
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
       aria-label={`${incident.client_name || "Unknown resident"} incident history`}>
-      <div className="relative mx-auto flex max-h-[calc(100vh-40px)] w-full max-w-[920px] flex-col overflow-hidden border border-[#111111] bg-white shadow-[0_28px_72px_-44px_rgba(0,0,0,0.32)]">
-        <div className="border-b border-[#111111] px-5 py-4 sm:px-6">
+      <div className="incident-history-sheet">
+        <div className="incident-history-sheet__header">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#0f8b73]">
+              <div className="incident-history-sheet__eyebrow">
                 Resident incident history
               </div>
-              <h2 className="mt-1.5 break-words font-serif text-[26px] font-semibold tracking-[-0.035em] text-[#111111]">
+              <h2 className="incident-history-sheet__name">
                 {incident.client_name || "Unknown Client"}
               </h2>
               <div className="mt-1 text-[13px] text-[#595959]">
@@ -90,42 +96,32 @@ export function ResidentIncidentHistoryDrawer({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
-            <div className="border-y border-[#d9d9d9] px-1">
+        <div className="incident-history-sheet__body">
+          <div className="incident-history-sheet__summary">
+            <dl className="incident-resident-facts">
               <ResidentDetailRow label="Unit" value={incident.unit_number || "—"} />
               <ResidentDetailRow label="Age" value={incident.age != null ? String(incident.age) : "—"} />
               <ResidentDetailRow label="Care Level" value={incident.care_level || "—"} />
-              <ResidentDetailRow label="Diagnosis" value={incident.primary_diagnosis || "—"} />
               <ResidentDetailRow label="Physician" value={incident.physician || "—"} />
-              <ResidentDetailRow label="History" value={`${history.length} incident${history.length === 1 ? "" : "s"}`} />
-            </div>
+              <ResidentDetailRow label="Diagnosis" value={incident.primary_diagnosis || "—"} />
+            </dl>
 
-            <div className="grid gap-2.5 sm:grid-cols-3">
+            <dl className="incident-history-priorities">
+              <div className="incident-history-total"><dt>History</dt><dd>{history.length} incident{history.length === 1 ? "" : "s"}</dd></div>
               {(["HIGH", "MEDIUM", "LOW"] as const).map((priority) => {
                 const presentation = priorityConfig[priority];
                 return (
                   <div
                     key={priority}
-                    className="border px-3 py-2"
-                    style={{ borderColor: presentation.border, background: presentation.bg }}
+                    className="incident-history-priorities__item"
+                    style={{ color: presentation.color }}
                   >
-                    <div
-                      className="text-[10px] font-semibold uppercase tracking-[0.1em]"
-                      style={{ color: presentation.color }}
-                    >
-                      {priority}
-                    </div>
-                    <div
-                      className="mt-1 text-[18px] font-semibold leading-none"
-                      style={{ color: presentation.color }}
-                    >
-                      {priorityCounts[priority]}
-                    </div>
+                    <dt>{priority}</dt>
+                    <dd>{priorityCounts[priority]}</dd>
                   </div>
                 );
               })}
-            </div>
+            </dl>
           </div>
 
           <div className="mt-5">
