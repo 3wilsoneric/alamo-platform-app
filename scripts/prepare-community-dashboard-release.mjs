@@ -41,7 +41,12 @@ if(start<0||end<0||!prior.slice(start,end).includes('Jh,{block:t}')) throw Error
 const original=prior.slice(start+1,end);
 const replacement=',e.reportId===`community`?V.createElement(PlatformCommunityDashboard,{report:e}):V.createElement(V.Fragment,null,'+original+')';
 const component=`\nconst PlatformCommunityDashboard=(()=>{const {useState,useEffect}=V;\n${compile(widthHook)}\n${compile(reader.slice(chartStart,chartEnd))}\n${compile(source)}\nreturn props=>V.createElement(CommunityReportDashboard,{...props,renderBlock:block=>block.type==='line_chart'?V.createElement(LineChart,{...block,height:220}):V.createElement(Jh,{block})});})();\n`;
-const bundle=prior.slice(0,start)+replacement+prior.slice(end)+component;
+const heading=await readFile('src/features/reports/components/ReportHeading.tsx','utf8');
+// Keep the canonical heading in this candidate; the production shell calls its
+// earlier compiled version, so redirect only that verified call site.
+let bundle=prior.slice(0,start)+replacement+prior.slice(end)+component;
+bundle=once(bundle,'V.createElement(PlatformReportHeading,{report:e})','V.createElement(CommunityReleaseHeading,{report:e})');
+bundle+='\nconst CommunityReleaseHeading=(()=>{'+compile(heading)+';return ReportHeading;})();';
 const newJs=`index-community-dashboard-${hash(bundle).slice(0,12)}.js`;
 await write(`dist/assets/${newJs}`,bundle);
 const css=await readFile('src/features/reports/components/community-report-dashboard.css');

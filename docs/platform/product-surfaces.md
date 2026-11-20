@@ -50,7 +50,9 @@ evidence, not a physical iOS/Android device certification.
 
 ### November 19 community dashboard — local preview
 
-The community reader now groups census/capacity, admissions and discharges,
+The community heading uses the community name, with period and freshness beneath
+it; the exported report retains its formal title. The community reader groups
+census/capacity, admissions and discharges,
 incidents, client profile, medication performance, and record detail. It removes
 the detached headline metrics and replaces the monthly number strip with the
 existing responsive line chart. White panels and thin rules establish grouping;
