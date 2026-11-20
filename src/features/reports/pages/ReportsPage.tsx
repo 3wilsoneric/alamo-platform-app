@@ -1,6 +1,8 @@
 import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import ReportHeading from "../components/ReportHeading";
+import "../components/platform-design-pass.css";
 import FullReportReader from "../components/FullReportReader";
 import {
   fetchHomeDashboard,
@@ -35,6 +37,7 @@ export default function ReportsPage({
   const [selectedReportId, setSelectedReportId] = useState<FullReportId>("overview");
   const [reportDefinitions, setReportDefinitions] = useState<FullReportDefinition[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState("");
+  const [flowYear, setFlowYear] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [selectedAudience, setSelectedAudience] = useState("");
   const [dashboard, setDashboard] = useState<HomeDashboardResponse | null>(null);
@@ -46,6 +49,7 @@ export default function ReportsPage({
   const [dataRequestVersion, setDataRequestVersion] = useState(0);
   const [reportRequestVersion, setReportRequestVersion] = useState(0);
   const reportLibraryRef = useRef<HTMLDivElement>(null);
+  const communityFilterRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
     if (!active) return;
@@ -228,6 +232,7 @@ export default function ReportsPage({
           className="min-w-0"
           aria-busy={loadingData || loadingReport}
         >
+          {reportPackage ? <ReportHeading report={reportPackage.report} /> : <header className="report-heading"><h1 id="full-report-title">{selectedReportId === "residents" ? "Clients" : selectedReportId === "community" ? ALAMO_FACILITIES.find(facility => facility.facilityId === selectedFacilityId)?.shortName ?? "Community" : selectedReport?.title ?? "Overview"}</h1></header>}
           <div className="mb-5 border-b border-[#d3d9d5] pb-4">
             <div data-report-filters="true" className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
               {supportsCommunityScope ? (
@@ -235,6 +240,7 @@ export default function ReportsPage({
                   <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">Community</span>
                   <span className="relative block">
                     <select
+                      ref={communityFilterRef}
                       aria-label="Report community"
                       value={selectedFacilityId}
                       onChange={(event) => {
@@ -323,7 +329,7 @@ export default function ReportsPage({
               </button>
             </div>
           ) : reportPackage ? (
-            <FullReportReader report={reportPackage.report} />
+            <FullReportReader hideHeading flowYear={flowYear} onFlowYearChange={setFlowYear} report={reportPackage.report} onCommunityChange={facilityId => { setSelectedFacilityId(facilityId); communityFilterRef.current?.focus(); }} />
           ) : null}
         </main>
       </div>

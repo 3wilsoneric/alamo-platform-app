@@ -1,3 +1,4 @@
+import PageTitleMotion from "./PageTitleMotion";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
@@ -61,6 +62,7 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
 
   return (
     <header ref={headerRef} data-platform-header="true" data-platform-owner={canViewOwnerWorkspace && !restricted ? "true" : "false"} className="sticky top-0 z-40 h-[var(--platform-header-height)] border-b border-[#dedfda] bg-white pt-[var(--platform-safe-top)] print:hidden">
+      <PageTitleMotion />
       <nav aria-label="Platform pages" data-platform-page-navigation="true" data-platform-page-current={active} className="mx-auto flex h-[var(--platform-header-bar-height)] max-w-[1500px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link to={restricted ? "/admissions" : "/home"} aria-label={restricted ? "Admissions home" : "Back to California map"} aria-current={active === "home" ? "page" : undefined} data-platform-page-target="home" data-platform-page-side="left" data-california-carousel-back="true" className="flex min-h-11 min-w-0 items-center">
           <PlatformWordmark compact />

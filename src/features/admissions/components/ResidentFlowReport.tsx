@@ -17,9 +17,11 @@ const dateLabel = (value: string) => new Date(`${value}T12:00:00Z`).toLocaleDate
 const signed = (value: number) => `${value > 0 ? "+" : ""}${number(value)}`;
 const communityOptions = [["337", "San Pablo"], ["342", "Victoria’s House"], ["343", "JC Wallace House"], ["344", "Turlock"], ["345", "Santa Clarita"]];
 
-export default function ResidentFlowReport({ facilityId = null }: { facilityId?: string | null }) {
+export default function ResidentFlowReport({ facilityId = null, onCommunityChange, selectedYear, onYearChange }: { facilityId?: string | null; onCommunityChange?: (facilityId: string) => void; selectedYear?: string; onYearChange?: (year: string) => void }) {
   const [selectedFacility, setSelectedFacility] = useState(facilityId);
-  const [year, setYear] = useState("");
+  const [localYear, setLocalYear] = useState("");
+  const year = selectedYear ?? localYear;
+  const setYear = onYearChange ?? setLocalYear;
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -65,7 +67,10 @@ export default function ResidentFlowReport({ facilityId = null }: { facilityId?:
     setSelection(next); setSearch(""); setPage(0);
     window.requestAnimationFrame(() => { detailRef.current?.focus({ preventScroll: true }); detailRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" }); });
   };
-  const changeCommunity = (id: string) => { setSelectedFacility(id || null); communityRef.current?.focus(); };
+  const changeCommunity = (id: string) => {
+    if (onCommunityChange) onCommunityChange(id);
+    else { setSelectedFacility(id || null); communityRef.current?.focus(); }
+  };
   const title = selection?.kind === "county" ? `${selection.county} admissions` : selection?.kind === "discharges" ? "Discharges" : selection?.kind === "churn" ? "Moved in and out" : selection?.kind === "short" ? "Left within 30 days" : "Admissions";
   const matching = ready && selection ? report.records.filter((row) => {
     const included = selection.kind === "admissions" ? row.admittedInPeriod : selection.kind === "county" ? row.admittedInPeriod && row.county === selection.county : selection.kind === "churn" ? row.admittedInPeriod && row.dischargedInPeriod : selection.kind === "short" ? row.dischargedInPeriod && row.stayDays !== null && row.stayDays <= 30 : row.dischargedInPeriod;
@@ -78,7 +83,7 @@ export default function ResidentFlowReport({ facilityId = null }: { facilityId?:
       <header className="resident-flow-head">
         <div><h2 id="resident-flow-title">Admissions & resident flow</h2><p>{ready ? `Jan 1–${dateLabel(report.period.through)} · Updated daily` : "Updated daily"}</p></div>
         <div className="resident-flow-filters">
-          <select ref={communityRef} aria-label="Client flow community" value={selectedFacility ?? ""} onChange={(event) => changeCommunity(event.target.value)}><option value="">All communities</option>{communityOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>
+          {!onCommunityChange && <select ref={communityRef} aria-label="Client flow community" value={selectedFacility ?? ""} onChange={(event) => changeCommunity(event.target.value)}><option value="">All communities</option>{communityOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>}
           <select aria-label="Client flow year" value={year || report?.period.year || ""} onChange={(event) => setYear(event.target.value)}>{report ? report.years.map((value) => <option key={value} value={value}>{value}</option>) : <option value="">This year</option>}</select>
         </div>
       </header>
@@ -87,20 +92,20 @@ export default function ResidentFlowReport({ facilityId = null }: { facilityId?:
         {report.snapshot.stale ? <p className="resident-flow-error" role="status">Data update delayed · Latest source: {dateLabel(report.snapshot.asOfDate)}</p> : null}
         <div className="resident-flow-movement">
           <div><span>Starting census</span><strong>{number(report.totals.openingCensus)}</strong></div>
-          <button type="button" onClick={() => open({ kind: "admissions" })}><span>Admissions <i aria-hidden="true">↗</i></span><strong>+{number(report.totals.admissions)}</strong></button>
-          <button type="button" onClick={() => open({ kind: "discharges" })}><span>Discharges <i aria-hidden="true">↗</i></span><strong>−{number(report.totals.discharges)}</strong></button>
+          <button type="button" onClick={() => open({ kind: "admissions" })}><span>Admissions <i aria-hidden="true">→</i></span><strong>+{number(report.totals.admissions)}</strong></button>
+          <button type="button" onClick={() => open({ kind: "discharges" })}><span>Discharges <i aria-hidden="true">→</i></span><strong>−{number(report.totals.discharges)}</strong></button>
           <div className="resident-flow-ending"><span>Ending census</span><strong>{number(report.totals.closingCensus)}</strong><small>{signed(report.totals.net)} net</small></div>
         </div>
         <div className="resident-flow-occupancy"><p><strong>{number(report.totals.bedDays)}</strong> occupied bed-days</p><p><strong>{number(report.totals.averageDailyCensus)}</strong> clients per day, on average</p></div>
-        {report.sites.length > 1 ? <div className="resident-flow-table-wrap" tabIndex={0} role="region" aria-label="Community flow comparison"><table><caption>By community</caption><thead><tr><th>Community</th><th>Admissions</th><th>Discharges</th><th>Net</th><th>Bed-days</th></tr></thead><tbody>{report.sites.map((site) => <tr key={site.facilityId}><th scope="row"><button type="button" onClick={() => changeCommunity(site.facilityId)}>{site.community} <span aria-hidden="true">↗</span></button></th><td>{number(site.admissions)}</td><td>{number(site.discharges)}</td><td>{signed(site.net)}</td><td>{number(site.bedDays)}</td></tr>)}</tbody></table></div> : null}
-        {report.sites.length > 1 ? <div className="resident-flow-site-list" aria-label="Community flow"><h3>By community</h3>{report.sites.map((site) => <button type="button" key={site.facilityId} onClick={() => changeCommunity(site.facilityId)}><strong>{site.community}<i aria-hidden="true">↗</i></strong><span>{number(site.admissions)} admissions · {number(site.discharges)} discharges · {signed(site.net)} net</span></button>)}</div> : null}
+        {report.sites.length > 1 ? <div className="resident-flow-table-wrap" tabIndex={0} role="region" aria-label="Community flow comparison"><table><caption>By community</caption><thead><tr><th>Community</th><th>Admissions</th><th>Discharges</th><th>Net</th><th>Bed-days</th></tr></thead><tbody>{report.sites.map((site) => <tr key={site.facilityId}><th scope="row"><button type="button" onClick={() => changeCommunity(site.facilityId)}>{site.community} <span aria-hidden="true">→</span></button></th><td>{number(site.admissions)}</td><td>{number(site.discharges)}</td><td>{signed(site.net)}</td><td>{number(site.bedDays)}</td></tr>)}</tbody></table></div> : null}
+        {report.sites.length > 1 ? <div className="resident-flow-site-list" aria-label="Community flow"><h3>By community</h3>{report.sites.map((site) => <button type="button" key={site.facilityId} onClick={() => changeCommunity(site.facilityId)}><strong>{site.community}<i aria-hidden="true">→</i></strong><span>{number(site.admissions)} admissions · {number(site.discharges)} discharges · {signed(site.net)} net</span></button>)}</div> : null}
         <div className="resident-flow-detail-grid">
           <section className="resident-flow-counties" aria-labelledby="resident-counties-title"><div className="resident-flow-section-head"><h3 id="resident-counties-title">Where admissions came from</h3><span>{number(report.totals.admissions)} admissions</span></div>
             {!report.counties.available ? <p role="status">County details are awaiting the next data update.</p> : !report.counties.rows.length ? <p>No admissions in this period.</p> : <ol>{report.counties.rows.map((row) => <li key={row.county}><button type="button" onClick={() => open({ kind: "county", county: row.county })} aria-label={`${row.county}: ${row.admissions} ${row.admissions === 1 ? "admission" : "admissions"}`}><span>{row.county}</span><strong>{number(row.admissions)}</strong><span className="resident-flow-county-track" aria-hidden="true"><i style={{ width: `${row.admissions / report.totals.admissions * 100}%` }} /></span></button></li>)}</ol>}
           </section>
           <section className="resident-flow-churn" aria-labelledby="resident-churn-title"><h3 id="resident-churn-title">Who leaves, and how soon</h3>
-            <button type="button" onClick={() => open({ kind: "churn" })}><strong>{number(report.totals.movedInAndOut)}</strong><span>Moved in and out in {report.period.year}<small>Part of the {number(report.totals.discharges)} discharges</small></span><i aria-hidden="true">↗</i></button>
-            <button type="button" onClick={() => open({ kind: "short" })}><strong>{number(report.totals.dischargedWithin30Days)}</strong><span>Left within 30 days<small>Among this period’s discharges</small></span><i aria-hidden="true">↗</i></button>
+            <button type="button" onClick={() => open({ kind: "churn" })}><strong>{number(report.totals.movedInAndOut)}</strong><span>Moved in and out in {report.period.year}<small>Part of the {number(report.totals.discharges)} discharges</small></span><i aria-hidden="true">→</i></button>
+            <button type="button" onClick={() => open({ kind: "short" })}><strong>{number(report.totals.dischargedWithin30Days)}</strong><span>Left within 30 days<small>Among this period’s discharges</small></span><i aria-hidden="true">→</i></button>
             <div className="resident-flow-length"><span>Length of stay before discharge</span><div><p><strong>{report.totals.medianCompletedStayDays === null ? "—" : number(report.totals.medianCompletedStayDays)}</strong> days <small>Median</small></p><p><strong>{report.totals.averageCompletedStayDays === null ? "—" : number(report.totals.averageCompletedStayDays)}</strong> days <small>Average</small></p></div></div>
           </section>
         </div>

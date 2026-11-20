@@ -7,6 +7,50 @@
 - tags: design, folders, pipeline, dashboard, typography, materials, responsive
 - labels: platform-handbook, implementation-reference
 
+## Main Platform review — November 19, 2026
+
+These owner decisions supersede the older domain-filled dashboard treatments
+below for the main Platform. Record folders and source-document readers retain
+their own materials. This work is local; it is not a deployment receipt.
+
+- Page identity comes before filters. It uses the same Avenir-based UI face,
+  weight, and 18px scale as primary navigation, not a large report headline.
+- A navigation label travels to the page-title position; the previous title
+  returns to its navigation position. The motion is presentation only: it never
+  delays navigation, intercepts a modified click, changes a route, or waits for
+  clinical data before allowing use. Keyboard and reduced-motion navigation are
+  immediate. Interrupted transitions restore every real element.
+- White surfaces, restrained rules, and aligned typography establish grouping.
+  Do not add colored panel fills, ornamental top rules, or decorative shadows
+  to compensate for weak structure. Color represents data or a labeled state.
+- A number belongs to its comparison: census against actual operating limits;
+  admissions beside discharges and net. Do not repeat the same fact in a stat
+  strip, narrative, and table. Preserve dates, missing-data labels, and material
+  distinctions between current profiles and historical observations.
+- Use one community scope per report. Community drilldowns update that scope;
+  back navigation preserves it. A control must not silently filter only half
+  the screen.
+- Detail disclosures must be named, keyboard reachable, and comfortably sized.
+  A mobile page should prioritize information rather than shrink desktop text.
+- Typography is functional. The compact page title identifies the location;
+  content headings introduce the question. Source documents may retain serif
+  typography; operational controls should not change font families mid-flow.
+
+Audit scope: map/index, Overview, community dashboard, Admissions, Clients,
+Incidents and history, Licensing, desktop and narrow layouts. Implemented in
+this local pass: overview comparisons, compact shared titles and motion,
+shared Clients scope, incident-history identity and scoped return, Licensing
+identity and removal of redundant instructions. No data aggregation changed.
+
+Remaining design findings:
+
+| Surface | Finding | Next concrete work |
+| --- | --- | --- |
+| Admissions | Individual referrals are anonymous person glyphs until inspected. This requires recall and hover rather than recognition; empty lanes take too much space. | Restore the deployed journey's canonical source, then replace glyphs with named compact records while preserving selection, permissions, and stage semantics. The current checkout's older `PipelineBoard` is not that deployed implementation. |
+| Home | Dates and zero-change comparisons repeat on all five community rows. | Consolidate only when every displayed row has the same dated observation; keep exceptions explicit. |
+| Clients | Flow is clearer than the large current-profile and diagnosis blocks that follow it. | Group secondary profile detail under concise disclosure after validating all current/historical labels. |
+| Packaging | Production contains multiple reviewed overlays not represented by this checkout's root routing source. | Reconcile the production shell before attempting a whole-app frontend replacement. The pinned preparation script preserves the live routing and access behavior for this local candidate. |
+
 ## Use this before changing the style
 
 Use the realistic **folder** for an actual client or report file: a Pipeline

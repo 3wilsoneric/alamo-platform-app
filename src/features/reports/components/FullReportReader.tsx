@@ -1,3 +1,4 @@
+import OverviewReportDashboard from "./OverviewReportDashboard";
 import CommunityReportDashboard from "./CommunityReportDashboard";
 import ReportHeading from "./ReportHeading";
 import ResidentFlowReport from "../../admissions/components/ResidentFlowReport";
@@ -261,9 +262,13 @@ function ReportBlock({ block }: { block: FullReportBlock }) {
 
 interface FullReportReaderProps {
   report: FullReportDocument;
+  hideHeading?: boolean;
+  flowYear?: string;
+  onFlowYearChange?: (year: string) => void;
+  onCommunityChange?: (facilityId: string) => void;
 }
 
-export default function FullReportReader({ report }: FullReportReaderProps) {
+export default function FullReportReader({ report, hideHeading = false, onCommunityChange, flowYear, onFlowYearChange }: FullReportReaderProps) {
   return (
     <article aria-labelledby="full-report-title" data-full-report={report.reportId} className="min-w-0">
       {report.freshness.status === "stale" ? (
@@ -273,7 +278,7 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
             "This report uses the latest available governed snapshot, which is older than the platform freshness target."}
         </div>
       ) : null}
-      <ReportHeading report={report} />
+      {!hideHeading && <ReportHeading report={report} />}
 
       {report.reportId === "community" ? (
         <CommunityReportDashboard
@@ -282,13 +287,13 @@ export default function FullReportReader({ report }: FullReportReaderProps) {
             ? <LineChart {...block} height={220} />
             : <ReportBlock block={block} />}
         />
-      ) : <>
+      ) : report.reportId === "overview" ? <OverviewReportDashboard report={report} renderBlock={block => <ReportBlock block={block} />} /> : <>
       <div className="mt-5">
         <MetricGrid items={report.metrics} />
       </div>
       <p data-report-mobile-summary="true" className="mt-5 border-b border-[#d9d9d9] pb-5 font-sans text-[14px] leading-[1.65] text-[#333333] sm:hidden">{report.summary}</p>
 
-      {report.reportId === "residents" ? <ResidentFlowReport facilityId={report.scope.kind === "community" ? report.scope.facilityId ?? null : null} /> : null}
+      {report.reportId === "residents" ? <ResidentFlowReport {...(flowYear !== undefined ? { selectedYear: flowYear } : {})} {...(onFlowYearChange ? { onYearChange: onFlowYearChange } : {})} {...(onCommunityChange ? { onCommunityChange } : {})} facilityId={report.scope.kind === "community" ? report.scope.facilityId ?? null : null} /> : null}
 
       {report.sections.map((section, sectionIndex) => (
         <section

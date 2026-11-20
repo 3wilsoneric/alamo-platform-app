@@ -1,0 +1,40 @@
+:root {
+  --platform-title-font: var(--ap-sans);
+  --platform-title-size: 18px;
+  --platform-title-weight: 600;
+}
+[data-platform-primary-links] a,
+[data-platform-mobile-menu] a { font-family: var(--platform-title-font); font-size: var(--platform-title-size); font-weight: var(--platform-title-weight); letter-spacing: -.015em; }
+[data-reports-page] .report-heading h1,
+[data-reports-page] .report-heading[data-community-heading] h1,
+.incident-center .incident-center-heading h1,
+[data-incident-history-page] > h1,
+[data-licensing-page] > h1,
+[data-licensing-page] > header h1,
+[data-admissions-brief-page] > h1,
+[data-admissions-overview] .platform-page-title {
+  font: var(--platform-title-weight) var(--platform-title-size)/1.4 var(--platform-title-font) !important;
+  letter-spacing: -.015em;
+  margin: 0;
+  color: var(--platform-file-ink);
+}
+[data-reports-page] .report-heading { padding: 4px 0 16px; }
+[data-reports-page] .report-heading__context { margin-top: 7px; }
+[data-reports-page] .report-heading__context p { font-size: 12px; }
+.platform-title-flight { position: fixed; z-index: 1000; pointer-events: none; white-space: nowrap; line-height: 1.4; will-change: transform; }
+[data-title-in-flight]:not(a) { visibility: hidden !important; }
+a[data-title-in-flight] { color: transparent !important; }
+a[data-title-in-flight] > * { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .platform-title-flight { display: none; } }
+
+[data-admissions-brief-page] > h1, [data-admissions-overview] .platform-page-title { margin-bottom: 20px; }
+[data-licensing-page]:has(> h1) { display: grid; grid-template-columns: minmax(0,1fr) auto; align-content: start; }
+[data-licensing-page]:has(> h1) > * { grid-column: 1/-1; }
+[data-licensing-page] > h1 { grid-column: 1; grid-row: 1; align-self: center; }
+[data-licensing-page] > h1 + div { grid-column: 2; grid-row: 1; margin-bottom: 0; }
+@media (min-width: 760px) {
+  [data-reports-page] main { display: grid; grid-template-columns: minmax(0,1fr) auto; column-gap: 24px; align-content: start; }
+  [data-reports-page] main > .report-heading { grid-column: 1; grid-row: 1; }
+  [data-reports-page] main > div:has(> [data-report-filters]) { grid-column: 2; grid-row: 1; border: 0; margin: 0; }
+  [data-reports-page] main > article, [data-reports-page] main > [role] { grid-column: 1/-1; }
+}

@@ -150,7 +150,7 @@ function IncidentRegisterContent({ facilityId, mode = "executive", onTotal, focu
   return (
     <section ref={registerRef} className="executive-incident-register" data-executive-incident-register="true" data-incident-scope={mode} aria-labelledby={headingId}>
       <header className="executive-incident-register__heading">
-        <div><ClipboardList aria-hidden="true" />{mode === "platform" ? <h1 id={headingId}>Incident history</h1> : <h2 id={headingId}>{resident ? `${resident.residentName} · incident history` : "All incidents"}</h2>}</div>
+        <div><ClipboardList aria-hidden="true" />{mode === "platform" ? <h2 id={headingId}>All incidents</h2> : <h2 id={headingId}>{resident ? `${resident.residentName} · incident history` : "All incidents"}</h2>}</div>
         <dl className="executive-incident-register__counts">
           <div><dt>{totalLabel}{activeResult?.error && catalog ? " · Last loaded" : ""}</dt><dd data-executive-incident-total="true">{formatExecutiveNumber(resident ? data?.matchingIncidents : total)}</dd></div>
           {publishedCount ? <div><dt>Available records</dt><dd data-executive-incident-available="true">{formatExecutiveNumber(catalog.totalIncidents)}</dd></div> : null}

@@ -83,7 +83,7 @@ export default function AdmissionsPage() {
       className="relative min-h-[calc(100dvh-var(--platform-header-height))] w-full bg-[#fbfaf7] px-3 pb-[max(3.5rem,env(safe-area-inset-bottom))] text-[#171918] sm:px-6 lg:px-10"
     >
       <div className="mx-auto w-full max-w-[1540px]">
-        <h1 className="sr-only">Admissions</h1>
+        <h1 className="platform-page-title">Admissions</h1>
 
         {freshnessWarning ? (
           <div className="mt-4 mb-4 rounded-lg border border-[#efc8bd] bg-[#fff7f5] px-4 py-3 text-[12px] leading-5 text-[#6e352d] sm:mt-6">

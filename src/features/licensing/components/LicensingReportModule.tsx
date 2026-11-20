@@ -18,13 +18,13 @@ export default function LicensingReportModule({ library, question, q, community,
   const correctionCount = reports.reduce((sum, item) => sum + (item.analysis?.correctionsCount ?? 0), 0);
   return <section aria-label="Licensing answer" data-licensing-module="true" className="licensing-answer">
     <header>
-      <p className="licensing-answer__eyebrow">Licensing · {scope}</p>
+      <p className="licensing-answer__eyebrow">{scope}</p>
       <h2>{selected?.title ?? "Reports matching your question"}</h2>
       {q && <p className="licensing-answer__question">“{q}”</p>}
       <p className="licensing-answer__summary" role="status">{reports.length
-        ? `${reports.length} ${question === "latest" ? "latest " : "matching "}state ${reports.length === 1 ? "report" : "reports"}, dated ${dates}. Open a report for its findings, correction plans, and source text.`
+        ? `${reports.length} ${question === "latest" ? "latest " : "matching "}state ${reports.length === 1 ? "report" : "reports"}, dated ${dates}.`
         : "I couldn’t find a matching report in the collected state records. Try another community, topic, finding, or year."}</p>
-      {!!reports.length && <p className="licensing-answer__evidence">{citationCount} cited {citationCount === 1 ? "deficiency" : "deficiencies"} · {correctionCount} recorded correction {correctionCount === 1 ? "plan" : "plans"}<span>Counts are from these reports. Historical plans do not establish current completion.</span></p>}
+      {!!reports.length && <p className="licensing-answer__evidence">{citationCount} cited {citationCount === 1 ? "deficiency" : "deficiencies"} · {correctionCount} recorded correction {correctionCount === 1 ? "plan" : "plans"}<span>Historical correction plans do not confirm completion.</span></p>}
     </header>
     <ul aria-label="Licensing reports" className="licensing-answer__reports">{reports.slice(0, limit).map(report => <li key={report.id}>
       <button type="button" onClick={() => onSelect(report.id)}>
