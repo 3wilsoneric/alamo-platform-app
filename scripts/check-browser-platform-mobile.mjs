@@ -175,16 +175,20 @@ async function routeContracts(page, route, viewport) {
   }
 
   if (route.name === "admissions" && viewport.width <= 430) {
-    const primaryTabs = page.locator("[data-admissions-surface-navigation='true'] [role='tab']");
-    if (await primaryTabs.count() !== 2) failures.push("Admissions did not preserve its two page-level phone tabs");
-    for (const tab of await primaryTabs.all()) {
-      const bounds = await tab.boundingBox();
-      if (!bounds || bounds.height < 44) failures.push("Admissions page tab is smaller than 44px");
-    }
-    const dashboardTabs = page.locator("[data-admissions-briefing-navigation='true'] [role='tab']");
-    for (const tab of await dashboardTabs.all()) {
-      const bounds = await tab.boundingBox();
-      if (!bounds || bounds.height < 44) failures.push("Admissions dashboard tab is smaller than 44px");
+    // The live Admissions journey uses title-level scope; the retired
+    // Briefing/Pipeline tabs are not part of the approved surface.
+    const scope = page.getByRole("combobox", { name: "Admissions community", exact: true });
+    if (await scope.count() !== 1 || !await scope.isVisible()) {
+      failures.push("Admissions did not expose its title-level community selector");
+    } else {
+      const bounds = await scope.boundingBox();
+      if (!bounds || bounds.height < 44 || bounds.width < 44) failures.push("Admissions community selector is smaller than 44px");
+      await scope.selectOption("337");
+      if (new URL(page.url()).searchParams.get("community") !== "337" || await scope.inputValue() !== "337") {
+        failures.push("Admissions community selector did not update its scoped route");
+      }
+      await scope.selectOption("");
+      if (new URL(page.url()).searchParams.has("community")) failures.push("Admissions all-community selection did not clear its scope");
     }
   }
 
