@@ -16,6 +16,58 @@
 
 ## Current Production Host
 
+### Platform title motion and dashboard hierarchy — 2026-11-19
+
+- Runtime source: `3602e3a`; release-test correction: `5784df4`; ACR build `ccfm`.
+- Active revision: `alamo-platform-prod-web--design-1119-3602e3a`;
+  Healthy/Running, one replica, 100% traffic.
+- Active image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:117d807c10bd16cc9dd0b0fddf8ba16c60611cc3a750bc7354d4d983f0da34d2`.
+- Rollback image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:1f2470f950e8317f0e0c1a276bc274e41068214f07307961116ab689b7aec117`
+  (preceding community-caption release below).
+
+Page titles now use the same compact typography as navigation. Clicked labels
+travel into the title position, with cleanup for rapid navigation, keyboard
+navigation, browser Back, viewport changes, and reduced motion. Community and
+Overview reports use white surfaces, clearer rules and hierarchy, and capacity
+bars proportional to actual operating limits. The Clients community drilldown
+updates the report scope and returns focus to its selector. Scoped incident
+history preserves its return path. Historical capacity and missing-data notices
+remain intact. Remaining design work in Admissions named records, Home repeated
+dates, and secondary Clients profile copy is recorded in the design guide.
+
+The release overlays 16 verified files on the exact preceding live image. It
+preserves deployed routes, authentication guards, API handlers, report figures,
+and data storage. Ten image-level report comparisons passed, including historical,
+mixed-month, and missing-data scenarios. All overlay hashes and compressed
+representations match. The development authentication bypass remains disabled.
+
+Verification: source analyst suite (including API/access, report, fuzz, and stress
+checks), typecheck, lint, code health, unused-source checks, docs, dependency audit,
+desktop checks, regression replays, and missions passed. All 19 browser/build
+predeployment stages passed, including 72 mobile route/viewport checks and 116
+catalog renders across four widths. An obsolete Home assertion expected Analytics
+beside the map, although both the pinned pre-change source and the candidate place
+it in the header. The corrected check requires header containment and 44px targets;
+the original failure and passing resumed run are both retained. No runtime change
+was needed for that test correction.
+
+After the revision became healthy, public smoke passed 4/4, all 15 served-asset
+identity/gzip/Brotli checks matched, and anonymous incident/Admissions APIs returned
+401. An earlier probe while Azure still served the old healthy revision is retained
+separately. Eric's existing signed-in Chrome session verified reload, title motion,
+Clients scope and reload, Licensing, Admissions, the community dashboard, and scoped
+incident-history return at 320/390/1024/1470px without page overflow or console errors.
+The browser viewport was restored. The automated isolated signed-in suite was not
+rerun; the owner's prior instruction to use the existing Chrome session instead of
+opening another Microsoft login window remains in effect. This manual evidence is
+separate from the automated predeploy and public-smoke results.
+
+Receipts: `generated/community-dashboard-20261119/deployment-3602e3a/`.
+Visual proof: `generated/community-dashboard-20261119/live-platform-design.jpg`.
+Rollback: update the app to the pinned rollback digest under a new revision suffix,
+then verify health, traffic, served entry assets, and signed-in navigation. No data
+rollback is required.
+
 ### Community metric caption cleanup — 2026-11-19
 
 - Source: `e488476`; ACR build `ccfj`.
