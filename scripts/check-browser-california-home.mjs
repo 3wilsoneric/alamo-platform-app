@@ -719,6 +719,9 @@ async function main() {
     const tallAnalyticsBox = await tallPage
       .locator('[data-california-hero-action="analytics"]')
       .boundingBox();
+    const tallNavigationBox = await tallPage
+      .locator('[data-platform-page-navigation="true"]')
+      .boundingBox();
     if (!tallMapBox || tallMapBox.width < 680 || tallMapBox.width > 695) {
       throw new Error(
         `California map did not expand for the tall desktop viewport (${tallMapBox?.width ?? 0}px).`
@@ -744,11 +747,16 @@ async function main() {
     }
     if (
       !tallAnalyticsBox ||
-      !tallStateFaceBox ||
-      tallAnalyticsBox.x <= tallStateFaceBox.x + tallStateFaceBox.width + 24
+      !tallNavigationBox ||
+      tallAnalyticsBox.width < 44 ||
+      tallAnalyticsBox.height < 44 ||
+      tallAnalyticsBox.x < tallNavigationBox.x ||
+      tallAnalyticsBox.x + tallAnalyticsBox.width > tallNavigationBox.x + tallNavigationBox.width ||
+      tallAnalyticsBox.y < tallNavigationBox.y ||
+      tallAnalyticsBox.y + tallAnalyticsBox.height > tallNavigationBox.y + tallNavigationBox.height
     ) {
       throw new Error(
-        `Analytics is not positioned beside the tall California silhouette (map ${JSON.stringify(tallMapBox)}, analytics ${JSON.stringify(tallAnalyticsBox)}).`
+        `Analytics is clipped or undersized in the desktop header (navigation ${JSON.stringify(tallNavigationBox)}, analytics ${JSON.stringify(tallAnalyticsBox)}).`
       );
     }
     for (const facility of ALAMO_FACILITIES) {
