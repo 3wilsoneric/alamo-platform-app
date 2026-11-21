@@ -18,6 +18,32 @@
 
 ### Executive Ally — local Platform candidate; disabled staging worker, November 21
 
+**Latest local correction, not deployed:** this checkout now pins engine 0.18.1,
+archive SHA-256
+`f7b8edca576eafc3125bfe3d00d052cc27d308106be0340ab6c7bbef9eab30f3`.
+Platform source receipts include `grant.detail` and evidence `requiresDetail`.
+The engine rejects sharing/reopening detail under aggregate-only access and
+rechecks evidence grant revisions after synthesis. Both defects were reproduced
+with fictional data before the correction. The signed local source test covers
+denied sharing, authorized sharing, subsequent downgrade, unchanged saved history
+and a fresh aggregate report shared successfully. Required fields fail closed;
+old unclassified development reports require a fresh investigation.
+
+Deploy these paired source/engine changes to disabled staging before enabling
+reports. The older cloud and overlay receipts below remain historical and do not
+certify 0.18.1. The overlay preparer records the new archive, but its previous
+generated image must be rebuilt/rechecked before use. No cloud setting, grant,
+provider request or executive access changed during this local correction.
+
+Engine commit `f8b69e3` passed the full engine suite, 24 focused executive checks,
+34 canned evaluation checks, API/worker builds and isolated package checks. Local
+Functions dispatch/restart/cancel/resume passed with fingerprinted receipt
+`generated/executive-functions-mHSLNM/verification.json` in the engine checkout.
+Platform's full analyst gate and build passed; after the final pin was installed,
+source/flow, server types, dependency audit (218 runtime dependencies), docs and
+build were repeated successfully. The installed service hash matches the engine
+source. These are offline/fictional authorization proofs, not live model quality.
+
 **Disabled production-base package prepared locally:** the exact November 19
 production image was compared with this checkout before packaging. A whole-root
 replacement would overwrite unrelated live server and browser updates. The new
@@ -124,12 +150,12 @@ updated the staging API to the same engine version, detailed below. Do not
 renew the expired connection gate by changing a date: first verify an active provider connection, then run the live
 acceptance cases in the canonical Ally spec.
 
-The candidate pins engine 0.18.0, adds Platform's report source endpoint and embeds
+The original November 20 candidate pinned engine 0.18.0, added Platform's report source endpoint and embedded
 its executive report client. It is disabled by default. The currently live
 Platform digest below remains the base and rollback for this feature. The root
 frontend still must not overwrite the production shell's separate route overlays.
 
-Local engine candidate: `d18b39d`, package 0.18.0; archive SHA-256
+Original engine candidate: `d18b39d`, package 0.18.0; archive SHA-256
 `1c5831a797ca30fb98a8e8103bd7f2627e17babcf4c22da4de7f156cc115fd62`.
 The lockfile integrity and installed runtime match the archive. Engine's full
 existing suite and all 21 focused executive checks passed. API/worker builds and

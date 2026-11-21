@@ -207,7 +207,7 @@
     "check:executive-ally-release": "node scripts/check-executive-ally-release.mjs"
   },
   "dependencies": {
-    "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.0.tgz",
+    "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.1.tgz",
     "@alamo/agent-workflow-knowledge": "file:vendor/alamo-agent-workflow-knowledge-0.17.0.tgz",
     "@azure/identity": "^4.14.1",
     "@azure/msal-browser": "^4.26.0",

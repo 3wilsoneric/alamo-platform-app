@@ -48,6 +48,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
   async function read(input, authorization) {
     const { step, scope } = input, args = step.input;
     const base = { capability: step.capability, inputHash: reportHash(args), scope, grantRevision: authorization.receipt.revision,
+      requiresDetail: step.capability === 'platform-data' && authorization.grant.detail,
       observedAt: new Date(now()).toISOString(), period: `${scope.from}–${scope.through}`, grain: 'source observation',
       status: 'verified', coverage: 'complete', title: metadata[step.capability][0], note: '', answer: '', revision: '' };
     let result, dataset;

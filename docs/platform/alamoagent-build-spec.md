@@ -17,7 +17,7 @@ The user prioritized building the agent and connecting many applications. The
 standalone UI is parked. Engine source, skill definitions, workflows and connector
 routing are edited in AlamoAgent. Platform consumes a pinned archive; the original
 extraction used `vendor/alamo-agent-runtime-0.1.0.tgz`, and the local executive
-candidate below uses `vendor/alamo-agent-runtime-0.18.0.tgz`. Old engine modules re-export that package.
+candidate below uses `vendor/alamo-agent-runtime-0.18.1.tgz`. Old engine modules re-export that package.
 There are no sibling runtime imports or symlinks. Rebuild/bump the package and run
 Platform integration checks before adopting another engine version.
 
@@ -35,10 +35,20 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 ## Executive Ally candidate — November 20, 2026
 
 The owner authorized the executive experience and then deferred **live GPT testing**.
-The independent engine now has a local 0.18.0 candidate, consumed by this checkout
+The independent engine now has a local 0.18.1 candidate, consumed by this checkout
 through its pinned archive. Existing production images, access and source data
 have not changed. The engine's living spec remains the implementation authority;
 this section records Platform's ownership and integration evidence.
+
+The November 21 permission correction is local: source grant receipts now expose
+their existing boolean `detail` permission, and evidence carries `requiresDetail`.
+A signed-source regression first reproduced disclosure of saved detail to an
+aggregate-only recipient. The corrected engine rejects that share and hides
+saved reports after a detail downgrade; a fresh aggregate report remains usable
+and shareable. Grant replacement during synthesis also prevents publication.
+The new fields must ship with engine 0.18.1. The earlier disabled staging and
+production-overlay receipts below cover 0.18.0, not this correction; rebuild and
+repeat acceptance before activation. Live GPT testing remains deferred.
 
 Platform owns `/api/platform/ally-source/v1`, its workload-token verifier, the
 separate private `agent-source/report-grants-v1.json` registry, and domain readers.

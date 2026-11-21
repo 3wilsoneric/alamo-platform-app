@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
+import { randomUUID } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT } from 'jose';
 import { createPlatformAgentSourceAuthorizer } from '../server/platform-agent-source-auth.mjs';
 import { createPlatformReportSourceHandler } from '../server/ally-report-source-api.mjs';
@@ -9,6 +13,8 @@ import { readAllyPlatformData } from '../server/ally-data-source.mjs';
 import { authorizePlatformReportSource } from '../server/ally-report-source-grants.mjs';
 import { EVERYAGENT_TENANT } from '../shared/everyagent-identity.mjs';
 import { createExecutiveReportSource } from '@alamo/agent-runtime/server/executive-report-source.mjs';
+import { createExecutiveReportStore } from '@alamo/agent-runtime/server/executive-report-store.mjs';
+import { createExecutiveReportService } from '@alamo/agent-runtime/server/executive-report-service.mjs';
 import { validateReportEvidence, EXECUTIVE_REPORT_SOURCE_PATH } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
 
 const user='11111111-1111-4111-8111-111111111111', clientId='22222222-2222-4222-8222-222222222222', principalId='33333333-3333-4333-8333-333333333333', audience='44444444-4444-4444-8444-444444444444';
@@ -34,6 +40,7 @@ try {
   assert.equal((await send('x'.repeat(17000))).status,413);
   const connection=createExecutiveReportSource({origin:'https://source.example.test',getToken:async()=>({token,expiresOnTimestamp:Date.now()+60000}),fetchImpl:(url,init)=>fetch(base+new URL(url).pathname,init)});
   const evidence=validateReportEvidence(await connection.read(user,scope,step),step,scope);
+  assert.equal(evidence.requiresDetail,false);
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
   const sqlResult=await readAllyPlatformData(step.input,{load:async()=>published,execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
   published.toolContext.manifest[0].row_count=10;assert.equal((await connection.read(user,scope,step)).coverage,'partial');published.toolContext.manifest[0].row_count=4;
@@ -75,6 +82,45 @@ try {
   const identity={tenantId:EVERYAGENT_TENANT,clientId,principalId};const auth=authorizePlatformReportSource(identity,input,registry);
   await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth),/partial month/);
   await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth),/across dates/);
+  // Saved output must obey the recipient's projection, not merely permission
+  // to issue the same query (which returns fewer fields for aggregate readers).
+  const reader='55555555-5555-4555-8555-555555555555';
+  registry.grants.push({...structuredClone(registry.grants[0]),id:'fictional-reader',subjectId:reader});
+  registry.grants[0].detail=true;
+  const localRoot=await mkdtemp(path.join(os.tmpdir(),'platform-report-sharing-'));
+  try {
+    const store=createExecutiveReportStore({azure:false,localRoot});
+    const service=createExecutiveReportService({store,source:connection,allowedSubjects:[user,reader],model:{
+      plan:async()=>({plan:{steps:[{capability:aggregateStep.capability,input:aggregateStep.input}],gaps:[]}}),
+      synthesize:async()=>({findings:[{text:'40 residents.',sourceIds:['source-1']}]})
+    }});
+    const delegated=oid=>({authenticated:true,mode:'entra-delegated',claims:{tid:EVERYAGENT_TENANT,oid}});
+    const report=await service.create(delegated(user),{requestId:randomUUID(),objective:'Show the current census.',scope});
+    for(let phase=0;phase<3;phase++) await service.advance({ownerId:user,id:report.id});
+    const saved=await service.get(delegated(user),user,report.id);
+    assert.equal((await store.read(user,report.id)).value.runs[0].evidence[0].value.requiresDetail,true);
+    assert(saved.artifact.html.includes('REDACTION_PROBE'),'fixture must contain the authorized detail before testing sharing');
+    const share={ownerId:user,id:report.id,revision:saved.revision,action:'share',readerId:reader};
+    await assert.rejects(service.command(delegated(user),share),error=>error.statusCode===404,'a detail report must not be shared to aggregate-only access');
+    registry.grants[1].detail=true;
+    await service.command(delegated(user),share);
+    assert.deepEqual((await service.get(delegated(reader),user,report.id)).artifact,saved.artifact);
+    registry.grants[1].detail=false;
+    await assert.rejects(service.get(delegated(reader),user,report.id),error=>error.statusCode===404);
+    assert.deepEqual(await service.list(delegated(reader)),[]);
+    registry.grants[0].detail=false;
+    await assert.rejects(service.get(delegated(user),user,report.id),error=>error.statusCode===404);
+    assert.deepEqual((await store.read(user,report.id)).value.runs[0].artifact,saved.artifact);
+    const aggregateReport=await service.create(delegated(user),{requestId:randomUUID(),objective:'Show aggregate census.',scope});
+    for(let phase=0;phase<3;phase++) await service.advance({ownerId:user,id:aggregateReport.id});
+    const aggregateSaved=await service.get(delegated(user),user,aggregateReport.id);
+    assert(!aggregateSaved.artifact.html.includes('REDACTION_PROBE'));
+    await service.command(delegated(user),{...share,id:aggregateReport.id,revision:aggregateSaved.revision});
+    assert.deepEqual((await service.get(delegated(reader),user,aggregateReport.id)).artifact,aggregateSaved.artifact);
+  } finally {
+    await rm(localRoot,{recursive:true,force:true});
+    registry.grants.pop();registry.grants[0].detail=false;
+  }
   afterRead=()=>{registry.grants[0].revoked=true;};const denied=await send();assert.equal(denied.status,403);assert(!(await denied.text()).includes('medium'));
   console.log('Executive source: signed workload, subject/community grants, date boundaries, partial coverage, aggregate privacy, pipeline scope and revocation passed.');
 } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

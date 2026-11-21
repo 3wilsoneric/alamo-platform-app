@@ -48,5 +48,5 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
           query.measure !== undefined && !measures.has(query.measure))) deny();
     }
   }
-  return { grant, communities, receipt: { revision: reportHash(grant), expiresAt: grant.expiresAt } };
+  return { grant, communities, receipt: { revision: reportHash(grant), expiresAt: grant.expiresAt, detail: grant.detail } };
 }
