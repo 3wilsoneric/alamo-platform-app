@@ -18,6 +18,60 @@
 
 ### Executive Ally — local Platform candidate; disabled staging worker, November 21
 
+**Latest isolated staging receipt:** Platform source `3963cc0` on
+`codex/platform-ally-staging-20261121` is deployed at
+`suitestg-platform--ally-source-ready-1121`, image SHA-256
+`1df0d00cd59c8edcc826af41f87c9c7575b239a4dc304dd80349a53e63a3b3f5`.
+ACR run `cch` passed; synthetic package manifest SHA-256 is
+`095dbc0bc077cfe10eafed6cd2800dc887b84fcb62104687f523ac59895e362e`.
+The prior Platform staging image is retained at
+`6e164c247a0a7fa327f2f30773a539965e3b0e9930efeebaec454390e26b08e6`.
+Identity, existing access, scale and configuration are preserved except the
+explicit source audience and source-owned grant-store settings. The temporary
+proof snapshot override was removed; the normal synthetic snapshot was read back.
+One healthy revision has 100% traffic. Health returned 200; anonymous bootstrap
+and source requests returned 401. Production remains at the November 19 image
+`a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639`.
+
+The dedicated staging workload audience is
+`6b0b50fd-1511-4aac-ab1e-6c8bc88e90de`. Its application role is assigned only to
+the existing Ally API and worker managed identities; no delegated scope, user
+assignment or secret was added. Platform owns the private
+`suitestg1y764dg4h5gh4q/agent-source-grants` container. Its current report registry
+is `{ "version": 1, "grants": [] }`; real executives have no new grant.
+
+Cloud acceptance used a separate fabricated snapshot and fictional subjects:
+the allowed census 7 was returned while another community's 99 and a private
+field were excluded. Unknown subjects/communities/private dimensions were denied.
+Ally's identity could not read the grant container directly. The canonical report
+service, with a canned model in an isolated process, passed concurrent-create
+idempotency, durable reopening in a fresh process, recipient-only read access,
+edit denial and source revocation for both owner and recipient. Revocation hid
+the saved report without rewriting its history. Cleanup removed active fictional
+report state and the isolated snapshot; fresh checks confirmed empty grants,
+empty fictional report indexes, a 403 for the former grant and restoration of
+the original staging snapshot. No GPT call or public report runtime was enabled.
+
+The complete Platform analyst gate passed using the existing **local** published
+snapshot; that snapshot was excluded from the cloud package. The later grant
+reader correction reran its real-SDK regression, executive/monitoring source,
+flow, host, types, lint, source-health, unused/duplicate and documentation checks.
+Runtime dependency audit passed. API/worker model and report configuration remain
+absent, and worker timers remain disabled. Actual Functions report execution,
+signed-in executive journeys, live answer quality and load/cold-start acceptance
+remain required before production activation.
+
+Receipts in `/Users/eric/suite-deploy/.state/` are named
+`platform-ally.plan.json`, `platform-ally.final.json`,
+`platform-ally.verification.json`, `ally-source-identity.receipt.json` and
+`ally-executive-source-proof.json`. Retain the preceding release/package receipts;
+never export `.state/` wholesale. Recovery restores the retained preceding
+Platform staging image and the `before` configuration from its plan, removing
+the three `PLATFORM_AGENT_SOURCE_*` settings and any proof `SNAPSHOT_ROOT` override,
+then repeats health/authentication checks. Do not choose the superseded intermediate
+image with the failed grant reader as a recovery point. This staging update does
+not authorize replacing Platform's layered production shell.
+
 Later staging source acceptance reproduced a 503 caused by the shared grant
 reader's fixed-length Azure buffer download. The new `check-source-grant-blob.mjs`
 uses the actual SDK against a local HTTP fixture and rejects the old reader on a
@@ -92,8 +146,9 @@ anonymous access with 401. Its report registry and model settings remain absent.
 Rollback is the retained 0.17.0 image
 `5a45222df65817019318afa0a01fc2a8c2727914db1a537896adef07dc0214c9`,
 with the same configuration. Named API package/release/verification receipts are
-`.state/ally-v018.*.json` in suite-deploy. Pipeline, Platform and Carelog staging
-images and every production application remain unchanged.
+`.state/ally-v018.*.json` in suite-deploy. At that API release the other staging
+images were unchanged; the later Platform staging receipt above supersedes that
+state. Every production application remains unchanged.
 
 Worker package 0.18.0 from engine `d18b39d` was deployed with zip SHA-256
 `2023a23e00456940f884c71f0affcd0ae76174bf832dbefc978161052e8eaa2c`.

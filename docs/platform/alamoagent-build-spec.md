@@ -96,6 +96,15 @@ documents, oversized/missing-size responses and invalid JSON. Both monitoring
 and executive report grants use the correction. This is source/persistence
 verification; GPT testing remains deferred.
 
+The corrected source is now verified in isolated cloud staging using the real
+Ally managed identity and Azure Blob persistence. Scoped values/private-field
+exclusion, unknown-subject denial, concurrent-create idempotency, fresh-process
+reopening, sharing and revocation passed with fictional records and a canned model.
+Test state/grants were cleared and the normal staging snapshot restored. Executive
+access and the public report runtime remain off. The operations receipt records
+the exact image and recovery configuration; Functions execution and live GPT
+acceptance are still outstanding.
+
 ## Workflow content in Platform — 2026-10-18
 
 Workflow is now embedded at `/workflow` in Platform, behind its existing owner
