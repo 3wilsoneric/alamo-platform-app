@@ -9,9 +9,12 @@ export const REPORT_AGGREGATE_SLICES = new Set(['community_operating_summary', '
 const deny = () => { throw createHttpError(403, 'report_source_denied', 'This report source is unavailable for the requested scope.'); };
 // Aggregate access cannot be turned into a named-person lookup by grouping or
 // probing a private field. New dimensions require a source-owner review here.
-const dimensions = new Set(['facility_id','Facility','facility','FacilityID','community','community_name','month','month_bucket','census_date','week','week_start','incident_date','severity','category','incident_category','status','county','admission_county']);
-const measures = new Set(['census','admissions','discharges','net','occupied_bed_days','bed_days','incident_count','count','total','service_count','refusal_count','scheduled_count','completed_count']);
+const dimensions = new Set(['facility_id','Facility','facility','FacilityID','Facility_Name','facility_name','community','community_name','month','month_bucket','census_month','incident_month','medication_month','census_date','as_of_date','week','week_start','week_end','incident_date','administration_date','severity','category','incident_category','Incident_Category','status','county','admission_county','client_county']);
+// Exact numeric columns from the governed publisher. Do not infer permission
+// from a field suffix or an observed numeric value; private columns stay closed.
+const measures = new Set(['census','prior_census','census_delta','admissions','discharges','net','net_change','occupied_bed_days','bed_days','resident_count','resident_rows','incident_count','incidents','count','total','service_count','refusal_count','scheduled_count','completed_count','given_count','not_given_count','pending_count','missed_count','late_given_count','refused_count','held_count','other_not_given_count','prn_given_count']);
 export const reportAggregateFields = fields => fields.filter(field => dimensions.has(field) || measures.has(field));
+export const reportNumericField = field => measures.has(field);
 
 export function authorizePlatformReportSource(identity, input, registry, now = Date.now()) {
   reportObject(registry, ['version', 'grants']);
@@ -41,6 +44,7 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
       if (!grant.detail && (query.operation === 'rows' && !REPORT_AGGREGATE_SLICES.has(query.slice) ||
           (query.groupBy ?? []).some(field => !dimensions.has(field)) ||
           query.filters !== undefined && (!Array.isArray(query.filters) || query.filters.some(filter => !dimensions.has(filter?.field))) ||
+          query.dateField !== undefined && query.dateField !== null && !dimensions.has(query.dateField) ||
           query.measure !== undefined && !measures.has(query.measure))) deny();
     }
   }

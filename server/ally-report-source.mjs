@@ -9,7 +9,7 @@ import { getPipelineAdmissionsSummary } from './pipeline-admissions-summary.mjs'
 import { facilityIdForPipelineCommunity } from './admissions-dashboard.mjs';
 import { getLicensingLibrary } from './licensing-library.mjs';
 import { createWorkflowKnowledgeSource } from './workflow-knowledge-source.mjs';
-import { reportAggregateFields } from './ally-report-source-grants.mjs';
+import { reportAggregateFields, reportNumericField } from './ally-report-source-grants.mjs';
 
 const objectSchema = properties => ({ type: 'object', properties, additionalProperties: false });
 const string = { type: 'string' }, strings = { type: 'array', items: string, maxItems: 3 };
@@ -31,13 +31,19 @@ const metadata = {
 const definition = id => ANALYSIS_SLICE_CATALOG.find(s => s.id === id);
 const facilityField = fields => ['facility_id', 'Facility', 'facility', 'FacilityID'].find(f => fields.includes(f));
 function scopedDataset(title, rows, columns, shape = 'records') { return { title, shape, columns, rows }; }
+function numericCell(value) {
+  if (value === undefined || value === null) return null;
+  if ((typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '' || !Number.isFinite(Number(value))) throw Error('The published measure is not a valid number.');
+  return Number(value);
+}
 
 export function createPlatformReportSources({ snapshot = readPlatformSnapshot, summary = getReportsSummaryData, data = readAllyPlatformData,
   pipeline = getPipelineAdmissionsSummary, licensing = getLicensingLibrary, knowledge = createWorkflowKnowledgeSource(), now = Date.now } = {}) {
   async function catalog(authorization) {
-    const sources = listAllyPlatformDataSources(await summary()).filter(s => authorization.grant.slices.includes(s.id) && facilityField(s.fields));
+    const sources = listAllyPlatformDataSources(await summary()).filter(s => authorization.grant.slices.includes(s.id) && facilityField(s.fields))
+      .map(s => ({ ...s, fields: authorization.grant.detail ? s.fields : reportAggregateFields(s.fields) }));
     return authorization.grant.capabilities.map(id => ({ id, title: metadata[id][0], description: metadata[id][1], inputSchema: schemas[id],
-      ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...s, fields: authorization.grant.detail ? s.fields : reportAggregateFields(s.fields), definition: definition(s.id)?.title, dateFields: s.fields.filter(f => /(?:date|month|week|period|time)/i.test(f)), detailAllowed: authorization.grant.detail })) } : {}) }));
+      ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...s, definition: definition(s.id)?.title, dateFields: s.fields.filter(f => /(?:date|month|week|period|time)/i.test(f)), detailAllowed: authorization.grant.detail })) } : {}) }));
   }
   async function read(input, authorization) {
     const { step, scope } = input, args = step.input;
@@ -71,12 +77,15 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
         constraints.push({ field: time, op: 'gte', value: scope.from.slice(0, 7) }, { field: time, op: 'lte', value: scope.through.slice(0, 7) + '-31' });
       } else if (time) constraints.push({ field: time, op: 'day-gte', value: scope.from }, { field: time, op: 'day-lte', value: scope.through });
       const { dateField: _date, ...query } = args;
-      result = await data(query, { constraints }); base.grain = source.grain; base.observedAt = source.generatedAt ?? base.observedAt;
+      result = await data(query, { constraints, ...(authorization.grant.detail ? {} : {allowedFields: reportAggregateFields(source.fields)}) }); base.grain = source.grain; base.observedAt = source.generatedAt ?? base.observedAt;
       if (!time) base.period = `Source snapshot as of ${base.observedAt.slice(0, 10)}; no event-date filter`;
       base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
       if (result.hasMore || result.coverage.startsWith('partial')) base.coverage = 'partial';
-      const keys = args.operation === 'rows' ? source.fields : [...(args.groupBy ?? []), 'result'];
-      dataset = scopedDataset(definition(args.slice)?.title ?? args.slice, result.rows.map(row => Object.fromEntries(keys.map(key => [key, row[key] ?? null]))), keys.map(key => ({ key, label: key, type: key === 'result' ? 'number' : 'string' })), time && keys.includes(time) && keys.length === 2 ? 'series' : 'records');
+      const keys = args.operation === 'rows' ? result.source.fields : [...(args.groupBy ?? []), 'result'];
+      const columns = keys.map(key => ({ key, label: key, type: key === 'result' || reportNumericField(key) ? 'number' : 'string' }));
+      dataset = scopedDataset(definition(args.slice)?.title ?? args.slice,
+        result.rows.map(row => Object.fromEntries(columns.map(column => [column.key, column.type === 'number' ? numericCell(row[column.key]) : row[column.key] ?? null]))),
+        columns, time && keys.includes(time) && keys.length === 2 ? 'series' : 'records');
     } else if (step.capability === 'pipeline-summary') {
       reportObject(args, []);
       const source = await pipeline();

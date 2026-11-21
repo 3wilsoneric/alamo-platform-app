@@ -34,4 +34,14 @@ const warehouse = await readAllyPlatformData({ slice: "notes_summary", operation
 } });
 assert.equal(warehouse.coverage, "source-query");
 assert.equal(warehouse.rows[0].result, 4);
+const allowedFields=['Facility','note_date'];
+const restricted=await readAllyPlatformData({slice:'notes_summary',operation:'rows'}, {load,execute:async sql=>{
+  assert.match(sql,/SELECT `Facility`, `note_date` FROM/);assert.doesNotMatch(sql,/SELECT \*/);
+  return [{Facility:'337',note_date:'2026-10-01',note_text:'PRIVATE_PROBE',undeclared:'UNDECLARED_PROBE'}];
+},allowedFields});
+assert.deepEqual(restricted.rows,[{Facility:'337',note_date:'2026-10-01'}]);assert.deepEqual(restricted.source.fields,allowedFields);
+const restrictedFallback=await readAllyPlatformData({slice:'notes_summary',operation:'rows'}, {load,execute:fail,allowedFields});
+assert.deepEqual(restrictedFallback.rows,summary.toolContext.tables.notes_summary.map(row=>({Facility:row.Facility,note_date:row.note_date})));
+await assert.rejects(readAllyPlatformData({slice:'notes_summary',filters:[{field:'note_text',op:'contains',value:'private'}]}, {load,execute:fail,allowedFields}),/bounded source filters/);
+await assert.rejects(readAllyPlatformData({slice:'notes_summary'}, {load,allowedFields:['unregistered_field']}),/authorized source fields/);
 console.log("Ally Platform data catalog, safe query compilation, source read, and partial snapshot fallback passed.");

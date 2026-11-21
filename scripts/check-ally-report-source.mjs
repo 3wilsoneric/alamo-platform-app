@@ -37,6 +37,40 @@ try {
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
   const sqlResult=await readAllyPlatformData(step.input,{load:async()=>published,execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
   published.toolContext.manifest[0].row_count=10;assert.equal((await connection.read(user,scope,step)).coverage,'partial');published.toolContext.manifest[0].row_count=4;
+  // A newly published field must not expand an aggregate-only grant.
+  const aggregate=published.toolContext.manifest[1];aggregate.fields.push('private_case_note','private_date_of_birth');
+  Object.assign(published.toolContext.tables.census_monthly_by_community[0],{private_case_note:'REDACTION_PROBE',private_date_of_birth:'1980-01-01',undeclared_secret:'UNDECLARED_PROBE'});
+  const aggregateStep={id:'source-3',capability:'platform-data',input:{slice:'census_monthly_by_community',operation:'rows'}};
+  const aggregateEvidence=await connection.read(user,scope,aggregateStep);
+  assert(!JSON.stringify(aggregateEvidence).includes('REDACTION_PROBE'),'aggregate evidence must remove private values from its answer and native dataset');
+  assert(!JSON.stringify(aggregateEvidence).includes('UNDECLARED_PROBE'),'undeclared fields must not escape source projection');
+  const catalog=await connection.catalog(user,scope),listed=catalog.find(c=>c.id==='platform-data').sources.find(s=>s.id==='census_monthly_by_community');
+  assert(!listed.dateFields.includes('private_date_of_birth'),'aggregate catalogs must not expose private query dimensions');
+  assert.equal(aggregateEvidence.dataset.columns.find(c=>c.key==='census').type,'number','published numeric measures must remain usable in native charts');
+  // Use actual publisher field names, not only normalized development fixtures.
+  for(const [slice,row,numeric] of [
+    ['current_resident_county_by_community',{Facility:'337',Facility_Name:'San Pablo',client_county:'Contra Costa',resident_count:'7',as_of_date:'2026-11-20'},'resident_count'],
+    ['resident_flow_weekly_by_community',{Facility:'337',Facility_Name:'San Pablo',week_start:'2026-11-16',admissions:5,discharges:2,net_change:3},'net_change'],
+    ['incident_monthly_by_community_category',{Facility:'337',Facility_Name:'San Pablo',Incident_Category:'Fall',month_bucket:'2026-11',incident_count:2,resident_count:1},'incident_count']
+  ]) {
+    registry.grants[0].slices.push(slice);
+    published.toolContext.manifest.push({slice_name:slice,grain:'published aggregate',row_count:1,fields:[...Object.keys(row),'private_case_note']});
+    published.toolContext.tables[slice]=[{...row,private_case_note:'PRIVATE_AGGREGATE_PROBE'}];
+    const publishedEvidence=await connection.read(user,scope,{id:'source-4',capability:'platform-data',input:{slice,operation:'rows'}});
+    assert.deepEqual(publishedEvidence.dataset.rows,[{...row,[numeric]:Number(row[numeric])}]);
+    assert.equal(publishedEvidence.dataset.columns.find(c=>c.key===numeric).type,'number');
+    assert(!JSON.stringify(publishedEvidence).includes('PRIVATE_AGGREGATE_PROBE'));
+  }
+  const county=published.toolContext.tables.current_resident_county_by_community[0];
+  const countyStep={id:'source-4',capability:'platform-data',input:{slice:'current_resident_county_by_community',operation:'rows'}};
+  for(const value of [null,0]) {
+    county.resident_count=value;
+    assert.equal((await connection.read(user,scope,countyStep)).dataset.rows[0].resident_count,value,'missing and zero measures remain distinct');
+  }
+  county.resident_count='';
+  await assert.rejects(connection.read(user,scope,countyStep),'blank measures cannot silently become zero');
+  county.resident_count='7';
+  assert.equal((await send({...input,step:{...aggregateStep,input:{...aggregateStep.input,dateField:'private_date_of_birth'}}})).status,403,'date selectors cannot bypass aggregate dimension limits');
   const pipeline=await connection.read(user,scope,{id:'source-2',capability:'pipeline-summary',input:{}});assert.equal(pipeline.dataset.rows[0].count,1);assert(!pipeline.answer.includes('900'));
   const identity={tenantId:EVERYAGENT_TENANT,clientId,principalId};const auth=authorizePlatformReportSource(identity,input,registry);
   await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth),/partial month/);

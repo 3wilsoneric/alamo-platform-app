@@ -74,7 +74,7 @@ export function compileAllyPlatformDataQuery(query, source, constraints = []) {
   const groupColumns = input.groupBy.map(quotedField);
   const metric = input.operation === "count" ? "COUNT(*) AS result"
     : input.operation === "sum" ? `SUM(try_cast(${quotedField(input.measure)} AS DOUBLE)) AS result`
-      : input.operation === "average" ? `AVG(try_cast(${quotedField(input.measure)} AS DOUBLE)) AS result` : "*";
+      : input.operation === "average" ? `AVG(try_cast(${quotedField(input.measure)} AS DOUBLE)) AS result` : input.source.fields.map(quotedField).join(', ');
   const projection = input.operation === "rows" ? metric : [...groupColumns, metric].join(", ");
   const sql = `SELECT ${projection} FROM alamohealth.gold.v_tool_${input.source.id}` +
     (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
@@ -113,10 +113,16 @@ function snapshotAggregate(rows, { operation, measure, groupBy, limit }) {
   }));
 }
 
-/** @param {any} query @param {{load?:Function,execute?:Function,constraints?:Array<{field:string,op:string,value:any}>}} [options] */
-export async function readAllyPlatformData(query, { load = getReportsSummaryData, execute = queryDatabricks, constraints = [] } = {}) {
+/** @param {any} query @param {{load?:Function,execute?:Function,constraints?:Array<{field:string,op:string,value:any}>,allowedFields?:string[]}} [options] */
+export async function readAllyPlatformData(query, { load = getReportsSummaryData, execute = queryDatabricks, constraints = [], allowedFields } = {}) {
   const reportsSummary = await load();
-  const source = listAllyPlatformDataSources(reportsSummary).find(item => item.id === query?.slice);
+  let source = listAllyPlatformDataSources(reportsSummary).find(item => item.id === query?.slice);
+  // Source-owned authorization narrows the manifest before query compilation.
+  // Both SQL and fallback rows use this same projection; new columns fail closed.
+  if (allowedFields !== undefined) {
+    if (!source || !Array.isArray(allowedFields) || !allowedFields.length || new Set(allowedFields).size !== allowedFields.length || allowedFields.some(field => !source.fields.includes(field))) throw Error('Invalid authorized source fields.');
+    source = { ...source, fields: source.fields.filter(field => allowedFields.includes(field)) };
+  }
   const input = compileAllyPlatformDataQuery(query, source, constraints);
   let rows; let readMode = "governed-view"; let coverage = "source-query";
   try {
@@ -131,7 +137,8 @@ export async function readAllyPlatformData(query, { load = getReportsSummaryData
     rows = input.operation === "rows" ? filtered.slice(0, input.limit + 1) : snapshotAggregate(filtered, input);
   }
   const hasMore = rows.length > input.limit;
-  const returned = hasMore ? rows.slice(0, input.limit) : rows;
+  const fields = input.operation === 'rows' ? input.source.fields : [...input.groupBy, 'result'];
+  const returned = (hasMore ? rows.slice(0, input.limit) : rows).map(row => Object.fromEntries(fields.map(field => [field, row[field] ?? null])));
   if (Buffer.byteLength(JSON.stringify(returned), "utf8") > MAX_RESULT_BYTES) throw Error("The result is too large; narrow the filters or row limit.");
   return { version: "ally-platform-data-v1", source: input.source, readMode, coverage,
     query: { slice: input.source.id, filters: input.filters, operation: input.operation, groupBy: input.groupBy, measure: input.measure, limit: input.limit },

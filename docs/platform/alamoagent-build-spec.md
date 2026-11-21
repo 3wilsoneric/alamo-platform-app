@@ -43,7 +43,13 @@ this section records Platform's ownership and integration evidence.
 Platform owns `/api/platform/ally-source/v1`, its workload-token verifier, the
 separate private `agent-source/report-grants-v1.json` registry, and domain readers.
 Community and date constraints are added by the source, outside model arguments.
-Aggregate grants cannot use private fields for grouping or named-person probes.
+Aggregate grants cannot use private fields for grouping, date filters or named-person probes.
+The November 21 continuation reproduced an aggregate-only field disclosure in a
+synthetic fixture. The source now narrows its field manifest before SQL compilation
+and projects every warehouse/fallback result to the same allowlist; newly added
+private columns cannot enter evidence, datasets or the source catalog. Exact
+publisher aliases retain community/category/county names and numerical measures;
+native datasets preserve null versus zero and reject invalid/blank measures.
 Partial snapshots, stale flow and bounded licensing results retain coverage limits.
 The existing resident-flow reader accepts an explicit within-year period while
 preserving its default full-year behavior and census/movement reconciliation.
@@ -76,7 +82,10 @@ checks and browser build. The browser fixture exercises 320/390/1440px, keyboard
 focus, reduced motion, lost-acknowledgement retry, saved reopening, version
 selection, follow-ups, cancellation, sharing and PDF creation. Fixture responses
 are explicitly synthetic; none of these checks establish GPT answer quality.
-See the candidate rollout boundary in [deployment operations](deployment-operations.md).
+The separate staging API and worker now use the tested 0.18.0 package, with dispatch off,
+empty source connectors and no model configuration. This does not activate reports
+or alter the production host. See the exact status and candidate rollout boundary
+in [deployment operations](deployment-operations.md).
 
 ## Workflow content in Platform — 2026-10-18
 

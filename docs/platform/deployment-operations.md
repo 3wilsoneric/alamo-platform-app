@@ -16,12 +16,14 @@
 
 ## Current Production Host
 
-### Executive Ally — local candidate, November 20 (not deployed)
+### Executive Ally — local Platform candidate; disabled staging worker, November 21
 
 The owner deferred live GPT tests after the shared Carelog OpenAI project was
-observed with no active credit balance. No billing, key, deployment, source grant
-or executive access was changed. Do not renew the expired connection gate by
-changing a date: first verify an active provider connection, then run the live
+observed with no active credit balance. Billing, keys, source grants, production
+images and executive access remain unchanged. The November 21 continuation
+deployed disabled staging worker infrastructure and its tested package, then
+updated the staging API to the same engine version, detailed below. Do not
+renew the expired connection gate by changing a date: first verify an active provider connection, then run the live
 acceptance cases in the canonical Ally spec.
 
 The candidate pins engine 0.18.0, adds Platform's report source endpoint and embeds
@@ -41,6 +43,60 @@ controls, revocation, cancellation and saved reopening. The rendered PDF was
 visually inspected. These are synthetic local receipts, not signed-in, live-model,
 device, load, or full production release acceptance.
 
+November 21 source-permission correction: a synthetic aggregate-only query could
+return newly added private summary columns. The regression was reproduced before
+the fix. `ally-data-source.mjs` now projects explicit authorized columns in SQL
+and in both warehouse/fallback results. Catalog, date filtering, evidence and
+native datasets use the same restricted manifest. Focused signed-source, data
+projection, resident-flow, server type and API checks pass. The full analyst
+regression gate also passed; the final published-column mapping correction reran the affected source/flow, type and lint
+checks. Exact publisher names now retain community/category/county labels and
+counts/net movement. Native datasets mark governed measures as numbers, preserve
+null versus zero, and reject blank measures. No real record was used for these
+reproductions.
+
+Disabled worker infrastructure receipt (subscription
+`84d40648-8488-4226-9e74-6b9458d0d73f`, `rg-suite-staging`):
+
+- Function App/plan/managed identity: `suitestg-ally-worker`, Node 22 Flex Consumption.
+- Identity client `83a4c5dd-ca6b-4ea8-ab98-724b1b50782e`, principal
+  `1bbdd6bd-60b4-4cb7-a496-6d60b08d7ad3`.
+- Host/deployment storage `suitestgawy764dg4h5gh4q`; shared keys/public blobs off.
+- Existing state container `suitestg2y764dg4h5gh4q/ally-state`; new identity has
+  container-scoped Blob Data Contributor, plus host-only blob/queue/table roles.
+- Both schedule disable flags true; worker enabled flag false; connectors `[]`;
+  no report registry, provider key or source credential. SCM/FTP basic publishing off.
+- Reviewed Bicep SHA-256
+  `51a9a98fab748f03e8a5d8568d05fc1eb995dd0e589b022bceb57bd7d8ae54de`.
+  Provisioned at `2026-11-21T07:59:05Z`; cloud configuration and exact role scopes
+  verified at `2026-11-21T08:01:13Z`.
+- Owner: `/Users/eric/suite-deploy`, branch `codex/ally-worker-20261120`.
+  Its named `.state/ally-worker.*.json` receipts retain the reviewed plan,
+  configuration proof and package provenance. Never export `.state/` wholesale.
+
+The staging API is now engine 0.18.0 at `suitestg-ally--v018-1121-d18b39d`,
+image SHA-256 `3ba811e447b2ce84e25c4699c5c371a8636fb60038c0ffb943f9983b272cc95b`.
+ACR run `cce` passed. Exact identity, environment, configuration and scaling were
+unchanged; only image/revision changed. The new revision is Healthy with 100%
+traffic; health returned 200 and work/conversations/catalog/reports rejected
+anonymous access with 401. Its report registry and model settings remain absent.
+Rollback is the retained 0.17.0 image
+`5a45222df65817019318afa0a01fc2a8c2727914db1a537896adef07dc0214c9`,
+with the same configuration. Named API package/release/verification receipts are
+`.state/ally-v018.*.json` in suite-deploy. Pipeline, Platform and Carelog staging
+images and every production application remain unchanged.
+
+Worker package 0.18.0 from engine `d18b39d` was deployed with zip SHA-256
+`2023a23e00456940f884c71f0affcd0ae76174bf832dbefc978161052e8eaa2c`.
+Azure deployment `8fcb9f09-c9ea-4457-916a-d7153c45d20c` succeeded at
+`2026-11-21T08:03:08Z`. Six monitor functions indexed, the only registered timer
+was disabled, and report functions remained unregistered without their registry.
+Anonymous management requests returned 401 and the absent public report route 404.
+Post-deploy configuration and exact-role verification passed. No report/source
+operation ran; indexing is not execution acceptance. Recovery is to retain
+state and the preceding package, disable schedules, and stop the Function App if
+necessary; do not delete shared Ally state or restore application records.
+
 Named pilot identities (verified directory/branding references, not active grants):
 
 | Person | Entra object ID |
@@ -53,10 +109,10 @@ Required activation order:
 
 1. Pin reviewed engine/API/worker and Platform candidates. Re-run affected checks
    after any changes; run the actual release checklist at the release boundary.
-2. Provision the independent durable worker against the engine's existing private
-   state store. Its disabled-by-omission report registry and existing worker switch
-   remain off until source and provider proofs pass. API and worker share storage;
-   Platform remains the source owner. No migration of application records.
+2. Finish the independent worker execution/storage acceptance against the engine's
+   private state store. Disabled staging infrastructure is provisioned; its
+   disabled-by-omission report registry and worker switch stay off until source and
+   provider proofs pass. Platform remains the source owner. No migration of records.
 3. Configure Platform's dedicated source audience and `AlamoAgent.Source.Read`
    workload role for the engine identity. Store explicit subject/community/capability
    grants in a **separate private source-owned container**, using the existing grant
@@ -65,8 +121,8 @@ Required activation order:
 4. Configure `ALAMOAGENT_EXECUTIVE_REPORTS_JSON` on the independent API/worker and
    the verified shared OpenAI connection. Register Platform's delegated client and
    exact browser origin. Run signed-in, source-permission, restart/recovery, live
-   answer, load/cost and export checks in staging. Current inspection found no
-   deployed Function App; the built worker package is not a deployment receipt.
+   answer, load/cost and export checks in staging. A disabled Function App is
+   provisioned; that alone does not prove source access or report execution.
 5. Enable the host flag and named display participants for Eric after acceptance,
    then Andrew, then Sandeep after their own source and usefulness checks. A name
    in the browser configuration grants no data or service access.
