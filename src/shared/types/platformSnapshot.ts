@@ -286,7 +286,7 @@ export interface AdmissionsPipelineMovingClient {
   referralId: number;
   clientName: string;
   stage: AdmissionsBoardColumnKey;
-  phase: "needs_date" | "awaiting_arrival" | "intake_assessment" | "decision_pending";
+  phase: "needs_date" | "awaiting_arrival" | "intake_assessment" | "decision_pending" | "outcome_review";
   plannedAt: string | null;
   status: string;
   community: string;

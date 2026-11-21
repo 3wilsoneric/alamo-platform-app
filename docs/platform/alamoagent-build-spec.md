@@ -105,6 +105,17 @@ access and the public report runtime remain off. The operations receipt records
 the exact image and recovery configuration; Functions execution and live GPT
 acceptance are still outstanding.
 
+Production-base reconciliation now has a reproducible **disabled** overlay and
+image check. It preserves all unrelated live files, shared authentication, source
+readers and the older monitoring engine instead of replacing the root build.
+The 19-file allowlist was checked against 19,123 base files; HTTP health/routes,
+anonymous denial and disabled/source-auth boundaries passed in an offline
+container. Reconciliation also restores the live recorded-outcome counting fix
+and outcome-review phase to this checkout, with a failing-before/passing-after
+regression. No image was pushed or deployed. The operations document records the
+image and commands. Enabling this package still requires the deferred live
+acceptance, exact service/CSP configuration and signed-in release checks.
+
 ## Workflow content in Platform — 2026-10-18
 
 Workflow is now embedded at `/workflow` in Platform, behind its existing owner

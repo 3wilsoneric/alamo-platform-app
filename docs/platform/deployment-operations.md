@@ -18,6 +18,41 @@
 
 ### Executive Ally — local Platform candidate; disabled staging worker, November 21
 
+**Disabled production-base package prepared locally:** the exact November 19
+production image was compared with this checkout before packaging. A whole-root
+replacement would overwrite unrelated live server and browser updates. The new
+`release:executive-ally:prepare` command therefore retains that image and changes
+only 19 recorded files, including compressed browser assets. It reuses the live
+React/MSAL/router instances and existing source readers; the source boundary
+bundles the pinned report contracts without replacing the installed monitoring
+engine. The shared source readers, other routes, authentication, package lock and
+image configuration remain intact. This is an additive disabled candidate, not
+a production deployment or executive activation.
+
+`check:executive-ally-release` compared all **19,123** base files against the exact
+allowlist, verified source fingerprints and compressed assets, exercised the
+disabled panel with restricted/unrestricted synthetic identities, and ran the
+packaged HTTP server with networking disabled. Health and browser routes passed;
+existing protected APIs returned 401. The new source returned 503 without
+configuration and 401 with an audience but no workload token. Local image ID:
+`sha256:4a92f7c1a1bcba7afbc201dff215c0016984f44ad96a1e99204f06305bb92637`.
+The preparation and verification receipts are in
+`generated/executive-ally-release/`; the rollback/base remains `a030b9aa…70639`.
+The image was not pushed to a registry or deployed.
+
+Reconciliation also recovered an existing production fix missing from the local
+candidate: recorded outcomes cannot inflate active referral counts, truncated
+boards retain their valid published count, and `outcome_review` remains an
+accepted briefing phase. The new regression failed before restoring the live
+behavior; dashboard/scheduling, source/flow, API, types and code checks passed
+afterward. No source records changed.
+
+This preparer intentionally rejects activation and any changed production base.
+After live acceptance resumes, prepare the enabled candidate with the reviewed
+API origin/CSP, scope and named display participants, then run the full release
+and signed-in checks. Its disabled-package receipt does not substitute for those
+checks or for actual Functions report execution.
+
 **Latest isolated staging receipt:** Platform source `3963cc0` on
 `codex/platform-ally-staging-20261121` is deployed at
 `suitestg-platform--ally-source-ready-1121`, image SHA-256

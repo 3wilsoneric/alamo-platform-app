@@ -65,7 +65,7 @@ export function facilityIdForPipelineCommunity(name) {
 }
 
 function boardCountsFor(cards) {
-  const activeCards = cards.filter((card) => card.status.trim().toLowerCase() !== "declined");
+  const activeCards = cards.filter((card) => !/^(declined|denied|admitted\b|did not move in\b)/i.test(card.status.trim()));
   return {
     onBoard: activeCards.length,
     inDecision: activeCards.filter((card) => card.column === "decision").length,

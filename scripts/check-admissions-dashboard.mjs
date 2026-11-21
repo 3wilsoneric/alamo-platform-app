@@ -431,6 +431,27 @@ legacyDeclinedPayload.board.cards[2].status = "Declined";
 legacyDeclinedPayload.board.columns[2].statuses = [{ status: "Declined", count: 1 }];
 const legacyDeclinedSummary = normalizePipelineAdmissionsSummary(legacyDeclinedPayload, "https://pipeline.example");
 assert.equal(legacyDeclinedSummary?.metrics.activeReferrals, 2, "legacy feeds exclude declined statuses from the derived active count");
+for (const status of ["Declined", "Denied", "Admitted", "Admitted · discharged", "Did not move in"]) {
+  const outcomes = structuredClone(pipelinePayload);
+  outcomes.board.cards[2].status = status;
+  outcomes.board.columns[2].statuses = [{ status, count: 1 }];
+  const normalized = normalizePipelineAdmissionsSummary(outcomes);
+  assert.equal(normalized?.metrics.activeReferrals, 2, `${status}: complete boards correct a stale published active count`);
+  const scoped = buildAdmissionsDashboard(snapshot, { referralPipeline: normalized });
+  assert.deepEqual(scoped.communities.find(row => row.facilityId === "342")?.referrals,
+    { onBoard: 0, inDecision: 0, needsAttention: 0 }, `${status}: recorded outcomes are not active community work`);
+  assert.equal(scoped.referral_pipeline.board.cards.length, 3, "outcomes remain reviewable");
+  outcomes.board.cards_truncated = true;
+  outcomes.board.cards.pop();
+  outcomes.metrics.active_referrals = 1;
+  assert.equal(normalizePipelineAdmissionsSummary(outcomes)?.metrics.activeReferrals, 1, "truncated boards retain the valid published active count");
+  delete outcomes.metrics.active_referrals;
+  assert.equal(normalizePipelineAdmissionsSummary(outcomes)?.metrics.activeReferrals, 2, "legacy truncated boards subtract all recorded outcomes");
+}
+const outcomeReviewPayload = structuredClone(pipelinePayload);
+outcomeReviewPayload.briefing.moving_through[0].phase = "outcome_review";
+const outcomeReview = buildAdmissionsDashboard(snapshot, { referralPipeline: normalizePipelineAdmissionsSummary(outcomeReviewPayload) });
+assert.equal(outcomeReview.referral_pipeline.briefing.movingThrough[0]?.phase, "outcome_review", "live outcome-review phase survives normalization");
 const reject = (cardOverrides) => normalizePipelineAdmissionsSummary({
   ...pipelinePayload,
   board: { ...pipelinePayload.board, cards: [card(cardOverrides)] }
@@ -502,6 +523,7 @@ assert.equal(dashboard.briefing.totals.completedMoveInsThisWeek, 3);
 const validators = await loadClientValidators();
 validators.admissionsDashboard(dashboard);
 validators.admissionsDashboard(connected);
+validators.admissionsDashboard(outcomeReview);
 validators.admissionsDashboard(crosswalkDashboard);
 assert.throws(() => validators.admissionsDashboard({ ...dashboard, referral_pipeline: { status: "bogus" } }));
 

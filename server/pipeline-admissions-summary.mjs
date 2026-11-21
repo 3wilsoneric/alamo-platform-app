@@ -234,7 +234,7 @@ function normalizeMovingThrough(row, pipelineOrigin) {
   const referralId = count(row?.referral_id);
   const clientName = text(row?.client_name, 160);
   const stage = BOARD_COLUMNS.has(row?.stage) ? row.stage : null;
-  const phase = ["needs_date", "awaiting_arrival", "intake_assessment", "decision_pending"].includes(row?.phase) ? row.phase : null;
+  const phase = ["needs_date", "awaiting_arrival", "intake_assessment", "decision_pending", "outcome_review"].includes(row?.phase) ? row.phase : null;
   const plannedAt = row?.planned_at == null ? null : isoCalendarDate(row.planned_at);
   const status = text(row?.status, 80);
   const community = text(row?.community, 80);
@@ -430,14 +430,20 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
   const baseMetrics = onBoard == null || stale == null || unassigned == null || awaitingAdmission == null
     ? null
     : { onBoard, stale, unassigned, awaitingAdmission };
-  const declinedCount = normalizedColumns
+  const total = count(board.total);
+  const isRecordedOutcome = (status) => /^(declined|denied|admitted\b|did not move in\b)/i.test(status.trim());
+  const completeBoard = board.cards_truncated !== true && board.cards.length === total;
+  const outcomeCount = normalizedColumns
     .filter(Boolean)
     .flatMap((column) => column.statuses)
-    .filter((row) => row.status.toLowerCase() === "declined")
+    .filter((row) => isRecordedOutcome(row.status))
     .reduce((totalCount, row) => totalCount + row.count, 0);
-  const activeReferrals = payload.metrics?.active_referrals === undefined
-    ? (baseMetrics ? Math.max(0, baseMetrics.onBoard - declinedCount) : null)
-    : count(payload.metrics?.active_referrals);
+  const publishedActiveReferrals = payload.metrics?.active_referrals === undefined ? null : count(payload.metrics?.active_referrals);
+  const activeReferrals = completeBoard
+    ? normalizedCards.filter((card) => card && !isRecordedOutcome(card.status)).length
+    : payload.metrics?.active_referrals === undefined
+      ? (baseMetrics ? Math.max(0, baseMetrics.onBoard - outcomeCount) : null)
+      : publishedActiveReferrals;
   /** @type {{ onBoard: number, stale: number, unassigned: number, awaitingAdmission: number, activeReferrals: number } | null} */
   const metrics = baseMetrics && activeReferrals != null
     ? { ...baseMetrics, activeReferrals }
@@ -454,7 +460,6 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
   const medianDays = timing?.median_days_to_decision;
   const decisionsCounted = count(timing?.decisions_counted);
   const windowDays = count(timing?.window_days);
-  const total = count(board.total);
   const coverageStartMonth = history?.coverage_start_month === undefined
     ? (normalizedMonthly.find(Boolean)?.month ?? null)
     : (history.coverage_start_month === null ? null : isoMonth(history.coverage_start_month));
@@ -463,7 +468,9 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
     normalizedColumns.some((column) => !column) ||
     normalizedCards.some((card) => !card) ||
     normalizedMonthly.some((row) => !row) ||
-    !metrics || metrics.activeReferrals > metrics.onBoard || !monthOutcomes || !month || !upcoming || !briefing || total == null ||
+    !metrics || metrics.activeReferrals > metrics.onBoard ||
+    (payload.metrics?.active_referrals !== undefined && (publishedActiveReferrals == null || (onBoard != null && publishedActiveReferrals > onBoard))) ||
+    !monthOutcomes || !month || !upcoming || !briefing || total == null ||
     (history?.coverage_start_month !== undefined && history.coverage_start_month !== null && !coverageStartMonth) ||
     normalizedMonthly.some((row) => row && coverageStartMonth && row.month < coverageStartMonth) ||
     decisionsCounted == null || windowDays == null ||
