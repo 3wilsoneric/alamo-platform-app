@@ -87,6 +87,15 @@ empty source connectors and no model configuration. This does not activate repor
 or alter the production host. See the exact status and candidate rollout boundary
 in [deployment operations](deployment-operations.md).
 
+The subsequent staging workload test found a real Azure grant-reader defect:
+`downloadToBuffer(0, 65537)` requires that exact byte count and rejects a valid
+smaller registry. The shared source owner now reads a bounded stream, preserving
+the 64 KiB limit and closing the stream on every result. A real Azure SDK test
+with a local HTTP blob fixture reproduces the failure and covers small/exact-limit
+documents, oversized/missing-size responses and invalid JSON. Both monitoring
+and executive report grants use the correction. This is source/persistence
+verification; GPT testing remains deferred.
+
 ## Workflow content in Platform — 2026-10-18
 
 Workflow is now embedded at `/workflow` in Platform, behind its existing owner

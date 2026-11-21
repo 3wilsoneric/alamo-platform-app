@@ -54,8 +54,23 @@ async function readSourceGrantBlob(blobName) {
   if (account === process.env.AZURE_STORAGE_ACCOUNT && container === process.env.AZURE_STORAGE_CONTAINER) throw new Error("Source grants require a separate private container from agent work state.");
   const client = new BlobServiceClient(`https://${account}.blob.core.windows.net`, new ManagedIdentityCredential(clientId),
     { retryOptions: { maxTries: 1 } }).getContainerClient(container).getBlobClient(blobName);
-  // A fixed-size ranged read bounds allocation even if the registry is corrupt.
-  const bytes = await client.downloadToBuffer(0, 65_537, { abortSignal: AbortSignal.timeout(5000) });
-  if (bytes.length > 65_536) throw new Error("Source grant registry is too large.");
-  return JSON.parse(bytes.toString("utf8"));
+  return readSourceGrantDocument(client);
+}
+
+export async function readSourceGrantDocument(client) {
+  // downloadToBuffer requires the exact requested byte count, not an upper
+  // bound. A ranged stream accepts small documents and still bounds allocation.
+  const response = await client.download(0, 65_537, { abortSignal: AbortSignal.timeout(5000) });
+  const stream = response.readableStreamBody;
+  if (!stream) throw new Error("Source grant registry has no response body.");
+  try {
+    if (Number(response.contentLength) > 65_536) throw new Error("Source grant registry is too large.");
+    const chunks = []; let size = 0;
+    for await (const chunk of stream) {
+      size += chunk.length;
+      if (size > 65_536) throw new Error("Source grant registry is too large.");
+      chunks.push(Buffer.from(chunk));
+    }
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } finally { stream.destroy(); }
 }

@@ -18,6 +18,15 @@
 
 ### Executive Ally — local Platform candidate; disabled staging worker, November 21
 
+Later staging source acceptance reproduced a 503 caused by the shared grant
+reader's fixed-length Azure buffer download. The new `check-source-grant-blob.mjs`
+uses the actual SDK against a local HTTP fixture and rejects the old reader on a
+25-byte valid registry. The source correction streams the bounded response,
+retains the 64 KiB cap, and closes the body after success or failure. The focused
+grant/source/flow and monitoring-source checks cover the correction. The isolated
+staging integration lives at `platform-ally-staging-20261121`; its cloud receipts
+remain separate from production release authorization and live-model acceptance.
+
 The owner deferred live GPT tests after the shared Carelog OpenAI project was
 observed with no active credit balance. Billing, keys, source grants, production
 images and executive access remain unchanged. The November 21 continuation
