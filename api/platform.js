@@ -3,6 +3,7 @@ import { handleWorkflowKnowledgeRequest } from "../server/workflow-knowledge-api
 import { handleEveryAgentRequest } from "../server/everyagent-api.mjs";
 import { handleWorkflowApiRequest, isWorkflowApiPath } from "../server/workflow-api.mjs";
 import { handlePlatformAgentSourceRequest } from "../server/platform-agent-source-api.mjs";
+import { handlePlatformReportSourceRequest } from "../server/ally-report-source-api.mjs";
 import { AGENT_SOURCE_PATH } from "../shared/everyagent-source-contracts.mjs";
 import {
   getAdmissionsDashboardData,
@@ -143,6 +144,7 @@ const PLATFORM_GET_ROUTES = Object.freeze({
 
 export default async function handler(req, res) {
   const requestPath = String(req.url ?? "").split("?", 1)[0] ?? "";
+  if (requestPath === '/api/platform/ally-source/v1') { await handlePlatformReportSourceRequest(req, res); return; }
   if (isWorkflowApiPath(requestPath)) { await handleWorkflowApiRequest(req, res); return; }
   if (requestPath === "/api/platform/workflow-knowledge") { await handleWorkflowKnowledgeRequest(req, res); return; }
   if (requestPath === AGENT_SOURCE_PATH) { await handlePlatformAgentSourceRequest(req, res); return; }

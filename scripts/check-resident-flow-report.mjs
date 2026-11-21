@@ -21,6 +21,11 @@ assert.equal(report.records.length, 10); assert.equal(report.totals.movedInAndOu
 assert.deepEqual(report.counties.rows, [{ county: "Contra Costa", admissions: 5 }]);
 assert.equal(JSON.stringify(report).includes("resident_id"), false);
 assert.equal(JSON.stringify(report).includes("birth_date"), false);
+const range = buildResidentFlowReport(snapshot, null, '2026', {from:'2026-01-02',through:'2026-01-02'});
+assert.equal(range.totals.admissions,5); assert.equal(range.totals.discharges,5); assert.equal(range.totals.bedDays,5); assert.equal(range.totals.openingCensus,5); assert.equal(range.totals.closingCensus,5);
+const after = buildResidentFlowReport(snapshot, null, '2026', {from:'2026-01-03',through:'2026-01-04'});
+assert.equal(after.totals.admissions,0); assert.equal(after.totals.discharges,0); assert.equal(after.totals.bedDays,10);
+assert.throws(()=>buildResidentFlowReport(snapshot,null,'2026',{from:'2025-12-31',through:'2026-01-02'}),/within the selected year/);
 const community = ALAMO_FACILITIES[0];
 const scoped = buildResidentFlowReport(snapshot, community.facilityId);
 assert.equal(scoped.scope.label, community.shortName); assert.equal(scoped.sites.length, 1);

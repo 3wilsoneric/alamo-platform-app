@@ -92,7 +92,8 @@ try {
   assert.equal((await call({ method: "POST", body: "{" })).status, 400);
   assert.equal((await call({ method: "POST", body: JSON.stringify({ action: "send_email" }) })).status, 400);
   assert.equal((await call({ method: "POST", body: JSON.stringify({ payload: "x".repeat(5000) }) })).status, 413);
-  const initial = await client.read(); assert.equal(initial.skills.length, 2); assert.equal(initial.emailEnabled, false);
+  const initial = await client.read(); assert.deepEqual(initial.skills.map(skill => skill.id), ["licensing", "admissions-watch", "assessment-review"]); assert.equal(initial.emailEnabled, false);
+  assert.equal(initial.responsibilities.find(item => item.skillId === "assessment-review").paused, true);
   const configure = { action: "configure", skillId: "licensing", communityIds: ["337"], paused: false, expectedVersion: 0 };
   await client.command(configure);
   assert.equal((await call({ method: "POST", body: JSON.stringify(configure) })).status, 409);

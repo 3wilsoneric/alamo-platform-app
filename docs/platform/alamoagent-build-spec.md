@@ -15,8 +15,9 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 The user prioritized building the agent and connecting many applications. The
 standalone UI is parked. Engine source, skill definitions, workflows and connector
-routing are edited in AlamoAgent. Platform consumes a pinned archive at
-`vendor/alamo-agent-runtime-0.1.0.tgz`; the old engine modules re-export that package.
+routing are edited in AlamoAgent. Platform consumes a pinned archive; the original
+extraction used `vendor/alamo-agent-runtime-0.1.0.tgz`, and the local executive
+candidate below uses `vendor/alamo-agent-runtime-0.18.0.tgz`. Old engine modules re-export that package.
 There are no sibling runtime imports or symlinks. Rebuild/bump the package and run
 Platform integration checks before adopting another engine version.
 
@@ -30,6 +31,52 @@ verified with two synthetic authenticated HTTP applications.
 Eric-only access and disabled emails remain unchanged. Andrew's Wilson branding
 is saved, with no access enabled. Extraction and tests do not establish production
 availability. See [deployment operations](deployment-operations.md) for receipts.
+
+## Executive Ally candidate — November 20, 2026
+
+The owner authorized the executive experience and then deferred **live GPT testing**.
+The independent engine now has a local 0.18.0 candidate, consumed by this checkout
+through its pinned archive. Existing production images, access and source data
+have not changed. The engine's living spec remains the implementation authority;
+this section records Platform's ownership and integration evidence.
+
+Platform owns `/api/platform/ally-source/v1`, its workload-token verifier, the
+separate private `agent-source/report-grants-v1.json` registry, and domain readers.
+Community and date constraints are added by the source, outside model arguments.
+Aggregate grants cannot use private fields for grouping or named-person probes.
+Partial snapshots, stale flow and bounded licensing results retain coverage limits.
+The existing resident-flow reader accepts an explicit within-year period while
+preserving its default full-year behavior and census/movement reconciliation.
+
+The optional embedded Ally panel uses the shared report API, the approved orange
+bookmark, current Platform typography, native controls, source-bound tables,
+comparisons and trends. It supports saved/versioned investigations, follow-ups,
+refresh/retry/cancel, recipient-checked sharing, report links and print/PDF. It
+reauthorizes on export and periodically while displaying saved results. Exported
+copies are snapshots and cannot be revoked after download. It does not replace
+existing monitoring, assessment workflows or source applications.
+
+Final integration checks retained the existing monitoring and conversation
+behavior. The newer engine catalog includes a paused assessment-review skill;
+updated compatibility assertions require it to remain paused, execute no runs
+and publish no work. This package adoption does not activate that capability.
+The browser pass also covers shared-link reopening, recipient-only controls and
+removal of cached report titles after source revocation. It caught and fixed an
+aborted-request lifecycle bug on direct report links; stale reads cannot replace
+a newly opened report. Polls are serialized while a previous check is pending.
+
+`VITE_ALLY_REPORTS_ENABLED` is false by omission. `VITE_ALLY_REPORT_PARTICIPANTS`
+is display configuration, never API or source authority. The signed-in API subject,
+engine membership and current independent source grant all remain mandatory.
+The browser fixture enables this only in its isolated loopback test process.
+
+Checks: `check:executive-reports`, `check:browser-executive-ally`, frontend/server
+TypeScript, API boundaries, lint, dependency audit, code health, unused/duplicate
+checks and browser build. The browser fixture exercises 320/390/1440px, keyboard
+focus, reduced motion, lost-acknowledgement retry, saved reopening, version
+selection, follow-ups, cancellation, sharing and PDF creation. Fixture responses
+are explicitly synthetic; none of these checks establish GPT answer quality.
+See the candidate rollout boundary in [deployment operations](deployment-operations.md).
 
 ## Workflow content in Platform — 2026-10-18
 

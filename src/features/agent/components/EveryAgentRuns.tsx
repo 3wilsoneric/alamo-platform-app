@@ -2,7 +2,7 @@ import { useEveryAgent } from "../EveryAgentContext";
 import { agentTime } from "./EveryAgentResponsibility";
 
 const phases = { queued: "Waiting to start", collect: "Reading sources", validate: "Checking evidence", publish: "Saving results",
-  completed: "Completed", failed: "Needs a retry", canceled: "Canceled" };
+  completed: "Completed", failed: "Needs a retry", canceled: "Canceled", blocked: "Needs attention" };
 
 export default function EveryAgentRuns() {
   const { data, busy, command } = useEveryAgent();

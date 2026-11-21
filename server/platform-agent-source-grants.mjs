@@ -39,13 +39,21 @@ export function authorizePlatformAgentSource(identity, request, document, now = 
 // Source-owned registry: no cache, fallback grant, or agent-side write path.
 // Grant storage must be inaccessible to the agent's workload identity.
 export async function readPlatformAgentSourceGrants() {
+  return readSourceGrantBlob('agent-source/grants-v1.json');
+}
+
+export async function readPlatformReportSourceGrants() {
+  return readSourceGrantBlob('agent-source/report-grants-v1.json');
+}
+
+async function readSourceGrantBlob(blobName) {
   const account = process.env.PLATFORM_AGENT_SOURCE_STORAGE_ACCOUNT;
   const container = process.env.PLATFORM_AGENT_SOURCE_STORAGE_CONTAINER;
   const clientId = process.env.AZURE_CLIENT_ID;
   if (!account || !container || !clientId) throw new Error("Configure source-owned grant storage.");
   if (account === process.env.AZURE_STORAGE_ACCOUNT && container === process.env.AZURE_STORAGE_CONTAINER) throw new Error("Source grants require a separate private container from agent work state.");
   const client = new BlobServiceClient(`https://${account}.blob.core.windows.net`, new ManagedIdentityCredential(clientId),
-    { retryOptions: { maxTries: 1 } }).getContainerClient(container).getBlobClient("agent-source/grants-v1.json");
+    { retryOptions: { maxTries: 1 } }).getContainerClient(container).getBlobClient(blobName);
   // A fixed-size ranged read bounds allocation even if the registry is corrupt.
   const bytes = await client.downloadToBuffer(0, 65_537, { abortSignal: AbortSignal.timeout(5000) });
   if (bytes.length > 65_536) throw new Error("Source grant registry is too large.");

@@ -58,7 +58,10 @@ try {
   for (const invalid of [andrew, ...formerPilots, auth("not-allowed"), { ...auth("admin"), claims: { tid: EVERYAGENT_TENANT, oid: "admin", roles: ["Alamo.Admissions.Admin"], email: "ericwilsonalamo@outlook.com" } }, { ...owner, claims: { ...owner.claims, tid: "wrong-tenant" } }, { ...owner, mode: "entra-application" }, { authenticated: false }]) {
     await rejects(service.overview(invalid), 404);
   }
-  assert.equal((await service.overview(owner)).skills.length, 2);
+  const initial = await service.overview(owner);
+  assert.deepEqual(initial.skills.map(skill => skill.id), ["licensing", "admissions-watch", "assessment-review"]);
+  assert.equal(initial.responsibilities.find(item => item.skillId === "assessment-review").paused, true,
+    "the shared engine's additional review capability must not activate with this upgrade");
   const legacyAssignment = (await service.overview(owner)).responsibilities.find(item => item.skillId === "licensing");
   const legacyAssignments = formerPilots.map(former => ({ ...legacyAssignment, userId: former.claims.oid, cursor: null }));
   await makeStore().update(state => { state.assignments.push(...structuredClone(legacyAssignments)); return true; });
@@ -68,7 +71,8 @@ try {
   assert.equal(view.work.length, 2);
   assert(view.work.every(item => item.status === "completed"), "backlog is a baseline, not a flood of new alerts");
   assert.equal(view.emailEnabled, false);
-  assert.equal((await makeStore().read()).value.assignments.length, 4);
+  assert.equal((await makeStore().read()).value.assignments.length, 5);
+  assert.equal((await makeStore().read()).value.assignments.find(item => item.skillId === "assessment-review").paused, true);
   assert((await makeStore().read()).value.work.every(item => item.userId === owner.claims.oid), "revoked pilot assignments cannot publish work");
   assert(!JSON.stringify((await makeStore().read()).value).includes("PRIVATE_REFERRAL"), "Pipeline projection excludes referral data");
   assert.equal(view.work.find(item => item.skillId === "licensing").relationships[0].relation, "has_report");
@@ -127,6 +131,8 @@ try {
   await service.tick(); assert.equal(reads, before + 1, "expired lease resumes work after crash");
   assert.equal((await service.overview(owner)).responsibilities.find(item => item.skillId === "licensing").connection, "connected");
   const finalState = (await makeStore().read()).value;
+  assert(!finalState.work.some(item => item.skillId === "assessment-review"), "the paused review capability cannot publish work");
+  assert(!finalState.runs.some(item => item.skillId === "assessment-review"), "the paused review capability cannot execute");
   assert.deepEqual(finalState.assignments.filter(item => item.userId !== owner.claims.oid), legacyAssignments, "stored revoked assignments stay untouched across worker ticks");
   assert(finalState.runs.every(item => item.userId === owner.claims.oid), "worker never runs for revoked pilots");
   await makeStore().update(state => {

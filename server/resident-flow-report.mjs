@@ -28,8 +28,8 @@ function county(value) {
   return cleaned.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()).replace(/^San Bernadino$/, "San Bernardino");
 }
 
-/** @param {any} snapshot @param {string | null} [facilityId] @param {string | null} [requestedYear] */
-export function buildResidentFlowReport(snapshot, facilityId = null, requestedYear = null) {
+/** @param {any} snapshot @param {string | null} [facilityId] @param {string | null} [requestedYear] @param {{from:string,through:string}|null} [range] */
+export function buildResidentFlowReport(snapshot, facilityId = null, requestedYear = null, range = null) {
   const selectedFacilityId = facilityId == null || facilityId === "" ? null : String(facilityId);
   if (selectedFacilityId && !facilities.has(selectedFacilityId)) throw createHttpError(400, "invalid_community", "Unknown community for client flow.");
   const source = snapshot?.reportsSummary?.toolContext?.tables;
@@ -41,8 +41,11 @@ export function buildResidentFlowReport(snapshot, facilityId = null, requestedYe
   const latestYear = Number(asOfDate.slice(0, 4));
   const year = requestedYear == null || requestedYear === "" ? latestYear : Number(requestedYear);
   if (!Number.isInteger(year) || year < 2026 || year > latestYear) throw createHttpError(400, "invalid_report_year", "Choose an available report year.");
-  const start = day(`${year}-01-01`);
-  const through = Math.min(asOf, day(`${year}-12-31`));
+  const yearStart = day(`${year}-01-01`);
+  if (range && (range.from.slice(0, 4) !== String(year) || range.through.slice(0, 4) !== String(year) || day(range.from) > day(range.through))) throw createHttpError(400, "invalid_report_range", "Choose a date range within the selected year.");
+  const start = range ? day(range.from) : yearStart;
+  const through = Math.min(asOf, day(range?.through ?? `${year}-12-31`));
+  if (start > through) throw createHttpError(400, "invalid_report_range", "No published client flow is available for that period.");
   const end = through + DAY_MS;
   const days = (end - start) / DAY_MS;
   const episodes = source.resident_episode_history.map((row) => ({
@@ -56,7 +59,7 @@ export function buildResidentFlowReport(snapshot, facilityId = null, requestedYe
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw createHttpError(503, "resident_stays_duplicate", "Client stay records need duplicate review.");
   const inPeriod = (value) => value !== null && value >= start && value < end;
   const at = (rows, time) => rows.filter((row) => row.admitted <= time && (row.discharged === null || row.discharged > time)).length;
-  const allWeekly = source.census_weekly_by_community.filter((row) => facilities.has(String(row.facility_id)) && day(row.census_date) >= start - 7 * DAY_MS && day(row.census_date) <= through);
+  const allWeekly = source.census_weekly_by_community.filter((row) => facilities.has(String(row.facility_id)) && day(row.census_date) >= yearStart - 7 * DAY_MS && day(row.census_date) <= through);
   if (!allWeekly.length || allWeekly.some((row) => at(episodes.filter((episode) => episode.facilityId === String(row.facility_id)), day(row.census_date)) !== Number(row.census))) {
     throw createHttpError(503, "resident_census_mismatch", "Client stays and weekly census do not reconcile.");
   }

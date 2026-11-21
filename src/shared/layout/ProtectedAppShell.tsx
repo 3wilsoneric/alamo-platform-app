@@ -35,6 +35,8 @@ import { useEveryAgentAccess } from "../auth/everyAgentAccess";
 import { getApiAuthCachePartition } from "../api/authenticatedFetch";
 import { EveryAgentProvider } from "../../features/agent/EveryAgentContext";
 import EveryAgentCompanion from "../../features/agent/components/EveryAgentCompanion";
+import ExecutiveAlly from "../../features/agent/reports/ExecutiveAlly";
+import { useExecutiveReportAccess } from "../../features/agent/reports/reportAccess";
 
 export default function ProtectedAppShell() {
   const location = useLocation();
@@ -71,6 +73,7 @@ export default function ProtectedAppShell() {
   );
   const hasPlatformOwnerAccess = usePlatformOwnerAccess();
   const hasEveryAgentAccess = useEveryAgentAccess();
+  const hasExecutiveReportAccess = useExecutiveReportAccess();
   const skipWorkspacePreparation =
     isAdmissionsExperience ||
     isExecutiveDirectorExperience ||
@@ -336,6 +339,10 @@ export default function ProtectedAppShell() {
     </div>
   );
   const showEveryAgent = hasEveryAgentAccess && !admissionsAccess.restrictedToAdmissions && !executiveDirectorAccess.restrictedToExecutive && !isExecutiveDirectorExperience && !isWorkflowExperience;
+  if (hasExecutiveReportAccess && !admissionsAccess.restrictedToAdmissions && !executiveDirectorAccess.restrictedToExecutive) {
+    const withAlly = <>{shell}<ExecutiveAlly key={getApiAuthCachePartition()}/></>;
+    return showEveryAgent ? <EveryAgentProvider key={getApiAuthCachePartition()}>{withAlly}</EveryAgentProvider> : withAlly;
+  }
   return showEveryAgent ? <EveryAgentProvider key={getApiAuthCachePartition()}>{shell}<EveryAgentCompanion /></EveryAgentProvider> : shell;
 }
 

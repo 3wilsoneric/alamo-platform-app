@@ -4,6 +4,7 @@ import { getLicensingLibrary, getLicensingReport, getLicensingUpdates } from "./
 import { handleEveryAgentRequest } from "./everyagent-api.mjs";
 import { handleWorkflowApiRequest, isWorkflowApiPath } from "./workflow-api.mjs";
 import { handlePlatformAgentSourceRequest } from "./platform-agent-source-api.mjs";
+import { handlePlatformReportSourceRequest } from "./ally-report-source-api.mjs";
 import { AGENT_SOURCE_PATH } from "../shared/everyagent-source-contracts.mjs";
 import { getPlatformIncidentHistory } from "./platform-incident-history.mjs";
 import { assertLicensingAccess } from "./licensing-access.mjs";
@@ -207,6 +208,7 @@ const server = http.createServer(async (req, res) => {
     await handlePlatformAgentSourceRequest(req, createVercelResponseAdapter(res));
     return;
   }
+  if (requestUrl.pathname === '/api/platform/ally-source/v1') { await handlePlatformReportSourceRequest(req, createVercelResponseAdapter(res)); return; }
   if (requestUrl.pathname === "/api/platform/workflow-knowledge") { await handleWorkflowKnowledgeRequest(req, res); return; }
   if (requestUrl.pathname === "/api/platform/everyagent" || requestUrl.pathname.startsWith("/api/platform/everyagent/")) {
     await handleEveryAgentRequest(req, createVercelResponseAdapter(res));

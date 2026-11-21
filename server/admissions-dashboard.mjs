@@ -58,7 +58,7 @@ function seriesBy(rows, key, limit) {
 
 // Pipeline names destination communities with short labels ("JC Wallace");
 // match them against each facility's known aliases.
-function facilityIdForPipelineCommunity(name) {
+export function facilityIdForPipelineCommunity(name) {
   const normalized = textValue(name).toLowerCase();
   return ALAMO_FACILITIES.find((facility) =>
     facility.shortName.toLowerCase() === normalized || facility.aliases.includes(normalized))?.facilityId ?? null;

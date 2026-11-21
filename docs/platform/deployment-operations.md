@@ -16,6 +16,71 @@
 
 ## Current Production Host
 
+### Executive Ally — local candidate, November 20 (not deployed)
+
+The owner deferred live GPT tests after the shared Carelog OpenAI project was
+observed with no active credit balance. No billing, key, deployment, source grant
+or executive access was changed. Do not renew the expired connection gate by
+changing a date: first verify an active provider connection, then run the live
+acceptance cases in the canonical Ally spec.
+
+The candidate pins engine 0.18.0, adds Platform's report source endpoint and embeds
+its executive report client. It is disabled by default. The currently live
+Platform digest below remains the base and rollback for this feature. The root
+frontend still must not overwrite the production shell's separate route overlays.
+
+Local engine candidate: `d18b39d`, package 0.18.0; archive SHA-256
+`1c5831a797ca30fb98a8e8103bd7f2627e17babcf4c22da4de7f156cc115fd62`.
+The lockfile integrity and installed runtime match the archive. Engine's full
+existing suite and all 21 focused executive checks passed. API/worker builds and
+isolated package closure passed. Platform's source/flow, prior monitoring and
+conversation integration, type, lint, API boundary, dependency, docs, code-health,
+unused/duplicate and production-build checks passed. The browser fixture passed
+320/390/1440px, PDF, retry, follow-up, versions, sharing and direct links, recipient
+controls, revocation, cancellation and saved reopening. The rendered PDF was
+visually inspected. These are synthetic local receipts, not signed-in, live-model,
+device, load, or full production release acceptance.
+
+Named pilot identities (verified directory/branding references, not active grants):
+
+| Person | Entra object ID |
+| --- | --- |
+| Eric | `f73371d5-d2b4-48b4-a32b-1edc7c88869f` |
+| Andrew | `e9f39185-d751-45c0-bcf5-c24d3565bdd9` |
+| Sandeep | `b72c34f0-0ee8-4ab4-8359-81c8f7b0d3b2` |
+
+Required activation order:
+
+1. Pin reviewed engine/API/worker and Platform candidates. Re-run affected checks
+   after any changes; run the actual release checklist at the release boundary.
+2. Provision the independent durable worker against the engine's existing private
+   state store. Its disabled-by-omission report registry and existing worker switch
+   remain off until source and provider proofs pass. API and worker share storage;
+   Platform remains the source owner. No migration of application records.
+3. Configure Platform's dedicated source audience and `AlamoAgent.Source.Read`
+   workload role for the engine identity. Store explicit subject/community/capability
+   grants in a **separate private source-owned container**, using the existing grant
+   reader. Do not give the engine write access to those grants. Begin with aggregate
+   dimensions and no raw assessment, personal HR, emails or clinical notes.
+4. Configure `ALAMOAGENT_EXECUTIVE_REPORTS_JSON` on the independent API/worker and
+   the verified shared OpenAI connection. Register Platform's delegated client and
+   exact browser origin. Run signed-in, source-permission, restart/recovery, live
+   answer, load/cost and export checks in staging. Current inspection found no
+   deployed Function App; the built worker package is not a deployment receipt.
+5. Enable the host flag and named display participants for Eric after acceptance,
+   then Andrew, then Sandeep after their own source and usefulness checks. A name
+   in the browser configuration grants no data or service access.
+6. On a rollout failure, disable report membership/host visibility, stop report
+   dispatch, and restore the pinned preceding images. Keep private report state
+   and evidence for investigation; do not roll back or delete source records.
+
+Source scope currently implemented: governed Platform analytics, reconciled
+resident-flow episodes, the published Pipeline summary, bounded state licensing
+metadata, and the deployed ProForma draft-reference snapshot. It does not imply
+complete Pipeline event history, live ProForma authoring, all Carelog encounter
+content or Workforce personal records. Those need their owning application's
+content contract and grants before catalog exposure.
+
 ### Platform Clients and Admissions consistency — 2026-11-19
 
 - Runtime source: `1fde4b0`; release-test correction: `41187ae`; ACR build `ccfp`.

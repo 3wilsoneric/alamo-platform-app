@@ -37,13 +37,17 @@ export function createAgentTransport(instance: IPublicClientApplication) {
         conversation_capacity: "The chat limit has been reached. Your existing conversations are saved.",
         conversation_budget: "The daily chat limit has been reached. Saved work is still available.",
         conversation_concurrency: "Two answers are already running. Wait or stop one before continuing.",
-        conversation_model_unavailable: "Chat answers are not configured yet. Saved work remains available."
+        conversation_model_unavailable: "Chat answers are not configured yet. Saved work remains available.",
+        report_changed: "This report changed. Refresh it before trying again.",
+        report_not_found: "This report is not available to your account.",
+        report_request_invalid: "Check the question and date range.",
+        report_budget: "The daily investigation limit has been reached. Saved reports remain available."
       };
       throw new Error(messages[problem.code ?? ""] ?? "Chat access could not be verified. Connect or refresh to try again.");
     }
     return readBoundedJsonResponse<T>(response, 8 * 1024 * 1024);
   }
-  return { conversations: createConversationClient(requestJson), work: (signal?: AbortSignal) => requestJson<EveryAgentOverview>("/api/agent/v1/work", signal ? { signal } : {}),
+  return { requestJson, conversations: createConversationClient(requestJson), work: (signal?: AbortSignal) => requestJson<EveryAgentOverview>("/api/agent/v1/work", signal ? { signal } : {}),
     connect: async () => {
       if (!agentApiScope) return;
       const result = await instance.acquireTokenPopup({ scopes: [agentApiScope] });

@@ -103,6 +103,21 @@ Remaining design findings:
 | Clients | Secondary profile detail is grouped under a disclosure in the local candidate. | Ship after release validation; preserve the current-profile / historical-flow distinction. |
 | Packaging | Production contains multiple reviewed overlays not represented by this checkout's root routing source. | Reconcile the production shell before attempting a whole-app frontend replacement. The pinned preparation script preserves the live routing and access behavior for this local candidate. |
 
+## Executive Ally host — local candidate, November 20
+
+The executive report work uses the already approved orange Ally bookmark from
+Carelog/Pipeline, in a compact header and persistent composer. Native saved-report,
+version, community and date controls remain distinct. Evidence is attached to the
+findings and each visualization; disclosure keeps raw source detail out of the
+reading path. No model-authored HTML, CSS or arbitrary routes are rendered.
+
+Desktop is a modeless side panel so the current page stays usable. Mobile uses
+an edge-to-edge native modal, 44px controls and wrapped names, with an independently
+scrolling report body. Escape and close return focus to the launcher; asynchronous
+commands restore focus if disabling a control temporarily moved it to the body.
+The fixed composer does not change the report's data scope. Export uses the same
+React report and source snapshot, with print-specific labels and exact values.
+
 ## Use this before changing the style
 
 Use the realistic **folder** for an actual client or report file: a Pipeline
