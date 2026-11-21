@@ -46,9 +46,10 @@ A signed-source regression first reproduced disclosure of saved detail to an
 aggregate-only recipient. The corrected engine rejects that share and hides
 saved reports after a detail downgrade; a fresh aggregate report remains usable
 and shareable. Grant replacement during synthesis also prevents publication.
-The new fields must ship with engine 0.18.1. The earlier disabled staging and
-production-overlay receipts below cover 0.18.0, not this correction; rebuild and
-repeat acceptance before activation. Live GPT testing remains deferred.
+The new fields must ship with engine 0.18.1. The disabled local overlay has been
+rebuilt and rechecked against the production base; the operations document holds
+its current receipt. The earlier cloud staging receipts still cover 0.18.0,
+so paired staging acceptance remains required. Live GPT testing stays deferred.
 
 Platform owns `/api/platform/ally-source/v1`, its workload-token verifier, the
 separate private `agent-source/report-grants-v1.json` registry, and domain readers.

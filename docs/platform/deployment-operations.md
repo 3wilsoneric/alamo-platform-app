@@ -30,9 +30,8 @@ and a fresh aggregate report shared successfully. Required fields fail closed;
 old unclassified development reports require a fresh investigation.
 
 Deploy these paired source/engine changes to disabled staging before enabling
-reports. The older cloud and overlay receipts below remain historical and do not
-certify 0.18.1. The overlay preparer records the new archive, but its previous
-generated image must be rebuilt/rechecked before use. No cloud setting, grant,
+reports. The older cloud and initial overlay receipts below remain historical
+and do not certify 0.18.1. No cloud setting, grant,
 provider request or executive access changed during this local correction.
 
 Engine commit `f8b69e3` passed the full engine suite, 24 focused executive checks,
@@ -44,7 +43,18 @@ source/flow, server types, dependency audit (218 runtime dependencies), docs and
 build were repeated successfully. The installed service hash matches the engine
 source. These are offline/fictional authorization proofs, not live model quality.
 
-**Disabled production-base package prepared locally:** the exact November 19
+The updated disabled overlay is now built and verified from Platform commit
+`b1291d7`. Image ID:
+`sha256:7e5682cd08dd698e213b567c680ac212a971f1a7989059c995e8f8d7c5a25e8a`.
+Its November 21, 23:38 UTC receipt in
+`generated/executive-ally-release/verification.json` confirms the same 19-file
+allowlist against 19,123 base files, unchanged image configuration, preserved
+host authentication, packaged HTTP routes and disabled/unauthorized gates.
+It remains local and has not been pushed or deployed. Production base/rollback
+is unchanged. This current receipt supersedes the generated 0.18.0 overlay check;
+the initial image and its historical result are recorded below.
+
+**Initial 0.18.0 production-base package:** the exact November 19
 production image was compared with this checkout before packaging. A whole-root
 replacement would overwrite unrelated live server and browser updates. The new
 `release:executive-ally:prepare` command therefore retains that image and changes
@@ -62,8 +72,9 @@ packaged HTTP server with networking disabled. Health and browser routes passed;
 existing protected APIs returned 401. The new source returned 503 without
 configuration and 401 with an audience but no workload token. Local image ID:
 `sha256:4a92f7c1a1bcba7afbc201dff215c0016984f44ad96a1e99204f06305bb92637`.
-The preparation and verification receipts are in
-`generated/executive-ally-release/`; the rollback/base remains `a030b9aa…70639`.
+The current preparation and verification receipts in
+`generated/executive-ally-release/` now cover 0.18.1 as described above;
+the rollback/base remains `a030b9aa…70639`.
 The image was not pushed to a registry or deployed.
 
 Reconciliation also recovered an existing production fix missing from the local
