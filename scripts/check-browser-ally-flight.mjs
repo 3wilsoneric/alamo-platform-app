@@ -29,6 +29,25 @@ await withBrowserQa(async browser => {
     await page.waitForTimeout(320);
     assert.equal(await page.locator("[data-ally-flight]").count(), 0);
     assert.equal(await panel.locator(".ally-panel-mark").evaluate(mark => getComputedStyle(mark).visibility), "visible");
+    const compact = await panel.boundingBox();
+    const chatSurface = panel.locator(".everyagent-companion-body, .executive-ally-chat").first();
+    await chatSurface.evaluate(element => { element.dataset.allyStateProbe = "same"; });
+    await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+    const expanded = await panel.boundingBox();
+    assert.ok(expanded, "expanded Ally remains visible");
+    assert.ok(Math.abs(expanded.x) <= 1 && Math.abs(expanded.y) <= 1, "expanded Ally reaches viewport origin");
+    assert.ok(Math.abs(expanded.width - width) <= 1, "expanded Ally fills viewport width");
+    assert.ok(Math.abs(expanded.height - 844) <= 1, "expanded Ally fills viewport height");
+    assert.equal(await panel.getByRole("button", { name: "Restore Ally panel" }).getAttribute("aria-pressed"), "true");
+    assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain mounted");
+    assert.equal(await chatSurface.getAttribute("data-ally-state-probe"), "same", "the existing chat stays mounted");
+    await page.keyboard.press("Escape");
+    assert.equal(await panel.getByRole("button", { name: "Expand Ally to full screen" }).count(), 1, "Escape restores the panel first");
+    await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+    await panel.getByRole("button", { name: "Restore Ally panel" }).click();
+    const restored = await panel.boundingBox();
+    assert.ok(restored, "Ally returns to its compact panel");
+    assert.ok(Math.abs(restored.width - compact.width) <= 1 && Math.abs(restored.x - compact.x) <= 1, "compact geometry is restored");
     await panel.getByRole("button", { name: "Close Ally" }).click();
     await panel.waitFor({ state: "hidden" });
     await page.waitForFunction(() => window.__allyFlightDirections.includes("home"));
@@ -40,4 +59,4 @@ await withBrowserQa(async browser => {
   }
 });
 
-console.log("Carelog-style Ally bookmark opens, travels, returns and restores focus at desktop and phone widths.");
+console.log("Ally bookmark flight, full-screen expand/restore, Escape and focus return passed at desktop and phone widths.");

@@ -38,6 +38,8 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 
 The subsequent local correction uses Carelog's actual three-path bookmark mark and its launch behavior. It leaves a slot in the Platform header, flies into the Ally panel heading, and returns on close. Both the executive report/chat panel and the EveryAgent chat panel use the same transition; it preserves focus return, supports desktop and phone dialogs, and honors reduced motion. The browser regression checks outbound and return flights at 1440px and 390px. This changes presentation only; the restored production image and access boundary remain as recorded above.
 
+The local Ally panel now has a full-screen toggle. It expands the mounted chat into a viewport-sized workspace without changing the selected conversation, and the entitled executive report view uses the same control for wider charts, tables, and narrative reports. Restore returns to the compact panel; Escape restores first and closes on a second press. This is a Platform UI capability, not a new agent rendering protocol or an enabled production service. The local browser regression verifies expand, restore, and the existing bookmark flight at desktop and phone widths.
+
 **Current status:** the owner-only image was deployed after all 28 predeployment
 checks passed, then exercised with ten real aggregate questions through Eric's
 signed-in main Chrome. The review found four passes, three partial results and

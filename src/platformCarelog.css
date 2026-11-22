@@ -566,3 +566,77 @@ dialog.executive-ally-panel--chat[open] { animation: none; }
   .everyagent-embedded .everyagent-companion header,
   .executive-ally-header { padding-left: 60px; }
 }
+
+/* Ally can grow into a full-page working surface without remounting the chat. */
+.executive-ally-header .ally-panel-expand,
+.everyagent-embedded .everyagent-companion header .ally-panel-expand {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: #17302d;
+  background: transparent;
+}
+.executive-ally-header .ally-panel-expand:hover,
+.everyagent-embedded .everyagent-companion header .ally-panel-expand:hover { background: #f2f6f2; }
+.executive-ally-header .ally-panel-expand:focus-visible,
+.everyagent-embedded .everyagent-companion header .ally-panel-expand:focus-visible { outline: 2px solid #0b7771; outline-offset: 2px; }
+.executive-ally-panel--expanded,
+.executive-ally-panel--chat.executive-ally-panel--expanded,
+.everyagent-embedded .everyagent-companion--chat.everyagent-companion--expanded {
+  inset: 0;
+  z-index: 1000;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+.executive-ally-panel--expanded .executive-ally-header,
+.everyagent-companion--expanded header { padding-right: clamp(16px, 3vw, 48px); }
+.executive-ally-panel--expanded .executive-ally-header > .ally-panel-mark,
+.everyagent-embedded .everyagent-companion--expanded header .ally-panel-mark { top: 8px; }
+.executive-ally-panel--expanded .executive-ally-chat,
+.everyagent-companion--expanded .everyagent-companion-body { min-width: 0; }
+.executive-ally-panel--expanded .agent-conversation-layout main,
+.everyagent-companion--expanded .agent-conversation-layout main {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+  padding-inline: clamp(20px, 5vw, 72px);
+}
+.executive-ally-panel--expanded .agent-conversation-new,
+.everyagent-companion--expanded .agent-conversation-new { width: min(100%, 760px); margin-inline: auto; }
+.everyagent-companion--expanded .ally-chat-preview { width: min(100%, 760px); height: 100%; margin-inline: auto; }
+.executive-ally-panel--expanded .agent-conversation-messages,
+.everyagent-companion--expanded .agent-conversation-messages { width: 100%; }
+.executive-ally-panel--expanded .executive-ally-saved,
+.executive-ally-panel--expanded .executive-ally-body,
+.executive-ally-panel--expanded .executive-ally-composer { padding-inline: max(24px, calc((100vw - 1240px) / 2)); }
+.executive-ally-panel--expanded .executive-ally-body .ally-report-document { max-width: 1240px; margin-inline: auto; }
+@media (max-width: 700px) {
+  .executive-ally-panel:not(.executive-ally-panel--expanded) {
+    inset: 24px 12px 16px;
+    width: calc(100vw - 24px);
+    height: calc(100dvh - 40px);
+    border: 1px solid #b8c9c4;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px #213b2d26;
+  }
+  .executive-ally-panel--expanded,
+  .executive-ally-panel--chat.executive-ally-panel--expanded,
+  .everyagent-embedded .everyagent-companion--chat.everyagent-companion--expanded { inset: 0; width: 100vw; height: 100dvh; border: 0; border-radius: 0; }
+  .executive-ally-panel--expanded .agent-conversation-layout main,
+  .everyagent-companion--expanded .agent-conversation-layout main { padding-inline: 16px; }
+  .executive-ally-panel--expanded .executive-ally-saved,
+  .executive-ally-panel--expanded .executive-ally-body,
+  .executive-ally-panel--expanded .executive-ally-composer { padding-inline: 16px; }
+}
