@@ -15,9 +15,9 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 ### November 22 current navigation and requested design integration
 
-The approved Platform design and navigation checks through `88f209c` are merged into the executive
+The approved Platform design and navigation checks through `f553f30` are merged into the executive
 integration branch. It includes the shared header, Carelog-style Ally transition,
-expanded answer/report canvas and phone Chat/Canvas controls. The merge preserves
+expanded answer/report canvas and phone Chat/Answer or Report controls. The merge preserves
 the 0.18.7 engine pin and canonical active-intake classification/completeness
 guards. Previously live Clients, Admissions and community report URLs retain
 their scope through explicit redirects. Desktop/320/390px Ally and Admissions
@@ -34,6 +34,12 @@ obsolete Questions/header source assertions without changing authentication or
 assessor-only boundaries. The synchronized design builds and typechecks. The
 release chat is completing the remaining browser gates; no production cutover or
 fresh live-model acceptance is claimed by this integration branch.
+
+The latest merge retains one visible follow-up input in the expanded report.
+Workspace and saved-report browser checks pass again at 1440/390/320px, including
+sharing restrictions, revoked content, retries, versioning, PDF and saved reopening.
+These are local fictional service fixtures; the existing native image receipts
+precede this final CSS change and must be regenerated before a pilot cutover.
 
 Shared release assertions now run in main Chrome without exporting its session.
 The restored live image passed twelve route checks and twelve interactions, plus

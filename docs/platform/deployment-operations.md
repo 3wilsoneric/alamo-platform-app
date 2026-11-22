@@ -5716,6 +5716,14 @@ composer or question guide, not merely the workspace shell, before measuring
 useful readiness. Runtime/shared contracts/packages are unchanged by these final
 UI and test commits. This is not a fresh live GPT or signed-in production pass.
 
+Integration `160d305` subsequently merged design `f553f30`, which removes the
+duplicate desktop follow-up field while preserving the phone controls. The
+workspace and real-service/fictional-source browser suites passed again at
+1440/390/320px; desktop and 320px report screenshots were inspected. Evidence:
+`single-composer-workspace.log` and `single-composer-executive.log` in the same
+generated directory. Native release artifacts below precede that CSS change;
+rebuild them against the final source and actual post-design production image.
+
 The former appended-panel preparation has been replaced by the native release
 path below. The reviewed-current-image guard remains mandatory; old prepared
 artifacts must not be promoted after another Platform/Carelog cutover.
