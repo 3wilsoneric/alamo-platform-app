@@ -79,7 +79,7 @@ const ROUTES = [
   },
   {
     name: "community",
-    pathname: "/analytics/community?community=337",
+    pathname: "/analytics?report=community&community=337",
     capture: true,
     ready: async (page) => {
       await page.locator('article[data-full-report="community"]').waitFor({
@@ -97,8 +97,8 @@ const ROUTES = [
     }
   },
   ...[
-    { name: "clients", pathname: "/analytics/residents", selector: 'article[data-full-report="residents"]' },
-    { name: "admissions", pathname: "/analytics/admissions", selector: '[data-admissions-journey="complete"]' },
+    { name: "clients", pathname: "/analytics?report=residents", selector: 'article[data-full-report="residents"]' },
+    { name: "admissions", pathname: "/admissions", selector: '[data-admissions-journey="complete"]' },
     { name: "licensing", pathname: "/analytics/licensing", selector: '[data-licensing-workspace="true"]' }
   ].map(({ selector, ...route }) => ({ ...route, capture: true,
     ready: async page => { await page.locator(selector).waitFor({ state: "visible", timeout: READY_TIMEOUT_MS }); }

@@ -5650,6 +5650,36 @@ design. Reconcile its final candidate with the newer engine pin and current live
 Carelog files before another cutover. These browser results apply to `82069c2d`,
 not to that forthcoming combined design.
 
+Integration follow-up: design commits through `f369957` are merged, including the
+phone workspace. The merge keeps runtime 0.18.7 and the shared active-intake
+status/completeness guards. The release stylesheet filter uses the actual `href`
+capture, preserving the Workflow layer without appending the previous main CSS.
+Compatibility redirects retain saved Clients, Admissions and community links,
+including scope/hash values; the browser fixture exercises all three redirects.
+The current-navigation assertions now target the single header and community
+modal, additionally requiring the three saved routes and exact report queries.
+All fifteen assertion fault tests pass. Synthetic desktop/320/390px answer/report
+and Admissions checks pass, as do bookmark flight, restore/Escape and focus
+return. Combined source checks and live verification remain separate. Logs and
+screenshots are in `generated/current-navigation-20261122/` and
+`generated/platform-page-screenshots-2026-11-22/`. The other Platform chat owns
+the current UI cutover; no competing deployment was made from this branch.
+
+The executive service/browser fixture also passes at 320/390/1440px after fixing
+the new expand control's target from 40px to the existing 44px minimum. It covers
+lost acknowledgements, chart/value selection, saved reopening, version refresh,
+follow-up, recipient controls, revoked access, shared links, PDF and cancellation.
+The original target-size failure is retained; no assertion was relaxed. A clean
+source build, TypeScript and documentation checks pass. The combined analyst
+suite is still running; no all-checks or live-deployment claim follows from these
+focused results.
+
+The old `prepare-executive-ally-release.mjs` still targets the superseded
+`b958cb49` shell and fails its current-image guard. Do not bypass that guard.
+Before reopening the model pilot, replace its appended panel preparation with
+the integrated native header/panel build on the actual new live image, retaining
+the source authorization, immutable file checks and Carelog recovery boundary.
+
 ## Ally worker configuration diagnosis — November 22
 
 At 17:44 UTC the canonical production worker was verified disabled after a no-op

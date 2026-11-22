@@ -57,6 +57,18 @@ function LegacyWorkforceRedirect() {
   return <Navigate to={`/personnel${location.search}${location.hash}`} replace />;
 }
 
+function LegacyAnalyticsRedirect({ report }: { report: "residents" | "community" }) {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  search.set("report", report);
+  return <Navigate to={`/analytics?${search}${location.hash}`} replace />;
+}
+
+function LegacyAdmissionsRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/admissions${location.search}${location.hash}`} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -70,6 +82,9 @@ export default function App() {
         />
         <Route path="/questions" element={<Navigate to="/analytics" replace />} />
         <Route path="/analytics" element={withRouteBoundary(<CaliforniaHomePage />)} />
+        <Route path="/analytics/residents" element={<LegacyAnalyticsRedirect report="residents" />} />
+        <Route path="/analytics/community" element={<LegacyAnalyticsRedirect report="community" />} />
+        <Route path="/analytics/admissions" element={<LegacyAdmissionsRedirect />} />
         <Route
           path="/analytics/questions"
           element={<Navigate to="/analytics" replace />}

@@ -35,9 +35,9 @@ const ROUTE_PROBES = LEGACY_QUESTIONS_ONLY ? LEGACY_QUESTION_PROBES : [
     readySelector: "[data-california-community-marker]", requiresCommunityMarkers: true },
   { name: "Overview", pathname: "/analytics", expect: /Overview/i,
     readySelector: 'article[data-full-report="overview"]', requiresReport: true },
-  { name: "Admissions", pathname: "/analytics/admissions", expect: /Admissions/i,
+  { name: "Admissions", pathname: "/admissions", expect: /Admissions/i,
     readySelector: '[data-admissions-journey="complete"]' },
-  { name: "Clients", pathname: "/analytics/residents", expect: /Clients/i,
+  { name: "Clients", pathname: "/analytics?report=residents", expect: /Clients/i,
     readySelector: 'article[data-full-report="residents"]', requiresReport: true },
   { name: "Incidents", pathname: "/incidents", expect: /Search full history/i,
     readySelector: '[data-incident-center="true"]', requiresIncidents: true },
@@ -49,6 +49,12 @@ const ROUTE_PROBES = LEGACY_QUESTIONS_ONLY ? LEGACY_QUESTION_PROBES : [
     expect: /Incident Search|filtered of|Search resident, category/i, requiresLoadedRecords: true },
   { name: "Command center", pathname: "/command-center",
     expect: /Command Center|Databricks Warehouse|Analyst QA|Prompt workbench/i, requiresSnapshotHealth: true },
+  { name: "Legacy Admissions", pathname: "/analytics/admissions", expectedPathname: "/admissions", expect: /Admissions/i,
+    readySelector: '[data-admissions-journey="complete"]' },
+  { name: "Legacy Clients", pathname: "/analytics/residents", expectedPathname: "/analytics?report=residents", expect: /Clients/i,
+    readySelector: 'article[data-full-report="residents"]', requiresReport: true },
+  { name: "Legacy community", pathname: "/analytics/community?community=337", expectedPathname: "/analytics?community=337&report=community", expect: /San Pablo/i,
+    readySelector: 'article[data-full-report="community"]', requiresReport: true },
   ...LEGACY_QUESTION_PROBES
 ];
 
@@ -128,8 +134,10 @@ async function checkProductionRoutes(page, artifactDir) {
       const matchedExpected = pageState.matchedExpected;
       const elapsedMs = Date.now() - routeStartedAt;
       const routeFailures = [];
-      const allowedPaths = routeProbe.pathname === "/" ? ["/", "/home"] : [routeProbe.expectedPathname || routeProbe.pathname];
-      if (!allowedPaths.includes(new URL(pageState.url).pathname)) {
+      const expectedUrl = new URL(buildUrl(routeProbe.expectedPathname || routeProbe.pathname));
+      const actualUrl = new URL(pageState.url);
+      const allowedPaths = routeProbe.pathname === "/" ? ["/", "/home"] : [expectedUrl.pathname];
+      if (!allowedPaths.includes(actualUrl.pathname) || actualUrl.search !== expectedUrl.search) {
         routeFailures.push("route resolved to an unexpected destination");
       }
       if (routeProbe.retiredQuestions && pageState.questionGuideVisible) routeFailures.push("retired question guide is still exposed");
@@ -205,13 +213,13 @@ async function checkProductionInteractions(page) {
 
       if (failures.length === 0) {
         await page.waitForURL(
-          buildUrl(`/analytics/community?community=${facilityId}`),
+          buildUrl(`/home/community/${facilityId}`),
           { timeout: ROUTE_READY_TIMEOUT_MS }
         ).catch(() => {
           failures.push("community click did not update the route");
         });
         await page
-          .locator('article[data-full-report="community"]')
+          .locator(`[data-california-community-profile="${facilityId}"] [data-community-domain-section="census"]`)
           .waitFor({ state: "visible", timeout: ROUTE_READY_TIMEOUT_MS })
           .catch(() => {
             failures.push("community profile did not render after navigation");
@@ -220,7 +228,7 @@ async function checkProductionInteractions(page) {
 
       if (failures.length === 0) {
         await page
-          .getByRole("link", { name: "Back to California map", exact: true })
+          .getByRole("button", { name: /^Close .+ profile$/ })
           .click({ timeout: ROUTE_READY_TIMEOUT_MS })
           .catch(() => {
             failures.push("community return-home link failed");
@@ -243,8 +251,8 @@ async function checkProductionInteractions(page) {
     // Current navigation replaces the retired carousel and question-picker entry.
     // Keep both route and completed-data assertions for each visible destination.
     for (const [label, pathname] of [
-      ["Overview", "/analytics"], ["Admissions", "/analytics/admissions"],
-      ["Clients", "/analytics/residents"], ["Incidents", "/incidents"],
+      ["Analytics", "/analytics"], ["Admissions", "/admissions"],
+      ["Clients", "/analytics?report=residents"], ["Incidents", "/incidents"],
       ["Licensing", "/analytics/licensing"]
     ]) {
       const failures = [];

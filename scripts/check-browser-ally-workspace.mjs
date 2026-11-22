@@ -60,6 +60,17 @@ await withBrowserQa(async browser => {
       } });
       return route.fulfill({ json: { modelAvailable: true, conversations: created ? [{ id, title: question || "Admissions review", createdAt: "2026-11-22T15:00:00Z", locked: false }] : [] } });
     });
+    if (width === 1440) {
+      for (const [legacy, destination] of [
+        ["/analytics/residents?period=2026-10#clients", "/analytics?period=2026-10&report=residents#clients"],
+        ["/analytics/community?community=337&report=overview", "/analytics?community=337&report=community"],
+        ["/analytics/admissions?community=337", "/admissions?community=337"],
+      ]) {
+        await page.goto(`${BASE_URL}${legacy}`, { waitUntil: "domcontentloaded" });
+        await page.waitForURL(`${BASE_URL}${destination}`);
+        assert.equal(page.url(), `${BASE_URL}${destination}`, "saved links retain their scope and destination");
+      }
+    }
     await page.goto(`${BASE_URL}/analytics`, { waitUntil: "domcontentloaded" });
     await page.locator(".platform-ally-header-button:visible").first().click();
     const panel = page.getByRole("dialog", { name: "Ally" });
