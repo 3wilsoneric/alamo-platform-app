@@ -53,24 +53,24 @@ try { await withBrowserQa(async browser=>{
     if(width===1440){
       const opened=context.waitForEvent('page');await panel.getByRole('button',{name:'Print or save PDF'}).click();const pdf=await opened;await pdf.getByRole('article',{name:'Report findings'}).waitFor();
       await pdf.pdf({path:path.join(output,'Ally fixture report.pdf'),format:'A4',printBackground:true});await pdf.close();
-      await panel.getByRole('button',{name:'Share report'}).click();await panel.getByLabel('Test reviewer').click(); await page.waitForFunction(()=>document.querySelector('.ally-report-sharing input')?.checked === true);
+      await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Share report'}).click();await panel.getByLabel('Test reviewer').click(); await page.waitForFunction(()=>document.querySelector('.ally-report-sharing input')?.checked === true);
       await panel.getByLabel('Test reviewer').waitFor();assert.equal((await service.list({...auth,claims:{...auth.claims,oid:reader}})).length,1);
       await context.grantPermissions(['clipboard-read','clipboard-write']);await panel.getByRole('button',{name:'Copy link',exact:true}).click();
       const sharedLink=await page.evaluate(()=>navigator.clipboard.readText());assert(new URL(sharedLink).searchParams.has('allyReport'));
       currentAuth={...auth,claims:{...auth.claims,oid:reader}};await page.goto(sharedLink,{waitUntil:'domcontentloaded'});
       await panel.getByRole('article',{name:'Report findings'}).waitFor();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isDisabled());
-      assert.equal(await panel.getByRole('button',{name:'Share report',exact:true}).count(),0,'recipient has no owner controls');
+      assert.equal(await panel.locator('.ally-report-actions').count(),0,'recipient has no owner controls');
       sourceReady=false;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await panel.getByRole('alert').waitFor();
       assert.equal(await panel.getByRole('article',{name:'Report findings'}).count(),0);assert.equal(await panel.getByLabel('Saved reports').locator('option').count(),1,'revocation clears cached report titles too');
       sourceReady=true;currentAuth=auth;await page.goto(sharedLink,{waitUntil:'domcontentloaded'});await panel.getByRole('article',{name:'Report findings'}).waitFor();
-      await panel.getByRole('button',{name:'Refresh report',exact:true}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='2');
-      await panel.getByLabel('Report version').selectOption('1');await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='1');assert.equal(await panel.getByRole('button',{name:'Refresh report',exact:true}).count(),0);
+      await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Refresh report',exact:true}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='2');
+      await panel.getByLabel('Report version').selectOption('1');await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='1');assert.equal(await panel.locator('.ally-report-actions').count(),0);
       await panel.getByLabel('Report version').selectOption('2');await panel.getByRole('textbox',{name:'Follow-up question'}).fill('Explain the net additions and show the supporting values.');await panel.getByRole('button',{name:'Send question'}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='3');
     }
     await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});
     await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();await panel.getByLabel('Saved reports').selectOption({label:'Compare admissions and discharges across communities.'}).catch(async()=>{const option=await panel.getByLabel('Saved reports').locator('option').nth(1).getAttribute('value');await panel.getByLabel('Saved reports').selectOption(option);});
     await panel.getByRole('article',{name:'Report findings'}).waitFor();
-    if(width===320){await panel.getByRole('button',{name:'New report'}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
+    if(width===320){await panel.locator('.ally-panel-create summary').click();await panel.getByRole('button',{name:'New report'}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
     assert.deepEqual(errors,[]);await context.close();
   }
 },{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, versioning, follow-up, shared links, recipient controls, revocation, PDF, cancellation and saved reopening passed.'); }

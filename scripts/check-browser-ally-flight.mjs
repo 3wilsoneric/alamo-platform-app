@@ -32,22 +32,28 @@ await withBrowserQa(async browser => {
     const compact = await panel.boundingBox();
     const chatSurface = panel.locator(".everyagent-companion-body, .executive-ally-chat").first();
     await chatSurface.evaluate(element => { element.dataset.allyStateProbe = "same"; });
-    await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+    if (width > 700) await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
     const expanded = await panel.boundingBox();
     assert.ok(expanded, "expanded Ally remains visible");
     assert.ok(Math.abs(expanded.x) <= 1 && Math.abs(expanded.y) <= 1, "expanded Ally reaches viewport origin");
     assert.ok(Math.abs(expanded.width - width) <= 1, "expanded Ally fills viewport width");
     assert.ok(Math.abs(expanded.height - 844) <= 1, "expanded Ally fills viewport height");
-    assert.equal(await panel.getByRole("button", { name: "Restore Ally panel" }).getAttribute("aria-pressed"), "true");
-    assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain mounted");
+    if (width > 700) assert.equal(await panel.getByRole("button", { name: "Restore Ally panel" }).getAttribute("aria-pressed"), "true");
+    if (await panel.locator(".ally-panel-create").count()) {
+      await panel.locator(".ally-panel-create summary").click();
+      assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain available");
+      await panel.locator(".ally-panel-create summary").click();
+    } else assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain mounted");
     assert.equal(await chatSurface.getAttribute("data-ally-state-probe"), "same", "the existing chat stays mounted");
-    await page.keyboard.press("Escape");
-    assert.equal(await panel.getByRole("button", { name: "Expand Ally to full screen" }).count(), 1, "Escape restores the panel first");
-    await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
-    await panel.getByRole("button", { name: "Restore Ally panel" }).click();
-    const restored = await panel.boundingBox();
-    assert.ok(restored, "Ally returns to its compact panel");
-    assert.ok(Math.abs(restored.width - compact.width) <= 1 && Math.abs(restored.x - compact.x) <= 1, "compact geometry is restored");
+    if (width > 700) {
+      await page.keyboard.press("Escape");
+      assert.equal(await panel.getByRole("button", { name: "Expand Ally to full screen" }).count(), 1, "Escape restores the panel first");
+      await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+      await panel.getByRole("button", { name: "Restore Ally panel" }).click();
+      const restored = await panel.boundingBox();
+      assert.ok(restored, "Ally returns to its compact panel");
+      assert.ok(Math.abs(restored.width - compact.width) <= 1 && Math.abs(restored.x - compact.x) <= 1, "compact geometry is restored");
+    }
     await panel.getByRole("button", { name: "Close Ally" }).click();
     await panel.waitFor({ state: "hidden" });
     await page.waitForFunction(() => window.__allyFlightDirections.includes("home"));

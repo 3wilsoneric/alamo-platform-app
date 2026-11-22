@@ -573,10 +573,10 @@ dialog.executive-ally-panel--chat[open] { animation: none; }
   display: grid;
   place-items: center;
   flex: none;
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   border-radius: 8px;
@@ -718,6 +718,39 @@ dialog.executive-ally-panel--chat[open] { animation: none; }
 .ally-canvas-sources ul { margin: 6px 0; padding-left: 18px; }
 .ally-canvas-sources li { margin: 6px 0; }
 .ally-canvas-sources a { color: #0a705e; }
+.executive-ally-header .ally-panel-create { position: relative; margin-left: auto; flex: none; }
+.executive-ally-header .ally-panel-create summary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 70px; min-height: 44px; padding: 8px 10px;
+  border-radius: 8px; color: #17302d; font-size: 13px; font-weight: 700;
+  cursor: pointer; list-style: none;
+}
+.executive-ally-header .ally-panel-create summary::-webkit-details-marker { display: none; }
+.executive-ally-header .ally-panel-create summary:is(:hover,:focus-visible) { background: #f2f6f2; }
+.executive-ally-header .ally-panel-create > div {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 5;
+  display: grid; gap: 2px; width: 172px; padding: 5px;
+  border: 1px solid #d8e0db; border-radius: 10px; background: #fff;
+  box-shadow: 0 12px 28px #17302d24;
+}
+.executive-ally-header .ally-panel-create:not([open]) > div { display: none; }
+.executive-ally-header .ally-panel-create > div button { justify-content: flex-start; width: 100%; min-height: 44px; border: 0; }
+.ally-report-toolbar .ally-report-export { gap: 6px; color: #0b6259; font-size: 13px; font-weight: 700; }
+.ally-report-toolbar .ally-report-actions { position: relative; }
+.ally-report-toolbar .ally-report-actions summary {
+  display: grid; place-items: center; width: 44px; height: 44px;
+  border-radius: 8px; cursor: pointer; list-style: none;
+}
+.ally-report-toolbar .ally-report-actions summary::-webkit-details-marker { display: none; }
+.ally-report-toolbar .ally-report-actions summary:is(:hover,:focus-visible) { background: #f2f6f2; }
+.ally-report-toolbar .ally-report-actions > div {
+  position: absolute; right: 0; top: calc(100% + 2px); z-index: 4;
+  display: grid; width: 170px; padding: 5px;
+  border: 1px solid #d8e0db; border-radius: 10px; background: #fff;
+  box-shadow: 0 12px 28px #17302d24;
+}
+.ally-report-toolbar .ally-report-actions:not([open]) > div { display: none; }
+.ally-report-toolbar .ally-report-actions > div button { justify-content: flex-start; min-height: 44px; font-size: 13px; }
 @media (max-width: 900px) {
   .agent-conversation-home--workspace .agent-conversation-workspace { display: block; }
   .agent-conversation-home--workspace .agent-conversation-workspace-tabs { display: flex; gap: 4px; padding: 8px 14px; border-bottom: 1px solid #d8e0db; }
@@ -731,4 +764,25 @@ dialog.executive-ally-panel--chat[open] { animation: none; }
   .ally-preview-workspace--expanded .ally-chat-preview { display: none; }
   .ally-canvas-prompts button { grid-template-columns: minmax(0, 1fr) 20px; }
   .ally-canvas-prompts button span { grid-column: 1 / -1; }
+}
+@media (max-width: 700px) {
+  .executive-ally-panel--expanded .executive-ally-header,
+  .everyagent-embedded .everyagent-companion--expanded header {
+    min-width: 0; gap: 8px; padding: max(8px, env(safe-area-inset-top)) 12px 8px 52px;
+  }
+  .executive-ally-panel--expanded .executive-ally-header > .ally-panel-mark,
+  .everyagent-embedded .everyagent-companion--expanded header .ally-panel-mark { left: 14px; top: 8px; }
+  .executive-ally-panel--expanded .ally-panel-expand,
+  .everyagent-embedded .everyagent-companion--expanded .ally-panel-expand { display: none; }
+  .executive-ally-header > button:last-child,
+  .everyagent-embedded .everyagent-companion header > button:last-child { width: 44px; height: 44px; }
+  .executive-ally-panel--expanded .agent-conversation-canvas,
+  .everyagent-companion--expanded .agent-conversation-canvas { padding: 20px 18px 48px; }
+  .executive-ally-panel--expanded .agent-conversation-canvas--report { padding: 0; }
+  .executive-ally-panel--expanded .agent-conversation-workspace-tabs,
+  .everyagent-companion--expanded .agent-conversation-workspace-tabs { padding: 6px 12px; }
+  .executive-ally-panel--expanded .agent-conversation-canvas--report .executive-ally-saved { padding: 8px 12px; }
+  .executive-ally-panel--expanded .agent-conversation-canvas--report .executive-ally-body { padding: 16px 18px 44px; }
+  .executive-ally-panel--expanded .agent-conversation-canvas--report .executive-ally-composer { padding: 8px 12px max(12px,env(safe-area-inset-bottom)); }
+  .executive-ally-panel--expanded .executive-ally-saved select+select { width: 112px; }
 }

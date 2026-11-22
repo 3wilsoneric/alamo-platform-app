@@ -1,5 +1,5 @@
 import { useMsal } from '@azure/msal-react';
-import { ArrowUp, Plus, Pencil, X, Download, RefreshCw, Share2, Square, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowUp, Plus, Pencil, X, Download, RefreshCw, Share2, Square, Maximize2, Minimize2, MoreHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ALAMO_FACILITIES } from '../../../../shared/community-names.mjs';
@@ -34,7 +34,7 @@ export default function ExecutiveAlly() {
   const [scope, setScope] = useState(() => initialScope(location.search));
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [share, setShare] = useState(false), [retryList, setRetryList] = useState(0);
-  const dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLTextAreaElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLTextAreaElement>(null), newMenu = useRef<HTMLDetailsElement>(null);
   const wasOpen = useRef(false);
   const request = useRef<AbortController | null>(null), generation = useRef(0), running = useRef(false);
   const retryCommand = useRef<{key: string; id: string} | null>(null);
@@ -52,7 +52,8 @@ export default function ExecutiveAlly() {
   useEffect(() => {
     const el = dialog.current;
     if (!el) return;
-    const resize = () => { if (!open) { if (el.open) el.close(); return; } const mobile = matchMedia('(max-width: 700px)').matches; if (el.open) el.close(); if (mobile) el.showModal(); else el.show(); };
+    let shownAsMobile: boolean | null = null;
+    const resize = () => { if (!open) { if (el.open) el.close(); return; } const mobile = matchMedia('(max-width: 700px)').matches; if (el.open && shownAsMobile === mobile) return; if (el.open) el.close(); if (mobile) { el.showModal(); setExpanded(true); } else el.show(); shownAsMobile = mobile; };
     resize(); window.addEventListener('resize', resize);
     return () => window.removeEventListener('resize', resize);
   }, [open]);
@@ -147,9 +148,8 @@ export default function ExecutiveAlly() {
         {report && <div className="ally-report-toolbar"><span role="status">{reportStatus(report.status)}{active && ` · ${report.completedSources}/${report.totalSources || '…'} sources`}</span>
           {editable && active && <button disabled={busy} onClick={() => void command('cancel')}><Square size={16}/>Stop</button>}
           {editable && ['paused','failed'].includes(report.status) && <button disabled={busy} onClick={() => void command('resume')}>Resume</button>}
-          {editable && !active && <button aria-label="Refresh report" title="Refresh report" disabled={busy} onClick={() => void command('refresh', {requestId: commandId(`refresh:${report.id}:${report.version}`)})}><RefreshCw size={18}/></button>}
-          {report.artifact && <button title="Print or save PDF" aria-label="Print or save PDF" onClick={() => void exportReport()} disabled={busy}><Download size={18}/></button>}
-          {editable && report.artifact && <button aria-label="Share report" title="Share report" aria-expanded={share} onClick={() => setShare(!share)}><Share2 size={18}/></button>}
+          {report.artifact && <button className="ally-report-export" title="Print or save PDF" aria-label="Print or save PDF" onClick={() => void exportReport()} disabled={busy}><Download size={18}/><span>Save PDF</span></button>}
+          {editable && !active && <details className="ally-report-actions"><summary aria-label="More report actions" title="More report actions"><MoreHorizontal size={21}/></summary><div role="group" aria-label="Report actions"><button type="button" disabled={busy} onClick={e => { e.currentTarget.closest('details')!.open = false; void command('refresh', {requestId: commandId(`refresh:${report.id}:${report.version}`)}); }}><RefreshCw size={17}/>Refresh report</button>{report.artifact && <button type="button" aria-expanded={share} onClick={e => { e.currentTarget.closest('details')!.open = false; setShare(!share); }}><Share2 size={17}/>Share report</button>}</div></details>}
         </div>}
         {report?.error && <p role="status">{report.error}</p>}
         {share && report && <fieldset className="ally-report-sharing"><legend>Report access</legend>{reportParticipants().filter(p=>p.id!==report.ownerId).map(p => <label key={p.id}><input type="checkbox" checked={report.readers.includes(p.id)} disabled={busy} onChange={e => void command(e.target.checked ? 'share' : 'unshare', {readerId:p.id})}/>{p.name}</label>)}<p>Recipients need their own source access.</p><button onClick={() => {const url=new URL(location.pathname,window.location.origin);url.searchParams.set('allyReport',`${report.ownerId}/${report.id}`);void navigator.clipboard.writeText(url.href).catch(()=>setError('The report link could not be copied.'));}}>Copy link</button></fieldset>}
@@ -162,8 +162,8 @@ export default function ExecutiveAlly() {
       </form>
   </div>;
   return <div className="executive-ally">
-    <dialog ref={dialog} className={`executive-ally-panel${surface === 'chat' ? ' executive-ally-panel--chat' : ''}${expanded ? ' executive-ally-panel--expanded' : ''}`} aria-label="Ally" onKeyDown={e => {if(e.key==='Escape'){e.preventDefault(); if (expanded) setExpanded(false); else changeOpen(false);}}} onCancel={e => {e.preventDefault(); if (expanded) setExpanded(false); else changeOpen(false);}}>
-      <header className="executive-ally-header"><AllyMark className="ally-panel-mark" /><strong>Ally</strong>{expanded && agentChatConfigured ? <><button className="ally-panel-new" type="button" onClick={() => { setChatId(null); setSurface('chat'); }}><Pencil size={17} />New chat</button><button type="button" title="New report" aria-label="New report" onClick={() => { startNew(); setSurface('reports'); setCanvasFocusSignal(value => value + 1); }} disabled={busy}><Plus size={20}/></button></> : surface === 'chat' ? <button className="ally-panel-new" type="button" onClick={() => setChatId(null)}><Pencil size={17} />New chat</button> : <><button className="ally-panel-new" type="button" onClick={() => setSurface('chat')} disabled={!agentChatConfigured}>Back to chat</button><button title="New report" aria-label="New report" onClick={startNew} disabled={busy}><Plus size={20}/></button></>}<button className="ally-panel-expand" type="button" aria-label={expanded ? 'Restore Ally panel' : 'Expand Ally to full screen'} aria-pressed={expanded} title={expanded ? 'Restore panel' : 'Full screen'} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button><button aria-label="Close Ally" autoFocus onClick={() => changeOpen(false)}><X size={20}/></button></header>
+    <dialog ref={dialog} className={`executive-ally-panel${surface === 'chat' ? ' executive-ally-panel--chat' : ''}${expanded ? ' executive-ally-panel--expanded' : ''}`} aria-label="Ally" onKeyDown={e => {if(e.key==='Escape'){e.preventDefault(); if (newMenu.current?.open) newMenu.current.open = false; else if (matchMedia('(max-width: 700px)').matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false);}}} onCancel={e => {e.preventDefault(); if (matchMedia('(max-width: 700px)').matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false);}}>
+      <header className="executive-ally-header"><AllyMark className="ally-panel-mark" /><strong>Ally</strong><details ref={newMenu} className="ally-panel-create"><summary><Plus size={18} aria-hidden="true" />New</summary><div role="group" aria-label="Start new work">{agentChatConfigured && <button type="button" onClick={() => { newMenu.current?.removeAttribute('open'); setChatId(null); setSurface('chat'); }}><Pencil size={17} aria-hidden="true" />New chat</button>}<button type="button" aria-label="New report" disabled={busy} onClick={() => { newMenu.current?.removeAttribute('open'); startNew(); setSurface('reports'); setCanvasFocusSignal(value => value + 1); }}><Plus size={17} aria-hidden="true" />New report</button></div></details><button className="ally-panel-expand" type="button" aria-label={expanded ? 'Restore Ally panel' : 'Expand Ally to full screen'} aria-pressed={expanded} title={expanded ? 'Restore panel' : 'Full screen'} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button><button aria-label="Close Ally" autoFocus onClick={() => changeOpen(false)}><X size={20}/></button></header>
       {surface === 'chat' || (expanded && agentChatConfigured) ? <div className="executive-ally-chat"><AgentConversationHome transport={transport} conversationId={chatId} onNavigate={setChatId} onBuildReport={() => { setSurface('reports'); setCanvasFocusSignal(value => value + 1); }} expanded={expanded} workspaceCanvas={expanded && surface === 'reports' ? reportSurface : undefined} canvasFocusSignal={canvasFocusSignal} /></div> : reportSurface}
     </dialog>
   </div>;

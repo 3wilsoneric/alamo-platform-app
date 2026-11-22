@@ -168,7 +168,7 @@ export default function ActiveIntakeJourney({
       {cards.length ? <div className="admissions-journey-main">
         <div className="admissions-journey-left">
         <div className="admissions-journey-chart">
-          <div className="admissions-journey-overline">{cards.length} open referrals · current position</div>
+          <div className="admissions-journey-overline">{cards.length} open referrals</div>
           <div className={`admissions-journey-stages ${cards.length > 80 ? "admissions-journey-bars" : ""}`}>
             {groups.map((group) => <div className="admissions-journey-stage" key={group.key} data-admissions-journey-stage={group.key}>
               <strong className="admissions-journey-count">{group.cards.length}</strong>
