@@ -18,6 +18,44 @@
 
 ### Owner-only Ally release configuration — November 22
 
+**Current prepared artifact (not deployed):** source `6ef50ea`, owner image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:704a3d5b918c41e158ddad6de7a4f893f0c995454d48affca76fe128fd938f00`.
+Registry digest was read back after the push at 05:47 UTC. The expanded package
+checks pass for owner, fictional-preview and disabled modes. Each preserves the
+base image configuration and all 19,123 files outside its reviewed allowlist;
+the enabled modes change 20 files. Actual HTTP headers on five routes permit only
+the exact independent service in addition to the existing connections. Updated
+preview image is `82295bd8b2812ed4c1183ceec24ec1e20151a2497b9359beeab0b1a087fd32dd`;
+disabled image is `7f6834b10a9a2793b9c3b9150291526467fbe818a031e3774c62bab8ce3e1bd9`.
+Earlier artifact IDs in this section are superseded, not rollback candidates.
+
+The isolated API now has Eric-only role/Principal consent and the exact Platform
+client/origin configuration. The source workload audience is
+`3c0d757d-0dc8-42d4-b7e2-aaa618dab5b9`, with only the independent API and worker
+assigned. Platform's identity owns its private `alamodatalake/ally-source-grants`
+registry, containing Eric's two aggregate-only workload bindings. The source
+endpoint is not connected in the current production image/configuration. The
+worker has the shared model configuration, with dispatch and both schedules off.
+See [current service preparation and recovery](/Users/eric/suite-deploy/README.md#ally-owner-pilot-preparation--november-22),
+which supersedes the closed-foundation observations below.
+
+The protected `.state/platform-production-ally-pilot.plan.json` in suite-deploy
+retains the exact existing app identity/configuration/template and original image
+`a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639`.
+Its candidate changes only the named image/revision and
+`PLATFORM_AGENT_SOURCE_AUDIENCE`, `PLATFORM_AGENT_SOURCE_STORAGE_ACCOUNT`,
+`PLATFORM_AGENT_SOURCE_STORAGE_CONTAINER`. No snapshot override is introduced.
+`platform-production-ally-pilot.mjs` checks configuration drift, candidate source
+hashes and the complete current predeployment report before applying the plan.
+Restore uses the retained image and removes only those three new settings.
+Health/revision checks are separate from the full postdeployment gate.
+
+The full `check:ship:predeploy` is currently running, recorded in
+`generated/executive-ally-pilot-predeploy-1122.log`. Do not cut over until it
+passes. Then require the new production `check:ship`, current source-boundary
+checks and signed-in Eric acceptance. Existing Platform production remains
+unchanged; neither a pushed artifact nor source grants prove runtime acceptance.
+
 Production-host inspection found that its static browser policy still limited
 connections to self and Microsoft sign-in. The enabled release now adds exactly
 its configured Ally origin to that one CSP directive; every other host byte and

@@ -34,6 +34,16 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 
 ## Executive Ally candidate — November 22, 2026
 
+Current preparation: the separate API is configured and verified for Eric's
+exact Platform client/origins, and the source workload identity/private aggregate
+grant registry are installed. The canonical worker has the shared Carelog
+connection configured with both timers and dispatch disabled. Existing Platform
+production is still unchanged. These prepared permissions are not signed-in
+source or model-execution acceptance. The
+[engine status](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-owner-pilot-preparation--not-yet-exposed-in-platform)
+and [suite recovery receipt](/Users/eric/suite-deploy/README.md#ally-owner-pilot-preparation--november-22)
+own those boundaries.
+
 The independent production API/worker is now installed in a separate closed
 foundation; the [engine spec](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-closed-production-installation--0183)
 owns its status. Existing Platform production remains unchanged. The release
@@ -53,6 +63,14 @@ The enabled packager now adds only the exact configured service origin, with an
 exact-host-file and actual-header regression. The prior image checks did not cover
 that connection permission; updated enabled builds use a 20-file boundary and
 must pass the expanded check before deployment.
+
+The corrected `6ef50ea` artifacts now pass all expanded package checks, including
+the real HTTP CSP on five routes. The owner image is pushed at
+`704a3d5b918c41e158ddad6de7a4f893f0c995454d48affca76fe128fd938f00`.
+Its exact deployment/rollback plan preserves the prior production app and adds
+only the three source-connection settings. The full predeployment gate is still
+running; source reads, signed-in owner acceptance and final worker recovery/load
+remain open. Do not treat the pushed image as a completed deployment.
 
 This production-source checkout now consumes the same **0.18.3** archive verified
 in the bounded staging browser run, SHA-256
