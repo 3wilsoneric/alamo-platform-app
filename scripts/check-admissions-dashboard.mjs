@@ -528,7 +528,7 @@ validators.admissionsDashboard(crosswalkDashboard);
 assert.throws(() => validators.admissionsDashboard({ ...dashboard, referral_pipeline: { status: "bogus" } }));
 
 const intakeJourneySource = await readFile(new URL("../src/features/admissions/components/ActiveIntakeJourney.tsx", import.meta.url), "utf8");
-assert.match(intakeJourneySource, /all\.length !== pipeline\.metrics\.activeReferrals/, "the visible population must reconcile to the feed's active-referral total");
+assert.match(intakeJourneySource, /all\.length === pipeline\.metrics\.activeReferrals/, "the visible population must reconcile to the feed's active-referral total");
 assert.match(intakeJourneySource, /pipeline\.board\.truncated/, "a partial feed must not be charted as a total");
 await import("./check-active-intake-journey.mjs");
 

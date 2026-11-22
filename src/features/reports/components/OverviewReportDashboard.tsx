@@ -1,4 +1,7 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
+import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
 import type { FullReportBlock, FullReportDocument } from "../../../shared/types/fullReport";
 import "./platform-design-pass.css";
 
@@ -23,8 +26,9 @@ export default function OverviewReportDashboard({ report, renderBlock }: {
         <div className="overview-dashboard__census-labels" aria-hidden="true"><span>Community</span><span>{capacity ? "Census / operating limit" : "Census"}</span>{capacity && <span>Open beds</span>}</div>
         <ul>{table.rows.map(row => {
           const occupied = number(row.census), limit = number(row.operatingLimit);
+          const facility = ALAMO_FACILITIES.find(item => item.shortName === row.community || item.communityName === row.community);
           return <li key={String(row.community)}>
-            <strong>{row.community}</strong>
+            {facility ? <Link className="overview-dashboard__community-link" to={`/home/community/${facility.facilityId}`}>{row.community}<ArrowUpRight size={16} aria-hidden="true" /></Link> : <strong>{row.community}</strong>}
             <div className="overview-dashboard__capacity" role="img" aria-label={`${row.census} residents${capacity ? ` of ${row.operatingLimit} operating beds` : ""}`}>
               <span>{row.census}{capacity && <> <small>/ {row.operatingLimit}</small></>}</span>
               {occupied !== null && (!capacity || limit !== null) && <div className="overview-dashboard__capacity-track" aria-hidden="true" style={{ width: `${Math.min(100, (capacity ? Math.max(limit ?? 0, occupied) : occupied) / maximum * 100)}%` }}><i style={{ width: `${capacity && limit ? Math.min(100, occupied / Math.max(limit, occupied) * 100) : 100}%` }} /></div>}

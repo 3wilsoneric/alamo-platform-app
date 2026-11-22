@@ -672,11 +672,11 @@
   letter-spacing: -.035em;
 }
 [data-admissions-brief-page="true"] .admissions-journey-sheet {
-  padding: 24px 0 0;
-  border: 0;
-  border-top: 3px solid var(--journey-blue);
-  border-radius: 0;
-  background: transparent;
+  padding: 24px 28px 18px;
+  border: 1px solid #b8cfc8;
+  border-top: 5px solid var(--journey-blue);
+  border-radius: 5px;
+  background: #fff;
   box-shadow: none;
 }
 [data-admissions-brief-page="true"] .admissions-journey-brief { max-width: 85ch; font-size: 16px; line-height: 1.65; }
@@ -692,6 +692,6 @@
   [data-licensing-page="true"] .licensing-answer__report-title { font-size: 18px; }
   [data-licensing-reader] .licensing-brief-sections article { padding-left: 14px; }
   [data-admissions-brief-page="true"] > h1 { margin-bottom: 20px; }
-  [data-admissions-brief-page="true"] .admissions-journey-sheet { padding-top: 20px; }
+  [data-admissions-brief-page="true"] .admissions-journey-sheet { padding: 18px 14px; }
 }
 /* END SURFACE FORMATTING */

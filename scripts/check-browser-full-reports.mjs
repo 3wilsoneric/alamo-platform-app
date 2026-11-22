@@ -219,13 +219,13 @@ async function assertDocumentFits(page, label) {
 async function assertContainedReader(page, label) {
   const composition = await page.evaluate(() => {
     const reports = document.querySelector('[data-reports-page="true"]');
-    const aside = document.querySelector('aside[aria-label="Analytics"]');
+    const tabs = reports?.querySelector('nav[aria-label="Analytics reports"]');
     const main = reports?.querySelector('main');
     const library = document.querySelector('[data-analytics-report-library="true"]');
     const reader = document.querySelector('[data-full-report]');
-    if (!reports || !aside || !main || !library || !reader) return null;
+    if (!reports || !tabs || !main || !library || !reader) return null;
     const reportsBox = reports.getBoundingClientRect();
-    const asideBox = aside.getBoundingClientRect();
+    const tabsBox = tabs.getBoundingClientRect();
     const mainBox = main.getBoundingClientRect();
     const libraryBox = library.getBoundingClientRect();
     const readerBox = reader.getBoundingClientRect();
@@ -233,8 +233,9 @@ async function assertContainedReader(page, label) {
       viewportWidth: window.innerWidth,
       reportsLeft: reportsBox.left,
       reportsRight: reportsBox.right,
-      asideRight: asideBox.right,
-      asideWidth: asideBox.width,
+      tabsLeft: tabsBox.left,
+      tabsRight: tabsBox.right,
+      tabsBottom: tabsBox.bottom,
       mainLeft: mainBox.left,
       mainRight: mainBox.right,
       mainTop: mainBox.top,
@@ -247,17 +248,12 @@ async function assertContainedReader(page, label) {
     };
   });
   assert(composition, `${label} did not render a report composition`);
-  if (composition.viewportWidth >= 768) {
-    assert(
-      composition.asideRight <= composition.mainLeft + 2 && composition.asideWidth <= 300,
-      `${label} library is not a restrained left rail: ${JSON.stringify(composition)}`
-    );
-  } else {
-    assert(
-      composition.mainTop >= composition.libraryBottom - 2,
-      `${label} mobile reader overlaps its library: ${JSON.stringify(composition)}`
-    );
-  }
+  assert(
+    composition.mainTop >= composition.tabsBottom - 2 &&
+      composition.tabsLeft >= composition.reportsLeft - 2 &&
+      composition.tabsRight <= composition.reportsRight + 2,
+    `${label} report tabs overlap or escape the reader: ${JSON.stringify(composition)}`
+  );
   assert(
     composition.mainLeft >= composition.reportsLeft - 2 &&
       composition.mainRight <= composition.reportsRight + 2 &&

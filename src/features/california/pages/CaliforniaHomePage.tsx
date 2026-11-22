@@ -11,9 +11,6 @@ import CaliforniaCommunityMap from "../components/CaliforniaCommunityMap";
 import CaliforniaCommunityIndex from "../components/CaliforniaCommunityIndex";
 import MobileCommunityHome from "../components/MobileCommunityHome";
 import CaliforniaCommunityModal from "../components/CaliforniaCommunityModal";
-import AnalyticsSectionNavigation, {
-  type AnalyticsSection
-} from "../components/AnalyticsSectionNavigation";
 import {
   CALIFORNIA_COMMUNITIES,
   CALIFORNIA_COMMUNITY_BY_ID
@@ -106,38 +103,12 @@ export default function CaliforniaHomePage() {
     navigate(`/home/community/${encodeURIComponent(facilityId)}`);
   }
 
-  function openPanel(panel: CaliforniaWorkspacePanel) {
-    setActivePanel(panel);
-    navigate(
-      panel === "map"
-        ? "/home"
-        : panel === "reports"
-          ? "/analytics"
-          : "/analytics/questions"
-    );
-  }
-
-  function openAnalyticsSection(section: AnalyticsSection) {
-    if (section === "agent" || section === "licensing") {
-      navigate(`/analytics/${section}`);
-      return;
-    }
-    openPanel(section);
-  }
-
   return (
     <div
       data-california-workspace-carousel="true"
       data-california-active-panel={activePanel}
       className="relative flex h-[calc(100dvh-var(--platform-header-height))] w-full flex-col overflow-clip bg-white text-[#111111]"
     >
-      {activePanel !== "map" ? (
-        <AnalyticsSectionNavigation
-          active={activePanel}
-          onNavigate={openAnalyticsSection}
-        />
-      ) : null}
-
       <div
         data-california-carousel-track="true"
         className="flex min-h-0 flex-1 w-[300%] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"

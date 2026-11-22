@@ -26,12 +26,12 @@ export default function EveryAgentCompanion() {
   }, [open]);
   if (agentChatConfigured && location.pathname === "/analytics/agent" && new URLSearchParams(location.search).has("chat")) return null;
   return <div className="everyagent-embedded">
-    <button ref={launcher} type="button" className={`everyagent-launcher everyagent-launcher--${branding.variant}`} aria-label={`Open ${branding.name}`} title={branding.name} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-      <EveryAgentOrb /><span className="everyagent-launcher__label">Ask Alamo</span>{needsReview.length > 0 && <span className="everyagent-badge" aria-label={`${needsReview.length} updates need review`}>{needsReview.length}</span>}
+    <button ref={launcher} type="button" className={`everyagent-launcher everyagent-launcher--${branding.variant}`} aria-label="Open Ally" title="Ally" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+      <img className="everyagent-launcher__mark" src="/brand/ally-mark.svg" alt="" /><span className="everyagent-launcher__label">Ally</span>{needsReview.length > 0 && <span className="everyagent-badge" aria-label={`${needsReview.length} updates need review`}>{needsReview.length}</span>}
     </button>
-    <dialog ref={dialog} className="everyagent-companion" aria-label={branding.name} onClose={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+    <dialog ref={dialog} className="everyagent-companion" aria-label="Ally" onClose={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
       <div className="everyagent-companion-inner">
-        <header><div><EveryAgentOrb /><span className="everyagent-live" role="status">{agentStatus(data, error)}</span></div><button autoFocus type="button" aria-label={`Close ${branding.name}`} onClick={() => setOpen(false)}><X size={20} /></button></header>
+        <header><div><EveryAgentOrb /><strong>Ally</strong><span className="everyagent-live" role="status">{agentStatus(data, error)}</span></div><button autoFocus type="button" aria-label="Close Ally" onClick={() => setOpen(false)}><X size={20} /></button></header>
         <div className="everyagent-companion-body">
           <WorkflowKnowledge active={open} onOpenSource={() => setOpen(false)} />
           {error && <div role="alert" className="everyagent-error">{error}<button type="button" onClick={refresh}>Try again</button></div>}

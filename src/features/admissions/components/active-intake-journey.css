@@ -1,56 +1,266 @@
 .admissions-brief-page { max-width: 1500px; margin-inline: auto; padding: 16px 32px 48px; color: var(--platform-file-ink); font-family: var(--ap-sans); }
 .intake-page-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 28px; padding-bottom: 16px; }
 .intake-page-heading .platform-page-title { margin: 0 !important; font: 650 18px/1.4 var(--ap-sans) !important; letter-spacing: normal; }
-.intake-scope-control, .intake-stage-control { position: relative; display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; }
-.intake-scope-control > span, .intake-stage-control > span { display: flex; align-items: center; gap: 12px; font-weight: 650; }
-.intake-scope-control select, .intake-stage-control select { position: absolute; width: 100%; height: 100%; inset: 0; opacity: 0; cursor: pointer; }
-.intake-scope-control:is(:hover,:focus-within), .intake-stage-control:is(:hover,:focus-within) { box-shadow: inset 0 -2px var(--platform-file-ink); }
-.active-intake :is(button,summary):focus-visible, .intake-page-heading label:has(:focus-visible), .intake-stage-control:has(:focus-visible) { outline: 2px solid var(--ap-accent); outline-offset: 4px; }
-.active-intake-layout { display: grid; grid-template-columns: minmax(0,1.65fr) minmax(280px,1fr); gap: 24px; align-items: start; }
-.intake-list, .intake-file { border: 2px solid var(--platform-file-ink); min-width: 0; background: var(--canvas-bg); }
-.intake-list > header, .intake-file > header { padding: 16px 20px; border-bottom: 2px solid var(--platform-file-ink); }
-.intake-list > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; }
-.intake-list time { font-size: 12px; color: var(--platform-muted-ink); }
-.intake-stage-control { font-size: 18px; }
-.intake-stage-control strong { font-variant-numeric: tabular-nums; color: var(--platform-muted-ink); }
-.intake-list > ul { list-style: none; padding: 0; margin: 0; max-height: 560px; overflow-y: auto; }
-.intake-list li + li { border-top: 1px solid var(--platform-file-rule); }
-.intake-list li button { display: grid; grid-template-columns: minmax(0,1fr) minmax(90px,.65fr); gap: 8px 20px; width: 100%; padding: 16px 20px; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; background: transparent; }
-.intake-list li button[aria-pressed="true"] { box-shadow: inset 4px 0 var(--ap-accent); }
-.intake-list li button:hover strong, .intake-list li button[aria-pressed="true"] strong { color: var(--ap-accent); text-decoration: underline; text-underline-offset: 3px; }
-.intake-list li strong { display: block; font-size: 16px; font-weight: 650; overflow-wrap: anywhere; }
-.intake-list li small { display: block; color: var(--platform-muted-ink); font-size: 12px; line-height: 1.5; margin-top: 4px; }
-.intake-row-status { text-align: right; font-size: 13px; line-height: 1.5; }
-.intake-row-status .intake-action-needed { color: var(--platform-incidents-ink, var(--platform-file-ink)); font-weight: 650; }
-.intake-file h2 { margin: 0; font: 650 22px/1.3 var(--ap-sans); letter-spacing: -.02em; overflow-wrap: anywhere; }
-.intake-file header p { font-size: 13px; margin: 8px 0 0; color: var(--platform-muted-ink); }
-.intake-file-status { padding: 16px 20px 0; margin: 0; font-size: 14px; font-weight: 600; }
-.intake-file dl { margin: 0; padding: 16px 20px; }
-.intake-file dl > div { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 12px; padding-block: 8px; }
-.intake-file dt { color: var(--platform-muted-ink); font-size: 13px; }
-.intake-file dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
-.intake-file-actions { border-top: 1px solid var(--platform-file-rule); margin: 0 20px; padding: 16px 0 16px 18px; font-size: 13px; }
-.intake-file-next { border-top: 1px solid var(--platform-file-rule); margin: 0 20px; padding-block: 16px; font-size: 13px; }
-.intake-file-next ul { margin: 6px 0 0; padding-left: 18px; }
-.intake-file-open { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 52px; border: 0; border-top: 2px solid var(--platform-file-ink); padding: 14px 20px; background: transparent; color: var(--ap-accent); font: 650 15px/1.5 var(--ap-sans); cursor: pointer; }
-.intake-file-open:hover { text-decoration: underline; text-underline-offset: 3px; }
-.intake-context { border: 2px solid var(--platform-file-ink); padding-inline: 20px; margin-top: 24px; }
-.intake-context > summary { min-height: 56px; padding-block: 16px; font-size: 16px; font-weight: 650; cursor: pointer; }
-.intake-context[open] > summary { border-bottom: 2px solid var(--platform-file-ink); }
-.intake-context > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; padding-block: 20px; }
-.intake-breakdown h3 { margin: 0 0 12px; font: 650 16px/1.4 var(--ap-sans); }
-.intake-breakdown dl { margin: 0; }
-.intake-breakdown dl > div { display: flex; justify-content: space-between; gap: 16px; padding-block: 10px; border-bottom: 1px solid var(--platform-file-rule); font-size: 14px; }
-.intake-breakdown dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; }
-.intake-breakdown button { border: 0; background: transparent; padding-block: 12px; min-height: 44px; color: var(--ap-accent); cursor: pointer; font: inherit; }
-.intake-empty { padding: 24px 20px; font-size: 14px; }
-@media(max-width:760px) {
+.intake-scope-control { position: relative; display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; }
+.intake-scope-control > span { display: flex; align-items: center; gap: 12px; font-weight: 650; }
+.intake-scope-control select { position: absolute; width: 100%; height: 100%; inset: 0; opacity: 0; cursor: pointer; }
+.intake-page-heading label:has(:focus-visible) { outline: 2px solid var(--ap-accent); outline-offset: 4px; }
+
+.admissions-journey {
+  --journey-ink: #16283a;
+  --journey-blue: #0a7075;
+  --journey-gold: #b95a1b;
+  --journey-rule: #d3d8dd;
+  color: var(--journey-ink);
+  font-family: var(--ap-sans);
+  margin-bottom: 34px;
+}
+
+.admissions-journey-sheet {
+  border: 1px solid #cbd6dc;
+  border-top: 5px solid var(--journey-blue);
+  border-radius: 5px;
+  background: #fcfbf7;
+  box-shadow: 0 12px 28px #223c4d12;
+  padding: 32px 37px 16px;
+}
+
+.admissions-journey-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+.admissions-journey-header time { color: #687781; font-size: 12px; }
+.admissions-journey-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 10px;
+  color: #586873;
+  font-size: 12px;
+}
+
+.admissions-journey-key span { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.admissions-journey-key .admissions-journey-key-label { color: #536371; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.admissions-journey-key svg { width: 16px; height: 16px; stroke-width: 2.4; }
+.admissions-journey-action-key i,
+.admissions-journey-action-marker { display: grid; place-items: center; width: 13px; height: 13px; border: 1px solid #fff; border-radius: 50%; background: #96610f; color: #fff; font: 800 9px/1 Arial, sans-serif; font-style: normal; }
+.admissions-journey-action-key { margin-left: auto; }
+
+.admissions-journey-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+  gap: 28px;
+  margin-top: 18px;
+}
+
+.admissions-journey-chart { min-width: 0; }
+.admissions-journey-overline {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #cbd6dc;
+  color: #576b7b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.admissions-journey-stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 18px;
+}
+
+.admissions-journey-stage {
+  min-width: 0;
+  min-height: 200px;
+  padding: 0 14px;
+  border-right: 1px solid #d9e0e3;
+}
+
+.admissions-journey-stage:first-child { padding-left: 0; }
+.admissions-journey-stage:last-child { border-right: 0; padding-right: 0; }
+.admissions-journey-count {
+  display: block;
+  color: var(--journey-blue);
+  font-size: 46px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -.07em;
+  font-variant-numeric: tabular-nums;
+}
+
+.admissions-journey-label {
+  display: block;
+  min-height: 39px;
+  margin-top: 5px;
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.admissions-journey-people {
+  display: grid;
+  grid-template-columns: repeat(4, 42px);
+  grid-auto-rows: 42px;
+  gap: 2px;
+  margin-top: 17px;
+}
+
+.admissions-journey-person-button { position: relative; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 5px; color: var(--journey-blue); cursor: pointer; }
+.admissions-journey-person-button.selected { background: #e8edf0; box-shadow: inset 0 0 0 2px #1a3547; }
+.admissions-journey-person-button:focus-visible { outline: 2px solid #0f8b73; outline-offset: 1px; }
+.admissions-journey-person { width: 25px; height: 25px; stroke-width: 2.1; }
+.admissions-journey-action-marker { position: absolute; top: -4px; right: -3px; pointer-events: none; }
+.admissions-journey-annotation { display: block; margin-top: 15px; padding-left: 8px; border-left: 2px solid #96610f; color: #684b22; font-size: 12px; font-weight: 650; line-height: 1.35; }
+
+.admissions-journey-bar { display: block; height: 8px; margin-top: 21px; background: #e3e9ec; }
+.admissions-journey-bar > span { display: block; height: 100%; background: var(--journey-blue); }
+.admissions-journey-bars .admissions-journey-stage { min-height: 155px; }
+.admissions-journey-file {
+  align-self: start;
+  min-width: 0;
+  height: 500px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 24px 20px;
+  border: 1px solid #c6d2d8;
+  border-top: 4px solid var(--journey-blue);
+  border-radius: 6px;
+  background: #fffefa;
+  box-shadow: 0 8px 24px #223c4d12;
+}
+.admissions-journey-file:hover { border-color: var(--journey-blue); box-shadow: 0 10px 28px #223c4d1f; }
+.admissions-journey-file:focus-visible { outline: 2px solid #0f8b73; outline-offset: 4px; }
+.admissions-journey-file-heading { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.admissions-journey-file-heading > span { color: var(--journey-blue); font-size: 21px; line-height: 1; }
+.admissions-journey-next > span {
+  color: #7c571f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.app-theme-root .admissions-journey-file h3 {
+  margin: 0 0 4px;
+  color: #193145;
+  font-family: var(--ap-sans);
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -.04em;
+  line-height: 1.16;
+}
+.admissions-journey-file-heading p { margin: 0; color: #53616a; font-size: 14px; line-height: 1.4; }
+.admissions-journey-file-stage {
+  margin: 17px 0 12px;
+  padding: 12px 0;
+  border-top: 1px solid #d8e0e4;
+  border-bottom: 1px solid #d8e0e4;
+  color: var(--journey-blue);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.admissions-journey-file dl { margin: 0; }
+.admissions-journey-file dl > div { display: grid; grid-template-columns: 85px minmax(0, 1fr); gap: 10px; padding: 7px 0; }
+.admissions-journey-file dt {
+  color: #64717a;
+  font-size: 13px;
+  font-weight: 650;
+}
+.admissions-journey-file dd { margin: 0; color: #1b3446; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.admissions-journey-action-note { margin-top: 14px; padding: 11px 0; border-top: 1px solid #dbcaa8; border-bottom: 1px solid #dbcaa8; color: #553e1e; font-size: 13px; line-height: 1.4; }
+.admissions-journey-action-note strong { display: block; margin-bottom: 4px; color: #755014; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.admissions-journey-action-note ul { margin: 0; padding-left: 16px; }
+.admissions-journey-action-note li + li { margin-top: 3px; }
+.admissions-journey-next { margin-top: 14px; padding: 13px 15px; border-left: 3px solid var(--journey-gold); background: #f8f3e9; }
+.admissions-journey-next ul { list-style: none; margin: 8px 0 0; padding: 0; color: #1c3445; font-size: 14px; line-height: 1.5; }
+.admissions-journey-next li + li { margin-top: 5px; }
+.admissions-journey-open { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 8px 0; margin-top: 12px; color: var(--journey-blue); font-size: 14px; font-weight: 700; cursor: pointer; }
+.admissions-journey-open:hover { text-decoration: underline; text-underline-offset: 3px; }
+.admissions-journey-open:focus-visible { outline: 2px solid #0f8b73; outline-offset: 3px; }
+.admissions-journey-breakdown-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 15px;
+  margin: 30px 0 16px;
+  padding-top: 16px;
+  border-top: 2px solid #21394b;
+}
+.app-theme-root .admissions-journey-breakdown-head h3 { margin: 0; font-family: var(--ap-sans); font-size: 21px; line-height: 1.2; font-weight: 700; letter-spacing: -.035em; }
+.admissions-journey-breakdown-head > span { flex: none; color: #687781; font-size: 11px; }
+.admissions-journey-breakdowns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; }
+.admissions-journey-breakdown { min-width: 0; }
+.admissions-journey-breakdown h4 { margin: 0 0 10px; color: var(--journey-blue); font-family: var(--ap-sans); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.admissions-journey-breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(95px, 1fr) minmax(45px, 1.2fr) 24px;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+}
+.admissions-journey-breakdown-row > span:first-child { min-width: 0; color: #3b4f5b; font-size: 13px; line-height: 1.3; overflow-wrap: anywhere; }
+.admissions-journey-breakdown-track { height: 7px; background: #e3e8e9; }
+.admissions-journey-breakdown-track i { display: block; height: 100%; background: #5a839f; }
+.admissions-journey-breakdown-row.missing .admissions-journey-breakdown-track i { background: #b6c0c5; }
+.admissions-journey-breakdown-row strong { color: #223c4b; font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+.admissions-journey-breakdown-more { min-height: 44px; color: #0b7057; font-size: 12px; font-weight: 700; text-align: left; }
+.admissions-journey-breakdown-more:hover { text-decoration: underline; }
+
+.admissions-journey-empty { margin: 32px 0; color: #5d6b73; font-size: 14px; }
+.admissions-journey-footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #d5dfe1; color: #66747c; font-size: 11px; line-height: 1.5; }
+.admissions-journey-unavailable { padding: 28px; border: 1px solid #d0d9dc; border-top: 5px solid var(--journey-blue); background: #fcfbf7; color: #4d5b63; font-size: 14px; line-height: 1.5; }
+
+@media (max-width: 1200px) {
+  .admissions-journey-main { grid-template-columns: 1fr; gap: 25px; }
+  .admissions-journey-file { width: 100%; height: 430px; }
+}
+
+@media (max-width: 900px) {
+  .admissions-journey-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 0; }
+  .admissions-journey-stage:nth-child(2) { border-right: 0; }
+  .admissions-journey-stage:nth-child(3) { padding-left: 0; }
+  .admissions-journey-breakdowns { gap: 17px; }
+}
+
+@media (max-width: 790px) {
+  .admissions-journey-breakdowns { grid-template-columns: 1fr; gap: 20px; }
+  .admissions-journey-breakdown-row { grid-template-columns: minmax(0, 1fr) minmax(80px, 1.2fr) 24px; }
+}
+
+@media (max-width: 600px) {
   .admissions-brief-page { padding: 12px 16px 32px; }
-  .active-intake-layout, .intake-context > div { grid-template-columns: minmax(0,1fr); }
-  .intake-list > ul { max-height: 360px; }
-  .intake-list > header, .intake-file > header { padding: 12px 16px; }
-  .intake-list li button { padding: 14px 16px; grid-template-columns: minmax(0,1fr); gap: 6px; }
-  .intake-row-status { text-align: left; display: flex; justify-content: space-between; gap: 12px; }
-  .intake-row-status .intake-action-needed { margin-top: 0; }
-  .intake-file dl > div { grid-template-columns: 80px minmax(0,1fr); }
+  .admissions-journey-sheet { padding: 22px 18px 15px; }
+  .admissions-journey-main { margin-top: 24px; }
+  .admissions-journey-stages { display: block; margin-top: 3px; }
+  .admissions-journey-stage {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    min-height: 79px;
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid #dce2e4;
+  }
+  .admissions-journey-stage:first-child { padding-left: 0; }
+  .admissions-journey-count { font-size: 37px; }
+  .admissions-journey-label { min-height: 0; margin: 0; font-size: 13px; }
+  .admissions-journey-people { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(4, 44px); grid-auto-rows: 44px; justify-content: start; gap: 2px; margin: 2px 0 0 52px; }
+  .admissions-journey-person-button { width: 44px; height: 44px; }
+  .admissions-journey-annotation { grid-column: 1 / -1; grid-row: 3; margin: 1px 0 0 52px; }
+  .admissions-journey-bars .admissions-journey-stage { min-height: 80px; }
+  .admissions-journey-bar { margin-top: 0; }
+  .admissions-journey-file { width: 100%; padding: 20px 18px; }
+  .admissions-journey-breakdown-head { display: block; margin-top: 27px; }
+  .admissions-journey-breakdown-head h3 { font-size: 19px; }
+  .admissions-journey-breakdown-head > span { display: block; margin-top: 4px; }
+  .admissions-journey-breakdown-row { grid-template-columns: minmax(0, 1fr) minmax(85px, 1.1fr) 24px; }
+}
+
+@media (max-width: 360px) {
+  .admissions-journey-breakdown-row { grid-template-columns: minmax(0, 1fr) minmax(68px, .9fr) 24px; }
 }

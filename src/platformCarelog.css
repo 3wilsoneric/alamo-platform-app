@@ -1,0 +1,383 @@
+/* Platform visual language: Carelog's type, color, and tactile feedback, with
+   route-specific composition. The Platform retains its horizontal navigation. */
+:root {
+  --platform-file-ink: #103032;
+  --platform-file-rule: #cbdad7;
+  --platform-file-paper: #ffffff;
+  --platform-census-ink: #0a7075;
+  --platform-census-soft: #dcecee;
+}
+[data-platform-shell] { --platform-ui-font: var(--ap-sans); }
+[data-platform-header="true"] {
+  border-bottom-color: #b8d1ce;
+  background: #fff !important;
+  box-shadow: 0 4px 16px #032f300c;
+}
+[data-platform-primary-links="true"] [data-platform-page-target] {
+  font-family: var(--ap-sans);
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+[data-platform-primary-links="true"] [data-platform-page-active] {
+  border-bottom-color: #0a7075 !important;
+  color: #032f30 !important;
+  background: #e8f5f5;
+}
+[data-platform-primary-links="true"] [data-platform-page-target]:hover:not([data-platform-page-active]) {
+  color: #032f30;
+  background: #e8f5f5;
+}
+[data-platform-mobile-menu="true"] {
+  background: #f2f8f7 !important;
+}
+[data-platform-mobile-menu="true"] > div:first-child {
+  border: 1px solid #bdd4d1;
+  border-radius: 10px;
+  box-shadow: 0 14px 32px #032f3014;
+}
+
+/* Communities: a map for spatial context, with a readable operating index. */
+[data-california-home-hero="true"] {
+  background: radial-gradient(circle at 48% 35%, #f7fbfa 0%, #e2f1f0 55%, #c7dcdd 100%);
+}
+.california-community-index,
+[data-mobile-community-home="true"] .california-community-index {
+  border: 1px solid #b9d3d0;
+  border-top: 5px solid #0a7075;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 18px 44px #032f3020;
+  overflow: hidden;
+}
+.california-community-index__header { border-bottom-color: #d0dfdc; }
+.california-community-index__header h1,
+.california-community-index__identity strong,
+.california-community-index__metric strong { color: #032f30; font-family: var(--ap-sans); }
+.california-community-index__row {
+  border-bottom-color: #e0ebe9;
+  transition: background-color 170ms ease, padding-left 170ms ease;
+}
+.california-community-index__row:hover,
+.california-community-index__row:focus-visible,
+.california-community-index__row[data-california-index-highlighted="true"] {
+  background: #e8f5f5;
+  padding-left: 22px;
+}
+.california-community-index__row:focus-visible { outline-color: #0a7075; }
+
+/* Analytics: one report navigation, then a full-width reader. */
+[data-california-carousel-panel="reports"] { background: #f7f9f8; }
+.analytics-report-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  min-width: 0;
+  background: #f7f9f8;
+}
+.analytics-report-tabs__scroller {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #9bbebb transparent;
+  border-bottom: 1px solid #b8d1ce;
+}
+.analytics-report-tabs__scroller > :is(button,a) {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 52px;
+  padding: 10px 18px;
+  border-bottom: 3px solid transparent;
+  border-radius: 8px 8px 0 0;
+  color: #395954;
+  font: 650 14px/1.2 var(--ap-sans);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 170ms ease, color 170ms ease;
+}
+.analytics-report-tabs__scroller > :is(button,a):hover { background: #e8f5f5; color: #032f30; }
+.analytics-report-tabs__scroller > :is(button,a)[aria-pressed="true"],
+.analytics-report-tabs__scroller > :is(button,a)[aria-current="page"] {
+  border-bottom-color: #0a7075;
+  background: #e8f5f5;
+  color: #032f30;
+}
+[data-reports-page="true"] {
+  --report-ui-font: var(--ap-sans);
+  --report-muted: #526963;
+  background: transparent !important;
+  font-family: var(--ap-sans);
+}
+[data-reports-page="true"] [data-analytics-report-option] { border-left: 0; background: transparent; }
+[data-reports-page="true"] [data-analytics-report-option][aria-pressed="true"] { background: #e8f5f5; color: #032f30; }
+[data-reports-page="true"] .report-heading h1,
+[data-reports-page="true"] article[data-full-report] h2,
+.overview-dashboard h2 { font-family: var(--ap-sans) !important; }
+[data-reports-page="true"] .report-heading:not([data-community-heading]) .report-heading__identity {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-reports-page="true"] .report-heading { border-bottom: 1px solid #c7d9d6; padding: 12px 0 !important; }
+[data-reports-page="true"] .report-heading__context { margin-top: 4px; }
+.overview-dashboard {
+  font-family: var(--ap-sans);
+  color: #103032;
+}
+.overview-dashboard__census,
+.overview-dashboard__details section {
+  border: 1px solid #bfd4d1;
+  border-top: 4px solid #0a7075;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px #032f300b;
+}
+.overview-dashboard__capacity-track i { background: #0a7075; }
+.overview-dashboard__census li { border-radius: 6px; transition: background-color 170ms ease; }
+.overview-dashboard__census li:hover,
+.overview-dashboard__census li:focus-within { background: #eef7f6; }
+.overview-dashboard__community-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: #065c61;
+  font-weight: 700;
+  text-decoration: none;
+}
+.overview-dashboard__community-link svg { opacity: .55; transition: transform 170ms ease, opacity 170ms ease; }
+.overview-dashboard__community-link:hover svg,
+.overview-dashboard__community-link:focus-visible svg { opacity: 1; transform: translate(2px,-2px); }
+
+/* Admissions: preserve the person-level infographic and its selected client. */
+[data-admissions-brief-page="true"] .admissions-journey-sheet {
+  border-color: #b8d1ce;
+  border-top-color: #0a7075;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 32px #032f3012;
+}
+[data-admissions-brief-page="true"] > h1 { font-family: var(--ap-sans); color: #032f30; }
+
+/* Incidents: the priority columns stay compact; each client opens the evidence. */
+.incident-center {
+  --incident-muted: #526963;
+  font-family: var(--ap-sans);
+  color: #103032;
+}
+.incident-center-heading :is(h1,h3),
+.incident-card-heading button { font-family: var(--ap-sans) !important; }
+.incident-card {
+  border-color: #d4e0dd;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px #032f300b;
+  transition: transform 170ms ease, box-shadow 170ms ease;
+}
+.incident-card:hover,
+.incident-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px #032f3017;
+}
+.incident-priority-tabs button[aria-selected="true"],
+.incident-priority-tabs button[aria-pressed="true"] { box-shadow: inset 0 -3px currentColor; }
+.incident-community-picker select,
+.incident-refresh,
+.incident-show-all { border-radius: 8px; }
+
+/* Licensing: small freshness line, generous report reading, visible state. */
+[data-licensing-page="true"] {
+  --licensing-ink: #103032;
+  --licensing-muted: #526963;
+  --licensing-accent: #0a7075;
+  font-family: var(--ap-sans);
+  background: transparent !important;
+}
+[data-licensing-page="true"] > header { border-bottom-color: #c7d9d6; }
+[data-licensing-page="true"] .licensing-page-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 0 8px;
+  border: 0;
+  padding: 0;
+}
+[data-licensing-page="true"] .licensing-page-toolbar:has(> button) { justify-content: space-between; }
+[data-licensing-page="true"] .licensing-page-toolbar h1.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0,0,0,0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+[data-licensing-page="true"] .licensing-agent { display: block; }
+[data-licensing-page="true"] .licensing-agent__status-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  color: #526963;
+  font-size: 14px;
+  line-height: 1.5;
+}
+[data-licensing-page="true"] .licensing-agent__status-line strong {
+  color: #0a7075;
+  font-weight: 650;
+}
+[data-licensing-page="true"] .licensing-agent__status-line strong[data-needs-attention="true"] { color: #9a5b12; }
+[data-licensing-page="true"] .licensing-agent__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 8px;
+  color: #0a7075;
+  font: 650 15px/1.25 var(--ap-sans);
+}
+[data-licensing-page="true"] .licensing-agent__trigger svg { transition: transform 170ms ease; }
+[data-licensing-page="true"] .licensing-agent__update { font-size: 14px; }
+[data-licensing-page="true"] .licensing-answer,
+[data-licensing-workspace="true"] main[aria-label="Report reader"] {
+  border-top-color: #0a7075;
+}
+[data-licensing-page="true"] .licensing-answer { margin-top: 16px; padding-top: 18px; }
+[data-licensing-page="true"] .licensing-answer h2 { margin: 0; font-size: clamp(22px,2.5vw,27px); }
+[data-licensing-page="true"] .licensing-answer__summary { margin-top: 7px; font-size: 14px; color: #526963; }
+[data-licensing-page="true"] .licensing-answer__reports { margin-top: 18px; }
+[data-licensing-page="true"] .licensing-answer__reports li { border-top: 1px solid #d4e0dd; }
+[data-licensing-page="true"] .licensing-answer__reports button {
+  padding: 18px 12px;
+  border-radius: 6px;
+  transition: background-color 170ms ease, padding-left 170ms ease;
+}
+[data-licensing-page="true"] .licensing-answer__reports button:hover,
+[data-licensing-page="true"] .licensing-answer__reports button:focus-visible {
+  background: #e8f5f5;
+  padding-left: 18px;
+}
+[data-licensing-page="true"] .licensing-answer__report-title { font-size: 18px; }
+[data-licensing-page="true"] .licensing-answer h2,
+[data-licensing-reader] > header h2,
+[data-licensing-page="true"] .licensing-brief-sections h3 {
+  font-family: var(--ap-sans) !important;
+}
+[data-licensing-page="true"] .licensing-answer__summary { font-size: 16px; line-height: 1.65; }
+.licensing-report-document { border-radius: 8px; box-shadow: 0 8px 24px #032f3010; }
+
+/* Executive director: same system, retaining its denser clinical panels. */
+.executive-director-community,
+.executive-material-dialog,
+.executive-material-workspace {
+  --ed-sans: var(--ap-sans);
+  --ed-ink: #103032;
+  --ed-muted: #526963;
+}
+.executive-director-community { background: #f7f9f8; }
+.executive-director-community__masthead h1 { color: #032f30 !important; }
+.executive-domain-card__paper { box-shadow: 0 9px 28px #032f3010; }
+
+/* Ally lives above the page as a tool, not as a separate page or navigation rail. */
+.executive-ally {
+  --ally-ink: #032f30;
+  --ally-accent: #0a7075;
+  --ally-rule: #c7d9d6;
+  --ally-paper: #fff;
+  font-family: var(--ap-sans);
+}
+.executive-ally .executive-ally-launcher {
+  right: 20px;
+  bottom: 20px;
+  border: 2px solid #032f30;
+  border-radius: 8px;
+  background: #f4a261;
+  color: #031716;
+  box-shadow: 0 10px 28px #032f3033;
+  transition: transform 170ms ease, box-shadow 170ms ease;
+}
+.executive-ally .executive-ally-launcher:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 34px #032f3040;
+}
+.executive-ally-panel {
+  border-color: #032f30;
+  border-radius: 10px;
+  box-shadow: 0 22px 60px #032f3038;
+}
+.executive-ally-header { background: #032f30; color: #fff; }
+.executive-ally-header span { color: #c7dcdd; }
+.executive-ally-header button { background: transparent; color: #fff; border-color: transparent; }
+.executive-ally-input { border-color: #0a7075; }
+.executive-ally-input button { background: #f4a261; border-color: #032f30; }
+
+/* The operational Ally companion uses the same bookmark entry, including on
+   accounts that do not have the analyst report composer. */
+.everyagent-embedded { --ea-ink: #032f30; --ea-green: #0a7075; --ea-rule: #c7d9d6; font-family: var(--ap-sans); }
+.everyagent-embedded .everyagent-launcher,
+.everyagent-embedded .everyagent-launcher--wilson {
+  right: 20px;
+  bottom: max(20px,env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  min-width: 86px;
+  height: 48px;
+  padding: 6px 12px;
+  border: 2px solid #032f30;
+  border-radius: 8px;
+  background: #f4a261;
+  color: #031716;
+  box-shadow: 0 10px 28px #032f3033;
+  transition: transform 170ms ease, box-shadow 170ms ease;
+}
+.everyagent-embedded .everyagent-launcher:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 34px #032f3040;
+}
+.everyagent-embedded .everyagent-launcher__mark { width: 22px; height: 25px; object-fit: contain; }
+.everyagent-embedded .everyagent-launcher__label { display: inline; font: 700 15px/1 var(--ap-sans); }
+.everyagent-embedded .everyagent-companion {
+  border: 2px solid #032f30;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 22px 60px #032f3038;
+}
+.everyagent-embedded .everyagent-companion header { background: #032f30; color: #fff; }
+.everyagent-embedded .everyagent-companion header > div { gap: 9px; }
+.everyagent-embedded .everyagent-companion header strong { font: 700 17px/1.2 var(--ap-sans); }
+.everyagent-embedded .everyagent-companion header .everyagent-live { color: #c7dcdd; }
+.everyagent-embedded .everyagent-companion header > button { color: #fff; }
+.everyagent-embedded .everyagent-companion footer { border-color: #c7d9d6; }
+.everyagent-embedded .everyagent-companion footer > a:first-child { background: #0a7075; }
+@media (max-width: 700px) {
+  .executive-ally-panel { border: 0; border-radius: 0; box-shadow: none; }
+  .executive-ally .executive-ally-launcher { right: 12px; bottom: max(16px,env(safe-area-inset-bottom)); }
+  .everyagent-embedded .everyagent-launcher { right: 12px; bottom: max(12px,env(safe-area-inset-bottom)); }
+  .everyagent-embedded .everyagent-companion { inset: auto 8px 8px; width: calc(100vw - 16px); max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .california-community-index__row,
+  .incident-card,
+  .overview-dashboard__census li,
+  .overview-dashboard__community-link svg,
+  .executive-ally .executive-ally-launcher,
+  .everyagent-embedded .everyagent-launcher,
+  [data-licensing-page="true"] .licensing-answer__reports button,
+  [data-platform-primary-links="true"] [data-platform-page-target] { transition: none; }
+  .incident-card:hover,
+  .incident-card:focus-within,
+  .executive-ally .executive-ally-launcher:hover { transform: none; }
+  .everyagent-embedded .everyagent-launcher:hover { transform: none; }
+}

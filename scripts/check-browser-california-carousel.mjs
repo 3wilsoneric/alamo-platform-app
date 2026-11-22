@@ -146,30 +146,27 @@ async function assertMapNavigationPlacement(page, viewport, label) {
 async function assertAnalyticsComposition(page, viewport, label) {
   const composition = await page.evaluate(() => {
     const reports = document.querySelector('[data-reports-page="true"]');
-    const aside = document.querySelector('aside[aria-label="Analytics"]');
+    const tabs = reports?.querySelector('nav[aria-label="Analytics reports"]');
     const main = reports?.querySelector('main');
     const library = document.querySelector('[data-analytics-report-library="true"]');
-    const mobileChoice = document.querySelector('[data-mobile-report-choice="true"]');
     const reader = document.querySelector('[data-full-report]');
-    if (!reports || !aside || !main || !library || !reader) return null;
+    if (!reports || !tabs || !main || !library || !reader) return null;
     const reportsBox = reports.getBoundingClientRect();
-    const asideBox = aside.getBoundingClientRect();
+    const tabsBox = tabs.getBoundingClientRect();
     const mainBox = main.getBoundingClientRect();
     const libraryBox = library.getBoundingClientRect();
-    const mobileChoiceBox = mobileChoice?.getBoundingClientRect();
     const readerBox = reader.getBoundingClientRect();
     return {
       reportsLeft: reportsBox.left,
       reportsRight: reportsBox.right,
-      asideLeft: asideBox.left,
-      asideRight: asideBox.right,
-      asideWidth: asideBox.width,
+      tabsLeft: tabsBox.left,
+      tabsRight: tabsBox.right,
+      tabsBottom: tabsBox.bottom,
       mainLeft: mainBox.left,
       mainRight: mainBox.right,
       mainTop: mainBox.top,
       mainWidth: mainBox.width,
       libraryBottom: libraryBox.bottom,
-      mobileChoiceBottom: mobileChoiceBox?.bottom ?? null,
       readerTop: readerBox.top,
       readerLeft: readerBox.left,
       readerRight: readerBox.right,
@@ -177,18 +174,12 @@ async function assertAnalyticsComposition(page, viewport, label) {
     };
   });
   assert(composition, `${label} did not render the report library and reader`);
-  if (viewport.width >= 1024) {
-    assert(
-      composition.asideRight <= composition.mainLeft + 2 && composition.asideWidth <= 300,
-      `${label} analytics library is not a restrained left rail: ${JSON.stringify(composition)}`
-    );
-  } else {
-    assert(
-      composition.mobileChoiceBottom !== null &&
-        composition.mainTop >= composition.mobileChoiceBottom - 2,
-      `${label} mobile report reader overlaps the report picker: ${JSON.stringify(composition)}`
-    );
-  }
+  assert(
+    composition.mainTop >= composition.tabsBottom - 2 &&
+      composition.tabsLeft >= composition.reportsLeft - 2 &&
+      composition.tabsRight <= composition.reportsRight + 2,
+    `${label} report tabs overlap or escape the reader: ${JSON.stringify(composition)}`
+  );
   assert(
     composition.mainLeft >= composition.reportsLeft - 2 &&
       composition.mainRight <= composition.reportsRight + 2 &&
@@ -358,11 +349,7 @@ async function runViewport(browser, screenshotDir, viewport, suffix) {
   await page
     .locator('[data-reports-page="true"][data-reports-embedded="true"]')
     .waitFor({ state: "visible", timeout: 10_000 });
-  if (viewport.width < 640) {
-    const reportPicker = page.locator('[data-mobile-report-choice="true"]');
-    await reportPicker.waitFor({ state: "visible", timeout: 5_000 });
-    assert((await reportPicker.inputValue()) === "overview", `${suffix} mobile report picker did not default to Overview`);
-  }
+  await page.locator('nav[aria-label="Analytics reports"] [data-analytics-report-option="overview"]').waitFor({ state: "visible", timeout: 5_000 });
   await page
     .locator('[data-full-report]')
     .waitFor({ state: "visible", timeout: 45_000 });
