@@ -26,6 +26,7 @@ for (const script of extraScripts) assert(imageHtml.includes(script), `Current s
 const inheritedStyles = [...imageHtml.matchAll(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g)]
   .filter(([, href]) => !/^\/assets\/index-[^/]+\.css$/.test(href))
   .map(([tag]) => tag);
+assert(!inheritedStyles.some(tag => /href="\/assets\/index-/.test(tag)), 'The prior main stylesheet must not override this build.');
 assert(inheritedStyles.some(tag => tag.includes('proforma-release-')), 'The current Workflow stylesheet must be retained.');
 const out = path.join(root, 'generated/platform-ui-release');
 const overlay = path.join(out, 'overlay/dist');
