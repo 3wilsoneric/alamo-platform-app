@@ -8,11 +8,11 @@ import { gzipSync, brotliCompressSync } from 'node:zlib';
 import { build } from 'vite';
 import react from '@vitejs/plugin-react';
 import ts from 'typescript';
+import { executiveAllyReleaseMode } from './executive-ally-release-mode.mjs';
 
 const base = 'pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639';
-const preview = process.argv.slice(2).includes('--enabled-preview');
-assert(process.argv.slice(2).every(arg => arg === '--enabled-preview'), 'Only --enabled-preview is supported.');
-const root = process.cwd(), out = path.resolve('generated/executive-ally-release' + (preview ? '-preview' : ''));
+const { preview, pilot, enabled, suffix, display } = executiveAllyReleaseMode(process.argv.slice(2));
+const root = process.cwd(), out = path.resolve('generated/executive-ally-release' + suffix);
 const run = (command, args) => execFileSync(command, args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 assert.equal(run('az', ['containerapp', 'show', '-n', 'alamo-platform-prod-web', '-g', 'alamo-data-rg', '--query', 'properties.template.containers[0].image', '-o', 'tsv']).trim(), base, 'Production changed; reconcile its new source before preparation.');
 const readImage = file => run('docker', ['run', '--rm', '--platform', 'linux/amd64', '--network', 'none', '--entrypoint', 'cat', base, '/app/' + file]);
@@ -27,14 +27,9 @@ async function write(file, bytes, compress = false) {
   }
 }
 
-// The default remains inactive. The explicit preview proves the enabled branch
-// with a fictional subject and an unroutable service; it cannot grant real access.
-// Actual pilot configuration still requires source grants and release acceptance.
-assert(process.env.VITE_ALLY_REPORTS_ENABLED !== 'true', 'Environment activation is not supported; use the fictional --enabled-preview for local verification.');
-const display = preview ? {
-  enabled: 'true', participants: JSON.stringify([{ id: '11111111-1111-4111-8111-111111111111', name: 'Test executive' }]),
-  origin: 'https://ally.invalid', scope: 'api://22222222-2222-4222-8222-222222222222/access_as_user',
-} : { enabled: 'false', participants: '[]', origin: '', scope: '' };
+// Explicit modes keep fictional previews separate from the owner pilot. Neither
+// grants source access, enrolls a browser client, or enables model execution.
+assert(process.env.VITE_ALLY_REPORTS_ENABLED !== 'true', 'Environment activation is not supported; use an explicit release mode.');
 const oldJs = 'index-platform-consistency-f080e6786782.js';
 const prior = readImage('dist/assets/' + oldJs);
 assert.equal(hash(prior), 'f080e67867827e01cf397d3d55c1b47837fd131e79701b4b555324728757f867');
@@ -112,9 +107,12 @@ for (const result of [browserCode, serverOutput[0]]) for (const id of Object.key
 }
 await source('vendor/alamo-agent-runtime-0.18.3.tgz');
 await source('scripts/prepare-executive-ally-release.mjs');
+await source('scripts/executive-ally-release-mode.mjs');
 await writeFile(path.join(out, 'Dockerfile'), `FROM ${base}\nCOPY --chown=node:node overlay /app\n`);
 await writeFile(path.join(out, '.dockerignore'), '*\n!Dockerfile\n!overlay/\n!overlay/**\n');
 await writeFile(path.join(out, 'receipt.json'), JSON.stringify({ base, rollback: base, sourceCommit: run('git', ['rev-parse', 'HEAD']).trim(),
-  oldJs, newJs, sourceHashes: sources, files, reportsEnabled: preview, previewOnly: preview, sourceConfigured: false,
-  scope: preview ? 'Local fictional display preview only. Unroutable service, fictional participant, source endpoint disabled; never deploy this preview.' : 'Disabled report UI and source endpoint. Live source readers, old monitoring runtime, all other routes, identity, configuration and data remain unchanged.' }, null, 2));
-console.log(JSON.stringify({ out, files: Object.keys(files).length, newJs, enabled: preview, previewOnly: preview }));
+  oldJs, newJs, sourceHashes: sources, files, reportsEnabled: enabled, previewOnly: preview, ownerPilot: pilot, display, sourceConfigured: false,
+  scope: preview ? 'Local fictional display preview only. Unroutable service, fictional participant, source endpoint disabled; never deploy this preview.'
+    : pilot ? 'Owner-only production service display configuration. Source endpoint remains disabled without deployment configuration. API membership, source grants, required release checks and signed-in acceptance remain separate.'
+      : 'Disabled report UI and source endpoint. Live source readers, old monitoring runtime, all other routes, identity, configuration and data remain unchanged.' }, null, 2));
+console.log(JSON.stringify({ out, files: Object.keys(files).length, newJs, enabled, previewOnly: preview, ownerPilot: pilot }));

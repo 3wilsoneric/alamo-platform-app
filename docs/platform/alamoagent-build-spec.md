@@ -34,6 +34,17 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 
 ## Executive Ally candidate — November 22, 2026
 
+The independent production API/worker is now installed in a separate closed
+foundation; the [engine spec](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-closed-production-installation--0183)
+owns its status. Existing Platform production remains unchanged. The release
+preparer now has an explicit `--owner-pilot` mode bound to that exact service and
+Eric's verified Entra object ID. It preserves the default disabled artifact and
+the separate fictional preview. This changes release configuration, not layout,
+source permissions or model execution. No broader participant list is accepted.
+The checker exercises the configured subject and denied user/tenant/role branches
+in the appended module. Deployment still needs the named candidate's release
+checks, server/source configuration and signed-in owner acceptance.
+
 This production-source checkout now consumes the same **0.18.3** archive verified
 in the bounded staging browser run, SHA-256
 `cf320ffd5b2ab43a563b5d93c3b33239c1cd6cf78bd14e0fdfa765b91eae7266`.

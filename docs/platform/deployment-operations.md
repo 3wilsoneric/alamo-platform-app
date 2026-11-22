@@ -16,6 +16,31 @@
 
 ## Current Production Host
 
+### Owner-only Ally release configuration — November 22
+
+`release:executive-ally:prepare -- --owner-pilot` prepares a separate
+`generated/executive-ally-release-pilot` artifact. The shared release-mode owner
+binds it to verified Eric subject `f73371d5-d2b4-48b4-a32b-1edc7c88869f`, the new
+production Ally origin and API scope. The default remains disabled;
+`--enabled-preview` remains fictional and cannot be deployed. Mixed/duplicate or
+unknown switches fail. Ambient Vite activation remains forbidden. The preparer
+records the exact display configuration and hashes its configuration owner.
+
+Build tag `platform-executive-pilot:20261122-v0183` from that directory, then run
+`check:executive-ally-release -- --owner-pilot`. The checker verifies the exact
+production-base file boundary, inherited image configuration and actual appended
+display module, including other users/tenants, signed-out/restricted accounts and
+an attempted production auth bypass. Existing routes and monitoring remain
+unchanged. The source endpoint remains closed without its server configuration.
+Artifact preparation cannot assign Entra access, grant sources or start model work.
+The new mode is not evidence of deployment or authenticated runtime acceptance.
+
+The [separate Ally foundation](/Users/eric/suite-deploy/README.md#ally-production-foundation--november-22)
+has no assigned executives, Platform client enrollment, source grants or model
+configuration. Preserve its closed baseline and the current Platform image as
+recovery targets. Complete the release checklist and source/identity prerequisites
+before deploying this UI to Eric; broaden to Andrew/Sandeep after owner acceptance.
+
 ### Local Ally 0.18.3 production-base candidate — November 22
 
 The candidate now pins the verified 0.18.3 archive

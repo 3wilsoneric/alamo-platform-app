@@ -204,7 +204,7 @@
     "check:executive-reports": "node scripts/check-source-grant-blob.mjs && node scripts/check-ally-data-source.mjs && node scripts/check-ally-report-source.mjs && npm run check:resident-flow",
     "check:browser-executive-ally": "node scripts/check-browser-executive-ally.mjs",
     "release:executive-ally:prepare": "node scripts/prepare-executive-ally-release.mjs",
-    "check:executive-ally-release": "node scripts/check-executive-ally-release.mjs"
+    "check:executive-ally-release": "node --test scripts/check-executive-ally-release-mode.mjs && node scripts/check-executive-ally-release.mjs"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.3.tgz",
