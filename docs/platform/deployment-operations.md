@@ -5620,3 +5620,48 @@ Private review evidence:
 The local native review stays available at `http://127.0.0.1:4383/`.
 Candidate/rollback plan:
 `/Users/eric/suite-deploy/.state/platform-production-ally-0187-1122.plan.json`.
+
+## Ally 0.18.7 retest and concurrent release recovery — November 22
+
+Full predeployment passed 28/28 at 16:34:58 UTC for packaged source `6c7ae45`.
+The immutable gate copy is `/Users/eric/suite-deploy/.state/ally-0187.platform-predeploy.json`
+(SHA-256 `89bc030d9d3e5f0b1c36d1c775bec72683488c32e8a7afaae8765d209e96028b`).
+The owner-only image `89063699` deployed healthy at 16:46 UTC. Public smoke passed
+4/4 and the aggregate source proof passed. These checks did not complete the
+postdeployment signed-in gate or authorize Andrew/Sandeep.
+
+Native Chrome Network, with recording and preserve-log enabled, showed 0/52
+requests after excluding the recorded successful status codes. Checks covered
+Clients reload, Home and two community pages. Console-only observation remains
+insufficient; this native evidence proves a supported request-failure observation
+path. It is not full route/viewport coverage. The console fixture, failed navigation
+attempts and native evidence remain in `generated/main-chrome-diagnostics-proof/`.
+DevTools was closed and its filter/preserve-log settings restored.
+
+The first frozen real 0.18.7 question and two resumes paused before a model call.
+The worker's disabled-host guard fired despite enabling configuration; stop/start
+failed to establish working execution. The follow-up was not run. Original failed
+attempts are retained, not graded as answers. The canonical worker was restored,
+execution disabled, and the same cloud campaign explicitly expired. Final drain
+and budget reconciliation passed with zero new model calls or reservations.
+
+During this bounded test, Carelog `fbc258a` deployed image `c78c5e9d`, based on the
+Ally pilot. The exact rollback guard rejected configuration drift. Recovery did
+not overwrite that release: it rebuilds the prior Platform base `b958cb49` with
+exactly its 461 current Carelog files, with no overlap with the Ally file list.
+The manifest comparison verifies 19 Ally-only changes, every Carelog file unchanged,
+and unchanged runtime configuration. HTTP routes, CSP and anonymous denial passed.
+
+Verified at 17:08 UTC:
+- Image `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:82069c2df4b6039d127431109044b4b1b593c3b233051f8379c63dc8d9930d70`.
+- Revision `alamo-platform-prod-web--ally-closed-services-1122`, Healthy, single active, 100% traffic.
+- Health 200, anonymous bootstrap 401, Carelog route 200.
+- Temporary source settings and owner pilot display removed; all other runtime configuration preserved.
+- Main Chrome remains signed in as Eric; Home has all five communities, the original entry bundle and zero horizontal overflow.
+
+Recovery artifacts: `/Users/eric/suite-deploy/.state/ally-0187-recovery-preserve-carelog/`.
+Final closure: `/Users/eric/suite-deploy/.state/owner-0187-closed.json`.
+No source records, grants, emails or wider executive access changed. Canonical
+worker 0.18.7 stays disabled. Resolve actual worker configuration recovery and the
+obsolete signed-in test expectations before another release; a healthy recovery
+is not an executive acceptance pass.

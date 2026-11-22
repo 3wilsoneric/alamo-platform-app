@@ -13,6 +13,23 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 22 bounded retest — rollout closed
+
+The 0.18.7 candidate passed all 28 predeployment checks and the aggregate source
+proof, but the first real question and two resumes paused before any model call.
+Stop/start did not prove working worker execution. No fresh answer-quality pass or
+Andrew/Sandeep access is claimed. Canonical worker execution is disabled, the
+cloud evaluation window is expired, zero active runs/leases remain, and the same
+235-reservation campaign is reconciled without new spend or a reset.
+
+A concurrent Carelog release inherited the temporary pilot image. Guarded recovery
+preserved all 461 Carelog files while removing only the Ally changes and temporary
+source settings. Production is healthy on `82069c2d`; signed-in main Chrome Home
+works. Native Network inspection resolves the console-only observation limitation,
+but the complete current-navigation release gate is still outstanding. See the
+[retest and recovery receipt](deployment-operations.md#ally-0187-retest-and-concurrent-release-recovery--november-22)
+and canonical engine spec for the next work and retained failures.
+
 ### November 22 embedded-date correction — local 0.18.7 package
 
 This checkout now pins engine 0.18.7/core 0.2.13 from `831a93d`, archive SHA-256
