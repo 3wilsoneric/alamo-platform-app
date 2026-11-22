@@ -13,6 +13,17 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 22 current navigation and requested design integration
+
+Shared release assertions now run in main Chrome without exporting its session.
+The restored live image passed twelve route checks and twelve interactions, plus
+fourteen local assertion fault tests. Request-failure coverage remains unproved
+for this run; the native filter did not apply. The owner has requested integration
+of the Platform chat's separate design branch with this newer Ally implementation.
+Preserve that design and its active phone work, the 0.18.7 pin, current Carelog
+files and disabled production execution while reconciling the candidate. See the
+[operations record](deployment-operations.md#current-navigation-checks-and-design-integration--november-22).
+
 ### November 22 worker diagnosis — rollout still closed
 
 The canonical worker's actual activity confirmed delayed adoption of enabled and

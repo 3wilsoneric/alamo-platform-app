@@ -69,35 +69,40 @@ const ROUTES = [
     }
   },
   {
-    name: "questions",
+    name: "retired-questions",
     pathname: "/analytics/questions",
     capture: true,
     ready: async (page) => {
-      await page.locator('[data-certified-question-guide="true"]').waitFor({
-        state: "visible",
-        timeout: READY_TIMEOUT_MS
-      });
+      await page.waitForURL((url) => url.pathname === "/analytics", { timeout: READY_TIMEOUT_MS });
+      await page.locator('article[data-full-report="overview"]').waitFor({ state: "visible", timeout: READY_TIMEOUT_MS });
     }
   },
   {
     name: "community",
-    pathname: "/home/community/337",
+    pathname: "/analytics/community?community=337",
     capture: true,
     ready: async (page) => {
-      await page.locator('[data-california-community-profile="337"]').waitFor({
+      await page.locator('article[data-full-report="community"]').waitFor({
         state: "visible",
         timeout: READY_TIMEOUT_MS
       });
       await page.waitForFunction(
         () => {
-          const surface = document.querySelector('[data-community-dashboard-surface="detail"]');
-          return Boolean(surface) && !/Loading community data/i.test(surface?.textContent || "");
+          const surface = document.querySelector('article[data-full-report="community"]');
+          return Boolean(surface) && document.querySelector('[data-reports-page] main')?.getAttribute("aria-busy") === "false";
         },
         undefined,
         { timeout: READY_TIMEOUT_MS }
       );
     }
   },
+  ...[
+    { name: "clients", pathname: "/analytics/residents", selector: 'article[data-full-report="residents"]' },
+    { name: "admissions", pathname: "/analytics/admissions", selector: '[data-admissions-journey="complete"]' },
+    { name: "licensing", pathname: "/analytics/licensing", selector: '[data-licensing-workspace="true"]' }
+  ].map(({ selector, ...route }) => ({ ...route, capture: true,
+    ready: async page => { await page.locator(selector).waitFor({ state: "visible", timeout: READY_TIMEOUT_MS }); }
+  })),
   {
     name: "incidents",
     pathname: "/incidents",

@@ -5621,6 +5621,35 @@ The local native review stays available at `http://127.0.0.1:4383/`.
 Candidate/rollback plan:
 `/Users/eric/suite-deploy/.state/platform-production-ally-0187-1122.plan.json`.
 
+## Current-navigation checks and design integration — November 22
+
+The production navigation checker now follows the current report routes instead
+of the retired carousel. It checks Overview, Admissions, Clients, Incidents and
+Licensing, all five community reports and return links, the existing explorers
+and Command Center. The two retired question entry routes must load Overview;
+local guided-answer regressions remain in the predeployment suite. Readiness,
+identity, error, loaded-record, performance and overflow assertions remain active.
+Their common browser operations are exported for the supported main-Chrome
+adapter; this never copies credentials or starts another sign-in session.
+
+Fourteen synthetic assertion fault-injection tests pass. In main Chrome on live
+`82069c2d`, all twelve route checks and twelve interactions passed. Home useful
+readiness was 1,317 ms for `/` and 900 ms for `/home`, below the unchanged 5-second
+budget. The initial test incorrectly waited on hidden map-description text and
+required `/` to redirect; those test mistakes were corrected and the original
+failure retained. An interrupted rerun is retained separately. There were zero
+captured console errors. The native Network filter did not take effect (200 rows
+remained visible), so this run does **not** prove absence of request failures or
+complete the release gate. Browser controls were restored after the run.
+
+Private evidence is `generated/current-navigation-20261122/main-chrome/`.
+The user then requested integration of the new design in the separate Platform
+chat. Its `codex/admissions-infographic-20261121` branch has additional committed
+UI and active phone-layout work; the current live site does not contain that
+design. Reconcile its final candidate with the newer engine pin and current live
+Carelog files before another cutover. These browser results apply to `82069c2d`,
+not to that forthcoming combined design.
+
 ## Ally worker configuration diagnosis — November 22
 
 At 17:44 UTC the canonical production worker was verified disabled after a no-op
