@@ -5699,6 +5699,23 @@ logs are retained. Eric authorized the handoff, and the Platform chat accepted
 the integration for its independently guarded UI release. This branch has made
 no production cutover or model calls.
 
+Integration validation is complete through `88f209c` (the final visual change is
+`c1a813b`; subsequent changes update browser checks for the retained owner chat).
+Every `check:analyst` component passed across the original run and the three
+continuation logs in `generated/current-navigation-20261122/`. The initial
+failures are retained, and only obsolete route/label assertions changed.
+Coverage includes 635 context-fuzz turns, 1,800 transitions, 203 operator prompts
+plus four follow-ups, 200 answer-shape checks, 42 workflow scenarios, 160 journey
+fuzz turns, 83 stress turns, 200 cached routes without errors, 150 certified
+prompt cases, 48 cache requests and three cache parity checks. Source, authorization,
+scope, recovery and existing data assertions all remain enforced. The final
+synchronized design typecheck and build pass; artifact logs have the
+`final-synchronized-design-` prefix. Browser release gates remain with the
+Platform chat. Its owner-chat performance check also requires the visible
+composer or question guide, not merely the workspace shell, before measuring
+useful readiness. Runtime/shared contracts/packages are unchanged by these final
+UI and test commits. This is not a fresh live GPT or signed-in production pass.
+
 The old `prepare-executive-ally-release.mjs` still targets the superseded
 `b958cb49` shell and fails its current-image guard. Do not bypass that guard.
 Before reopening the model pilot, replace its appended panel preparation with

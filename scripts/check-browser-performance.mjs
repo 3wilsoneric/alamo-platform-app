@@ -83,6 +83,10 @@ async function openOwnerChat(page, timeoutMs) {
     state: "visible",
     timeout: timeoutMs
   });
+  await page.locator('[data-conversational-input="true"]:visible, [data-certified-question-guide="true"]:visible').first().waitFor({
+    state: "visible",
+    timeout: timeoutMs
+  });
 }
 
 async function measureResidentSearchSurfaceReady(page) {
