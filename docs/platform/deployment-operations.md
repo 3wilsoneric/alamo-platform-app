@@ -5580,3 +5580,43 @@ Final acceptance cleanup at 10:04 UTC: zero active runs/model leases, canonical
 worker disabled, prior Platform image healthy. All 231 cloud reservations were
 returned to the local campaign ledger with the original prefix intact; the local
 lock was released. Receipt: `/Users/eric/suite-deploy/.state/owner-0186-closed.json`.
+
+## Ally pilot usefulness and corrected candidate — November 22
+
+Eric reviewed the seven captured real-data results in main Chrome using the
+unchanged native `ReportView` and `printReport` layout and answered “Useful for
+an initial pilot.” The separate human receipt hashes the original results and
+stored reports; it does not rewrite answers, agent verdicts or per-question grades.
+This is overall usefulness acceptance for the captured 0.18.6 results, not fresh
+0.18.7 cloud acceptance. The canonical spec retains that distinction.
+
+The 0.18.7 Platform candidate from `6c7ae45` is pushed at
+`89063699f25241170ef3934bb02268983683d524d4a6f2f1e8ce60355f0c2d30`.
+Preparation verified the registry image, exact-file overlay and current production
+base. Suite deployment's canonical helper now binds the new plan to the installed
+0.18.7 API/worker and retains the complete predeployment requirement. Eleven suite
+deployment tests pass. The full Platform predeployment run remains in progress;
+no production cutover, new access or paid model call occurred in this preparation.
+
+Live main Chrome confirmed the current Overview, Admissions and Clients reports,
+five home communities, and `/analytics/community?community=337` navigation.
+`/analytics/questions` returns to Overview; the old guide/carousel is absent.
+Production smoke scripts still target those retired controls and the earlier
+community modal. Preserve authentication, useful-ready, loaded-data, overflow,
+navigation, console and request-failure checks when updating their assertions.
+Do not reinstate the retired UI or mark those checks passed.
+
+The supported main-Chrome tab console API was tested with a loopback fixture
+returning deliberate 404, 500 and closed-connection responses. Only the fixture's
+explicit completion log was captured; network failures were absent. Therefore
+console-only observation cannot replace the existing request-failure checks.
+The synthetic proof is `generated/main-chrome-diagnostics-proof/result.json`;
+the server and tab were closed. The user requires main Chrome, so no isolated
+sign-in window or credential export was used. A complete current-navigation and
+network observation path is still required before the signed-in gate can pass.
+
+Private review evidence:
+`/Users/eric/CareEngineMain/ally/generated/executive-evaluations/real-owner-corrected-20261122/human-usefulness-review-20261122.json`.
+The local native review stays available at `http://127.0.0.1:4383/`.
+Candidate/rollback plan:
+`/Users/eric/suite-deploy/.state/platform-production-ally-0187-1122.plan.json`.

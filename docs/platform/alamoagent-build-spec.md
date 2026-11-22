@@ -38,6 +38,12 @@ unpassed and needs its older layout expectations reconciled with current workflo
 See the [canonical correction and limits](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-embedded-source-date-correction--local-0187)
 and the [installation receipt](deployment-operations.md#ally-0187-installed-with-execution-disabled--november-22).
 
+Eric's November 22 review of seven captured real-data answers in the native
+report view was “Useful for an initial pilot.” Overall usefulness is accepted;
+fresh corrected-answer acceptance and the technical release checks remain open.
+The canonical spec links the timestamped human receipt; captured answers and
+per-question grades were not rewritten. This does not enable wider access.
+
 ### November 22 corrected acceptance — current status
 
 The corrected candidate passed 28/28 predeployment checks and ran six real
