@@ -6,9 +6,11 @@ import { runInNewContext } from 'node:vm';
 import { gunzipSync, brotliDecompressSync } from 'node:zlib';
 import React from 'react';
 
-const root = 'generated/executive-ally-release';
+const preview = process.argv.slice(2).includes('--enabled-preview');
+assert(process.argv.slice(2).every(arg => arg === '--enabled-preview'), 'Only --enabled-preview is supported.');
+const root = 'generated/executive-ally-release' + (preview ? '-preview' : '');
 const receipt = JSON.parse(await readFile(root + '/receipt.json', 'utf8'));
-const image = 'platform-executive-disabled:20261122-v0182';
+const image = `platform-executive-${preview ? 'preview' : 'disabled'}:20261122-v0183`;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const docker = args => execFileSync('docker', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 const inventory = `import {readdir,readFile,stat} from 'node:fs/promises';import {createHash} from 'node:crypto';
@@ -30,7 +32,8 @@ for (const [file, digest] of Object.entries(receipt.sourceHashes)) assert.equal(
 const config = target => JSON.parse(docker(['image', 'inspect', target, '--format', '{{json .Config}}']));
 const previous = config(receipt.base), candidate = config(image);
 for (const field of ['Cmd', 'Entrypoint', 'Env', 'User', 'WorkingDir', 'ExposedPorts', 'Healthcheck']) assert.deepEqual(candidate[field], previous[field], `Image configuration changed: ${field}`);
-assert.equal(receipt.reportsEnabled, false);
+assert.equal(receipt.reportsEnabled, preview);
+assert.equal(receipt.previewOnly, preview);
 assert.equal(receipt.sourceConfigured, false);
 
 // Exercise the actual appended browser module without entering a real account.
@@ -40,12 +43,19 @@ const marker = '\nconst PlatformAllyMsal=';
 assert.equal(bundle.split(marker).length, 2);
 const addition = bundle.slice(bundle.indexOf(marker));
 const children = { existing: 'host outlet' };
-for (const bypass of [false, true]) for (const restricted of [false, true]) {
+for (const bypass of [false, true]) for (const restricted of [false, true]) for (const subject of ['allowed', 'other-user', 'other-tenant', 'signed-out']) {
+  const claims = subject === 'signed-out' ? undefined : {
+    tid: subject === 'other-tenant' ? '33333333-3333-4333-8333-333333333333' : 'd72d9036-cff8-4f5f-a6fa-d698f621d420',
+    oid: subject === 'other-user' ? '44444444-4444-4444-4444-444444444444' : '11111111-1111-4111-8111-111111111111',
+  };
   const context = { V: React, H: {}, We: {}, Ue: {}, _i: bypass,
-    i: () => ({ accounts: [{ homeAccountId: 'fictional-session', idTokenClaims: { tid: 'd72d9036-cff8-4f5f-a6fa-d698f621d420', oid: '11111111-1111-4111-8111-111111111111' } }], instance: { getActiveAccount: () => null } }),
+    i: () => ({ accounts: claims ? [{ homeAccountId: 'fictional-session', idTokenClaims: claims }] : [], instance: { getActiveAccount: () => null } }),
     vn: () => ({ pathname: '/', search: '' }), window: { location: { origin: 'https://platform.invalid', hostname: 'platform.invalid' } }, location: { hostname: 'platform.invalid' }, children, restricted };
   const element = runInNewContext(addition + '\nPlatformExecutiveAlly({children,restricted})', context);
-  assert.equal(element.props.children[0], children); assert.equal(element.props.children[1], null, 'Disabled candidate must never render executive access.');
+  assert.equal(element.props.children[0], children, 'Preserve the original route outlet.');
+  const expected = preview && !restricted && subject === 'allowed';
+  assert.equal(Boolean(element.props.children[1]), expected, `Display gate: preview=${preview}, restricted=${restricted}, subject=${subject}, bypass=${bypass}`);
+  if (expected) assert.equal(element.props.children[1].key, 'fictional-session', 'Changing account remounts the report panel.');
 }
 
 const smoke = `import assert from 'node:assert/strict';import {createAppServer} from '/app/server/app-server.mjs';
@@ -65,7 +75,8 @@ const smokeOutput = docker(['run', '--rm', '--platform', 'linux/amd64', '--netwo
 assert(smokeOutput.includes('Container HTTP:'));
 const result = { checkedAt: new Date().toISOString(), imageId: docker(['image', 'inspect', image, '--format', '{{.Id}}']).trim(), base: receipt.base,
   baseFiles: Object.keys(before).length, reviewedFiles: Object.keys(receipt.files).length, preservedOtherFiles: true, imageConfiguration: 'unchanged',
-  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'shared host authentication', 'disabled display gate', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial'],
+  previewOnly: preview,
+  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'shared host authentication', preview ? 'fictional enabled and denied display gates' : 'disabled display gate', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial'],
   productionDeployed: false, liveModelTested: false, signedInBrowserTested: false };
 await writeFile(root + '/verification.json', JSON.stringify(result, null, 2));
 console.log(JSON.stringify(result, null, 2));

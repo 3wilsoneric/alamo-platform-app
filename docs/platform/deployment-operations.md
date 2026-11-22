@@ -16,6 +16,52 @@
 
 ## Current Production Host
 
+### Local Ally 0.18.3 production-base candidate — November 22
+
+The candidate now pins the verified 0.18.3 archive
+`cf320ffd5b2ab43a563b5d93c3b33239c1cd6cf78bd14e0fdfa765b91eae7266` and ports
+the source/chart correction from staging commit `12f1461`. The lockfile changes
+only that runtime. No staging adapters, synthetic snapshots or deployed settings
+were copied. The real-source/permission/chart tests, resident flow, production
+dependency audit and Chromium fixture at 320/390/1440px pass. The phone screenshot
+was inspected: wrapped names remain readable and controls meet the 44px check.
+The complete analyst gate and production build also pass. The existing bundle-size
+warning remains; no threshold was raised. These checks do not replace the final
+predeployment/postdeployment checklist or real-account pilot acceptance.
+
+Both local production-base images pass exact-file, compression, configuration,
+source-fingerprint, HTTP-route and authorization checks against the unchanged
+November 19 production image. They preserve all 19,123 inventoried base files
+outside the 19-file allowlist. The original monitoring runtime and source readers
+remain unchanged. Images:
+
+- Disabled: `platform-executive-disabled:20261122-v0183`,
+  `sha256:6ec1580f196a399d5199cd42be886c9723a71dd898d80aa6a9659c0c1a35d03d`.
+- Fictional enabled preview: `platform-executive-preview:20261122-v0183`,
+  `sha256:c81bbdbcf724372e2a6f6eee6c708a8fc3011281205a6003fc700513bbe8d7f4`.
+
+The preview's enabled UI uses a fictional subject and `https://ally.invalid`;
+its source remains disabled. Never deploy this preview. Its bundled display gate
+is exercised for allowed/wrong users, wrong tenant, signed-out sessions, restricted
+roles and a production-host bypass attempt. Existing route children remain intact
+and the account key remains attached to the report panel. This is executable
+module evidence, not a signed-in real-account browser test. Actual pilot settings
+remain subject to source grants, human acceptance and the release checklist.
+
+Reproduce the disabled image using `npm run release:executive-ally:prepare`, build
+its tag from `generated/executive-ally-release`, then run
+`npm run check:executive-ally-release`. Add `-- --enabled-preview` to both commands
+and build the separate preview tag from `generated/executive-ally-release-preview`
+to exercise the enabled branch. Each directory contains its own immutable input
+hashes, image and verification receipts. The preparer refuses environment-driven
+activation and checks that production still matches its pinned base before work.
+
+No image has been pushed or deployed. Production remains
+`a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639`.
+The five-question cloud browser test and verified restoration are recorded in the
+[staging operations receipt](/Users/eric/.codex/worktrees/platform-ally-staging-20261121/docs/platform/deployment-operations.md#bounded-executive-browser-test-completed-and-restored-november-22).
+That cloud evidence uses only fictional data; it does not authorize real sources.
+
 ### Local Ally 0.18.2 integration — November 22
 
 The local candidate pins engine `7c657a2` through

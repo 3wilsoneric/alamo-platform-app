@@ -16,6 +16,7 @@ import { createExecutiveReportSource } from '@alamo/agent-runtime/server/executi
 import { createExecutiveReportStore } from '@alamo/agent-runtime/server/executive-report-store.mjs';
 import { createExecutiveReportService } from '@alamo/agent-runtime/server/executive-report-service.mjs';
 import { validateReportEvidence, EXECUTIVE_REPORT_SOURCE_PATH } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
+import { reportViewContext } from '@alamo/agent-runtime/shared/executive-report-views.mjs';
 
 const user='11111111-1111-4111-8111-111111111111', clientId='22222222-2222-4222-8222-222222222222', principalId='33333333-3333-4333-8333-333333333333', audience='44444444-4444-4444-8444-444444444444';
 const scope={communityIds:['337'],from:'2026-11-01',through:'2026-11-20'};
@@ -77,6 +78,36 @@ try {
   county.resident_count='';
   await assert.rejects(connection.read(user,scope,countyStep),'blank measures cannot silently become zero');
   county.resident_count='7';
+  // Exercise the real source projection, not a browser fixture that already
+  // labels its synthetic dataset as chartable.
+  const chartSlice='census_weekly_by_community';
+  const chartRows=[
+    {facility_id:'337',community:'San Pablo',as_of_date:'2026-11-20',census:7},
+    {facility_id:'345',community:'Santa Clarita',as_of_date:'2026-11-20',census:19}
+  ];
+  published.toolContext.manifest.push({slice_name:chartSlice,grain:'community week',row_count:2,fields:Object.keys(chartRows[0])});
+  published.toolContext.tables[chartSlice]=chartRows;
+  registry.grants[0].slices.push(chartSlice);registry.grants[0].communityIds.push('345');
+  const chartScope={...scope,communityIds:['337','345']};
+  const chartStep={id:'source-5',capability:'platform-data',input:{slice:chartSlice,operation:'rows',dateField:'as_of_date'}};
+  const chartEvidence=validateReportEvidence(await connection.read(user,chartScope,chartStep),chartStep,chartScope);
+  assert.equal(chartEvidence.dataset.shape,'categories');
+  assert.equal(chartEvidence.dataset.columns[0].key,'community','the chart axis must use names, not facility IDs or dates');
+  assert.deepEqual(chartEvidence.dataset.rows,chartRows,'chart selection must not alter source values');
+  const chartContext=reportViewContext([{sourceId:chartStep.id,value:chartEvidence}],'fixture','Compare communities in a chart');
+  assert(chartContext.catalog.some(view=>view.id==='comparison'),'the real projected source must offer the comparison renderer');
+  chartRows[1].as_of_date='2026-11-13';
+  assert.equal((await connection.read(user,chartScope,chartStep)).dataset.shape,'records','different census dates cannot be charted as a same-date comparison');
+  chartRows[1].community='San Pablo';chartRows[1].facility_id='337';
+  const series=await connection.read(user,chartScope,chartStep);
+  assert.equal(series.dataset.shape,'series');assert.equal(series.dataset.columns[0].key,'as_of_date');
+  chartRows[1].as_of_date=chartRows[0].as_of_date;
+  assert.equal((await connection.read(user,chartScope,chartStep)).dataset.shape,'records','duplicate community/date rows cannot imply a single observation');
+  chartRows[1].community='';
+  assert.equal((await connection.read(user,chartScope,chartStep)).dataset.shape,'records','missing labels are not chart categories');
+  published.toolContext.tables[chartSlice]=[];
+  assert.equal((await connection.read(user,chartScope,chartStep)).dataset.shape,'records','empty sources remain exact-value tables');
+  registry.grants[0].communityIds.pop();
   assert.equal((await send({...input,step:{...aggregateStep,input:{...aggregateStep.input,dateField:'private_date_of_birth'}}})).status,403,'date selectors cannot bypass aggregate dimension limits');
   const pipeline=await connection.read(user,scope,{id:'source-2',capability:'pipeline-summary',input:{}});assert.equal(pipeline.dataset.rows[0].count,1);assert(!pipeline.answer.includes('900'));
   const identity={tenantId:EVERYAGENT_TENANT,clientId,principalId};const auth=authorizePlatformReportSource(identity,input,registry);

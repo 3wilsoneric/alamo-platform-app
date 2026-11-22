@@ -10,7 +10,9 @@ import react from '@vitejs/plugin-react';
 import ts from 'typescript';
 
 const base = 'pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639';
-const root = process.cwd(), out = path.resolve('generated/executive-ally-release');
+const preview = process.argv.slice(2).includes('--enabled-preview');
+assert(process.argv.slice(2).every(arg => arg === '--enabled-preview'), 'Only --enabled-preview is supported.');
+const root = process.cwd(), out = path.resolve('generated/executive-ally-release' + (preview ? '-preview' : ''));
 const run = (command, args) => execFileSync(command, args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 assert.equal(run('az', ['containerapp', 'show', '-n', 'alamo-platform-prod-web', '-g', 'alamo-data-rg', '--query', 'properties.template.containers[0].image', '-o', 'tsv']).trim(), base, 'Production changed; reconcile its new source before preparation.');
 const readImage = file => run('docker', ['run', '--rm', '--platform', 'linux/amd64', '--network', 'none', '--entrypoint', 'cat', base, '/app/' + file]);
@@ -25,10 +27,14 @@ async function write(file, bytes, compress = false) {
   }
 }
 
-// The inactive candidate is deliberately not an activation mechanism. Rebuild
-// with reviewed display configuration only after model/source acceptance.
-const enabled = process.env.VITE_ALLY_REPORTS_ENABLED === 'true';
-assert(!enabled, 'This preparation supports the disabled candidate only; executive activation acceptance remains open.');
+// The default remains inactive. The explicit preview proves the enabled branch
+// with a fictional subject and an unroutable service; it cannot grant real access.
+// Actual pilot configuration still requires source grants and release acceptance.
+assert(process.env.VITE_ALLY_REPORTS_ENABLED !== 'true', 'Environment activation is not supported; use the fictional --enabled-preview for local verification.');
+const display = preview ? {
+  enabled: 'true', participants: JSON.stringify([{ id: '11111111-1111-4111-8111-111111111111', name: 'Test executive' }]),
+  origin: 'https://ally.invalid', scope: 'api://22222222-2222-4222-8222-222222222222/access_as_user',
+} : { enabled: 'false', participants: '[]', origin: '', scope: '' };
 const oldJs = 'index-platform-consistency-f080e6786782.js';
 const prior = readImage('dist/assets/' + oldJs);
 assert.equal(hash(prior), 'f080e67867827e01cf397d3d55c1b47837fd131e79701b4b555324728757f867');
@@ -50,8 +56,8 @@ const browser = await build({ configFile: false, envDir: false, publicDir: false
         const account=instance.getActiveAccount()??accounts[0];
         return createElement(Fragment,null,children,allowed&&!restricted?createElement(ExecutiveAlly,{key:account?.homeAccountId}):null);
       }`; } }],
-  define: { 'import.meta.env.VITE_ALLY_REPORTS_ENABLED': JSON.stringify('false'), 'import.meta.env.VITE_ALLY_REPORT_PARTICIPANTS': JSON.stringify('[]'),
-    'import.meta.env.VITE_E2E_AUTH_BYPASS': JSON.stringify('false'), 'import.meta.env.VITE_ALAMOAGENT_API_ORIGIN': JSON.stringify(''), 'import.meta.env.VITE_ALAMOAGENT_SCOPE': JSON.stringify('') },
+  define: { 'import.meta.env.VITE_ALLY_REPORTS_ENABLED': JSON.stringify(display.enabled), 'import.meta.env.VITE_ALLY_REPORT_PARTICIPANTS': JSON.stringify(display.participants),
+    'import.meta.env.VITE_E2E_AUTH_BYPASS': JSON.stringify('false'), 'import.meta.env.VITE_ALAMOAGENT_API_ORIGIN': JSON.stringify(display.origin), 'import.meta.env.VITE_ALAMOAGENT_SCOPE': JSON.stringify(display.scope) },
   build: { write: false, minify: false, lib: { entry, formats: ['iife'], name: 'PlatformExecutiveAlly' },
     rollupOptions: { external: (id, importer) => browserExternals.includes(id) || isHostAuth(id, importer), output: {
       globals: id => ({ react: 'V', 'react/jsx-runtime': 'H', '@azure/msal-react': 'PlatformAllyMsal', 'react-router-dom': 'PlatformAllyRouter', 'react-dom/client': 'We', 'react-dom': 'Ue' })[id] ?? 'PlatformAllyAuth' } } } });
@@ -104,11 +110,11 @@ for (const result of [browserCode, serverOutput[0]]) for (const id of Object.key
   const file = id.split('?')[0];
   if (file !== entry && file.startsWith(root + '/') && !file.includes('/node_modules/')) await source(path.relative(root, file));
 }
-await source('vendor/alamo-agent-runtime-0.18.2.tgz');
+await source('vendor/alamo-agent-runtime-0.18.3.tgz');
 await source('scripts/prepare-executive-ally-release.mjs');
 await writeFile(path.join(out, 'Dockerfile'), `FROM ${base}\nCOPY --chown=node:node overlay /app\n`);
 await writeFile(path.join(out, '.dockerignore'), '*\n!Dockerfile\n!overlay/\n!overlay/**\n');
 await writeFile(path.join(out, 'receipt.json'), JSON.stringify({ base, rollback: base, sourceCommit: run('git', ['rev-parse', 'HEAD']).trim(),
-  oldJs, newJs, sourceHashes: sources, files, reportsEnabled: false, sourceConfigured: false,
-  scope: 'Disabled report UI and source endpoint. Live source readers, old monitoring runtime, all other routes, identity, configuration and data remain unchanged.' }, null, 2));
-console.log(JSON.stringify({ out, files: Object.keys(files).length, newJs, enabled: false }));
+  oldJs, newJs, sourceHashes: sources, files, reportsEnabled: preview, previewOnly: preview, sourceConfigured: false,
+  scope: preview ? 'Local fictional display preview only. Unroutable service, fictional participant, source endpoint disabled; never deploy this preview.' : 'Disabled report UI and source endpoint. Live source readers, old monitoring runtime, all other routes, identity, configuration and data remain unchanged.' }, null, 2));
+console.log(JSON.stringify({ out, files: Object.keys(files).length, newJs, enabled: preview, previewOnly: preview }));

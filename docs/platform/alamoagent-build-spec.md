@@ -17,7 +17,7 @@ The user prioritized building the agent and connecting many applications. The
 standalone UI is parked. Engine source, skill definitions, workflows and connector
 routing are edited in AlamoAgent. Platform consumes a pinned archive; the original
 extraction used `vendor/alamo-agent-runtime-0.1.0.tgz`, and the local executive
-candidate below uses `vendor/alamo-agent-runtime-0.18.2.tgz`. Old engine modules re-export that package.
+candidate below uses `vendor/alamo-agent-runtime-0.18.3.tgz`. Old engine modules re-export that package.
 There are no sibling runtime imports or symlinks. Rebuild/bump the package and run
 Platform integration checks before adopting another engine version.
 
@@ -34,7 +34,30 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 
 ## Executive Ally candidate — November 22, 2026
 
-This checkout now pins engine **0.18.2** from `7c657a2`. The owner's $10 live-test
+This production-source checkout now consumes the same **0.18.3** archive verified
+in the bounded staging browser run, SHA-256
+`cf320ffd5b2ab43a563b5d93c3b33239c1cd6cf78bd14e0fdfa765b91eae7266`.
+Only the runtime pin and the actual source/chart regression from staging commit
+`12f1461` were ported; no staging infrastructure or synthetic content was copied.
+Source-owned classification now offers comparisons for unambiguous same-period
+categories and trends for unique dated observations with constant context.
+Mixed dates, duplicates and missing labels retain exact-value tables. Multi-series
+charts remain outside this contract; revisit only with an explicit grouped-series
+contract rather than guessing an axis.
+
+The production-base packaging check now exercises the enabled display branch as
+well as the disabled candidate. `--enabled-preview` creates a separate local image
+with a fictional participant and unroutable service, never real access. It checks
+wrong user/tenant, signed-out and restricted accounts, preserved route children and
+account-bound remounting in the actual appended module. This does not replace
+signed-in production or browser rendering acceptance. The normal artifact remains
+disabled. Both images preserve unrelated production files, routes, readers,
+authentication and image configuration. Exact results belong in
+[deployment operations](deployment-operations.md#local-ally-0183-production-base-candidate--november-22).
+
+### Earlier 0.18.2 integration evidence
+
+This checkout previously pinned engine **0.18.2** from `7c657a2`. The owner's $10 live-test
 authorization supersedes the earlier deferral. The shared Carelog GPT connection
 passed 30 fictional report cases and a ten-question follow-up conversation after
 corrections to date-label validation, source-scope planning and stage distinctions.

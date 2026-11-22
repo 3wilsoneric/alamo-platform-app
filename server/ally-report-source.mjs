@@ -36,6 +36,32 @@ function numericCell(value) {
   if ((typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '' || !Number.isFinite(Number(value))) throw Error('The published measure is not a valid number.');
   return Number(value);
 }
+function platformDataset(title, rows, columns, time) {
+  const dataset = scopedDataset(title, rows, columns);
+  if (!rows.length || !columns.some(column => column.type === 'number')) return dataset;
+  const dimensions = columns.filter(column => column.type === 'string');
+  const constant = key => rows.every(row => row[key] === rows[0][key]);
+  const uniqueLabels = key => rows.every(row => typeof row[key] === 'string' && row[key].trim()) && new Set(rows.map(row => row[key])).size === rows.length;
+  const dates = dimensions.filter(column => /(?:date|month|week|time|period)/i.test(column.key));
+  const communities = ['community', 'community_name', 'Facility_Name', 'facility_name'];
+  const facilityIds = ['facility_id', 'Facility', 'facility', 'FacilityID'];
+  // A chart has one unambiguous dimension. Preserve the full table, and never
+  // combine dates, duplicate categories, or differently scoped observations.
+  const label = dimensions.find(column => !dates.includes(column) && !facilityIds.includes(column.key) &&
+    reportAggregateFields([column.key]).length && uniqueLabels(column.key) &&
+    dates.every(date => constant(date.key) && rows[0][date.key] != null) &&
+    dimensions.every(other => other.key === column.key || constant(other.key) ||
+      communities.includes(column.key) && (communities.includes(other.key) || facilityIds.includes(other.key))));
+  const date = dimensions.find(column => column.key === time && uniqueLabels(column.key) &&
+    rows.every(row => /^\d{4}-\d{2}(?:-\d{2})?$/.test(row[column.key]) && Number.isFinite(Date.parse(row[column.key]))) &&
+    dimensions.every(other => other === column || constant(other.key)));
+  const axis = label ?? date;
+  if (axis) {
+    dataset.shape = label ? 'categories' : 'series';
+    dataset.columns = [axis, ...columns.filter(column => column !== axis)];
+  }
+  return dataset;
+}
 
 export function createPlatformReportSources({ snapshot = readPlatformSnapshot, summary = getReportsSummaryData, data = readAllyPlatformData,
   pipeline = getPipelineAdmissionsSummary, licensing = getLicensingLibrary, knowledge = createWorkflowKnowledgeSource(), now = Date.now } = {}) {
@@ -84,9 +110,9 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       if (result.hasMore || result.coverage.startsWith('partial')) base.coverage = 'partial';
       const keys = args.operation === 'rows' ? result.source.fields : [...(args.groupBy ?? []), 'result'];
       const columns = keys.map(key => ({ key, label: key, type: key === 'result' || reportNumericField(key) ? 'number' : 'string' }));
-      dataset = scopedDataset(definition(args.slice)?.title ?? args.slice,
+      dataset = platformDataset(definition(args.slice)?.title ?? args.slice,
         result.rows.map(row => Object.fromEntries(columns.map(column => [column.key, column.type === 'number' ? numericCell(row[column.key]) : row[column.key] ?? null]))),
-        columns, time && keys.includes(time) && keys.length === 2 ? 'series' : 'records');
+        columns, time);
     } else if (step.capability === 'pipeline-summary') {
       reportObject(args, []);
       const source = await pipeline();
