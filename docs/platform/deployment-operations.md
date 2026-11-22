@@ -33,12 +33,12 @@ Both local production-base images pass exact-file, compression, configuration,
 source-fingerprint, HTTP-route and authorization checks against the unchanged
 November 19 production image. They preserve all 19,123 inventoried base files
 outside the 19-file allowlist. The original monitoring runtime and source readers
-remain unchanged. Images:
+remain unchanged. Final images built from committed source `c232f73`:
 
 - Disabled: `platform-executive-disabled:20261122-v0183`,
-  `sha256:6ec1580f196a399d5199cd42be886c9723a71dd898d80aa6a9659c0c1a35d03d`.
+  `sha256:bfaa34419d521b6ef765b1d7e12148f8e88c9992b02e58d95bd5c3d2d02ece63`.
 - Fictional enabled preview: `platform-executive-preview:20261122-v0183`,
-  `sha256:c81bbdbcf724372e2a6f6eee6c708a8fc3011281205a6003fc700513bbe8d7f4`.
+  `sha256:8b88d100e8fa6d022ca7d53dccf07b14027dbe382f0cb9af98f0aa72c6e818db`.
 
 The preview's enabled UI uses a fictional subject and `https://ally.invalid`;
 its source remains disabled. Never deploy this preview. Its bundled display gate
