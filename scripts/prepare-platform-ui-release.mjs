@@ -23,6 +23,10 @@ const extraScripts = [
   '<script defer src="/point-of-care-launcher.js?v=523fde0578b4"></script>',
 ];
 for (const script of extraScripts) assert(imageHtml.includes(script), `Current shell lost ${script}`);
+const inheritedStyles = [...imageHtml.matchAll(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g)]
+  .filter(([, href]) => !/^\/assets\/index-[^/]+\.css$/.test(href))
+  .map(([tag]) => tag);
+assert(inheritedStyles.some(tag => tag.includes('proforma-release-')), 'The current Workflow stylesheet must be retained.');
 const out = path.join(root, 'generated/platform-ui-release');
 const overlay = path.join(out, 'overlay/dist');
 await rm(out, { recursive: true, force: true });
@@ -34,7 +38,7 @@ const files = {};
 for (const file of ['index.html', 'admissions/index.html', 'chat/index.html']) {
   let html = await readFile(path.join(root, 'dist', file), 'utf8');
   assert(!extraScripts.some(script => html.includes(script)), 'Duplicate external script.');
-  html = html.replace('</head>', `    ${extraScripts[0]}\n  </head>`).replace('</body>', `    ${extraScripts[1]}\n  </body>`);
+  html = html.replace('</head>', `    ${inheritedStyles.join('\n    ')}\n    ${extraScripts[0]}\n  </head>`).replace('</body>', `    ${extraScripts[1]}\n  </body>`);
   const target = path.join(overlay, file);
   await mkdir(path.dirname(target), { recursive: true });
   for (const [suffix, bytes] of [['', Buffer.from(html)], ['.gz', gzipSync(html)], ['.br', brotliCompressSync(Buffer.from(html))]]) {
@@ -44,5 +48,5 @@ for (const file of ['index.html', 'admissions/index.html', 'chat/index.html']) {
 }
 await writeFile(path.join(out, 'Dockerfile'), `FROM ${base}\nCOPY --chown=node:node overlay /app\n`);
 await writeFile(path.join(out, '.dockerignore'), '*\n!Dockerfile\n!overlay/\n!overlay/**\n');
-await writeFile(path.join(out, 'receipt.json'), JSON.stringify({ base, rollback: base, sourceCommit: run('git', ['rev-parse', 'HEAD']).trim(), originalHtmlSha256: sha(imageHtml), files, preservedScripts: extraScripts, boundary: 'Browser assets and three SPA entry documents only. Base server, API, Carelog and licensing runtime unchanged.' }, null, 2));
+await writeFile(path.join(out, 'receipt.json'), JSON.stringify({ base, rollback: base, sourceCommit: run('git', ['rev-parse', 'HEAD']).trim(), originalHtmlSha256: sha(imageHtml), files, preservedScripts: extraScripts, preservedStyles: inheritedStyles, boundary: 'Browser assets and three SPA entry documents only. Base server, API, Carelog and licensing runtime unchanged.' }, null, 2));
 console.log(out);
