@@ -178,7 +178,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       base.coverage = 'partial';
     } else if (step.capability === 'proforma-search') {
       reportObject(args, ['query']);
-      result = await knowledge.read({ operation: 'search', query: reportText(args.query, 200) });
+      result = await knowledge.read({ version: 1, operation: 'search', query: reportText(args.query, 200) });
       base.observedAt = result.observedAt; base.period = `Document revisions as of ${result.observedAt.slice(0, 10)}`; base.grain = 'procedure excerpt'; base.note = result.notice;
       if (result.limited) base.coverage = 'partial';
     } else throw Error('Unregistered report capability.');

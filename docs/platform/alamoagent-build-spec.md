@@ -15,6 +15,13 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 ### November 22 current navigation and requested design integration
 
+Source audit correction: the executive ProForma adapter now supplies the
+canonical knowledge request's required `version: 1`. Its signed-route regression
+failed with 503 before the fix and passes with the real knowledge reader after
+it. Draft status, scoped capability denial and versioned citations are preserved.
+This belongs to the later native Ally release, not the design chat's running UI
+cutover. See the [source correction receipt](deployment-operations.md#ally-proforma-source-contract-correction--november-22-not-deployed).
+
 The approved Platform design and navigation checks through `f553f30` are merged into the executive
 integration branch. It includes the shared header, Carelog-style Ally transition,
 expanded answer/report canvas and phone Chat/Answer or Report controls. The merge preserves

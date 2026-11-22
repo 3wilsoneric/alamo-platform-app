@@ -1,5 +1,25 @@
 # Deployment And Operations
 
+## Ally ProForma source contract correction — November 22, not deployed
+
+The executive `proforma-search` adapter omitted `version: 1` when calling the
+canonical Workflow knowledge reader. A regression through the signed source
+endpoint reproduced a 503; the one-field request correction passes against the
+real reader and committed draft library. The regression also checks capability
+denial before and after the read, versioned source links, draft/review labels,
+partial-result coverage and exclusion of full document bodies.
+
+`check:executive-reports`, `check:workflow-knowledge`, server typecheck and focused
+ESLint pass. Before/after evidence is in
+`generated/current-navigation-20261122/proforma-*.log`. The separate design chat's
+UI overlay preserves the live server and does not contain this new source
+endpoint; its running release candidate is unchanged. Include this correction
+in the subsequent native Ally overlay and recheck all approved live sources.
+The earlier live proof catalogued five capabilities but read only resident flow
+and Pipeline. Suite's canonical read-only proof now executes every capability,
+including licensing metadata and ProForma draft references, while emitting only
+hashes, counts, scope and freshness. That expanded live proof is still pending.
+
 ## Ally 0.18.7 installed with execution disabled — November 22
 
 The independent API is Healthy on `alamo-ally-prod-api--runtime-0187-1122`,

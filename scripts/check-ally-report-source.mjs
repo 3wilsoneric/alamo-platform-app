@@ -42,6 +42,21 @@ try {
   assert.equal((await send({...input,untrustedAction:'send-email'})).status,400);
   assert.equal((await send('x'.repeat(17000))).status,413);
   const connection=createExecutiveReportSource({origin:'https://source.example.test',getToken:async()=>({token,expiresOnTimestamp:Date.now()+60000}),fetchImpl:(url,init)=>fetch(base+new URL(url).pathname,init)});
+  // Use the canonical knowledge reader and its versioned contract, rather than
+  // a permissive fake that would accept an invalid cross-application request.
+  const knowledgeStep={id:'knowledge',capability:'proforma-search',input:{query:'intake'}};
+  assert.equal((await send({...input,step:knowledgeStep})).status,403);
+  registry.grants[0].capabilities.push('proforma-search');
+  const knowledgeEvidence=validateReportEvidence(await connection.read(user,scope,knowledgeStep),knowledgeStep,scope);
+  const knowledge=JSON.parse(knowledgeEvidence.answer);
+  assert.equal(knowledgeEvidence.requiresDetail,false);
+  assert(knowledge.documents.length>0&&knowledge.documents.length<=5);
+  assert(knowledge.documents.every(document=>['draft','review'].includes(document.reviewStatus)&&document.body===null));
+  assert(knowledge.documents.every(document=>document.href.includes('revision='+document.revision)));
+  assert.match(knowledgeEvidence.note,/not approved clinical policy/);
+  assert.equal(knowledgeEvidence.coverage,knowledge.limited?'partial':'complete');
+  registry.grants[0].capabilities.pop();
+  assert.equal((await send({...input,step:knowledgeStep})).status,403,'removing a capability must revoke knowledge reads');
   const evidence=validateReportEvidence(await connection.read(user,scope,step),step,scope);
   assert.equal(evidence.requiresDetail,false);
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
