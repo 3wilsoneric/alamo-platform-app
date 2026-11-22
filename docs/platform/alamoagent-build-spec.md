@@ -44,6 +44,18 @@ Preserve that design and its active phone work, the 0.18.7 pin, current Carelog
 files and disabled production execution while reconciling the candidate. See the
 [operations record](deployment-operations.md#current-navigation-checks-and-design-integration--november-22).
 
+### November 22 native release preparation — local validation
+
+Native release preparation now uses the existing Platform UI build and overlay
+owner instead of appending a second panel to an old minified bundle. It requires
+an explicit current immutable base and matching public Microsoft configuration,
+fingerprints the native sources/assets, and preserves the live Carelog/runtime
+files. Local disabled and owner-only containers pass exact-file, configuration,
+display/access, CSP, route and anonymous-denial checks. This is preparation only;
+after the design chat's cutover, rebuild against that reviewed live image and
+complete main-Chrome acceptance before reopening the model pilot. See the
+[native release receipt](deployment-operations.md#native-ally-release-preparation--november-22).
+
 ### November 22 worker diagnosis — rollout still closed
 
 The canonical worker's actual activity confirmed delayed adoption of enabled and

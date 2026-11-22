@@ -4,13 +4,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { runInNewContext } from 'node:vm';
 import { gunzipSync, brotliDecompressSync } from 'node:zlib';
-import React from 'react';
+import ts from 'typescript';
+import { loadEnv } from 'vite';
 import { executiveAllyReleaseMode } from './executive-ally-release-mode.mjs';
 
 const { preview, pilot, enabled, suffix, imageKind, participants, display } = executiveAllyReleaseMode(process.argv.slice(2));
 const root = 'generated/executive-ally-release' + suffix;
 const receipt = JSON.parse(await readFile(root + '/receipt.json', 'utf8'));
-const image = `platform-executive-${imageKind}:20261122-v0187`;
+const image = `platform-executive-${imageKind}:native-v0187`;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const docker = args => execFileSync('docker', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 const inventory = `import {readdir,readFile,stat} from 'node:fs/promises';import {createHash} from 'node:crypto';
@@ -21,6 +22,7 @@ const before = manifest(receipt.base), after = manifest(image);
 for (const [file, digest] of Object.entries(before)) assert.equal(after[file], receipt.files[file] ?? digest, `Unreviewed production change: ${file}`);
 for (const [file, digest] of Object.entries(after)) assert.equal(digest, receipt.files[file] ?? before[file], `Unrecorded candidate file: ${file}`);
 for (const [file, digest] of Object.entries(receipt.files)) {
+  assert(/^(?:dist\/assets\/[^/]+|dist\/(?:index\.html|(?:admissions|chat)\/index\.html|brand\/ally-mark\.svg)(?:\.gz|\.br)?|server\/(?:ally-report-source-release|app-server|admissions-dashboard)\.mjs|api\/platform\.js)$/.test(file), `Outside the native UI and source boundary: ${file}`);
   assert.equal(after[file], digest, `Candidate mismatch: ${file}`);
   const bytes = await readFile(root + '/overlay/' + file); assert.equal(hash(bytes), digest);
   if (file.endsWith('.gz') || file.endsWith('.br')) {
@@ -37,6 +39,8 @@ assert.equal(receipt.previewOnly, preview);
 assert.equal(receipt.ownerPilot, pilot);
 assert.deepEqual(receipt.display, display);
 assert.equal(receipt.sourceConfigured, false);
+assert.equal(receipt.nativeUi, true);
+assert.equal(receipt.publicBuildEnvironmentHash, hash(JSON.stringify(Object.entries(loadEnv('production', process.cwd(), 'VITE_')).sort(([a], [b]) => a.localeCompare(b)))), 'Public build environment changed; prepare again.');
 const originalHost = docker(['run', '--rm', '--platform', 'linux/amd64', '--network', 'none', '--entrypoint', 'cat', receipt.base, '/app/server/app-server.mjs']);
 if (enabled) {
   const connect = '"connect-src \'self\' https://login.microsoftonline.com"';
@@ -45,36 +49,67 @@ if (enabled) {
     originalHost.replace(connect, JSON.stringify("connect-src 'self' https://login.microsoftonline.com " + display.origin)), 'Only the exact service origin may change in the live host.');
 } else assert.equal(after['server/app-server.mjs'], before['server/app-server.mjs']);
 
-// Exercise the actual appended browser module without entering a real account.
-// The existing auth/router providers are host objects, not a second MSAL client.
+// The native app owns its auth provider and panel. Verify the compiled source
+// gate with fictional claims; source fingerprints bind this check to the build.
+// Real signed-in acceptance remains a separate required release check.
 const bundle = await readFile(root + '/overlay/dist/assets/' + receipt.newJs, 'utf8');
-const marker = '\nconst PlatformAllyMsal=';
-assert.equal(bundle.split(marker).length, 2);
-const addition = bundle.slice(bundle.indexOf(marker));
-const children = { existing: 'host outlet' };
-for (const bypass of [false, true]) for (const restricted of [false, true]) for (const subject of ['allowed', 'other-user', 'other-tenant', 'signed-out']) {
+assert(!bundle.includes('PlatformAllyMsal=') && !bundle.includes('PlatformExecutiveAlly'), 'No appended Ally/auth tree.');
+assert(!Object.hasOwn(receipt.files, 'dist/executive-ally.css'), 'Use the native stylesheet.');
+for (const file of ['dist/index.html', 'dist/admissions/index.html', 'dist/chat/index.html']) {
+  const html = await readFile(root + '/overlay/' + file, 'utf8');
+  assert.equal([...html.matchAll(/<script\b[^>]*type="module"[^>]*src=/g)].length, 1, 'One native app entry.');
+  assert.equal([...html.matchAll(/href="\/assets\/index-[^/]+\.css"/g)].length, 1, 'One main native stylesheet.');
+  for (const kept of [...receipt.preservedScripts, ...receipt.preservedStyles]) assert(html.includes(kept), `Preserve shell extension: ${file}`);
+}
+const accessPath = 'src/features/agent/reports/reportAccess.ts';
+assert(Object.hasOwn(receipt.sourceHashes, accessPath));
+const accessSource = await readFile(accessPath, 'utf8');
+const accessCode = ts.transpileModule(accessSource.replaceAll('import.meta.env', '__env'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
+}).outputText;
+const shell = await readFile('src/shared/layout/ProtectedAppShell.tsx', 'utf8');
+assert(Object.hasOwn(receipt.sourceHashes, 'src/shared/layout/ProtectedAppShell.tsx'));
+const shellTree = ts.createSourceFile('ProtectedAppShell.tsx', shell, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+const nativeGates = [];
+function findNativeGate(node) {
+  if (ts.isIfStatement(node) && node.expression.getText(shellTree).includes('hasExecutiveReportAccess')) nativeGates.push(node.expression.getText(shellTree));
+  ts.forEachChild(node, findNativeGate);
+}
+findNativeGate(shellTree);
+assert.equal(nativeGates.length, 1, 'One native report access branch.');
+for (const hasExecutiveReportAccess of [false, true]) for (const assessor of [false, true]) for (const director of [false, true]) {
+  assert.equal(runInNewContext(nativeGates[0], { hasExecutiveReportAccess,
+    admissionsAccess: { restrictedToAdmissions: assessor }, executiveDirectorAccess: { restrictedToExecutive: director } }),
+  hasExecutiveReportAccess && !assessor && !director, 'Restricted workspaces must not mount executive reports.');
+}
+assert.equal((shell.match(/<ExecutiveAlly\b/g) ?? []).length, 1, 'One native report panel.');
+assert(shell.includes('<ExecutiveAlly key={getApiAuthCachePartition()}'), 'Account changes remount the report panel.');
+assert(shell.includes('return showEveryAgent ? <EveryAgentProvider key={getApiAuthCachePartition()}>{withAlly}</EveryAgentProvider> : withAlly;'), 'Report access replaces the companion instead of adding a duplicate.');
+for (const bypass of [false, true]) for (const configured of [false, true]) for (const subject of ['allowed', 'other-user', 'other-tenant', 'signed-out']) {
   const claims = subject === 'signed-out' ? undefined : {
     tid: subject === 'other-tenant' ? '33333333-3333-4333-8333-333333333333' : 'd72d9036-cff8-4f5f-a6fa-d698f621d420',
     oid: subject === 'other-user' ? '44444444-4444-4444-4444-444444444444' : participants[0]?.id ?? '11111111-1111-4111-8111-111111111111',
   };
-  const context = { V: React, H: {}, We: {}, Ue: {}, _i: bypass,
-    i: () => ({ accounts: claims ? [{ homeAccountId: 'fictional-session', idTokenClaims: claims }] : [], instance: { getActiveAccount: () => null } }),
-    vn: () => ({ pathname: '/', search: '' }), window: { location: { origin: 'https://platform.invalid', hostname: 'platform.invalid' } }, location: { hostname: 'platform.invalid' }, children, restricted };
-  const element = runInNewContext(addition + '\nPlatformExecutiveAlly({children,restricted})', context);
-  assert.equal(element.props.children[0], children, 'Preserve the original route outlet.');
-  const expected = enabled && !restricted && subject === 'allowed';
-  assert.equal(Boolean(element.props.children[1]), expected, `Display gate: mode=${imageKind}, restricted=${restricted}, subject=${subject}, bypass=${bypass}`);
-  if (expected) assert.equal(element.props.children[1].key, 'fictional-session', 'Changing account remounts the report panel.');
+  const dependencies = {
+    '@azure/msal-react': { useMsal: () => ({ accounts: claims ? [{ idTokenClaims: claims }] : [], instance: { getActiveAccount: () => null } }) },
+    '../../../app/auth/authConfig': { isE2EAuthBypassEnabled: bypass },
+    '../conversations/agentTransport': { agentChatConfigured: configured }
+  };
+  const context = { exports: {}, __env: { VITE_ALLY_REPORTS_ENABLED: display.enabled, VITE_ALLY_REPORT_PARTICIPANTS: display.participants },
+    location: { hostname: 'platform.invalid' }, require: id => { assert(Object.hasOwn(dependencies, id), `Unexpected access dependency: ${id}`); return dependencies[id]; } };
+  const allowed = runInNewContext(accessCode + '\nexports.useExecutiveReportAccess()', context);
+  assert.equal(Boolean(allowed), enabled && configured && subject === 'allowed', `Native display gate: mode=${imageKind}, configured=${configured}, subject=${subject}, bypass=${bypass}`);
 }
 
 const smoke = `import assert from 'node:assert/strict';import {createAppServer} from '/app/server/app-server.mjs';
  const server=createAppServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
  try{
   assert.equal((await fetch(origin+'/healthz')).status,200);
-  for(const route of ['/','/admissions','/chat','/analytics/residents','/incidents']){const response=await fetch(origin+route);assert.equal(response.status,200,route);assert((await response.text()).includes(${JSON.stringify(receipt.newJs)}),route+' must use the candidate entry');
+  for(const route of ['/','/admissions','/chat','/analytics/residents','/analytics/community','/analytics/licensing','/incidents']){const response=await fetch(origin+route);assert.equal(response.status,200,route);assert((await response.text()).includes(${JSON.stringify(receipt.newJs)}),route+' must use the candidate entry');
    const directives=response.headers.get('content-security-policy').split('; ');
    assert.equal(directives.find(d=>d.startsWith('connect-src ')),${JSON.stringify("connect-src 'self' https://login.microsoftonline.com" + (enabled ? ' ' + display.origin : ''))});
    assert(directives.includes("script-src 'self'")&&directives.includes("object-src 'none'")&&directives.includes("frame-ancestors 'self'"));}
+  assert.equal((await fetch(origin+'/poc/app/now')).status,200,'Carelog route');
   for(const route of ['/api/platform/bootstrap','/api/platform/admissions-dashboard','/api/platform/everyagent'])assert.equal((await fetch(origin+route)).status,401,route);
   const source=()=>fetch(origin+'/api/platform/ally-source/v1',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
   let response=await source();assert.equal(response.status,503);assert(response.headers.get('cache-control').includes('no-store'));
@@ -86,9 +121,9 @@ const smokeOutput = docker(['run', '--rm', '--platform', 'linux/amd64', '--netwo
   '--entrypoint', 'node', image, '--input-type=module', '-e', smoke]);
 assert(smokeOutput.includes('Container HTTP:'));
 const result = { checkedAt: new Date().toISOString(), imageId: docker(['image', 'inspect', image, '--format', '{{.Id}}']).trim(), base: receipt.base,
-  baseFiles: Object.keys(before).length, reviewedFiles: Object.keys(receipt.files).length, preservedOtherFiles: true, imageConfiguration: 'unchanged',
+  nativeUi: true, baseFiles: Object.keys(before).length, reviewedFiles: Object.keys(receipt.files).length, preservedOtherFiles: true, imageConfiguration: 'unchanged',
   previewOnly: preview, ownerPilot: pilot,
-  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'shared host authentication', enabled ? 'configured subject and denied display gates' : 'disabled display gate', 'exact service CSP origin', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial'],
+  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'native source-bound authentication and display gates', enabled ? 'configured subject and denied display gates' : 'disabled display gate', 'exact service CSP origin', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial'],
   productionDeployed: false, liveModelTested: false, signedInBrowserTested: false };
 await writeFile(root + '/verification.json', JSON.stringify(result, null, 2));
 console.log(JSON.stringify(result, null, 2));

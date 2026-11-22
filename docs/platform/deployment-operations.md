@@ -5716,11 +5716,50 @@ composer or question guide, not merely the workspace shell, before measuring
 useful readiness. Runtime/shared contracts/packages are unchanged by these final
 UI and test commits. This is not a fresh live GPT or signed-in production pass.
 
-The old `prepare-executive-ally-release.mjs` still targets the superseded
-`b958cb49` shell and fails its current-image guard. Do not bypass that guard.
-Before reopening the model pilot, replace its appended panel preparation with
-the integrated native header/panel build on the actual new live image, retaining
-the source authorization, immutable file checks and Carelog recovery boundary.
+The former appended-panel preparation has been replaced by the native release
+path below. The reviewed-current-image guard remains mandatory; old prepared
+artifacts must not be promoted after another Platform/Carelog cutover.
+
+## Native Ally release preparation — November 22
+
+`prepare-executive-ally-release.mjs` now builds the existing native app and reuses
+`prepare-platform-ui-release.mjs` for its browser overlay. It no longer patches
+minified React internals, appends a second component tree, or installs a separate
+Ally stylesheet/auth instance. Supply the reviewed `PLATFORM_UI_BASE_IMAGE`
+immutable digest and the verified production `VITE_ENTRA_TENANT_ID`,
+`VITE_ENTRA_CLIENT_ID` and `VITE_ENTRA_API_SCOPE`. The current live image, HTML,
+entry asset and identity must agree before preparation; a final image readback
+rejects a concurrent cutover. Public build inputs are fingerprinted in key order.
+The current conventional `api://<client-id>/access_as_user` scope is supported;
+any other scope must already occur in the live entry and requires explicit review.
+
+With no mode flag, reports stay hidden; `--owner-pilot` configures only Eric's display
+membership. The isolated `--enabled-preview` remains fictional and cannot be
+deployed. Those modes do not create source grants, configure API membership,
+install credentials, enable workers/schedules or reopen the evaluation campaign.
+The source endpoint remains disabled without its separate runtime configuration.
+The source bundle still reuses live governed readers and adds only the reviewed
+API hook/export and exact CSP origin. Build/source hashes cover the actual native
+chunks, package lock, pinned runtime and preparation owners.
+
+Local image checks on base `82069c2d` compared all 19,462 inventoried files.
+Only 43 disabled-mode / 44 pilot-mode files changed or were added; every other
+file and image runtime setting matched. Native source-bound display tests cover
+wrong subjects/tenants, signed-out accounts, missing configuration and both
+restricted workspace types. The verifier rejects a second entry/panel, a prior
+main stylesheet, unlisted paths, changed source/configuration and mismatched
+compressed siblings. HTTP smoke covers Platform routes, licensing, Carelog,
+anonymous protected-API denial and disabled/unauthorized source denial. These
+are container/source checks, not fresh Microsoft or GPT acceptance.
+
+Evidence is in `generated/current-navigation-20261122/native-*.log` and
+`generated/executive-ally-release{,-pilot}/{receipt,verification}.json`.
+The local verifier tags are `platform-executive-disabled:native-v0187` and
+`platform-executive-pilot:native-v0187`. The current design chat owns the pending
+UI cutover. Reprepare and reverify on its actual final live digest before any
+Ally pilot deployment, preserving that exact rollback target and Carelog files.
+No production deployment, source record change, grant or model call was made
+while implementing this preparation path.
 
 ## Ally worker configuration diagnosis — November 22
 

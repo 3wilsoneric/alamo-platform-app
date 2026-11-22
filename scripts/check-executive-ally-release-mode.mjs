@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { spawnSync } from 'node:child_process';
 import { executiveAllyReleaseMode } from './executive-ally-release-mode.mjs';
 
 test('default release is inactive and fictional preview stays isolated', () => {
@@ -21,5 +22,15 @@ test('first production artifact admits only the verified owner to its display ga
 test('ambiguous, repeated and unrecognized release switches cannot broaden access', () => {
   for (const args of [['--enabled-preview', '--owner-pilot'], ['--owner-pilot', '--owner-pilot'], ['--all'], ['--owner-pilot', 'anything'], ['']]) {
     assert.throws(() => executiveAllyReleaseMode(args));
+  }
+});
+
+test('native preparation rejects missing, mutable and unrelated base images before external work', () => {
+  for (const base of ['', 'pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform:latest', 'elsewhere.example/app@sha256:' + 'a'.repeat(64)]) {
+    const result = spawnSync(process.execPath, ['scripts/prepare-executive-ally-release.mjs'], {
+      encoding: 'utf8', timeout: 10_000, env: { ...process.env, PLATFORM_UI_BASE_IMAGE: base }
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Set PLATFORM_UI_BASE_IMAGE to the reviewed current immutable image/);
   }
 });
