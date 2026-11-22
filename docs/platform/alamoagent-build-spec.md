@@ -13,6 +13,19 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 22 corrected acceptance — current status
+
+The corrected candidate passed 28/28 predeployment checks and ran six real
+questions plus a cache repeat in Eric's main Chrome. Saved-report reopening and
+PDF export passed. Growth, Pipeline stages and counties matched the sources;
+occupancy/freshness still withheld findings, and delay causes lack source detail.
+The prior Platform image and disabled canonical worker are restored. No isolated
+sign-in window, credential export or Andrew/Sandeep access was added. Manual
+acceptance does not pass the separate automated signed-in gate. See the
+[recovery and evidence receipt](deployment-operations.md#corrected-ally-main-chrome-acceptance-and-recovery--november-22)
+and the [canonical next work](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-corrected-main-chrome-acceptance--rollout-remains-closed).
+The preparation and earlier pilot observations below remain historical evidence.
+
 ### November 22 local corrections after real acceptance
 
 The current unpromoted source normalizes the publisher's `Facility`,

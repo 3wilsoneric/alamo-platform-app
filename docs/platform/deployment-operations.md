@@ -5511,3 +5511,50 @@ loads the live map; no isolated sign-in window or credential export is used.
 This is distinct from the automated signed-in smoke gate, which has no saved
 session. Corrected real-answer/cache tests and executive expansion remain open.
 There were no paid calls: the same campaign retains 218 reservations/$5.758482.
+
+## Corrected Ally main-Chrome acceptance and recovery — November 22
+
+The full corrected candidate predeploy gate passed 28/28 at 09:06:22 UTC
+(`generated/platform-ready/latest.json`, SHA-256
+`15c8c5ed3867ef052c5fd13b741128280ff72a7ef05312d3d3b8deff1897e080`).
+Public production smoke passed 4/4. Owner-only image
+`56919745c78533e7f81d87d91c5e4896dfd0c4e435414fb6989dc70401e25e0d`
+ran on `alamo-platform-prod-web--ally-corrected-1122-863f038`.
+
+Eric's existing main Chrome completed six real aggregate questions plus a repeat.
+Growth, exclusive Pipeline stages and eighteen county rows matched their sources.
+Delay causes were correctly left unknown. Occupancy and freshness each withheld
+one finding; their exact rejected proposals were not retained. Synthesis reuse,
+reopening saved reports after reload and native PDF export passed. This is manual
+signed-in acceptance, not the separate automated signed-in smoke gate. No test
+window or credential export; no broader executive access or source mutation.
+
+The pilot was restored to the previous Carelog coverage image
+`b958cb49939c895b56a7c2f032c0208863efb0a5b726a29c00862f47117c59dd`, revision
+`alamo-platform-prod-web--pre-ally-restore-1122`. At 10:01:01 UTC the exact original
+configuration (with that revision suffix) matched, one Healthy revision held
+100% traffic, health returned 200 and anonymous bootstrap 401. The three temporary
+source settings were removed. Azure rejected the original rollback suffix for
+exceeding its revision-name length; the canonical helper now uses the shorter
+suffix. No drift checks were removed.
+
+The canonical independent worker 0.18.6 is restored: all 128 runtime files, ten
+functions and original settings verified at 09:59:32 UTC. Dispatch and both timers
+are disabled. A post-deploy EPIPE was resolved by read-only verification. The
+source/model identities and grants are unchanged. During testing, a stale Durable
+host kept earlier settings despite the verified package; a roughly 80–90 second
+stop then start produced the verified new bootstrap. Treat that as one observed
+recovery, not a universal wait or proof that control-plane settings drain work.
+
+Thirteen paid calls cost an estimated $0.072084 using the campaign's reviewed
+rates. The same $10 campaign retains 231 reservations/$6.132352 (not actual spend).
+Read-only final run/lease and budget reconciliation receipts stay in suite `.state/`.
+Private actual answers, agent review, screenshot and PDF live under
+`/Users/eric/CareEngineMain/ally/generated/executive-evaluations/real-owner-corrected-20261122/`.
+The [canonical engine status](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-corrected-main-chrome-acceptance--rollout-remains-closed)
+records the open answer-quality and human-review work. Andrew/Sandeep remain closed.
+
+Final acceptance cleanup at 10:04 UTC: zero active runs/model leases, canonical
+worker disabled, prior Platform image healthy. All 231 cloud reservations were
+returned to the local campaign ledger with the original prefix intact; the local
+lock was released. Receipt: `/Users/eric/suite-deploy/.state/owner-0186-closed.json`.
