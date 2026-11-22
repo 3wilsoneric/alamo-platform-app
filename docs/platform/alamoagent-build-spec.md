@@ -29,9 +29,14 @@ and isolated package check pass. Platform source/flow/agent integration and its
 218-dependency audit pass. New release preparation and full Platform gate follow.
 
 The change does not edit application layouts, source data or grants. Production
-remains on the restored Carelog coverage image, with canonical worker 0.18.6
-execution disabled. No wider executive access or fresh cloud acceptance is
-claimed. See the [canonical correction and limits](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-embedded-source-date-correction--local-0187).
+Platform remains on the restored Carelog coverage image. Independent API/worker
+0.18.7 is now installed with execution and schedules disabled; exact configuration,
+128 worker files and ten functions are verified. No wider executive access or
+fresh cloud acceptance is claimed. Main Chrome again signed in as Eric without
+an isolated window or credential export. The automated signed-in gate remains
+unpassed and needs its older layout expectations reconciled with current workflows.
+See the [canonical correction and limits](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-embedded-source-date-correction--local-0187)
+and the [installation receipt](deployment-operations.md#ally-0187-installed-with-execution-disabled--november-22).
 
 ### November 22 corrected acceptance — current status
 

@@ -1,5 +1,27 @@
 # Deployment And Operations
 
+## Ally 0.18.7 installed with execution disabled — November 22
+
+The independent API is Healthy on `alamo-ally-prod-api--runtime-0187-1122`,
+image `0ca7e7d46a3491b699cd0d52574d2348eafd1c7e19d5bf159b7cc343f068a08e`.
+Configuration, identity and owner-only access are preserved; health is 200,
+anonymous reports 401, foreign origin 403 and Platform preflight 204. The canonical
+worker ZIP is `677bf4a0209edc7e595c23dc4e1c27770ce60ae869d233d4b2ce3581765106c4`.
+All 128 runtime files, ten functions and exact settings are verified; execution
+and both schedules remain disabled. Earlier EPIPE/timeout readbacks are retained,
+and read-only verification passed at 16:04 UTC without redeployment. API/worker
+0.18.6 remains the recovery target. Suite deployment owns the exact plans and
+private `ally-0187.*` receipts.
+
+Platform's candidate remains package `6c7ae45` on the Carelog coverage base,
+with the full predeployment check still running. The owner-only overlay's exact
+file/configuration, access and served-CSP checks pass. Main Chrome signed in as
+Eric through the existing Microsoft session, with no isolated window or credential
+export. This is not a passing automated signed-in smoke: its stored test session
+is absent and its older home/navigation expectations need reconciliation. No
+Platform cutover, broader executive access, source mutations, grants or additional
+paid model calls occurred during this backend update.
+
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference
 - owners: engineering, operations
