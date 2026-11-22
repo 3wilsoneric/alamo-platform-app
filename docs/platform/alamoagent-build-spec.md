@@ -48,6 +48,11 @@ All three packaged modes now pass their exact-file, configuration, HTTP and
 display-access checks from source `b08e420`. The new real pilot artifact is local
 only; [the operations receipt](deployment-operations.md#owner-only-ally-release-configuration--november-22)
 records its image and preserved production boundary.
+Subsequent inspection found the live host's static CSP would block the new service.
+The enabled packager now adds only the exact configured service origin, with an
+exact-host-file and actual-header regression. The prior image checks did not cover
+that connection permission; updated enabled builds use a 20-file boundary and
+must pass the expanded check before deployment.
 
 This production-source checkout now consumes the same **0.18.3** archive verified
 in the bounded staging browser run, SHA-256

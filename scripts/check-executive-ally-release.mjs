@@ -37,6 +37,13 @@ assert.equal(receipt.previewOnly, preview);
 assert.equal(receipt.ownerPilot, pilot);
 assert.deepEqual(receipt.display, display);
 assert.equal(receipt.sourceConfigured, false);
+const originalHost = docker(['run', '--rm', '--platform', 'linux/amd64', '--network', 'none', '--entrypoint', 'cat', receipt.base, '/app/server/app-server.mjs']);
+if (enabled) {
+  const connect = '"connect-src \'self\' https://login.microsoftonline.com"';
+  assert.equal(originalHost.split(connect).length, 2);
+  assert.equal(await readFile(root + '/overlay/server/app-server.mjs', 'utf8'),
+    originalHost.replace(connect, JSON.stringify("connect-src 'self' https://login.microsoftonline.com " + display.origin)), 'Only the exact service origin may change in the live host.');
+} else assert.equal(after['server/app-server.mjs'], before['server/app-server.mjs']);
 
 // Exercise the actual appended browser module without entering a real account.
 // The existing auth/router providers are host objects, not a second MSAL client.
@@ -64,7 +71,10 @@ const smoke = `import assert from 'node:assert/strict';import {createAppServer} 
  const server=createAppServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
  try{
   assert.equal((await fetch(origin+'/healthz')).status,200);
-  for(const route of ['/','/admissions','/chat','/analytics/residents','/incidents']){const response=await fetch(origin+route);assert.equal(response.status,200,route);assert((await response.text()).includes(${JSON.stringify(receipt.newJs)}),route+' must use the candidate entry');}
+  for(const route of ['/','/admissions','/chat','/analytics/residents','/incidents']){const response=await fetch(origin+route);assert.equal(response.status,200,route);assert((await response.text()).includes(${JSON.stringify(receipt.newJs)}),route+' must use the candidate entry');
+   const directives=response.headers.get('content-security-policy').split('; ');
+   assert.equal(directives.find(d=>d.startsWith('connect-src ')),${JSON.stringify("connect-src 'self' https://login.microsoftonline.com" + (enabled ? ' ' + display.origin : ''))});
+   assert(directives.includes("script-src 'self'")&&directives.includes("object-src 'none'")&&directives.includes("frame-ancestors 'self'"));}
   for(const route of ['/api/platform/bootstrap','/api/platform/admissions-dashboard','/api/platform/everyagent'])assert.equal((await fetch(origin+route)).status,401,route);
   const source=()=>fetch(origin+'/api/platform/ally-source/v1',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
   let response=await source();assert.equal(response.status,503);assert(response.headers.get('cache-control').includes('no-store'));
@@ -78,7 +88,7 @@ assert(smokeOutput.includes('Container HTTP:'));
 const result = { checkedAt: new Date().toISOString(), imageId: docker(['image', 'inspect', image, '--format', '{{.Id}}']).trim(), base: receipt.base,
   baseFiles: Object.keys(before).length, reviewedFiles: Object.keys(receipt.files).length, preservedOtherFiles: true, imageConfiguration: 'unchanged',
   previewOnly: preview, ownerPilot: pilot,
-  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'shared host authentication', enabled ? 'configured subject and denied display gates' : 'disabled display gate', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial'],
+  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'shared host authentication', enabled ? 'configured subject and denied display gates' : 'disabled display gate', 'exact service CSP origin', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial'],
   productionDeployed: false, liveModelTested: false, signedInBrowserTested: false };
 await writeFile(root + '/verification.json', JSON.stringify(result, null, 2));
 console.log(JSON.stringify(result, null, 2));

@@ -98,6 +98,11 @@ api = 'import { handlePlatformReportSourceRequest } from "../server/ally-report-
   '  const requestPath = String(req.url ?? "").split("?", 1)[0] ?? "";',
   '  const requestPath = String(req.url ?? "").split("?", 1)[0] ?? "";\n  if (requestPath === "/api/platform/ally-source/v1") { await handlePlatformReportSourceRequest(req, res); return; }');
 await write('api/platform.js', api);
+// The live host has a static CSP, unlike the staging wrapper. Permit exactly
+// the configured service; retain every other directive and server byte.
+if (enabled) await write('server/app-server.mjs', once(readImage('server/app-server.mjs'),
+  '"connect-src \'self\' https://login.microsoftonline.com"',
+  JSON.stringify("connect-src 'self' https://login.microsoftonline.com " + display.origin)));
 await write('server/admissions-dashboard.mjs', once(readImage('server/admissions-dashboard.mjs'), 'function facilityIdForPipelineCommunity(name)', 'export function facilityIdForPipelineCommunity(name)'));
 await write('dist/brand/ally-mark.svg', await source('public/brand/ally-mark.svg'));
 // Record every bundled source, including the contracts actually consumed.

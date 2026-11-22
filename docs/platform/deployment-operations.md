@@ -18,6 +18,14 @@
 
 ### Owner-only Ally release configuration — November 22
 
+Production-host inspection found that its static browser policy still limited
+connections to self and Microsoft sign-in. The enabled release now adds exactly
+its configured Ally origin to that one CSP directive; every other host byte and
+directive is retained. The disabled host remains byte-identical. The image check
+compares the exact host-file replacement and verifies headers on all served entry
+routes. Enabled artifacts therefore have a 20-file boundary; the preceding
+19-file receipts below predate this connection fix and are not pilot-ready.
+
 `release:executive-ally:prepare -- --owner-pilot` prepares a separate
 `generated/executive-ally-release-pilot` artifact. The shared release-mode owner
 binds it to verified Eric subject `f73371d5-d2b4-48b4-a32b-1edc7c88869f`, the new
