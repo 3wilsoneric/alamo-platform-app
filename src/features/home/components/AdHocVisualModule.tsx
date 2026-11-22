@@ -236,6 +236,48 @@ export function AdHocVisualModule({
         </div>
       </div>
       ) : null}
+      {shouldPreviewDatasheet ? (
+        <div className="border-t border-[#d9d9d9] bg-white px-4 py-3">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {hasMoreDatasheetRows ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    onInteract?.();
+                    preserveInteractionAnchor(event.currentTarget);
+                    setRenderedDatasheetRows((value) => Math.min(value + LARGE_DATASHEET_RENDER_CHUNK, visual.rows.length));
+                  }}
+                  className="inline-flex items-center justify-center border border-[#d9d9d9] bg-white px-4 py-2 text-[12px] font-semibold text-[#333333] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73]"
+                >
+                  Load next {Math.min(LARGE_DATASHEET_RENDER_CHUNK, visual.rows.length - displayVisualRows.length).toLocaleString()}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={(event) => {
+                  onInteract?.();
+                  preserveInteractionAnchor(event.currentTarget);
+                  setShowFullDatasheet((value) => !value);
+                  setRenderedDatasheetRows(LARGE_DATASHEET_RENDER_CHUNK);
+                }}
+                data-dark-action="true"
+                className="inline-flex items-center justify-center bg-[#111111] px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#0f8b73]"
+              >
+                {showFullDatasheet
+                  ? "Collapse preview"
+                  : isServerCappedPreview
+                  ? `Show ${visual.rows.length.toLocaleString()} ${datasheetNoun}`
+                  : visual.rows.length <= LARGE_DATASHEET_FULL_RENDER_LIMIT
+                  ? `Show all ${visual.rows.length.toLocaleString()} ${datasheetNoun}`
+                  : `Show first ${Math.min(visual.rows.length, LARGE_DATASHEET_RENDER_CHUNK).toLocaleString()} ${datasheetNoun}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+
       {isCensusTrendRenderer ? (
         <div className="p-4">
           <CensusTrendModule
@@ -553,46 +595,6 @@ export function AdHocVisualModule({
         />
       ) : null}
 
-      {shouldPreviewDatasheet ? (
-        <div className="border-t border-[#d9d9d9] bg-white px-4 py-3">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {hasMoreDatasheetRows ? (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    onInteract?.();
-                    preserveInteractionAnchor(event.currentTarget);
-                    setRenderedDatasheetRows((value) => Math.min(value + LARGE_DATASHEET_RENDER_CHUNK, visual.rows.length));
-                  }}
-                  className="inline-flex items-center justify-center border border-[#d9d9d9] bg-white px-4 py-2 text-[12px] font-semibold text-[#333333] transition-colors hover:border-[#0f8b73] hover:text-[#0f8b73]"
-                >
-                  Load next {Math.min(LARGE_DATASHEET_RENDER_CHUNK, visual.rows.length - displayVisualRows.length).toLocaleString()}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={(event) => {
-                  onInteract?.();
-                  preserveInteractionAnchor(event.currentTarget);
-                  setShowFullDatasheet((value) => !value);
-                  setRenderedDatasheetRows(LARGE_DATASHEET_RENDER_CHUNK);
-                }}
-                data-dark-action="true"
-                className="inline-flex items-center justify-center bg-[#111111] px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#0f8b73]"
-              >
-                {showFullDatasheet
-                  ? "Collapse preview"
-                  : isServerCappedPreview
-                  ? `Show ${visual.rows.length.toLocaleString()} ${datasheetNoun}`
-                  : visual.rows.length <= LARGE_DATASHEET_FULL_RENDER_LIMIT
-                  ? `Show all ${visual.rows.length.toLocaleString()} ${datasheetNoun}`
-                  : `Show first ${Math.min(visual.rows.length, LARGE_DATASHEET_RENDER_CHUNK).toLocaleString()} ${datasheetNoun}`}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {restoredHistoryPreviewLabel ? (
         <div className="border-t border-[#d9d9d9] bg-white px-4 py-3">

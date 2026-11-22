@@ -196,6 +196,10 @@ async function exerciseExpansion(assistant, page, testCase) {
   await page.mouse.wheel(0, 1);
   await page.waitForTimeout(20);
   await control.scrollIntoViewIfNeeded();
+  // The sticky phone composer covers the bottom of the viewport. Center the
+  // control as a person would before clicking it so Playwright does not move
+  // the page during click and mistake that movement for expansion drift.
+  await control.evaluate((element) => element.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }));
   await page.waitForTimeout(50);
   const initialLayout = await readInteractionLayout(page);
   const initialLabel = normalize(await control.textContent());
