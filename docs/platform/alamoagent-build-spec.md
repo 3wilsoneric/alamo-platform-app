@@ -44,6 +44,10 @@ source permissions or model execution. No broader participant list is accepted.
 The checker exercises the configured subject and denied user/tenant/role branches
 in the appended module. Deployment still needs the named candidate's release
 checks, server/source configuration and signed-in owner acceptance.
+All three packaged modes now pass their exact-file, configuration, HTTP and
+display-access checks from source `b08e420`. The new real pilot artifact is local
+only; [the operations receipt](deployment-operations.md#owner-only-ally-release-configuration--november-22)
+records its image and preserved production boundary.
 
 This production-source checkout now consumes the same **0.18.3** archive verified
 in the bounded staging browser run, SHA-256

@@ -35,6 +35,21 @@ unchanged. The source endpoint remains closed without its server configuration.
 Artifact preparation cannot assign Entra access, grant sources or start model work.
 The new mode is not evidence of deployment or authenticated runtime acceptance.
 
+Source `b08e420` built all three modes. Their exact-file, compressed-asset,
+source-fingerprint, inherited image settings, display gate, route and authorization
+checks passed at 05:31 UTC. Each preserves the 19,123 base files outside the
+reviewed 19-file boundary. The three mode-guard regressions, docs/retention and
+JavaScript lint also pass. Local image IDs:
+
+- Owner pilot: `047726c00af2d409aafd57c36aea248c90622eeb2c0a584346b6e069ea166a5a`.
+- Fictional preview: `261ce730dfbb019c8da993974334d884ece542f9f8ddd8b3453d58ab88b51d40`.
+- Disabled: `118773e1d4d4186429b51304f4f626ca9d3a7638c8d0b2e2981182fdb66a645a`.
+
+Receipts are the `receipt.json` and `verification.json` in each mode's generated
+directory. These supersede the earlier local build IDs below, not the unchanged
+production deployment. No image was pushed/deployed and no live model call or
+signed-in owner test was made by these checks.
+
 The [separate Ally foundation](/Users/eric/suite-deploy/README.md#ally-production-foundation--november-22)
 has no assigned executives, Platform client enrollment, source grants or model
 configuration. Preserve its closed baseline and the current Platform image as
