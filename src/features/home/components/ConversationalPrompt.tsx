@@ -53,7 +53,7 @@ export function ConversationalPrompt({
         className="sticky bottom-0 z-20 mt-6 border-t border-[#dbe5e1] bg-white/95 px-0 pb-[calc(10px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-md sm:px-5"
       >
         <form onSubmit={handleSubmit} className="mx-auto flex max-w-[980px] items-end gap-2 rounded-2xl border border-[#aebfba] bg-white p-2 shadow-[0_10px_32px_rgba(15,55,45,0.08)] focus-within:border-[#0f8b73]">
-          <label className="sr-only" htmlFor="analyst-follow-up">{agent ? "Message AlamoAgent" : "Ask a follow-up"}</label>
+          <label className="sr-only" htmlFor="analyst-follow-up">{agent ? "Ask Ally" : "Ask a follow-up"}</label>
           <textarea
             id="analyst-follow-up"
             data-conversational-input="true"
@@ -63,7 +63,7 @@ export function ConversationalPrompt({
             rows={1}
             maxLength={agent ? 4000 : undefined}
             autoFocus={agent}
-            placeholder={agent ? "Message AlamoAgent" : "Ask a follow-up"}
+            placeholder={agent ? "Ask Ally…" : "Ask a follow-up"}
             className="max-h-36 min-h-11 min-w-0 flex-1 resize-y bg-transparent px-2 py-2.5 text-[16px] leading-6 text-[#111111] outline-none placeholder:text-[#7a8581]"
           />
           <button

@@ -34,6 +34,8 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 
 ## Executive Ally candidate — November 22, 2026
 
+**Local Platform UI follow-up:** Ally now enters from the Platform header and opens chat first in a compact Carelog-style panel. The old floating launcher and updates/skills landing are removed from the shared entry. Entitled report users can enter the retained report tool from chat. This is a source-only presentation change; the production owner pilot described below remains restored to the prior image. The engine, source grants, access policy, model configuration, and notification settings are unchanged. The ordinary local preview has no Ally API and displays a disabled chat layout; a separate synthetic configured browser run verified the create/send/read interaction. This is not signed-in production acceptance.
+
 **Current status:** the owner-only image was deployed after all 28 predeployment
 checks passed, then exercised with ten real aggregate questions through Eric's
 signed-in main Chrome. The review found four passes, three partial results and

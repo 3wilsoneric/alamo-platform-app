@@ -91,7 +91,7 @@ export default function ResidentFlowReport({ facilityId = null, onCommunityChang
         </div>
         <div className="resident-flow-filters">
           {!onCommunityChange && <select ref={communityRef} aria-label="Client flow community" value={selectedFacility ?? ""} onChange={(event) => changeCommunity(event.target.value)}><option value="">All communities</option>{communityOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>}
-          {ready && <p>Jan 1–{dateLabel(report.period.through)}</p>}
+          {ready && <p>Jan 1–{dateLabel(report.period.through)}{report.snapshot.asOfDate !== report.period.through ? ` · Data through ${dateLabel(report.snapshot.asOfDate)}` : ""}</p>}
         </div>
       </header>
       {error ? <div className="resident-flow-error" role="status">{ready ? "Update delayed. Showing the last loaded report." : "Client flow is temporarily unavailable."} <button type="button" onClick={() => setRetry((value) => value + 1)}>Retry</button></div> : null}
@@ -121,7 +121,6 @@ export default function ResidentFlowReport({ facilityId = null, onCommunityChang
           {!matching.length ? <p>No matching clients.</p> : <ul>{matching.slice(currentPage * 12, (currentPage + 1) * 12).map((row) => <li key={row.id}><div><strong>{row.name}</strong><span>{row.community} · {row.county}</span></div><dl><div><dt>Admitted</dt><dd>{dateLabel(row.admitted)}</dd></div><div><dt>Discharged</dt><dd>{row.discharged && row.discharged <= report.period.through ? dateLabel(row.discharged) : "Still in community"}</dd></div>{row.dischargedInPeriod ? <div><dt>Stay</dt><dd>{number(row.stayDays ?? 0)} {row.stayDays === 1 ? "day" : "days"}</dd></div> : null}</dl>{row.priorPlacement ? <p>From {row.priorPlacement}</p> : null}</li>)}</ul>}
           {matching.length > 12 ? <nav aria-label="Client detail pages"><button type="button" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>Previous</button><span>{currentPage + 1} of {lastPage + 1}</span><button type="button" disabled={currentPage === lastPage} onClick={() => setPage(currentPage + 1)}>Next</button></nav> : null}
         </section> : null}
-        <footer className="resident-flow-foot">{report.snapshot.asOfDate !== report.period.through && <span>Source through {dateLabel(report.snapshot.asOfDate)}</span>}<details><summary>Counting</summary><p>Each admission and discharge counts once per stay. Returning clients count again. Bed-days include the admission day and exclude the discharge day. County is the admission/referral county, which may differ from the previous facility’s location.</p></details></footer>
       </>}
     </section>
   );

@@ -162,13 +162,13 @@ async function assertReportSemantics(report, reportId) {
 }
 
 async function assertReportEndReachable(page, report, reportId, screenshotDir, viewportLabel) {
-  const evidence = report.locator('[data-report-evidence="true"]');
-  await evidence.scrollIntoViewIfNeeded();
-  const evidenceBox = await evidence.boundingBox();
+  const end = report.locator('[data-report-reader-end="true"]');
+  await end.scrollIntoViewIfNeeded();
+  const endBox = await end.boundingBox();
   const viewport = page.viewportSize();
   assert(
-    evidenceBox && viewport && evidenceBox.y < viewport.height && evidenceBox.y + evidenceBox.height > 0,
-    `${reportId} evidence boundary is not reachable in the ${viewportLabel} reader`
+    endBox && viewport && endBox.y < viewport.height && endBox.y + endBox.height > 0,
+    `${reportId} end is not reachable in the ${viewportLabel} reader`
   );
   await page.screenshot({
     path: path.join(screenshotDir, `full-report-${reportId}-${viewportLabel}-bottom.png`),

@@ -39,7 +39,7 @@ try { await withBrowserQa(async browser=>{
       } catch(e){await route.fulfill({status:e.statusCode??503,json:{code:e.code??'report_unavailable'}});}
     });
     await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});
-    await page.getByRole('button',{name:'Ally',exact:true}).click();const panel=page.getByRole('dialog',{name:'Ally',exact:true});
+    await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();const panel=page.getByRole('dialog',{name:'Ally',exact:true});
     await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Compare admissions and discharges across communities.');
     loseResponse=width===1440;await panel.getByRole('button',{name:'Send question'}).click();
     if(width===1440){await panel.getByRole('alert').waitFor();await panel.getByRole('button',{name:'Send question'}).click();}
@@ -67,10 +67,10 @@ try { await withBrowserQa(async browser=>{
       await panel.getByLabel('Report version').selectOption('1');await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='1');assert.equal(await panel.getByRole('button',{name:'Refresh report',exact:true}).count(),0);
       await panel.getByLabel('Report version').selectOption('2');await panel.getByRole('textbox',{name:'Follow-up question'}).fill('Explain the net additions and show the supporting values.');await panel.getByRole('button',{name:'Send question'}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='3');
     }
-    await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Ally',exact:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});
-    await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Ally',exact:true}).click();await panel.getByLabel('Saved reports').selectOption({label:'Compare admissions and discharges across communities.'}).catch(async()=>{const option=await panel.getByLabel('Saved reports').locator('option').nth(1).getAttribute('value');await panel.getByLabel('Saved reports').selectOption(option);});
+    await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});
+    await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();await panel.getByLabel('Saved reports').selectOption({label:'Compare admissions and discharges across communities.'}).catch(async()=>{const option=await panel.getByLabel('Saved reports').locator('option').nth(1).getAttribute('value');await panel.getByLabel('Saved reports').selectOption(option);});
     await panel.getByRole('article',{name:'Report findings'}).waitFor();
-    if(width===320){await panel.getByRole('button',{name:'New investigation'}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
+    if(width===320){await panel.getByRole('button',{name:'New report'}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
     assert.deepEqual(errors,[]);await context.close();
   }
 },{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, versioning, follow-up, shared links, recipient controls, revocation, PDF, cancellation and saved reopening passed.'); }

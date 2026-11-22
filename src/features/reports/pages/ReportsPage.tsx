@@ -132,7 +132,7 @@ export default function ReportsPage({
       })
       .catch((reportError) => {
         if (!controller.signal.aborted) {
-          setError(reportError instanceof Error ? reportError.message : "The report could not be compiled.");
+          setError(reportError instanceof Error ? reportError.message : "Report unavailable.");
         }
       })
       .finally(() => {
@@ -263,12 +263,12 @@ export default function ReportsPage({
             >
               <span className="mx-auto block h-6 w-6 animate-spin rounded-full border-2 border-[#d9d9d9] border-t-[#0f8b73]" />
               <p className="mt-3 text-[12px] text-[#595959]">
-                Compiling the governed report.
+                Loading report…
               </p>
             </div>
           ) : error ? (
             <div role="alert" className="min-h-[220px] border-t-2 border-[#a63d2f] py-8">
-              <h2 className="!font-sans text-[25px] font-bold tracking-[-0.035em]">This report could not be compiled.</h2>
+              <h2 className="!font-sans text-[25px] font-bold tracking-[-0.035em]">Report unavailable</h2>
               <p className="mt-2 max-w-[680px] text-[13px] leading-5 text-[#595959]">{error}</p>
               <button
                 type="button"

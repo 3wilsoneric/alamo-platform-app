@@ -47,8 +47,7 @@ export default function OverviewReportDashboard({ report, renderBlock }: {
           <table><thead><tr><th>Community</th>{has("incidents") && <th>Incidents<small>{metric("Incidents")?.detail}</small></th>}{has("compliance") && <th>Administrations given<small>{metric("Administrations given")?.detail}</small></th>}</tr></thead><tbody>{table.rows.map(row => <tr key={String(row.community)}><th scope="row">{row.community}</th>{has("incidents") && <td>{row.incidents}</td>}{has("compliance") && <td>{row.compliance}</td>}</tr>)}</tbody></table>
         </section>}
       </div>
-      <details className="overview-dashboard__context"><summary>Dates & definitions</summary><p>{operating?.intro}</p>{report.metrics.filter(item => !["Census", "Incidents", "Administrations given"].includes(item.label)).map(item => <p key={item.label}><strong>{item.label}: {item.value}.</strong> {item.detail}</p>)}</details>
     </>}
-    {report.sections.filter(section => !table || section !== operating).map(section => <details className="overview-dashboard__context" key={section.id}><summary>{section.title}</summary>{section.intro && <p>{section.intro}</p>}{section.blocks.map((block, index) => <div key={index}>{renderBlock(block)}</div>)}</details>)}
+    {report.sections.filter(section => !table || section !== operating).map(section => <section className="overview-dashboard__additional" key={section.id} aria-label={section.title}><h2>{section.title}</h2>{section.blocks.map((block, index) => <div key={index}>{renderBlock(block)}</div>)}</section>)}
   </div>;
 }
