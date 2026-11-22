@@ -5446,3 +5446,38 @@ production authentication setting was changed.
 - The local auth recorder now reports its non-sensitive route/state and fails
   promptly if its temporary window closes. This test-only change is not part
   of the production image. The prior immutable image above remains the rollback.
+
+
+## Ally model controls installed with execution disabled — November 22
+
+The independent API and canonical worker now run engine 0.18.5 from `5a8b624`.
+API image `493ae5884d4629326300566ededeb731cce6c379841a57e410031bb04e208be0`
+is Healthy at 100% on revision `alamo-ally-prod-api--runtime-0185-1122`.
+The canonical worker ZIP hash is
+`17a4f112572dc64cf6038c3b1a66f75617898a80c863666a538b1d6855c02d1b`;
+128 runtime files, ten functions and exact unchanged settings are verified.
+Dispatch and both schedules remain disabled. Source records/grants and the
+Eric-only allowlist are unchanged. This is installed code, not enabled reports.
+
+The corrected Platform image is pushed at
+`56919745c78533e7f81d87d91c5e4896dfd0c4e435414fb6989dc70401e25e0d`;
+its plan preserves the current Carelog base/rollback `b958cb49939c895b56a7c2f032c0208863efb0a5b726a29c00862f47117c59dd`.
+No Platform release has occurred. The current full predeploy gate stopped in
+`check:everyagent-conversations` on the duplicate-send response assertion.
+Its conversation/store/persistence source is byte-identical to engine 0.18.3;
+20 subsequent full focused runs and 20 direct duplicate-send probes passed.
+The failure cause remains unconfirmed. The test now records response status/body
+on failure without changing the assertion. Preserve
+`generated/executive-ally-predeploy-1122-first-failure.json` and the failed log;
+rerun the entire required gate before deploying the prepared image.
+
+The main-Chrome live map is signed in as Eric and shows the expected five
+communities. The required automated production smoke check failed because
+`.auth/alamo-production-storage-state.json` is absent. No main-browser session
+was exported; manual sign-in is not the automated gate. Real corrected-answer
+and cache acceptance are still pending. No paid model calls ran during this
+update: the unchanged $10 campaign retains 218 reservations totaling $5.758482.
+
+The [suite recovery commands](/Users/eric/suite-deploy/README.md#corrected-runtime-installed-execution-disabled--november-22)
+and [canonical engine status](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-0185-installation--execution-still-disabled)
+record the named images, disabled execution and old-runtime recovery limits.

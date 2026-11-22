@@ -21,7 +21,7 @@ try {
   assert.equal((await request({ ...createCommand, skillIds: ["licensing"] })).status, 409);
   const input = message(chat);
   const results = await Promise.all([request(input), request(input)]);
-  assert(results.every(result => result.ok));
+  assert(results.every(result => result.ok), JSON.stringify(await Promise.all(results.map(async result => ({ status: result.status, body: await result.clone().json() })))));
   const complete = await (await request(null, await sign({ azp: clients[1] }), `?id=${chat.id}`)).json();
   assert.equal(complete.turns.length, 1); assert.equal(complete.turns[0].status, "complete"); assert.equal(modelState.calls, 1);
   assert.deepEqual(complete.turns[0].usage, { inputTokens: 120, outputTokens: 80 }); assert(complete.turns[0].modelStartedAt);

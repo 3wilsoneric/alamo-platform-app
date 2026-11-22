@@ -49,9 +49,16 @@ The next package must preserve the independently deployed Carelog coverage image
 The preparer's original-base guard stopped as intended; its new base is supported
 by an image comparison showing only Carelog asset changes and identical host
 configuration. See the [reconciliation receipt](deployment-operations.md#carelog-release-preserved-for-the-next-ally-candidate--november-22).
-Separately, engine 0.18.5 has local model concurrency and exact answer-reuse
-controls. This Platform pin remains 0.18.4; no engine deployment or broadened
-executive access follows from those source changes.
+Separately, the independent engine 0.18.5 API and canonical worker are now
+installed with model execution disabled, preserving their exact owner-only
+configuration. This Platform pin remains 0.18.4. The current full predeployment
+run stopped in the unchanged conversation duplicate-send assertion. Twenty
+focused reruns passed; the first failure cause is not confirmed. Response
+diagnostics were added without relaxing the assertion or retry limits, and
+the complete release gate must be rerun. Main Chrome signs in normally, but
+the separate required automated production test lacks a saved test session.
+Neither manual access nor focused passes substitute for those gates. See the
+[disabled runtime receipt](deployment-operations.md#ally-model-controls-installed-with-execution-disabled--november-22).
 
 The user prioritized building the agent and connecting many applications. The
 standalone UI is parked. Engine source, skill definitions, workflows and connector
