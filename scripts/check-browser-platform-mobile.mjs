@@ -21,7 +21,6 @@ const ROUTES = [
   { name: "home", pathname: "/home", ready: "[data-california-workspace-carousel='true']" },
   { name: "community-profile", pathname: "/home/community/337", ready: "[data-california-community-profile='337']" },
   { name: "analytics", pathname: "/analytics", ready: "[data-reports-page='true']" },
-  { name: "questions", pathname: "/analytics/questions", ready: "[data-certified-question-guide='true']" },
   { name: "admissions", pathname: "/admissions", ready: "[data-admissions-overview='true']" },
   { name: "personnel", pathname: "/personnel", ready: "[data-workforce-overview='true']" },
   { name: "outreach", pathname: "/outreach", ready: "[data-fifty-state-page='true']" },

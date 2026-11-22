@@ -77,14 +77,9 @@ async function measureRouteReady(page, pathname, pattern) {
   return Math.round(performance.now() - startedAt);
 }
 
-async function openAnalyticsQuestionGuide(page, timeoutMs) {
-  await page.locator('[data-platform-page-target="analytics"]').click({ timeout: timeoutMs });
-  const analyticsSections = page.locator('[data-analytics-section-navigation][data-analytics-section-current="reports"]');
-  await analyticsSections.waitFor({ state: "visible", timeout: timeoutMs });
-  await analyticsSections.locator('[data-analytics-section-target="questions"]').click({ timeout: timeoutMs });
-  await page.locator('[data-california-carousel-panel="questions"][aria-hidden="false"]')
-    .waitFor({ state: "visible", timeout: timeoutMs });
-  await page.locator('[data-certified-question-guide="true"]').first().waitFor({
+async function openOwnerChat(page, timeoutMs) {
+  await page.goto(`${BASE_URL}/chat`, { waitUntil: "domcontentloaded" });
+  await page.locator('[data-chat-workspace-panel="true"]').waitFor({
     state: "visible",
     timeout: timeoutMs
   });
@@ -92,7 +87,7 @@ async function openAnalyticsQuestionGuide(page, timeoutMs) {
 
 async function measureResidentSearchSurfaceReady(page) {
   const startedAt = performance.now();
-  await page.goto(`${BASE_URL}/analytics/questions`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/chat`, { waitUntil: "domcontentloaded" });
   await startCleanChat(page);
   await ask(page, "Can you show me the Resident Search module?");
   await waitForLatestRenderableReady(page, "Resident Search");
@@ -148,9 +143,9 @@ async function main() {
     });
     const homeReadyMs = Math.round(performance.now() - homeStart);
 
-    requestPhase = "analytics";
+    requestPhase = "chat";
     const chatStart = performance.now();
-    await openAnalyticsQuestionGuide(page, CHAT_READY_MS);
+    await openOwnerChat(page, CHAT_READY_MS);
     const chatReadyMs = Math.round(performance.now() - chatStart);
 
     await startCleanChat(page);
