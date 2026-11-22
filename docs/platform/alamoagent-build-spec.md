@@ -40,6 +40,8 @@ The subsequent local correction uses Carelog's actual three-path bookmark mark a
 
 The local Ally panel now has a full-screen toggle. It expands the mounted chat into a viewport-sized workspace without changing the selected conversation, and the entitled executive report view uses the same control for wider charts, tables, and narrative reports. Restore returns to the compact panel; Escape restores first and closes on a second press. This is a Platform UI capability, not a new agent rendering protocol or an enabled production service. The local browser regression verifies expand, restore, and the existing bookmark flight at desktop and phone widths.
 
+The expanded layout now keeps a compact conversation trail beside a reading canvas. An answer appears directly with its formatted text and tables; source links stay in one collapsed disclosure. Entitled report users can build a report in the canvas without losing the chat, and the existing report view renders its chart or values there. On phones, Chat and Canvas are separate tabs and a new answer opens the Canvas tab. A synthetic HTTP fixture exercises a conversation answer, table, cited source, chart report, and follow-up composer at desktop and phone widths. These are presentation and existing report-rendering behaviors; model-authored arbitrary UI components and broader data coverage are not implemented by this change.
+
 **Current status:** the owner-only image was deployed after all 28 predeployment
 checks passed, then exercised with ten real aggregate questions through Eric's
 signed-in main Chrome. The review found four passes, three partial results and

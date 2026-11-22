@@ -1,13 +1,15 @@
 import type { AgentConversation } from "../../../../shared/everyagent-conversations.mjs";
 import { FormattedMessageText } from "../../home/components/FormattedMessageText";
+import { ArrowUpRight } from "lucide-react";
 
-export default function ConversationMessages({ chat, onCancel }: { chat: AgentConversation; onCancel: (id: string) => void }) {
+export default function ConversationMessages({ chat, onCancel, compact = false, selectedTurnId, onSelectTurn }: { chat: AgentConversation; onCancel: (id: string) => void; compact?: boolean; selectedTurnId?: string | null; onSelectTurn?: (id: string) => void }) {
   return <div className="agent-conversation-messages" aria-label="Messages" aria-live="polite">
     {chat.turns.map(turn => <section key={turn.id} className="agent-conversation-turn">
       <div className="agent-conversation-user"><span className="sr-only">You: </span>{turn.text}</div>
       {turn.status === "working" && <div role="status" className="agent-conversation-progress">Reading sources and preparing an answer…<button type="button" onClick={() => onCancel(turn.id)}>Stop</button></div>}
       {turn.status !== "working" && turn.status !== "complete" && <p role="status">{turn.status === "canceled" ? "Stopped." : turn.status === "interrupted" ? "This answer was interrupted. Your message is saved; send again when ready." : "The answer could not be verified. Your message is saved; send again when ready."}</p>}
-      {turn.answer && <div className="agent-conversation-answer" aria-label="Ally answer">
+      {turn.answer && compact && <div className="agent-conversation-answer-summary" aria-label="Ally answer preview"><button type="button" aria-pressed={selectedTurnId === turn.id} onClick={() => onSelectTurn?.(turn.id)}>View answer <ArrowUpRight size={15} aria-hidden="true" /></button></div>}
+      {turn.answer && !compact && <div className="agent-conversation-answer" aria-label="Ally answer">
         {turn.answer.paragraphs.map((paragraph, index) => <div key={index}>
           <FormattedMessageText text={paragraph.text} />
           {paragraph.sourceIds.length > 0 && <p className="agent-conversation-citations">{paragraph.sourceIds.map(id => {
