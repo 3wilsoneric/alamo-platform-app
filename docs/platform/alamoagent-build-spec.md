@@ -38,7 +38,10 @@ records, grants or production deployment. This checkout now pins engine **0.18.4
 `465b9120c995ea79abf89e44132ba0fda6bf0c5eea7e2a1f52b95cc537ab767a`.
 The installed validator and lockfile integrity match that archive. The engine
 suite, API/worker builds, isolated package and Platform production-dependency audit
-pass. Broader paired integration and fresh browser acceptance are still pending. See the
+pass. The full `check:analyst`, `check:docs` and production build now also pass.
+The owner overlay on the current Carelog base passes its exact-file/configuration,
+access/display and served-header checks. Full release-gate and fresh real browser
+acceptance remain pending. See the
 [canonical correction record](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-real-source-corrections--local-0184-candidate).
 
 The next package must preserve the independently deployed Carelog coverage image
