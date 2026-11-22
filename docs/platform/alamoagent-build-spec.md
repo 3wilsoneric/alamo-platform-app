@@ -34,11 +34,15 @@ allowlist and passes container/access checks. Its full gate was stopped when the
 design owner began a final live control cleanup. That cleanup, `d7a97a1`, is now
 merged in `04f82fe`; the combined native image `68437690` passes preservation,
 configuration and access checks against the unchanged live image. Its complete
-predeployment gate is rerunning after repeated storage-token `EPIPE` failures.
+predeployment gate remains incomplete after storage-token and cache-read failures.
 Fresh credential and idle controls pass. Yielding to the event loop between
 simulated turns now passes 635/635 twice; the longer run also verifies a successful
 second token request after the five-minute cache expiry. Runtime authentication
-is unchanged. The current
+is unchanged. The following full run passed that stage but stalled during cache
+generation; its terminated failure is retained. An instrumented generation passed
+all 200 entries. The cache batch now also yields between calls; its 200-entry
+generation and existing 150-prompt/48-cache/15-live-turn/three-parity assertions
+pass. A complete release gate is still required. The current
 live design has passed all 15 routes, 12 navigation interactions and a complete
 native Network/console observation in main Chrome. That evidence does not cover
 the pending image. At 23:09 UTC the new explicit driver also passed 15 routes,

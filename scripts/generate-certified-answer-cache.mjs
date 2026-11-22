@@ -1,6 +1,7 @@
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { setImmediate as nextTurn } from "node:timers/promises";
 import { getCommunitiesDashboardData, getReportsSummaryData } from "../server/platform-data.mjs";
 import { buildCertifiedAnswerDataSignature } from "../server/certified-answer-cache.mjs";
 import { runCopilotTool } from "../server/copilot-tools.mjs";
@@ -92,6 +93,8 @@ async function main() {
   const dataSignature = buildCertifiedAnswerDataSignature(communities, reportsSummary);
 
   for (const request of requests) {
+    // Cached calls must let pending socket events run between simulated requests.
+    await nextTurn();
     try {
       const result = await runCopilotTool({
         content: request.prompt,

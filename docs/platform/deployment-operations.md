@@ -34,8 +34,19 @@ the snapshot cache's five-minute expiry: both token requests returned 200 on new
 sockets (338ms and 444ms), and its final receipt is dated 23:00:25 UTC. This supports
 the event-loop starvation diagnosis; no production authentication code changed.
 Its log and report are retained as `fuzz-yield-extended.log` and
-`fuzz-yield-second-token-pass.json`. The full 28-stage gate is running again with
-this correction; it is not yet a release pass.
+`fuzz-yield-second-token-pass.json`. The next full run passed the corrected fuzz
+stage but stalled in answer-cache generation: the process held an Azure socket,
+with unchanged CPU time and byte counters for repeated observations over twenty
+minutes. A separate instrumented generation completed all 200 entries with zero
+errors. The stalled child was terminated; the full run failed at 23:36 UTC with
+exit 143, retained in `native-final-ui-predeploy-cache-stall.json`. The cache
+generator now also yields between cached tool calls. Its focused generation
+passed all 200 entries; rail validation passed 150 prompts, 48 cache requests,
+15 live turns and three parity checks across 44 families. Logs are
+`cache-yield.log` and `cache-yield-rails.log`. Another complete gate is required.
+The precise stalled request
+was not captured; yielding prevents a tight microtask chain but does not add a
+transport deadline or establish a general network-availability guarantee.
 
 At 22:07 UTC the current live design passed 15 routes and 12 interactions in main
 Chrome. Its settled native capture observed 600 requests with one explicit
