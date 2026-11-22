@@ -16,6 +16,27 @@
 
 ## Current Production Host
 
+### Carelog release preserved for the next Ally candidate — November 22
+
+Another authorized release subsequently advanced Platform to image
+`b958cb49939c895b56a7c2f032c0208863efb0a5b726a29c00862f47117c59dd`, revision
+`alamo-platform-prod-web--coverage-1121-db9b538`. The Ally preparer's drift guard
+stopped before creating a candidate from the obsolete restoration image.
+An independent hash comparison of the old and new images found identical image
+configuration and changes/additions only within `dist/poc/app/`: the Carelog
+coverage release. No files were removed. The compared inventories contain 19,123
+and 19,270 files respectively. Platform's shell, source readers and API bytes are
+unchanged. Private proof: `suite-deploy/.state/platform-current-base-delta.json`.
+
+The preparer now pins that current image as both base and rollback target.
+Its exact shell/content assertions and full overlay preservation checks remain.
+Old owner-pilot deployment/restore plans are historical and must not be applied
+to this new base. No Ally cutover was performed by this reconciliation. Eric's
+existing main Chrome Microsoft session successfully reopened the live Platform
+home; that observation is not a replacement for the required release gate.
+
+See the [Carelog coverage receipt](/Users/eric/.codex/worktrees/carelog-coverage-completion-20261121/docs/handoff/coverage-completion-2026-11-21.md).
+
 ### Real Ally owner acceptance and restoration — November 22
 
 The owner image `704a3d5b918c41e158ddad6de7a4f893f0c995454d48affca76fe128fd938f00`

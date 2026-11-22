@@ -41,6 +41,15 @@ suite, API/worker builds, isolated package and Platform production-dependency au
 pass. Broader paired integration and fresh browser acceptance are still pending. See the
 [canonical correction record](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-real-source-corrections--local-0184-candidate).
 
+The next package must preserve the independently deployed Carelog coverage image
+`b958cb49939c895b56a7c2f032c0208863efb0a5b726a29c00862f47117c59dd`.
+The preparer's original-base guard stopped as intended; its new base is supported
+by an image comparison showing only Carelog asset changes and identical host
+configuration. See the [reconciliation receipt](deployment-operations.md#carelog-release-preserved-for-the-next-ally-candidate--november-22).
+Separately, engine 0.18.5 has local model concurrency and exact answer-reuse
+controls. This Platform pin remains 0.18.4; no engine deployment or broadened
+executive access follows from those source changes.
+
 The user prioritized building the agent and connecting many applications. The
 standalone UI is parked. Engine source, skill definitions, workflows and connector
 routing are edited in AlamoAgent. Platform consumes a pinned archive; the original

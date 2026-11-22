@@ -10,7 +10,7 @@ import react from '@vitejs/plugin-react';
 import ts from 'typescript';
 import { executiveAllyReleaseMode } from './executive-ally-release-mode.mjs';
 
-const base = 'pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639';
+const base = 'pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:b958cb49939c895b56a7c2f032c0208863efb0a5b726a29c00862f47117c59dd';
 const { preview, pilot, enabled, suffix, display } = executiveAllyReleaseMode(process.argv.slice(2));
 const root = process.cwd(), out = path.resolve('generated/executive-ally-release' + suffix);
 const run = (command, args) => execFileSync(command, args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
