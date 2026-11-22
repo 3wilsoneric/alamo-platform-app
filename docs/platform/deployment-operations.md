@@ -5621,6 +5621,26 @@ The local native review stays available at `http://127.0.0.1:4383/`.
 Candidate/rollback plan:
 `/Users/eric/suite-deploy/.state/platform-production-ally-0187-1122.plan.json`.
 
+## Ally worker configuration diagnosis — November 22
+
+At 17:44 UTC the canonical production worker was verified disabled after a no-op
+configuration test. Both schedules stayed disabled throughout. Its real activity
+observed the old flag shortly after both enable and disable, then adopted each
+change. The [engine finding](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-worker-configuration-propagation--confirmed-without-report-execution)
+records sampled times and the required activity-level activation/closure checks;
+there is no claimed maximum propagation time. No production package changed.
+All report/index/model-state hashes remained identical, zero source/model calls
+occurred, and the same campaign remains expired. Staging was fully restored;
+nine completed test histories were removed, preserving real report histories.
+The focused engine suite passes 39/39, including stale delivery fencing.
+
+Platform image/revision/source settings are unchanged from the recovery below;
+health and `/poc/app/` return 200. Private receipts are in
+`/Users/eric/suite-deploy/.state/worker-config-probe-prod/`:
+`canonical-verification.json`, `canonical-restored.json`, `cleanup.json` and
+`platform-unchanged.json`. This closes the configuration investigation, not fresh
+answer acceptance or the signed-in current-navigation release gate.
+
 ## Ally 0.18.7 retest and concurrent release recovery — November 22
 
 Full predeployment passed 28/28 at 16:34:58 UTC for packaged source `6c7ae45`.

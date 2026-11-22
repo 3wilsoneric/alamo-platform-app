@@ -13,6 +13,17 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 22 worker diagnosis — rollout still closed
+
+The canonical worker's actual activity confirmed delayed adoption of enabled and
+disabled configuration. No package change is needed for that finding; activation
+must prove the activity branch before scheduling reports. Stale-attempt probes
+left all report and model-budget state unchanged, both workers are restored, and
+all 39 executive-report tests pass. Platform stays on `82069c2d`; no source
+settings or executive access changed. See the [operations receipt](deployment-operations.md#ally-worker-configuration-diagnosis--november-22)
+and [canonical evidence](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-worker-configuration-propagation--confirmed-without-report-execution).
+Current-navigation release coverage and fresh answer acceptance remain open.
+
 ### November 22 bounded retest — rollout closed
 
 The 0.18.7 candidate passed all 28 predeployment checks and the aggregate source
