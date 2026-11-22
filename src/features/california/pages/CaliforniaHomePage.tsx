@@ -43,7 +43,8 @@ export default function CaliforniaHomePage() {
     ? decodeURIComponent(encodedPathFacilityId)
     : null;
   const routeFacilityId =
-    pathFacilityId ?? new URLSearchParams(location.search).get("community");
+    pathFacilityId ?? (panelForPath(location.pathname) === "map"
+      ? new URLSearchParams(location.search).get("community") : null);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(
     routeFacilityId
   );
@@ -96,8 +97,7 @@ export default function CaliforniaHomePage() {
   }
 
   function openCommunity(facilityId: string) {
-    setSelectedFacilityId(facilityId);
-    navigate(`/home/community/${encodeURIComponent(facilityId)}`);
+    navigate(`/analytics?report=community&community=${encodeURIComponent(facilityId)}`);
   }
 
   return (

@@ -115,8 +115,8 @@ requireText(
 );
 requireText(
   page,
-  /function openCommunity\(facilityId: string\)[\s\S]*?setSelectedFacilityId\(facilityId\)[\s\S]*?navigate\(`\/home\/community\/\$\{encodeURIComponent\(facilityId\)\}`\)/,
-  "map selection does not open immediately and synchronize the canonical community route"
+  /function openCommunity\(facilityId: string\)[\s\S]*?navigate\(`\/analytics\?report=community&community=\$\{encodeURIComponent\(facilityId\)\}`\)/,
+  "map selection does not preserve the full scoped community report"
 );
 requireText(
   modal,

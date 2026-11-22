@@ -213,13 +213,13 @@ async function checkProductionInteractions(page) {
 
       if (failures.length === 0) {
         await page.waitForURL(
-          buildUrl(`/home/community/${facilityId}`),
+          buildUrl(`/analytics?report=community&community=${facilityId}`),
           { timeout: ROUTE_READY_TIMEOUT_MS }
         ).catch(() => {
           failures.push("community click did not update the route");
         });
         await page
-          .locator(`[data-california-community-profile="${facilityId}"] [data-community-domain-section="census"]`)
+          .locator('article[data-full-report="community"]')
           .waitFor({ state: "visible", timeout: ROUTE_READY_TIMEOUT_MS })
           .catch(() => {
             failures.push("community profile did not render after navigation");
@@ -228,7 +228,7 @@ async function checkProductionInteractions(page) {
 
       if (failures.length === 0) {
         await page
-          .getByRole("button", { name: /^Close .+ profile$/ })
+          .getByRole("link", { name: "Back to California map", exact: true })
           .click({ timeout: ROUTE_READY_TIMEOUT_MS })
           .catch(() => {
             failures.push("community return-home link failed");

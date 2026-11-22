@@ -69,7 +69,14 @@ await withBrowserQa(async browser => {
         await page.goto(`${BASE_URL}${legacy}`, { waitUntil: "domcontentloaded" });
         await page.waitForURL(`${BASE_URL}${destination}`);
         assert.equal(page.url(), `${BASE_URL}${destination}`, "saved links retain their scope and destination");
+        assert.equal(await page.locator('[data-california-community-profile]').count(), 0, "report scope must not open the old community popup");
       }
+    }
+    if (width === 1440) {
+      await page.goto(`${BASE_URL}/home`, { waitUntil: "domcontentloaded" });
+      await page.locator('[data-california-community-marker="337"]').click();
+      await page.waitForURL(`${BASE_URL}/analytics?report=community&community=337`);
+      assert.equal(await page.locator('[data-california-community-profile]').count(), 0, "map opens the full report without a duplicate popup");
     }
     await page.goto(`${BASE_URL}/analytics`, { waitUntil: "domcontentloaded" });
     await page.locator(".platform-ally-header-button:visible").first().click();

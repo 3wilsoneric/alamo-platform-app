@@ -167,10 +167,14 @@ async function main() {
         });
       }
       await marker.click();
-      await page.waitForURL(
-        (url) => url.pathname === `/home/community/${facility.facilityId}`,
-        { timeout: 5_000 }
-      );
+      await page.waitForURL(`${BASE_URL}/analytics?report=community&community=${facility.facilityId}`, { timeout: 5_000 });
+      await page.locator('article[data-full-report="community"]').waitFor({ state: "visible", timeout: 45_000 });
+      if (await page.getByRole('combobox', { name: 'Report community', exact: true }).inputValue() !== facility.facilityId) throw new Error('Full community report lost the selected map scope.');
+      if (await page.locator('[data-california-community-profile]').count()) throw new Error('Full community report is obscured by the legacy popup.');
+      await page.getByRole('link', { name: 'Back to California map', exact: true }).click();
+      await page.waitForURL(`${BASE_URL}/home`);
+      // Retain the existing saved-profile route and drilldown regression checks.
+      await page.goto(`${BASE_URL}/home/community/${facility.facilityId}`, { waitUntil: "domcontentloaded" });
       const profile = page.locator(
         `[data-california-community-profile="${facility.facilityId}"]`
       );
@@ -431,14 +435,14 @@ async function main() {
       '[data-california-carousel-panel="reports"]'
     );
     if (
-      await questionPanel.count() !== 1 ||
+      await questionPanel.count() !== 0 ||
       await reportsPanel.count() !== 1
     ) {
-      throw new Error("Questions and Analytics were not pre-mounted beside the California map.");
+      throw new Error("The retired Questions panel returned or the Analytics panel is missing.");
     }
     if (
-      await questionPanel.getAttribute("aria-hidden") !== "true" ||
-      await reportsPanel.getAttribute("aria-hidden") !== "true"
+      await reportsPanel.getAttribute("aria-hidden") !== "true" ||
+      await reportsPanel.getAttribute("inert") === null
     ) {
       throw new Error("Off-screen carousel panels are exposed before either is selected.");
     }
@@ -502,137 +506,29 @@ async function main() {
     if (
       homeNavigation.current !== "home" ||
       homeNavigation.left.join(",") !== "home" ||
-      homeNavigation.right.join(",") !== "analytics,incidents,admissions,workflow,personnel,everyagent"
+      homeNavigation.right.join(",") !== "analytics,admissions,clients,incidents,licensing,workflow,personnel"
     ) {
       throw new Error(`Home platform navigation is out of order: ${JSON.stringify(homeNavigation)}`);
     }
     await page.getByRole("link", { name: "Analytics", exact: true }).click();
-    await page.waitForURL((url) => url.pathname === "/analytics", { timeout: 5_000 });
-    await page
-      .locator('[data-reports-page="true"][data-reports-embedded="true"]')
-      .waitFor({ state: "visible", timeout: 10_000 });
-    await page
-      .locator('[data-analytics-section-navigation][data-analytics-section-current="reports"] [data-analytics-section-target="questions"]')
-      .click();
-    await page
-      .locator('[data-certified-question-guide="true"]')
-      .waitFor({ state: "visible", timeout: 5_000 });
-    await page.waitForFunction(() => {
-      const carousel = document.querySelector(
-        '[data-california-workspace-carousel="true"]'
-      );
-      const panel = document.querySelector(
-        '[data-california-carousel-panel="questions"]'
-      );
-      if (!carousel || !panel) return false;
-      const panelBox = panel.getBoundingClientRect();
-      return (
-        carousel.getAttribute("data-california-active-panel") === "questions" &&
-        panel.getAttribute("aria-hidden") === "false" &&
-        Math.abs(panelBox.left - carousel.getBoundingClientRect().left) <= 2
-      );
-    });
-    await page.screenshot({
-      path: `${screenshotDir}/desktop-questions.png`,
-      fullPage: false
-    });
-    if (new URL(page.url()).pathname !== "/analytics/questions") {
-      throw new Error("Ask a question did not establish the canonical /analytics/questions route.");
+    await page.waitForURL(`${BASE_URL}/analytics`);
+    await page.locator('article[data-full-report="overview"]').waitFor({ state: "visible", timeout: 45_000 });
+    await page.getByRole("link", { name: "Clients", exact: true }).click();
+    await page.waitForURL(`${BASE_URL}/analytics?report=residents`);
+    await page.locator('article[data-full-report="residents"]').waitFor({ state: "visible", timeout: 45_000 });
+    for (const route of ['/questions', '/analytics/questions']) {
+      await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
+      await page.waitForURL(`${BASE_URL}/analytics`);
+      await page.locator('article[data-full-report="overview"]').waitFor({ state: "visible", timeout: 45_000 });
+      if (await page.locator('[data-certified-question-guide="true"]').count()) throw new Error('Retired question guide is exposed instead of Analytics.');
     }
-    if (await questionPanel.getAttribute("aria-hidden") !== "false") {
-      throw new Error("Questions route did not activate the analyst carousel panel.");
-    }
-    const questionNavigation = await readPlatformPageNavigation(page);
-    if (
-      questionNavigation.current !== "analytics" ||
-      questionNavigation.left.join(",") !== "home" ||
-      questionNavigation.right.join(",") !== "analytics,incidents,admissions,workflow,personnel,everyagent"
-    ) {
-      throw new Error(`Analytics question navigation is out of order: ${JSON.stringify(questionNavigation)}`);
-    }
-    const [questionNavigationBox, questionWorkspaceBox] = await Promise.all([
-      page.locator('[data-platform-page-navigation="true"]').boundingBox(),
-      page.locator('[data-california-question-workspace="true"]').boundingBox()
-    ]);
-    if (
-      !questionNavigationBox ||
-      !questionWorkspaceBox ||
-      questionWorkspaceBox.y < questionNavigationBox.y + questionNavigationBox.height + 6
-    ) {
-      throw new Error("Questions content overlaps the positional platform navigation.");
-    }
-    const questionScroll = await page.evaluate(() => window.scrollY);
-    if (questionScroll > 2) {
-      throw new Error(`Questions carousel changed document scroll to ${questionScroll}px.`);
-    }
-    await page
-      .getByRole("link", { name: "Back to California map" })
-      .waitFor({ state: "visible", timeout: 5_000 });
-
     await page.reload({ waitUntil: "domcontentloaded" });
-    await page
-      .locator('[data-certified-question-guide="true"]')
-      .waitFor({ state: "visible", timeout: 5_000 });
-    await page.waitForFunction(() => {
-      const carousel = document.querySelector(
-        '[data-california-workspace-carousel="true"]'
-      );
-      const panel = document.querySelector(
-        '[data-california-carousel-panel="questions"]'
-      );
-      if (!carousel || !panel) return false;
-      return (
-        carousel.getAttribute("data-california-active-panel") === "questions" &&
-        panel.getAttribute("aria-hidden") === "false" &&
-        Math.abs(
-          panel.getBoundingClientRect().left -
-            carousel.getBoundingClientRect().left
-        ) <= 2
-      );
-    });
-    const reloadLayout = await page.evaluate(() => {
-      const carousel = document.querySelector(
-        '[data-california-workspace-carousel="true"]'
-      );
-      const mapPanel = document.querySelector(
-        '[data-california-carousel-panel="map"]'
-      );
-      const questionPanel = document.querySelector(
-        '[data-california-carousel-panel="questions"]'
-      );
-      return {
-        carouselLeft: Math.round(carousel?.getBoundingClientRect().left ?? -1),
-        mapRight: Math.round(mapPanel?.getBoundingClientRect().right ?? -1),
-        questionLeft: Math.round(questionPanel?.getBoundingClientRect().left ?? -1),
-        scrollY: Math.round(window.scrollY)
-      };
-    });
-    if (
-      Math.abs(reloadLayout.questionLeft - reloadLayout.carouselLeft) > 2 ||
-      reloadLayout.mapRight > reloadLayout.carouselLeft + 2 ||
-      reloadLayout.scrollY > 2
-    ) {
-      throw new Error(
-        `Reload did not preserve the isolated Questions panel: ${JSON.stringify(reloadLayout)}`
-      );
-    }
-    await page.screenshot({
-      path: `${screenshotDir}/desktop-questions-reload.png`,
-      fullPage: false
-    });
-
-    await page
-      .locator('[data-analytics-section-navigation][data-analytics-section-current="questions"] [data-analytics-section-target="reports"]')
-      .click();
-    await page.waitForURL((url) => url.pathname === "/analytics", { timeout: 5_000 });
-    await page
-      .locator('[data-reports-page="true"][data-reports-embedded="true"]')
-      .waitFor({ state: "visible", timeout: 10_000 });
+    await page.locator('article[data-full-report="overview"]').waitFor({ state: "visible", timeout: 45_000 });
     const analyticsNavigation = await readPlatformPageNavigation(page);
     if (
       analyticsNavigation.current !== "analytics" ||
       analyticsNavigation.left.join(",") !== "home" ||
-      analyticsNavigation.right.join(",") !== "analytics,incidents,admissions,workflow,personnel,everyagent"
+      analyticsNavigation.right.join(",") !== "analytics,admissions,clients,incidents,licensing,workflow,personnel"
     ) {
       throw new Error(`Analytics platform navigation is out of order: ${JSON.stringify(analyticsNavigation)}`);
     }
@@ -920,20 +816,18 @@ async function main() {
     await mobilePage.screenshot({ path: `${screenshotDir}/mobile-menu.png`, fullPage: false });
     await mobilePage.getByRole("button", { name: "Close navigation" }).click();
     await mobileMenu.waitFor({ state: "hidden", timeout: 5_000 });
-    if (
-      await mobilePage
-        .locator('[data-california-carousel-panel="questions"]')
-        .getAttribute("aria-hidden") !== "true"
-    ) {
-      throw new Error("Mobile analyst panel is exposed before Ask a question is selected.");
+    if (await mobilePage.locator('[data-california-carousel-panel="questions"]').count()) {
+      throw new Error("The retired question panel returned on mobile.");
     }
     await mobilePage
       .locator('[data-mobile-community-card="345"]')
       .click();
-    await mobilePage.waitForURL(
-      (url) => url.pathname === "/home/community/345",
-      { timeout: 5_000 }
-    );
+    await mobilePage.waitForURL(`${BASE_URL}/analytics?report=community&community=345`, { timeout: 5_000 });
+    await mobilePage.locator('article[data-full-report="community"]').waitFor({ state: "visible", timeout: 45_000 });
+    if (await mobilePage.locator('[data-california-community-profile]').count()) throw new Error('Mobile community report is obscured by the legacy popup.');
+    if (await mobilePage.evaluate(() => document.documentElement.scrollWidth - innerWidth) > 2) throw new Error('Mobile community report overflows horizontally.');
+    await mobilePage.screenshot({ path: `${screenshotDir}/mobile-community-report.png`, fullPage: false });
+    await mobilePage.goto(`${BASE_URL}/home/community/345`, { waitUntil: "domcontentloaded" });
     await mobilePage
       .locator('[data-california-community-profile="345"]')
       .waitFor({ state: "visible", timeout: 5_000 });
@@ -1039,7 +933,7 @@ async function main() {
   });
 
   console.log(
-    "California home browser QA passed: pre-mounted desktop panels, route-safe Questions and Analytics slides, five desktop markers, bounded mobile community cards, modal drilldowns, and mobile flow are wired."
+    "California home browser QA passed: single-header navigation, retired question redirects, five scoped community reports, desktop map geometry, bounded mobile community cards, and saved-profile drilldowns passed."
   );
 }
 

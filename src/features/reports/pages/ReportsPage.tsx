@@ -20,7 +20,7 @@ import type {
 } from "../../../shared/types/fullReport";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 
-const VISIBLE_REPORT_IDS: FullReportId[] = ["overview", "census", "incidents", "residents"];
+const VISIBLE_REPORT_IDS: FullReportId[] = ["overview", "census", "incidents", "residents", "community"];
 
 interface ReportsPageProps {
   embedded?: boolean;
@@ -40,6 +40,8 @@ export default function ReportsPage({
   const [selectedReportId, setSelectedReportId] = useState<FullReportId>("overview");
   const [searchParams] = useSearchParams();
   const routeReportId = searchParams.get("report");
+  const routeFacilityId = searchParams.get("community") ?? "";
+  const routePeriod = searchParams.get("period") ?? "";
   const [reportDefinitions, setReportDefinitions] = useState<FullReportDefinition[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState("");
   const [flowYear, setFlowYear] = useState("");
@@ -61,11 +63,11 @@ export default function ReportsPage({
     } else if (!routeReportId) {
       setSelectedReportId("overview");
     }
-    setSelectedFacilityId("");
-    setSelectedPeriod("");
+    setSelectedFacilityId(ALAMO_FACILITIES.some(facility => facility.facilityId === routeFacilityId) ? routeFacilityId : "");
+    setSelectedPeriod(/^\d{4}-(0[1-9]|1[0-2])$/.test(routePeriod) ? routePeriod : "");
     setPeriodOptions([]);
     setSelectedAudience("");
-  }, [routeReportId]);
+  }, [routeReportId, routeFacilityId, routePeriod]);
 
   useEffect(() => {
     if (!active) return;

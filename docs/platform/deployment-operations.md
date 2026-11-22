@@ -5674,6 +5674,18 @@ source build, TypeScript and documentation checks pass. The combined analyst
 suite is still running; no all-checks or live-deployment claim follows from these
 focused results.
 
+The integration also restores the full community report reached by the live
+map. Report query scope no longer opens a legacy popup, and the report reader
+recognizes the community report and applies its validated community/period
+parameters. The first browser failures exposed the missing report registration
+and scope; they remain in the evidence directory. The corrected home check passes
+all five scoped reports, legacy saved-profile drilldowns, desktop map geometry,
+phone community/report fit, resident search and profile behavior. Its retired
+question-carousel expectations were replaced by the current header, loaded
+Overview/Clients, reload and both legacy question redirects. Existing data,
+geographic, overflow and legacy-profile assertions remain enforced. The
+`design-community-current-navigation.log` records the passing combined run.
+
 The old `prepare-executive-ally-release.mjs` still targets the superseded
 `b958cb49` shell and fails its current-image guard. Do not bypass that guard.
 Before reopening the model pilot, replace its appended panel preparation with
