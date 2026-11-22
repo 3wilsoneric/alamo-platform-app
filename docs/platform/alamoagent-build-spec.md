@@ -31,8 +31,10 @@ desktop and 320/390px fixtures verify the compact and expanded interaction.
 The design is live on `555272da` after its full predeployment gate. The rebuilt
 native Ally owner candidate preserves all 19,639 base files outside its reviewed
 allowlist and passes container/access checks. Its full gate was stopped when the
-design owner began a final live control cleanup; wait for that final source/image
-before rebuilding and releasing Ally. See the [current preparation receipt](deployment-operations.md#native-ally-on-the-live-design--november-22-prepared-only).
+design owner began a final live control cleanup. That cleanup, `d7a97a1`, is now
+merged in `04f82fe`; the combined native candidate is being rebuilt and checked
+against the unchanged live image. No second UI-only cutover is needed. See the
+[current preparation receipt](deployment-operations.md#native-ally-on-the-live-design--november-22-prepared-only).
 
 Source audit correction: the executive ProForma adapter now supplies the
 canonical knowledge request's required `version: 1`. Its signed-route regression

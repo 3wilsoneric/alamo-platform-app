@@ -14,8 +14,9 @@ Receipts and logs are under `generated/current-navigation-20261122/` with the
 
 The subsequent Ally predeployment run was deliberately stopped after the design
 owner began another control cleanup during live acceptance. This is an incomplete
-gate, not a release pass. Await its final committed source and live image, merge,
-rebuild and run the complete gate before the native Ally cutover. No source
+gate, not a release pass. Final cleanup `d7a97a1` is now merged in `04f82fe`, and
+the combined candidate is being rebuilt against the unchanged `555272da` image.
+The complete gate must pass before the native Ally cutover. No source
 settings, model execution, campaign counters or executive grants changed here.
 Suite's named package/readiness and campaign-window helpers are prepared locally;
 ten in-memory tests exercise their actual remote budget body, including ETag
