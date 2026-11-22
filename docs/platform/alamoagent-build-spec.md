@@ -13,6 +13,26 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 22 embedded-date correction — local 0.18.7 package
+
+This checkout now pins engine 0.18.7/core 0.2.13 from `831a93d`, archive SHA-256
+`9ca0192b721d66cfbdac7d2e026d82a44741d64ff679880a047f50fd05afa50e`.
+The installed core bytes match the tested engine build. Fresh model replays over
+the recorded authorized source responses reproduced both withheld capacity-date
+findings and a separately written timestamp. The canonical validator now recognizes
+those exact source labels and removes their components from numeric operands.
+Source date ranges, unspecified timezones, legitimate negative counts and altered
+or uncited date denial have focused regressions; the cache policy changed to v2.
+Four captured proposals (fourteen findings) validate, and the recorded 30-case
+suite plus ten-turn conversation remain passing. The full engine suite/builds
+and isolated package check pass. Platform source/flow/agent integration and its
+218-dependency audit pass. New release preparation and full Platform gate follow.
+
+The change does not edit application layouts, source data or grants. Production
+remains on the restored Carelog coverage image, with canonical worker 0.18.6
+execution disabled. No wider executive access or fresh cloud acceptance is
+claimed. See the [canonical correction and limits](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-embedded-source-date-correction--local-0187).
+
 ### November 22 corrected acceptance — current status
 
 The corrected candidate passed 28/28 predeployment checks and ran six real

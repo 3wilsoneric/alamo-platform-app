@@ -110,7 +110,7 @@ for (const result of [browserCode, serverOutput[0]]) for (const id of Object.key
   const file = id.split('?')[0];
   if (file !== entry && file.startsWith(root + '/') && !file.includes('/node_modules/')) await source(path.relative(root, file));
 }
-await source('vendor/alamo-agent-runtime-0.18.4.tgz');
+await source('vendor/alamo-agent-runtime-0.18.7.tgz');
 await source('scripts/prepare-executive-ally-release.mjs');
 await source('scripts/executive-ally-release-mode.mjs');
 await writeFile(path.join(out, 'Dockerfile'), `FROM ${base}\nCOPY --chown=node:node overlay /app\n`);
