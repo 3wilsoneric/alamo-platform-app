@@ -92,11 +92,12 @@ if (
 if (
   !platformNavigation.includes('restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions")') ||
   !platformNavigation.includes('href: "/admissions"') ||
-  !platformNavigation.match(/id: "home"[\s\S]*id: "analytics"[\s\S]*id: "admissions"/) ||
+  !platformNavigation.match(/id: "analytics"[\s\S]*id: "admissions"/) ||
+  !platformNavigation.includes('to={restricted ? "/admissions" : "/home"}') ||
   platformNavigation.includes("admissionsAllowed") ||
   californiaHome.includes("admissionsAllowed")
 ) {
-  throw new Error("Admissions navigation must appear below Analytics for every authenticated Platform identity.");
+  throw new Error("Admissions must follow Analytics in the shared header, with the logo and restricted navigation retaining the assessor-only boundary.");
 }
 if (!apiAuth.includes("assertApiClaimsWorkspaceAccess(payload)")) {
   throw new Error("The Alamo API must enforce the assessor-only workspace boundary.");

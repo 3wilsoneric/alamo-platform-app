@@ -98,12 +98,12 @@ if (!app.includes('path="/" element={withRouteBoundary(<CaliforniaHomePage />)}'
   throw new Error("App.tsx must render the authenticated California workspace as the root route");
 }
 if (
-  !app.includes('path="/questions" element={<Navigate to="/analytics/questions" replace />}') ||
+  !app.includes('path="/questions" element={<Navigate to="/analytics" replace />}') ||
   !app.includes('path="/analytics" element={withRouteBoundary(<CaliforniaHomePage />)}') ||
-  !app.includes('path="/analytics/questions"') ||
+  !/path="\/analytics\/questions"\s+element=\{<Navigate to="\/analytics" replace \/>\}/.test(app) ||
   !app.includes('path="/reports" element={withRouteBoundary(<CaliforniaHomePage />)}')
 ) {
-  throw new Error("App.tsx must keep Analytics questions and reports inside the California workspace carousel while redirecting legacy Questions links");
+  throw new Error("App.tsx must keep Analytics and reports inside the authenticated workspace and redirect both retired Questions routes to Analytics");
 }
 if (!viteConfig.includes("modulePreload: false")) {
   throw new Error("vite.config.ts must not wrap lazy routes in the production dependency-preload path");

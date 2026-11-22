@@ -5686,6 +5686,19 @@ Overview/Clients, reload and both legacy question redirects. Existing data,
 geographic, overflow and legacy-profile assertions remain enforced. The
 `design-community-current-navigation.log` records the passing combined run.
 
+Final design synchronization includes `3b74025` and its compact report controls.
+The executive browser fixture passes again at 320/390/1440px, including assertions
+that recipients and historical versions have no mutation controls even inside a
+closed actions menu. Evidence: `design-final-report-controls.log`. The analyst
+suite passed through answer quality, source authorization and workflow checks,
+then identified two stale source assertions: retired Questions routing and the
+former Home tab. Their replacements require the new Analytics redirects and
+shared-header order while preserving the assessor-only navigation/API boundary.
+The remaining analyst checks are running; the initial failures and continuation
+logs are retained. Eric authorized the handoff, and the Platform chat accepted
+the integration for its independently guarded UI release. This branch has made
+no production cutover or model calls.
+
 The old `prepare-executive-ally-release.mjs` still targets the superseded
 `b958cb49` shell and fails its current-image guard. Do not bypass that guard.
 Before reopening the model pilot, replace its appended panel preparation with

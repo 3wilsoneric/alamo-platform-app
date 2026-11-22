@@ -59,12 +59,12 @@ try { await withBrowserQa(async browser=>{
       const sharedLink=await page.evaluate(()=>navigator.clipboard.readText());assert(new URL(sharedLink).searchParams.has('allyReport'));
       currentAuth={...auth,claims:{...auth.claims,oid:reader}};await page.goto(sharedLink,{waitUntil:'domcontentloaded'});
       await panel.getByRole('article',{name:'Report findings'}).waitFor();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isDisabled());
-      assert.equal(await panel.getByRole('button',{name:'Refresh report',exact:true}).count(),0,'recipient has no owner refresh control');
+      assert.equal(await panel.getByRole('button',{name:/^(Refresh report|Share report)$/,includeHidden:true}).count(),0,'recipient has no owner controls, including closed-menu actions');
       sourceReady=false;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await panel.getByRole('alert').waitFor();
       assert.equal(await panel.getByRole('article',{name:'Report findings'}).count(),0);assert.equal(await panel.getByLabel('Saved reports').locator('option').count(),1,'revocation clears cached report titles too');
       sourceReady=true;currentAuth=auth;await page.goto(sharedLink,{waitUntil:'domcontentloaded'});await panel.getByRole('article',{name:'Report findings'}).waitFor();
       await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Refresh report',exact:true}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='2');
-      await panel.getByLabel('Report version').selectOption('1');await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='1');assert.equal(await panel.getByRole('button',{name:'Refresh report',exact:true}).count(),0);
+      await panel.getByLabel('Report version').selectOption('1');await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='1');assert.equal(await panel.getByRole('button',{name:/^(Refresh report|Share report)$/,includeHidden:true}).count(),0,'historical versions have no owner mutation controls');
       await panel.getByLabel('Report version').selectOption('2');await panel.getByRole('textbox',{name:'Follow-up question'}).fill('Explain the net additions and show the supporting values.');await panel.getByRole('button',{name:'Send question'}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='3');
     }
     await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});

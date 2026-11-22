@@ -15,7 +15,7 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 ### November 22 current navigation and requested design integration
 
-The approved Platform design through `f369957` is now merged into the executive
+The approved Platform design through `3b74025` is now merged into the executive
 integration branch. It includes the shared header, Carelog-style Ally transition,
 expanded answer/report canvas and phone Chat/Canvas controls. The merge preserves
 the 0.18.7 engine pin and canonical active-intake classification/completeness
@@ -25,6 +25,14 @@ fixtures pass; combined source checks and fresh live verification are recorded
 separately. The Platform design chat owns the current UI deployment, avoiding
 competing production cutovers. This merge does not activate model execution or
 broaden executive grants.
+
+The owner authorized sending the integration to the Platform design chat, which
+has accepted it for its release. The final compact report controls pass the
+desktop/phone service-browser fixture, including hidden-menu permission checks.
+The broad analyst run reached obsolete Questions/header source assertions;
+those now assert the approved navigation while retaining authentication and
+assessor-only boundaries. Remaining checks are continuing, with original
+failures retained. No production cutover is claimed by this integration branch.
 
 Shared release assertions now run in main Chrome without exporting its session.
 The restored live image passed twelve route checks and twelve interactions, plus
