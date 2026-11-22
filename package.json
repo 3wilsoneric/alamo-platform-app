@@ -121,6 +121,7 @@
     "check:california-home": "node scripts/check-california-home.mjs",
     "check:browser-california-home": "node scripts/check-browser-california-home.mjs",
     "check:browser-admissions": "node scripts/check-browser-admissions.mjs",
+    "check:browser-ally-flight": "node scripts/check-browser-ally-flight.mjs",
     "check:browser-admissions-combined": "node scripts/check-browser-combined-admissions-briefing.mjs",
     "check:browser-admissions-material": "node scripts/check-browser-admissions-material.mjs",
     "check:browser-california-carousel": "node scripts/check-browser-california-carousel.mjs",

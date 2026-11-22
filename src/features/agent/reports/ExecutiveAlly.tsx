@@ -1,5 +1,5 @@
 import { useMsal } from '@azure/msal-react';
-import { ArrowUp, BookmarkCheck, Plus, Pencil, X, Download, RefreshCw, Share2, Square } from 'lucide-react';
+import { ArrowUp, Plus, Pencil, X, Download, RefreshCw, Share2, Square } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ALAMO_FACILITIES } from '../../../../shared/community-names.mjs';
@@ -10,6 +10,8 @@ import ReportView from './ReportView';
 import AgentConversationHome from '../conversations/AgentConversationHome';
 import { agentChatConfigured } from '../conversations/agentTransport';
 import { OPEN_ALLY_EVENT } from '../allyLauncher';
+import AllyMark from '../components/AllyMark';
+import { useAllyTransition } from '../components/useAllyTransition';
 import './executiveAlly.css';
 
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date());
@@ -31,6 +33,7 @@ export default function ExecutiveAlly() {
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [share, setShare] = useState(false), [retryList, setRetryList] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLTextAreaElement>(null);
+  const wasOpen = useRef(false);
   const request = useRef<AbortController | null>(null), generation = useRef(0), running = useRef(false);
   const retryCommand = useRef<{key: string; id: string} | null>(null);
   const linkedReport = new URLSearchParams(location.search).get('allyReport');
@@ -39,11 +42,6 @@ export default function ExecutiveAlly() {
     const [ownerId,id] = linkedReport.split('/');
     if (ownerId && id) { setOpen(true); setSurface('reports'); void openReport({ownerId,id}); }
   }, [linkedReport]);
-  useEffect(() => {
-    const openFromHeader = () => { setSurface(agentChatConfigured ? 'chat' : 'reports'); setOpen(true); };
-    window.addEventListener(OPEN_ALLY_EVENT, openFromHeader);
-    return () => window.removeEventListener(OPEN_ALLY_EVENT, openFromHeader);
-  }, []);
   function commandId(key: string) {
     if (retryCommand.current?.key !== key) retryCommand.current = {key, id: crypto.randomUUID()};
     return retryCommand.current!.id;
@@ -54,8 +52,17 @@ export default function ExecutiveAlly() {
     if (!el) return;
     const resize = () => { if (!open) { if (el.open) el.close(); return; } const mobile = matchMedia('(max-width: 700px)').matches; if (el.open) el.close(); if (mobile) el.showModal(); else el.show(); };
     resize(); window.addEventListener('resize', resize);
-    if (!open) document.querySelector<HTMLButtonElement>('.platform-ally-header-button')?.focus({preventScroll: true});
     return () => window.removeEventListener('resize', resize);
+  }, [open]);
+  const changeOpen = useAllyTransition(open, setOpen, dialog);
+  useEffect(() => {
+    const toggleFromHeader = () => { if (!open) setSurface(agentChatConfigured ? 'chat' : 'reports'); changeOpen(!open); };
+    window.addEventListener(OPEN_ALLY_EVENT, toggleFromHeader);
+    return () => window.removeEventListener(OPEN_ALLY_EVENT, toggleFromHeader);
+  }, [changeOpen, open]);
+  useEffect(() => {
+    if (!open && wasOpen.current) [...document.querySelectorAll<HTMLButtonElement>('.platform-ally-header-button')].find(button => button.getBoundingClientRect().width > 0)?.focus({preventScroll: true});
+    wasOpen.current = open;
   }, [open]);
   useEffect(() => {
     if (!open || surface !== 'reports') return;
@@ -128,8 +135,8 @@ export default function ExecutiveAlly() {
   const editable = report?.canEdit && report.selectedVersion === report.version;
   const active = report && reportRunning(report.status);
   return <div className="executive-ally">
-    <dialog ref={dialog} className={`executive-ally-panel${surface === 'chat' ? ' executive-ally-panel--chat' : ''}`} aria-label="Ally" onKeyDown={e => {if(e.key==='Escape'){e.preventDefault();setOpen(false);}}} onCancel={e => {e.preventDefault(); setOpen(false);}}>
-      <header className="executive-ally-header"><BookmarkCheck className="ally-panel-mark" size={28} aria-hidden="true" /><strong>Ally</strong>{surface === 'chat' ? <button className="ally-panel-new" type="button" onClick={() => setChatId(null)}><Pencil size={17} />New chat</button> : <><button className="ally-panel-new" type="button" onClick={() => setSurface('chat')} disabled={!agentChatConfigured}>Back to chat</button><button title="New report" aria-label="New report" onClick={startNew} disabled={busy}><Plus size={20}/></button></>}<button aria-label="Close Ally" autoFocus onClick={() => setOpen(false)}><X size={20}/></button></header>
+    <dialog ref={dialog} className={`executive-ally-panel${surface === 'chat' ? ' executive-ally-panel--chat' : ''}`} aria-label="Ally" onKeyDown={e => {if(e.key==='Escape'){e.preventDefault();changeOpen(false);}}} onCancel={e => {e.preventDefault(); changeOpen(false);}}>
+      <header className="executive-ally-header"><AllyMark className="ally-panel-mark" /><strong>Ally</strong>{surface === 'chat' ? <button className="ally-panel-new" type="button" onClick={() => setChatId(null)}><Pencil size={17} />New chat</button> : <><button className="ally-panel-new" type="button" onClick={() => setSurface('chat')} disabled={!agentChatConfigured}>Back to chat</button><button title="New report" aria-label="New report" onClick={startNew} disabled={busy}><Plus size={20}/></button></>}<button aria-label="Close Ally" autoFocus onClick={() => changeOpen(false)}><X size={20}/></button></header>
       {surface === 'chat' ? <div className="executive-ally-chat"><AgentConversationHome transport={transport} conversationId={chatId} onNavigate={setChatId} onBuildReport={() => setSurface('reports')} /></div> : <>
       <nav className="executive-ally-saved" aria-label="Report navigation"><select aria-label="Saved reports" value={report ? `${report.ownerId}/${report.id}` : ''} disabled={busy} onChange={e => {const r=reports.find(v=>`${v.ownerId}/${v.id}`===e.target.value); if(r) void openReport(r); else startNew();}}><option value="">New investigation</option>{reports.map(r => <option key={`${r.ownerId}/${r.id}`} value={`${r.ownerId}/${r.id}`}>{r.title}</option>)}</select>{report && <select aria-label="Report version" value={report.selectedVersion} disabled={busy} onChange={e => void openReport(report, Number(e.target.value))}>{report.versions.map(v => <option key={v.version} value={v.version}>Version {v.version}</option>)}</select>}</nav>
       <div className="executive-ally-body">

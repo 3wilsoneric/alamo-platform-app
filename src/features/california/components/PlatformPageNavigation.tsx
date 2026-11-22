@@ -1,7 +1,7 @@
 import PageTitleMotion from "./PageTitleMotion";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BookmarkCheck, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
@@ -11,6 +11,7 @@ import { usePresentationAccess } from "../../presentation/usePresentationAccess"
 import { useEveryAgentAccess } from "../../../shared/auth/everyAgentAccess";
 import { useExecutiveReportAccess } from "../../agent/reports/reportAccess";
 import { openAlly } from "../../agent/allyLauncher";
+import AllyMark from "../../agent/components/AllyMark";
 import { agentChatConfigured, localAgentPreview } from "../../agent/conversations/agentTransport";
 
 const PLATFORM_PAGES = [
@@ -85,10 +86,10 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
             </Link>
           ))}
           </div>
-          {canOpenAlly && <button type="button" className="platform-ally-header-button" aria-label="Open Ally chat" title="Ask Ally" onClick={openAlly}><BookmarkCheck size={22} aria-hidden="true" /><span>Ally</span></button>}
+          {canOpenAlly && <button type="button" className="platform-ally-header-button" aria-label="Open Ally chat" aria-haspopup="dialog" aria-expanded="false" title="Ally" onClick={openAlly}><AllyMark /><span>Ally</span></button>}
           <PlatformUserIdentity className="ml-3" nameSide="bottom" />
         </div>
-        {canOpenAlly && <button type="button" className="platform-ally-header-button platform-ally-header-button--mobile lg:hidden" aria-label="Open Ally chat" title="Ask Ally" onClick={() => { setMenuOpen(false); openAlly(); }}><BookmarkCheck size={22} aria-hidden="true" /></button>}
+        {canOpenAlly && <button type="button" className="platform-ally-header-button platform-ally-header-button--mobile lg:hidden" aria-label="Open Ally chat" aria-haspopup="dialog" aria-expanded="false" title="Ally" onClick={() => { setMenuOpen(false); openAlly(); }}><AllyMark /></button>}
         <button type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="platform-mobile-menu" onClick={() => setMenuOpen((open) => !open)} className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-sm font-semibold text-[#315b54] lg:hidden">
           <span>Menu</span>{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
         </button>
