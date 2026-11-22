@@ -5481,3 +5481,33 @@ update: the unchanged $10 campaign retains 218 reservations totaling $5.758482.
 The [suite recovery commands](/Users/eric/suite-deploy/README.md#corrected-runtime-installed-execution-disabled--november-22)
 and [canonical engine status](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-0185-installation--execution-still-disabled)
 record the named images, disabled execution and old-runtime recovery limits.
+
+## Ally queued-stop correction installed — November 22
+
+The independent API and canonical worker now run 0.18.6 (`f68c0f1`). Same-host
+report/index writes queue before reading their snapshot; cross-process conditional
+writes and their retry limit remain unchanged. A queued Durable activity checks
+the disabled flag before advancing and pauses through the existing fenced service.
+All 38 executive checks, the full engine suite, API/worker builds, isolated package
+checks and eight real-Functions/Azurite cases pass. The fixture uses a ten-second
+work-item visibility lease for crash redelivery; it does not claim production
+recovery latency. Prior startup/visibility-timeout failures are retained.
+
+API image `32d03f4cd41950f4b4336ec95e89985de976ab60d75c7eda1314753edfb79cd7`
+is Healthy at 100%. Worker ZIP
+`fe039f9dafab4a8ae38ed50b00d58f7182f861f95694d33b80b99a9a620463c4`
+matches all 128 canonical files and ten functions. Settings, credentials and
+Eric-only scope are preserved; execution and both schedules remain disabled.
+An immediate EPIPE was resolved with read-only verification, without redeploying.
+The release owner binds the corrected Platform pilot to these fresh receipts.
+
+The current full Platform predeploy rerun passed its complete analyst stage,
+including duplicate conversation sends, and continues. Platform stays on its
+existing Carelog coverage image. Its local runtime pin remains 0.18.4/core 0.2.12;
+the 0.18.6 changes affect the independent execution/storage host only.
+
+The owner explicitly requires main Chrome. That session signs in as Eric and
+loads the live map; no isolated sign-in window or credential export is used.
+This is distinct from the automated signed-in smoke gate, which has no saved
+session. Corrected real-answer/cache tests and executive expansion remain open.
+There were no paid calls: the same campaign retains 218 reservations/$5.758482.
