@@ -82,7 +82,7 @@ await withBrowserQa(async browser => {
     await page.locator(".platform-ally-header-button:visible").first().click();
     const panel = page.getByRole("dialog", { name: "Ally" });
     if (width > 700) await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
-    if (width <= 390) await panel.getByRole("button", { name: "Canvas" }).click();
+    if (width <= 390) await panel.getByRole("button", { name: "Answer" }).click();
     await panel.getByRole("button", { name: /Which accepted clients are still waiting/ }).click();
     await panel.getByRole("button", { name: "Send question" }).click();
     const canvas = panel.getByRole("article", { name: "Expanded Ally answer" });
@@ -111,6 +111,7 @@ await withBrowserQa(async browser => {
     await reportSurface.getByRole("textbox", { name: "Ask Ally" }).fill("Compare admissions and discharges across communities.");
     await reportSurface.getByRole("button", { name: "Send question" }).click();
     await reportSurface.getByRole("article", { name: "Report findings" }).waitFor();
+    if (width <= 390) assert.equal(await panel.getByRole("button", { name: "Report" }).count(), 1, "the phone tab names the displayed work");
     assert.equal(await reportSurface.locator(".ally-report-comparison li").count(), 5);
     assert.equal(await panel.locator(".agent-conversation-user").count(), 1, "the chat stays mounted beside the report");
     assert.equal(await panel.evaluate(element => element.scrollLeft), 0, "the phone panel does not scroll sideways");
