@@ -52,7 +52,14 @@ calls to stay within the browser tool's execution context. The first whole-run
 attempt lost that context; later native-control interruptions are not passes.
 The bounded attempt also reset the browser tool before saving its initial
 observation. That tool failure is distinct from the passing saved design check.
-A fresh end-to-end driver capture is still required.
+A fresh driver run completed at 23:09:25 UTC: 15/15 routes, 12/12 interactions,
+604 requests, two explicit navigation cancellations and zero console errors or
+HTTP failures. The normal signed-in release command accepted that evidence and
+all 18 assertion regression groups passed. The capture is bound to the currently
+served `index-CzZG_tv8.js` asset, not the pending image, and is saved privately at
+`main-chrome-driver-batched/evidence.json`; the verifier's log is
+`main-chrome-driver-cli.log`. DevTools was closed after capture. The pending
+image still requires its own fresh acceptance after cutover.
 No source
 settings, model execution, campaign counters or executive grants changed here.
 Suite's named package/readiness and campaign-window helpers are prepared locally;

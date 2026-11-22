@@ -41,7 +41,9 @@ second token request after the five-minute cache expiry. Runtime authentication
 is unchanged. The current
 live design has passed all 15 routes, 12 navigation interactions and a complete
 native Network/console observation in main Chrome. That evidence does not cover
-the pending image; the new explicit capture driver still needs its fresh live run.
+the pending image. At 23:09 UTC the new explicit driver also passed 15 routes,
+12 interactions, 604 requests and zero console/HTTP failures on the live design;
+the canonical signed-in release command accepted its source/build-bound receipt.
 No second UI-only cutover is needed. See the
 [current preparation receipt](deployment-operations.md#native-ally-on-the-live-design--november-22-prepared-only).
 
