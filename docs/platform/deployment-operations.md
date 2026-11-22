@@ -55,14 +55,21 @@ and read-only verification passed at 16:04 UTC without redeployment. API/worker
 0.18.6 remains the recovery target. Suite deployment owns the exact plans and
 private `ally-0187.*` receipts.
 
-Platform's candidate remains package `6c7ae45` on the Carelog coverage base,
-with the full predeployment check still running. The owner-only overlay's exact
-file/configuration, access and served-CSP checks pass. Main Chrome signed in as
-Eric through the existing Microsoft session, with no isolated window or credential
-export. This is not a passing automated signed-in smoke: its stored test session
-is absent and its older home/navigation expectations need reconciliation. No
-Platform cutover, broader executive access, source mutations, grants or additional
-paid model calls occurred during this backend update.
+Platform's current UI revision is `alamo-platform-prod-web--ui-1122-d10bddc-r2`,
+image `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:555272da288d0e69acb6c52d8dd39b986d36c0cf04982837e0eb254fcfac2c34`
+from source `d10bddc`. It rebased the tested browser build on the immediately
+preceding Carelog/fleet image `d0f544e76ce5c94d2b1e5a1cf69e2fadb05df3d1ea6a0e37522ab6c58a57fbaa`,
+which is the rollback target. The full 28/28 predeployment gate passed with the
+Platform environment loaded; the named revision became Healthy/Running with one
+replica and 100% traffic. Public production smoke passed 4/4, six SPA routes
+served the release receipt's exact HTML hash, and `/poc` and `/healthz` responded.
+Server, API, Carelog, fleet, licensing alert and Carelog launcher bytes match the
+preceding image. Eric signed in through the existing personal Microsoft account
+in main Chrome and opened the live Home, Admissions and `/chat` surfaces. The
+separate automated signed-in postdeployment gate was not completed; its stored
+test session was absent. The model worker remains disabled, no broader access was
+granted, and no paid model calls were made by this UI release. The subsequent
+control cleanup is a local candidate awaiting the next combined release gate.
 
 - purpose: document local development, production deployment, auth, environment variables, and health checks
 - status: authoritative current-state reference

@@ -9,6 +9,7 @@
 .agent-conversation-toolbar nav { flex: 1; display: flex; gap: 4px; }
 .agent-conversation-toolbar img { width: 32px; height: 32px; object-fit: contain; }
 .agent-conversation-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 32px; }
+.agent-conversation-layout:not(:has(.agent-conversation-history)) { grid-template-columns: minmax(0, 1fr); }
 .agent-conversation-layout aside { padding: 20px 0; border-right: 1px solid #e4eae7; }
 .agent-conversation-layout aside button { width: calc(100% - 12px); text-align: left; font-size: 13px; overflow-wrap: anywhere; }
 .agent-conversation-layout aside button[aria-current] { background: #edf4ef; color: #086b54; }

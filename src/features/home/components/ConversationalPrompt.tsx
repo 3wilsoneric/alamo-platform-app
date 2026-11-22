@@ -94,19 +94,16 @@ export function ConversationalPrompt({
   return (
     <section
       data-conversational-prompt="hero"
-      className="mx-auto flex min-h-[min(660px,calc(100dvh-190px))] w-full max-w-[1040px] flex-col justify-center px-1 py-10 sm:px-8 sm:py-16"
+      className="mx-auto flex min-h-[min(520px,calc(100dvh-190px))] w-full max-w-[1040px] flex-col justify-center px-1 py-8 sm:px-8 sm:py-12"
     >
       <div className="mx-auto w-full max-w-[900px] text-center">
         <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#0f8b73]">
           <MessageSquareText className="h-4 w-4" aria-hidden="true" />
           Alamo Analyst
         </div>
-        <h1 className="mt-4 font-serif text-[clamp(38px,7vw,76px)] leading-[0.98] tracking-[-0.045em] text-[#102b26]">
+        <h1 className="mt-3 font-serif text-[clamp(36px,5vw,60px)] leading-[1.02] tracking-[-0.04em] text-[#102b26]">
           What do you need to know?
         </h1>
-        <p className="mx-auto mt-4 max-w-[660px] text-[14px] leading-6 text-[#5f6e69] sm:text-[16px]">
-          Ask about communities, census, residents, incidents, or medications. The analyst can answer directly and surface the relevant operating module.
-        </p>
       </div>
 
       <form
@@ -136,18 +133,7 @@ export function ConversationalPrompt({
       </form>
 
       <div className="mx-auto mt-5 w-full max-w-[900px]">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#687570]">Try asking</p>
-          <button
-            type="button"
-            onClick={onOpenLibrary}
-            aria-label="Open questions"
-            className="inline-flex min-h-11 items-center gap-2 text-[12px] font-semibold text-[#0b6f5e] hover:text-[#111111]"
-          >
-            <BookOpen className="h-4 w-4" aria-hidden="true" />
-            Browse question library
-          </button>
-        </div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#687570]">Try asking</p>
         <div className="mt-2 grid border-y border-[#dbe5e1] sm:grid-cols-3 sm:divide-x sm:divide-[#dbe5e1]">
           {EXAMPLE_PROMPTS.map((example) => (
             <button

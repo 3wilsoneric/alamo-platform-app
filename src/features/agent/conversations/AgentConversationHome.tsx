@@ -8,8 +8,8 @@ import type { AgentTransport } from "./agentTransport";
 import "./conversations.css";
 
 const skillTitle = (id: string) => id === "licensing" ? "Licensing" : "Admissions";
-export default function AgentConversationHome({ transport, conversationId, onNavigate, onBuildReport, expanded = false, workspaceCanvas, canvasFocusSignal = 0 }: {
-  transport: AgentTransport; conversationId: string | null; onNavigate: (id: string | null) => void; onBuildReport?: () => void;
+export default function AgentConversationHome({ transport, conversationId, onNavigate, expanded = false, workspaceCanvas, canvasFocusSignal = 0 }: {
+  transport: AgentTransport; conversationId: string | null; onNavigate: (id: string | null) => void;
   expanded?: boolean; workspaceCanvas?: ReactNode; canvasFocusSignal?: number;
 }) {
   const [list, setList] = useState<ConversationList | null>(null);
@@ -98,27 +98,27 @@ export default function AgentConversationHome({ transport, conversationId, onNav
     }
   }, [canvasFocusSignal]);
   const toolbar = <header className="agent-conversation-toolbar"><span>Conversation</span><button type="button" aria-label="Refresh chats" onClick={() => { void refresh(); }}><RefreshCw size={17} /></button></header>;
-  return <section className={`agent-conversation-home${expanded ? " agent-conversation-home--workspace" : ""}`} aria-label="Ally chats">
-    {!expanded && toolbar}
+  return <section className={`agent-conversation-home${expanded ? " agent-conversation-home--workspace" : ""}${expanded && !conversationId && !workspaceCanvas ? " agent-conversation-home--empty" : ""}`} aria-label="Ally chats">
+    {!expanded && Boolean(conversationId || list?.conversations.length) && toolbar}
     {error && <div role="alert" className="agent-conversation-error">{error}<button type="button" onClick={() => { void transport.connect().then(refresh).catch(() => setError("Sign-in could not be completed.")); }}>Connect</button>
       {retry?.action === "send" && <button type="button" onClick={() => { void command({ action: "cancel", conversationId: retry.conversationId, turnId: retry.requestId }); }}>Stop request</button>}
       {retry && <button type="button" disabled={busy} onClick={() => { void command(retry); }}>Retry request</button>}</div>}
     {expanded && <nav className="agent-conversation-workspace-tabs" aria-label="Ally workspace view"><button type="button" aria-pressed={workspaceView === "chat"} onClick={() => setWorkspaceView("chat")}>Chat</button><button type="button" aria-pressed={workspaceView === "canvas"} onClick={() => setWorkspaceView("canvas")}>{workspaceCanvas ? "Report" : "Answer"}</button></nav>}
-    <div className="agent-conversation-workspace" data-view={workspaceView}><div className="agent-conversation-layout">{expanded && toolbar}<details className="agent-conversation-history"><summary>Recent chats</summary><aside aria-label="Saved chats">
+    <div className="agent-conversation-workspace" data-view={workspaceView}><div className="agent-conversation-layout">{expanded && Boolean(conversationId || list?.conversations.length) && toolbar}{Boolean(list?.conversations.length) && <details className="agent-conversation-history"><summary>Recent chats</summary><aside aria-label="Saved chats">
       {list?.conversations.map(item => <button type="button" key={item.id} aria-current={item.id === conversationId ? "page" : undefined} disabled={item.locked} onClick={() => onNavigate(item.id)}>{item.title}</button>)}
       {list?.conversations.length === 0 && <p>No saved chats.</p>}
-    </aside></details><main>
+    </aside></details>}<main>
       {conversationId ? chat && <>
         <div className="agent-conversation-scope" aria-label="Chat scope">{chat.scope.map(scope => <span key={scope.skillId}>{skillTitle(scope.skillId)}{scope.communityIds.length ? ` · ${scope.communityIds.length} ${scope.communityIds.length === 1 ? "community" : "communities"}` : " · aggregates"}</span>)}</div>
         <ConversationMessages chat={chat} compact={expanded} selectedTurnId={selectedTurnId} onSelectTurn={id => { setSelectedTurnId(id); setWorkspaceView("canvas"); }} onCancel={turnId => { void command({ action: "cancel", conversationId: chat.id, turnId }); }} />
         {list?.modelAvailable === false && <p role="status">Chat answers are not configured yet. Saved work remains available.</p>}
         <ConversationalPrompt compact agent draft={draft} onDraftChange={setDraft} sending={busy || Boolean(working) || list?.modelAvailable === false} onOpenLibrary={() => {}} onSubmit={text => { void command({ action: "send", conversationId: chat.id, requestId: crypto.randomUUID(), expectedVersion: chat.version, text }); }} />
       </> : <div className="agent-conversation-new" aria-label="New chat">
-        <h2>What’s next?</h2>
-        <div className="agent-conversation-actions"><button type="button" onClick={() => setDraft("What needs attention in admissions today?")}>Review admissions <span aria-hidden="true">→</span></button><button type="button" onClick={() => setDraft("What changed in licensing across our communities?")}>Check licensing <span aria-hidden="true">→</span></button>{onBuildReport && <button type="button" onClick={() => { if (expanded) setWorkspaceView("canvas"); onBuildReport(); }}>Build a report <span aria-hidden="true">→</span></button>}</div>
+        <h2>Ask Ally</h2>
+        <p className="agent-conversation-hint">Ask about admissions, licensing, or a community. Ally will show the answer here.</p>
         <ConversationalPrompt compact agent draft={draft} onDraftChange={setDraft} sending={busy || list?.modelAvailable === false} onOpenLibrary={() => {}} onSubmit={text => { void startWithQuestion(text); }} />
         {list?.modelAvailable === false && <p role="status">Chat answers are unavailable right now.</p>}
       </div>}
-    </main></div>{expanded && <div className={`agent-conversation-canvas${workspaceCanvas ? " agent-conversation-canvas--report" : ""}`}>{workspaceCanvas ?? <AllyAnswerCanvas chat={chat} selectedTurnId={selectedTurnId} onUsePrompt={prompt => { setDraft(prompt); setWorkspaceView("chat"); }} />}</div>}</div>
+    </main></div>{expanded && <div className={`agent-conversation-canvas${workspaceCanvas ? " agent-conversation-canvas--report" : ""}`}>{workspaceCanvas ?? <AllyAnswerCanvas chat={chat} selectedTurnId={selectedTurnId} />}</div>}</div>
   </section>;
 }

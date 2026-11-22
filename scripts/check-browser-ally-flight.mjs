@@ -43,7 +43,7 @@ await withBrowserQa(async browser => {
       await panel.locator(".ally-panel-create summary").click();
       assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain available");
       await panel.locator(".ally-panel-create summary").click();
-    } else assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain mounted");
+    } else assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 0, "an empty chat does not show a redundant new-chat action");
     assert.equal(await chatSurface.getAttribute("data-ally-state-probe"), "same", "the existing chat stays mounted");
     if (width > 700) {
       await page.keyboard.press("Escape");
