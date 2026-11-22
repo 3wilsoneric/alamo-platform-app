@@ -91,7 +91,7 @@ assert.match(app, /path="\/personnel"/);
 assert.match(app, /path="\/workforce" element=\{<LegacyWorkforceRedirect \/>\}/);
 assert.match(app, /to=\{`\/personnel\$\{location\.search\}\$\{location\.hash\}`\}/);
 // The live feed remains owner-only; the separately labeled fixture may be shown to Andrew.
-assert.match(navigation, /id: "personnel", label: "Personnel", href: "\/personnel", ownerOnly: true/);
+assert.match(navigation, /id: "personnel", label: "Workforce", href: "\/personnel", ownerOnly: true/);
 assert.match(pageSource, /<h1 className="sr-only">Personnel<\/h1>/);
 assert.match(platformApi, /"\/api\/platform\/workforce-dashboard": \(\{ authContext \}\) => \{\s+assertPlatformKnowledgeOwner\(authContext\);\s+return getWorkforceDashboardData\(\);/);
 assert.match(devApi, /"\/api\/platform\/workforce-dashboard"\) \{\s+assertPlatformKnowledgeOwner\(authContext\);/);
