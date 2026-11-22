@@ -197,12 +197,17 @@ session and fail rather than silently passing when that verification is unavaila
 
 For an owner-authorized main-Chrome session, the explicit alternative is
 `PRODUCTION_MAIN_CHROME_EVIDENCE=/absolute/path/evidence.json`. Capture it with
-`captureMainChromeProductionCheck` from `scripts/lib/production-main-chrome.mjs`
-through the supported CUA page adapter. It runs the same navigation assertions;
+`beginMainChromeProductionCheck` and `finishMainChromeProductionCheck` from
+`scripts/lib/production-main-chrome.mjs` through the supported CUA page adapter.
+Between them, run the canonical `checkProductionRoutes` and
+`checkProductionInteractions` in separate tool calls, retaining their observations.
+The short batches avoid losing the browser tool's execution context. This uses the same navigation assertions;
 it does not export credentials or automatically replace a failed CI driver.
-The native Network log must start empty, record across navigations, include all
+Clear the native Network log first, record across navigations, include all
 request types, use the module's exact success-status filter, and show every
-More filters option unchecked in both observations. Console errors come from
+More filters option unchecked in both observations. Immediate background polling
+can repopulate the cleared log; its initial statuses are also checked and its
+count becomes the baseline for proving subsequent navigation coverage. Console errors come from
 the tab's error log API. Captures bind the current public entry asset and assertion
 source hashes, expire after one hour, and reject incomplete/unknown request
 statuses or missing coverage. Only explicit navigation cancellations are excluded.

@@ -68,33 +68,41 @@ export function validateMainChromeEvidence(evidence, { baseUrl, fingerprint, ent
   assert.deepEqual(evidence.entry, entry, 'Production changed after capture.');
   const start = Date.parse(evidence.startedAt), end = Date.parse(evidence.completedAt);
   assert(Number.isFinite(start) && Number.isFinite(end) && start <= end && end <= now && now - start < 3_600_000, 'Need a fresh, complete browser capture.');
-  assert.equal(evidence.startedNetwork.total, 0, 'Clear the Network log before running the checks.');
+  const startedNetwork = inspectNativeNetwork(evidence.initialNetworkAX, true);
+  assert.deepEqual(evidence.startedNetwork, startedNetwork);
   assert.deepEqual(evidence.budgets, { homeReadyMs: 5000, routeReadyMs: 8000, dataReadyMs: 12000, timeoutMs: 30000 });
   assert.deepEqual(createProductionNavigationChecks({ baseUrl }).validateCapturedResults(evidence.routeResults, evidence.interactionResults), []);
   assert(Array.isArray(evidence.consoleErrors) && evidence.consoleErrors.length === 0, 'Browser console errors must be resolved.');
   assert.equal(evidence.consoleCaptureComplete, true);
   const network = inspectNativeNetwork(evidence.networkAX);
-  assert(network.total >= evidence.routeResults.length, 'Incomplete navigation network capture.');
+  assert(network.total >= startedNetwork.total + evidence.routeResults.length, 'Incomplete navigation network capture.');
   return network;
 }
 
 // Call inside cua_repl with the documented browser adapter and native Network
-// observation. The initial and final observations must use the same empty log,
+// observation. Clear the log first; normal background polling may already add a
+// request before the initial observation. Validate that observation too and use
+// its count as the baseline. Initial/final observations must use the same log,
 // Keep log on, All request types, the exact filter above, and the expanded
 // More filters menu showing every option unchecked. No HAR/body export.
-export async function captureMainChromeProductionCheck({ page, readConsole, readNetwork, baseUrl, directory }) {
+export async function beginMainChromeProductionCheck({ page, readNetwork, baseUrl, directory }) {
   assert.equal(new URL(baseUrl).origin, baseUrl);
   const fingerprint = await sourceFingerprint(), entry = await liveEntry(baseUrl);
   const startedAt = new Date().toISOString();
   const initialAX = await readNetwork();
   const startedNetwork = inspectNativeNetwork(initialAX, true);
-  assert.equal(startedNetwork.total, 0);
   const observedEntry = await page.evaluate(() => [...document.querySelectorAll('script[type="module"][src]')].map(script => new URL(script.src).pathname));
   assert(observedEntry.includes(entry.path), 'The browser is not on the current production build.');
   await mkdir(path.join(directory, 'screenshots'), { recursive: true });
-  const checks = createProductionNavigationChecks({ baseUrl });
-  const routeResults = await checks.checkProductionRoutes(page, directory);
-  const interactionResults = await checks.checkProductionInteractions(page);
+  return { version: 1, mode: 'main-chrome', baseUrl, assertionFingerprint: fingerprint, entry, startedAt,
+    initialNetworkAX: initialAX, startedNetwork,
+    budgets: { homeReadyMs: 5000, routeReadyMs: 8000, dataReadyMs: 12000, timeoutMs: 30000 } };
+}
+
+// Separate calls keep the supported browser tool's execution batches bounded.
+// Completion still requires every canonical route and interaction observation.
+export async function finishMainChromeProductionCheck({ started, routeResults, interactionResults, readConsole, readNetwork, directory }) {
+  const { baseUrl, assertionFingerprint: fingerprint, entry, startedAt } = started;
   const networkAX = await readNetwork();
   const logs = await readConsole();
   assert(logs.length < 1000, 'Console capture may be truncated.');
@@ -103,9 +111,7 @@ export async function captureMainChromeProductionCheck({ page, readConsole, read
     .map(log => ({ timestamp: log.timestamp, message: sanitizeBrowserDiagnostic(log.message).slice(0, 600) }));
   assert.equal(await sourceFingerprint(), fingerprint, 'Assertions changed during capture.');
   assert.deepEqual(await liveEntry(baseUrl), entry, 'Production changed during capture.');
-  const evidence = { version: 1, mode: 'main-chrome', baseUrl, assertionFingerprint: fingerprint, entry, startedAt,
-    completedAt: new Date().toISOString(), startedNetwork, networkAX,
-    budgets: { homeReadyMs: 5000, routeReadyMs: 8000, dataReadyMs: 12000, timeoutMs: 30000 },
+  const evidence = { ...started, completedAt: new Date().toISOString(), networkAX,
     routeResults, interactionResults, consoleErrors, consoleCaptureComplete: true };
   // Retain failures too. The verifier derives pass/fail from observations.
   await writeFile(path.join(directory, 'evidence.json'), JSON.stringify(evidence, null, 2) + '\n', { mode: 0o600 });

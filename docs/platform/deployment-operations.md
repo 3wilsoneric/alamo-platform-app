@@ -23,7 +23,19 @@ Suite's `ally-native-1122-final` plan pins that candidate and `555272da` rollbac
 the first complete run passed seven stages, then stopped on an Azure Identity
 `network_error` obtaining the storage token in `check:thread-context-fuzz`.
 The failed receipt is retained as `native-final-ui-predeploy-first-failure.json`;
-the unchanged candidate's full gate is being retried from stage one.
+the unchanged candidate's full retry stopped in the nested analyst fuzz check on
+the same failure. Both receipts/logs are retained. A metadata-only transport trace
+observed the first token return 200 and the later token request fail with `EPIPE`.
+Direct fetch and Azure SDK credential checks pass, as does a five-minute idle
+control. The harness now yields to Node's event loop between simulated turns,
+allowing socket-close events and timers to run without changing its assertions.
+Two focused runs passed all 635 turns across 130 sessions. The longer run crossed
+the snapshot cache's five-minute expiry: both token requests returned 200 on new
+sockets (338ms and 444ms), and its final receipt is dated 23:00:25 UTC. This supports
+the event-loop starvation diagnosis; no production authentication code changed.
+Its log and report are retained as `fuzz-yield-extended.log` and
+`fuzz-yield-second-token-pass.json`. The full 28-stage gate is running again with
+this correction; it is not yet a release pass.
 
 At 22:07 UTC the current live design passed 15 routes and 12 interactions in main
 Chrome. Its settled native capture observed 600 requests with one explicit
@@ -32,7 +44,15 @@ errors. The earlier interrupted capture is retained separately. This proves the
 current design, not the pending native image. The explicit main-Chrome release
 driver now rechecks source/build hashes, freshness, complete route/interaction
 coverage, native request statuses and filter settings; 18 fault-injection tests
-and focused ESLint pass. A fresh end-to-end driver capture is still required.
+and focused ESLint pass. A normal `/api/platform/everyagent` background poll can
+repopulate a just-cleared log, so the driver validates its initial statuses and
+uses the observed count as a baseline. It never ignores a failed initial request.
+Capture is split into begin, canonical routes, canonical interactions and finish
+calls to stay within the browser tool's execution context. The first whole-run
+attempt lost that context; later native-control interruptions are not passes.
+The bounded attempt also reset the browser tool before saving its initial
+observation. That tool failure is distinct from the passing saved design check.
+A fresh end-to-end driver capture is still required.
 No source
 settings, model execution, campaign counters or executive grants changed here.
 Suite's named package/readiness and campaign-window helpers are prepared locally;

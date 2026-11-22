@@ -146,6 +146,7 @@ async function captureFixture() {
   return { version: 1, mode: 'main-chrome', baseUrl: 'https://example.test', assertionFingerprint: 'test-source',
     entry: { path: '/assets/index-test.js', sha256: 'test-hash' },
     startedAt: '2026-11-22T22:00:00Z', completedAt: '2026-11-22T22:02:00Z',
+    initialNetworkAX: networkFixture('', { total: 0, visible: 0 }),
     startedNetwork: { total: 0, visible: 0, canceled: 0 }, networkAX: networkFixture(),
     budgets: { homeReadyMs: 5000, routeReadyMs: 8000, dataReadyMs: 12000, timeoutMs: 30000 },
     routeResults: routes, interactionResults: names.map(name => ({ name, passed: true, failures: [] })),
@@ -156,6 +157,10 @@ test('captured evidence rechecks route observations, coverage, build, source and
   const good = await captureFixture();
   const options = { baseUrl: good.baseUrl, fingerprint: good.assertionFingerprint, entry: good.entry, now: Date.parse('2026-11-22T22:03:00Z') };
   assert.equal(validateMainChromeEvidence(good, options).total, 600);
+  const withBackgroundPoll = structuredClone(good);
+  withBackgroundPoll.initialNetworkAX = networkFixture('200', {total:1,visible:1});
+  withBackgroundPoll.startedNetwork = {total:1,visible:1,canceled:0};
+  assert.equal(validateMainChromeEvidence(withBackgroundPoll, options).total, 600);
   for (const mutate of [
     e => e.routeResults.pop(), e => e.interactionResults.pop(),
     e => e.routeResults[0].pageState.hasAuthenticatedShell = false,
@@ -168,6 +173,8 @@ test('captured evidence rechecks route observations, coverage, build, source and
     e => e.assertionFingerprint = 'old-source', e => e.entry.sha256 = 'old-build',
     e => e.startedAt = '2026-11-22T20:00:00Z', e => e.completedAt = '2026-11-22T23:00:00Z',
     e => e.startedNetwork.total = 10, e => e.budgets.homeReadyMs = 999999,
+    e => { e.initialNetworkAX = networkFixture('500'); e.startedNetwork = {total:600,visible:1,canceled:0}; },
+    e => { e.initialNetworkAX = networkFixture('200'); e.startedNetwork = {total:600,visible:1,canceled:0}; },
     e => e.consoleErrors.push({ message: 'failure' }), e => e.consoleCaptureComplete = false,
     e => e.networkAX = networkFixture('500')
   ]) {

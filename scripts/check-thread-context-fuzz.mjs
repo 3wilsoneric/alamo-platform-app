@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { setImmediate as nextTurn } from "node:timers/promises";
 import { compileCopilotIntent } from "../server/copilot-tools.mjs";
 import { hasMeaningfulAnalysisFrame } from "../shared/analysis-session-state.mjs";
 
@@ -403,6 +404,9 @@ async function runSession(session, sessionIndex) {
   const sessionId = `thread-context-fuzz-${Date.now()}-${sessionIndex}`;
 
   for (const [turnIndex, turn] of session.turns.entries()) {
+    // Cached compiler calls otherwise form one long microtask chain. Real
+    // requests allow socket-close events and timers to run between turns.
+    await nextTurn();
     if (turn.action === "new-chat" || turn.action === "reload") {
       frame = null;
       turns.push({
