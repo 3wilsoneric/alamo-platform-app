@@ -34,6 +34,18 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 
 ## Executive Ally candidate — November 22, 2026
 
+**Current status:** the owner-only image was deployed after all 28 predeployment
+checks passed, then exercised with ten real aggregate questions through Eric's
+signed-in main Chrome. The review found four passes, three partial results and
+three failures, including operating-summary field mapping, misleading referral
+stage counts and withheld findings. The prior production image was restored and
+verified healthy; the temporary worker is stopped and canonical again. The full
+automated postdeployment gate was not completed. Andrew/Sandeep are not enabled.
+See [the real acceptance receipt](deployment-operations.md#real-ally-owner-acceptance-and-restoration--november-22)
+and [engine findings](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-real-owner-acceptance--failures-found-pilot-restored).
+
+The preparation observations below are historical and superseded by that receipt.
+
 Current preparation: the separate API is configured and verified for Eric's
 exact Platform client/origins, and the source workload identity/private aggregate
 grant registry are installed. The canonical worker has the shared Carelog

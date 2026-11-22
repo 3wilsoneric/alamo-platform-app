@@ -16,7 +16,44 @@
 
 ## Current Production Host
 
+### Real Ally owner acceptance and restoration — November 22
+
+The owner image `704a3d5b918c41e158ddad6de7a4f893f0c995454d48affca76fe128fd938f00`
+was deployed as `alamo-platform-prod-web--ally-owner-1122-6ef50ea` after the full
+28/28 predeployment gate passed. Public production smoke passed 4/4. The source
+managed-identity proof read five real community aggregate rows and denied an
+unknown subject, a private clinical slice and direct source-storage access.
+
+Eric explicitly requested his signed-in **main Chrome**, not another login window.
+Ten real questions completed there, with saved reports/version history verified
+after reload. The full automated postdeployment `check:ship` was not completed;
+the separate session recorder did not capture a usable session. Manual acceptance
+is not reported as that gate. The real answers found three failures and three
+partial results, including normalized snapshot field mapping, overlapping old
+Pipeline stages and withheld net-growth/freshness findings. Four questions passed.
+See the [exact review](/Users/eric/CareEngineMain/ally/generated/executive-evaluations/real-owner-20261122/Results.json)
+and [engine findings](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-real-owner-acceptance--failures-found-pilot-restored).
+
+The failed candidate was restored at 06:39 UTC to the previous immutable image
+`a030b9aa57edda854cb15515e237b93d94c080d99ff82778d1d1f74569270639`, revision
+`alamo-platform-prod-web--pre-ally-restored-1122`. Readback verified one Healthy
+active revision, 100% traffic, health 200 and anonymous bootstrap 401. Only the
+three added source-connection settings were removed; the prior configuration and
+source records/snapshots were preserved. The source tree remains the unpromoted
+candidate for repairing those findings.
+
+The temporary paid report worker was disabled, its canonical 0.18.3 package
+restored, its five selected active-file hashes and settings verified, and ten
+functions indexed with both timers disabled. The API remains Eric-only; no wider
+executive access was added. Saved reports and source grants remain retained.
+Twenty real calls used an estimated $0.096656, with all prior reservations kept
+inside the unchanged $10 campaign. Cloud/local ledgers were reconciled only after
+execution stopped. Exact protected receipts are owned by
+[suite deployment](/Users/eric/suite-deploy/README.md#real-owner-acceptance--tested-and-restored-november-22).
+
 ### Owner-only Ally release configuration — November 22
+
+Historical preparation state; the real test and restoration receipt above is current.
 
 **Current prepared artifact (not deployed):** source `6ef50ea`, owner image
 `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:704a3d5b918c41e158ddad6de7a4f893f0c995454d48affca76fe128fd938f00`.
