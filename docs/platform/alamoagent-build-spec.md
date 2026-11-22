@@ -13,6 +13,34 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 22 local corrections after real acceptance
+
+The current unpromoted source normalizes the publisher's `Facility`,
+`Facility_Name` and `Incident_Category` aliases before snapshot filters and
+aggregation. Conflicting dimensions and missing required query fields fail closed.
+The Admissions page and report source share one four-stage classifier and a
+complete active-board check; the report no longer combines overlapping old board
+columns with the producer's broader awaiting-admission metric. Truncated lists or
+unmapped/conflicting community identities cannot claim a complete count.
+
+The resident-flow report capability has explicit community, admission-county and
+current-occupancy views, using the existing reconciled stay reader and operating
+limits. County views follow the selected admission episode cohort and community
+permissions. Occupancy states its current source date and refuses to reuse today's
+limits as historical capacity. Missing coverage remains partial.
+
+Focused source, stage, scheduling, dashboard and syntax checks pass with fictional
+regressions, including privacy and scope failures. An aggregate-only real-source
+inspection confirmed 28 assessed / 2 under review / 11 accepted among 41 active
+records. These edits do not change the rendered Admissions page, user-facing copy,
+records, grants or production deployment. This checkout now pins engine **0.18.4**
+(core **0.2.12**) from engine commit `6b3a356`, with archive SHA-256
+`465b9120c995ea79abf89e44132ba0fda6bf0c5eea7e2a1f52b95cc537ab767a`.
+The installed validator and lockfile integrity match that archive. The engine
+suite, API/worker builds, isolated package and Platform production-dependency audit
+pass. Broader paired integration and fresh browser acceptance are still pending. See the
+[canonical correction record](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-22-real-source-corrections--local-0184-candidate).
+
 The user prioritized building the agent and connecting many applications. The
 standalone UI is parked. Engine source, skill definitions, workflows and connector
 routing are edited in AlamoAgent. Platform consumes a pinned archive; the original

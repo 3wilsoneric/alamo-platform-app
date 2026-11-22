@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 import { buildAdmissionsDashboard } from "../server/admissions-dashboard.mjs";
 import { normalizePipelineAdmissionsSummary } from "../server/pipeline-admissions-summary.mjs";
+import { hasCompleteIntakeBoard } from "../shared/admissions-intake.mjs";
 
 // Compile the browser validator so the builder and client contract cannot drift.
 async function loadClientValidators() {
@@ -528,8 +529,8 @@ validators.admissionsDashboard(crosswalkDashboard);
 assert.throws(() => validators.admissionsDashboard({ ...dashboard, referral_pipeline: { status: "bogus" } }));
 
 const intakeJourneySource = await readFile(new URL("../src/features/admissions/components/ActiveIntakeJourney.tsx", import.meta.url), "utf8");
-assert.match(intakeJourneySource, /all\.length !== pipeline\.metrics\.activeReferrals/, "the visible population must reconcile to the feed's active-referral total");
-assert.match(intakeJourneySource, /pipeline\.board\.truncated/, "a partial feed must not be charted as a total");
+assert.match(intakeJourneySource, /!hasCompleteIntakeBoard\(pipeline\)/, "the visible population must use the shared completeness guard against the feed's active-referral total");
+assert.equal(hasCompleteIntakeBoard({board:{cards:[],total:0,truncated:true},metrics:{activeReferrals:0}}),false,"a partial feed must not be charted as a total");
 await import("./check-active-intake-journey.mjs");
 
 console.log("admissions dashboard checks passed");

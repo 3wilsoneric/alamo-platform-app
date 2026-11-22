@@ -44,4 +44,22 @@ const restrictedFallback=await readAllyPlatformData({slice:'notes_summary',opera
 assert.deepEqual(restrictedFallback.rows,summary.toolContext.tables.notes_summary.map(row=>({Facility:row.Facility,note_date:row.note_date})));
 await assert.rejects(readAllyPlatformData({slice:'notes_summary',filters:[{field:'note_text',op:'contains',value:'private'}]}, {load,execute:fail,allowedFields}),/bounded source filters/);
 await assert.rejects(readAllyPlatformData({slice:'notes_summary'}, {load,allowedFields:['unregistered_field']}),/authorized source fields/);
+
+// Actual publisher shape: raw manifest names and normalized snapshot rows.
+const operating = {toolContext:{manifest:[{slice_name:'community_operating_summary',grain:'community',row_count:2,
+  fields:['Facility','Facility_Name','census','private_note']}],tables:{community_operating_summary:[
+  {facility_id:'337',facility_name:'San Pablo',census:153,private_note:'PRIVATE_PROBE'},
+  {facility_id:'345',facility_name:'Santa Clarita',census:136,private_note:'OTHER_COMMUNITY'}
+]}}};
+const scoped = {load:async()=>operating,execute:fail,allowedFields:['Facility','Facility_Name','census'],constraints:[{field:'Facility',op:'in',value:['337']}]};
+const fixed = await readAllyPlatformData({slice:'community_operating_summary',operation:'rows'},scoped);
+assert.deepEqual(fixed.rows,[{Facility:'337',Facility_Name:'San Pablo',census:153}]);
+assert(!JSON.stringify(fixed).includes('PRIVATE_PROBE'));assert(!JSON.stringify(fixed).includes('OTHER_COMMUNITY'));
+const grouped = await readAllyPlatformData({slice:'community_operating_summary',operation:'sum',measure:'census',groupBy:['Facility_Name']},scoped);
+assert.deepEqual(grouped.rows,[{Facility_Name:'San Pablo',result:153}]);
+operating.toolContext.tables.community_operating_summary[0].Facility='345';
+await assert.rejects(readAllyPlatformData({slice:'community_operating_summary',operation:'count'},scoped),/dimensions conflict/);
+delete operating.toolContext.tables.community_operating_summary[0].Facility;
+delete operating.toolContext.tables.community_operating_summary[0].facility_id;
+await assert.rejects(readAllyPlatformData({slice:'community_operating_summary',operation:'count'},scoped),/required query field/);
 console.log("Ally Platform data catalog, safe query compilation, source read, and partial snapshot fallback passed.");

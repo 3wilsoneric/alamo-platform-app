@@ -10,7 +10,7 @@ import { executiveAllyReleaseMode } from './executive-ally-release-mode.mjs';
 const { preview, pilot, enabled, suffix, imageKind, participants, display } = executiveAllyReleaseMode(process.argv.slice(2));
 const root = 'generated/executive-ally-release' + suffix;
 const receipt = JSON.parse(await readFile(root + '/receipt.json', 'utf8'));
-const image = `platform-executive-${imageKind}:20261122-v0183`;
+const image = `platform-executive-${imageKind}:20261122-v0184`;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const docker = args => execFileSync('docker', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 const inventory = `import {readdir,readFile,stat} from 'node:fs/promises';import {createHash} from 'node:crypto';

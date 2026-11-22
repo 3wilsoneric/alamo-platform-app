@@ -3,23 +3,10 @@ import { ChevronDown } from "lucide-react";
 import type { AdmissionsBoardCard, AdmissionsReferralPipeline } from "../../../shared/types/platformSnapshot";
 import { CALIFORNIA_COMMUNITIES } from "../../california/data/californiaCommunities";
 import { isAcceptedReferral } from "../schedule";
+import { activeIntakeCards, hasCompleteIntakeBoard, intakeStage, INTAKE_STAGES as stages } from "../../../../shared/admissions-intake.mjs";
 import "./active-intake-journey.css";
 
 type Pipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
-const stages = [
-  { key: "new", label: "Just referred" },
-  { key: "assessment", label: "Being assessed" },
-  { key: "decision", label: "Under review" },
-  { key: "arrival", label: "Accepted, awaiting move-in" }
-];
-// Restored from the deployed intake journey. Keep its active population and
-// completeness guard: a partial feed must never be displayed as the total.
-export function activeIntakeCards(pipeline: Pipeline) {
-  return pipeline.board.cards.filter(card => !/^(declined|denied)$/i.test(card.status.trim()) && !card.status.trim().toLowerCase().startsWith("admitted") && card.status.trim().toLowerCase() !== "did not move in");
-}
-export function intakeStage(card: AdmissionsBoardCard) {
-  return isAcceptedReferral(card.status) ? "arrival" : card.column === "received" ? "new" : card.column === "in_progress" ? "assessment" : "decision";
-}
 function actions(card: AdmissionsBoardCard) {
   return [
     card.flags.moveInOverdue && "Planned move-in date passed without a recorded outcome",
@@ -72,7 +59,7 @@ export default function ActiveIntakeJourney({ pipeline, facilityId = null, onOpe
   const [selectedId, setSelectedId] = useState<number | null>(null);
   if (!pipeline) return <p role="status">Active intake is unavailable while the Pipeline feed is disconnected.</p>;
   const all = activeIntakeCards(pipeline);
-  if (pipeline.board.truncated || pipeline.board.cards.length !== pipeline.board.total || all.length !== pipeline.metrics.activeReferrals) return <p role="status">The active intake list is incomplete. Open Pipeline for the full referral record; no partial list is charted as the total.</p>;
+  if (!hasCompleteIntakeBoard(pipeline)) return <p role="status">The active intake list is incomplete. Open Pipeline for the full referral record; no partial list is charted as the total.</p>;
   const communityOrder = new Map(CALIFORNIA_COMMUNITIES.map((community, index) => [community.facilityId, index]));
   const cards = all.filter(card => !facilityId || card.facilityId === facilityId);
   const visible = cards.filter(card => !stage || intakeStage(card) === stage).sort((a, b) => (communityOrder.get(a.facilityId || "") ?? 99) - (communityOrder.get(b.facilityId || "") ?? 99));

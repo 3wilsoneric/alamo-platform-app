@@ -3,6 +3,8 @@ import type {
   AdmissionsReferralPipeline,
   AdmissionsWeeklyBriefing
 } from "../../shared/types/platformSnapshot";
+import { isAcceptedReferral } from "../../../shared/admissions-intake.mjs";
+export { isAcceptedReferral } from "../../../shared/admissions-intake.mjs";
 
 type ConnectedAdmissionsPipeline = Extract<AdmissionsReferralPipeline, { status: "connected" }>;
 
@@ -17,11 +19,6 @@ export type AdmissionsScheduleEvent = {
   owner: string;
   detail: string;
 };
-
-export function isAcceptedReferral(status: string) {
-  const normalized = status.trim().toLowerCase();
-  return normalized.startsWith("accept") || normalized === "awaiting admit" || normalized === "meet the client not sent";
-}
 
 export function isDeclinedReferral(status: string) {
   return status.trim().toLowerCase() === "declined";

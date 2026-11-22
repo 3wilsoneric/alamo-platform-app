@@ -7,6 +7,7 @@ import { buildResidentFlowReport } from './resident-flow-report.mjs';
 import { listAllyPlatformDataSources, readAllyPlatformData } from './ally-data-source.mjs';
 import { getPipelineAdmissionsSummary } from './pipeline-admissions-summary.mjs';
 import { facilityIdForPipelineCommunity } from './admissions-dashboard.mjs';
+import { activeIntakeCards, hasCompleteIntakeBoard, intakeStage, INTAKE_STAGES } from '../shared/admissions-intake.mjs';
 import { getLicensingLibrary } from './licensing-library.mjs';
 import { createWorkflowKnowledgeSource } from './workflow-knowledge-source.mjs';
 import { reportAggregateFields, reportNumericField } from './ally-report-source-grants.mjs';
@@ -17,13 +18,13 @@ const schemas = {
   'platform-data': objectSchema({ slice: string, operation: { enum: ['rows', 'count', 'sum', 'average'] }, groupBy: strings, measure: string,
     dateField: { type: ['string', 'null'] }, limit: { type: 'integer', minimum: 1, maximum: 100 },
     filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains'] }, value: string }) } }),
-  'resident-flow': objectSchema({}), 'pipeline-summary': objectSchema({}),
+  'resident-flow': objectSchema({ view: { enum: ['communities', 'counties', 'occupancy'] } }), 'pipeline-summary': objectSchema({}),
   'licensing-search': objectSchema({ query: string, type: { enum: ['Complaint', 'Inspection', 'Other'] } }),
   'proforma-search': objectSchema({ query: string })
 };
 const metadata = {
   'platform-data': ['Governed Platform data', 'Query published source grains. Counts count rows, not necessarily unique clients. Dates and communities are enforced. Never sum census across dates.'],
-  'resident-flow': ['Admissions, discharges and bed use', 'Reconciled admission episodes, discharges, opening/closing census, occupied bed-days and completed-stay durations in the exact selected period. Repeat stays count separately.'],
+  'resident-flow': ['Admissions, discharges and bed use', 'Reconciled admission episodes in the selected period; repeat stays count separately. Use view counties for counties of those admissions, not current residents. Use view occupancy for latest published census, operating capacity and available beds; occupancy is a current snapshot, not historical utilization. Default communities shows period admissions/discharges, opening/closing census and bed-days.'],
   'pipeline-summary': ['Current referral pipeline', 'Current published referral stages and decisions. This is a current snapshot, not all referral event history.'],
   'licensing-search': ['State licensing reports', 'Dated inspection and complaint metadata for selected communities. Separate from internal incidents.'],
   'proforma-search': ['ProForma procedures', 'Source-linked draft procedure excerpts. Draft references are not approved policy.']
@@ -79,8 +80,12 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       status: 'verified', coverage: 'complete', title: metadata[step.capability][0], note: '', answer: '', revision: '' };
     let result, dataset;
     if (step.capability === 'resident-flow') {
-      reportObject(args, []);
-      const flow = buildResidentFlowReport(await snapshot(), null, scope.from.slice(0, 4), scope);
+      reportObject(args, [], ['view']);
+      const view = args.view ?? 'communities';
+      if (!['communities', 'counties', 'occupancy'].includes(view)) throw Error('Choose a supported resident-flow view.');
+      const published = await snapshot();
+      const range = view === 'occupancy' ? { from: published?.snapshot?.as_of_date, through: published?.snapshot?.as_of_date } : scope;
+      const flow = buildResidentFlowReport(published, null, range.from?.slice(0, 4), range);
       const sites = flow.sites.filter(s => authorization.communities.includes(s.facilityId));
       result = { period: flow.period, sites, ...(authorization.communities.length === ALAMO_FACILITIES.length ? { totals: flow.totals, counties: flow.counties } : {}),
         definitions: { admissions: 'Admission episodes starting in this period; repeat admissions count separately.', discharges: 'Stay endings in this period.', bedDays: 'Admission day included; discharge day excluded.', averageCompletedStayDays: 'Total duration of stays that ended in this period, not ongoing residents.' } };
@@ -89,6 +94,34 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       if (flow.snapshot.stale || flow.period.through < scope.through) base.coverage = 'partial';
       dataset = scopedDataset('Admissions and discharges', sites.map(s => ({ community: s.community, admissions: s.admissions, discharges: s.discharges, net: s.net, bedDays: s.bedDays })),
         [{ key: 'community', label: 'Community', type: 'string' }, ...['admissions', 'discharges', 'net', 'bedDays'].map(key => ({ key, label: key, type: 'number' }))], 'categories');
+      if (view === 'counties') {
+        base.title = 'Counties of admission';
+        const selected = authorization.communities.length === ALAMO_FACILITIES.length ? [flow] :
+          authorization.communities.map(id => buildResidentFlowReport(published, id, range.from.slice(0, 4), range));
+        const available = selected.every(report => report.counties.available);
+        const counts = new Map();
+        if (available) for (const report of selected) for (const row of report.counties.rows) counts.set(row.county, (counts.get(row.county) ?? 0) + row.admissions);
+        const rows = [...counts].map(([county, admissions]) => ({ county, admissions })).sort((a,b) => b.admissions-a.admissions || a.county.localeCompare(b.county));
+        result = { period: flow.period, counties: { available, rows }, definitions: { admissions: result.definitions.admissions } };
+        base.grain = 'county of admission episodes';
+        if (!available) { base.coverage = 'partial'; base.note += ' Admission county fields are unavailable for part of this scope.'; }
+        dataset = scopedDataset('Counties of admission', rows, [{key:'county',label:'County',type:'string'},{key:'admissions',label:'Admissions',type:'number'}], 'categories');
+      } else if (view === 'occupancy') {
+        base.title = 'Census and operating capacity';
+        const rows = sites.map(site => {
+          const facility = ALAMO_FACILITIES.find(f => f.facilityId === site.facilityId);
+          if (!facility) throw Error('Census community has no recorded operating limit.');
+          const capacity = facility.capacityAsOf <= flow.snapshot.asOfDate ? facility.operatingLimit : null;
+          return { community: site.community, census: site.closingCensus, operatingCapacity: capacity,
+            availableBeds: capacity === null ? null : Math.max(0, capacity - site.closingCensus), capacityAsOf: facility.capacityAsOf };
+        });
+        result = { asOfDate: flow.snapshot.asOfDate, communities: rows,
+          definitions: { census: 'Residents present at the latest published census date.', operatingCapacity: 'Recorded operating limit, not licensed capacity or a historical occupancy denominator.', availableBeds: 'Operating capacity minus census, floored at zero. This does not establish room or staffing availability.' } };
+        base.period = `Current census as of ${flow.snapshot.asOfDate}`; base.grain = 'community census and operating capacity';
+        if (rows.some(row => row.operatingCapacity === null)) { base.coverage = 'partial'; base.note += ' Recorded operating limits do not establish capacity before their effective dates.'; }
+        dataset = scopedDataset('Census and operating capacity', rows,
+          [{key:'community',label:'Community',type:'string'},...['census','operatingCapacity','availableBeds'].map(key=>({key,label:key,type:'number'})),{key:'capacityAsOf',label:'Capacity recorded',type:'string'}], 'categories');
+      }
     } else if (step.capability === 'platform-data') {
       reportObject(args, ['slice', 'operation'], ['groupBy', 'measure', 'dateField', 'limit', 'filters']);
       const source = listAllyPlatformDataSources(await summary()).find(s => s.id === args.slice);
@@ -117,15 +150,21 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       reportObject(args, []);
       const source = await pipeline();
       if (source.status !== 'connected') throw Error('Pipeline source unavailable.');
-      const portfolio = authorization.communities.length === ALAMO_FACILITIES.length;
-      if (!portfolio && source.board.truncated) throw Error('A complete community referral count is unavailable.');
-      const columns = source.board.columns.map(column => ({ key: column.key, title: column.label,
-        count: portfolio ? column.count : source.board.cards.filter(item => item.column === column.key && authorization.communities.includes(facilityIdForPipelineCommunity(item.community))).length }));
-      // Portfolio metrics are never reused for a narrower community scope.
-      result = { generatedAt: source.generatedAt, columns, truncated: source.board.truncated,
-        ...(authorization.communities.length === ALAMO_FACILITIES.length ? { metrics: source.metrics, history: source.history } : {}) };
+      if (!hasCompleteIntakeBoard(source)) throw Error('A complete active referral count is unavailable.');
+      const active = activeIntakeCards(source);
+      const facilityFor = item => item.facilityId ?? facilityIdForPipelineCommunity(item.community);
+      if (active.some(item => !ALAMO_FACILITIES.some(facility => facility.facilityId === facilityFor(item)) ||
+          item.facilityId && facilityIdForPipelineCommunity(item.community) && item.facilityId !== facilityIdForPipelineCommunity(item.community))) {
+        throw Error('Active referral community scope could not be verified.');
+      }
+      const cards = active.filter(item => authorization.communities.includes(facilityFor(item)));
+      const columns = INTAKE_STAGES.map(stage => ({ key: stage.key, title: stage.label, count: cards.filter(card => intakeStage(card) === stage.key).length }));
+      // Counts share the same complete active population as the Admissions UI.
+      // The broader producer awaiting-admission metric is not a stage subtotal.
+      result = { generatedAt: source.generatedAt, columns, truncated: false,
+        metrics: { activeReferrals: cards.length, awaitingAdmission: columns.find(column => column.key === 'arrival')?.count ?? 0 } };
       base.observedAt = source.generatedAt; base.period = `Current snapshot as of ${source.generatedAt.slice(0, 10)}`; base.grain = 'referral workspace stage';
-      base.note = 'Published Pipeline snapshot. Stage rows may be bounded; this is not full referral event history.';
+      base.note = 'Complete active Pipeline workspaces in the selected communities. Stages are mutually exclusive; admitted and closed workspaces are excluded. This is a current snapshot, not referral event history.';
       dataset = scopedDataset('Current workspaces', columns.map(c => ({ stage: c.title, count: c.count })), [{ key: 'stage', label: 'Stage', type: 'string' }, { key: 'count', label: 'Workspaces', type: 'number' }], 'categories');
     } else if (step.capability === 'licensing-search') {
       reportObject(args, [], ['query', 'type']);

@@ -8,7 +8,7 @@ const { outputText } = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 }
 });
 const { buildAdmissionsMoveInSchedule, isAcceptedReferral } = await import(
-  `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`
+  `data:text/javascript;base64,${Buffer.from(outputText.replaceAll('../../../shared/admissions-intake.mjs',new URL('../shared/admissions-intake.mjs',import.meta.url).href)).toString("base64")}`
 );
 
 const card = (overrides = {}) => ({

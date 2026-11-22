@@ -17,6 +17,7 @@ import { createExecutiveReportStore } from '@alamo/agent-runtime/server/executiv
 import { createExecutiveReportService } from '@alamo/agent-runtime/server/executive-report-service.mjs';
 import { validateReportEvidence, EXECUTIVE_REPORT_SOURCE_PATH } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
 import { reportViewContext } from '@alamo/agent-runtime/shared/executive-report-views.mjs';
+import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 
 const user='11111111-1111-4111-8111-111111111111', clientId='22222222-2222-4222-8222-222222222222', principalId='33333333-3333-4333-8333-333333333333', audience='44444444-4444-4444-8444-444444444444';
 const scope={communityIds:['337'],from:'2026-11-01',through:'2026-11-20'};
@@ -24,8 +25,9 @@ const registry={version:1,grants:[{id:'fictional-pilot',clientId,principalId,sub
 const rows=[{facility_id:'337',incident_date:'2026-11-20T23:59:59',severity:'medium',private_name:'Synthetic A'}, {facility_id:'345',incident_date:'2026-11-20',severity:'high',private_name:'OTHER_COMMUNITY'}, {facility_id:'337',incident_date:'2026-11-21',severity:'high',private_name:'NEXT_DAY'}, {facility_id:'337',incident_date:'2026-11-01T00:00:00',severity:'low',private_name:'Synthetic B'}];
 const published={toolContext:{manifest:[{slice_name:'incident_detail_history',grain:'incident',row_count:4,fields:Object.keys(rows[0]),generated_at:new Date().toISOString()}, {slice_name:'census_monthly_by_community',grain:'community month',row_count:1,fields:['facility_id','month','census']}],tables:{incident_detail_history:rows,census_monthly_by_community:[{facility_id:'337',month:'2026-11',census:40}]}}};
 const step={id:'source-1',capability:'platform-data',input:{slice:'incident_detail_history',operation:'count',groupBy:['severity'],dateField:'incident_date'}};
+const pipelineSnapshot={status:'connected',generatedAt:new Date().toISOString(),metrics:{activeReferrals:2,awaitingAdmission:900},board:{total:2,truncated:false,columns:[{key:'decision',label:'Decision',count:99}],cards:[{column:'in_progress',status:'Assessment underway',community:'San Pablo'},{column:'decision',status:'Accepted, requirements open',community:'Santa Clarita'}]}};
 let reads=0, afterRead=()=>{};
-const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>({status:'connected',generatedAt:new Date().toISOString(),metrics:{activeReferrals:900},board:{truncated:false,columns:[{key:'active',label:'In progress',count:99}],cards:[{column:'active',community:'San Pablo'},{column:'active',community:'Santa Clarita'}]}})});
+const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot)});
 const {publicKey,privateKey}=await generateKeyPair('RS256');const jwk=await exportJWK(publicKey);
 const sign=(claims={})=>new SignJWT({tid:EVERYAGENT_TENANT,oid:principalId,azp:clientId,roles:['AlamoAgent.Source.Read'],ver:'2.0',iss:`https://login.microsoftonline.com/${EVERYAGENT_TENANT}/v2.0`,aud:audience,iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600,...claims}).setProtectedHeader({alg:'RS256',kid:'test'}).sign(privateKey);
 const handler=createPlatformReportSourceHandler({authorize:createPlatformAgentSourceAuthorizer({audience,keySet:createLocalJWKSet({keys:[{...jwk,kid:'test',alg:'RS256'}]})}),readGrants:async()=>structuredClone(registry),sources});
@@ -109,8 +111,25 @@ try {
   assert.equal((await connection.read(user,chartScope,chartStep)).dataset.shape,'records','empty sources remain exact-value tables');
   registry.grants[0].communityIds.pop();
   assert.equal((await send({...input,step:{...aggregateStep,input:{...aggregateStep.input,dateField:'private_date_of_birth'}}})).status,403,'date selectors cannot bypass aggregate dimension limits');
-  const pipeline=await connection.read(user,scope,{id:'source-2',capability:'pipeline-summary',input:{}});assert.equal(pipeline.dataset.rows[0].count,1);assert(!pipeline.answer.includes('900'));
+  const pipeline=await connection.read(user,scope,{id:'source-2',capability:'pipeline-summary',input:{}});assert.deepEqual(pipeline.dataset.rows.map(row=>row.count),[0,1,0,0]);assert(!pipeline.answer.includes('900'));
   const identity={tenantId:EVERYAGENT_TENANT,clientId,principalId};const auth=authorizePlatformReportSource(identity,input,registry);
+  registry.grants[0].communityIds.push('345');
+  const bothScope={...scope,communityIds:['337','345']}, pipelineStep={id:'source-2',capability:'pipeline-summary',input:{}};
+  const both=await connection.read(user,bothScope,pipelineStep);
+  assert.deepEqual(both.dataset.rows.map(row=>row.count),[0,1,0,1]);
+  assert.deepEqual(JSON.parse(both.answer).metrics,{activeReferrals:2,awaitingAdmission:1});
+  assert.equal(both.dataset.rows.reduce((sum,row)=>sum+row.count,0),2,'stage counts cannot overlap');
+  pipelineSnapshot.board.truncated=true;
+  await assert.rejects(connection.read(user,bothScope,pipelineStep),'truncated lists cannot provide a complete active total');
+  pipelineSnapshot.board.truncated=false;pipelineSnapshot.metrics.activeReferrals=3;
+  await assert.rejects(connection.read(user,bothScope,pipelineStep),'a mismatched published population must fail closed');
+  pipelineSnapshot.metrics.activeReferrals=2;
+  pipelineSnapshot.board.cards[0].community='Unmapped';
+  await assert.rejects(connection.read(user,bothScope,pipelineStep),'unmapped active records cannot silently disappear from a complete count');
+  pipelineSnapshot.board.cards[0].community='San Pablo';pipelineSnapshot.board.cards[0].facilityId='345';
+  await assert.rejects(connection.read(user,bothScope,pipelineStep),'conflicting community identity cannot choose an authorized scope');
+  delete pipelineSnapshot.board.cards[0].facilityId;registry.grants[0].communityIds.pop();
+
   await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth),/partial month/);
   await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth),/across dates/);
   // Saved output must obey the recipient's projection, not merely permission
@@ -155,3 +174,37 @@ try {
   afterRead=()=>{registry.grants[0].revoked=true;};const denied=await send();assert.equal(denied.status,403);assert(!(await denied.text()).includes('medium'));
   console.log('Executive source: signed workload, subject/community grants, date boundaries, partial coverage, aggregate privacy, pipeline scope and revocation passed.');
 } finally {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+
+// Exercise actual episode reconciliation and the source-owned view selection.
+// A discharged November admission must remain in the county cohort, and source
+// person fields must never enter the aggregate answer or on-demand view.
+const flowSnapshot={snapshot:{as_of_date:'2026-11-21',generated_at:new Date().toISOString()},reportsSummary:{toolContext:{tables:{
+  resident_flow_monthly_by_community:ALAMO_FACILITIES.flatMap(f=>Array.from({length:10},(_,i)=>({facility_id:f.facilityId,month_bucket:`2026-${String(i+1).padStart(2,'0')}`,admissions:0,discharges:0}))),
+  resident_episode_history:ALAMO_FACILITIES.flatMap(f=>[
+    {episode_id:f.facilityId+'-old',resident_name:'PRIVATE_PERSON_PROBE',facility_id:f.facilityId,admit_date:'2025-12-01',discharge_date:null,admission_county:'Alameda'},
+    {episode_id:f.facilityId+'-new',resident_name:'PRIVATE_PERSON_PROBE',facility_id:f.facilityId,admit_date:'2026-11-01',discharge_date:'2026-11-02',admission_county:'Contra Costa County'},
+    {episode_id:f.facilityId+'-repeat',resident_name:'PRIVATE_PERSON_PROBE',facility_id:f.facilityId,admit_date:'2026-11-03',discharge_date:null,admission_county:'San Francisco'}]),
+  census_weekly_by_community:ALAMO_FACILITIES.map(f=>({facility_id:f.facilityId,census_date:'2026-11-21',census:2}))
+}}}};
+const flowSources=createPlatformReportSources({snapshot:async()=>flowSnapshot});
+const flowScope={communityIds:['337','344'],from:'2026-11-01',through:'2026-11-21'};
+const flowAuthorization={communities:flowScope.communityIds,grant:{detail:false},receipt:{revision:'a'.repeat(64)}};
+const readView=(view,selectedScope=flowScope)=>flowSources.read({scope:selectedScope,step:{id:'flow',capability:'resident-flow',input:{view}}},{...flowAuthorization,communities:selectedScope.communityIds});
+const countyView=await readView('counties');
+assert.deepEqual(countyView.dataset.rows,[{county:'Contra Costa',admissions:2},{county:'San Francisco',admissions:2}]);
+assert.equal(countyView.dataset.shape,'categories');assert.equal(countyView.dataset.columns[0].key,'county');
+assert(!countyView.answer.includes('Alameda'),'current resident counties cannot replace the admission cohort');
+assert(!JSON.stringify(countyView).includes('PRIVATE_PERSON_PROBE'));
+const occupancy=await readView('occupancy');
+assert.deepEqual(occupancy.dataset.rows,[{community:'San Pablo',census:2,operatingCapacity:175,availableBeds:173,capacityAsOf:'2026-07-30'},{community:'Turlock',census:2,operatingCapacity:84,availableBeds:82,capacityAsOf:'2026-07-30'}]);
+assert(!JSON.stringify(occupancy).includes('PRIVATE_PERSON_PROBE'));assert(!occupancy.answer.includes('Santa Clarita'));
+assert.equal((await readView('occupancy',{...flowScope,through:'2026-11-02'})).period,'Current census as of 2026-11-21','current occupancy is labeled as the source snapshot, not a historical denominator');
+const ordinary=await readView('communities');
+assert.deepEqual(ordinary.dataset.rows.map(r=>[r.community,r.admissions,r.discharges]),[['San Pablo',2,1],['Turlock',2,1]]);
+await assert.rejects(readView('invented'),/supported resident-flow view/);
+delete flowSnapshot.reportsSummary.toolContext.tables.resident_episode_history[1].admission_county;
+const unavailableCounty=await readView('counties');assert.equal(unavailableCounty.coverage,'partial');assert.deepEqual(unavailableCounty.dataset.rows,[]);
+flowSnapshot.snapshot.as_of_date='2026-06-30';
+flowSnapshot.reportsSummary.toolContext.tables.census_weekly_by_community=ALAMO_FACILITIES.map(f=>({facility_id:f.facilityId,census_date:'2026-06-30',census:1}));
+const historical=await readView('occupancy');assert.equal(historical.coverage,'partial');assert(historical.dataset.rows.every(r=>r.operatingCapacity===null&&r.availableBeds===null),'current operating limits cannot be applied before their effective dates');
+console.log('Executive views: scoped admission counties, actual occupancy limits, unavailable history, and aggregate privacy passed.');

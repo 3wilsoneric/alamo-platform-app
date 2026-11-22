@@ -83,6 +83,26 @@ export function compileAllyPlatformDataQuery(query, source, constraints = []) {
   return { sql, ...input };
 }
 
+// snapshot_publish.py preserves the governed measures but normalizes these
+// dimensions. Translate back to the manifest/query contract before applying
+// scope, filters or grouping. Never guess aliases from a field's spelling.
+const PUBLISHED_FIELD_NAMES = Object.freeze({ Facility: 'facility_id', Facility_Name: 'facility_name', Incident_Category: 'category' });
+function snapshotQueryRows(rows, input) {
+  const required = new Set([...input.filters.map(filter => filter.field), ...input.groupBy, ...(input.measure ? [input.measure] : [])]);
+  return rows.map(row => {
+    const projected = Object.fromEntries(input.source.fields.map(field => {
+      const alias = PUBLISHED_FIELD_NAMES[field];
+      if (alias && Object.hasOwn(row, field) && Object.hasOwn(row, alias) && String(row[field]) !== String(row[alias])) {
+        throw Error('Published source dimensions conflict.');
+      }
+      const key = Object.hasOwn(row, field) ? field : alias && Object.hasOwn(row, alias) ? alias : null;
+      if (!key && required.has(field)) throw Error('The published source lacks a required query field.');
+      return [field, key ? row[key] : null];
+    }));
+    return projected;
+  });
+}
+
 function snapshotFilter(rows, filters) {
   return rows.filter(row => filters.every(({ field, op, value }) => {
     const actual = String(row[field] ?? "");
@@ -133,7 +153,7 @@ export async function readAllyPlatformData(query, { load = getReportsSummaryData
     if (!Array.isArray(snapshotRows)) throw Error("The governed source is unavailable and no published rows exist for this slice.");
     readMode = "published-snapshot";
     coverage = snapshotRows.length < input.source.sourceRows ? `partial: ${snapshotRows.length} of ${input.source.sourceRows} source rows published` : "published-row-set";
-    const filtered = snapshotFilter(snapshotRows, input.filters);
+    const filtered = snapshotFilter(snapshotQueryRows(snapshotRows, input), input.filters);
     rows = input.operation === "rows" ? filtered.slice(0, input.limit + 1) : snapshotAggregate(filtered, input);
   }
   const hasMore = rows.length > input.limit;
