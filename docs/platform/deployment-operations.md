@@ -15,8 +15,14 @@ Receipts and logs are under `generated/current-navigation-20261122/` with the
 The subsequent Ally predeployment run was deliberately stopped after the design
 owner began another control cleanup during live acceptance. This is an incomplete
 gate, not a release pass. Final cleanup `d7a97a1` is now merged in `04f82fe`, and
-the combined candidate is being rebuilt against the unchanged `555272da` image.
-The complete gate must pass before the native Ally cutover. No source
+the combined candidate was rebuilt against the unchanged `555272da` image.
+At 21:46 UTC its exact-file, configuration, access and HTTP verifier passed. The
+44-file native overlay is pushed as immutable image
+`68437690ab2038b99d74a86c9aeb5e4b1c1873ae2ba4bb5466ea3156ec91bd11`.
+Suite's `ally-native-1122-final` plan pins that candidate and `555272da` rollback;
+the complete predeployment gate is still running. The current sign-in was checked
+in main Chrome, but the native Network check was interrupted by a tab change and
+is not a passing signed-in release gate. No source
 settings, model execution, campaign counters or executive grants changed here.
 Suite's named package/readiness and campaign-window helpers are prepared locally;
 ten in-memory tests exercise their actual remote budget body, including ETag
