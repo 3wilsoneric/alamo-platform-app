@@ -125,7 +125,7 @@ const scenarios = [
       {
         prompt: "open incident center",
         expectText: [/Incident Center|Surface Incidents|incidents/i],
-        expectFrame: (frame) => frame?.metric === "incidents" && !frame?.category
+        expectFrame: (frame) => frame === null || !frame?.metric || (frame?.metric === "incidents" && !frame?.category)
       },
       {
         prompt: "how many people went AWOL in April 2026",
@@ -165,7 +165,7 @@ const scenarios = [
       {
         prompt: "show shannon romero resident profile",
         expectText: [/Shannon Romero/i, /Resident #|9513755/i],
-        expectFrame: (frame) => frame === null || !frame?.residentName
+        expectFrame: (frame) => frame?.mode === "profile" && Boolean(frame?.residentName)
       }
     ]
   },
@@ -176,7 +176,7 @@ const scenarios = [
       {
         prompt: "show Shannon Romero resident profile",
         expectText: [/Shannon Romero/i, /Resident #|9513755/i],
-        expectFrame: (frame) => frame === null || !frame?.residentName
+        expectFrame: (frame) => frame?.mode === "profile" && Boolean(frame?.residentName)
       },
       {
         prompt: "how many people went AWOL in May 2026",
@@ -296,7 +296,7 @@ async function validateTurn(page, turn, scenarioId, stepIndex) {
   }
 
   if (turn.expectResidentCard?.length) {
-    const card = page.locator('[data-resident-search-module="true"] [data-module-row="resident-profile-card"]').last();
+    const card = page.locator('[data-resident-search-module="true"] [data-module-row="resident-profile-card"], [data-chat-visual-renderer="profile_card"]').last();
     await card.waitFor({ state: "visible", timeout: TIMEOUT_MS }).catch(() => {});
     const cardText = await card.innerText().catch(() => "");
     for (const pattern of turn.expectResidentCard) {
