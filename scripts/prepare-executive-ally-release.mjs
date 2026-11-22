@@ -28,7 +28,7 @@ async function write(file, bytes, compress = false) {
 // The inactive candidate is deliberately not an activation mechanism. Rebuild
 // with reviewed display configuration only after model/source acceptance.
 const enabled = process.env.VITE_ALLY_REPORTS_ENABLED === 'true';
-assert(!enabled, 'This preparation supports the disabled candidate only; live acceptance is still deferred.');
+assert(!enabled, 'This preparation supports the disabled candidate only; executive activation acceptance remains open.');
 const oldJs = 'index-platform-consistency-f080e6786782.js';
 const prior = readImage('dist/assets/' + oldJs);
 assert.equal(hash(prior), 'f080e67867827e01cf397d3d55c1b47837fd131e79701b4b555324728757f867');
@@ -104,7 +104,7 @@ for (const result of [browserCode, serverOutput[0]]) for (const id of Object.key
   const file = id.split('?')[0];
   if (file !== entry && file.startsWith(root + '/') && !file.includes('/node_modules/')) await source(path.relative(root, file));
 }
-await source('vendor/alamo-agent-runtime-0.18.1.tgz');
+await source('vendor/alamo-agent-runtime-0.18.2.tgz');
 await source('scripts/prepare-executive-ally-release.mjs');
 await writeFile(path.join(out, 'Dockerfile'), `FROM ${base}\nCOPY --chown=node:node overlay /app\n`);
 await writeFile(path.join(out, '.dockerignore'), '*\n!Dockerfile\n!overlay/\n!overlay/**\n');

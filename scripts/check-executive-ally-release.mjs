@@ -8,7 +8,7 @@ import React from 'react';
 
 const root = 'generated/executive-ally-release';
 const receipt = JSON.parse(await readFile(root + '/receipt.json', 'utf8'));
-const image = 'platform-executive-disabled:20261121';
+const image = 'platform-executive-disabled:20261122-v0182';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const docker = args => execFileSync('docker', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 const inventory = `import {readdir,readFile,stat} from 'node:fs/promises';import {createHash} from 'node:crypto';

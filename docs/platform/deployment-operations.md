@@ -16,6 +16,41 @@
 
 ## Current Production Host
 
+### Local Ally 0.18.2 integration — November 22
+
+The local candidate pins engine `7c657a2` through
+`vendor/alamo-agent-runtime-0.18.2.tgz`, SHA-256
+`04651bf664e31f01650267733d703120f81bb1d117cdc99056773d756d898bad`.
+The lockfile changes only that package. The engine's live fictional evaluation
+passed 30 cases plus ten conversational follow-ups using the shared Carelog GPT
+connection, within the owner's $10 allowance. Human grades are still blank; see
+[the evaluation](/Users/eric/CareEngineMain/ally/docs/evaluations/executive-quality-2026-11-22.md).
+
+Platform's signed-source/flow checks, production dependency audit and browser
+journey pass against this archive. The first browser run exposed a stale test
+response missing `requiresDetail`. Direct checks reproduced its rejection on
+both 0.18.1 and 0.18.2. The fictional source now explicitly declares aggregate
+permission and aggregate evidence, matching the current real-source contract;
+no runtime validation was relaxed. The rerun covers 320/390/1440px, 44px controls,
+reduced motion, retry, saved reopening, versioning, follow-ups, recipient controls,
+revocation, cancellation and PDF export. The three viewport screenshots were
+visually inspected. These are Chromium fixtures, not physical-device acceptance.
+
+The complete analyst gate, documentation checks and browser build also pass.
+The rebuilt disabled overlay is
+`platform-executive-disabled:20261122-v0182`, image
+`sha256:2fb410d6e3949f4cc8f7bc46d772fb2fee2a3d0e223035a8b1ddedb7943a4ced`.
+Its verification preserves all 19,123 base files outside the 19-file allowlist,
+image settings, existing authentication and routes. The source and display gates
+remain disabled. Reproduce with `npm run release:executive-ally:prepare`, build
+that tag from `generated/executive-ally-release`, then run
+`npm run check:executive-ally-release`. The generated receipt binds the archive,
+source hashes, base image and rollback; the verification records the exact image.
+
+This is a local integration and checked image, not a deployment. Existing staging
+remains on 0.18.1; its receipts below do not certify this new candidate. Production
+images, settings, source grants and user access are unchanged.
+
 ### Current disabled staging: paired 0.18.1 permission correction
 
 The engine API and worker (`f8b69e3`, packaged at `3ba5a5a`) and the matching

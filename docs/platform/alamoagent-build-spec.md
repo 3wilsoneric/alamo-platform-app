@@ -17,7 +17,7 @@ The user prioritized building the agent and connecting many applications. The
 standalone UI is parked. Engine source, skill definitions, workflows and connector
 routing are edited in AlamoAgent. Platform consumes a pinned archive; the original
 extraction used `vendor/alamo-agent-runtime-0.1.0.tgz`, and the local executive
-candidate below uses `vendor/alamo-agent-runtime-0.18.1.tgz`. Old engine modules re-export that package.
+candidate below uses `vendor/alamo-agent-runtime-0.18.2.tgz`. Old engine modules re-export that package.
 There are no sibling runtime imports or symlinks. Rebuild/bump the package and run
 Platform integration checks before adopting another engine version.
 
@@ -32,7 +32,22 @@ Eric-only access and disabled emails remain unchanged. Andrew's Wilson branding
 is saved, with no access enabled. Extraction and tests do not establish production
 availability. See [deployment operations](deployment-operations.md) for receipts.
 
-## Executive Ally candidate — November 20, 2026
+## Executive Ally candidate — November 22, 2026
+
+This checkout now pins engine **0.18.2** from `7c657a2`. The owner's $10 live-test
+authorization supersedes the earlier deferral. The shared Carelog GPT connection
+passed 30 fictional report cases and a ten-question follow-up conversation after
+corrections to date-label validation, source-scope planning and stage distinctions.
+Human usefulness grades remain blank. The
+[engine evaluation record](/Users/eric/CareEngineMain/ally/docs/evaluations/executive-quality-2026-11-22.md)
+records results, costs and limitations. Platform's full analyst gate, source/flow,
+dependency/docs, desktop/mobile browser, build and disabled-overlay checks pass
+against this pinned candidate; earlier evidence applies to its recorded version.
+No production setting, source grant or executive access has changed.
+Staging remains disabled at **0.18.1**. The operations document distinguishes
+the new local candidate from the existing staging receipt.
+
+### Earlier 0.18.1 integration and staging evidence
 
 The paired 0.18.1 engine/source correction is now installed in disabled staging.
 Actual managed-identity/Blob tests passed saved detail sharing and downgrade
