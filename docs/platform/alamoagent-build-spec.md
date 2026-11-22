@@ -13,6 +13,19 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 22 Platform control cleanup
+
+The Platform Ally UI candidate now starts with one centered composer in full
+screen, then reveals the reading canvas with the first answer. Its empty chat and
+answer canvas no longer present duplicate suggestion cards, disabled actions, or
+a second question-library entry. New chat and history controls appear when there
+is work to restart or revisit. An empty chat offers one Report action; the New
+menu handles multiple kinds of saved work. Phone Chat/Answer tabs, source links
+and reversible panel controls remain.
+This is a Platform interface change only; the independent model execution and
+schedules remain disabled and no additional user access is granted. Local
+desktop and 320/390px fixtures verify the compact and expanded interaction.
+
 ### November 22 current navigation and requested design integration
 
 The approved Platform design and navigation checks through `88f209c` are merged into the executive

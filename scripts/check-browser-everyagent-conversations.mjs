@@ -39,53 +39,53 @@ try {
       page.on("pageerror", error => errors.push(error.message));
       await bridge(page, fixture.clients[0]);
       await page.goto(fixture.base, { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: "Discuss", exact: true }).first().waitFor().catch(async error => {
+      const input = page.getByRole("textbox", { name: "Ask Ally" });
+      await input.waitFor().catch(async error => {
         await page.screenshot({ path: path.join(output, `failed-${width}.png`), fullPage: true });
         console.error("Direct-home fixture state:", await page.locator("body").innerText(), errors); throw error;
       });
       assert.doesNotMatch(await page.locator("body").innerText(), /Welcome|Your assistant|What do you need to know|I’m AlamoAgent/);
-      assert.equal(await page.getByRole("textbox").count(), 0, "direct home leads with work");
-      await page.getByRole("button", { name: "Discuss", exact: true }).first().click();
-      const input = page.getByRole("textbox", { name: "Message AlamoAgent" });
-      await input.waitFor();
-      assert.match(await page.getByLabel("Chat scope").innerText(), /Licensing · 1 community/);
+      assert.equal(await page.getByRole("textbox").count(), 1, "direct home has one place to ask");
       await input.fill("Summarize this inspection and link the original.");
       await input.press("Enter");
-      await page.getByLabel("AlamoAgent answer").first().waitFor();
+      await page.getByLabel("Ally answer").first().waitFor().catch(async error => {
+        await page.screenshot({ path: path.join(output, `failed-answer-${width}.png`), fullPage: true });
+        console.error("Direct chat answer state:", await page.locator("body").innerText(), errors);
+        throw error;
+      });
+      assert.match(await page.getByLabel("Chat scope").innerText(), /Licensing · 1 community/);
       const id = new URL(page.url()).searchParams.get("chat");
       assert(id);
-      await page.locator(".agent-conversation-sources summary").first().click();
-      assert(await page.getByText(/Source checked/).count() > 0);
-      assert(await page.locator('.agent-conversation-answer a[href^="https://www.alamoplatform.com/"]').count() > 0);
+      assert(await page.locator('.agent-conversation-answer a[href^="https://www.alamoplatform.com/"]').count() > 0, "source links appear with the answer");
       await page.screenshot({ path: path.join(output, `direct-${width}.png`), fullPage: true });
       assert(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 1), `${width}px direct home overflowed`);
-      await page.reload(); await page.getByLabel("AlamoAgent answer").first().waitFor();
+      await page.reload(); await page.getByLabel("Ally answer").first().waitFor();
       assert.equal(await page.locator(".agent-conversation-user").count(), 1);
       const embedded = await context.newPage();
       embedded.on("pageerror", error => errors.push(error.message));
       await bridge(embedded, fixture.clients[1]);
       await embedded.goto(`${BASE_URL}/analytics/agent?chat=${id}`, { waitUntil: "domcontentloaded" });
       await embedded.bringToFront();
-      await embedded.getByLabel("AlamoAgent answer").first().waitFor().catch(async error => {
+      await embedded.getByLabel("Ally answer").first().waitFor().catch(async error => {
         await embedded.screenshot({ path: path.join(output, `failed-embedded-${width}.png`), fullPage: true });
         console.error("Embedded fixture state:", embedded.url(), await embedded.locator("body").innerText(), await embedded.evaluate(() => document.visibilityState), errors); throw error;
       });
       assert.equal(await embedded.getByRole("button", { name: "Open AlamoAgent", exact: true }).count(), 0, "the floating helper must not cover the chat composer");
-      await embedded.getByRole("textbox", { name: "Message AlamoAgent" }).fill("Which source supports that?");
+      await embedded.getByRole("textbox", { name: "Ask Ally" }).fill("Which source supports that?");
       await embedded.getByRole("button", { name: "Send question" }).click();
-      await embedded.locator('[aria-label="AlamoAgent answer"]').nth(1).waitFor();
+      await embedded.locator('[aria-label="Ally answer"]').nth(1).waitFor();
       await embedded.screenshot({ path: path.join(output, `embedded-${width}.png`), fullPage: true });
       assert(await embedded.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 1), `${width}px embedded home overflowed`);
-      await page.bringToFront(); await page.reload(); await page.getByLabel("AlamoAgent answer").nth(1).waitFor();
+      await page.bringToFront(); await page.reload(); await page.getByLabel("Ally answer").nth(1).waitFor();
       assert.equal(await page.locator(".agent-conversation-user").count(), 2);
-      await page.getByRole("textbox", { name: "Message AlamoAgent" }).fill("Keep this unsent draft");
+      await page.getByRole("textbox", { name: "Ask Ally" }).fill("Keep this unsent draft");
       await embedded.bringToFront(); await page.bringToFront();
-      await page.getByRole("textbox", { name: "Message AlamoAgent" }).waitFor();
-      assert.equal(await page.getByRole("textbox", { name: "Message AlamoAgent" }).inputValue(), "Keep this unsent draft", "focus revalidation must preserve an unsent draft in memory");
+      await page.getByRole("textbox", { name: "Ask Ally" }).waitFor();
+      assert.equal(await page.getByRole("textbox", { name: "Ask Ally" }).inputValue(), "Keep this unsent draft", "focus revalidation must preserve an unsent draft in memory");
       if (width === 1440) {
         let release;
         fixture.modelState.wait = () => new Promise(resolve => { release = resolve; });
-        await page.getByRole("textbox", { name: "Message AlamoAgent" }).fill("Explain the evidence.");
+        await page.getByRole("textbox", { name: "Ask Ally" }).fill("Explain the evidence.");
         await page.getByRole("button", { name: "Send question" }).click();
         await page.getByRole("button", { name: "Stop", exact: true }).waitFor();
         fixture.sourceFixture.state.document.grants[0].revoked = true;
@@ -101,11 +101,11 @@ try {
       fixture.sourceFixture.state.document.grants[0].revoked = true;
       await page.getByRole("button", { name: "Refresh chats" }).click();
       await page.getByRole("alert").waitFor();
-      assert.equal(await page.getByLabel("AlamoAgent answer").count(), 0, "revocation clears visible transcript");
+      assert.equal(await page.getByLabel("Ally answer").count(), 0, "revocation clears visible transcript");
       fixture.sourceFixture.state.document.grants[0].revoked = false;
       assert.deepEqual(errors, []);
       await context.close();
     }
   });
-  console.log("Direct and embedded conversation browser checks passed at 320/390/1440px: real authenticated API, one persisted chat across clients, task-linked scope, cited replies, refresh/reopen, cancellation, revocation hiding, work-first layout and no overflow/runtime errors.");
+  console.log("Direct and embedded conversation browser checks passed at 320/390/1440px: real authenticated API, one persisted chat across clients, task-linked scope, cited replies, refresh/reopen, cancellation, revocation hiding, one initial composer and no overflow/runtime errors.");
 } finally { await fixture.close(); }

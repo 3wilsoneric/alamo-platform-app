@@ -82,8 +82,10 @@ await withBrowserQa(async browser => {
     await page.locator(".platform-ally-header-button:visible").first().click();
     const panel = page.getByRole("dialog", { name: "Ally" });
     if (width > 700) await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
-    if (width <= 390) await panel.getByRole("button", { name: "Answer" }).click();
-    await panel.getByRole("button", { name: /Which accepted clients are still waiting/ }).click();
+    if (width <= 390) assert.equal(await panel.getByRole("button", { name: "Answer" }).count(), 0, "the empty phone view starts with one composer");
+    assert.equal(await panel.getByRole("textbox", { name: "Ask Ally" }).count(), 1, "the empty workspace has one input");
+    await panel.getByRole("textbox", { name: "Ask Ally" }).fill("Which accepted clients are still waiting for a move-in date?");
+    await panel.screenshot({ path: path.join(output, `ally-workspace-composer-${width}.png`) });
     await panel.getByRole("button", { name: "Send question" }).click();
     const canvas = panel.getByRole("article", { name: "Expanded Ally answer" });
     await canvas.waitFor({ timeout: 10_000 }).catch(async error => {

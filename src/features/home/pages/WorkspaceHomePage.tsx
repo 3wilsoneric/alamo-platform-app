@@ -605,7 +605,7 @@ export default function WorkspaceHomePage({
                     <span className="hidden sm:inline">{questionGuideOpen ? "Hide questions" : "Questions"}</span>
                     <ChevronDown className={`hidden h-3.5 w-3.5 transition-transform sm:block ${questionGuideOpen ? "rotate-180" : ""}`} />
                   </button>
-                  <button
+                  {timelineItems.length > 0 && <button
                     type="button"
                     onClick={startNewChat}
                     aria-label="Start a new chat"
@@ -614,7 +614,7 @@ export default function WorkspaceHomePage({
                   >
                     <MessageSquarePlus className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">New chat</span>
-                  </button>
+                  </button>}
                 </div>
               </div>
             ) : null}
