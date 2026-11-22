@@ -5761,6 +5761,13 @@ Ally pilot deployment, preserving that exact rollback target and Carelog files.
 No production deployment, source record change, grant or model call was made
 while implementing this preparation path.
 
+The final verifier passed again at 19:32 UTC. The owner artifact was rebuilt
+from committed preparation `f951b1f`, producing local image
+`sha256:9cd8d46fa5fe7bb6fd7fbc2280057148290ebe647ddd20d5c856d42d5d50d4dd`.
+The disabled artifact also passed the final configured/unconfigured access
+matrix. Documentation, JavaScript lint and all four mode tests passed. These
+receipts remain local-only and require rebuilding after the pending UI cutover.
+
 ## Ally worker configuration diagnosis — November 22
 
 At 17:44 UTC the canonical production worker was verified disabled after a no-op
