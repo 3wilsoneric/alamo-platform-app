@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { createServer } from "vite";
+import { BASE_URL, withBrowserQa } from "./browser-qa-utils.mjs";
 
 Object.assign(process.env, {
   VITE_E2E_AUTH_BYPASS: "true",
@@ -10,19 +10,11 @@ Object.assign(process.env, {
   VITE_ALAMOAGENT_API_ORIGIN: "https://agent.example.test",
   VITE_ALAMOAGENT_SCOPE: "api://77777777-7777-4777-8777-777777777777/access_as_user",
 });
-const vite = await createServer({ logLevel: "silent", server: { host: "127.0.0.1", port: 0 } });
-await vite.listen();
-const address = vite.httpServer?.address();
-assert.ok(address && typeof address !== "string");
-process.env.BROWSER_MISSION_BASE_URL = `http://127.0.0.1:${address.port}`;
-process.env.BROWSER_MISSION_MANAGED = "false";
-const { BASE_URL, withBrowserQa } = await import("./browser-qa-utils.mjs");
-
 const output = path.resolve("generated/platform-page-screenshots-2026-11-22");
 await mkdir(output, { recursive: true });
 
-try { await withBrowserQa(async browser => {
-  for (const width of [1440, 390]) {
+await withBrowserQa(async browser => {
+  for (const width of [1440, 390, 320]) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     const page = await context.newPage();
     const errors = [];
@@ -71,8 +63,8 @@ try { await withBrowserQa(async browser => {
     await page.goto(`${BASE_URL}/analytics`, { waitUntil: "domcontentloaded" });
     await page.locator(".platform-ally-header-button:visible").first().click();
     const panel = page.getByRole("dialog", { name: "Ally" });
-    await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
-    if (width === 390) await panel.getByRole("button", { name: "Canvas" }).click();
+    if (width > 700) await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+    if (width <= 390) await panel.getByRole("button", { name: "Canvas" }).click();
     await panel.getByRole("button", { name: /Which accepted clients are still waiting/ }).click();
     await panel.getByRole("button", { name: "Send question" }).click();
     const canvas = panel.getByRole("article", { name: "Expanded Ally answer" });
@@ -87,11 +79,15 @@ try { await withBrowserQa(async browser => {
     assert.equal(await canvas.getByRole("link", { name: "Pipeline referral records" }).count(), 1);
     await canvas.getByText("Sources used").click();
     assert.deepEqual(errors, []);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "no horizontal overflow");
     await page.waitForTimeout(330);
     await panel.screenshot({ path: path.join(output, `ally-workspace-answer-${width}.png`) });
-    await panel.getByRole("button", { name: "Restore Ally panel" }).click();
-    await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+    if (width > 700) {
+      await panel.getByRole("button", { name: "Restore Ally panel" }).click();
+      await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+    }
     assert.equal(await panel.getByRole("article", { name: "Expanded Ally answer" }).count(), 1, "the answer survives panel resizing");
+    await panel.locator(".ally-panel-create summary").click();
     await panel.getByRole("button", { name: "New report" }).click();
     const reportSurface = panel.locator(".executive-ally-report-surface");
     await reportSurface.getByRole("textbox", { name: "Ask Ally" }).fill("Compare admissions and discharges across communities.");
@@ -99,10 +95,11 @@ try { await withBrowserQa(async browser => {
     await reportSurface.getByRole("article", { name: "Report findings" }).waitFor();
     assert.equal(await reportSurface.locator(".ally-report-comparison li").count(), 5);
     assert.equal(await panel.locator(".agent-conversation-user").count(), 1, "the chat stays mounted beside the report");
+    assert.equal(await panel.evaluate(element => element.scrollLeft), 0, "the phone panel does not scroll sideways");
     assert.deepEqual(errors, []);
     await panel.screenshot({ path: path.join(output, `ally-workspace-report-${width}.png`) });
     await context.close();
   }
-}); } finally { await vite.close(); }
+});
 
 console.log("Expanded Ally keeps chat beside an answer or chart report, with source links and phone tabs.");

@@ -32,7 +32,7 @@ export default function EveryAgentCompanion() {
       const mobile = window.matchMedia("(max-width: 700px)").matches;
       if (element.open && element.matches(":modal") === mobile) return;
       if (element.open) element.close();
-      if (mobile) element.showModal();
+      if (mobile) { element.showModal(); setExpanded(true); }
       else element.show();
     };
     resize();
@@ -54,7 +54,7 @@ export default function EveryAgentCompanion() {
   }, [open]);
   if (agentChatConfigured && location.pathname === "/analytics/agent" && new URLSearchParams(location.search).has("chat")) return null;
   return <div className="everyagent-embedded">
-    <dialog ref={dialog} className={`everyagent-companion everyagent-companion--chat${expanded ? " everyagent-companion--expanded" : ""}`} aria-label="Ally" onClose={() => { if (!dialog.current?.open) changeOpen(false); }} onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); if (expanded) setExpanded(false); else changeOpen(false); } }} onCancel={event => { event.preventDefault(); if (expanded) setExpanded(false); else changeOpen(false); }} onClick={event => { if (event.target === event.currentTarget) changeOpen(false); }}>
+    <dialog ref={dialog} className={`everyagent-companion everyagent-companion--chat${expanded ? " everyagent-companion--expanded" : ""}`} aria-label="Ally" onClose={() => { if (!dialog.current?.open) changeOpen(false); }} onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); if (window.matchMedia("(max-width: 700px)").matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false); } }} onCancel={event => { event.preventDefault(); if (window.matchMedia("(max-width: 700px)").matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false); }} onClick={event => { if (event.target === event.currentTarget) changeOpen(false); }}>
       <div className="everyagent-companion-inner">
         <header><div><AllyMark className="ally-panel-mark" /><strong>Ally</strong></div><button type="button" className="ally-panel-new" onClick={() => setChatId(null)}><Pencil size={17} aria-hidden="true" />New chat</button><button type="button" className="ally-panel-expand" aria-label={expanded ? "Restore Ally panel" : "Expand Ally to full screen"} aria-pressed={expanded} title={expanded ? "Restore panel" : "Full screen"} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button><button autoFocus type="button" aria-label="Close Ally" onClick={() => changeOpen(false)}><X size={20} /></button></header>
         <div className="everyagent-companion-body">
