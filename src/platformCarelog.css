@@ -673,6 +673,10 @@ dialog.executive-ally-panel--chat[open] { animation: none; }
 .agent-conversation-home--workspace .agent-conversation-new h2 { font-size: 21px; }
 .agent-conversation-home--workspace .agent-conversation-new .agent-conversation-actions { display: none; }
 .agent-conversation-home--workspace .agent-conversation-layout main > [data-conversational-prompt] { margin-top: auto; position: sticky; bottom: 0; z-index: 1; background: #fff; padding-top: 10px; }
+@media (min-width: 901px) {
+  .agent-conversation-home--workspace:has(.agent-conversation-canvas--report)
+    .agent-conversation-workspace[data-view="canvas"] .agent-conversation-layout [data-conversational-prompt] { display: none; }
+}
 .agent-conversation-home--workspace .agent-conversation-turn { padding: 16px 0; }
 .agent-conversation-home--workspace .agent-conversation-user { max-width: 94%; font-size: 14px; line-height: 1.45; }
 .agent-conversation-answer-summary { margin-top: 8px; }

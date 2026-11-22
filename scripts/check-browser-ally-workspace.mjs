@@ -114,6 +114,7 @@ await withBrowserQa(async browser => {
     if (width <= 390) assert.equal(await panel.getByRole("button", { name: "Report" }).count(), 1, "the phone tab names the displayed work");
     assert.equal(await reportSurface.locator(".ally-report-comparison li").count(), 5);
     assert.equal(await panel.locator(".agent-conversation-user").count(), 1, "the chat stays mounted beside the report");
+    assert.equal(await panel.locator("textarea:visible").count(), 1, "the report has one visible place to ask a follow-up");
     assert.equal(await panel.evaluate(element => element.scrollLeft), 0, "the phone panel does not scroll sideways");
     assert.deepEqual(errors, []);
     await panel.screenshot({ path: path.join(output, `ally-workspace-report-${width}.png`) });
