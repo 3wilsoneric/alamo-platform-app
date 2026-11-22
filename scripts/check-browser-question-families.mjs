@@ -124,7 +124,7 @@ function validateRenderedState(testCase, state) {
   if (state.clippedControls.length) failures.push(`${state.clippedControls.length} answer controls are clipped horizontally`);
   if (state.assistantLeft != null && state.assistantLeft < -1) failures.push(`answer begins ${Math.abs(state.assistantLeft)}px outside the viewport`);
   if (state.assistantRight != null && state.assistantRight > state.viewportWidth + 1) failures.push(`answer ends ${state.assistantRight - state.viewportWidth}px outside the viewport`);
-  if (state.freeTextComposerCount) failures.push("free-text composer reappeared on the guided-only surface");
+  if (state.freeTextComposerCount !== 1) failures.push(`owner chat exposed ${state.freeTextComposerCount} question composers instead of one`);
   if (state.thinkingVisible) failures.push("answer remained in a thinking state");
 
   return failures;

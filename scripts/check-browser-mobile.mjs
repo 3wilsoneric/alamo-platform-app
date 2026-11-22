@@ -128,7 +128,7 @@ async function main() {
     const collapsedScreenshotPath = path.join(screenshotDir, "awol-detail-collapsed.png");
     await page.screenshot({ path: collapsedScreenshotPath, fullPage: false });
 
-    await page.getByRole("button", { name: "Choose another question" }).click();
+    await page.getByText("Browse questions", { exact: true }).click();
     const search = page.locator('[data-certified-question-search="true"]').last();
     const questionLibraryScreenshotPath = path.join(screenshotDir, "question-library.png");
     await page.screenshot({ path: questionLibraryScreenshotPath, fullPage: false });
