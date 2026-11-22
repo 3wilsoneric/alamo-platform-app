@@ -493,7 +493,7 @@ export async function clearClientState(page) {
   });
 }
 
-export async function openChat(page, { resetClientState = true, route = "/analytics/questions" } = {}) {
+export async function openChat(page, { resetClientState = true, route = "/chat" } = {}) {
   await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
   if (resetClientState) {
     await clearClientState(page);
@@ -552,10 +552,8 @@ export async function startCleanChat(page) {
   }
 
   await clearClientState(page);
-  const currentPath = new URL(page.url()).pathname;
-  const route = currentPath === "/chat" ? "/chat" : "/analytics/questions";
-  // The questions route can poll for updates; wait for its explicit ready target below.
-  await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
+  // The owner chat can poll for updates; wait for its explicit ready target below.
+  await page.goto(`${BASE_URL}/chat`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-certified-question-guide="true"], [data-conversational-prompt="hero"]').first().waitFor({
     state: "visible",
     timeout: 10_000
