@@ -34,13 +34,20 @@ availability. See [deployment operations](deployment-operations.md) for receipts
 
 ## Executive Ally candidate — November 20, 2026
 
+The paired 0.18.1 engine/source correction is now installed in disabled staging.
+Actual managed-identity/Blob tests passed saved detail sharing and downgrade
+checks with fictional records. Final revocation and cleanup also passed after
+honoring an Azure exec retry interval; active test state is cleared and the normal
+staging snapshot is restored. Real executive access and live GPT testing remain off. Exact images, rollback and evidence are in
+[deployment operations](deployment-operations.md#current-disabled-staging-paired-0181-permission-correction).
+
 The owner authorized the executive experience and then deferred **live GPT testing**.
 The independent engine now has a local 0.18.1 candidate, consumed by this checkout
 through its pinned archive. Existing production images, access and source data
 have not changed. The engine's living spec remains the implementation authority;
 this section records Platform's ownership and integration evidence.
 
-The November 21 permission correction is local: source grant receipts now expose
+The November 21 permission correction adds source grant receipts exposing
 their existing boolean `detail` permission, and evidence carries `requiresDetail`.
 A signed-source regression first reproduced disclosure of saved detail to an
 aggregate-only recipient. The corrected engine rejects that share and hides
@@ -48,8 +55,8 @@ saved reports after a detail downgrade; a fresh aggregate report remains usable
 and shareable. Grant replacement during synthesis also prevents publication.
 The new fields must ship with engine 0.18.1. The disabled local overlay has been
 rebuilt and rechecked against the production base; the operations document holds
-its current receipt. The earlier cloud staging receipts still cover 0.18.0,
-so paired staging acceptance remains required. Live GPT testing stays deferred.
+its current receipt. The current paired staging rollout is recorded above;
+earlier 0.18.0 receipts remain historical. Live GPT testing stays deferred.
 
 Platform owns `/api/platform/ally-source/v1`, its workload-token verifier, the
 separate private `agent-source/report-grants-v1.json` registry, and domain readers.
@@ -93,7 +100,7 @@ checks and browser build. The browser fixture exercises 320/390/1440px, keyboard
 focus, reduced motion, lost-acknowledgement retry, saved reopening, version
 selection, follow-ups, cancellation, sharing and PDF creation. Fixture responses
 are explicitly synthetic; none of these checks establish GPT answer quality.
-The separate staging API and worker now use the tested 0.18.0 package, with dispatch off,
+The initial separate staging API and worker used the tested 0.18.0 package, with dispatch off,
 empty source connectors and no model configuration. This does not activate reports
 or alter the production host. See the exact status and candidate rollout boundary
 in [deployment operations](deployment-operations.md).
@@ -107,7 +114,7 @@ documents, oversized/missing-size responses and invalid JSON. Both monitoring
 and executive report grants use the correction. This is source/persistence
 verification; GPT testing remains deferred.
 
-The corrected source is now verified in isolated cloud staging using the real
+The earlier corrected source was verified in isolated cloud staging using the real
 Ally managed identity and Azure Blob persistence. Scoped values/private-field
 exclusion, unknown-subject denial, concurrent-create idempotency, fresh-process
 reopening, sharing and revocation passed with fictional records and a canned model.

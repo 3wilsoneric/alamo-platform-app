@@ -16,9 +16,58 @@
 
 ## Current Production Host
 
+### Current disabled staging: paired 0.18.1 permission correction
+
+The engine API and worker (`f8b69e3`, packaged at `3ba5a5a`) and the matching
+Platform source (`831611e`) are deployed only to isolated staging. ACR builds
+`ccj` and `cck` passed. Platform's complete analyst gate, source/grant-reader/flow,
+server type, dependency, documentation and build checks passed. The cloud package
+contains the synthetic/empty company-content replacements; no local published
+snapshot, credentials or production records were uploaded.
+
+- API: `suitestg-ally--v0181-1121-f8b69e3`, image
+  `f529fe734e08c7ae090c72823b22a12a8c4a9c395abe08c7c2a819939851ce8a`.
+- Platform: `suitestg-platform--ally-v0181-ready-1121`, image
+  `c425d60c2c2a45cae84789b6a43c04209f92dc0f48a2e04d750aeae153e88186`.
+- Worker: deployment `be5eef68-40f5-4bbf-88be-d97e3516200a`, zip SHA-256
+  `64e1098543745a31b7c00f57e7351e5a34dd7ad17b2bd70dd5893ba352902a34`.
+
+API and Platform each have one Healthy revision with all traffic. Exact
+configuration/identity comparisons passed, health is 200, and protected endpoints
+reject anonymous access. The temporary proof snapshot override is removed.
+The worker's settings are unchanged, both timers remain disabled, and no public
+report runtime, provider, real executive grant or production change is enabled.
+Six existing monitor functions are indexed; this is not report-execution proof.
+
+The expanded actual-cloud test passed scoped aggregate reads, duplicate-create
+idempotency, fresh-process reopening, denied detail sharing, authorized detail
+sharing, and subsequent detail downgrade. Aggregate content remains accessible;
+saved detail is hidden without rewriting history. These checks use fictional
+subjects, real workload tokens and Azure Blob storage, and a canned model.
+The final revoked-access and cleanup checks also passed after honoring Azure
+exec's ten-minute Retry-After. The 18-phase receipt confirms empty active
+fictional report indexes, an empty source-grant registry, removal of the fixture
+snapshot, and a readback of the normal staging snapshot.
+
+The four-app warm runtime gate passed. Cold staging probes over 25 seconds on
+Pipeline, Carelog and Ally are retained in `staging-cold-start-v0181.json`;
+thresholds and scaling were unchanged. Staffed-pilot latency remains open.
+
+Current receipts in `/Users/eric/suite-deploy/.state/` include
+`ally-v0181.verification.json`, `platform-v0181.final.verification.json`,
+`platform-v0181.final.expected.json`, `ally-worker-v0181.runtime-proof.json`
+and the complete `ally-v0181-source-proof.json` (with ordered phase receipts in
+`ally-v0181-proof-phases.json`). Previous release/configuration/package
+receipts are retained. Rollback, with reports still disabled, restores API
+`3ba811e447b2ce84e25c4699c5c371a8636fb60038c0ffb943f9983b272cc95b`,
+Platform `1df0d00cd59c8edcc826af41f87c9c7575b239a4dc304dd80349a53e63a3b3f5`,
+and the retained worker zip `ally-worker-d18b39d.zip`. Use the corresponding
+`suitestg-*-v0181.previous.json` settings and repeat health/authentication checks;
+preserve all state storage. The earlier sections below retain historical evidence.
+
 ### Executive Ally — local Platform candidate; disabled staging worker, November 21
 
-**Latest local correction, not deployed:** this checkout now pins engine 0.18.1,
+**Local correction before the paired staging rollout:** this checkout pins engine 0.18.1,
 archive SHA-256
 `f7b8edca576eafc3125bfe3d00d052cc27d308106be0340ab6c7bbef9eab30f3`.
 Platform source receipts include `grant.detail` and evidence `requiresDetail`.
@@ -29,10 +78,10 @@ denied sharing, authorized sharing, subsequent downgrade, unchanged saved histor
 and a fresh aggregate report shared successfully. Required fields fail closed;
 old unclassified development reports require a fresh investigation.
 
-Deploy these paired source/engine changes to disabled staging before enabling
-reports. The older cloud and initial overlay receipts below remain historical
-and do not certify 0.18.1. No cloud setting, grant,
-provider request or executive access changed during this local correction.
+The paired source/engine changes have since reached disabled staging, as recorded
+above. The older cloud and initial overlay receipts below remain historical
+and do not certify 0.18.1. No cloud setting, grant, provider request or executive
+access changed during the preceding local correction.
 
 Engine commit `f8b69e3` passed the full engine suite, 24 focused executive checks,
 34 canned evaluation checks, API/worker builds and isolated package checks. Local
@@ -90,8 +139,8 @@ API origin/CSP, scope and named display participants, then run the full release
 and signed-in checks. Its disabled-package receipt does not substitute for those
 checks or for actual Functions report execution.
 
-**Latest isolated staging receipt:** Platform source `3963cc0` on
-`codex/platform-ally-staging-20261121` is deployed at
+**Earlier 0.18.0 staging receipt:** Platform source `3963cc0` on
+`codex/platform-ally-staging-20261121` was deployed at
 `suitestg-platform--ally-source-ready-1121`, image SHA-256
 `1df0d00cd59c8edcc826af41f87c9c7575b239a4dc304dd80349a53e63a3b3f5`.
 ACR run `cch` passed; synthetic package manifest SHA-256 is
@@ -209,7 +258,7 @@ Disabled worker infrastructure receipt (subscription
   Its named `.state/ally-worker.*.json` receipts retain the reviewed plan,
   configuration proof and package provenance. Never export `.state/` wholesale.
 
-The staging API is now engine 0.18.0 at `suitestg-ally--v018-1121-d18b39d`,
+The initial staging API update used engine 0.18.0 at `suitestg-ally--v018-1121-d18b39d`,
 image SHA-256 `3ba811e447b2ce84e25c4699c5c371a8636fb60038c0ffb943f9983b272cc95b`.
 ACR run `cce` passed. Exact identity, environment, configuration and scaling were
 unchanged; only image/revision changed. The new revision is Healthy with 100%
