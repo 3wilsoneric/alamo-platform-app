@@ -1,5 +1,27 @@
 # Deployment And Operations
 
+## Native Ally on the live design — November 22, prepared only
+
+The design chat's 28-command predeployment gate passed and its UI is live on
+`555272da288d0e69acb6c52d8dd39b986d36c0cf04982837e0eb254fcfac2c34`, revision
+`alamo-platform-prod-web--ui-1122-d10bddc-r2`. That image preserves the intervening
+Carelog/fleet update. The native owner-only Ally candidate was rebuilt on this
+exact base. At 21:06 UTC its verifier passed against 19,639 base files, with 44
+reviewed files, unchanged image configuration, scoped display/authentication,
+compressed assets, HTTP routes and anonymous/source-disabled denial checks.
+Receipts and logs are under `generated/current-navigation-20261122/` with the
+`native-pilot-ui-r2` prefix; preceding receipts are retained in `native-before-ui-r2`.
+
+The subsequent Ally predeployment run was deliberately stopped after the design
+owner began another control cleanup during live acceptance. This is an incomplete
+gate, not a release pass. Await its final committed source and live image, merge,
+rebuild and run the complete gate before the native Ally cutover. No source
+settings, model execution, campaign counters or executive grants changed here.
+Suite's named package/readiness and campaign-window helpers are prepared locally;
+ten in-memory tests exercise their actual remote budget body, including ETag
+conflict, changed ledger, active work, expiry and read-only behavior. They do not
+prove a production renewal or activation.
+
 ## Ally ProForma source contract correction — November 22, not deployed
 
 The executive `proforma-search` adapter omitted `version: 1` when calling the

@@ -15,6 +15,12 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 ### November 22 current navigation and requested design integration
 
+The design is live on `555272da` after its full predeployment gate. The rebuilt
+native Ally owner candidate preserves all 19,639 base files outside its reviewed
+allowlist and passes container/access checks. Its full gate was stopped when the
+design owner began a final live control cleanup; wait for that final source/image
+before rebuilding and releasing Ally. See the [current preparation receipt](deployment-operations.md#native-ally-on-the-live-design--november-22-prepared-only).
+
 Source audit correction: the executive ProForma adapter now supplies the
 canonical knowledge request's required `version: 1`. Its signed-route regression
 failed with 503 before the fix and passes with the real knowledge reader after
