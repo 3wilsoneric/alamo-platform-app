@@ -13,6 +13,26 @@
 
 ## Shared navigation and responsive layout
 
+### November 22 single-header redesign — local candidate
+
+The design candidate is based on the November 21 Platform source and its owner-pilot continuation, with the active `coverage-1121-db9b538` production image inspected separately. Production is an accumulated overlay image; this source build is **not** a substitute for that image or a deployment receipt.
+
+The shared header now contains Analytics, Admissions, Clients, Incidents, and permissioned Licensing, followed by owner-only Workflow and Workforce. The wordmark returns to the community map. Analytics opens directly into Overview; Clients opens the existing combined resident-flow and current-profile report. The old Reports / Ask a question / AlamoAgent / Licensing row and the separate report-tab row are removed. The legacy Questions URL redirects to Analytics; the owner agent route remains unlisted. No report calculation, API contract, licensing access rule, or source freshness rule changes in this design pass.
+
+The local follow-up aligns Ally with Carelog's interaction: an orange header launcher opens a compact right-side chat with a few suggested actions and a composer at the bottom. The older floating launcher, updates/skills landing, and wide chat layout are removed from this entry. The executive report tool remains available inside Ally for entitled accounts and opens from the chat action; saved chats remain reachable. The source checkout has no Ally API configured in its ordinary local preview, so that preview shows the chat layout with disabled controls. A synthetic configured browser check verified prompt selection, chat creation, an answer, and starting a new chat. This UI pass does not turn on the rolled-back owner pilot or extend access.
+
+The Carelog launcher correction replaces the static Platform bookmark with Carelog's actual mark and movement: it leaves a slot in the header, lands in the chat heading, and returns when the panel closes. The same interaction is used by both entitled Ally panel variants, with desktop and phone browser checks and a reduced-motion path. The change does not alter engine wiring, permissions, or production availability.
+
+Ally's panel also has an expand button in its header. It keeps the same chat mounted while filling the viewport, then restores the compact chat with a second click. Entitled report users can expand the report surface for full-width charts, tables, and text. This provides a larger reading and working canvas for the existing answer and report components; it does not add a model-generated component library or claim new data access. Escape restores the panel before closing it. The local browser check covers desktop and phone geometry and control continuity.
+
+In the expanded workspace, the chat stays in a narrow conversation rail and the selected answer or report occupies the canvas. Answers lead with their text and formatted table; source links are available in a single collapsed Sources used control. The executive report tool keeps its question composer, saved reports, chart/value toggle, and share/export actions on the canvas beside the same chat. Phones use Chat and Canvas tabs. The local synthetic browser fixture covers answer selection, table rendering, source access, chart report creation, and switching between compact and expanded views. It is not live source or model acceptance.
+
+The same local pass increases small report copy, removes the Evidence used, Dates & definitions, Counting, and licensing excerpt disclosures, and keeps substantive report records and data freshness visible in the main flow. Licensing still links to the archived narrative and the state's report list. The header Alamo wordmark remains the product brand; Ally uses its Carelog-style bookmark icon as a tool marker.
+
+The follow-up visual correction shows the report's data-through date once when the update happened on that same date. A distinct update time or date remains visible. The Overview census card omits an identical date and sits closer to the period selector. Admissions keeps the live active-intake people chart and selected client details, places origin/county/assessor breakdowns directly below the chart, removes the empty fixed-height file and redundant footer, and keeps the full client card readable at phone width.
+
+The local browser preview checks the header at 390px and 1440px, verifies Clients navigation and no old navigation rows, and captures Analytics, Incidents, and Licensing. TypeScript, source build, and targeted source checks are required before release. A production overlay must be prepared from the active image and must preserve its existing route, auth, and asset overlays before any deployment.
+
 ### November 19 incident/mobile update — deployed
 
 The shared Incidents entry returns to `/incidents` daily cards, with the existing

@@ -31,14 +31,14 @@ function MetricGrid({ items }: { items: FullReportMetric[] }) {
               largeColumn > 0 ? "xl:border-l" : "xl:border-l-0"
             }`}
           >
-            <p className="text-[10px] font-bold uppercase leading-4 tracking-[0.13em] text-[#595959]">
+            <p className="text-[12px] font-bold leading-5 tracking-[0.02em] text-[#595959]">
               {item.label}
             </p>
             <p className="mt-1.5 font-sans text-[23px] font-bold leading-none tracking-[-0.04em] sm:text-[25px]">
               {item.value}
             </p>
             {item.detail ? (
-              <p className="mt-2 text-[12px] leading-[1.45] text-[#666666]">{item.detail}</p>
+              <p className="mt-2 text-[14px] leading-[1.5] text-[#59645f]">{item.detail}</p>
             ) : null}
           </div>
         );
@@ -89,7 +89,7 @@ function LineChart({
   return (
     <figure ref={chartRef} className="mt-5 min-w-0 border-y border-[#d9d9d9] py-3">
       {label ? (
-        <figcaption className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#595959]">
+        <figcaption className="text-[12px] font-bold tracking-[0.02em] text-[#595959]">
           {label}
         </figcaption>
       ) : null}
@@ -151,11 +151,11 @@ function LineChart({
 
 function ReportBlock({ block }: { block: FullReportBlock }) {
   if (block.type === "paragraph") {
-    return <p className="mt-4 max-w-[840px] font-sans text-[13px] leading-[1.65] text-[#333333] sm:text-[14px]">{block.text}</p>;
+    return <p className="mt-4 max-w-[840px] font-sans text-[15px] leading-[1.7] text-[#333333]">{block.text}</p>;
   }
   if (block.type === "callout") {
     return (
-      <p className="mt-4 max-w-[920px] border-l-[3px] border-[#0f8b73] bg-[#f7faf9] px-4 py-3 text-[12px] leading-5 text-[#333333]">
+      <p className="mt-4 max-w-[920px] border-l-[3px] border-[#0f8b73] bg-[#f7faf9] px-4 py-3 text-[15px] leading-[1.6] text-[#333333]">
         {block.text}
       </p>
     );
@@ -165,7 +165,7 @@ function ReportBlock({ block }: { block: FullReportBlock }) {
   }
   if (block.type === "bullets") {
     return (
-      <ul className="mt-4 space-y-2 pl-5 font-sans text-[13px] leading-[1.65] text-[#333333] sm:text-[14px]">
+      <ul className="mt-4 space-y-2 pl-5 font-sans text-[15px] leading-[1.65] text-[#333333]">
         {block.items.map((item) => <li key={item} className="list-disc">{item}</li>)}
       </ul>
     );
@@ -181,9 +181,9 @@ function ReportBlock({ block }: { block: FullReportBlock }) {
       <div className="mt-4 border-t border-[#d9d9d9]">
         {block.items.map((item) => (
           <div key={item.label} className="border-b border-[#d9d9d9] py-2.5">
-            <div className="flex items-baseline justify-between gap-4 text-[12px]">
+            <div className="flex items-baseline justify-between gap-4 text-[14px]">
               <span className="font-semibold">{item.label}</span>
-              <span className="font-sans text-[13px] font-bold tabular-nums">
+              <span className="font-sans text-[14px] font-bold tabular-nums">
                 {item.displayValue ?? item.value}
               </span>
             </div>
@@ -212,10 +212,10 @@ function ReportBlock({ block }: { block: FullReportBlock }) {
         {block.items.map((item, index) => (
           <div
             key={`${item.label}-${index}`}
-            className="flex items-baseline justify-between gap-3 border-b border-[#d9d9d9] px-3 py-2.5 text-[11px]"
+            className="flex items-baseline justify-between gap-3 border-b border-[#d9d9d9] px-3 py-3 text-[14px]"
           >
             <span className="text-[#595959]">{item.label}</span>
-            <strong className="font-sans text-[14px] font-bold tabular-nums">{item.value}</strong>
+            <strong className="font-sans text-[15px] font-bold tabular-nums">{item.value}</strong>
           </div>
         ))}
       </div>
@@ -229,14 +229,14 @@ function ReportBlock({ block }: { block: FullReportBlock }) {
         tabIndex={0}
         className="mt-4 overflow-x-auto overscroll-x-contain focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
       >
-        {block.columns.length > 3 ? <p className="mb-2 text-xs text-[#66776e] sm:hidden">Swipe to see all columns</p> : null}
-        <table className={`w-full ${block.columns.length > 3 ? "min-w-[620px]" : ""} border-collapse text-left text-[12px] leading-5`}>
+        {block.columns.length > 3 ? <p className="mb-2 text-[13px] text-[#66776e] sm:hidden">Swipe to see all columns</p> : null}
+        <table className={`w-full ${block.columns.length > 3 ? "min-w-[620px]" : ""} border-collapse text-left text-[14px] leading-[1.45]`}>
           <thead>
             <tr>
               {block.columns.map((column) => (
                 <th
                   key={column.key}
-                  className="border-b-2 border-[#111111] px-3 py-2.5 text-[10px] font-bold uppercase leading-4 tracking-[0.12em] text-[#4f4f4f] first:pl-0 last:pr-0"
+                  className="border-b-2 border-[#111111] px-3 py-3 text-[12px] font-bold leading-[1.35] tracking-[0.02em] text-[#4f4f4f] first:pl-0 last:pr-0"
                 >
                   {column.label}
                 </th>
@@ -247,7 +247,7 @@ function ReportBlock({ block }: { block: FullReportBlock }) {
             {block.rows.map((row, rowIndex) => (
               <tr key={rowIndex} className="transition-colors hover:bg-[#f7faf9]">
                 {block.columns.map((column) => (
-                  <td key={column.key} className="break-words border-b border-[#d9d9d9] px-3 py-2.5 align-top first:pl-0 last:pr-0">
+                  <td key={column.key} className="break-words border-b border-[#d9d9d9] px-3 py-3 align-top first:pl-0 last:pr-0">
                     {row[column.key]}
                   </td>
                 ))}
@@ -297,20 +297,17 @@ export default function FullReportReader({ report, hideHeading = false, onCommun
       </div>
       <p data-report-mobile-summary="true" className="mt-5 border-b border-[#d9d9d9] pb-5 font-sans text-[14px] leading-[1.65] text-[#333333] sm:hidden">{report.summary}</p>
 
-      {report.sections.map((section, sectionIndex) => (
+      {report.sections.map((section) => (
         <section
           key={section.id}
           id={section.id}
           className="mt-7 scroll-mt-20 border-t-2 border-[#111111] pt-4 sm:scroll-mt-24"
         >
-          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#0f8b73]">
-            {String(sectionIndex + 1).padStart(2, "0")}
-          </p>
-          <h2 className="mt-1 !font-sans text-[23px] font-bold leading-tight tracking-[-0.04em] sm:text-[26px]">
+          <h2 className="!font-sans text-[23px] font-bold leading-tight tracking-[-0.04em] sm:text-[26px]">
             {section.title}
           </h2>
           {section.intro ? (
-            <p className="mt-2 max-w-[860px] font-sans text-[13px] leading-[1.65] text-[#3f3f3f] sm:text-[14px]">
+            <p className="mt-2 max-w-[860px] font-sans text-[15px] leading-[1.65] text-[#3f3f3f]">
               {section.intro}
             </p>
           ) : null}
@@ -321,14 +318,7 @@ export default function FullReportReader({ report, hideHeading = false, onCommun
       ))}
 
       </>}
-      <details data-report-evidence="true" className="mt-10 border-t border-[#111111] pt-3 text-[10px] leading-5 text-[#737373]">
-        <summary className="cursor-pointer font-semibold text-[#595959]">Evidence used</summary>
-        <p className="mt-2">
-          {report.evidence.sources
-            .map((source) => `${source.slice}: ${source.rowCount.toLocaleString()} rows`)
-            .join(" · ")}
-        </p>
-      </details>
+      <span data-report-reader-end="true" aria-hidden="true" className="block h-px" />
     </article>
   );
 }

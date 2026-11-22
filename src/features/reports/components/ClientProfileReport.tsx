@@ -21,8 +21,5 @@ export default function ClientProfileReport({ report, renderBlock }: {
         {section.blocks.map((block, index) => <div key={index}>{renderBlock(block)}</div>)}
       </section>)}
     </div>
-    <details className="client-profile-definitions"><summary>Definitions</summary>
-      {report.sections.filter(section => section.intro).map(section => <p key={section.id}><strong>{section.title}.</strong> {section.intro}</p>)}
-    </details>
   </details>;
 }

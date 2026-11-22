@@ -1,4 +1,7 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
+import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
 import type { FullReportBlock, FullReportDocument } from "../../../shared/types/fullReport";
 import "./platform-design-pass.css";
 
@@ -19,12 +22,13 @@ export default function OverviewReportDashboard({ report, renderBlock }: {
   return <div className="overview-dashboard">
     {table && <>
       <section className="overview-dashboard__census" aria-labelledby="overview-census-title">
-        <header><div><h2 id="overview-census-title">Census</h2><p>{census?.detail}</p></div><p className="overview-dashboard__total"><strong>{census?.value}</strong><span>residents</span></p></header>
+        <header><div><h2 id="overview-census-title">Census</h2>{census?.detail && census.detail !== report.dataThrough && <p>{census.detail}</p>}</div><p className="overview-dashboard__total"><strong>{census?.value}</strong><span>residents</span></p></header>
         <div className="overview-dashboard__census-labels" aria-hidden="true"><span>Community</span><span>{capacity ? "Census / operating limit" : "Census"}</span>{capacity && <span>Open beds</span>}</div>
         <ul>{table.rows.map(row => {
           const occupied = number(row.census), limit = number(row.operatingLimit);
+          const facility = ALAMO_FACILITIES.find(item => item.shortName === row.community || item.communityName === row.community);
           return <li key={String(row.community)}>
-            <strong>{row.community}</strong>
+            {facility ? <Link className="overview-dashboard__community-link" to={`/home/community/${facility.facilityId}`}>{row.community}<ArrowUpRight size={16} aria-hidden="true" /></Link> : <strong>{row.community}</strong>}
             <div className="overview-dashboard__capacity" role="img" aria-label={`${row.census} residents${capacity ? ` of ${row.operatingLimit} operating beds` : ""}`}>
               <span>{row.census}{capacity && <> <small>/ {row.operatingLimit}</small></>}</span>
               {occupied !== null && (!capacity || limit !== null) && <div className="overview-dashboard__capacity-track" aria-hidden="true" style={{ width: `${Math.min(100, (capacity ? Math.max(limit ?? 0, occupied) : occupied) / maximum * 100)}%` }}><i style={{ width: `${capacity && limit ? Math.min(100, occupied / Math.max(limit, occupied) * 100) : 100}%` }} /></div>}
@@ -43,8 +47,7 @@ export default function OverviewReportDashboard({ report, renderBlock }: {
           <table><thead><tr><th>Community</th>{has("incidents") && <th>Incidents<small>{metric("Incidents")?.detail}</small></th>}{has("compliance") && <th>Administrations given<small>{metric("Administrations given")?.detail}</small></th>}</tr></thead><tbody>{table.rows.map(row => <tr key={String(row.community)}><th scope="row">{row.community}</th>{has("incidents") && <td>{row.incidents}</td>}{has("compliance") && <td>{row.compliance}</td>}</tr>)}</tbody></table>
         </section>}
       </div>
-      <details className="overview-dashboard__context"><summary>Dates & definitions</summary><p>{operating?.intro}</p>{report.metrics.filter(item => !["Census", "Incidents", "Administrations given"].includes(item.label)).map(item => <p key={item.label}><strong>{item.label}: {item.value}.</strong> {item.detail}</p>)}</details>
     </>}
-    {report.sections.filter(section => !table || section !== operating).map(section => <details className="overview-dashboard__context" key={section.id}><summary>{section.title}</summary>{section.intro && <p>{section.intro}</p>}{section.blocks.map((block, index) => <div key={index}>{renderBlock(block)}</div>)}</details>)}
+    {report.sections.filter(section => !table || section !== operating).map(section => <section className="overview-dashboard__additional" key={section.id} aria-label={section.title}><h2>{section.title}</h2>{section.blocks.map((block, index) => <div key={index}>{renderBlock(block)}</div>)}</section>)}
   </div>;
 }

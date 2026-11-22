@@ -14,17 +14,14 @@ export default function LicensingReportModule({ library, question, q, community,
   const newest = reports[0]?.reportDate;
   const oldest = reports[reports.length - 1]?.reportDate;
   const dates = newest && oldest ? `${licensingDate(oldest)}${newest !== oldest ? ` to ${licensingDate(newest)}` : ""}` : "";
-  const citationCount = reports.reduce((sum, item) => sum + (item.analysis?.citationCount ?? 0), 0);
-  const correctionCount = reports.reduce((sum, item) => sum + (item.analysis?.correctionsCount ?? 0), 0);
   return <section aria-label="Licensing answer" data-licensing-module="true" className="licensing-answer">
     <header>
-      <p className="licensing-answer__eyebrow">{scope}</p>
-      <h2>{selected?.title ?? "Reports matching your question"}</h2>
+      <h2>{question === "latest" ? "Recent state reports" : selected?.title ?? "Reports matching your question"}</h2>
+      {community && <p className="licensing-answer__eyebrow">{scope}</p>}
       {q && <p className="licensing-answer__question">“{q}”</p>}
       <p className="licensing-answer__summary" role="status">{reports.length
-        ? `${reports.length} ${question === "latest" ? "latest " : "matching "}state ${reports.length === 1 ? "report" : "reports"}, dated ${dates}.`
+        ? `${reports.length} ${question === "latest" ? "recent " : "matching "}${reports.length === 1 ? "report" : "reports"} · ${dates}`
         : "I couldn’t find a matching report in the collected state records. Try another community, topic, finding, or year."}</p>
-      {!!reports.length && <p className="licensing-answer__evidence">{citationCount} cited {citationCount === 1 ? "deficiency" : "deficiencies"} · {correctionCount} recorded correction {correctionCount === 1 ? "plan" : "plans"}<span>Historical correction plans do not confirm completion.</span></p>}
     </header>
     <ul aria-label="Licensing reports" className="licensing-answer__reports">{reports.slice(0, limit).map(report => <li key={report.id}>
       <button type="button" onClick={() => onSelect(report.id)}>
@@ -35,6 +32,5 @@ export default function LicensingReportModule({ library, question, q, community,
       </button>
     </li>)}</ul>
     {limit < reports.length && <button type="button" className="licensing-answer__more" onClick={() => setLimit(limit + 8)}>Show {Math.min(8, reports.length - limit)} more reports</button>}
-    <footer>State records archived {licensingDate(library.collectedAt)}. Open Updates for the latest check.</footer>
   </section>;
 }

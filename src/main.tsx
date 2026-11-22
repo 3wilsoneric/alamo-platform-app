@@ -9,8 +9,10 @@ import { initializeRedirectAuthentication } from "./app/auth/redirectAuthenticat
 import { getAuthenticationErrorMessage } from "../shared/auth-redirect-contract.mjs";
 import { PlatformWordmark } from "./shared/branding/PlatformWordmark";
 import { DesktopRuntime } from "./shared/desktop/DesktopRuntime";
+import "@fontsource-variable/ibm-plex-sans";
 import "./styles.css";
 import "./platformWorkspace.css";
+import "./platformCarelog.css";
 
 async function bootstrap() {
   await initializeRedirectAuthentication(msalInstance);

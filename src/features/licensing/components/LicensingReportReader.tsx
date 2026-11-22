@@ -22,19 +22,10 @@ const outcomeMeaning: Record<string, string> = {
   "Not applicable": ""
 };
 
-function EvidenceList({ items, limit = 3, onSource }: {
-  items: LicensingEvidence[]; limit?: number; onSource: (page?: number | null) => void;
+function EvidenceList({ items }: {
+  items: LicensingEvidence[];
 }) {
-  function rows(evidence: LicensingEvidence[]) {
-    return <ul className="space-y-3">{evidence.map((item, index) => <li key={`${item.page}-${index}`} className="border-l-2 border-[#dbe6e1] pl-4">
-      <p>{item.text}</p>
-      <button type="button" onClick={() => onSource(item.page)} className="min-h-11 text-[12px] font-medium text-[#287261] underline underline-offset-4">{item.page ? `Source · page ${item.page}` : "Source text"}</button>
-    </li>)}</ul>;
-  }
-  return <>{rows(items.slice(0, limit))}{items.length > limit && <details className="mt-3">
-    <summary className="cursor-pointer py-3 text-sm font-semibold text-[#287261]">Read {items.length - limit} more {items.length - limit === 1 ? "excerpt" : "excerpts"}</summary>
-    {rows(items.slice(limit))}
-  </details>}</>;
+  return <ul className="space-y-3">{items.map((item, index) => <li key={`${item.page}-${index}`} className="border-l-2 border-[#dbe6e1] pl-4 text-[15px] leading-7">{item.text}</li>)}</ul>;
 }
 
 export default function LicensingReportReader({ report, community }: {
@@ -76,19 +67,17 @@ export default function LicensingReportReader({ report, community }: {
     </section>
     <div className="mt-5 flex max-w-[900px] flex-col gap-2 sm:flex-row sm:flex-wrap">
       <button type="button" onClick={() => openSource()} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#cdd6d1] px-4 text-[13px] font-semibold text-[#315b54]">Read report text</button>
-      <a href={report.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0f8b73] px-4 text-[13px] font-semibold text-white">Open original on state site <ExternalLink size={14} /></a>
+      <a href={report.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0f8b73] px-4 text-[14px] font-semibold text-white">Open state report list <ExternalLink size={14} /></a>
       <button type="button" onClick={downloadText} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#cdd6d1] bg-white px-4 text-[13px] font-semibold text-[#315b54]"><Download size={14} /> Download original text</button>
     </div>
-    <p className="mt-2 max-w-[900px] text-[12px] leading-5 text-[#68716b]">The state link opens the facility’s report list. Select the {report.reportType.toLowerCase()} report dated {licensingDate(report.reportDate)}{report.controlNumber ? `, complaint ${report.controlNumber}` : ""}.</p>
     <div className="licensing-brief-sections mt-7 max-w-[900px] space-y-7 text-base leading-7 text-[#37463e]">
       {insights.allegations.length > 0 && <section aria-label="Reported concerns">
         <h3>Reported concerns</h3>
-        <p className="mb-3 text-sm text-[#68716b]">Allegations recorded in the report; the state’s findings appear below.</p>
-        <EvidenceList items={insights.allegations} onSource={openSource} />
+        <EvidenceList items={insights.allegations} />
       </section>}
       {(insights.findings.length > 0 || insights.narratives.length > 0) && <section aria-label="State findings">
         <h3>{insights.findings.length ? "What the state found" : "Visit notes"}</h3>
-        <EvidenceList items={insights.findings.length ? insights.findings : insights.narratives} limit={3} onSource={openSource} />
+        <EvidenceList items={insights.findings.length ? insights.findings : insights.narratives} />
       </section>}
       {insights.citations.length > 0 && <section aria-label="Deficiencies and correction plans">
         <h3>Deficiencies & correction plans</h3>
@@ -97,19 +86,17 @@ export default function LicensingReportReader({ report, community }: {
           <h4 className="!font-sans text-base font-semibold text-[#263c30]">{citation.type} · Section {citation.regulation}</h4>
           {citation.disposition && <p className="mt-1 text-sm font-semibold text-[#735b33]">{citation.disposition}</p>}
           <dl className="mt-4 space-y-4">
-            <div><dt className="text-sm font-semibold text-[#526259]">Cited deficiency</dt><dd className="mt-1">{citation.description || "The deficiency could not be separated reliably. Read the source excerpt below."}</dd></div>
+            <div><dt className="text-sm font-semibold text-[#526259]">Cited deficiency</dt><dd className="mt-1">{citation.description || "The deficiency could not be separated reliably. Read the report text below."}</dd></div>
             <div><dt className="text-sm font-semibold text-[#526259]">Plan of correction</dt><dd className="mt-1">{citation.correction || "A correction plan was not extracted. Check the original."}</dd></div>
             {citation.dueDate && <div><dt className="text-sm font-semibold text-[#526259]">Due date recorded in this report</dt><dd>{licensingDate(citation.dueDate)}</dd></div>}
           </dl>
-          <details className="mt-3"><summary className="cursor-pointer py-3 text-sm font-semibold text-[#287261]">Source excerpt{citation.page ? ` · page ${citation.page}` : ""}</summary><p className="whitespace-pre-wrap text-sm leading-6">{citation.excerpt}</p></details>
         </article>)}</div>
       </section>}
-      {insights.followUps.length > 0 && <section aria-label="Follow-up recorded"><h3>Follow-up recorded</h3><EvidenceList items={insights.followUps} onSource={openSource} /></section>}
+      {insights.followUps.length > 0 && <section aria-label="Follow-up recorded"><h3>Follow-up recorded</h3><EvidenceList items={insights.followUps} /></section>}
     </div>
     <section ref={sourceRef} tabIndex={-1} aria-label="Report text" className="licensing-report-document mt-8 scroll-mt-32" data-licensing-source-text="true">
       <header className="licensing-report-document__header">
         <h3>Report text</h3>
-        <p>The state’s narrative, formatted for reading. Form headers, signatures, and standard notices are available in the original.</p>
       </header>
       <div className="licensing-report-document__body">
         {readingPages.length ? readingPages.map(({ page, blocks }) => <section key={page ?? "unpaged"} data-source-page={page ?? "unpaged"} tabIndex={-1} className="licensing-report-page scroll-mt-32" aria-label={page ? `Narrative from page ${page}` : "Report narrative"}>
@@ -120,7 +107,6 @@ export default function LicensingReportReader({ report, community }: {
               : <p key={index}>{block.text}</p>)}</div>
         </section>) : <p>The narrative could not be separated reliably from this form. Open the state source or download the original text to read the report.</p>}
       </div>
-      <footer className="licensing-report-document__footer">Archived {licensingDate(report.retrievedAt)} · <button type="button" onClick={downloadText}>Download complete original text</button></footer>
     </section>
   </article>;
 }

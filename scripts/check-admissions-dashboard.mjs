@@ -529,7 +529,8 @@ validators.admissionsDashboard(crosswalkDashboard);
 assert.throws(() => validators.admissionsDashboard({ ...dashboard, referral_pipeline: { status: "bogus" } }));
 
 const intakeJourneySource = await readFile(new URL("../src/features/admissions/components/ActiveIntakeJourney.tsx", import.meta.url), "utf8");
-assert.match(intakeJourneySource, /!hasCompleteIntakeBoard\(pipeline\)/, "the visible population must use the shared completeness guard against the feed's active-referral total");
+assert.match(intakeJourneySource, /const complete = hasCompleteIntakeBoard\(pipeline\)/, "the visible population must use the shared completeness guard against the feed's active-referral total");
+assert.match(intakeJourneySource, /if \(!complete\)/, "the redesigned chart must still withhold an incomplete population");
 assert.equal(hasCompleteIntakeBoard({board:{cards:[],total:0,truncated:true},metrics:{activeReferrals:0}}),false,"a partial feed must not be charted as a total");
 await import("./check-active-intake-journey.mjs");
 

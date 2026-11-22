@@ -68,11 +68,11 @@ export default function App() {
           path="/home/community/:facilityId"
           element={withRouteBoundary(<CaliforniaHomePage />)}
         />
-        <Route path="/questions" element={<Navigate to="/analytics/questions" replace />} />
+        <Route path="/questions" element={<Navigate to="/analytics" replace />} />
         <Route path="/analytics" element={withRouteBoundary(<CaliforniaHomePage />)} />
         <Route
           path="/analytics/questions"
-          element={withRouteBoundary(<CaliforniaHomePage />)}
+          element={<Navigate to="/analytics" replace />}
         />
         <Route path="/reports" element={withRouteBoundary(<CaliforniaHomePage />)} />
         <Route path="/communities" element={withRouteBoundary(<AppHomePage />)} />

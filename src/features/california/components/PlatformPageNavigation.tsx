@@ -5,24 +5,32 @@ import { Menu, X } from "lucide-react";
 import { PlatformWordmark } from "../../../shared/branding/PlatformWordmark";
 import { PlatformUserIdentity } from "../../../shared/auth/PlatformUserIdentity";
 import { usePlatformOwnerAccess } from "../../../shared/auth/platformOwnerAccess";
+import { useLicensingAccess } from "../../../shared/auth/licensingAccess";
 import { isE2EAuthBypassEnabled } from "../../../app/auth/authConfig";
 import { usePresentationAccess } from "../../presentation/usePresentationAccess";
-import { useAgentBranding } from "../../agent/useAgentBranding";
 import { useEveryAgentAccess } from "../../../shared/auth/everyAgentAccess";
+import { useExecutiveReportAccess } from "../../agent/reports/reportAccess";
+import { openAlly } from "../../agent/allyLauncher";
+import AllyMark from "../../agent/components/AllyMark";
+import { agentChatConfigured, localAgentPreview } from "../../agent/conversations/agentTransport";
 
 const PLATFORM_PAGES = [
-  { id: "home", label: "Communities", href: "/home" },
   { id: "analytics", label: "Analytics", href: "/analytics" },
-  { id: "incidents", label: "Incidents", href: "/incidents" },
   { id: "admissions", label: "Admissions", href: "/admissions" },
+  { id: "clients", label: "Clients", href: "/analytics?report=residents" },
+  { id: "incidents", label: "Incidents", href: "/incidents" },
+  { id: "licensing", label: "Licensing", href: "/analytics/licensing", licensingOnly: true },
   { id: "workflow", label: "Workflow", href: "/workflow", ownerOnly: true },
-  { id: "personnel", label: "Personnel", href: "/personnel", ownerOnly: true }
+  { id: "personnel", label: "Workforce", href: "/personnel", ownerOnly: true }
 ];
 
 export default function PlatformPageNavigation({ restricted = false }: { restricted?: boolean }) {
-  const { pathname } = useLocation();
-  const active = pathname === "/analytics/agent" || pathname === "/everyagent" ? "everyagent" : pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" || pathname === "/licensing"
-    ? "analytics"
+  const { pathname, search } = useLocation();
+  const report = new URLSearchParams(search).get("report");
+  const active = pathname.startsWith("/analytics/licensing") || pathname === "/licensing" ? "licensing"
+    : pathname === "/analytics" && (report === "census" || report === "residents") ? "clients"
+    : pathname === "/analytics" && report === "incidents" ? "incidents"
+    : pathname.startsWith("/analytics") || pathname.startsWith("/reports") || pathname === "/questions" ? "analytics"
     : pathname.startsWith("/incidents") ? "incidents"
     : pathname.startsWith("/admissions") ? "admissions"
       : pathname.startsWith("/personnel") || pathname.startsWith("/workforce") ? "personnel"
@@ -32,11 +40,14 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const canViewOwnerWorkspace = usePlatformOwnerAccess() || (import.meta.env.DEV && isE2EAuthBypassEnabled);
+  const canViewLicensing = useLicensingAccess();
   const canUseEveryAgent = useEveryAgentAccess();
-  const branding = useAgentBranding();
+  const canUseReports = useExecutiveReportAccess();
+  const canOpenAlly = ((canUseEveryAgent && (agentChatConfigured || localAgentPreview)) || canUseReports) && !restricted;
   const { allowed: canViewDemo } = usePresentationAccess();
-  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : [...PLATFORM_PAGES.filter((page) => !page.ownerOnly || canViewOwnerWorkspace || (page.id === "personnel" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo)),
-    ...(canUseEveryAgent ? [{ id: "everyagent", label: branding.name, href: "/analytics/agent" }] : [])];
+  const pages = restricted ? PLATFORM_PAGES.filter((page) => page.id === "admissions") : PLATFORM_PAGES.filter((page) =>
+    (!page.licensingOnly || canViewLicensing) && (!page.ownerOnly || canViewOwnerWorkspace || (page.id === "personnel" && import.meta.env.VITE_WORKFORCE_DEMO === "true" && canViewDemo))
+  );
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
   useEffect(() => {
@@ -69,14 +80,16 @@ export default function PlatformPageNavigation({ restricted = false }: { restric
         </Link>
         <div className="hidden h-full items-center gap-1.5 lg:flex" data-platform-primary-links="true">
           <div className="flex h-full items-stretch gap-1">
-          {pages.filter((page) => page.id !== "home").map((page) => (
+          {pages.map((page) => (
             <Link key={page.id} to={page.href} aria-current={active === page.id ? "page" : undefined} data-platform-page-target={page.id} data-platform-page-side="right" data-california-hero-action={page.id} data-platform-page-active={active === page.id ? page.id : undefined} className={`inline-flex min-h-11 items-center border-b-[3px] px-4 text-[14px] font-semibold transition-[background-color,border-color,color] ${active === page.id ? "border-[#087d64] text-[#086c57]" : "border-transparent text-[#56636b] hover:bg-[#f4f6f3] hover:text-[#132f33]"}`}>
               {page.label}
             </Link>
           ))}
           </div>
+          {canOpenAlly && <button type="button" className="platform-ally-header-button" aria-label="Open Ally chat" aria-haspopup="dialog" aria-expanded="false" title="Ally" onClick={openAlly}><AllyMark /><span>Ally</span></button>}
           <PlatformUserIdentity className="ml-3" nameSide="bottom" />
         </div>
+        {canOpenAlly && <button type="button" className="platform-ally-header-button platform-ally-header-button--mobile lg:hidden" aria-label="Open Ally chat" aria-haspopup="dialog" aria-expanded="false" title="Ally" onClick={() => { setMenuOpen(false); openAlly(); }}><AllyMark /></button>}
         <button type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="platform-mobile-menu" onClick={() => setMenuOpen((open) => !open)} className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-sm font-semibold text-[#315b54] lg:hidden">
           <span>Menu</span>{menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
         </button>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import WorkspaceHomePage from "../../home/pages/WorkspaceHomePage";
 import ReportsPage from "../../reports/pages/ReportsPage";
 import {
   fetchHomeDashboard,
@@ -11,24 +10,19 @@ import CaliforniaCommunityMap from "../components/CaliforniaCommunityMap";
 import CaliforniaCommunityIndex from "../components/CaliforniaCommunityIndex";
 import MobileCommunityHome from "../components/MobileCommunityHome";
 import CaliforniaCommunityModal from "../components/CaliforniaCommunityModal";
-import AnalyticsSectionNavigation, {
-  type AnalyticsSection
-} from "../components/AnalyticsSectionNavigation";
 import {
   CALIFORNIA_COMMUNITIES,
   CALIFORNIA_COMMUNITY_BY_ID
 } from "../data/californiaCommunities";
 
-type CaliforniaWorkspacePanel = "map" | "questions" | "reports";
+type CaliforniaWorkspacePanel = "map" | "reports";
 
 const PANEL_INDEX: Record<CaliforniaWorkspacePanel, number> = {
   map: 0,
-  questions: 1,
-  reports: 2
+  reports: 1
 };
 
 function panelForPath(pathname: string): CaliforniaWorkspacePanel {
-  if (pathname === "/analytics/questions" || pathname === "/questions") return "questions";
   if (pathname.startsWith("/analytics")) return "reports";
   if (pathname.startsWith("/reports")) return "reports";
   return "map";
@@ -106,50 +100,24 @@ export default function CaliforniaHomePage() {
     navigate(`/home/community/${encodeURIComponent(facilityId)}`);
   }
 
-  function openPanel(panel: CaliforniaWorkspacePanel) {
-    setActivePanel(panel);
-    navigate(
-      panel === "map"
-        ? "/home"
-        : panel === "reports"
-          ? "/analytics"
-          : "/analytics/questions"
-    );
-  }
-
-  function openAnalyticsSection(section: AnalyticsSection) {
-    if (section === "agent" || section === "licensing") {
-      navigate(`/analytics/${section}`);
-      return;
-    }
-    openPanel(section);
-  }
-
   return (
     <div
       data-california-workspace-carousel="true"
       data-california-active-panel={activePanel}
       className="relative flex h-[calc(100dvh-var(--platform-header-height))] w-full flex-col overflow-clip bg-white text-[#111111]"
     >
-      {activePanel !== "map" ? (
-        <AnalyticsSectionNavigation
-          active={activePanel}
-          onNavigate={openAnalyticsSection}
-        />
-      ) : null}
-
       <div
         data-california-carousel-track="true"
-        className="flex min-h-0 flex-1 w-[300%] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+        className="flex min-h-0 flex-1 w-[200%] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
         style={{
-          transform: `translate3d(-${PANEL_INDEX[activePanel] * (100 / 3)}%, 0, 0)`
+          transform: `translate3d(-${PANEL_INDEX[activePanel] * 50}%, 0, 0)`
         }}
       >
         <section
           data-california-carousel-panel="map"
           aria-hidden={activePanel !== "map"}
           inert={activePanel !== "map"}
-          className="relative h-full w-1/3 shrink-0 overflow-y-auto overscroll-contain bg-white lg:overflow-clip"
+          className="relative h-full w-1/2 shrink-0 overflow-y-auto overscroll-contain bg-white lg:overflow-clip"
         >
           <div className="h-full lg:hidden">
             <MobileCommunityHome
@@ -185,30 +153,10 @@ export default function CaliforniaHomePage() {
         </section>
 
         <section
-          data-california-carousel-panel="questions"
-          aria-hidden={activePanel !== "questions"}
-          inert={activePanel !== "questions"}
-          className="relative h-full w-1/3 shrink-0 overflow-y-auto overscroll-contain bg-white px-3 pb-[calc(32px+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-8 lg:px-8"
-        >
-          <div
-            data-california-question-workspace="true"
-            className="mx-auto w-full max-w-[1432px]"
-          >
-            <div className="mx-auto w-full max-w-[1380px]">
-              <WorkspaceHomePage
-                embedded
-                sectionId="questions"
-                initialQuestionsOpen
-              />
-            </div>
-          </div>
-        </section>
-
-        <section
           data-california-carousel-panel="reports"
           aria-hidden={activePanel !== "reports"}
           inert={activePanel !== "reports"}
-          className="relative h-full w-1/3 shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pb-8 lg:px-8"
+          className="relative h-full w-1/2 shrink-0 overflow-y-auto overscroll-contain bg-white px-4 pb-[calc(32px+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pb-8 lg:px-8"
         >
           <div className="mx-auto w-full max-w-[1432px]">
             <ReportsPage embedded active={activePanel === "reports"} />

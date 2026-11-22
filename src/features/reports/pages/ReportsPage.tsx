@@ -1,6 +1,7 @@
 import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import ReportHeading from "../components/ReportHeading";
 import "../components/platform-design-pass.css";
 import FullReportReader from "../components/FullReportReader";
@@ -19,6 +20,8 @@ import type {
 } from "../../../shared/types/fullReport";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 
+const VISIBLE_REPORT_IDS: FullReportId[] = ["overview", "census", "incidents", "residents"];
+
 interface ReportsPageProps {
   embedded?: boolean;
   active?: boolean;
@@ -35,6 +38,8 @@ export default function ReportsPage({
   active = true
 }: ReportsPageProps) {
   const [selectedReportId, setSelectedReportId] = useState<FullReportId>("overview");
+  const [searchParams] = useSearchParams();
+  const routeReportId = searchParams.get("report");
   const [reportDefinitions, setReportDefinitions] = useState<FullReportDefinition[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState("");
   const [flowYear, setFlowYear] = useState("");
@@ -48,8 +53,19 @@ export default function ReportsPage({
   const [error, setError] = useState("");
   const [dataRequestVersion, setDataRequestVersion] = useState(0);
   const [reportRequestVersion, setReportRequestVersion] = useState(0);
-  const reportLibraryRef = useRef<HTMLDivElement>(null);
   const communityFilterRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    if (VISIBLE_REPORT_IDS.some((id) => id === routeReportId)) {
+      setSelectedReportId(routeReportId as FullReportId);
+    } else if (!routeReportId) {
+      setSelectedReportId("overview");
+    }
+    setSelectedFacilityId("");
+    setSelectedPeriod("");
+    setPeriodOptions([]);
+    setSelectedAudience("");
+  }, [routeReportId]);
 
   useEffect(() => {
     if (!active) return;
@@ -62,7 +78,7 @@ export default function ReportsPage({
     ])
       .then(([dashboardValue, definitionValue]) => {
         const visibleReports = definitionValue.reports
-          .filter((report) => report.showInAnalyticsNav)
+          .filter((report) => VISIBLE_REPORT_IDS.includes(report.id))
           .map(normalizeOverviewTitle);
         setDashboard(dashboardValue);
         setReportDefinitions(visibleReports);
@@ -91,13 +107,6 @@ export default function ReportsPage({
   const audienceOptions = selectedReport?.audienceOptions ?? [];
 
   useEffect(() => {
-    const library = reportLibraryRef.current;
-    if (!library || library.scrollWidth <= library.clientWidth) return;
-    const selectedButton = library.querySelector<HTMLElement>('[aria-pressed="true"]');
-    selectedButton?.scrollIntoView({ block: "nearest", inline: "start" });
-  }, [reportDefinitions, selectedReportId]);
-
-  useEffect(() => {
     if (!active || loadingData || !dashboard || !selectedReport) return;
     if (requiresCommunityScope && !selectedFacilityId) return;
     const controller = new AbortController();
@@ -123,7 +132,7 @@ export default function ReportsPage({
       })
       .catch((reportError) => {
         if (!controller.signal.aborted) {
-          setError(reportError instanceof Error ? reportError.message : "The report could not be compiled.");
+          setError(reportError instanceof Error ? reportError.message : "Report unavailable.");
         }
       })
       .finally(() => {
@@ -143,20 +152,6 @@ export default function ReportsPage({
     supportsCommunityScope,
     reportRequestVersion
   ]);
-
-  function selectReport(reportId: FullReportId) {
-    if (reportId === selectedReportId) return;
-    setSelectedReportId(reportId);
-    setSelectedPeriod("");
-    setPeriodOptions([]);
-    const nextDefinition = reportDefinitions.find((report) => report.id === reportId);
-    setSelectedAudience(nextDefinition?.audienceOptions?.[0]?.id ?? "");
-    if (reportId === "community") {
-      setSelectedFacilityId(dashboard?.communities[0]?.facility_id ?? "");
-      return;
-    }
-    setSelectedFacilityId("");
-  }
 
   function retryReport() {
     if (!dashboard) {
@@ -246,61 +241,9 @@ export default function ReportsPage({
         embedded ? "min-h-full" : ""
       }`}
     >
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[260px_minmax(0,1fr)] xl:gap-8">
-        <aside aria-label="Analytics" className="min-w-0">
-          <label className="block lg:hidden" htmlFor="mobile-report-choice">
-            <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#67736f]">
-              Report
-            </span>
-            <span className="relative block">
-              <select
-                id="mobile-report-choice"
-                data-mobile-report-choice="true"
-                aria-label="Choose a report"
-                value={selectedReportId}
-                onChange={(event) => selectReport(event.currentTarget.value as FullReportId)}
-                className="min-h-12 w-full appearance-none rounded-lg border border-[#bfd1cb] bg-[#eef4f1] px-3 pr-10 font-sans text-base font-semibold text-[#315b54] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f8b73]"
-              >
-                {reportDefinitions.map((report) => (
-                  <option key={report.id} value={report.id}>{report.title}</option>
-                ))}
-              </select>
-              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#315b54]" />
-            </span>
-          </label>
-          <div
-            ref={reportLibraryRef}
-            data-analytics-report-library="true"
-            className="hidden border-t border-[#b9c8c2] lg:block lg:overflow-visible"
-          >
-            {reportDefinitions.map((report) => {
-              const selected = report.id === selectedReportId;
-              return (
-                <button
-                  type="button"
-                  key={report.id}
-                  onClick={() => selectReport(report.id)}
-                  aria-pressed={selected}
-                  data-analytics-report-option={report.id}
-                  className={`grid min-w-[210px] snap-start grid-cols-[3px_minmax(0,1fr)] gap-3 border-b border-[#d8dfdc] py-4 pr-2 text-left transition-colors md:w-full md:min-w-0 ${
-                    selected ? "bg-[#f3f5f2]" : "hover:bg-[#f8f9f7]"
-                  }`}
-                >
-                  <span className={selected ? "bg-[#0f8b73]" : "bg-transparent"} aria-hidden="true" />
-                  <span>
-                    <span className="block font-sans text-[14px] font-bold leading-5 tracking-[-0.025em]">{report.title}</span>
-                    <span className="mt-1 block text-[12px] leading-4 text-[#67747a]">
-                      {report.cadence} | {report.audience}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
-
+      <div className="min-w-0">
         <main
-          className="min-w-0"
+          className="min-w-0 pt-4"
           aria-busy={loadingData || loadingReport}
         >
           <ReportHeading
@@ -320,12 +263,12 @@ export default function ReportsPage({
             >
               <span className="mx-auto block h-6 w-6 animate-spin rounded-full border-2 border-[#d9d9d9] border-t-[#0f8b73]" />
               <p className="mt-3 text-[12px] text-[#595959]">
-                Compiling the governed report.
+                Loading report…
               </p>
             </div>
           ) : error ? (
             <div role="alert" className="min-h-[220px] border-t-2 border-[#a63d2f] py-8">
-              <h2 className="!font-sans text-[25px] font-bold tracking-[-0.035em]">This report could not be compiled.</h2>
+              <h2 className="!font-sans text-[25px] font-bold tracking-[-0.035em]">Report unavailable</h2>
               <p className="mt-2 max-w-[680px] text-[13px] leading-5 text-[#595959]">{error}</p>
               <button
                 type="button"

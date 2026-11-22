@@ -4,11 +4,10 @@ import path from "node:path";
 const root = path.resolve(import.meta.dirname, "..");
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
-const [app, page, platformNavigation, analyticsNavigation, map, neighborPaths, modal, communities, profile, incidentCenter, shell, wordmark, identity] = await Promise.all([
+const [app, page, platformNavigation, map, neighborPaths, modal, communities, profile, incidentCenter, shell, wordmark, identity] = await Promise.all([
   read("src/app/App.tsx"),
   read("src/features/california/pages/CaliforniaHomePage.tsx"),
   read("src/features/california/components/PlatformPageNavigation.tsx"),
-  read("src/features/california/components/AnalyticsSectionNavigation.tsx"),
   read("src/features/california/components/CaliforniaCommunityMap.tsx"),
   read("src/features/california/data/californiaNeighborPaths.ts"),
   read("src/features/california/components/CaliforniaCommunityModal.tsx"),
@@ -27,13 +26,8 @@ const requireText = (source, pattern, message) => {
 
 requireText(
   app,
-  /<Route path="\/" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?<Route path="\/home" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?path="\/home\/community\/:facilityId"[\s\S]*?<Route path="\/questions" element=\{<Navigate to="\/analytics\/questions" replace \/>\} \/>[\s\S]*?<Route path="\/analytics" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?path="\/analytics\/questions"[\s\S]*?<Route path="\/reports" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>/,
-  "map, community, and Analytics routes do not share one warning-free persistent California carousel with a legacy Questions redirect"
-);
-requireText(
-  page,
-  /<WorkspaceHomePage[\s\S]*?embedded[\s\S]*?sectionId="questions"[\s\S]*?\/>/,
-  "California home does not pre-mount the analyst panel"
+  /<Route path="\/" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?<Route path="\/home" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?path="\/home\/community\/:facilityId"[\s\S]*?<Route path="\/questions" element=\{<Navigate to="\/analytics" replace \/>\} \/>[\s\S]*?<Route path="\/analytics" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>[\s\S]*?path="\/analytics\/questions"[\s\S]*?<Route path="\/reports" element=\{withRouteBoundary\(<CaliforniaHomePage \/>\)\} \/>/,
+  "map, community, and Analytics routes do not share the persistent California workspace with a legacy Questions redirect"
 );
 requireText(
   page,
@@ -64,14 +58,9 @@ requireText(
   "community profiles do not preserve a truthful medication loading state"
 );
 requireText(
-  analyticsNavigation,
-  /aria-label="Analytics sections"[\s\S]*?label="Reports"[\s\S]*?label="Ask a question"/,
-  "Ask a question is not contained within the Analytics workspace"
-);
-requireText(
   platformNavigation,
-  /id: "home"[\s\S]*?id: "analytics"[\s\S]*?id: "admissions"/,
-  "platform pages are not registered in the required Home, Analytics, Admissions order"
+  /id: "analytics"[\s\S]*?id: "admissions"[\s\S]*?id: "clients"[\s\S]*?id: "incidents"[\s\S]*?id: "licensing"/,
+  "the single Platform header does not contain the current page navigation"
 );
 if (/id: "questions"/.test(platformNavigation)) {
   failures.push("Ask a question is still registered as a top-level platform page");
@@ -96,18 +85,13 @@ requireText(
 );
 requireText(
   page,
-  /function openAnalyticsSection[\s\S]*?openPanel\(section\)/,
-  "Analytics section navigation must select the mounted panel"
-);
-requireText(
-  page,
-  /function panelForPath[\s\S]*?pathname === "\/analytics\/questions" \|\| pathname === "\/questions"[\s\S]*?pathname\.startsWith\("\/analytics"\)[\s\S]*?pathname\.startsWith\("\/reports"\)[\s\S]*?setActivePanel\(panelForPath\(location\.pathname\)\)[\s\S]*?addEventListener\("popstate"/,
+  /function panelForPath[\s\S]*?pathname\.startsWith\("\/analytics"\)[\s\S]*?pathname\.startsWith\("\/reports"\)[\s\S]*?setActivePanel\(panelForPath\(location\.pathname\)\)[\s\S]*?addEventListener\("popstate"/,
   "carousel state is not synchronized with canonical routes and browser history"
 );
 requireText(
   page,
-  /data-california-carousel-panel="map"[\s\S]*?data-california-carousel-panel="questions"[\s\S]*?data-california-carousel-panel="reports"/,
-  "the map, analyst, and reports panels are not pre-mounted in order"
+  /data-california-carousel-panel="map"[\s\S]*?data-california-carousel-panel="reports"/,
+  "the map and reports panels are not pre-mounted in order"
 );
 requireText(
   page,
@@ -116,7 +100,7 @@ requireText(
 );
 requireText(
   page,
-  /data-california-carousel-track="true"[\s\S]*?w-\[300%\][\s\S]*?transition-transform[\s\S]*?motion-reduce:transition-none[\s\S]*?translate3d/,
+  /data-california-carousel-track="true"[\s\S]*?w-\[200%\][\s\S]*?transition-transform[\s\S]*?motion-reduce:transition-none[\s\S]*?translate3d/,
   "the workspace does not use a reduced-motion-safe horizontal slide track"
 );
 requireText(
@@ -126,7 +110,7 @@ requireText(
 );
 requireText(
   page,
-  /aria-hidden=\{activePanel !== "questions"\}[\s\S]*?inert=\{activePanel !== "questions"\}[\s\S]*?aria-hidden=\{activePanel !== "reports"\}[\s\S]*?inert=\{activePanel !== "reports"\}/,
+  /aria-hidden=\{activePanel !== "map"\}[\s\S]*?inert=\{activePanel !== "map"\}[\s\S]*?aria-hidden=\{activePanel !== "reports"\}[\s\S]*?inert=\{activePanel !== "reports"\}/,
   "off-screen carousel panels remain exposed to assistive technology or keyboard focus"
 );
 requireText(
@@ -206,7 +190,7 @@ requireText(
 );
 requireText(
   map,
-  /id="california-paper-face"[\s\S]*?stopColor="#ffffff"[\s\S]*?stopColor="#e9efed"/,
+  /id="california-paper-face"[\s\S]*?stopColor="#fffefb"[\s\S]*?stopColor="#e5edf0"/,
   "California does not use the restrained paper object face"
 );
 requireText(
@@ -405,4 +389,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("California home contract passed: map, Questions, and Analytics navigation share the mounted carousel, and community markers and modal drilldowns remain intact.");
+console.log("California home contract passed: map and Analytics share the mounted workspace, and community markers and modal drilldowns remain intact.");
