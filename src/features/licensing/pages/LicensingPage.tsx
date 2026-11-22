@@ -7,7 +7,6 @@ import LicensingReportReader from "../components/LicensingReportReader";
 import LicensingUpdates from "../components/LicensingUpdates";
 import LicensingSkill from "../components/LicensingSkill";
 import LicensingReportModule from "../components/LicensingReportModule";
-import AnalyticsReportTabs from "../../reports/components/AnalyticsReportTabs";
 import { licensingQuestionQuery, licensingQuestions } from "../licensingQuestions";
 import { useLicensingUpdates } from "../useLicensingUpdates";
 export default function LicensingWorkspace({ agentMode = false }: { agentMode?: boolean }) {
@@ -67,7 +66,6 @@ export default function LicensingWorkspace({ agentMode = false }: { agentMode?: 
 
   return <>
     <section aria-label="Licensing reports" data-licensing-page="true" className="mx-auto min-h-[calc(100dvh-var(--platform-header-height)-58px)] min-w-0 w-full max-w-[1100px] bg-white px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-4 font-sans text-[#16283a] sm:px-6 lg:px-8">
-      {!agentMode ? <AnalyticsReportTabs active="licensing" /> : null}
       <header className="licensing-page-toolbar">
         {selectedId ? <button type="button" onClick={() => { setParams(previous => { const next = new URLSearchParams(previous); next.delete("report"); next.set("skill", "licensing"); return next; }); }} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[#287261]"><ArrowLeft size={16} aria-hidden="true" /> Back to reports</button>
           : <h1 className="sr-only">Licensing</h1>}

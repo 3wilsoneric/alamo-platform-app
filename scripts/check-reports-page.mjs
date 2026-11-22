@@ -66,13 +66,13 @@ assert(
     !reportsSource.includes("6 report families") &&
     !reportsSource.includes("Choose an analysis to review.") &&
     !/>\s*Analytics\s*</.test(reportsSource) &&
-    reportsSource.includes('aria-label="Analytics"'),
-  "Analytics must open directly into the streamlined picker without redundant title or instructional copy"
+    reportsSource.includes('data-analytics-page="true"'),
+  "Analytics must open directly into the report without redundant title or instructional copy"
 );
 assert(
   !reportsSource.includes("REPORT_FAMILIES") &&
     reportsSource.includes("definitionValue.reports") &&
-    reportsSource.includes("report.showInAnalyticsNav") &&
+    reportsSource.includes("VISIBLE_REPORT_IDS.includes(report.id)") &&
     reportsSource.includes('useState<FullReportId>("overview")'),
   "the report library must use the server-owned visibility contract and open on Overview"
 );
@@ -105,7 +105,7 @@ assert(
     reportsSource.includes('data-reports-embedded={embedded ? "true" : "false"}') &&
     reportsSource.includes('data-analytics-page="true"') &&
     read("src/shared/layout/ProtectedAppShell.tsx").includes("<PlatformPageNavigation") &&
-    californiaSource.includes("<AnalyticsSectionNavigation"),
+    !californiaSource.includes("<AnalyticsSectionNavigation"),
   "Analytics must be available as a governed home surface without loading reports behind the inactive map"
 );
 assert(
@@ -122,4 +122,4 @@ assert(
   "the analyst workspace must not expose the retired History menu"
 );
 
-console.log("Analytics page check passed: five finished visible reports, unfinished effectiveness and duplicate community reports hidden, standalone /outreach route retained, and no visible History menu.");
+console.log("Analytics page check passed: governed reports load under the single Platform header, unfinished reports stay hidden, and Outreach retains its standalone route.");

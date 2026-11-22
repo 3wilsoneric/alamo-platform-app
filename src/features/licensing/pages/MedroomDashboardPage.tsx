@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { ArrowRight, Activity, ClipboardCheck, ShieldAlert, Sparkles } from "lucide-react";
 import { fetchAnalyticsSummary, fetchHomeDashboard, fetchMedroomDashboard, type HomeDashboardResponse, type MedroomDashboardResponse, type ReportsSummaryResponse } from "../../../shared/api/platformData";
 import { useMedroomAccess } from "../../../shared/auth/medroomAccess";
-import AnalyticsSectionNavigation from "../../california/components/AnalyticsSectionNavigation";
 import { buildMedicationCommunities, buildMedicationMonths, buildQuarterlyTrend } from "../medroomDashboardModel";
 import "../medroomDashboard.css";
 
@@ -14,7 +13,6 @@ const monthLabel = (month: string | null | undefined) => month && /^\d{4}-\d{2}$
   : "No period available";
 
 function MedroomDashboard() {
-  const navigate = useNavigate();
   const [medication, setMedication] = useState<ReportsSummaryResponse | null>(null);
   const [dashboard, setDashboard] = useState<HomeDashboardResponse | null>(null);
   const [detail, setDetail] = useState<MedroomDashboardResponse | null>(null);
@@ -61,7 +59,6 @@ function MedroomDashboard() {
   ];
 
   return <>
-    <AnalyticsSectionNavigation active="licensing" onNavigate={section => navigate(section === "reports" ? "/analytics" : `/analytics/${section}`)} />
     <main className="medroom-dashboard" data-medroom-dashboard="true">
       <div className="medroom-dashboard__topline"><Link to="/analytics/licensing">Licensing reports</Link><span aria-hidden="true">/</span><span>Med-room dashboard</span></div>
       <header className="medroom-dashboard__header">

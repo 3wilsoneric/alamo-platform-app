@@ -13,6 +13,14 @@
 
 ## Shared navigation and responsive layout
 
+### November 22 single-header redesign — local candidate
+
+The design candidate is based on the November 21 Platform source and its owner-pilot continuation, with the active `coverage-1121-db9b538` production image inspected separately. Production is an accumulated overlay image; this source build is **not** a substitute for that image or a deployment receipt.
+
+The shared header now contains Analytics, Admissions, Clients, Incidents, and permissioned Licensing, followed by owner-only Workflow and Workforce. The wordmark returns to the community map. Analytics opens directly into Overview; Clients opens the existing combined resident-flow and current-profile report. The old Reports / Ask a question / AlamoAgent / Licensing row and the separate report-tab row are removed. The legacy Questions URL redirects to Analytics; the owner agent route remains unlisted. Ally stays in its in-page companion, with its update list expanded within that panel instead of linking to a full-page work list. No report calculation, API contract, licensing access rule, or source freshness rule changes in this design pass.
+
+The local browser preview checks the header at 390px and 1440px, verifies Clients navigation and no old navigation rows, and captures Analytics, Incidents, and Licensing. TypeScript, source build, and targeted source checks are required before release. A production overlay must be prepared from the active image and must preserve its existing route, auth, and asset overlays before any deployment.
+
 ### November 19 incident/mobile update — deployed
 
 The shared Incidents entry returns to `/incidents` daily cards, with the existing

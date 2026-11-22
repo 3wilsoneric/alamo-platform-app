@@ -2,7 +2,6 @@ import { ALAMO_FACILITIES } from "../../../../shared/community-names.mjs";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import AnalyticsReportTabs, { ANALYTICS_REPORT_TABS } from "../components/AnalyticsReportTabs";
 import ReportHeading from "../components/ReportHeading";
 import "../components/platform-design-pass.css";
 import FullReportReader from "../components/FullReportReader";
@@ -21,6 +20,8 @@ import type {
 } from "../../../shared/types/fullReport";
 import { formatMonthLabel } from "../../../../shared/period-utils.mjs";
 
+const VISIBLE_REPORT_IDS: FullReportId[] = ["overview", "census", "incidents", "residents"];
+
 interface ReportsPageProps {
   embedded?: boolean;
   active?: boolean;
@@ -37,7 +38,7 @@ export default function ReportsPage({
   active = true
 }: ReportsPageProps) {
   const [selectedReportId, setSelectedReportId] = useState<FullReportId>("overview");
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const routeReportId = searchParams.get("report");
   const [reportDefinitions, setReportDefinitions] = useState<FullReportDefinition[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState("");
@@ -55,11 +56,15 @@ export default function ReportsPage({
   const communityFilterRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
-    if (ANALYTICS_REPORT_TABS.some(({ id }) => id === routeReportId)) {
+    if (VISIBLE_REPORT_IDS.some((id) => id === routeReportId)) {
       setSelectedReportId(routeReportId as FullReportId);
     } else if (!routeReportId) {
       setSelectedReportId("overview");
     }
+    setSelectedFacilityId("");
+    setSelectedPeriod("");
+    setPeriodOptions([]);
+    setSelectedAudience("");
   }, [routeReportId]);
 
   useEffect(() => {
@@ -73,7 +78,7 @@ export default function ReportsPage({
     ])
       .then(([dashboardValue, definitionValue]) => {
         const visibleReports = definitionValue.reports
-          .filter((report) => ANALYTICS_REPORT_TABS.some(({ id }) => id === report.id))
+          .filter((report) => VISIBLE_REPORT_IDS.includes(report.id))
           .map(normalizeOverviewTitle);
         setDashboard(dashboardValue);
         setReportDefinitions(visibleReports);
@@ -147,21 +152,6 @@ export default function ReportsPage({
     supportsCommunityScope,
     reportRequestVersion
   ]);
-
-  function selectReport(reportId: FullReportId) {
-    if (reportId === selectedReportId) return;
-    setSelectedReportId(reportId);
-    setSearchParams((previous) => { const next = new URLSearchParams(previous); next.set("report", reportId); return next; }, { replace: true });
-    setSelectedPeriod("");
-    setPeriodOptions([]);
-    const nextDefinition = reportDefinitions.find((report) => report.id === reportId);
-    setSelectedAudience(nextDefinition?.audienceOptions?.[0]?.id ?? "");
-    if (reportId === "community") {
-      setSelectedFacilityId(dashboard?.communities[0]?.facility_id ?? "");
-      return;
-    }
-    setSelectedFacilityId("");
-  }
 
   function retryReport() {
     if (!dashboard) {
@@ -252,8 +242,6 @@ export default function ReportsPage({
       }`}
     >
       <div className="min-w-0">
-        <AnalyticsReportTabs active={selectedReportId} onSelectReport={selectReport} />
-
         <main
           className="min-w-0 pt-4"
           aria-busy={loadingData || loadingReport}

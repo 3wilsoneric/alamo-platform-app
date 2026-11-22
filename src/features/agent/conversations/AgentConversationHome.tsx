@@ -67,8 +67,8 @@ export default function AgentConversationHome({ transport, conversationId, onNav
     }
   }
   const working = chat?.turns.some(turn => turn.status === "working");
-  return <section className="agent-conversation-home" aria-label="AlamoAgent chats">
-    <header className="agent-conversation-toolbar"><img src="/brand/everyagent-alamo-v1.webp" alt="AlamoAgent" width="32" height="32" />
+  return <section className="agent-conversation-home" aria-label="Ally chats">
+    <header className="agent-conversation-toolbar"><img src="/brand/ally-mark.svg" alt="Ally" width="32" height="32" />
       <nav aria-label="Chat navigation"><button type="button" aria-pressed={!conversationId} onClick={() => onNavigate(null)}>Updates</button><button type="button" onClick={() => setCreating(value => !value)}><Plus size={16} />New chat</button></nav>
       <button type="button" aria-label="Refresh chats" onClick={() => { void refresh(); }}><RefreshCw size={17} /></button>
     </header>
