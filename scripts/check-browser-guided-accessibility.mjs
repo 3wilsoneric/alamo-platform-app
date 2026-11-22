@@ -311,7 +311,7 @@ async function exerciseKeyboardJourney(page, testCase) {
   if (finalState.assistantCount !== 1) failures.push(`keyboard run rendered ${finalState.assistantCount} assistant answers`);
   if (finalState.assistantTop < 68) failures.push(`assistant lead is covered by the fixed header at ${finalState.assistantTop}px`);
   if (finalState.guideVisible) failures.push("question guide remained open after keyboard execution");
-  if (finalState.freeTextComposerCount) failures.push("free-text composer appeared after keyboard execution");
+  if (finalState.freeTextComposerCount !== 1) failures.push(`keyboard run exposed ${finalState.freeTextComposerCount} question composers instead of one`);
   if (finalState.viewportWidth < 640 && finalState.visibleBackToTopCount) {
     failures.push("phone-width answer is covered by a floating back-to-top control");
   }

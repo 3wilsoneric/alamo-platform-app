@@ -212,7 +212,7 @@ async function runThreadContextUx(page, screenshotDir) {
   checkpoints.push({ step: "broad question after clean chat does not inherit", chat: broadQuestionAfterClean, session: broadSessionAfterClean });
 
   const finalCanvas = await measureCanvas(page);
-  if (!(await page.getByRole("button", { name: /Choose another question/i }).count())) {
+  if (!(await page.getByRole("button", { name: /Open questions/i }).count())) {
     failures.push("completed answer did not retain the vetted question continuation");
   }
   if (finalCanvas.horizontalOverflow > 8) failures.push(`horizontal overflow: ${finalCanvas.horizontalOverflow}px`);
