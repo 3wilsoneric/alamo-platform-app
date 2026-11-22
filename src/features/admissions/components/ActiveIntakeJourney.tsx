@@ -156,18 +156,17 @@ export default function ActiveIntakeJourney({
   const hasUnassignedCommunity = cards.some((card) => !card.facilityId);
   return <section className="admissions-journey" data-admissions-journey="complete" aria-labelledby="admissions-journey-title">
     <div className="admissions-journey-sheet">
-      <header className="admissions-journey-header">
-        <h2 id="admissions-journey-title" className="sr-only">Active intake</h2>
-        <time>Updated {formatUpdatedAt(pipeline.generatedAt)}</time>
-      </header>
+      <h2 id="admissions-journey-title" className="sr-only">Active intake</h2>
       <div className="admissions-journey-key" aria-label="Person colors by community">
         <span className="admissions-journey-key-label">Community</span>
         {communityLegend.map((facility) => <span key={facility.facilityId}><UserRound aria-hidden="true" style={{ color: COMMUNITY_COLORS[facility.facilityId] }} />{facility.shortName}</span>)}
         {hasUnassignedCommunity ? <span><UserRound aria-hidden="true" style={{ color: UNASSIGNED_COLOR }} />Not assigned</span> : null}
         {actionCards.length ? <span className="admissions-journey-action-key"><i aria-hidden="true">!</i>Specific action needed</span> : null}
+        <time className="admissions-journey-updated">Updated {formatUpdatedAt(pipeline.generatedAt)}</time>
       </div>
 
       {cards.length ? <div className="admissions-journey-main">
+        <div className="admissions-journey-left">
         <div className="admissions-journey-chart">
           <div className="admissions-journey-overline">{cards.length} open referrals · current position</div>
           <div className={`admissions-journey-stages ${cards.length > 80 ? "admissions-journey-bars" : ""}`}>
@@ -182,10 +181,19 @@ export default function ActiveIntakeJourney({
           </div>
         </div>
 
+        <div className="admissions-journey-analysis">
+          <div className="admissions-journey-breakdown-head"><h3>Where referrals come from</h3></div>
+          <div className="admissions-journey-breakdowns">
+            <JourneyBreakdown title="Previous setting" rows={settings} missingLabel="Setting not recorded" />
+            <JourneyBreakdown title="Referring county" rows={counties} missingLabel="Not recorded" />
+            <JourneyBreakdown title="Assigned assessor" rows={assessors} missingLabel="Not assigned" />
+          </div>
+        </div>
+        </div>
+
         {selected ? <aside className="admissions-journey-file" aria-label={`Selected referral: ${selected.clientName}`}>
           <div className="admissions-journey-file-heading">
             <div><h3>{selected.clientName}</h3><p>{selected.facilityId ? selected.community : "Community not assigned"} · Referral #{selected.referralId}</p></div>
-            <span aria-hidden="true">↗</span>
           </div>
           <p className="admissions-journey-file-stage">{STAGES.find((stage) => stage.key === intakeStage(selected))?.label}<span> · </span>{selected.daysOpen == null ? "Open date unavailable" : `${selected.daysOpen} ${selected.daysOpen === 1 ? "day" : "days"} open`}</p>
           <dl>
@@ -200,16 +208,6 @@ export default function ActiveIntakeJourney({
           <button type="button" className="admissions-journey-open" onClick={() => onOpenCard(selected)}>Open client file <span aria-hidden="true">→</span></button>
         </aside> : null}
       </div> : <p className="admissions-journey-empty">No active referrals are recorded in the current Pipeline feed.</p>}
-
-      {cards.length ? <>
-        <div className="admissions-journey-breakdown-head"><h3>Where people are coming from</h3><span>Recorded setting or source name · {cards.length} open referrals</span></div>
-        <div className="admissions-journey-breakdowns">
-          <JourneyBreakdown title="Previous setting" rows={settings} missingLabel="Setting not recorded" />
-          <JourneyBreakdown title="Referring county" rows={counties} missingLabel="Not recorded" />
-          <JourneyBreakdown title="Assigned assessor" rows={assessors} missingLabel="Not assigned" />
-        </div>
-      </> : null}
-      <footer className="admissions-journey-footer">Active referrals only; admitted clients are excluded.</footer>
     </div>
   </section>;
 }

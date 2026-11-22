@@ -14,6 +14,9 @@ export default function ReportHeading({ report, title, communityAsTitle = false,
   const isCommunity = report?.reportId === "community" || communityAsTitle;
   const periodLabel = report?.period.label.replace("Latest governed data through", "Through") ?? "";
   const periodIncludesDate = report && periodLabel.includes(report.dataThrough);
+  const updatedLabel = report?.generatedAtLabel.startsWith(report.dataThrough)
+    ? report.generatedAtLabel.slice(report.dataThrough.length).replace(/^[\s,·]*(?:at\s*)?/, "")
+    : report?.generatedAtLabel;
   const interactive = Boolean(communityControl || periodControl || otherControls);
   return (
     <header data-report-compact-header="true" data-report-inline-heading={interactive || undefined} data-community-heading={isCommunity || undefined} className="report-heading">
@@ -30,7 +33,7 @@ export default function ReportHeading({ report, title, communityAsTitle = false,
         <p>
           {periodControl || report.reportId === "residents" ? <>Data through {report.dataThrough}</> : <>{periodLabel}{!periodIncludesDate ? <> · Data through {report.dataThrough}</> : null}</>}
         </p>
-        <p className="report-heading__updated">Updated {report.generatedAtLabel}</p>
+        {updatedLabel && <p className="report-heading__updated">Updated {updatedLabel}</p>}
       </div>}
     </header>
   );

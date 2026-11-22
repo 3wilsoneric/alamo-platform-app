@@ -23,6 +23,8 @@ The local follow-up aligns Ally with Carelog's interaction: an orange header lau
 
 The same local pass increases small report copy, removes the Evidence used, Dates & definitions, Counting, and licensing excerpt disclosures, and keeps substantive report records and data freshness visible in the main flow. Licensing still links to the archived narrative and the state's report list. The header Alamo wordmark remains the product brand; Ally uses its Carelog-style bookmark icon as a tool marker.
 
+The follow-up visual correction shows the report's data-through date once when the update happened on that same date. A distinct update time or date remains visible. The Overview census card omits an identical date and sits closer to the period selector. Admissions keeps the live active-intake people chart and selected client details, places origin/county/assessor breakdowns directly below the chart, removes the empty fixed-height file and redundant footer, and keeps the full client card readable at phone width.
+
 The local browser preview checks the header at 390px and 1440px, verifies Clients navigation and no old navigation rows, and captures Analytics, Incidents, and Licensing. TypeScript, source build, and targeted source checks are required before release. A production overlay must be prepared from the active image and must preserve its existing route, auth, and asset overlays before any deployment.
 
 ### November 19 incident/mobile update — deployed

@@ -22,7 +22,7 @@ export default function OverviewReportDashboard({ report, renderBlock }: {
   return <div className="overview-dashboard">
     {table && <>
       <section className="overview-dashboard__census" aria-labelledby="overview-census-title">
-        <header><div><h2 id="overview-census-title">Census</h2><p>{census?.detail}</p></div><p className="overview-dashboard__total"><strong>{census?.value}</strong><span>residents</span></p></header>
+        <header><div><h2 id="overview-census-title">Census</h2>{census?.detail && census.detail !== report.dataThrough && <p>{census.detail}</p>}</div><p className="overview-dashboard__total"><strong>{census?.value}</strong><span>residents</span></p></header>
         <div className="overview-dashboard__census-labels" aria-hidden="true"><span>Community</span><span>{capacity ? "Census / operating limit" : "Census"}</span>{capacity && <span>Open beds</span>}</div>
         <ul>{table.rows.map(row => {
           const occupied = number(row.census), limit = number(row.operatingLimit);
