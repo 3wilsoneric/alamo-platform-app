@@ -20,9 +20,20 @@ At 21:46 UTC its exact-file, configuration, access and HTTP verifier passed. The
 44-file native overlay is pushed as immutable image
 `68437690ab2038b99d74a86c9aeb5e4b1c1873ae2ba4bb5466ea3156ec91bd11`.
 Suite's `ally-native-1122-final` plan pins that candidate and `555272da` rollback;
-the complete predeployment gate is still running. The current sign-in was checked
-in main Chrome, but the native Network check was interrupted by a tab change and
-is not a passing signed-in release gate. No source
+the first complete run passed seven stages, then stopped on an Azure Identity
+`network_error` obtaining the storage token in `check:thread-context-fuzz`.
+The failed receipt is retained as `native-final-ui-predeploy-first-failure.json`;
+the unchanged candidate's full gate is being retried from stage one.
+
+At 22:07 UTC the current live design passed 15 routes and 12 interactions in main
+Chrome. Its settled native capture observed 600 requests with one explicit
+navigation cancellation, no unknown statuses, no HTTP failures, and zero console
+errors. The earlier interrupted capture is retained separately. This proves the
+current design, not the pending native image. The explicit main-Chrome release
+driver now rechecks source/build hashes, freshness, complete route/interaction
+coverage, native request statuses and filter settings; 18 fault-injection tests
+and focused ESLint pass. A fresh end-to-end driver capture is still required.
+No source
 settings, model execution, campaign counters or executive grants changed here.
 Suite's named package/readiness and campaign-window helpers are prepared locally;
 ten in-memory tests exercise their actual remote budget body, including ETag

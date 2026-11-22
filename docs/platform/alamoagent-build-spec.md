@@ -34,7 +34,11 @@ allowlist and passes container/access checks. Its full gate was stopped when the
 design owner began a final live control cleanup. That cleanup, `d7a97a1`, is now
 merged in `04f82fe`; the combined native image `68437690` passes preservation,
 configuration and access checks against the unchanged live image. Its complete
-predeployment gate is running. No second UI-only cutover is needed. See the
+predeployment gate is retrying after a storage-token network error. The current
+live design has passed all 15 routes, 12 navigation interactions and a complete
+native Network/console observation in main Chrome. That evidence does not cover
+the pending image; the new explicit capture driver still needs its fresh live run.
+No second UI-only cutover is needed. See the
 [current preparation receipt](deployment-operations.md#native-ally-on-the-live-design--november-22-prepared-only).
 
 Source audit correction: the executive ProForma adapter now supplies the

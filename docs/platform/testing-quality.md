@@ -195,6 +195,22 @@ local engineering release gate. Pair it with the human/data checklist in
 Both `check:release` and `check:ship` require a captured signed-in production
 session and fail rather than silently passing when that verification is unavailable.
 
+For an owner-authorized main-Chrome session, the explicit alternative is
+`PRODUCTION_MAIN_CHROME_EVIDENCE=/absolute/path/evidence.json`. Capture it with
+`captureMainChromeProductionCheck` from `scripts/lib/production-main-chrome.mjs`
+through the supported CUA page adapter. It runs the same navigation assertions;
+it does not export credentials or automatically replace a failed CI driver.
+The native Network log must start empty, record across navigations, include all
+request types, use the module's exact success-status filter, and show every
+More filters option unchecked in both observations. Console errors come from
+the tab's error log API. Captures bind the current public entry asset and assertion
+source hashes, expire after one hour, and reject incomplete/unknown request
+statuses or missing coverage. Only explicit navigation cancellations are excluded.
+The same complete capture also validates the retired-question redirects. Keep
+captures in private generated artifacts; they are evidence for that build only.
+Chrome AX format changes require a fresh observed fixture and parser regressions,
+not relaxed assertions. The existing Playwright session driver remains the CI default.
+
 The full profile is the default. It runs analyst, regression, mission/stress,
 browser, production, and signed-in-smoke checks. Set
 `PLATFORM_READY_SKIP_BROWSER=true` when browser automation is not available, or

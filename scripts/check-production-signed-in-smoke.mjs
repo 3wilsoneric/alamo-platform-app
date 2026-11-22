@@ -61,6 +61,27 @@ async function readJsonIfExists(filePath) {
 }
 
 export async function main() {
+  // Explicit supported driver for the owner's main-Chrome-only testing policy.
+  // No automatic fallback and no credential export; all assertions, diagnostics,
+  // source/build binding and freshness must pass before accepting its capture.
+  if (process.env.PRODUCTION_MAIN_CHROME_EVIDENCE) {
+    try {
+      const { readMainChromeProductionCheck } = await import('./lib/production-main-chrome.mjs');
+      const report = await readMainChromeProductionCheck(process.env.PRODUCTION_MAIN_CHROME_EVIDENCE, BASE_URL);
+      if (LEGACY_QUESTIONS_ONLY) {
+        report.routeResults = report.routeResults.filter(result => ['/questions', '/analytics/questions'].includes(result.pathname));
+        report.interactionResults = [];
+      }
+      await writeReport(report);
+      console.log(`production main-Chrome ${OUTPUT_NAME} passed: ${report.routeResults.length} routes, ${report.interactionResults.length} interactions`);
+    } catch (error) {
+      await writeReport({ generatedAt: new Date().toISOString(), baseUrl: BASE_URL, mode: 'main-chrome', status: 'fail', passed: false,
+        error: error instanceof Error ? error.message : String(error) });
+      console.error('Main-Chrome production evidence failed validation. See the retained release report.');
+      process.exitCode = 1;
+    }
+    return;
+  }
   const { chromium } = await import("playwright");
   if (!(await fileExists(STORAGE_STATE))) {
     const report = {

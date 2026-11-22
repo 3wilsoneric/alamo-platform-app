@@ -121,6 +121,48 @@ async function waitForExpectedContent(page, probe) {
   }
 }
 
+function failuresForRoute(routeProbe, pageState, elapsedMs) {
+  const routeFailures = [];
+  const expectedUrl = new URL(buildUrl(routeProbe.expectedPathname || routeProbe.pathname));
+  const actualUrl = new URL(pageState.url);
+  const allowedPaths = routeProbe.pathname === "/" ? ["/", "/home"] : [expectedUrl.pathname];
+  if (!allowedPaths.includes(actualUrl.pathname) || actualUrl.search !== expectedUrl.search) {
+    routeFailures.push("route resolved to an unexpected destination");
+  }
+  if (routeProbe.retiredQuestions && pageState.questionGuideVisible) routeFailures.push("retired question guide is still exposed");
+  if (!pageState.hasAuthenticatedShell) routeFailures.push("authenticated shell missing");
+  if (!pageState.readySelectorVisible) routeFailures.push("route readiness marker missing");
+  if (pageState.errorVisible) routeFailures.push("route rendered an error");
+  if (routeProbe.requiresReport && pageState.reportBusy) routeFailures.push("report still loading");
+  if (routeProbe.requiresIncidents && pageState.incidentLoading) routeFailures.push("incidents still loading");
+  if (pageState.isMicrosoftLogin) routeFailures.push("landed on Microsoft login");
+  if (!pageState.matchedExpected) routeFailures.push("expected route content did not render");
+  if (routeProbe.requiresCommunityMarkers && pageState.communityMarkerCount !== 5) {
+    routeFailures.push(`expected five community markers; rendered ${pageState.communityMarkerCount}`);
+  }
+  if (routeProbe.requiresLoadedRecords && pageState.loadingGovernedRecords) {
+    routeFailures.push("governed records were still loading");
+  }
+  if (routeProbe.requiresLoadedRecords && pageState.loadedRecordCount < 1) {
+    routeFailures.push("governed explorer returned zero loaded records");
+  }
+  if (routeProbe.requiresLoadedRecords && pageState.explorerStatus !== "ready") {
+    routeFailures.push(`governed explorer settled as ${pageState.explorerStatus ?? "unknown"}`);
+  }
+  if (routeProbe.requiresSnapshotHealth && pageState.commandCenterLoading) {
+    routeFailures.push("snapshot health was still loading");
+  }
+  if (routeProbe.requiresSnapshotHealth && pageState.snapshotUnavailable) {
+    routeFailures.push("published snapshot health was unavailable");
+  }
+  if ((routeProbe.pathname === "/" || routeProbe.pathname === "/home") && elapsedMs > HOME_READY_BUDGET_MS) {
+    routeFailures.push(`home useful-ready exceeded budget: ${elapsedMs}ms > ${HOME_READY_BUDGET_MS}ms`);
+  }
+  if (pageState.horizontalOverflow > 8) routeFailures.push(`horizontal overflow: ${pageState.horizontalOverflow}px`);
+
+  return routeFailures;
+}
+
 // Export the exact assertions for a supported main-Chrome adapter. This does
 // not bypass the independent console, HTTP/request-failure and revision checks.
 async function checkProductionRoutes(page, artifactDir) {
@@ -131,45 +173,8 @@ async function checkProductionRoutes(page, artifactDir) {
       await page.goto(buildUrl(routeProbe.pathname), { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
       await waitForExpectedContent(page, routeProbe);
       const pageState = await readPageState(page, routeProbe);
-      const matchedExpected = pageState.matchedExpected;
       const elapsedMs = Date.now() - routeStartedAt;
-      const routeFailures = [];
-      const expectedUrl = new URL(buildUrl(routeProbe.expectedPathname || routeProbe.pathname));
-      const actualUrl = new URL(pageState.url);
-      const allowedPaths = routeProbe.pathname === "/" ? ["/", "/home"] : [expectedUrl.pathname];
-      if (!allowedPaths.includes(actualUrl.pathname) || actualUrl.search !== expectedUrl.search) {
-        routeFailures.push("route resolved to an unexpected destination");
-      }
-      if (routeProbe.retiredQuestions && pageState.questionGuideVisible) routeFailures.push("retired question guide is still exposed");
-      if (!pageState.hasAuthenticatedShell) routeFailures.push("authenticated shell missing");
-      if (!pageState.readySelectorVisible) routeFailures.push("route readiness marker missing");
-      if (pageState.errorVisible) routeFailures.push("route rendered an error");
-      if (routeProbe.requiresReport && pageState.reportBusy) routeFailures.push("report still loading");
-      if (routeProbe.requiresIncidents && pageState.incidentLoading) routeFailures.push("incidents still loading");
-      if (pageState.isMicrosoftLogin) routeFailures.push("landed on Microsoft login");
-      if (!matchedExpected) routeFailures.push("expected route content did not render");
-      if (routeProbe.requiresCommunityMarkers && pageState.communityMarkerCount !== 5) {
-        routeFailures.push(`expected five community markers; rendered ${pageState.communityMarkerCount}`);
-      }
-      if (routeProbe.requiresLoadedRecords && pageState.loadingGovernedRecords) {
-        routeFailures.push("governed records were still loading");
-      }
-      if (routeProbe.requiresLoadedRecords && pageState.loadedRecordCount < 1) {
-        routeFailures.push("governed explorer returned zero loaded records");
-      }
-      if (routeProbe.requiresLoadedRecords && pageState.explorerStatus !== "ready") {
-        routeFailures.push(`governed explorer settled as ${pageState.explorerStatus ?? "unknown"}`);
-      }
-      if (routeProbe.requiresSnapshotHealth && pageState.commandCenterLoading) {
-        routeFailures.push("snapshot health was still loading");
-      }
-      if (routeProbe.requiresSnapshotHealth && pageState.snapshotUnavailable) {
-        routeFailures.push("published snapshot health was unavailable");
-      }
-      if ((routeProbe.pathname === "/" || routeProbe.pathname === "/home") && elapsedMs > HOME_READY_BUDGET_MS) {
-        routeFailures.push(`home useful-ready exceeded budget: ${elapsedMs}ms > ${HOME_READY_BUDGET_MS}ms`);
-      }
-      if (pageState.horizontalOverflow > 8) routeFailures.push(`horizontal overflow: ${pageState.horizontalOverflow}px`);
+      const routeFailures = failuresForRoute(routeProbe, pageState, elapsedMs);
 
       const routeScreenshotPath = `${artifactDir}/screenshots/${String(index + 1).padStart(2, "0")}-${routeProbe.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.jpg`;
       await page.screenshot({ path: routeScreenshotPath, fullPage: false }).catch(() => {});
@@ -313,5 +318,35 @@ async function checkProductionInteractions(page) {
     return interactionResults;
 }
 
-  return { checkProductionRoutes, checkProductionInteractions };
+  function validateCapturedResults(routes, interactions) {
+    const problems = [];
+    if (!Array.isArray(routes) || routes.length !== ROUTE_PROBES.length) return ['Incomplete route coverage'];
+    for (const [index, probe] of ROUTE_PROBES.entries()) {
+      const result = routes[index];
+      if (result?.name !== probe.name || result.pathname !== probe.pathname || !Number.isFinite(result.elapsedMs) || result.elapsedMs < 0 || !result.pageState) {
+        problems.push('Invalid route evidence'); continue;
+      }
+      const state = result.pageState;
+      const booleans = ['matchedExpected','readySelectorVisible','questionGuideVisible','reportBusy','incidentLoading','errorVisible',
+        'hasAuthenticatedShell','isMicrosoftLogin','loadingGovernedRecords','commandCenterLoading','snapshotUnavailable'];
+      if (booleans.some(key => typeof state[key] !== 'boolean') ||
+          ['communityMarkerCount','loadedRecordCount','horizontalOverflow'].some(key => !Number.isFinite(state[key])) ||
+          result.passed !== true || !Array.isArray(result.failures) || result.failures.length) problems.push('Incomplete or failed route observation');
+      try {
+        if (new URL(state.url).origin !== BASE_URL) problems.push('Wrong observed origin');
+        problems.push(...failuresForRoute(probe, state, result.elapsedMs));
+      } catch { problems.push('Invalid observed route'); }
+    }
+    const expected = LEGACY_QUESTIONS_ONLY ? [] : [
+      ...['337','342','343','344','345'].map(id => `Community ${id} marker and report`),
+      ...['Analytics','Admissions','Clients','Incidents','Licensing','Home'].map(label => `${label} navigation`),
+      'Command Center Workspace navigation'
+    ];
+    if (!Array.isArray(interactions) || interactions.length !== expected.length || expected.some((name,index) =>
+      interactions[index]?.name !== name || interactions[index].passed !== true || !Array.isArray(interactions[index].failures) || interactions[index].failures.length)) {
+      problems.push('Incomplete or failed interaction coverage');
+    }
+    return problems;
+  }
+  return { checkProductionRoutes, checkProductionInteractions, validateCapturedResults };
 }
