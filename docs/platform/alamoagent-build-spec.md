@@ -26,8 +26,9 @@ chart selections, sharing and freshly authorized PDF export retain their owners.
 Earlier answers use the existing per-version authorized reads, rechecked on
 visibility and every 30 seconds. Denied versions disappear independently; failed
 current authorization still removes the conversation. The service's existing
-12-version ceiling bounds these reads. A higher ceiling requires paginated
-history before expansion. Answers appear after validation, not token streaming.
+12-version ceiling bounds these reads. At that limit the composer directs the
+user to New chat instead of allowing a doomed submission. A higher ceiling
+requires paginated history before expansion. Answers appear after validation, not token streaming.
 Scope changes remain explicit, and these UI changes grant no additional access.
 Focused checks and full release validation are being completed. This paragraph
 records implemented source, not deployment.

@@ -8,6 +8,9 @@ export type ExecutiveReport = ReportSummary & { selectedVersion: number; canEdit
   sourceProgress: Array<{id: string; title: string; status: string}>; versions: Array<{version: number; createdAt: string; status: string}>;
   artifact: null | { title: string; generatedAt: string; coverage: string; findings: Array<{text: string; sourceIds: string[]}>; sections: ReportSection[]; gaps: string[] };
   view: null | { blocks: Array<{id: string; componentId: string; datasetId: string; sourceIds: string[]; measureKey?: string | null}> } };
+// Matches the service's existing bounded investigation history. Raise only
+// with paginated authorized history reads; the server remains authoritative.
+export const reportCanExtend = (report: ExecutiveReport) => report.versions.length < 12;
 export const reportRunning = (status: string) => ['queued', 'reading', 'analyzing'].includes(status);
 export const reportStatus = (status: string) => ({ queued: 'Queued', reading: 'Reading sources', analyzing: 'Preparing findings', ready: 'Ready', partial: 'Partial coverage', paused: 'Paused', failed: 'Interrupted', cancelled: 'Stopped' })[status] ?? status;
 export function createReportClient(transport: AgentTransport) {

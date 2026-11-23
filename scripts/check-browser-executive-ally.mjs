@@ -123,6 +123,21 @@ try { await withBrowserQa(async browser=>{
     if(width===1440){await panel.locator('.ally-thread-turn[data-version="2"] article').waitFor();assert.equal(await panel.locator('.ally-thread-question').count(),2,'saved reopening restores the conversation');}
     if(width===390){await panel.getByRole('button',{name:'Open report',exact:true}).click();const readerView=panel.getByRole('complementary',{name:'Expanded report'});await readerView.waitFor();assert.equal(await panel.locator('.ally-conversation-column').isVisible(),false,'phone report uses one reading surface');await readerView.getByRole('button',{name:'Close report'}).click();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isVisible());}
     if(width===320){await panel.getByRole('button',{name:'New chat',exact:true}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
+    if(width===320){
+      let full=await service.create(auth,{requestId:crypto.randomUUID(),objective:'At the conversation limit',scope:{communityIds:[],from:'2026-01-01',through:'2026-11-23'}});
+      for(let version=1;version<=12;version++){
+        for(let step=0;step<3;step++)await service.advance({ownerId:owner,id:full.id});
+        full=await service.get(auth,owner,full.id);
+        if(version<12)full=await service.command(auth,{ownerId:owner,id:full.id,revision:full.revision,action:'refresh',requestId:crypto.randomUUID()});
+      }
+      await page.reload({waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();
+      await panel.getByLabel('Saved conversations').click();await panel.getByRole('button',{name:'At the conversation limit',exact:true}).click();
+      await panel.getByText('Continue in a new chat.',{exact:true}).waitFor();
+      assert.equal(await panel.getByRole('textbox',{name:'Follow-up question'}).isEnabled(),false,'full conversations offer a usable next step before a failed submission');
+      assert.equal(await panel.getByRole('button',{name:'Refresh report',includeHidden:true}).count(),0);
+      await panel.getByRole('button',{name:'New chat',exact:true}).click();assert(await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).isEnabled());
+      assert.equal(await panel.locator('.ally-thread-turn').count(),0,'new chat does not inherit previous questions');
+    }
     assert.deepEqual(errors,[]);await context.close();
   }
 },{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, conversation/history, stable scrolling/drafts, IME, versioning, shared links, recipient controls, current and historical revocation, PDF, cancellation and saved reopening passed.'); }
