@@ -20,7 +20,10 @@ after fresh authorization. A failing-before/passing-after browser check proves
 that choosing Discharges exports Discharges; version isolation and historical
 selection also pass. Typecheck, focused ESLint and rendered PDF review pass.
 The previous full gate was deliberately stopped at 15 completed stages; its
-`68437690` candidate lacks this correction and needs replacement before release.
+`68437690` candidate lacks this correction. Replacement `0db1b47d`, from
+`34f0df2`, passes exact-file/configuration/access/HTTP verification and is pinned
+in Suite's `ally-native-1123-pdf` plan. Its complete release gate is running;
+production and model execution are unchanged.
 See the [PDF correction receipt](deployment-operations.md#ally-pdf-chart-selection--november-23-awaiting-release).
 
 ### November 22 Platform control cleanup

@@ -20,6 +20,18 @@ complete its full release gate. Production remains `555272da`; model execution,
 campaign budget and executive grants are unchanged. Regression logs use the
 `pdf-measure-` prefix under `generated/current-navigation-20261122/`.
 
+The replacement from `34f0df2` passed its container verifier at 00:38 UTC:
+19,639 base files preserved outside 44 reviewed files, unchanged image
+configuration, all 318 source hashes matched, and access/CSP/HTTP checks passed.
+It is pushed as immutable image
+`0db1b47d2669bba9d78ac71172ae68a6b32f71e7d87297c3b03caa0ec5445192`.
+Suite's `ally-native-1123-pdf` plan pins that candidate and the unchanged
+`555272da` rollback, with the same three source settings and owner-only display.
+The complete predeployment run is in progress in `native-pdf-predeploy.log`;
+`native-pdf-prepare.log`, `native-pdf-image.log`, `native-pdf-verification.log`
+and `native-pdf-push.log` retain the preparation evidence. This is not a cutover
+or a fresh live-model/signed-in acceptance pass.
+
 ## Native Ally on the live design — November 22, prepared only
 
 The design chat's 28-command predeployment gate passed and its UI is live on
