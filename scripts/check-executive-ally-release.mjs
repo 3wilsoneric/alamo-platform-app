@@ -23,7 +23,7 @@ const before = manifest(receipt.base), after = manifest(image);
 for (const [file, digest] of Object.entries(before)) assert.equal(after[file], receipt.files[file] ?? digest, `Unreviewed production change: ${file}`);
 for (const [file, digest] of Object.entries(after)) assert.equal(digest, receipt.files[file] ?? before[file], `Unrecorded candidate file: ${file}`);
 for (const [file, digest] of Object.entries(receipt.files)) {
-  assert(/^(?:dist\/assets\/[^/]+|dist\/(?:index\.html|(?:admissions|chat)\/index\.html|brand\/ally-mark\.svg)(?:\.gz|\.br)?|server\/(?:ally-report-source-release|app-server|admissions-dashboard)\.mjs|api\/platform\.js)$/.test(file), `Outside the native UI and source boundary: ${file}`);
+  assert(/^(?:dist\/assets\/[^/]+|dist\/(?:index\.html|(?:admissions|chat)\/index\.html|brand\/ally-mark\.svg)(?:\.gz|\.br)?|server\/(?:ally-report-source-release|app-server|admissions-dashboard|platform-snapshot)\.mjs|api\/platform\.js)$/.test(file), `Outside the native UI and source boundary: ${file}`);
   assert.equal(after[file], digest, `Candidate mismatch: ${file}`);
   const bytes = await readFile(root + '/overlay/' + file); assert.equal(hash(bytes), digest);
   if (file.endsWith('.gz') || file.endsWith('.br')) {

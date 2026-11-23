@@ -19,9 +19,17 @@ and raw reads, missing/invalid/denied sources. Ten existing revalidation cases,
 client integration, server typecheck, focused lint, unused-code and API checks pass.
 The candidate verifier now runs that transport check inside the built container.
 
-The `0db1b47d` plan remains historical and must not be deployed. Rebuild and verify
-the corrected candidate, then run the complete release gate before preparing its
-replacement plan. Production remains `555272da`; worker execution is disabled.
+The live-data context rerun passed all 635 turns across 130 sessions. The
+`0db1b47d` plan remains historical and must not be deployed. Rebuild and verify
+the corrected candidate, then run the complete release gate.
+
+Preparation correctly stopped when Carelog 0.1.26 advanced the production base
+to `76f01e1d3bd3786d8e740a418b27f47ce5c63b12e8472b43a1c2440490fe6fc0`
+(`recovery-1122-18c389b`). The complete file comparison found 153 changes, all
+within `dist/poc/` or `dist/fleet/`; Platform's snapshot reader is unchanged.
+The replacement must preserve all 19,783 current base files outside its explicit
+overlay and use this newer image for rollback. The comparison is retained in
+`carelog-base-reconciliation.json`; worker execution remains disabled.
 
 ## Ally PDF chart selection — November 23, awaiting release
 

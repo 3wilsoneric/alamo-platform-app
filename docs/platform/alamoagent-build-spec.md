@@ -22,7 +22,9 @@ The real-SDK stalled-response regression fails before and passes after; data,
 authorization and recovery checks pass. The existing candidate is superseded,
 not deployed. The [operations receipt](deployment-operations.md#azure-read-deadline--november-23-awaiting-release)
 owns evidence and the replacement release status. Execution and broader grants
-remain disabled.
+remain disabled. The repaired live-data context run passed 635/635 turns.
+Carelog's concurrent 0.1.26 release is reconciled: all 153 changed files are in
+its app/Fleet assets. Use the new `76f01e1d` production base and rollback image.
 
 ### November 23 PDF chart selection
 
