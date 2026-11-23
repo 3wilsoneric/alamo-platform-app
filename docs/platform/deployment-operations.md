@@ -1,5 +1,28 @@
 # Deployment And Operations
 
+## Azure read deadline — November 23, awaiting release
+
+The full `native-pdf-predeploy` run stopped at stage 8 after its context process
+stalled in an HTTP 200 Azure download: 20,693,845 bytes received of a declared
+57,370,446, no active timer, and no CPU progress. The owned child was terminated;
+the failed gate and read-only socket/sample evidence are retained under
+`generated/current-navigation-20261122/`. This was not a passing release.
+
+The local reader was older than production. It now starts from the exact live
+reader (`e7f5b60`, SHA-256 `2b577edfd96749e6991a8fd7aab9ecff41bf0dfea557cce3673d4d020b33a447`),
+preserving managed identity, compressed publications, ETag revalidation and data
+validation. The production-relative change adds one 60-second abort deadline per
+Azure read, spanning metadata and the response body. No source writes or counting
+rules change. A real-SDK local HTTP regression fails before the change and passes
+after it: stalled headers/body, concurrent readers, retry after failure, compressed
+and raw reads, missing/invalid/denied sources. Ten existing revalidation cases,
+client integration, server typecheck, focused lint, unused-code and API checks pass.
+The candidate verifier now runs that transport check inside the built container.
+
+The `0db1b47d` plan remains historical and must not be deployed. Rebuild and verify
+the corrected candidate, then run the complete release gate before preparing its
+replacement plan. Production remains `555272da`; worker execution is disabled.
+
 ## Ally PDF chart selection — November 23, awaiting release
 
 Visual review found that selecting Discharges still exported an Admissions chart.

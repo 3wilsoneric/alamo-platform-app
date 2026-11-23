@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { runInNewContext } from 'node:vm';
 import { gunzipSync, brotliDecompressSync } from 'node:zlib';
@@ -120,10 +121,15 @@ const smokeOutput = docker(['run', '--rm', '--platform', 'linux/amd64', '--netwo
   '-e', 'ENTRA_TENANT_ID=d72d9036-cff8-4f5f-a6fa-d698f621d420', '-e', 'ENTRA_CLIENT_ID=11111111-1111-4111-8111-111111111111',
   '--entrypoint', 'node', image, '--input-type=module', '-e', smoke]);
 assert(smokeOutput.includes('Container HTTP:'));
+const transportOutput = docker(['run', '--rm', '--platform', 'linux/amd64', '--network', 'none',
+  '-v', path.resolve('scripts/check-snapshot-transport.mjs') + ':/app/scripts/check-snapshot-transport.mjs:ro',
+  '-v', path.resolve('scripts/fixtures/pipeline-clinical-snapshot.sanitized.json') + ':/app/scripts/fixtures/pipeline-clinical-snapshot.sanitized.json:ro',
+  '--entrypoint', 'node', image, '/app/scripts/check-snapshot-transport.mjs']);
+assert(transportOutput.includes('Azure snapshot transport passed:'));
 const result = { checkedAt: new Date().toISOString(), imageId: docker(['image', 'inspect', image, '--format', '{{.Id}}']).trim(), base: receipt.base,
   nativeUi: true, baseFiles: Object.keys(before).length, reviewedFiles: Object.keys(receipt.files).length, preservedOtherFiles: true, imageConfiguration: 'unchanged',
   previewOnly: preview, ownerPilot: pilot,
-  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'native source-bound authentication and display gates', enabled ? 'configured subject and denied display gates' : 'disabled display gate', 'exact service CSP origin', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial'],
+  checks: ['exact file allowlist', 'compressed assets', 'source fingerprints', 'native source-bound authentication and display gates', enabled ? 'configured subject and denied display gates' : 'disabled display gate', 'exact service CSP origin', 'HTTP routes', 'anonymous API denial', 'source disabled/unauthorized denial', 'bounded Azure snapshot transport and retry'],
   productionDeployed: false, liveModelTested: false, signedInBrowserTested: false };
 await writeFile(root + '/verification.json', JSON.stringify(result, null, 2));
 console.log(JSON.stringify(result, null, 2));

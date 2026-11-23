@@ -45,7 +45,7 @@
     "check:answer-contracts": "node scripts/check-answer-contracts.mjs",
     "check:answer-quality": "node scripts/check-answer-quality.mjs",
     "check:data-depth": "node scripts/check-data-depth-contracts.mjs",
-    "check:client-database": "node scripts/check-client-database-integration.mjs",
+    "check:client-database": "node scripts/check-client-database-integration.mjs && node scripts/check-snapshot-transport.mjs && node scripts/check-snapshot-revalidation-performance.mjs",
     "client-intelligence:check": "node --env-file=.env scripts/publish-client-intelligence.mjs",
     "check:weekly-analysis": "node scripts/check-weekly-analysis.mjs",
     "prototype:monday-census-email": "node scripts/generate-monday-census-email-prototype.mjs",

@@ -91,6 +91,9 @@ const serverOutput = (Array.isArray(server) ? server : [server]).flatMap(result 
 assert.equal(serverOutput.length, 1); assert.equal(serverOutput[0].type, 'chunk');
 for (const reader of externalReaders) assert(!Object.keys(serverOutput[0].modules).includes(reader), `Production reader was bundled: ${reader}`);
 await write('server/ally-report-source-release.mjs', serverOutput[0].code);
+// Preserve the deployed reader's compressed publications and identity handling,
+// adding only the reviewed deadline for stalled Azure reads.
+await write('server/platform-snapshot.mjs', await source('server/platform-snapshot.mjs'));
 let api = readImage('api/platform.js');
 assert(!api.includes('handlePlatformReportSourceRequest') && !api.includes('/api/platform/ally-source/v1'), 'The base already contains an Ally source endpoint; review its installed implementation before replacing it.');
 api = 'import { handlePlatformReportSourceRequest } from "../server/ally-report-source-release.mjs";\n' + once(api,

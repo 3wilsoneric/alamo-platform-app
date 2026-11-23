@@ -13,6 +13,17 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 23 Azure read deadline
+
+The release run exposed an indefinitely stalled snapshot response. The local
+reader is now reconciled with the exact deployed compression/identity/cache owner,
+with a bounded 60-second read deadline as the only production-relative change.
+The real-SDK stalled-response regression fails before and passes after; data,
+authorization and recovery checks pass. The existing candidate is superseded,
+not deployed. The [operations receipt](deployment-operations.md#azure-read-deadline--november-23-awaiting-release)
+owns evidence and the replacement release status. Execution and broader grants
+remain disabled.
+
 ### November 23 PDF chart selection
 
 The print renderer now receives the open report version's selected chart measures
