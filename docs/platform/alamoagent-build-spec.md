@@ -13,9 +13,9 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
-Current rollout evidence is recorded in [Ally readability and response latency](deployment-operations.md#ally-readability-and-response-latency--november-23). Older dated entries below retain their historical scope; they do not override the current release.
+Current rollout evidence is recorded in [Ally History and incident recovery](deployment-operations.md#ally-history-and-incident-recovery--november-23-deployed). Older dated entries below retain their historical scope; they do not override the current release.
 
-### November 23 incident response — local candidate
+### November 23 incident response — deployed and verified
 
 The production History menu escaped its clipping side panel despite viewport-only
 checks. Its anchor is now the header, with panel-relative width and keyboard/scroll
@@ -25,7 +25,10 @@ Monthly queries that cannot represent the requested dates yield explicit unavail
 evidence instead of a generic outage. New `incident-summary` grants are required;
 no private incident fields are returned. The owner directed a bounded Ally release
 gate; unrelated generated-answer and whole-app repetitions remain in the full suite.
-Release status is tracked in the operations record; not deployed yet.
+Source `fbdc99b` is deployed; desktop/phone History, saved-answer reopen, live
+source grants and the signed-in postdeployment gate pass. A real incident question
+completed after actual worker adoption was verified. Published-snapshot fallback
+remains explicitly partial; see the operations record for evidence and rollback.
 
 ### November 23 readability and responsive data — deployed and verified
 

@@ -1,15 +1,72 @@
 # Deployment And Operations
 
-## Ally History and incident recovery — November 23 candidate
+## Ally History and incident recovery — November 23, deployed
 
-The owner reported clipped History and a queued request that paused as a source/model
-outage. Metadata proved planning succeeded; its monthly incident query rejected a
-partial month. The new daily aggregate adapter reuses the incident-register owner,
-and monthly-grain limits become unavailable evidence. Source/grant and live-answer
-verification remain required before this candidate is called deployed. The History
-containment regression fails on the old CSS and passes on the corrected anchor.
-The scoped nine-stage Ally gate replaces the unrelated 28-stage repetition for
-this bounded release; broad releases retain the full gate.
+Source `fbdc99b` is live in revision
+`alamo-platform-prod-web--ally-history-incident-1123`, image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:57489fee1b7c2c172a387fec1a4ef837e41b2eb533fbedaecc069d647ed8db17`.
+Exact configuration, one healthy active revision with all traffic, health 200,
+and anonymous source/API denial passed. The image changes 41 reviewed files;
+19,939 other files, including Carelog, are preserved. Browser entry
+`/assets/index-pPQvlJpG.js` has SHA-256
+`6e6ea401ff0b326e881ab2fdb96cb531679fd6ac3e4fedbd0f2e9915811228da`.
+
+History was positioned against its small trigger and clipped by the normal side
+panel. Its anchor is now the header. The new regression fails on the old CSS and
+passes with eight long titles, scroll/click access, Escape/focus, normal/expanded
+panels, and 1440/390/320px layouts. Live desktop and phone containment, 18 saved
+reports, and reopening the completed incident answer were verified in main Chrome.
+
+The failed incident question had completed planning, then requested a partial
+month from a monthly-only source. The daily `incident-summary` capability now
+reuses the incident register's exact date/priority filters and returns aggregates
+only. Monthly limitations return explicit unavailable evidence. Six existing
+API/worker grants add this capability for the same three subjects, with unchanged
+scope, expiry and `detail:false`. All three live source checks passed; an unlisted
+subject was denied. No client/source records were modified.
+
+Engine 0.18.14 separates source, model and validation failures and exposes active
+planning without changing persisted states. API/worker deployment and exact
+package verification passed, but the first live follow-up revealed that Azure's
+activity process still held the disabled state after settings were enabled.
+An explicit restart corrected it. A stale-run Durable probe then proved the
+actual enabled branch with zero model calls or report mutations; configuration
+inspection alone is not accepted as worker readiness.
+
+The same real question resumed successfully: 18.569 seconds after Resume, two
+model calls, 7.919 seconds total model latency, estimated $0.009012 model usage.
+It uses `incident-summary` and retains the original failed version. It reports
+zero available high-priority Santa Clarita records for November 22, with explicit
+partial coverage. The canonical incident reader currently falls back to the
+published snapshot, so this is **not a confirmed complete zero**. Restoring full
+live incident-register coverage remains a source-owner follow-up; do not relabel
+snapshot answers as complete. One recovered answer is not a latency guarantee.
+
+The scoped predeployment gate passed 9/9 in 150.755 seconds, replacing the roughly
+95-minute 28-stage sequence for this bounded scope. Postdeployment passed 2/2.
+Main Chrome captured 15 routes and 12 interactions, 613 requests, one explicit
+cancellation, and no HTTP or console errors. The native Linux Functions recovery
+workflow `45286447112` passed on engine source `be269c2`. All 18 existing reports
+and spending ledgers were unchanged before re-enabling execution; subsequent
+changes are the authorized real follow-up and its two model reservations.
+
+Evidence:
+- `generated/ally-recovery-20261123/main-chrome/evidence.json`, `postdeploy.log`, and `live/` screenshots.
+- `generated/platform-ready/2026-11-23-ally.json` and `2026-11-23-ally-live.json`.
+- `/Users/eric/suite-deploy/.state/platform-history-incident-1123.verification.json`.
+- `/Users/eric/suite-deploy/.state/incident-summary-live.json` and `incident-grants-apply.json`.
+- `/Users/eric/suite-deploy/.state/ally-recovery-runtime.verified.json`, `ally-recovery-runtime.preservation.json`, and `worker-01814-adoption.verified.json`.
+- `/Users/eric/suite-deploy/.state/ally-failure-1123.json` records the final real-answer metadata.
+
+Rollback is conditional on unchanged candidate configuration. Restore source
+grants **first** using `.state/run-incident-grants.py restore`, then
+`.state/deploy-platform-history-incident-1123.mjs restore` in `suite-deploy`.
+The retained Platform base is image `211d4343ca7da14f8c1004cd7b47a4e9b24e76492783c4157f247b47e9085502`.
+Engine rollback uses `.state/ally-recovery-runtime.mjs restore` and its retained
+0.18.13 API image/worker package. Neither procedure resets reports or spending.
+Verify actual worker adoption after any settings restoration before accepting
+new execution. Existing three-person membership and $199.09 prepaid allowance,
+expiry and auto-reload settings remain unchanged.
 
 ## Ally readability and response latency — November 23
 

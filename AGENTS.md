@@ -71,6 +71,10 @@ the deployed candidate. Check the actual changed workflow signed in: a real
 question must reach a saved answer or an explicit coverage limit; reopen it and
 exercise History in the normal panel and on a phone. Engine changes additionally
 require engine tests/build/package and the native Functions recovery check.
+After changing worker settings, prove adoption in an actual Durable activity
+before the real question; a successful settings read is insufficient. Reuse
+`assertWorkerBranch` with a stale-run probe that cannot call the model or mutate
+a report. If the process is stale, restart it and verify adoption before retrying.
 Source grant changes require exact before/after registry receipts, denied-scope
 checks and a usable conditional rollback. Never use synthetic model output as
 proof of live model availability or answer accuracy.
