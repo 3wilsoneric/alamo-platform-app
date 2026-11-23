@@ -1,8 +1,9 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { gunzipSync } from "node:zlib";
-import { ClientSecretCredential } from "@azure/identity";
+import { promisify } from "node:util";
+import { gzip as gzipCallback, gunzip as gunzipCallback, gunzipSync } from "node:zlib";
+import { ClientSecretCredential, ManagedIdentityCredential } from "@azure/identity";
 import { BlobServiceClient } from "@azure/storage-blob";
 import {
   getBoundedIntegerEnv,
@@ -14,10 +15,13 @@ const __dirname = path.dirname(__filename);
 const snapshotDir = path.resolve(__dirname, "../generated/platform-snapshot");
 const snapshotPath = path.join(snapshotDir, "latest.json");
 const DEFAULT_SNAPSHOT_CACHE_TTL_MS = 5 * 60_000;
+const AZURE_READ_TIMEOUT_MS = 60_000;
 const DEFAULT_SNAPSHOT_MAX_BYTES = 64 * 1024 * 1024;
 const DEFAULT_CLIENT_DATABASE_MAX_BYTES = 16 * 1024 * 1024;
 const DEFAULT_CLIENT_DOCUMENT_MAX_BYTES = 32 * 1024 * 1024;
 const DEFAULT_CLIENT_THUMBNAIL_MAX_BYTES = 2 * 1024 * 1024;
+const gzip = promisify(gzipCallback);
+const gunzip = promisify(gunzipCallback);
 const DEFAULT_CLIENT_INTELLIGENCE_MAX_BYTES = 8 * 1024 * 1024;
 const DEFAULT_CLIENT_INTELLIGENCE_MAX_UNCOMPRESSED_BYTES = 32 * 1024 * 1024;
 const MAX_CLIENT_INTELLIGENCE_CACHE_ENTRIES = 50;
@@ -37,6 +41,12 @@ let platformSnapshotCache = {
   expiresAt: 0,
   promise: null
 };
+
+// One validated Azure publication, not an authorization/response cache. Every
+// TTL refresh still checks both source objects. An unchanged ETag can reuse the
+// parsed publication; a changed/missing object or storage failure cannot.
+/** @type {{ key: string | null, etag: string | null, value: any | null, bytes: number }} */
+let azureSnapshotReadCache = { key: null, etag: null, value: null, bytes: 0 };
 
 /** @type {{ key: string | null, value: any | null, promise: Promise<any | null> | null }} */
 let platformClientDatabaseCache = {
@@ -362,7 +372,11 @@ export function assertPlatformClientDatabasePayload(payload, source = "unknown s
   if (pointer?.dataset && payload.dataset !== pointer.dataset) {
     throw new Error(`Platform client database from ${source} does not match the published pointer dataset.`);
   }
-  if (pointer?.version != null && payload.version !== pointer.version) {
+  if (
+    pointer?.version != null &&
+    payload.version !== pointer.version &&
+    (Number(pointer.version) >= 3 || Number(payload.version) >= 3)
+  ) {
     throw new Error(`Platform client database from ${source} does not match the published pointer version.`);
   }
   return payload;
@@ -444,6 +458,7 @@ function getAzureSnapshotConfig() {
   const account = process.env.AZURE_STORAGE_ACCOUNT?.trim();
   const container = process.env.AZURE_STORAGE_CONTAINER?.trim();
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING?.trim();
+  const requestedAuthMode = process.env.AZURE_STORAGE_AUTH_MODE?.trim().toLowerCase();
 
   if (!container) {
     return null;
@@ -453,6 +468,18 @@ function getAzureSnapshotConfig() {
     return {
       authMode: "connection-string",
       connectionString,
+      container,
+      root: normalizeSnapshotRoot()
+    };
+  }
+
+  if (requestedAuthMode === "managed-identity") {
+    const managedIdentityClientId = process.env.AZURE_CLIENT_ID?.trim();
+    if (!account || !managedIdentityClientId) return null;
+    return {
+      authMode: "managed-identity",
+      account,
+      managedIdentityClientId,
       container,
       root: normalizeSnapshotRoot()
     };
@@ -497,11 +524,9 @@ function createBlobServiceClient(config) {
     return BlobServiceClient.fromConnectionString(config.connectionString);
   }
 
-  const credential = new ClientSecretCredential(
-    config.tenantId,
-    config.clientId,
-    config.clientSecret
-  );
+  const credential = config.authMode === "managed-identity"
+    ? new ManagedIdentityCredential(config.managedIdentityClientId)
+    : new ClientSecretCredential(config.tenantId, config.clientId, config.clientSecret);
 
   return new BlobServiceClient(`https://${config.account}.blob.core.windows.net`, credential);
 }
@@ -543,19 +568,48 @@ async function readAzureSnapshot() {
   const config = getAzureSnapshotConfig();
   if (!config) return null;
 
+  const options = { abortSignal: AbortSignal.timeout(AZURE_READ_TIMEOUT_MS) };
   const service = createBlobServiceClient(config);
   const containerClient = service.getContainerClient(config.container);
   const blobClient = containerClient.getBlobClient(`${config.root}/latest.json`);
+  const compressedBlobClient = containerClient.getBlobClient(`${config.root}/latest.json.gz`);
+  const [compressedProperties, sourceProperties] = await Promise.all([
+    getAzureBlobPropertiesOrNull(compressedBlobClient, options),
+    getAzureBlobPropertiesOrNull(blobClient, options)
+  ]);
 
-  if (!(await blobClient.exists())) {
-    return null;
+  const useCompressed = compressedBlobIsCurrent(compressedProperties, sourceProperties);
+  const selectedBlob = useCompressed ? compressedBlobClient : blobClient;
+  const selectedProperties = useCompressed ? compressedProperties : sourceProperties;
+  if (selectedProperties?.etag && azureSnapshotReadCache.key === selectedBlob.url && azureSnapshotReadCache.etag === selectedProperties.etag) {
+    assertSnapshotSize(azureSnapshotReadCache.bytes, "validated Azure storage");
+    return azureSnapshotReadCache.value;
   }
 
-  const download = await blobClient.download();
+  if (useCompressed) {
+    const compressedDownload = await compressedBlobClient.download(0, undefined, options);
+    assertSnapshotSize(compressedDownload.contentLength, "compressed Azure storage");
+    const compressed = await streamToBuffer(
+      compressedDownload.readableStreamBody,
+      getPlatformSnapshotMaxBytes(),
+      "Platform snapshot from compressed Azure storage exceeds its configured size limit."
+    );
+    const raw = await gunzip(compressed, { maxOutputLength: getPlatformSnapshotMaxBytes() });
+    assertSnapshotSize(raw.byteLength, "compressed Azure storage");
+    const value = assertPlatformSnapshotPayload(JSON.parse(raw.toString("utf8")), "compressed Azure storage");
+    azureSnapshotReadCache = { key: selectedBlob.url, etag: compressedDownload.etag ?? null, value, bytes: raw.byteLength };
+    return value;
+  }
+
+  if (!sourceProperties) return null;
+
+  const download = await blobClient.download(0, undefined, options);
   assertSnapshotSize(download.contentLength, "Azure storage");
   const raw = await streamToString(download.readableStreamBody);
   assertSnapshotSize(Buffer.byteLength(raw, "utf8"), "Azure storage");
-  return assertPlatformSnapshotPayload(JSON.parse(raw), "Azure storage");
+  const value = assertPlatformSnapshotPayload(JSON.parse(raw), "Azure storage");
+  azureSnapshotReadCache = { key: selectedBlob.url, etag: download.etag ?? null, value, bytes: Buffer.byteLength(raw, "utf8") };
+  return value;
 }
 
 function getLocalClientDatabasePath(clientDatabasePath) {
@@ -582,16 +636,63 @@ async function readAzureClientDatabase(pointer) {
   const config = getAzureSnapshotConfig();
   if (!config) return null;
 
+  const options = { abortSignal: AbortSignal.timeout(AZURE_READ_TIMEOUT_MS) };
   const service = createBlobServiceClient(config);
   const containerClient = service.getContainerClient(config.container);
+  const compressedBlobClient = containerClient.getBlobClient(`${pointer.path}.gz`);
   const blobClient = containerClient.getBlobClient(pointer.path);
-  if (!(await blobClient.exists())) return null;
+  const [compressedProperties, sourceProperties] = await Promise.all([
+    getAzureBlobPropertiesOrNull(compressedBlobClient, options),
+    getAzureBlobPropertiesOrNull(blobClient, options)
+  ]);
+  if (compressedBlobIsCurrent(compressedProperties, sourceProperties)) {
+    const compressedDownload = await compressedBlobClient.download(0, undefined, options);
+    assertClientDatabaseSize(compressedDownload.contentLength, "compressed Azure storage");
+    const compressed = await streamToBuffer(
+      compressedDownload.readableStreamBody,
+      getPlatformClientDatabaseMaxBytes(),
+      "Platform client database from compressed Azure storage exceeds its configured size limit."
+    );
+    return decodeCompressedPlatformClientDatabase(compressed, "compressed Azure storage", pointer);
+  }
 
-  const download = await blobClient.download();
+  if (!sourceProperties) return null;
+
+  const download = await blobClient.download(0, undefined, options);
   assertClientDatabaseSize(download.contentLength, "Azure storage");
   const raw = await streamToString(download.readableStreamBody);
   assertClientDatabaseSize(Buffer.byteLength(raw, "utf8"), "Azure storage");
   return assertPlatformClientDatabasePayload(JSON.parse(raw), "Azure storage", pointer);
+}
+
+async function getAzureBlobPropertiesOrNull(blobClient, options) {
+  try {
+    return await blobClient.getProperties(options);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      (("statusCode" in error && error.statusCode === 404) ||
+        ("code" in error && error.code === "BlobNotFound"))
+    ) return null;
+    throw error;
+  }
+}
+
+function compressedBlobIsCurrent(compressedProperties, sourceProperties) {
+  const compressedModified = compressedProperties?.lastModified?.getTime?.();
+  const sourceModified = sourceProperties?.lastModified?.getTime?.();
+  return Number.isFinite(compressedModified) &&
+    Number.isFinite(sourceModified) &&
+    compressedModified >= sourceModified;
+}
+
+export async function decodeCompressedPlatformClientDatabase(body, source = "compressed source", pointer = null) {
+  const maximumBytes = getPlatformClientDatabaseMaxBytes();
+  assertClientDatabaseSize(body?.byteLength, source);
+  const raw = await gunzip(body, { maxOutputLength: maximumBytes });
+  assertClientDatabaseSize(raw.byteLength, source);
+  return assertPlatformClientDatabasePayload(JSON.parse(raw.toString("utf8")), source, pointer);
 }
 
 async function writeAzureSnapshot(payload) {
@@ -603,18 +704,24 @@ async function writeAzureSnapshot(payload) {
   const { latest, dated } = getAzureBlobNames(payload);
   const serialized = JSON.stringify(payload, null, 2);
   assertSnapshotSize(Buffer.byteLength(serialized, "utf8"), "Azure publish payload");
+  const compressed = await gzip(Buffer.from(serialized));
 
   await containerClient.createIfNotExists();
 
   await Promise.all(
-    [latest, dated].map(async (blobName) => {
-      const blockBlob = containerClient.getBlockBlobClient(blobName);
-      await blockBlob.upload(serialized, Buffer.byteLength(serialized), {
+    [latest, dated].flatMap((blobName) => [
+      containerClient.getBlockBlobClient(blobName).upload(serialized, Buffer.byteLength(serialized), {
         blobHTTPHeaders: {
           blobContentType: "application/json; charset=utf-8"
         }
-      });
-    })
+      }),
+      containerClient.getBlockBlobClient(`${blobName}.gz`).upload(compressed, compressed.byteLength, {
+        blobHTTPHeaders: {
+          blobContentType: "application/gzip",
+          blobCacheControl: "private, max-age=300"
+        }
+      })
+    ])
   );
 
   return {
@@ -638,6 +745,13 @@ export function getPlatformSnapshotTargets(payload) {
     local: snapshotPath,
     azure: getAzureSnapshotConfig() ? getAzureBlobNames(payload) : null
   };
+}
+
+// Only the validated, currently published read is eligible for projection
+// reuse. Publishing/refreshing replaces this object; fixtures and callers'
+// mutable objects must continue through the ordinary pure builder.
+export function isCurrentPlatformSnapshot(snapshot) {
+  return Boolean(snapshot && platformSnapshotCache.value === snapshot && platformSnapshotCache.expiresAt > Date.now());
 }
 
 export async function readPlatformSnapshot() {
@@ -952,10 +1066,12 @@ async function readLocalClientIntelligence(shardPath, maximumBytes) {
 async function readAzureClientIntelligence(shardPath, maximumBytes) {
   const config = getAzureSnapshotConfig();
   if (!config) return null;
+
+  const options = { abortSignal: AbortSignal.timeout(AZURE_READ_TIMEOUT_MS) };
   const service = createBlobServiceClient(config);
   const blobClient = service.getContainerClient(config.container).getBlobClient(shardPath);
-  if (!(await blobClient.exists())) return null;
-  const download = await blobClient.download();
+  if (!(await blobClient.exists(options))) return null;
+  const download = await blobClient.download(0, undefined, options);
   if (Number(download.contentLength ?? 0) < 1 || Number(download.contentLength ?? 0) > maximumBytes) {
     throw new Error("Platform client intelligence has an invalid compressed size.");
   }
@@ -979,10 +1095,12 @@ async function readLocalClientDocumentAsset(assetPath, maximumBytes) {
 async function readAzureClientDocumentAsset(assetPath, maximumBytes) {
   const config = getAzureSnapshotConfig();
   if (!config) return null;
+
+  const options = { abortSignal: AbortSignal.timeout(AZURE_READ_TIMEOUT_MS) };
   const service = createBlobServiceClient(config);
   const blobClient = service.getContainerClient(config.container).getBlobClient(assetPath);
-  if (!(await blobClient.exists())) return null;
-  const download = await blobClient.download();
+  if (!(await blobClient.exists(options))) return null;
+  const download = await blobClient.download(0, undefined, options);
   if (Number(download.contentLength ?? 0) < 1) {
     throw new Error("Platform client document asset is empty.");
   }
@@ -996,14 +1114,18 @@ async function readAzureClientDocumentAsset(assetPath, maximumBytes) {
   };
 }
 
-async function streamToBuffer(readableStream, maximumBytes) {
+async function streamToBuffer(
+  readableStream,
+  maximumBytes,
+  oversizeMessage = "Platform client document asset exceeds its configured size limit."
+) {
   if (!readableStream) return Buffer.alloc(0);
   const chunks = [];
   let received = 0;
   for await (const chunk of readableStream) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     received += buffer.byteLength;
-    if (received > maximumBytes) throw new Error("Platform client document asset exceeds its configured size limit.");
+    if (received > maximumBytes) throw new Error(oversizeMessage);
     chunks.push(buffer);
   }
   return Buffer.concat(chunks);

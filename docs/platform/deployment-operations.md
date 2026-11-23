@@ -1,5 +1,43 @@
 # Deployment And Operations
 
+## Azure read deadline — November 23, awaiting release
+
+The full `native-pdf-predeploy` run stopped at stage 8 after its context process
+stalled in an HTTP 200 Azure download: 20,693,845 bytes received of a declared
+57,370,446, no active timer, and no CPU progress. The owned child was terminated;
+the failed gate and read-only socket/sample evidence are retained under
+`generated/current-navigation-20261122/`. This was not a passing release.
+
+The local reader was older than production. It now starts from the exact live
+reader (`e7f5b60`, SHA-256 `2b577edfd96749e6991a8fd7aab9ecff41bf0dfea557cce3673d4d020b33a447`),
+preserving managed identity, compressed publications, ETag revalidation and data
+validation. The production-relative change adds one 60-second abort deadline per
+Azure read, spanning metadata and the response body. The credential factory uses
+one shared client constructor, with all three existing authentication modes
+covered by assertions. No source writes or counting rules change. A real-SDK local HTTP regression fails before the change and passes
+after it: stalled headers/body, concurrent readers, retry after failure, compressed
+and raw reads, missing/invalid/denied sources. Thirteen credential/revalidation cases,
+client integration, server typecheck, focused lint, unused-code and API checks pass.
+The candidate verifier now runs that transport check inside the built container.
+The fixture advances its controlled deadline only after the intended request
+exists; it passes natively and inside the container without relying on CPU speed.
+The subsequent full gate stopped at duplicate detection; consolidating the
+credential factory resolves that finding without changing its choices. Focused
+transport, credential, duplication, type and lint checks pass. The full gate must
+run again against the rebuilt candidate.
+
+The live-data context rerun passed all 635 turns across 130 sessions. The
+`0db1b47d` plan remains historical and must not be deployed. Rebuild and verify
+the corrected candidate, then run the complete release gate.
+
+Preparation correctly stopped when Carelog 0.1.26 advanced the production base
+to `76f01e1d3bd3786d8e740a418b27f47ce5c63b12e8472b43a1c2440490fe6fc0`
+(`recovery-1122-18c389b`). The complete file comparison found 153 changes, all
+within `dist/poc/` or `dist/fleet/`; Platform's snapshot reader is unchanged.
+The replacement must preserve all 19,783 current base files outside its explicit
+overlay and use this newer image for rollback. The comparison is retained in
+`carelog-base-reconciliation.json`; worker execution remains disabled.
+
 ## Ally PDF chart selection — November 23, awaiting release
 
 Visual review found that selecting Discharges still exported an Admissions chart.
