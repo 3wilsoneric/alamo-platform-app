@@ -1,5 +1,98 @@
 # Deployment And Operations
 
+## Executive Ally conversations — November 23
+
+Eric authorized deployment for Eric Wilson, Andrew Dominici and Betty Dominici,
+using the existing shared prepaid OpenAI balance. Entra identity, principal-only
+consent and role assignments were verified for exactly those three accounts.
+The API membership and six source grants independently enforce that scope.
+Each person passed eight real source reads; unknown users, Sandeep, private
+resident slices and direct storage access are denied. This is service/directory
+verification for Andrew and Betty, not an interactive sign-in as either person.
+No email, clinical write, credit purchase or automatic top-up was performed.
+
+Ally API/worker **0.18.12** is live. The API image is
+`alamoallywqqka6kfae5ma.azurecr.io/ally@sha256:a12ff7f7f1ee06945b3f0827b02b667a2020bc5096536a044136e866a1e1cc2b`,
+revision `alamo-ally-prod-api--executives-01812-1123`. The keyless API, exact
+configuration, healthy revision and access boundaries pass. Worker package
+SHA-256 `d13e3dd5715a44fcc01c75100d1f8728a42a46ec7ad4102cb388989e076a8ece`
+matches all 134 runtime files and ten Functions. Native Linux Functions CI
+`45238412700` passed on verification commit `5052ee2`; runtime bytes match source
+`1077069`. Only the report scheduler is enabled. Unrelated monitors remain off.
+
+The cumulative `credits-20261123` allowance is **$199.09**, expiring December 17,
+2026, matching the verified provider balance with auto-reload off. It does not
+reset daily. Other applications share the provider balance and may exhaust it
+sooner. Reservations, uncertain outcomes and final token settlements retain their
+existing atomic behavior. The concurrency guard, 100 daily investigations per
+person, 100 saved reports and 12 versions per conversation remain. Twelve prior
+reports and both historical spending ledgers match their predeployment hashes.
+
+The continuous conversation UI keeps questions and answers together, with
+searchable History, one composer, Stop, native report reading and authorized PDF
+export. Validated answers appear together rather than streaming tokens.
+The initial Platform source `96790c3` was deployed in image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:eb855b5aa0699a3a5be30e7c3f57f5ca8867708517b50d0012062d5772cf972c`,
+revision `alamo-platform-prod-web--ally-executives-1123-2`, superseded by the
+verified correction below. Both preserve Carelog
+0.1.27, Platform's 1 CPU / 2 GiB resources and existing source authorities.
+The planned-admissions source uses the same current weekly schedule as Admissions.
+
+Two actual questions returned 0 planned admissions for November 23–29, 11
+accepted clients without dates, and Santa Clarita's 6 / 11 = 54.5% share. The chart
+correctly selects Awaiting date. The first request required Resume during
+cutover; the follow-up completed on its first attempt. Four completed model calls
+settled at **$0.020320**, leaving $199.069680 of the application allowance at
+19:28 UTC. Native Chrome exported the saved second version to a two-page A4 PDF;
+both pages were rendered and inspected, with values, measure, source note and
+observed timestamp intact. Chrome's default background-graphics-off omits colored
+bars; all labels and the full table remain. Its headers/footers print about:blank.
+A second two-page export with background graphics enabled and browser headers
+disabled preserves the chart bars too. Both versions were inspected; the original
+Chrome print settings were restored.
+
+Live inspection caught absolutely positioned accessibility labels extending the
+enclosing dialog at short desktop heights. Source `0d78346` adds the containing
+block at the answer scroller; the regression fails before and passes after.
+Desktop 1440, phone 390/320 and existing interaction checks pass. Its replacement
+image `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:6b5540b8c474887f8416b2d334290a8271d0d3eddbc480b7d3e8a3add3bf2579`
+changes only the 40 allowed browser files. Comparison against all 19,962 base
+files verifies preservation outside that allowlist and exact image configuration.
+The correction is live as `alamo-platform-prod-web--ally-executives-scroll-1123`,
+with one healthy active revision receiving 100% of traffic. Its browser entry is
+`/assets/index-2Mzc9e3x.js`, SHA-256
+`d92827ea1ed8b99d38b9f1e73471025b9bccb7b9a7b6089c72e53d9ac5fb4c76`.
+The fresh full predeployment gate passed **28/28**, and the final postdeployment
+gate passed **4/4**. Main Chrome's source/build-bound audit passed all 15 routes
+and 12 interactions: 635 requests, one explicit cancellation, no console or HTTP
+errors. Earlier incomplete network captures remain as failed evidence. The
+context stress check passed all 19 assertions; its test-owned orphan crash
+reporters were stopped after browser exit, with forensic evidence retained in
+`generated/ally-conversation-20261123/stress-cleanup-note.json`.
+
+Actual production conversation/history checks pass at 1440px desktop and 390/320px
+phone widths. The header and composer stay fixed, only the answers scroll, and
+there is no horizontal or enclosing-dialog overflow. Keyboard focus is visible.
+The default 1470 × 636 viewport was restored and also passes containment. Native
+PDF, saved reopening and the two-answer follow-up are verified in Eric's signed-in
+session. Andrew and Betty retain the service/directory verification described
+above; no interactive session was impersonated.
+
+Private Suite receipts: `.state/ally-executives-runtime.*.json`,
+`.state/ally-executives-identity.*.json`, `.state/executive-grants-apply.json`,
+`.state/native-owner-executives-source.source.json`,
+`.state/executives-preservation.json`, `.state/executives-live/acceptance.json`,
+`.state/platform-executives.*.json` and `.state/platform-executives-scroll.*.json`.
+Platform gate logs are under `generated/ally-conversation-20261123/`.
+
+Rollback is bounded by the saved exact before-state in each plan. The browser-only
+correction restores the initial executive UI image `eb855b5a` without touching
+Ally or source data. A full engine rollback pauses dispatch, restores worker
+0.18.11 and API image `e85db393`, then restores the prior owner-only configuration.
+Identity/source rollback removes only this release's new assignments and grants.
+Reports and spending ledgers are never reset. Older records below are historical
+and do not supersede this release's explicit membership or spending authorization.
+
 ## Platform runtime recovery — November 23
 
 At 07:09–07:20 UTC, production logged five JavaScript heap exhaustion crashes

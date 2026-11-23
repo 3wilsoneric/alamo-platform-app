@@ -13,7 +13,9 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
-### November 23 executive expansion — live, final UI check in progress
+Current rollout evidence is recorded in [Executive Ally conversations](deployment-operations.md#executive-ally-conversations--november-23). Older dated entries below retain their historical scope; they do not override the current release.
+
+### November 23 executive expansion — live and verified
 
 The owner explicitly authorized Eric Wilson, Andrew Dominici and Betty Dominici,
 with the available prepaid credits replacing the owner-only 50¢ daily cap.
@@ -27,7 +29,7 @@ spending ledgers are unchanged. The live planned-admissions answer and follow-up
 settled four model calls at $0.020320 in the cumulative allowance. No purchase,
 new top-up or outbound notification is authorized by this change.
 
-### November 23 conversation UX — deployed, scroll containment correction
+### November 23 conversation UX — deployed and verified
 
 The owner approved the continuous conversation pass after reviewing the live
 report-first interface. The candidate keeps questions and earlier answers visible,
@@ -50,8 +52,12 @@ The initial 28-stage predeployment gate passed and this interface is live.
 The actual two-answer thread exposed absolutely positioned accessibility labels
 escaping the answer scroller and extending the enclosing dialog. The answer
 scroller now establishes its own containing block. A short-height, multi-answer
-browser regression fails before this correction; its verification and replacement
-release are in progress. No labels, report behavior or source boundaries change.
+browser regression fails before this correction and passes after. The replacement
+is live: all 28 predeployment stages and four postdeployment stages pass. Main
+Chrome verified 15 routes and 12 interactions with 635 requests and no console or
+HTTP errors. Desktop, 390/320px phone, saved history and native PDF checks pass.
+No labels, report behavior or source boundaries change. Immutable images, receipts
+and rollback are in the [current operations record](deployment-operations.md#executive-ally-conversations--november-23).
 
 ### November 23 priority: Ally in Platform
 
