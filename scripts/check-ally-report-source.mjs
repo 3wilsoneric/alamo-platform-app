@@ -22,6 +22,8 @@ import { reportColumnLabel, reportCellValue } from '../shared/report-display.mjs
 
 for (const [key,expected] of [['operatingCapacity','Operating capacity'],['occupied_bed_days','Occupied bed-days'],['census_delta','Census delta'],['prn_given_count','PRN given count'],['FacilityID','Community ID']]) assert.equal(reportColumnLabel({key,label:key}),expected);
 assert.equal(reportColumnLabel({key:'bedDays',label:'Days occupied in this period'}),'Days occupied in this period','source-authored wording is preserved');
+assert.equal(reportColumnLabel({key:'operatingCapacity',label:'  '}),'Operating capacity');
+assert.equal(reportColumnLabel({key:'toString'}),'To string');
 assert.equal(reportCellValue(150443),'150,443');
 assert.equal(reportCellValue(false),'No');
 assert.equal(reportCellValue(null),'Not recorded');

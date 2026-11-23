@@ -11,10 +11,10 @@ const labels = {
 };
 const acronyms = new Set(['id', 'prn', 'mar', 'adl', 'ssn', 'dob', 'mrn']);
 export function reportColumnLabel(column) {
-  const value = (column.label || column.key).trim();
+  const value = column.label?.trim() || column.key.trim();
   // Preserve source-authored wording; normalize labels that still look like keys.
   if (value !== column.key && !/[_]|[a-z\d][A-Z]/.test(value)) return value;
-  if (labels[value]) return labels[value];
+  if (Object.hasOwn(labels, value)) return labels[value];
   return value.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
     .replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').trim()
     .split(/\s+/).map((word, i) => acronyms.has(word.toLowerCase()) ? word.toUpperCase()
