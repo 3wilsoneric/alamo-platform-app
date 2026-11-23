@@ -44,6 +44,9 @@ generator now also yields between cached tool calls. Its focused generation
 passed all 200 entries; rail validation passed 150 prompts, 48 cache requests,
 15 live turns and three parity checks across 44 families. Logs are
 `cache-yield.log` and `cache-yield-rails.log`. Another complete gate is required.
+The current full run has since passed both corrected batches, 635 context turns,
+Ally report interactions and 68 mobile route/viewport checks plus safe-area
+checks. It is still running; these completed stages are not a release pass.
 The precise stalled request
 was not captured; yielding prevents a tight microtask chain but does not add a
 transport deadline or establish a general network-availability guarantee.
