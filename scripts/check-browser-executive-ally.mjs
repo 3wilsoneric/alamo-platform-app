@@ -15,12 +15,13 @@ process.env.VITE_ALLY_REPORTS_ENABLED='true';process.env.VITE_ALLY_REPORT_PARTIC
 const output=path.resolve('generated/executive-ally-browser');await mkdir(output,{recursive:true});
 const localRoot=await mkdtemp(path.join(os.tmpdir(),'platform-report-browser-'));
 const auth={authenticated:true,mode:'entra-delegated',claims:{tid:EVERYAGENT_TENANT,oid:owner}};
-let sourceReady=true, sourceReads=0;
+let sourceReady=true, sourceReads=0, trendFixture=false;
+const trendDataset={title:'Monthly occupied bed-days',shape:'series',columns:[{key:'as_of_date',label:'as_of_date',type:'string'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'}],rows:[{as_of_date:'2026-01-01',occupied_bed_days:-1200},{as_of_date:'2026-02-01',occupied_bed_days:null},{as_of_date:'2026-03-01',occupied_bed_days:150443},{as_of_date:'2026-04-01',occupied_bed_days:130000}]};
 const source={authorize:async()=>sourceReady?{revision:reportHash('fixture-grant'),detail:false}:false,catalog:async()=>[{id:'resident-flow',title:'Resident flow',inputSchema:{type:'object'}}],read:async(subject,scope,step)=>{
   sourceReads++;
-  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'Admissions',type:'number'},{key:'discharges',label:'Discharges',type:'number'}],rows:[{community:'San Pablo',admissions:15,discharges:8},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}]}};
+  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
 }};
-const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:[{id:'flow',componentId:'comparison',datasetId:'source-1'}]}})};
+const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:trendFixture?'Monthly occupied bed-days.':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
 try { await withBrowserQa(async browser=>{
   for(const width of [1440,390,320]) {
     console.log(`Executive Ally: checking ${width}px`);
@@ -38,7 +39,7 @@ try { await withBrowserQa(async browser=>{
         else result={reports:await service.list(currentAuth)};
         // The independent API adds a validated optional measureKey. Keep this
         // wire fixture separate from the host’s older source-runtime package.
-        if (result?.view && result.selectedVersion !== 2) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:'discharges'}))}};
+        if (result?.view && result.selectedVersion !== 2) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:trendFixture?'occupied_bed_days':'discharges'}))}};
         await route.fulfill({status:200,json:result,headers:{'cache-control':'no-store'}});
       } catch(e){await route.fulfill({status:e.statusCode??503,json:{code:e.code??'report_unavailable'}});}
     });
@@ -51,7 +52,19 @@ try { await withBrowserQa(async browser=>{
     assert.equal((await service.list(auth)).length,1,'lost acknowledgement retry must not duplicate the investigation');
     assert.equal(await panel.getByLabel('Chart measure').inputValue(),'discharges','the chart must use the saved measure, not the first numeric column');
     assert.equal(await panel.getByRole('list',{name:'Discharges',exact:true}).count(),1);
-    await panel.getByText('View data table').click();await panel.getByRole('table').first().waitFor();
+    await panel.getByText('View data table').click();
+    assert.equal(await panel.getByLabel('Chart measure').getByRole('option',{name:'Operating capacity',exact:true}).count(),1,'legacy database keys become readable measure names');
+    if(width<700){
+      const records=panel.locator('.ally-report-data-table .ally-report-records');await records.waitFor();
+      assert.match(await records.innerText(),/Occupied bed-days/);assert.match(await records.innerText(),/150,443/);assert.match(await records.innerText(),/30 Jul 2026/);
+      assert.equal(await panel.getByRole('table').count(),0,'narrow layouts expose readable records instead of squeezed table columns');
+      const bounds=await records.evaluate(el=>({left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,overflow:el.scrollWidth-el.clientWidth}));
+      assert(bounds.left>=0&&bounds.right<=width&&bounds.overflow<=1,'record labels and values fit the phone');
+      await page.screenshot({path:path.join(output,`readable-data-${width}.png`),fullPage:true});
+    }else{
+      await panel.getByRole('table').first().waitFor();
+      assert.equal(await panel.getByRole('columnheader',{name:'Occupied bed-days',exact:true}).count(),1);
+    }
     await panel.getByText('View data table').click();
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);
     const small=await panel.locator('button:visible,input:visible,select:visible,summary:visible').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().height<43).map(el=>el.outerHTML));assert.deepEqual(small,[],'controls are at least 44px');
@@ -108,6 +121,11 @@ try { await withBrowserQa(async browser=>{
       await composer.focus();
       const scrollBounds=await panel.evaluate(el=>({overflow:el.scrollHeight-el.clientHeight,top:el.scrollTop,header:el.querySelector('header').getBoundingClientRect().top,composer:el.querySelector('.executive-ally-composer').getBoundingClientRect().bottom,bottom:el.getBoundingClientRect().bottom}));
       assert(scrollBounds.overflow<=1&&scrollBounds.top===0&&scrollBounds.header>=0&&scrollBounds.composer<=scrollBounds.bottom,'long conversations scroll only the answer body, keeping the header and composer in the panel: '+JSON.stringify(scrollBounds));
+      await page.setViewportSize({width:1440,height:320});
+      await panel.locator('.ally-report-scope summary').click();
+      const short=await panel.evaluate(el=>({outer:el.scrollHeight-el.clientHeight,body:el.querySelector('.executive-ally-body').clientHeight,composer:el.querySelector('.executive-ally-composer').getBoundingClientRect().bottom,bottom:el.getBoundingClientRect().bottom}));
+      assert(short.outer<=1&&short.body>40&&short.composer<=short.bottom,'expanded scope cannot push the composer outside a short viewport: '+JSON.stringify(short));
+      await panel.locator('.ally-report-scope summary').click();
       await page.setViewportSize({width:1440,height:1000});
       const ids=await panel.locator('[id^="ally-turn-"]').evaluateAll(els=>els.map(el=>el.id));assert.equal(new Set(ids).size,ids.length,'citations have unique per-answer destinations');
       await page.screenshot({path:path.join(output,'conversation-1440.png'),fullPage:true});
@@ -151,6 +169,32 @@ try { await withBrowserQa(async browser=>{
       await panel.getByRole('button',{name:'New chat',exact:true}).click();assert(await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).isEnabled());
       assert.equal(await panel.locator('.ally-thread-turn').count(),0,'new chat does not inherit previous questions');
     }
+    // Same report path, with long values, a missing point and a negative baseline.
+    await panel.getByRole('button',{name:'New chat',exact:true}).click();trendFixture=true;
+    await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Show the monthly occupied bed-days.');
+    await panel.getByRole('button',{name:'Send question'}).click();
+    const trend=panel.getByRole('figure',{name:'Monthly occupied bed-days: Occupied bed-days'});await trend.waitFor();
+    assert.equal(await trend.locator('circle').count(),3,'missing values do not become zero');
+    assert.equal(await trend.locator('line.ally-report-trend').count(),1,'missing values break the line');
+    assert.match(await trend.innerText(),/150,443/);assert.match(await trend.innerText(),/-1,200/);
+    assert.match(await trend.innerText(),/1 Jan 2026/);assert.match(await trend.innerText(),/1 Apr 2026/);
+    const trendBounds=await trend.evaluate(el=>({width:el.clientWidth,overflow:el.scrollWidth-el.clientWidth,right:el.getBoundingClientRect().right}));
+    assert(trendBounds.width>100&&trendBounds.overflow<=1&&trendBounds.right<=width,'trend axes and dates fit the available width');
+    const baseline=Number(await trend.locator('.ally-report-axis').getAttribute('y1'));assert(baseline>0&&baseline<136,'zero axis reflects negative values');
+    await page.screenshot({path:path.join(output,`trend-${width}.png`),fullPage:true});
+    await panel.getByText('View data table').click();
+    if(width<700){
+      const records=panel.locator('.ally-report-data-table .ally-report-records');
+      await records.locator('li').nth(2).scrollIntoViewIfNeeded();
+      await page.screenshot({path:path.join(output,`record-detail-${width}.png`),fullPage:true});
+    }else{
+      const opened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const pdf=await opened;
+      await pdf.getByRole('article',{name:'Report findings'}).waitFor();await pdf.emulateMedia({media:'print'});
+      assert.equal(await pdf.locator('.ally-report-records:visible').count(),0,'print keeps full tables');
+      assert.equal(await pdf.getByRole('columnheader',{name:'Occupied bed-days',exact:true}).count(),1);
+      await pdf.pdf({path:path.join(output,'Ally trend report.pdf'),format:'A4',printBackground:true});await pdf.close();
+    }
+    trendFixture=false;
     assert.deepEqual(errors,[]);await context.close();
   }
 },{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, conversation/history, stable scrolling/drafts, IME, versioning, shared links, recipient controls, current and historical revocation, PDF, cancellation and saved reopening passed.'); }

@@ -1,13 +1,27 @@
 import type { ExecutiveReport, ReportDataset } from './reportClient';
+import { reportColumnLabel, reportCellValue as displayValue } from '../../../../shared/report-display.mjs';
 export type ReportMeasures = Record<string, string>;
-const displayValue = (value: string | number | boolean | null | undefined) => typeof value === 'number' ? value.toLocaleString() : String(value ?? 'Not recorded');
 
 function SourceTable({dataset}: {dataset: ReportDataset}) {
-  return <div className="ally-report-table" tabIndex={0} role="region" aria-label={`${dataset.title} data`}><table><caption>{dataset.title}</caption><thead><tr>{dataset.columns.map(c => <th key={c.key} scope="col">{c.label}</th>)}</tr></thead><tbody>{dataset.rows.map((r,i) => <tr key={i}>{dataset.columns.map(c => <td key={c.key}>{displayValue(r[c.key])}</td>)}</tr>)}</tbody></table>{!dataset.rows.length && <p>No records in this scope.</p>}</div>;
+  const columns = dataset.columns.map(column => ({...column, label:reportColumnLabel(column)}));
+  const identity = columns.find(column => column.type === 'string');
+  return <>
+    <div className="ally-report-table" tabIndex={0} role="region" aria-label={`${dataset.title} data`}>
+      <table><caption>{dataset.title}</caption><thead><tr>{columns.map(c => <th key={c.key} scope="col">{c.label}</th>)}</tr></thead>
+        <tbody>{dataset.rows.map((row,i) => <tr key={i}>{columns.map(c => <td key={c.key} data-numeric={c.type==='number'}>{displayValue(row[c.key])}</td>)}</tr>)}</tbody>
+      </table>
+    </div>
+    <ul className="ally-report-records" aria-label={dataset.title}>{dataset.rows.map((row,i) => <li key={i}>
+      {identity && <h4>{displayValue(row[identity.key])}</h4>}
+      <dl>{columns.filter(column => column !== identity).map(column => <div key={column.key}><dt>{column.label}</dt><dd>{displayValue(row[column.key])}</dd></div>)}</dl>
+    </li>)}</ul>
+    {!dataset.rows.length && <p>No records in this scope.</p>}
+  </>;
 }
 function DataView({dataset, component, measure, onMeasureChange}: {dataset: ReportDataset; component: string; measure: string | undefined; onMeasureChange: ((measure: string) => void) | undefined}) {
-  const label = dataset.columns.find(c => c.type === 'string');
-  const numbers = dataset.columns.filter(c => c.type === 'number');
+  const columns = dataset.columns.map(column => ({...column,label:reportColumnLabel(column)}));
+  const label = columns.find(c => c.type === 'string');
+  const numbers = columns.filter(c => c.type === 'number');
   const metric = numbers.find(c => c.key === measure) ?? numbers[0];
   const chart = component !== 'table' && label && metric && dataset.rows.length > 0 && dataset.rows.length <= (component === 'comparison' ? 20 : 100);
   const rows = component === 'trend' && label ? [...dataset.rows].sort((a,b) => String(a[label.key]).localeCompare(String(b[label.key]))) : dataset.rows;
@@ -17,8 +31,18 @@ function DataView({dataset, component, measure, onMeasureChange}: {dataset: Repo
   return <div className="ally-report-data">
     {chart && <p className="ally-report-print-values">{metric.label}</p>}
     {chart && numbers.length > 1 && <div className="ally-report-chart-tools"><select aria-label="Chart measure" value={metric?.key} disabled={!onMeasureChange} onChange={e => onMeasureChange?.(e.target.value)}>{numbers.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}</select></div>}
-    {chart ? component === 'trend' ? <figure aria-label={`${dataset.title}: ${metric.label}`}><svg viewBox="0 0 440 180" role="img" aria-label={`${metric.label} over time; exact values below`}><line x1="32" y1="148" x2="426" y2="148" className="ally-report-axis"/>{rows.slice(1).map((_,i) => values[i] !== null && values[i+1] !== null && <line key={i} x1={32 + i/Math.max(1,rows.length-1)*394} y1={148-(Number(values[i])-min)/range*124} x2={32+(i+1)/Math.max(1,rows.length-1)*394} y2={148-(Number(values[i+1])-min)/range*124} className="ally-report-trend"/>)}{rows.map((r,i) => values[i] !== null && <circle key={i} cx={32+i/Math.max(1,rows.length-1)*394} cy={148-(Number(values[i])-min)/range*124} r="3" className="ally-report-point"><title>{String(r[label.key])}: {values[i]?.toLocaleString()}</title></circle>)}<text x="32" y="174">{String(rows[0]?.[label.key])}</text><text x="426" y="174" textAnchor="end">{String(rows.at(-1)?.[label.key])}</text><text x="4" y="24">{max.toLocaleString()}</text></svg><figcaption>{metric.label}</figcaption><details><summary>Exact values</summary><SourceTable dataset={dataset}/></details></figure>
-      : <ul className="ally-report-comparison" aria-label={metric.label}>{rows.map((r,i) => <li key={i}><span>{String(r[label.key] ?? 'Not recorded')}</span><strong>{values[i]?.toLocaleString() ?? 'Not recorded'}</strong><div className="ally-report-track" aria-hidden="true"><i style={{left: `${(Math.min(values[i] ?? 0,0)-min)/range*100}%`, width: `${Math.abs(values[i] ?? 0)/range*100}%`}}/></div></li>)}</ul>
+    {chart && numbers.length === 1 && <p className="ally-report-measure">{metric.label}</p>}
+    {chart ? component === 'trend' ? <figure aria-label={`${dataset.title}: ${metric.label}`}>
+      <div className="ally-report-trend-plot"><div className="ally-report-trend-scale" aria-hidden="true"><span>{displayValue(max)}</span><span>{displayValue(min)}</span></div>
+        <svg viewBox="0 0 440 148" role="img" aria-label={`${metric.label} over time; exact values below`}>
+          <line x1="4" y1={136-(0-min)/range*124} x2="436" y2={136-(0-min)/range*124} className="ally-report-axis"/>
+          {rows.slice(1).map((_,i) => values[i] !== null && values[i+1] !== null && <line key={i} x1={4+i/Math.max(1,rows.length-1)*432} y1={136-(Number(values[i])-min)/range*124} x2={4+(i+1)/Math.max(1,rows.length-1)*432} y2={136-(Number(values[i+1])-min)/range*124} className="ally-report-trend"/>)}
+          {rows.map((r,i) => values[i] !== null && <circle key={i} cx={4+i/Math.max(1,rows.length-1)*432} cy={136-(Number(values[i])-min)/range*124} r="3" className="ally-report-point"><title>{displayValue(r[label.key])}: {displayValue(values[i])}</title></circle>)}
+        </svg>
+      </div>
+      <div className="ally-report-trend-labels"><span>{displayValue(rows[0]?.[label.key])}</span><span>{displayValue(rows.at(-1)?.[label.key])}</span></div>
+    </figure>
+      : <ul className="ally-report-comparison" aria-label={metric.label}>{rows.map((r,i) => <li key={i}><span>{displayValue(r[label.key])}</span><strong>{values[i]?.toLocaleString() ?? 'Not recorded'}</strong><div className="ally-report-track" aria-hidden="true"><i style={{left: `${(Math.min(values[i] ?? 0,0)-min)/range*100}%`, width: `${Math.abs(values[i] ?? 0)/range*100}%`}}/></div></li>)}</ul>
       : <SourceTable dataset={dataset}/>}
     {chart && <details className="ally-report-data-table"><summary>View data table</summary><SourceTable dataset={dataset}/></details>}
     {chart && <div className="ally-report-print-values"><SourceTable dataset={dataset}/></div>}

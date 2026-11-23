@@ -12,6 +12,7 @@ import { activeIntakeCards, hasCompleteIntakeBoard, intakeStage, INTAKE_STAGES }
 import { getLicensingLibrary } from './licensing-library.mjs';
 import { createWorkflowKnowledgeSource } from './workflow-knowledge-source.mjs';
 import { reportAggregateFields, reportNumericField } from './ally-report-source-grants.mjs';
+import { reportColumnLabel } from '../shared/report-display.mjs';
 
 const objectSchema = properties => ({ type: 'object', properties, additionalProperties: false });
 const string = { type: 'string' }, strings = { type: 'array', items: string, maxItems: 3 };
@@ -33,7 +34,9 @@ const metadata = {
 };
 const definition = id => ANALYSIS_SLICE_CATALOG.find(s => s.id === id);
 const facilityField = fields => ['facility_id', 'Facility', 'facility', 'FacilityID'].find(f => fields.includes(f));
-function scopedDataset(title, rows, columns, shape = 'records') { return { title, shape, columns, rows }; }
+function scopedDataset(title, rows, columns, shape = 'records') {
+  return { title, shape, columns: columns.map(column => ({...column, label:reportColumnLabel(column)})), rows };
+}
 function numericCell(value) {
   if (value === undefined || value === null) return null;
   if ((typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '' || !Number.isFinite(Number(value))) throw Error('The published measure is not a valid number.');
@@ -61,7 +64,7 @@ function platformDataset(title, rows, columns, time) {
   const axis = label ?? date;
   if (axis) {
     dataset.shape = label ? 'categories' : 'series';
-    dataset.columns = [axis, ...columns.filter(column => column !== axis)];
+    dataset.columns = [axis, ...columns.filter(column => column !== axis)].map(column => ({...column,label:reportColumnLabel(column)}));
   }
   return dataset;
 }
@@ -144,7 +147,9 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
       if (result.hasMore || result.coverage.startsWith('partial')) base.coverage = 'partial';
       const keys = args.operation === 'rows' ? result.source.fields : [...(args.groupBy ?? []), 'result'];
-      const columns = keys.map(key => ({ key, label: key, type: key === 'result' || reportNumericField(key) ? 'number' : 'string' }));
+      const resultLabel = args.operation === 'count' ? 'Records' : args.measure
+        ? `${args.operation === 'average' ? 'Average' : 'Total'} ${reportColumnLabel({key:args.measure}).toLowerCase()}` : 'Result';
+      const columns = keys.map(key => ({ key, label: key === 'result' ? resultLabel : key, type: key === 'result' || reportNumericField(key) ? 'number' : 'string' }));
       dataset = platformDataset(definition(args.slice)?.title ?? args.slice,
         result.rows.map(row => Object.fromEntries(columns.map(column => [column.key, column.type === 'number' ? numericCell(row[column.key]) : row[column.key] ?? null]))),
         columns, time);

@@ -32,12 +32,12 @@
 .ally-report-toolbar {display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:16px;}
 .ally-report-toolbar>span {margin-right:auto;font-size:13px;color:var(--ally-muted);}
 .ally-report-toolbar button {padding:8px;border:0;}
-.ally-report-document {overflow-wrap:anywhere;}
+.ally-report-document {min-width:0;overflow-wrap:anywhere;}
 .ally-report-document h2 {font-size:22px;line-height:1.3;font-weight:600;margin:0 0 14px;}
 .ally-report-document header>p {font-size:12px;color:var(--ally-muted);margin-bottom:24px;}
 .ally-report-document header>p span {display:block;margin-top:4px;}
 .ally-report-finding {margin:0 0 24px;}
-.ally-report-finding>p {margin:0;line-height:1.65;font-size:16px;}
+.ally-report-finding>p {margin:0;line-height:1.65;font-size:16px;white-space:pre-line;}
 .ally-report-citations {display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;}
 .ally-report-citations a {color:var(--ally-accent);font-size:12px;text-decoration:underline;text-underline-offset:3px;min-height:44px;display:inline-flex;align-items:center;}
 .ally-report-source {border-top:2px solid var(--ally-ink);padding-top:18px;margin-top:26px;scroll-margin:12px;}
@@ -57,6 +57,24 @@
 .ally-report-table caption {text-align:left;font-size:13px;margin-bottom:8px;color:var(--ally-muted);}
 .ally-report-table :is(th,td) {padding:10px 12px 10px 0;border-bottom:1px solid var(--ally-rule);vertical-align:top;min-width:80px;max-width:220px;overflow-wrap:anywhere;}
 .ally-report-table th {font-weight:600;}
+.ally-report-table td[data-numeric=true] {font-variant-numeric:tabular-nums;}
+.ally-report-data {container-type:inline-size;min-width:0;}
+.ally-report-records {display:none;list-style:none;margin:0;padding:0;}
+.ally-report-records>li {padding:16px 0;border-bottom:1px solid var(--ally-rule);}
+.ally-report-records h4 {margin:0 0 12px;font-size:15px;font-weight:650;line-height:1.5;}
+.ally-report-records dl {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;margin:0;}
+.ally-report-records dt {font-size:12px;line-height:1.5;color:var(--ally-muted);}
+.ally-report-records dd {margin:2px 0 0;font-size:15px;font-variant-numeric:tabular-nums;}
+.ally-report-measure {margin:0 0 12px;color:var(--ally-muted);font-size:13px;}
+.ally-report-trend-plot {display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:stretch;}
+.ally-report-trend-scale {display:flex;flex-direction:column;justify-content:space-between;padding:4px 0 8px;min-width:0;font-size:12px;color:var(--ally-muted);font-variant-numeric:tabular-nums;}
+.ally-report-trend-labels {display:flex;justify-content:space-between;gap:24px;font-size:12px;color:var(--ally-muted);}
+.ally-report-trend-labels span {max-width:48%;}
+.ally-report-trend-labels span:last-child {text-align:right;}
+@container(max-width:520px) {
+  .ally-report-table {display:none;}
+  .ally-report-records {display:block;}
+}
 .ally-report-comparison {list-style:none;padding:0;margin:0;}
 .ally-report-comparison li {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;margin-bottom:18px;font-size:14px;}
 .ally-report-comparison strong {font-variant-numeric:tabular-nums;}
@@ -69,7 +87,7 @@
 .ally-report-point {fill:var(--ally-accent);}
 .ally-report-data svg text {fill:var(--ally-muted);font-size:10px;}
 .ally-report-data figcaption {color:var(--ally-muted);font-size:12px;}
-.executive-ally-composer {border-top:2px solid var(--ally-ink);padding:10px 16px 16px;background:var(--ally-paper);flex:none;}
+.executive-ally-composer {border-top:2px solid var(--ally-ink);padding:10px 16px 16px;background:var(--ally-paper);flex:none;max-height:55dvh;overflow-y:auto;overscroll-behavior:contain;}
 .ally-report-scope summary {cursor:pointer;font-size:12px;color:var(--ally-muted);min-height:44px;display:flex;align-items:center;}
 .ally-report-scope summary::before {content:'⌄';margin-right:8px;}
 .ally-report-scope[open] summary::before {content:'⌃';}
@@ -111,7 +129,9 @@
   .ally-report-finding,.ally-report-source {break-inside:avoid;}
   .ally-report-document :is(p,li,td,th) {font-size:10pt;}
   .ally-report-document pre {max-height:none;white-space:pre-wrap;}
-  .ally-report-table {overflow:visible;}
+  .ally-report-data {container-type:normal;}
+  .ally-report-table {display:block!important;overflow:visible;}
+  .ally-report-records {display:none!important;}
 }
 
 /* A saved investigation reads as a conversation; the report is an optional view. */

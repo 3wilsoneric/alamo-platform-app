@@ -15,6 +15,17 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 Current rollout evidence is recorded in [Executive Ally conversations](deployment-operations.md#executive-ally-conversations--november-23). Older dated entries below retain their historical scope; they do not override the current release.
 
+### November 23 readability and responsive data — local candidate
+
+Canonical display labels now normalize database field names in new source datasets
+and existing saved reports without rewriting evidence or changing field bindings.
+Numbers and exact dates use the existing display conventions. At narrow container
+widths, tables become labeled records; line-chart axes and date labels stay in
+normal layout instead of shrinking SVG text. PDF exports retain complete tables.
+Composer scope controls scroll within short viewports. Bounded browser fixtures
+cover 320/390/1440px, long names, legacy keys, null/negative chart values and PDFs.
+Deployment and real-data visual acceptance remain pending.
+
 ### November 23 executive expansion — live and verified
 
 The owner explicitly authorized Eric Wilson, Andrew Dominici and Betty Dominici,

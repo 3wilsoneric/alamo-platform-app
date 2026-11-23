@@ -18,6 +18,15 @@ import { createExecutiveReportService } from '@alamo/agent-runtime/server/execut
 import { validateReportEvidence, EXECUTIVE_REPORT_SOURCE_PATH } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
 import { reportViewContext } from '@alamo/agent-runtime/shared/executive-report-views.mjs';
 import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
+import { reportColumnLabel, reportCellValue } from '../shared/report-display.mjs';
+
+for (const [key,expected] of [['operatingCapacity','Operating capacity'],['occupied_bed_days','Occupied bed-days'],['census_delta','Census delta'],['prn_given_count','PRN given count'],['FacilityID','Community ID']]) assert.equal(reportColumnLabel({key,label:key}),expected);
+assert.equal(reportColumnLabel({key:'bedDays',label:'Days occupied in this period'}),'Days occupied in this period','source-authored wording is preserved');
+assert.equal(reportCellValue(150443),'150,443');
+assert.equal(reportCellValue(false),'No');
+assert.equal(reportCellValue(null),'Not recorded');
+assert.equal(reportCellValue('2026-07-30'),'30 Jul 2026');
+assert.equal(reportCellValue('2026-07'),'July 2026');
 
 const user='11111111-1111-4111-8111-111111111111', clientId='22222222-2222-4222-8222-222222222222', principalId='33333333-3333-4333-8333-333333333333', audience='44444444-4444-4444-8444-444444444444';
 const scope={communityIds:['337'],from:'2026-11-01',through:'2026-11-20'};
@@ -58,6 +67,7 @@ try {
   registry.grants[0].capabilities.pop();
   assert.equal((await send({...input,step:knowledgeStep})).status,403,'removing a capability must revoke knowledge reads');
   const evidence=validateReportEvidence(await connection.read(user,scope,step),step,scope);
+  assert.deepEqual(evidence.dataset.columns.map(column=>column.label),['Severity','Records']);
   assert.equal(evidence.requiresDetail,false);
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
   const sqlResult=await readAllyPlatformData(step.input,{load:async()=>published,execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
