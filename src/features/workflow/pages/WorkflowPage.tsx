@@ -31,7 +31,7 @@ export default function WorkflowPage() {
     !isE2EAuthBypassEnabled &&
     (!isAuthenticated || inProgress !== InteractionStatus.None || !account?.idTokenClaims)
   ) {
-    return <AuthenticationProgress label="Opening ProForma" detail="Verifying preview access..." />;
+    return <AuthenticationProgress label="Opening ProForma" detail="Verifying your access…" />;
   }
 
   if (!isE2EAuthBypassEnabled && !isOwner) {

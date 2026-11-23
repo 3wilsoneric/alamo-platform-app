@@ -1,13 +1,13 @@
 import content from '../../content/library/documents.v1.json'
 import type { Document, KnowledgeFile } from './types'
 
-// A projection of Workflow-owned content and the pinned read-only skill import.
+// A projection of ProForma-owned content and the pinned read-only skill import.
 // Original source files remain authoritative; workspace copies are not editors.
 export const LIBRARY_DOCUMENTS: Document[] = content.records.map(record => ({
   id: record.id, code: record.code, title: record.title,
   type: record.kind === 'procedure' ? 'Procedure' : 'Reference',
   dept: record.kind === 'procedure' ? 'Admissions' : 'Cross-application',
-  owner: record.ownerApplication === 'workflow' ? 'ProForma' : 'AlamoAgent',
+  owner: record.ownerApplication === 'workflow' ? 'ProForma' : 'Ally',
   version: String(record.version), format: 'Markdown', size: `${(new TextEncoder().encode(record.body).length / 1024).toFixed(1)} KB`,
   status: record.kind === 'procedure' ? 'review' : 'draft',
   effective_date: 'Not effective — draft', reviewed_at: 'Not reviewed', review_due: 'Not assigned',

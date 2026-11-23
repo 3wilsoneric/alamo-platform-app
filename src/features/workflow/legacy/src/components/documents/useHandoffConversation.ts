@@ -14,7 +14,7 @@ async function request<T>(query = '', command?: Command): Promise<T> {
     headers: { 'content-type': 'application/json' }, ...(command ? { body: JSON.stringify(command) } : {}) })
   const data = await response.json().catch(() => null)
   if (!data) throw new Error('The handoff connection is unavailable in this environment.')
-  if (!response.ok) throw new Error(data.error?.message ?? 'AlamoAgent could not complete the macro request.')
+  if (!response.ok) throw new Error(data.error?.message ?? 'Ally could not complete the macro request.')
   return data
 }
 export function useHandoffConversation() {

@@ -129,8 +129,8 @@ export default function ProcessConversation({ detail, client, onSaved, onBusyCha
       {!!request.inputs.length && <p><strong>Inputs:</strong> {request.inputs.join(' · ')}</p>}
       <ol>{request.steps.map((step, index) => <li key={index}>{step.instruction}{step.system && <small>{step.system}</small>}{step.expectedResult && <small>Check: {step.expectedResult}</small>}</li>)}</ol>
       {!!request.stopConditions.length && <p><strong>Stop when:</strong> {request.stopConditions.join('; ')}</p>}
-      <p className="process-muted">Saved as a proposed request. {handoffRehearsalAvailable ? 'For the supported handoff rehearsal, type “Try fictional handoff”. Real referrals are not connected here.' : 'An authorized AlamoAgent connection is required before this request can run.'}</p>
-      <button onClick={() => download({ schemaVersion: 1, kind: 'proforma.automation-request', status: 'proposed', source: { documentId: doc?.id, revision: turn.baseRevision + 1, turnId: turn.id }, request }, 'proforma-macro-request.json')}>Export request for AlamoAgent</button>
+      <p className="process-muted">Saved as a proposed request. {handoffRehearsalAvailable ? 'For the supported handoff rehearsal, type “Try fictional handoff”. Real referrals are not connected here.' : 'An authorized Ally connection is required before this request can run.'}</p>
+      <button onClick={() => download({ schemaVersion: 1, kind: 'proforma.automation-request', status: 'proposed', source: { documentId: doc?.id, revision: turn.baseRevision + 1, turnId: turn.id }, request }, 'proforma-macro-request.json')}>Export request for Ally</button>
     </article>
   }
   return <section className="process-conversation" data-has-guide={!!doc} data-chat-open={chatOpen || !doc} data-mobile-pane={editing ? 'guide' : mobilePane} aria-label="ProForma conversation">
@@ -168,11 +168,11 @@ export default function ProcessConversation({ detail, client, onSaved, onBusyCha
           {questions.notice && <p role="status">{questions.notice}</p>}
           {questions.source && <SourceInspector source={questions.source} onClose={questions.closeSource} />}
           {handoff.active && <section className="process-handoff" aria-label="Referral handoff macro">
-            <div className="process-overline">AlamoAgent / Referral handoff · fictional rehearsal</div>
+            <div className="process-overline">Ally / Referral handoff · fictional rehearsal</div>
             <p>Quality review → your review decision → handoff draft. This uses a fixed fictional referral; no real records are read or changed.</p>
             {handoff.chat?.turns.map(turn => <div className="process-turn" key={turn.id}>
               <div className="process-message process-message-user"><span className="process-speaker">Macro request</span><p>{turn.text}</p></div>
-              <div className="process-message process-message-assistant"><span className="process-speaker">AlamoAgent · {turn.status}</span>{turn.answer?.paragraphs.map((paragraph, index) => <p key={index}>{paragraph.text}</p>)}
+              <div className="process-message process-message-assistant"><span className="process-speaker">Ally · {turn.status}</span>{turn.answer?.paragraphs.map((paragraph, index) => <p key={index}>{paragraph.text}</p>)}
                 {turn.draftReview && <div className="process-review-receipt"><strong>{turn.draftReview.decision ? `Draft ${turn.draftReview.decision === 'accept' ? 'accepted' : 'rejected'}` : 'Draft awaiting your review'}</strong><small>Version {turn.draftReview.artifactRevision.slice(0, 12)}</small>
                   {!turn.draftReview.decision && <p>After inspecting this draft, type <strong>Accept this draft</strong> or <strong>Reject this draft</strong>. Your decision applies to this saved version. Acceptance does not establish clinical sufficiency or send a handoff.</p>}
                 </div>}
@@ -181,7 +181,7 @@ export default function ProcessConversation({ detail, client, onSaved, onBusyCha
             <p className="process-muted">After accepting the quality draft, ask “Prepare the handoff draft”. Type “Back to guide” to return to ProForma.</p>
             {handoff.error && <div role="alert" className="drafts-alert"><p>{handoff.error}</p><button disabled={working} onClick={() => void handoff.reload()}>Reload saved macro</button><button disabled={working} onClick={() => { handoff.leave(); setMessage('') }}>Return to guide</button></div>}
           </section>}
-          {working && <p role="status" className="process-thinking">{handoff.busy ? 'AlamoAgent is preparing the draft…' : 'Working with your guide…'}</p>}
+          {working && <p role="status" className="process-thinking">{handoff.busy ? 'Ally is preparing the draft…' : 'Working with your guide…'}</p>}
         </div>
         {maintenanceNotice && <p role="status" className="process-muted">{maintenanceNotice}</p>}
         {(error || questions.error) && <div className="drafts-alert" role="alert"><p>{error || questions.error}</p><div className="drafts-actions">
@@ -196,8 +196,8 @@ export default function ProcessConversation({ detail, client, onSaved, onBusyCha
           {!sources.pending && <SourceContext control={questions.sources} scope={questions.sourceScope} disabled={busy || requestPending || editing} onReload={() => void reloadConversation()} />}
           {!handoff.active && !locked && <ConversationSources key={attachmentVersion} client={client} disabled={working || requestPending || locked || editing} onChange={setSources} />}
           <label htmlFor="process-message" className="sr-only">Message ProForma</label>
-          <textarea id="process-message" data-proposal={!!maintenanceNotice && !!message} ref={input} rows={4} maxLength={handoff.active ? 4000 : CONVERSATION_MESSAGE_LIMIT} value={message} disabled={working || (locked && !doc) || requestPending || !!handoff.pending || linksDirty || editing} onChange={event => setMessage(event.target.value)} placeholder={locked ? 'Ask about this guide and its sources…' : handoff.active ? 'Review the draft or ask AlamoAgent to continue…' : doc ? 'Describe a change or ask about this guide…' : 'Describe a process, paste notes, or explain what needs to happen…'} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
-          <div className="process-send-row"><small>{editing ? 'Save or discard document edits to continue chatting.' : locked ? 'Guide is read only' : handoff.active ? 'Talking to AlamoAgent · fictional handoff' : 'Enter to send · Shift + Enter for a new line'}</small><button type="submit" aria-label={requestPending || handoff.pending ? 'Retry message' : 'Send →'} title={requestPending || handoff.pending ? 'Retry message' : 'Send'} className="drafts-primary" disabled={working || (locked && !doc) || linksDirty || editing || rebase || sources.incomplete || (!requestPending && !handoff.pending && !message.trim())}><ArrowUp size={19} aria-hidden="true" /></button></div>
+          <textarea id="process-message" data-proposal={!!maintenanceNotice && !!message} ref={input} rows={4} maxLength={handoff.active ? 4000 : CONVERSATION_MESSAGE_LIMIT} value={message} disabled={working || (locked && !doc) || requestPending || !!handoff.pending || linksDirty || editing} onChange={event => setMessage(event.target.value)} placeholder={locked ? 'Ask about this guide and its sources…' : handoff.active ? 'Review the draft or ask Ally to continue…' : doc ? 'Describe a change or ask about this guide…' : 'Describe a process, paste notes, or explain what needs to happen…'} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
+          <div className="process-send-row"><small>{editing ? 'Save or discard document edits to continue chatting.' : locked ? 'Guide is read only' : handoff.active ? 'Talking to Ally · fictional handoff' : 'Enter to send · Shift + Enter for a new line'}</small><button type="submit" aria-label={requestPending || handoff.pending ? 'Retry message' : 'Send →'} title={requestPending || handoff.pending ? 'Retry message' : 'Send'} className="drafts-primary" disabled={working || (locked && !doc) || linksDirty || editing || rebase || sources.incomplete || (!requestPending && !handoff.pending && !message.trim())}><ArrowUp size={19} aria-hidden="true" /></button></div>
         </form>
       </div>
       <aside className="process-artifact" aria-label="Guide alongside conversation">
@@ -213,7 +213,7 @@ export default function ProcessConversation({ detail, client, onSaved, onBusyCha
             <SourceAttachments attachments={conversationAttachments(doc)} client={client} />
             <DraftKnowledgeLinks permissions={permissions} document={doc} disabled={working || editing || requestPending || !!handoff.pending || !!message || locked || sources.pending} onUnsavedChange={setLinksDirty} />
           </details>
-        </> : <div className="process-artifact-empty"><p>No guide yet.</p>{handoffRehearsalAvailable && <p className="process-muted">To rehearse the first macro with a connected AlamoAgent sandbox, type “Try fictional handoff”.</p>}</div>}
+        </> : <div className="process-artifact-empty"><p>No guide yet.</p>{handoffRehearsalAvailable && <p className="process-muted">To rehearse the first macro with a connected Ally sandbox, type “Try fictional handoff”.</p>}</div>}
       </aside>
     </div>
   </section>

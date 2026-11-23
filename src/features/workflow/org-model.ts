@@ -59,7 +59,7 @@ export const ORG_AREAS: OrgArea[] = [
     title: "Systems & knowledge",
     shortTitle: "Systems & knowledge",
     description: "Maintains the tools, trusted guidance, and information flow people use to do the work.",
-    responsibilities: ["Platform systems", "Workflow guidance", "Information stewardship"],
+    responsibilities: ["Platform systems", "ProForma guidance", "Information stewardship"],
     tone: "rust",
     marker: "05",
     keywords: ["systems", "technology", "workflow", "knowledge", "documents", "software"],
@@ -106,7 +106,7 @@ export function answerOrgQuestion(question: string): OrgAnswer {
   if (/report(s|ing)? to|manager|director name|who is|phone|email|contact/.test(normalized)) {
     return {
       heading: "That relationship is not verified yet",
-      body: "This preview maps functions and communities, not employee assignments or reporting lines. An approved staff directory is needed before Workflow can identify a person or contact route.",
+      body: "This view maps functions and communities, not employee assignments or reporting lines. An approved staff directory is needed before ProForma can identify a person or contact route.",
       nodeId: community ? `community:${community.id}` : area?.id ?? null,
       related: ["View functional map", "Ask about staffing support"],
     };

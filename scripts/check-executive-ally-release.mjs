@@ -74,6 +74,16 @@ for (const file of ['dist/index.html', 'dist/admissions/index.html', 'dist/chat/
   assert.equal([...html.matchAll(/href="\/assets\/index-[^/]+\.css"/g)].length, 1, 'One main native stylesheet.');
   for (const kept of [...receipt.preservedScripts, ...receipt.preservedStyles]) assert(html.includes(kept), `Preserve shell extension: ${file}`);
 }
+// Protect the product identity when rebuilding the shared Platform bundle.
+// Historical source snapshots and /workflow protocol IDs remain compatible.
+for (const file of ['src/features/workflow/pages/WorkflowPage.tsx',
+  'src/features/workflow/legacy/src/components/layout/Sidebar.tsx',
+  'src/features/workflow/legacy/src/components/layout/Header.tsx']) {
+  assert(Object.hasOwn(receipt.sourceHashes, file), `Native ProForma owner missing: ${file}`);
+  const source = await readFile(file, 'utf8');
+  assert(source.includes('ProForma'), `Current product identity missing: ${file}`);
+  assert(!/Workflow preview|Local demo session|Opening Workflow|aria-label="Workflow"/.test(source), `Retired product identity: ${file}`);
+}
 const accessPath = 'src/features/agent/reports/reportAccess.ts';
 assert(Object.hasOwn(receipt.sourceHashes, accessPath));
 const accessSource = await readFile(accessPath, 'utf8');
