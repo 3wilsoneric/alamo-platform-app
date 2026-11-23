@@ -765,21 +765,21 @@ dialog.executive-ally-panel--chat[open] { animation: none; }
 .executive-ally-header .ally-panel-create:not([open]) > div { display: none; }
 .executive-ally-header .ally-panel-create > div button { justify-content: flex-start; width: 100%; min-height: 44px; border: 0; }
 .ally-report-toolbar .ally-report-export { gap: 6px; color: #0b6259; font-size: 13px; font-weight: 700; }
-.ally-report-toolbar .ally-report-actions { position: relative; }
-.ally-report-toolbar .ally-report-actions summary {
+.executive-ally .ally-report-actions { position: relative; }
+.executive-ally .ally-report-actions summary {
   display: grid; place-items: center; width: 44px; height: 44px;
   border-radius: 8px; cursor: pointer; list-style: none;
 }
-.ally-report-toolbar .ally-report-actions summary::-webkit-details-marker { display: none; }
-.ally-report-toolbar .ally-report-actions summary:is(:hover,:focus-visible) { background: #f2f6f2; }
-.ally-report-toolbar .ally-report-actions > div {
+.executive-ally .ally-report-actions summary::-webkit-details-marker { display: none; }
+.executive-ally .ally-report-actions summary:is(:hover,:focus-visible) { background: #f2f6f2; }
+.executive-ally .ally-report-actions > div {
   position: absolute; right: 0; top: calc(100% + 2px); z-index: 4;
   display: grid; width: 170px; padding: 5px;
   border: 1px solid #d8e0db; border-radius: 10px; background: #fff;
   box-shadow: 0 12px 28px #17302d24;
 }
-.ally-report-toolbar .ally-report-actions:not([open]) > div { display: none; }
-.ally-report-toolbar .ally-report-actions > div button { justify-content: flex-start; min-height: 44px; font-size: 13px; }
+.executive-ally .ally-report-actions:not([open]) > div { display: none; }
+.executive-ally .ally-report-actions > div button { justify-content: flex-start; min-height: 44px; font-size: 13px; }
 @media (max-width: 900px) {
   .agent-conversation-home--workspace .agent-conversation-workspace { display: block; }
   .agent-conversation-home--workspace .agent-conversation-workspace-tabs { display: flex; gap: 4px; padding: 8px 14px; border-bottom: 1px solid #d8e0db; }

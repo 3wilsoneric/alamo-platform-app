@@ -13,6 +13,25 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 23 conversation UX — local candidate
+
+The owner approved the continuous conversation pass after reviewing the live
+report-first interface. The candidate keeps questions and earlier answers visible,
+with a compact searchable History menu, one data-question composer, readable
+findings, real execution states, Stop, and an optional native report reader.
+General guidance chats remain accessible from History. New chat returns to data
+questions without mounting a second composer. Report versions, source controls,
+chart selections, sharing and freshly authorized PDF export retain their owners.
+
+Earlier answers use the existing per-version authorized reads, rechecked on
+visibility and every 30 seconds. Denied versions disappear independently; failed
+current authorization still removes the conversation. The service's existing
+12-version ceiling bounds these reads. A higher ceiling requires paginated
+history before expansion. Answers appear after validation, not token streaming.
+Scope changes remain explicit, and these UI changes grant no additional access.
+Focused checks and full release validation are being completed. This paragraph
+records implemented source, not deployment.
+
 ### November 23 priority: Ally in Platform
 
 The owner deferred ProForma acceptance to prioritize useful Platform data questions,

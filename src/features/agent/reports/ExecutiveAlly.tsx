@@ -1,11 +1,13 @@
 import { useMsal } from '@azure/msal-react';
-import { ArrowUp, Plus, Pencil, X, Download, RefreshCw, Share2, Square, Maximize2, Minimize2, MoreHorizontal } from 'lucide-react';
+import { ArrowUp, ArrowDown, History, Pencil, X, Download, RefreshCw, Share2, Square, Maximize2, Minimize2, MoreHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
+import { formatDisplayDate } from '../../../../shared/display-date.mjs';
 import { ALAMO_FACILITIES } from '../../../../shared/community-names.mjs';
 import { createAgentTransport } from '../conversations/agentTransport';
 import { createReportClient, reportRunning, reportStatus, type ExecutiveReport, type ReportScope, type ReportSummary } from './reportClient';
 import { reportParticipants } from './reportAccess';
+import { useReportHistory } from './useReportHistory';
 import ReportView, { type ReportMeasures } from './ReportView';
 import AgentConversationHome from '../conversations/AgentConversationHome';
 import { agentChatConfigured } from '../conversations/agentTransport';
@@ -29,15 +31,24 @@ export default function ExecutiveAlly() {
   const [expanded, setExpanded] = useState(false);
   const [surface, setSurface] = useState<'chat'|'reports'>('reports');
   const [chatId, setChatId] = useState<string | null>(null);
-  const [canvasFocusSignal, setCanvasFocusSignal] = useState(0);
   const [report, setReport] = useState<ExecutiveReport | null>(null), [draft, setDraft] = useState('');
-  const [chartSelection, setChartSelection] = useState<{key: string; measures: ReportMeasures}>({key: '', measures: {}});
-  const reportKey = report ? `${report.ownerId}/${report.id}/${report.selectedVersion}` : '';
-  const measures = chartSelection.key === reportKey ? chartSelection.measures : {};
+  const history = useReportHistory(report, open && surface === 'reports', client);
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const [historySearch, setHistorySearch] = useState('');
+  const [awayFromLatest, setAwayFromLatest] = useState(false);
+  const [chartSelection, setChartSelection] = useState<Record<string, ReportMeasures>>({});
+  const [documentVersion, setDocumentVersion] = useState<number | null>(null);
+  const reportKey = (value: ExecutiveReport) => `${value.ownerId}/${value.id}/${value.selectedVersion}`;
+  const measuresFor = (value: ExecutiveReport) => chartSelection[reportKey(value)] ?? {};
+  const changeMeasure = (value: ExecutiveReport, section: string, measure: string) => setChartSelection(current => ({...current, [reportKey(value)]: {...current[reportKey(value)], [section]: measure}}));
   const [scope, setScope] = useState(() => initialScope(location.search));
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
+  const [accessUncertain, setAccessUncertain] = useState(false);
   const [share, setShare] = useState(false), [retryList, setRetryList] = useState(0);
-  const dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLTextAreaElement>(null), newMenu = useRef<HTMLDetailsElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLTextAreaElement>(null);
+  const historyMenu = useRef<HTMLDetailsElement>(null), body = useRef<HTMLDivElement>(null), latestTurn = useRef<HTMLDivElement>(null);
+  const documentHeading = useRef<HTMLHeadingElement>(null), documentOpener = useRef<HTMLButtonElement | null>(null);
+  const revealLatest = useRef(false);
   const wasOpen = useRef(false);
   const request = useRef<AbortController | null>(null), generation = useRef(0), running = useRef(false);
   const retryCommand = useRef<{key: string; id: string} | null>(null);
@@ -52,6 +63,27 @@ export default function ExecutiveAlly() {
     return retryCommand.current!.id;
   }
   useEffect(() => () => { request.current?.abort(); ++generation.current; running.current = false; }, []);
+  const documentOpen = documentVersion !== null;
+  useEffect(() => { if (documentOpen) documentHeading.current?.focus({preventScroll:true}); }, [documentOpen]);
+  useEffect(() => {
+    const closeHistory = (event: PointerEvent) => { if (event.target instanceof Node && !historyMenu.current?.contains(event.target)) historyMenu.current?.removeAttribute('open'); };
+    document.addEventListener('pointerdown',closeHistory);
+    return () => document.removeEventListener('pointerdown',closeHistory);
+  }, []);
+  function closeDocument() { setDocumentVersion(null); requestAnimationFrame(() => documentOpener.current?.focus({preventScroll:true})); }
+  function scrollToLatest(animate = false) {
+    const container = body.current, turn = latestTurn.current;
+    if (!container || !turn) return;
+    container.scrollTo({top: Math.max(0, container.scrollTop + turn.getBoundingClientRect().top - container.getBoundingClientRect().top - 20),
+      behavior: animate && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'instant'});
+    setAwayFromLatest(false);
+  }
+  useEffect(() => {
+    if (revealLatest.current && (report || pendingQuestion)) {
+      revealLatest.current = false;
+      requestAnimationFrame(() => scrollToLatest());
+    }
+  }, [report?.id, report?.selectedVersion, pendingQuestion]);
   useEffect(() => {
     const el = dialog.current;
     if (!el) return;
@@ -86,8 +118,11 @@ export default function ExecutiveAlly() {
     const poll = async () => {
       if (document.visibilityState === 'hidden' || polling) return;
       polling = true;
-      try { const next = await client.get(report, report.selectedVersion === report.version ? undefined : report.selectedVersion, controller.signal); if (!controller.signal.aborted && current === generation.current) setReport(next); }
-      catch (e) { if (!controller.signal.aborted && current === generation.current) { setReport(null); setReports([]); setShare(false); setError(e instanceof Error ? e.message : 'Report access could not be verified.'); } }
+      try {
+        const next = await client.get(report, report.selectedVersion === report.version ? undefined : report.selectedVersion, controller.signal);
+        if (!controller.signal.aborted && current === generation.current) { setReport(next); setAccessUncertain(false); setError(null); }
+      }
+      catch (e) { if (!controller.signal.aborted && current === generation.current) { setReport(null); setDocumentVersion(null); setReports([]); setShare(false); setError(e instanceof Error ? e.message : 'Report access could not be verified.'); } }
       finally { polling = false; }
     };
     // Recheck saved content too, so a revoked share disappears without reload.
@@ -96,11 +131,14 @@ export default function ExecutiveAlly() {
     return () => { controller.abort(); clearInterval(timer); document.removeEventListener('visibilitychange', poll); };
   }, [open, surface, client, report?.id, report?.status, report?.version, report?.selectedVersion, busy]);
   async function perform(operation: (signal: AbortSignal) => Promise<ExecutiveReport>) {
-    if (running.current) return;
+    if (running.current) return false;
     running.current = true; setBusy(true); setError(null);
     request.current?.abort(); const controller = new AbortController(); request.current = controller; const current = ++generation.current;
-    try { const result = await operation(controller.signal); if (!controller.signal.aborted && current === generation.current) { setReport(result); setScope(result.scope); setRetryList(v => v+1); retryCommand.current = null; } }
-    catch (e) { if (!controller.signal.aborted && current === generation.current) setError(e instanceof Error ? e.message : 'Try again.'); }
+    try {
+      const result = await operation(controller.signal);
+      if (!controller.signal.aborted && current === generation.current) { setReport(result); setAccessUncertain(false); setScope(result.scope); setRetryList(v => v+1); retryCommand.current = null; return true; }
+    }
+    catch (e) { if (!controller.signal.aborted && current === generation.current) { setAccessUncertain(true); setDocumentVersion(null); setError(e instanceof Error ? e.message : 'Try again.'); } }
     finally { if (current === generation.current) {
       setBusy(false); running.current = false;
       // Disabling a submit/select during a request can move focus to body.
@@ -112,62 +150,112 @@ export default function ExecutiveAlly() {
         }
       });
     } }
+    return false;
   }
   async function openReport(value: Pick<ReportSummary, 'id'|'ownerId'>, version?: number) {
     // Navigation replaces an in-flight retrieval; stale results cannot win.
     request.current?.abort(); running.current = false;
-    setReport(null); setDraft(''); setShare(false); await perform(signal => client.get(value, version, signal));
+    historyMenu.current?.removeAttribute('open');
+    revealLatest.current = true;
+    setDocumentVersion(null); setReport(null); setDraft(''); setShare(false);
+    const loaded = await perform(signal => client.get(value, version, signal));
+    if (loaded && dialog.current?.open) input.current?.focus({preventScroll:true});
   }
   async function command(action: string, extra: Record<string, unknown> = {}) {
     if (!report) return;
     await perform(async signal => { const next = await client.command(report, action, extra, signal); return client.get(next, undefined, signal); });
   }
   async function submit(e: FormEvent) {
-    e.preventDefault(); const text = draft.trim(); if (!text || busy) return;
+    e.preventDefault(); const text = draft.trim(); if (!text || busy || report && reportRunning(report.status)) return;
     const key = JSON.stringify([report?.id, text, scope]);
-    await perform(async signal => {
+    revealLatest.current = true; setPendingQuestion(text);
+    const sent = await perform(async signal => {
       const next = report ? await client.command(report, 'followup', {objective: text, scope, requestId: commandId(key)}, signal) : await client.create(text, scope, commandId(key), signal);
-      const result = await client.get(next, undefined, signal); setDraft(''); return result;
+      return client.get(next, undefined, signal);
     });
+    if (sent) setDraft('');
+    setPendingQuestion(null);
   }
-  function startNew() { if (busy) return; ++generation.current; setReport(null); setError(null); setShare(false); setDraft(''); setScope(initialScope(location.search)); input.current?.focus(); }
-  function openBlankReport() { newMenu.current?.removeAttribute('open'); startNew(); setSurface('reports'); setCanvasFocusSignal(value => value + 1); }
-  async function exportReport() {
-    if (!report || busy) return;
+  function startNew() { if (busy) return; ++generation.current; historyMenu.current?.removeAttribute('open'); setDocumentVersion(null); setChartSelection({}); setReport(null); setPendingQuestion(null); setError(null); setShare(false); setDraft(''); setScope(initialScope(location.search)); input.current?.focus(); }
+  function openBlankReport() { startNew(); setChatId(null); setSurface('reports'); requestAnimationFrame(()=>input.current?.focus()); }
+  async function exportReport(value = report) {
+    if (!value || busy) return;
     // Open synchronously for popup blockers, then reauthorize the selected version.
     const target = window.open('', '_blank'); if (!target) { setError('Allow a new window to export this report.'); return; }
     target.opener = null; target.document.title = 'Preparing report';
     try {
-      const fresh = await client.get(report, report.selectedVersion);
-      const {printReport} = await import('./printReport'); await printReport(target, fresh, measures);
-    } catch (e) { target.close(); setReport(null); setError(e instanceof Error ? e.message : 'Report export unavailable.'); }
+      const fresh = await client.get(value, value.selectedVersion);
+      const {printReport} = await import('./printReport'); await printReport(target, fresh, measuresFor(value));
+    } catch (e) { target.close(); setReport(null); setDocumentVersion(null); setError(e instanceof Error ? e.message : 'Report export unavailable.'); }
   }
   const editable = report?.canEdit && report.selectedVersion === report.version;
   const active = report && reportRunning(report.status);
-  const reportSurface = <div className="executive-ally-report-surface">
-      {(!report || reports.length > 1 || report.versions.length > 1) && <nav className="executive-ally-saved" aria-label="Report navigation">{(!report || reports.length > 1) && <select aria-label="Saved reports" value={report ? `${report.ownerId}/${report.id}` : ''} disabled={busy} onChange={e => {const r=reports.find(v=>`${v.ownerId}/${v.id}`===e.target.value); if(r) void openReport(r); else startNew();}}><option value="">Recent reports</option>{reports.map(r => <option key={`${r.ownerId}/${r.id}`} value={`${r.ownerId}/${r.id}`}>{r.title}</option>)}</select>}{report && report.versions.length > 1 && <select aria-label="Report version" value={report.selectedVersion} disabled={busy} onChange={e => void openReport(report, Number(e.target.value))}>{report.versions.map(v => <option key={v.version} value={v.version}>Version {v.version}</option>)}</select>}</nav>}
-      <div className="executive-ally-body">
-        {error && <div role="alert" className="ally-report-error"><p>{error}</p><button onClick={() => {setError(null); setRetryList(v=>v+1);}}>Refresh reports</button><button onClick={() => void transport.connect().then(()=>setRetryList(v=>v+1)).catch(()=>setError('Sign-in was not completed.'))}>Connect sign-in</button></div>}
-        {!report && !busy && <div className="executive-ally-empty"><h2>Ask Ally</h2><p>Describe the question or report you need.</p></div>}
-        {report && <div className="ally-report-toolbar"><span role="status">{reportStatus(report.status)}{active && ` · ${report.completedSources}/${report.totalSources || '…'} sources`}</span>
-          {editable && active && <button disabled={busy} onClick={() => void command('cancel')}><Square size={16}/>Stop</button>}
-          {editable && ['paused','failed'].includes(report.status) && <button disabled={busy} onClick={() => void command('resume')}>Resume</button>}
-          {(report.artifact || (editable && !active)) && <details className="ally-report-actions"><summary aria-label="More report actions" title="More report actions"><MoreHorizontal size={21}/></summary><div role="group" aria-label="Report actions">{report.artifact && <button type="button" disabled={busy} onClick={e => { e.currentTarget.closest('details')!.open = false; void exportReport(); }}><Download size={17}/>Save PDF</button>}{editable && !active && <button type="button" disabled={busy} onClick={e => { e.currentTarget.closest('details')!.open = false; void command('refresh', {requestId: commandId(`refresh:${report.id}:${report.version}`)}); }}><RefreshCw size={17}/>Refresh report</button>}{editable && !active && report.artifact && <button type="button" aria-expanded={share} onClick={e => { e.currentTarget.closest('details')!.open = false; setShare(!share); }}><Share2 size={17}/>Share report</button>}</div></details>}
-        </div>}
-        {report?.error && <p role="status">{report.error}</p>}
-        {share && report && <fieldset className="ally-report-sharing"><legend>Report access</legend>{reportParticipants().filter(p=>p.id!==report.ownerId).map(p => <label key={p.id}><input type="checkbox" checked={report.readers.includes(p.id)} disabled={busy} onChange={e => void command(e.target.checked ? 'share' : 'unshare', {readerId:p.id})}/>{p.name}</label>)}<p>Recipients need their own source access.</p><button onClick={() => {const url=new URL(location.pathname,window.location.origin);url.searchParams.set('allyReport',`${report.ownerId}/${report.id}`);void navigator.clipboard.writeText(url.href).catch(()=>setError('The report link could not be copied.'));}}>Copy link</button></fieldset>}
-        {report && <ReportView report={report} canvas={expanded} measures={measures} onMeasureChange={(sectionId, measure) => setChartSelection(current => ({key: reportKey, measures: {...(current.key === reportKey ? current.measures : {}), [sectionId]: measure}}))}/>}
-        {busy && <p role="status">Saving…</p>}
+  const answers = report && !accessUncertain && !error ? [...history.answers, report] : [];
+  // A refresh replaces the presentation of the same question. Every saved
+  // version remains available in the report reader.
+  const threadAnswers = answers.filter((value,index) => {const next=answers[index+1];return !next || !next.artifact || next.objective!==value.objective || JSON.stringify(next.scope)!==JSON.stringify(value.scope);});
+  const documentReport = answers.find(value => value.selectedVersion === documentVersion);
+  useEffect(() => {
+    if (documentVersion !== null && !documentReport && !history.loading) {
+      setDocumentVersion(null);
+      input.current?.focus({preventScroll:true});
+    }
+  }, [documentVersion, documentReport, history.loading]);
+  const reportActions = report && (report.artifact || (editable && !active)) && <details className="ally-report-actions"><summary aria-label="More report actions" title="More report actions"><MoreHorizontal size={21}/></summary><div role="group" aria-label="Report actions">
+    {report.artifact && <button type="button" disabled={busy} onClick={e => {e.currentTarget.closest('details')!.open=false; void exportReport();}}><Download size={17}/>Save PDF</button>}
+    {editable && !active && <button type="button" disabled={busy} onClick={e => {e.currentTarget.closest('details')!.open=false; void command('refresh',{requestId:commandId(`refresh:${report.id}:${report.version}`)});}}><RefreshCw size={17}/>Refresh report</button>}
+    {editable && !active && report.artifact && <button type="button" aria-expanded={share} onClick={e => {e.currentTarget.closest('details')!.open=false; setShare(!share);}}><Share2 size={17}/>Share report</button>}
+  </div></details>;
+  const reportSurface = <div className={`executive-ally-report-surface ally-conversation${documentReport ? ' ally-conversation--document' : ''}`}>
+    <div className="ally-conversation-column">
+      <div ref={body} className="executive-ally-body" onScroll={() => {if(body.current && latestTurn.current) setAwayFromLatest(latestTurn.current.getBoundingClientRect().top > body.current.getBoundingClientRect().bottom - 48);}}>
+        {error && <div role="alert" className="ally-report-error"><p>{error}</p><button onClick={() => {if(report) void openReport(report); else {setError(null);setRetryList(v=>v+1);}}}>Refresh reports</button><button onClick={() => void transport.connect().then(()=>setRetryList(v=>v+1)).catch(()=>setError('Sign-in was not completed.'))}>Connect sign-in</button></div>}
+        {!report && !busy && !error && <div className="executive-ally-empty"><h2>Ask Ally</h2></div>}
+        <div className="ally-conversation-thread" aria-label="Conversation">
+          {history.loading && <p className="ally-history-status" role="status">Loading earlier answers…</p>}
+          {history.unavailable && <p className="ally-history-status" role="status">Some earlier answers are unavailable. <button type="button" onClick={history.retry}>Retry</button></p>}
+          {threadAnswers.map(value => <div className="ally-thread-turn" data-version={value.selectedVersion} data-working={reportRunning(value.status)} key={reportKey(value)} ref={value === report && !pendingQuestion ? latestTurn : undefined}>
+            <div className="ally-thread-question"><span className="sr-only">You: </span>{value.objective}</div>
+            <div className="ally-thread-answer"><span className="sr-only">Ally: </span>
+              {reportRunning(value.status) && <div className="ally-thread-progress" role="status"><span className="ally-working-dot" aria-hidden="true"/>{reportStatus(value.status)}{value.totalSources > 0 && <span>{value.completedSources}/{value.totalSources}</span>}</div>}
+              {value.error && <p role="status">{value.error}</p>}
+              {['paused','failed','cancelled'].includes(value.status) && <div className="ally-thread-progress" role="status">{reportStatus(value.status)}{value === report && editable && value.status !== 'cancelled' && <button disabled={busy} onClick={() => void command('resume')}>Resume</button>}</div>}
+              <ReportView report={value} canvas anchorPrefix={`ally-turn-${value.selectedVersion}`} measures={measuresFor(value)} onMeasureChange={(section,measure) => changeMeasure(value,section,measure)}/>
+              {value.artifact && <footer className="ally-thread-actions"><button type="button" onClick={e => {documentOpener.current=e.currentTarget;setExpanded(true);setDocumentVersion(value.selectedVersion);}}>Open report</button>{value === report && reportActions}</footer>}
+            </div>
+          </div>)}
+          {pendingQuestion && <div className="ally-thread-turn" ref={latestTurn}><div className="ally-thread-question"><span className="sr-only">You: </span>{pendingQuestion}</div><div className="ally-thread-progress" role="status"><span className="ally-working-dot" aria-hidden="true"/>Sending…</div></div>}
+        </div>
+        {share && report && !error && <fieldset className="ally-report-sharing"><legend>Report access</legend>{reportParticipants().filter(p=>p.id!==report.ownerId).map(p => <label key={p.id}><input type="checkbox" checked={report.readers.includes(p.id)} disabled={busy} onChange={e => void command(e.target.checked ? 'share' : 'unshare',{readerId:p.id})}/>{p.name}</label>)}<p>Recipients need their own source access.</p><button onClick={() => {const url=new URL(location.pathname,window.location.origin);url.searchParams.set('allyReport',`${report.ownerId}/${report.id}`);void navigator.clipboard.writeText(url.href).catch(()=>setError('The report link could not be copied.'));}}>Copy link</button></fieldset>}
       </div>
+      {awayFromLatest && <button className="ally-latest" aria-label="Go to latest answer" onClick={() => scrollToLatest(true)}><ArrowDown size={17}/>Latest</button>}
       <form className="executive-ally-composer" onSubmit={e => void submit(e)}>
-        <details className="ally-report-scope"><summary>{scope.communityIds.length ? ALAMO_FACILITIES.find(f => f.facilityId === scope.communityIds[0])?.shortName : 'All communities'} · {scope.from} – {scope.through}</summary><div><label>Community<select value={scope.communityIds[0] ?? ''} disabled={busy || Boolean(active)} onChange={e=>setScope({...scope, communityIds:e.target.value?[e.target.value]:[]})}><option value="">All communities</option>{ALAMO_FACILITIES.map(f=><option key={f.facilityId} value={f.facilityId}>{f.shortName}</option>)}</select></label><label>From<input type="date" value={scope.from} max={scope.through} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,from:e.target.value})}/></label><label>Through<input type="date" value={scope.through} min={scope.from} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,through:e.target.value})}/></label></div></details>
-        <div className="executive-ally-input"><textarea ref={input} aria-label={report ? 'Follow-up question' : 'Ask Ally'} placeholder={report ? 'Ask a follow-up…' : 'Ask Ally…'} rows={2} maxLength={2000} value={draft} onChange={e => setDraft(e.target.value)} disabled={busy || Boolean(active) || Boolean(report && !editable)}/><button type="submit" aria-label="Send question" disabled={busy || Boolean(active) || Boolean(report && !editable) || !draft.trim()}><ArrowUp size={22}/></button></div>
+        <details className="ally-report-scope"><summary>{scope.communityIds.length ? ALAMO_FACILITIES.find(f => f.facilityId === scope.communityIds[0])?.shortName : 'All communities'} · {formatDisplayDate(scope.from,{month:'short'})} – {formatDisplayDate(scope.through,{month:'short'})}</summary><div><label>Community<select value={scope.communityIds[0] ?? ''} disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,communityIds:e.target.value?[e.target.value]:[]})}><option value="">All communities</option>{ALAMO_FACILITIES.map(f=><option key={f.facilityId} value={f.facilityId}>{f.shortName}</option>)}</select></label><label>From<input type="date" value={scope.from} max={scope.through} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,from:e.target.value})}/></label><label>Through<input type="date" value={scope.through} min={scope.from} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,through:e.target.value})}/></label></div></details>
+        <div className="executive-ally-input"><textarea ref={input} aria-label={report ? 'Follow-up question' : 'Ask Ally'} placeholder="Ask Ally…" rows={2} maxLength={2000} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => {if(e.key==='Enter' && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault();if(!active && !busy) e.currentTarget.form?.requestSubmit();}}} disabled={busy || Boolean(report && !editable)}/>{active && editable ? <button type="button" aria-label="Stop" disabled={busy} onClick={() => void command('cancel')}><Square size={19}/></button> : <button type="submit" aria-label="Send question" disabled={busy || Boolean(active) || Boolean(report && !editable) || !draft.trim()}><ArrowUp size={22}/></button>}</div>
       </form>
+    </div>
+    {documentReport && <aside className="ally-document-reader" aria-label="Expanded report"><header><h2 ref={documentHeading} tabIndex={-1}>Report</h2>{report && report.versions.length > 1 && <select aria-label="Report version" value={documentVersion!} onChange={e=>setDocumentVersion(Number(e.target.value))}>{report.versions.filter(v=>v.version<=report.selectedVersion).map(v=><option key={v.version} value={v.version}>Version {v.version}</option>)}</select>}<button aria-label="Save PDF" title="Save PDF" disabled={busy} onClick={() => void exportReport(documentReport)}><Download size={19}/></button><button aria-label="Close report" onClick={closeDocument}><X size={20}/></button></header><div className="ally-document-body"><ReportView report={documentReport} anchorPrefix="ally-document" measures={measuresFor(documentReport)} onMeasureChange={(section,measure) => changeMeasure(documentReport,section,measure)}/></div></aside>}
   </div>;
+  function escapePanel() {
+    if(historyMenu.current?.open) {historyMenu.current.open=false;historyMenu.current.querySelector('summary')?.focus();}
+    else if(documentVersion!==null) closeDocument();
+    else if(matchMedia('(max-width: 700px)').matches) changeOpen(false);
+    else if(expanded) setExpanded(false);
+    else changeOpen(false);
+  }
   return <div className="executive-ally">
-    <dialog ref={dialog} className={`executive-ally-panel${surface === 'chat' ? ' executive-ally-panel--chat' : ''}${expanded ? ' executive-ally-panel--expanded' : ''}`} aria-label="Ally" onKeyDown={e => {if(e.key==='Escape'){e.preventDefault(); if (newMenu.current?.open) newMenu.current.open = false; else if (matchMedia('(max-width: 700px)').matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false);}}} onCancel={e => {e.preventDefault(); if (matchMedia('(max-width: 700px)').matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false);}}>
-      <header className="executive-ally-header"><AllyMark className="ally-panel-mark" /><strong>Ally</strong>{surface === 'chat' && !chatId ? <button type="button" className="ally-panel-report" disabled={busy} onClick={openBlankReport}>Report</button> : <details ref={newMenu} className="ally-panel-create"><summary><Plus size={18} aria-hidden="true" />New</summary><div role="group" aria-label="Start new work">{agentChatConfigured && <button type="button" onClick={() => { newMenu.current?.removeAttribute('open'); setChatId(null); setSurface('chat'); }}><Pencil size={17} aria-hidden="true" />New chat</button>}<button type="button" aria-label="New report" disabled={busy} onClick={openBlankReport}><Plus size={17} aria-hidden="true" />New report</button></div></details>}<button className="ally-panel-expand" type="button" aria-label={expanded ? 'Restore Ally panel' : 'Expand Ally to full screen'} aria-pressed={expanded} title={expanded ? 'Restore panel' : 'Full screen'} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button><button aria-label="Close Ally" autoFocus onClick={() => changeOpen(false)}><X size={20}/></button></header>
-      {surface === 'chat' || (expanded && agentChatConfigured && chatId) ? <div className="executive-ally-chat"><AgentConversationHome transport={transport} conversationId={chatId} onNavigate={setChatId} expanded={expanded} workspaceCanvas={expanded && surface === 'reports' ? reportSurface : undefined} canvasFocusSignal={canvasFocusSignal} /></div> : reportSurface}
+    <dialog ref={dialog} className={`executive-ally-panel${surface==='chat' ? ' executive-ally-panel--chat' : ''}${expanded ? ' executive-ally-panel--expanded' : ''}`} aria-label="Ally" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();escapePanel();}}} onCancel={e=>{e.preventDefault();escapePanel();}}>
+      <header className="executive-ally-header"><AllyMark className="ally-panel-mark"/><strong>Ally</strong>
+        {(!accessUncertain && reports.length>0 || agentChatConfigured) && <details ref={historyMenu} className="ally-conversation-history"><summary aria-label="Saved conversations" title="History"><History size={19}/><span>History</span></summary><nav aria-label="Saved reports">
+          {!accessUncertain && reports.length>0 && <input aria-label="Search conversations" type="search" placeholder="Search" value={historySearch} onChange={e=>setHistorySearch(e.target.value)}/>}
+          {(accessUncertain ? [] : reports).filter(r=>r.title.toLocaleLowerCase().includes(historySearch.toLocaleLowerCase())).map(r=><button type="button" key={`${r.ownerId}/${r.id}`} aria-current={r.id===report?.id && r.ownerId===report.ownerId ? 'page' : undefined} disabled={busy} onClick={()=>{setSurface('reports');void openReport(r);}}>{r.title}</button>)}
+          {agentChatConfigured && <button type="button" className="ally-guidance-history" onClick={()=>{historyMenu.current?.removeAttribute('open');setSurface('chat');}}>Guidance chats</button>}
+        </nav></details>}
+        <button type="button" className="ally-panel-new" aria-label="New chat" disabled={busy} onClick={openBlankReport}><Pencil size={18}/><span>New chat</span></button>
+        <button className="ally-panel-expand" type="button" aria-label={expanded ? 'Restore Ally panel' : 'Expand Ally to full screen'} aria-pressed={expanded} title={expanded ? 'Restore panel' : 'Full screen'} onClick={()=>{if(expanded && documentVersion!==null) closeDocument();setExpanded(value=>!value);}}>{expanded ? <Minimize2 size={18} aria-hidden="true"/> : <Maximize2 size={18} aria-hidden="true"/>}</button>
+        <button aria-label="Close Ally" autoFocus onClick={()=>changeOpen(false)}><X size={20}/></button>
+      </header>
+      {surface==='chat' ? <div className="executive-ally-chat"><AgentConversationHome transport={transport} conversationId={chatId} onNavigate={setChatId} expanded={expanded}/></div> : reportSurface}
     </dialog>
   </div>;
 }

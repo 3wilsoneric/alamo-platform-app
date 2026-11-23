@@ -23,17 +23,18 @@ const source={authorize:async()=>sourceReady?{revision:reportHash('fixture-grant
 const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:[{id:'flow',componentId:'comparison',datasetId:'source-1'}]}})};
 try { await withBrowserQa(async browser=>{
   for(const width of [1440,390,320]) {
+    console.log(`Executive Ally: checking ${width}px`);
     const store=createExecutiveReportStore({azure:false,localRoot:path.join(localRoot,String(width))});
     const service=createExecutiveReportService({store,source,model,allowedSubjects:[owner,reader]});
     const context=await browser.newContext({viewport:{width,height:width===1440?1000:844},hasTouch:width<700,reducedMotion:width===320?'reduce':'no-preference'});
     await context.addInitScript(()=>{window.print=()=>{};});
-    const page=await context.newPage(),errors=[];let loseResponse=false,hold=false,currentAuth=auth;
+    const page=await context.newPage(),errors=[];let loseResponse=false,hold=false,denyHistory=false,currentAuth=auth;
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/api/agent/v1/reports*',async route=>{
       try {
         const req=route.request(),url=new URL(req.url());let result;
         if(req.method()==='POST') {const body=req.postDataJSON();result=await service[body.operation](currentAuth,body.input);if(loseResponse){loseResponse=false;await route.abort();return;}}
-        else if(url.searchParams.has('id')) {const id=url.searchParams.get('id');if(!hold)for(let i=0;i<3;i++)await service.advance({ownerId:owner,id});result=await service.get(currentAuth,url.searchParams.get('ownerId'),id,url.searchParams.has('version')?Number(url.searchParams.get('version')):null);}
+        else if(url.searchParams.has('id')) {if(denyHistory && Number(url.searchParams.get('version'))>0 && Number(url.searchParams.get('version'))<3) {await route.fulfill({status:403,json:{code:'source_forbidden'}});return;}const id=url.searchParams.get('id');if(!hold)for(let i=0;i<3;i++)await service.advance({ownerId:owner,id});result=await service.get(currentAuth,url.searchParams.get('ownerId'),id,url.searchParams.has('version')?Number(url.searchParams.get('version')):null);}
         else result={reports:await service.list(currentAuth)};
         // The independent API adds a validated optional measureKey. Keep this
         // wire fixture separate from the host’s older source-runtime package.
@@ -67,23 +68,62 @@ try { await withBrowserQa(async browser=>{
       await panel.getByRole('article',{name:'Report findings'}).waitFor();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isDisabled());
       assert.equal(await panel.getByRole('button',{name:/^(Refresh report|Share report)$/,includeHidden:true}).count(),0,'recipient has no owner controls, including closed-menu actions');
       sourceReady=false;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await panel.getByRole('alert').waitFor();
-      assert.equal(await panel.getByRole('article',{name:'Report findings'}).count(),0);assert.equal(await panel.getByLabel('Saved reports').locator('option').count(),1,'revocation clears cached report titles too');
+      assert.equal(await panel.getByRole('article',{name:'Report findings'}).count(),0);assert.equal(await panel.getByRole('navigation',{name:'Saved reports'}).count(),0,'revocation clears cached report titles too');
       sourceReady=true;currentAuth=auth;await page.goto(sharedLink,{waitUntil:'domcontentloaded'});await panel.getByRole('article',{name:'Report findings'}).waitFor();
       assert.equal(await panel.getByLabel('Chart measure').inputValue(),'discharges','reopening keeps the source-bound chart measure');
       await panel.getByLabel('Chart measure').selectOption('admissions');
       const overrideOpened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const overridePdf=await overrideOpened;await overridePdf.getByRole('article',{name:'Report findings'}).waitFor();
       assert.equal(await overridePdf.getByRole('list',{name:'Admissions',exact:true}).count(),1,'explicit user choice takes precedence in PDF');await overridePdf.close();
-      await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Refresh report',exact:true}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='2');
-      assert.equal(await panel.getByLabel('Chart measure').inputValue(),'admissions','legacy versions without a measure retain first-column behavior');
-      await panel.getByLabel('Report version').selectOption('1');await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='1');assert.equal(await panel.getByRole('button',{name:/^(Refresh report|Share report)$/,includeHidden:true}).count(),0,'historical versions have no owner mutation controls');
-      assert.equal(await panel.getByLabel('Chart measure').inputValue(),'admissions','returning to the selected version keeps its explicit override');
-      await panel.getByLabel('Report version').selectOption('2');await panel.getByRole('textbox',{name:'Follow-up question'}).fill('Explain the net additions and show the supporting values.');await panel.getByRole('button',{name:'Send question'}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='3');
+      await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Refresh report',exact:true}).click();
+      const second=panel.locator('.ally-thread-turn[data-version="2"]');await second.getByRole('article',{name:'Report findings'}).waitFor();
+      assert.equal(await second.getByLabel('Chart measure').inputValue(),'admissions','legacy versions without a measure retain first-column behavior');
+      assert.equal(await panel.locator('.ally-thread-question').count(),1,'refresh replaces the answer without repeating the question');
+      await second.getByRole('button',{name:'Open report',exact:true}).click();const readerView=panel.getByRole('complementary',{name:'Expanded report'});
+      await readerView.getByLabel('Report version').selectOption('1');
+      assert.equal(await readerView.getByRole('button',{name:/^(Refresh report|Share report)$/,includeHidden:true}).count(),0,'historical reader has no mutation controls');
+      assert.equal(await readerView.getByLabel('Chart measure').inputValue(),'admissions','each version retains its explicit chart selection');
+      const historicalOpened=context.waitForEvent('page');await readerView.getByRole('button',{name:'Save PDF'}).click();const historicalPdf=await historicalOpened;
+      await historicalPdf.getByRole('article',{name:'Report findings'}).waitFor();assert.equal(await historicalPdf.getByRole('list',{name:'Admissions',exact:true}).count(),1);await historicalPdf.close();
+      await readerView.getByRole('button',{name:'Close report'}).click();
+      hold=true;
+      const composer=panel.getByRole('textbox',{name:'Follow-up question'});
+      await composer.fill('Explain the net additions');await composer.press('Shift+Enter');await composer.pressSequentially('and show the supporting values.');
+      assert.equal(await composer.inputValue(),'Explain the net additions\nand show the supporting values.');
+      await composer.dispatchEvent('keydown',{key:'Enter',code:'Enter',bubbles:true,isComposing:true});
+      assert.equal((await service.list(auth))[0].version,2,'IME confirmation must not submit');
+      await composer.press('Enter');const third=panel.locator('.ally-thread-turn[data-version="3"]');await third.waitFor();
+      assert.equal(await second.getByRole('article',{name:'Report findings'}).count(),1,'the previous answer stays visible during follow-up');
+      assert(await composer.isEnabled(),'the user can draft while Ally works');await composer.fill('Draft for the next question');
+      const scroller=panel.locator('.executive-ally-body');await scroller.evaluate(el=>{el.scrollTop=0;el.dispatchEvent(new Event('scroll'));});
+      hold=false;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await third.getByRole('article',{name:'Report findings'}).waitFor();
+      assert.equal(await scroller.evaluate(el=>el.scrollTop),0,'finishing an answer must not move a reader inspecting older work');
+      assert.equal(await composer.inputValue(),'Draft for the next question','polling preserves the next draft');await composer.fill('');
+      assert.equal(await panel.locator('.ally-thread-question').count(),2,'a follow-up produces a visible conversation');
+      const ids=await panel.locator('[id^="ally-turn-"]').evaluateAll(els=>els.map(el=>el.id));assert.equal(new Set(ids).size,ids.length,'citations have unique per-answer destinations');
+      await page.screenshot({path:path.join(output,'conversation-1440.png'),fullPage:true});
+      await second.getByRole('button',{name:'Open report',exact:true}).click();
+      denyHistory=true;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+      await panel.getByText('Some earlier answers are unavailable.',{exact:false}).waitFor();
+      assert.equal(await panel.locator('.ally-thread-turn[data-version="2"]').count(),0,'a historical source denial removes the older answer');
+      assert.equal(await panel.getByRole('complementary',{name:'Expanded report'}).count(),0,'an open historical document closes when its source access is denied');
+      assert.equal(await third.getByRole('article',{name:'Report findings'}).count(),1,'a separately authorized current answer remains usable');
+      denyHistory=false;await panel.getByRole('button',{name:'Retry',exact:true}).click();await second.getByRole('article',{name:'Report findings'}).waitFor();
+      await panel.getByLabel('Saved conversations').click();
+      const menu=panel.getByRole('navigation',{name:'Saved reports'});await menu.getByLabel('Search conversations').fill('Explain the net additions');
+      assert.equal(await menu.getByRole('button').count(),1,'history searches the saved conversations');
+      await page.screenshot({path:path.join(output,'history-1440.png'),fullPage:true});
+      await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false,'Escape closes history before the workspace');
+
+
     }
+    if(width===1440 && await panel.getByRole('button',{name:'Restore Ally panel'}).count()) await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});
-    await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();await panel.getByLabel('Saved reports').selectOption({label:'Compare admissions and discharges across communities.'}).catch(async()=>{const option=await panel.getByLabel('Saved reports').locator('option').nth(1).getAttribute('value');await panel.getByLabel('Saved reports').selectOption(option);});
-    await panel.getByRole('article',{name:'Report findings'}).waitFor();
-    if(width===320){await panel.locator('.ally-panel-create summary').click();await panel.getByRole('button',{name:'New report'}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
+    await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();await panel.getByLabel('Saved conversations').click();await panel.getByRole('navigation',{name:'Saved reports'}).getByRole('button').first().click();
+    await panel.getByRole('article',{name:'Report findings'}).last().waitFor();
+    if(width===1440){await panel.locator('.ally-thread-turn[data-version="2"] article').waitFor();assert.equal(await panel.locator('.ally-thread-question').count(),2,'saved reopening restores the conversation');}
+    if(width===390){await panel.getByRole('button',{name:'Open report',exact:true}).click();const readerView=panel.getByRole('complementary',{name:'Expanded report'});await readerView.waitFor();assert.equal(await panel.locator('.ally-conversation-column').isVisible(),false,'phone report uses one reading surface');await readerView.getByRole('button',{name:'Close report'}).click();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isVisible());}
+    if(width===320){await panel.getByRole('button',{name:'New chat',exact:true}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
     assert.deepEqual(errors,[]);await context.close();
   }
-},{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, versioning, follow-up, shared links, recipient controls, revocation, PDF, cancellation and saved reopening passed.'); }
+},{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, conversation/history, stable scrolling/drafts, IME, versioning, shared links, recipient controls, current and historical revocation, PDF, cancellation and saved reopening passed.'); }
 finally {await rm(localRoot,{recursive:true,force:true});}

@@ -113,3 +113,67 @@
   .ally-report-document pre {max-height:none;white-space:pre-wrap;}
   .ally-report-table {overflow:visible;}
 }
+
+/* A saved investigation reads as a conversation; the report is an optional view. */
+.executive-ally .ally-conversation {flex-direction:row;position:relative;}
+.ally-conversation-column {display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;position:relative;}
+.executive-ally-panel .ally-conversation .executive-ally-body {overflow-anchor:none;padding:28px max(20px,calc((100% - 760px)/2)) 40px;}
+.executive-ally-panel .ally-conversation .executive-ally-composer {padding:8px max(20px,calc((100% - 760px)/2)) max(16px,env(safe-area-inset-bottom));border-top:1px solid var(--ally-rule);}
+.ally-conversation .executive-ally-empty {display:grid;place-items:center;min-height:30dvh;}
+.ally-conversation-thread {min-width:0;}
+.ally-thread-turn {margin-bottom:40px;scroll-margin-top:20px;}
+.ally-thread-question {width:fit-content;max-width:88%;margin:0 0 26px auto;padding:12px 16px;border:1px solid var(--ally-rule);border-radius:var(--ally-radius);font-size:16px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;}
+.ally-thread-answer {min-width:0;}
+.ally-thread-turn[data-working=true] .ally-thread-answer {min-height:140px;}
+.ally-conversation .ally-thread-answer .ally-report-finding>p {font-size:16px;font-weight:400;line-height:1.7;color:var(--ally-ink);}
+.ally-conversation .ally-thread-answer .ally-report-finding:first-of-type>p {font-weight:600;}
+.ally-conversation .ally-thread-answer .ally-report-finding {margin-bottom:18px;}
+.ally-conversation .ally-thread-answer .ally-report-source {margin-top:20px;padding-top:20px;border-top:1px solid var(--ally-rule);}
+.ally-conversation .ally-thread-answer .ally-report-source h3 {font-size:15px;margin-bottom:14px;}
+.ally-thread-progress {display:flex;gap:10px;align-items:center;min-height:44px;color:var(--ally-muted);font-size:14px;}
+.ally-working-dot {display:block;flex:none;width:7px;height:7px;border-radius:50%;background:var(--ally-accent);animation:ally-working 1.4s ease-in-out infinite;}
+@keyframes ally-working {50%{opacity:.35;}}
+.ally-thread-actions {display:flex;align-items:center;gap:8px;}
+.ally-thread-actions>button {border-color:transparent;font-size:13px;padding-inline:0;color:var(--ally-muted);}
+.ally-thread-actions .ally-report-actions {margin-left:auto;}
+.executive-ally-header .ally-conversation-history {position:relative;margin-left:auto;flex:none;}
+.ally-conversation-history>summary {list-style:none;display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:8px;cursor:pointer;font-size:13px;}
+.ally-conversation-history>summary::-webkit-details-marker {display:none;}
+.executive-ally-header .ally-conversation-history>summary span {margin:0;color:inherit;font-size:inherit;}
+.executive-ally-header .ally-conversation-history nav {display:block;position:absolute;right:0;top:calc(100% + 8px);z-index:5;width:min(340px,calc(100vw - 32px));max-height:min(60dvh,460px);overflow:auto;overscroll-behavior:contain;padding:8px;background:var(--ally-paper);border:1px solid var(--ally-ink);border-radius:var(--ally-radius);}
+.ally-conversation-history input {width:100%;min-height:44px;padding:8px 10px;border:1px solid var(--ally-rule);border-radius:var(--ally-radius);background:var(--ally-paper);margin-bottom:6px;}
+.executive-ally-header .ally-conversation-history nav button {display:block;width:100%;min-height:52px;text-align:left;font-size:13px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;padding:10px;border:0;border-left:2px solid transparent;border-radius:0;}
+.executive-ally-header .ally-conversation-history nav button[aria-current=page] {border-left-color:var(--ally-accent);font-weight:600;}
+.ally-conversation .executive-ally-input textarea {resize:none;field-sizing:content;min-height:48px;max-height:160px;}
+.executive-ally .ally-latest {position:absolute;bottom:154px;left:50%;transform:translateX(-50%);font-size:13px;border-color:var(--ally-rule);padding:6px 12px;}
+.ally-document-reader {display:flex;flex-direction:column;flex:0 0 48%;min-width:0;min-height:0;border-left:1px solid var(--ally-rule);background:var(--ally-paper);}
+.ally-document-reader>header {display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--ally-rule);}
+.ally-document-reader>header h2 {font-size:16px;font-weight:600;margin:0 auto 0 0;}
+.ally-document-reader>header button {border:0;padding:8px;}
+.ally-document-reader>header select {min-width:0;max-width:130px;min-height:44px;padding:6px;background:var(--ally-paper);border:1px solid var(--ally-rule);border-radius:var(--ally-radius);}
+.ally-document-body {min-height:0;overflow:auto;overscroll-behavior:contain;padding:24px;}
+@media(max-width:1000px) {
+  .ally-conversation--document .ally-conversation-column {display:none;}
+  .ally-document-reader {flex:1;border:0;}
+}
+@media(max-width:700px) {
+  .executive-ally-panel .ally-conversation .executive-ally-body {overflow-anchor:none;padding:20px 18px 28px;}
+  .executive-ally-panel .ally-conversation .executive-ally-composer {padding:6px 12px max(12px,env(safe-area-inset-bottom));}
+  .ally-thread-question {max-width:94%;padding:10px 12px;}
+  .ally-thread-turn {margin-bottom:30px;}
+  .ally-conversation-history>summary span {display:none;}
+  .ally-document-reader>header {padding:8px 12px;gap:4px;}
+  .ally-document-body {padding:18px;}
+}
+@media(prefers-reduced-motion:reduce) {.ally-working-dot {animation:none;}}
+.ally-conversation {container-type:inline-size;}
+.ally-history-status {font-size:13px;color:var(--ally-muted);margin:0 0 20px;}
+.ally-history-status button {border:0;font-size:inherit;}
+@container(max-width:1000px) {
+  .ally-conversation--document .ally-conversation-column {display:none;}
+  .ally-document-reader {flex:1;border:0;}
+}
+.executive-ally-header .ally-panel-new {font-size:13px;gap:6px;}
+.executive-ally-header .ally-panel-new span {font:inherit;margin:0;color:inherit;}
+.executive-ally-header .ally-guidance-history {border-top:1px solid var(--ally-rule);margin-top:6px;}
+@media(max-width:700px){.executive-ally-header .ally-panel-new span{display:none;}}

@@ -92,8 +92,8 @@ await withBrowserQa(async browser => {
     await initialReport.getByRole("article", { name: "Report findings" }).waitFor();
     assert.equal(await initialReport.locator(".ally-report-comparison li").count(), 5);
     await panel.screenshot({ path: path.join(output, `ally-workspace-default-report-${width}.png`) });
-    await panel.locator(".ally-panel-create summary").click();
-    await panel.getByRole("button", { name: "New chat" }).click();
+    await panel.getByLabel("Saved conversations").click();
+    await panel.getByRole("button", { name: "Guidance chats" }).click();
     if (width <= 390) assert.equal(await panel.getByRole("button", { name: "Answer" }).count(), 0, "the empty phone view starts with one composer");
     assert.equal(await panel.getByRole("textbox", { name: "Ask Ally" }).count(), 1, "the empty workspace has one input");
     await panel.getByRole("textbox", { name: "Ask Ally" }).fill("Which accepted clients are still waiting for a move-in date?");
@@ -119,15 +119,14 @@ await withBrowserQa(async browser => {
       await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
     }
     assert.equal(await panel.getByRole("article", { name: "Expanded Ally answer" }).count(), 1, "the answer survives panel resizing");
-    await panel.locator(".ally-panel-create summary").click();
-    await panel.getByRole("button", { name: "New report" }).click();
+    await panel.getByRole("button", { name: "New chat", exact: true }).click();
     const reportSurface = panel.locator(".executive-ally-report-surface");
     await reportSurface.getByRole("textbox", { name: "Ask Ally" }).fill("Compare admissions and discharges across communities.");
     await reportSurface.getByRole("button", { name: "Send question" }).click();
     await reportSurface.getByRole("article", { name: "Report findings" }).waitFor();
-    if (width <= 390) assert.equal(await panel.getByRole("button", { name: "Report" }).count(), 1, "the phone tab names the displayed work");
+    assert.equal(await panel.locator(".executive-ally-chat").count(), 0, "data questions use one continuous conversation surface");
     assert.equal(await reportSurface.locator(".ally-report-comparison li").count(), 5);
-    assert.equal(await panel.locator(".agent-conversation-user").count(), 1, "the chat stays mounted beside the report");
+    assert.equal(await reportSurface.locator(".ally-thread-question").count(), 1, "the asked data question is visible above its answer");
     assert.equal(await panel.locator("textarea:visible").count(), 1, "the report has one visible place to ask a follow-up");
     assert.equal(await panel.evaluate(element => element.scrollLeft), 0, "the phone panel does not scroll sideways");
     assert.deepEqual(errors, []);
@@ -136,4 +135,4 @@ await withBrowserQa(async browser => {
   }
 });
 
-console.log("Expanded Ally keeps chat beside an answer or chart report, with source links and phone tabs.");
+console.log("Ally data conversations, retained guidance chats, sources, one composer, route scope and 320/390/1440px layouts passed.");

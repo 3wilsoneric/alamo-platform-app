@@ -24,15 +24,15 @@ function DataView({dataset, component, measure, onMeasureChange}: {dataset: Repo
     {chart && <div className="ally-report-print-values"><SourceTable dataset={dataset}/></div>}
   </div>;
 }
-export default function ReportView({report, canvas = false, measures = {}, onMeasureChange}: {report: ExecutiveReport; canvas?: boolean; measures?: ReportMeasures; onMeasureChange?: (sectionId: string, measure: string) => void}) {
+export default function ReportView({report, canvas = false, anchorPrefix = 'ally', measures = {}, onMeasureChange}: {report: ExecutiveReport; canvas?: boolean; anchorPrefix?: string; measures?: ReportMeasures; onMeasureChange?: (sectionId: string, measure: string) => void}) {
   const artifact = report.artifact;
   if (!artifact) return null;
   return <article className={`ally-report-document${canvas ? ' ally-report-document--canvas' : ''}`} aria-label="Report findings">
     {!canvas && <header><h2>{artifact.title}</h2><p>{report.scope.from} – {report.scope.through}<span>Version {report.selectedVersion} · {new Date(artifact.generatedAt).toLocaleString()}</span></p></header>}
-    {artifact.findings.map((f,i) => <section className="ally-report-finding" key={i}><p>{f.text}</p>{!canvas && <div className="ally-report-citations">{f.sourceIds.map(id => <a key={id} href={`#ally-${id}`}>{artifact.sections.find(s => s.id === id)?.title ?? 'Source'}</a>)}</div>}</section>)}
+    {artifact.findings.map((f,i) => <section className="ally-report-finding" key={i}><p>{f.text}</p>{!canvas && <div className="ally-report-citations">{f.sourceIds.map(id => <a key={id} href={`#${anchorPrefix}-${id}`}>{artifact.sections.find(s => s.id === id)?.title ?? 'Source'}</a>)}</div>}</section>)}
     {artifact.gaps.length > 0 && <details className="ally-report-gaps" open><summary>Coverage limits</summary><ul>{artifact.gaps.map((g,i) => <li key={i}>{g}</li>)}</ul></details>}
     {artifact.sections.map(section => { const block = report.view?.blocks.find(b => b.datasetId === section.id && b.sourceIds.includes(section.id));
-      return <section id={`ally-${section.id}`} key={section.id} className="ally-report-source"><h3>{section.title}</h3>{!canvas && <p className="ally-report-source-date">{section.period} · {section.grain}</p>}
+      return <section id={`${anchorPrefix}-${section.id}`} key={section.id} className="ally-report-source"><h3>{section.title}</h3>{!canvas && <p className="ally-report-source-date">{section.period} · {section.grain}</p>}
         {section.dataset && <DataView key={`${report.selectedVersion}-${section.id}`} dataset={section.dataset} component={block?.componentId ?? 'table'} measure={measures[section.id] ?? block?.measureKey ?? undefined} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>}
         {!canvas && <details><summary>Source evidence</summary><p>{section.note}</p><p>Observed {new Date(section.observedAt).toLocaleString()}</p>{section.answer && <pre>{section.answer}</pre>}</details>}
       </section>;

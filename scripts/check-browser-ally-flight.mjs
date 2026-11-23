@@ -39,11 +39,9 @@ await withBrowserQa(async browser => {
     assert.ok(Math.abs(expanded.width - width) <= 1, "expanded Ally fills viewport width");
     assert.ok(Math.abs(expanded.height - 844) <= 1, "expanded Ally fills viewport height");
     if (width > 700) assert.equal(await panel.getByRole("button", { name: "Restore Ally panel" }).getAttribute("aria-pressed"), "true");
-    if (await panel.locator(".ally-panel-create").count()) {
-      await panel.locator(".ally-panel-create summary").click();
-      assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain available");
-      await panel.locator(".ally-panel-create summary").click();
-    } else assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 0, "an empty chat does not show a redundant new-chat action");
+    if (await panel.locator(".executive-ally-report-surface").count()) {
+      assert.equal(await panel.getByRole("button", { name: "New chat", exact: true }).count(), 1, "one new conversation control remains available");
+    } else assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 0, "an empty guidance chat does not show a redundant new-chat action");
     assert.equal(await chatSurface.getAttribute("data-ally-state-probe"), "same", "the current Ally surface stays mounted");
     if (width > 700) {
       await page.keyboard.press("Escape");
