@@ -13,18 +13,21 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
-### November 23 executive expansion — authorized, not yet deployed
+### November 23 executive expansion — live, final UI check in progress
 
 The owner explicitly authorized Eric Wilson, Andrew Dominici and Betty Dominici,
 with the available prepaid credits replacing the owner-only 50¢ daily cap.
 Betty's enabled tenant object was verified directly in Entra; the release switch
 names only those three accounts. UI visibility, independent API membership and
 source grants remain separate checks. The matching OpenAI project shows $199.09
-available, auto-reload off and expiration December 17. Deployment must retain
-existing saved reports, source restrictions and spent-credit history. No purchase,
+available, auto-reload off and expiration December 17. API/worker 0.18.12 and the
+three-account interface are deployed. All 24 source reads and denied-account,
+private-slice and direct-storage boundaries pass; the 12 old reports and previous
+spending ledgers are unchanged. The live planned-admissions answer and follow-up
+settled four model calls at $0.020320 in the cumulative allowance. No purchase,
 new top-up or outbound notification is authorized by this change.
 
-### November 23 conversation UX — local candidate
+### November 23 conversation UX — deployed, scroll containment correction
 
 The owner approved the continuous conversation pass after reviewing the live
 report-first interface. The candidate keeps questions and earlier answers visible,
@@ -43,8 +46,12 @@ current authorization still removes the conversation. The service's existing
 user to New chat instead of allowing a doomed submission. A higher ceiling
 requires paginated history before expansion. Answers appear after validation, not token streaming.
 Scope changes remain explicit, and these UI changes grant no additional access.
-Focused checks and full release validation are being completed. This paragraph
-records implemented source, not deployment.
+The initial 28-stage predeployment gate passed and this interface is live.
+The actual two-answer thread exposed absolutely positioned accessibility labels
+escaping the answer scroller and extending the enclosing dialog. The answer
+scroller now establishes its own containing block. A short-height, multi-answer
+browser regression fails before this correction; its verification and replacement
+release are in progress. No labels, report behavior or source boundaries change.
 
 ### November 23 priority: Ally in Platform
 

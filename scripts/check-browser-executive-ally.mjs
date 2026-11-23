@@ -104,6 +104,11 @@ try { await withBrowserQa(async browser=>{
       assert.equal(await scroller.evaluate(el=>el.scrollTop),0,'finishing an answer must not move a reader inspecting older work');
       assert.equal(await composer.inputValue(),'Draft for the next question','polling preserves the next draft');await composer.fill('');
       assert.equal(await panel.locator('.ally-thread-question').count(),2,'a follow-up produces a visible conversation');
+      await page.setViewportSize({width:1440,height:636});
+      await composer.focus();
+      const scrollBounds=await panel.evaluate(el=>({overflow:el.scrollHeight-el.clientHeight,top:el.scrollTop,header:el.querySelector('header').getBoundingClientRect().top,composer:el.querySelector('.executive-ally-composer').getBoundingClientRect().bottom,bottom:el.getBoundingClientRect().bottom}));
+      assert(scrollBounds.overflow<=1&&scrollBounds.top===0&&scrollBounds.header>=0&&scrollBounds.composer<=scrollBounds.bottom,'long conversations scroll only the answer body, keeping the header and composer in the panel: '+JSON.stringify(scrollBounds));
+      await page.setViewportSize({width:1440,height:1000});
       const ids=await panel.locator('[id^="ally-turn-"]').evaluateAll(els=>els.map(el=>el.id));assert.equal(new Set(ids).size,ids.length,'citations have unique per-answer destinations');
       await page.screenshot({path:path.join(output,'conversation-1440.png'),fullPage:true});
       await second.getByRole('button',{name:'Open report',exact:true}).click();
