@@ -21,7 +21,7 @@ const source={authorize:async()=>sourceReady?{revision:reportHash('fixture-grant
   sourceReads++;
   return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
 }};
-const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:trendFixture?'Monthly occupied bed-days.':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
+const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:trendFixture?'Monthly occupied bed-days.\n\n**Context**\n- Missing values stay missing.\n- Negative values stay below zero.\n\n<img src=x onerror=alert()>':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
 try { await withBrowserQa(async browser=>{
   for(const width of [1440,390,320]) {
     console.log(`Executive Ally: checking ${width}px`);
@@ -66,6 +66,18 @@ try { await withBrowserQa(async browser=>{
       assert.equal(await panel.getByRole('columnheader',{name:'Occupied bed-days',exact:true}).count(),1);
     }
     await panel.getByText('View data table').click();
+    const references=panel.locator('.ally-report-sources');
+    assert.equal(await references.getAttribute('open'),null,'source metadata stays out of the answer by default');
+    assert.equal(await panel.getByText('Source evidence',{exact:true}).count(),0);
+    assert.equal(await panel.locator('article pre').count(),0,'the report never dumps JSON into the reader');
+    await references.getByText('Sources',{exact:true}).click();
+    const sourceLink=references.getByRole('link',{name:'Community flow',exact:true});await sourceLink.focus();await page.keyboard.press('Enter');
+    const sourceReader=panel.getByRole('complementary',{name:'Expanded report'});await sourceReader.waitFor();
+    assert.equal(await sourceReader.locator('#ally-document-source-1').evaluate(el=>el===document.activeElement),true,'source link focuses the exact saved data view');
+    assert.equal(await sourceReader.locator('pre').count(),0);
+    await sourceReader.getByRole('button',{name:'Close report'}).click();
+    assert.equal(await sourceLink.evaluate(el=>el===document.activeElement),true,'closing a source returns focus to its link');
+    await references.getByText('Sources',{exact:true}).click();
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);
     const small=await panel.locator('button:visible,input:visible,select:visible,summary:visible').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().height<43).map(el=>el.outerHTML));assert.deepEqual(small,[],'controls are at least 44px');
     await page.screenshot({path:path.join(output,`report-${width}.png`),fullPage:true});
@@ -174,6 +186,10 @@ try { await withBrowserQa(async browser=>{
     await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Show the monthly occupied bed-days.');
     await panel.getByRole('button',{name:'Send question'}).click();
     const trend=panel.getByRole('figure',{name:'Monthly occupied bed-days: Occupied bed-days'});await trend.waitFor();
+    assert.equal(await panel.locator('.ally-report-prose strong').innerText(),'Context');
+    assert.equal(await panel.locator('.ally-report-prose li').count(),2);
+    assert.equal(await panel.locator('.ally-report-prose ul').evaluate(el=>getComputedStyle(el).listStyleType),'disc','global list resets must not erase bullets');
+    assert.equal(await panel.locator('article img').count(),0,'model HTML stays literal text');
     assert.equal(await trend.locator('circle').count(),3,'missing values do not become zero');
     assert.equal(await trend.locator('line.ally-report-trend').count(),1,'missing values break the line');
     assert.match(await trend.innerText(),/150,443/);assert.match(await trend.innerText(),/-1,200/);

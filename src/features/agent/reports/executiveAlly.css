@@ -37,16 +37,12 @@
 .ally-report-document header>p {font-size:12px;color:var(--ally-muted);margin-bottom:24px;}
 .ally-report-document header>p span {display:block;margin-top:4px;}
 .ally-report-finding {margin:0 0 24px;}
-.ally-report-finding>p {margin:0;line-height:1.65;font-size:16px;white-space:pre-line;}
-.ally-report-citations {display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;}
-.ally-report-citations a {color:var(--ally-accent);font-size:12px;text-decoration:underline;text-underline-offset:3px;min-height:44px;display:inline-flex;align-items:center;}
+.ally-report-prose p {margin:0;line-height:1.65;font-size:16px;white-space:pre-line;}
 .ally-report-source {border-top:2px solid var(--ally-ink);padding-top:18px;margin-top:26px;scroll-margin:12px;}
 .ally-report-source h3 {font-size:17px;font-weight:650;margin:0;}
-.ally-report-source-date {font-size:12px;color:var(--ally-muted);margin:6px 0 16px;}
 .ally-report-document summary {cursor:pointer;min-height:44px;padding:10px 0;font-size:13px;}
 .ally-report-document details p,.ally-report-gaps li {font-size:13px;line-height:1.6;margin:8px 0;}
-.ally-report-document pre {white-space:pre-wrap;word-break:break-word;font:12px/1.5 ui-monospace,monospace;max-height:320px;overflow:auto;padding:12px;border:1px solid var(--ally-rule);}
-.ally-report-gaps {border:1px solid var(--ally-rule);padding:0 12px;}
+.ally-report-gaps {color:var(--ally-muted);margin:0 0 18px;}
 .ally-report-gaps ul {margin:0 0 14px;padding-left:20px;}
 .ally-report-chart-tools {display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-bottom:12px;}
 .ally-report-chart-tools select {min-height:44px;background:var(--ally-paper);border:1px solid var(--ally-rule);padding:8px;min-width:0;border-radius:var(--ally-radius);}
@@ -54,7 +50,6 @@
 .ally-report-data-table summary {width:fit-content;}
 .ally-report-table {max-width:100%;overflow:auto;}
 .ally-report-table table {width:100%;border-collapse:collapse;font-size:13px;text-align:left;}
-.ally-report-table caption {text-align:left;font-size:13px;margin-bottom:8px;color:var(--ally-muted);}
 .ally-report-table :is(th,td) {padding:10px 12px 10px 0;border-bottom:1px solid var(--ally-rule);vertical-align:top;min-width:80px;max-width:220px;overflow-wrap:anywhere;}
 .ally-report-table th {font-weight:600;}
 .ally-report-table td[data-numeric=true] {font-variant-numeric:tabular-nums;}
@@ -85,8 +80,6 @@
 .ally-report-axis {stroke:var(--ally-rule);stroke-width:1;}
 .ally-report-trend {stroke:var(--ally-accent);stroke-width:2;}
 .ally-report-point {fill:var(--ally-accent);}
-.ally-report-data svg text {fill:var(--ally-muted);font-size:10px;}
-.ally-report-data figcaption {color:var(--ally-muted);font-size:12px;}
 .executive-ally-composer {border-top:2px solid var(--ally-ink);padding:10px 16px 16px;background:var(--ally-paper);flex:none;max-height:55dvh;overflow-y:auto;overscroll-behavior:contain;}
 .ally-report-scope summary {cursor:pointer;font-size:12px;color:var(--ally-muted);min-height:44px;display:flex;align-items:center;}
 .ally-report-scope summary::before {content:'⌄';margin-right:8px;}
@@ -124,11 +117,9 @@
   .ally-report-chart-tools {display:none!important;}
   .ally-report-print-values {display:block;margin:12px 0;}
   .ally-report-data-table {display:none;}
-  .ally-report-source details>summary,.ally-report-source pre {display:none;}
   .ally-report-document h2 {font-size:22pt;}
   .ally-report-finding,.ally-report-source {break-inside:avoid;}
   .ally-report-document :is(p,li,td,th) {font-size:10pt;}
-  .ally-report-document pre {max-height:none;white-space:pre-wrap;}
   .ally-report-data {container-type:normal;}
   .ally-report-table {display:block!important;overflow:visible;}
   .ally-report-records {display:none!important;}
@@ -145,8 +136,8 @@
 .ally-thread-question {width:fit-content;max-width:88%;margin:0 0 26px auto;padding:12px 16px;border:1px solid var(--ally-rule);border-radius:var(--ally-radius);font-size:16px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;}
 .ally-thread-answer {min-width:0;}
 .ally-thread-turn[data-working=true] .ally-thread-answer {min-height:140px;}
-.ally-conversation .ally-thread-answer .ally-report-finding>p {font-size:16px;font-weight:400;line-height:1.7;color:var(--ally-ink);}
-.ally-conversation .ally-thread-answer .ally-report-finding:first-of-type>p {font-weight:600;}
+.ally-conversation .ally-thread-answer .ally-report-prose p {font-size:16px;font-weight:400;line-height:1.7;color:var(--ally-ink);}
+.ally-conversation .ally-thread-answer .ally-report-finding:first-of-type .ally-report-prose>p:first-child {font-weight:600;}
 .ally-conversation .ally-thread-answer .ally-report-finding {margin-bottom:18px;}
 .ally-conversation .ally-thread-answer .ally-report-source {margin-top:20px;padding-top:20px;border-top:1px solid var(--ally-rule);}
 .ally-conversation .ally-thread-answer .ally-report-source h3 {font-size:15px;margin-bottom:14px;}
@@ -200,3 +191,18 @@
 .executive-ally-header .ally-panel-new span {font:inherit;margin:0;color:inherit;}
 .executive-ally-header .ally-guidance-history {border-top:1px solid var(--ally-rule);margin-top:6px;}
 @media(max-width:700px){.executive-ally-header .ally-panel-new span{display:none;}}
+
+.ally-report-prose>:not(:last-child) {margin-bottom:12px;}
+.ally-report-prose :is(ul,ol) {margin:0;padding-left:22px;line-height:1.7;}
+.ally-report-prose ul {list-style:disc;}
+.ally-report-prose ol {list-style:decimal;}
+.ally-report-prose li+li {margin-top:6px;}
+.ally-report-prose strong {font-weight:650;}
+.ally-report-sources {margin-top:12px;color:var(--ally-muted);font-size:13px;}
+.ally-report-sources summary {width:fit-content;}
+.ally-report-sources ul {list-style:none;margin:0;padding:0;}
+.ally-report-sources li {padding:4px 0;}
+.ally-report-sources a {display:inline-flex;align-items:center;min-height:44px;color:var(--ally-accent);text-decoration:underline;text-underline-offset:3px;}
+.ally-report-sources .ally-report-prose p {font-size:13px;}
+.ally-report-source h3 {margin-bottom:14px;}
+@media print {.ally-report-sources {break-inside:avoid;}.ally-report-sources a {min-height:0;}}

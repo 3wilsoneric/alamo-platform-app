@@ -49,7 +49,8 @@ export default function ExecutiveAlly() {
   const [share, setShare] = useState(false), [retryList, setRetryList] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLTextAreaElement>(null);
   const historyMenu = useRef<HTMLDetailsElement>(null), body = useRef<HTMLDivElement>(null), latestTurn = useRef<HTMLDivElement>(null);
-  const documentHeading = useRef<HTMLHeadingElement>(null), documentOpener = useRef<HTMLButtonElement | null>(null);
+  const documentHeading = useRef<HTMLHeadingElement>(null), documentOpener = useRef<HTMLElement | null>(null);
+  const [documentSource,setDocumentSource] = useState<string | null>(null);
   const revealLatest = useRef(false);
   const wasOpen = useRef(false);
   const request = useRef<AbortController | null>(null), generation = useRef(0), running = useRef(false);
@@ -66,7 +67,12 @@ export default function ExecutiveAlly() {
   }
   useEffect(() => () => { request.current?.abort(); ++generation.current; running.current = false; }, []);
   const documentOpen = documentVersion !== null;
-  useEffect(() => { if (documentOpen) documentHeading.current?.focus({preventScroll:true}); }, [documentOpen]);
+  useEffect(() => {
+    if (!documentOpen) return;
+    const source = documentSource ? document.getElementById(`ally-document-${documentSource}`) : null;
+    if (source) { const details=source.closest('details'); if(details) details.open=true; source.scrollIntoView({block:'start'}); source.focus({preventScroll:true}); }
+    else documentHeading.current?.focus({preventScroll:true});
+  }, [documentOpen,documentVersion,documentSource]);
   useEffect(() => {
     const closeHistory = (event: PointerEvent) => { if (event.target instanceof Node && !historyMenu.current?.contains(event.target)) historyMenu.current?.removeAttribute('open'); };
     document.addEventListener('pointerdown',closeHistory);
@@ -223,8 +229,8 @@ export default function ExecutiveAlly() {
               {reportRunning(value.status) && <div className="ally-thread-progress" role="status"><span className="ally-working-dot" aria-hidden="true"/>{reportStatus(value.status)}{value.totalSources > 0 && <span>{value.completedSources}/{value.totalSources}</span>}</div>}
               {value.error && <p role="status">{value.error}</p>}
               {['paused','failed','cancelled'].includes(value.status) && <div className="ally-thread-progress" role="status">{reportStatus(value.status)}{value === report && editable && value.status !== 'cancelled' && <button disabled={busy} onClick={() => void command('resume')}>Resume</button>}</div>}
-              <ReportView report={value} canvas anchorPrefix={`ally-turn-${value.selectedVersion}`} measures={measuresFor(value)} onMeasureChange={(section,measure) => changeMeasure(value,section,measure)}/>
-              {value.artifact && <footer className="ally-thread-actions"><button type="button" onClick={e => {documentOpener.current=e.currentTarget;setExpanded(true);setDocumentVersion(value.selectedVersion);}}>Open report</button>{value === report && reportActions}</footer>}
+              <ReportView report={value} canvas anchorPrefix={`ally-turn-${value.selectedVersion}`} measures={measuresFor(value)} onMeasureChange={(section,measure) => changeMeasure(value,section,measure)} onOpenSource={(section,opener)=>{documentOpener.current=opener;setDocumentSource(section);setExpanded(true);setDocumentVersion(value.selectedVersion);}}/>
+              {value.artifact && <footer className="ally-thread-actions"><button type="button" onClick={e => {documentOpener.current=e.currentTarget;setDocumentSource(null);setExpanded(true);setDocumentVersion(value.selectedVersion);}}>Open report</button>{value === report && reportActions}</footer>}
             </div>
           </div>)}
           {pendingQuestion && <div className="ally-thread-turn" ref={latestTurn}><div className="ally-thread-question"><span className="sr-only">You: </span>{pendingQuestion}</div><div className="ally-thread-progress" role="status"><span className="ally-working-dot" aria-hidden="true"/>Sending…</div></div>}
@@ -238,7 +244,7 @@ export default function ExecutiveAlly() {
         <div className="executive-ally-input"><textarea ref={input} aria-label={report ? 'Follow-up question' : 'Ask Ally'} placeholder="Ask Ally…" rows={2} maxLength={2000} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => {if(e.key==='Enter' && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault();if(!active && !busy) e.currentTarget.form?.requestSubmit();}}} disabled={busy || full || Boolean(report && !editable)}/>{active && editable ? <button type="button" aria-label="Stop" disabled={busy} onClick={() => void command('cancel')}><Square size={19}/></button> : <button type="submit" aria-label="Send question" disabled={busy || full || Boolean(active) || Boolean(report && !editable) || !draft.trim()}><ArrowUp size={22}/></button>}</div>
       </form>
     </div>
-    {documentReport && <aside className="ally-document-reader" aria-label="Expanded report"><header><h2 ref={documentHeading} tabIndex={-1}>Report</h2>{report && report.versions.length > 1 && <select aria-label="Report version" value={documentVersion!} onChange={e=>setDocumentVersion(Number(e.target.value))}>{report.versions.filter(v=>v.version<=report.selectedVersion).map(v=><option key={v.version} value={v.version}>Version {v.version}</option>)}</select>}<button aria-label="Save PDF" title="Save PDF" disabled={busy} onClick={() => void exportReport(documentReport)}><Download size={19}/></button><button aria-label="Close report" onClick={closeDocument}><X size={20}/></button></header><div className="ally-document-body"><ReportView report={documentReport} anchorPrefix="ally-document" measures={measuresFor(documentReport)} onMeasureChange={(section,measure) => changeMeasure(documentReport,section,measure)}/></div></aside>}
+    {documentReport && <aside className="ally-document-reader" aria-label="Expanded report"><header><h2 ref={documentHeading} tabIndex={-1}>Report</h2>{report && report.versions.length > 1 && <select aria-label="Report version" value={documentVersion!} onChange={e=>{setDocumentSource(null);setDocumentVersion(Number(e.target.value));}}>{report.versions.filter(v=>v.version<=report.selectedVersion).map(v=><option key={v.version} value={v.version}>Version {v.version}</option>)}</select>}<button aria-label="Save PDF" title="Save PDF" disabled={busy} onClick={() => void exportReport(documentReport)}><Download size={19}/></button><button aria-label="Close report" onClick={closeDocument}><X size={20}/></button></header><div className="ally-document-body"><ReportView report={documentReport} anchorPrefix="ally-document" measures={measuresFor(documentReport)} onMeasureChange={(section,measure) => changeMeasure(documentReport,section,measure)}/></div></aside>}
   </div>;
   function escapePanel() {
     if(historyMenu.current?.open) {historyMenu.current.open=false;historyMenu.current.querySelector('summary')?.focus();}

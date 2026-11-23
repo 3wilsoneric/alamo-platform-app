@@ -1,3 +1,5 @@
+import ReportProse from './ReportProse';
+import { formatDisplayDate } from '../../../../shared/display-date.mjs';
 import type { ExecutiveReport, ReportDataset } from './reportClient';
 import { reportColumnLabel, reportCellValue as displayValue } from '../../../../shared/report-display.mjs';
 export type ReportMeasures = Record<string, string>;
@@ -7,7 +9,7 @@ function SourceTable({dataset}: {dataset: ReportDataset}) {
   const identity = columns.find(column => column.type === 'string');
   return <>
     <div className="ally-report-table" tabIndex={0} role="region" aria-label={`${dataset.title} data`}>
-      <table><caption>{dataset.title}</caption><thead><tr>{columns.map(c => <th key={c.key} scope="col">{c.label}</th>)}</tr></thead>
+      <table aria-label={dataset.title}><thead><tr>{columns.map(c => <th key={c.key} scope="col">{c.label}</th>)}</tr></thead>
         <tbody>{dataset.rows.map((row,i) => <tr key={i}>{columns.map(c => <td key={c.key} data-numeric={c.type==='number'}>{displayValue(row[c.key])}</td>)}</tr>)}</tbody>
       </table>
     </div>
@@ -48,19 +50,21 @@ function DataView({dataset, component, measure, onMeasureChange}: {dataset: Repo
     {chart && <div className="ally-report-print-values"><SourceTable dataset={dataset}/></div>}
   </div>;
 }
-export default function ReportView({report, canvas = false, anchorPrefix = 'ally', measures = {}, onMeasureChange}: {report: ExecutiveReport; canvas?: boolean; anchorPrefix?: string; measures?: ReportMeasures; onMeasureChange?: (sectionId: string, measure: string) => void}) {
+export default function ReportView({report, canvas = false, anchorPrefix = 'ally', measures = {}, onMeasureChange, onOpenSource}: {report: ExecutiveReport; canvas?: boolean; anchorPrefix?: string; measures?: ReportMeasures; onMeasureChange?: (sectionId: string, measure: string) => void; onOpenSource?: (sectionId:string, opener:HTMLElement) => void}) {
   const artifact = report.artifact;
   if (!artifact) return null;
   return <article className={`ally-report-document${canvas ? ' ally-report-document--canvas' : ''}`} aria-label="Report findings">
-    {!canvas && <header><h2>{artifact.title}</h2><p>{report.scope.from} – {report.scope.through}<span>Version {report.selectedVersion} · {new Date(artifact.generatedAt).toLocaleString()}</span></p></header>}
-    {artifact.findings.map((f,i) => <section className="ally-report-finding" key={i}><p>{f.text}</p>{!canvas && <div className="ally-report-citations">{f.sourceIds.map(id => <a key={id} href={`#${anchorPrefix}-${id}`}>{artifact.sections.find(s => s.id === id)?.title ?? 'Source'}</a>)}</div>}</section>)}
-    {artifact.gaps.length > 0 && <details className="ally-report-gaps" open><summary>Coverage limits</summary><ul>{artifact.gaps.map((g,i) => <li key={i}>{g}</li>)}</ul></details>}
-    {artifact.sections.map(section => { const block = report.view?.blocks.find(b => b.datasetId === section.id && b.sourceIds.includes(section.id));
-      return <section id={`${anchorPrefix}-${section.id}`} key={section.id} className="ally-report-source"><h3>{section.title}</h3>{!canvas && <p className="ally-report-source-date">{section.period} · {section.grain}</p>}
-        {section.dataset && <DataView key={`${report.selectedVersion}-${section.id}`} dataset={section.dataset} component={block?.componentId ?? 'table'} measure={measures[section.id] ?? block?.measureKey ?? undefined} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>}
-        {!canvas && <details><summary>Source evidence</summary><p>{section.note}</p><p>Observed {new Date(section.observedAt).toLocaleString()}</p>{section.answer && <pre>{section.answer}</pre>}</details>}
+    {!canvas && <header><h2>{artifact.title}</h2><p>{formatDisplayDate(report.scope.from,{month:'short'})} – {formatDisplayDate(report.scope.through,{month:'short'})}</p></header>}
+    {artifact.findings.map((finding,i) => <section className="ally-report-finding" key={i}><ReportProse text={finding.text}/></section>)}
+    {artifact.gaps.length > 0 && <details className="ally-report-gaps" open><summary>Data limits</summary><ul>{artifact.gaps.map((gap,i) => <li key={i}><ReportProse text={gap}/></li>)}</ul></details>}
+    {artifact.sections.filter(section=>section.dataset).map(section => { const block = report.view?.blocks.find(b => b.datasetId === section.id && b.sourceIds.includes(section.id));
+      return <section id={`${anchorPrefix}-${section.id}`} tabIndex={-1} key={section.id} className="ally-report-source"><h3>{section.dataset!.title}</h3>
+        <DataView key={`${report.selectedVersion}-${section.id}`} dataset={section.dataset!} component={block?.componentId ?? 'table'} measure={measures[section.id] ?? block?.measureKey ?? undefined} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>
       </section>;
     })}
-    {canvas && <details className="ally-report-canvas-sources"><summary>Sources used</summary><ul>{artifact.sections.map(section => <li key={section.id}>{section.title} · {section.period}</li>)}</ul></details>}
+    <details className="ally-report-sources"><summary>Sources</summary><ul>{artifact.sections.map(section => <li key={section.id} {...(!section.dataset ? {id:`${anchorPrefix}-${section.id}`,tabIndex:-1} : {})}>
+      <a href={`#${canvas && onOpenSource ? 'ally-document' : anchorPrefix}-${section.id}`} onClick={canvas && onOpenSource ? event=>{event.preventDefault();onOpenSource(section.id,event.currentTarget);} : undefined}>{section.dataset?.title ?? section.title}</a>
+      {!canvas && <><p>{formatDisplayDate(section.observedAt,{month:'short'})}</p></>}
+    </li>)}</ul></details>
   </article>;
 }

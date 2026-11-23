@@ -24,7 +24,12 @@ widths, tables become labeled records; line-chart axes and date labels stay in
 normal layout instead of shrinking SVG text. PDF exports retain complete tables.
 Composer scope controls scroll within short viewports. Bounded browser fixtures
 cover 320/390/1440px, long names, legacy keys, null/negative chart values and PDFs.
-Deployment and real-data visual acceptance remain pending.
+Source references are folded into one quiet Sources disclosure. Readable links
+open the matching saved report section and restore keyboard focus on close.
+Repeated citations, source-grain metadata, duplicate table captions and raw JSON
+are removed from presentation; saved evidence and access checks stay intact.
+Paragraphs, lists and bold emphasis render as text-safe native markup. Data limits
+remain visible. Deployment and real-data visual acceptance remain pending.
 
 ### November 23 executive expansion — live and verified
 
