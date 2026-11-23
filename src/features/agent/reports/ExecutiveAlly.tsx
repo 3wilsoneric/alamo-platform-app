@@ -2,6 +2,7 @@ import { useMsal } from '@azure/msal-react';
 import { ArrowUp, ArrowDown, History, Pencil, X, Download, RefreshCw, Share2, Square, Maximize2, Minimize2, MoreHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useEveryAgentAccess } from '../../../shared/auth/everyAgentAccess';
 import { formatDisplayDate } from '../../../../shared/display-date.mjs';
 import { ALAMO_FACILITIES } from '../../../../shared/community-names.mjs';
 import { createAgentTransport } from '../conversations/agentTransport';
@@ -24,6 +25,7 @@ function initialScope(search: string): ReportScope {
 }
 export default function ExecutiveAlly() {
   const {instance} = useMsal();
+  const canUseGuidance = useEveryAgentAccess();
   const location = useLocation();
   const transport = useMemo(() => createAgentTransport(instance), [instance]);
   const client = useMemo(() => createReportClient(transport), [transport]);
@@ -251,7 +253,7 @@ export default function ExecutiveAlly() {
         {(!accessUncertain && reports.length>0 || agentChatConfigured) && <details ref={historyMenu} className="ally-conversation-history"><summary aria-label="Saved conversations" title="History"><History size={19}/><span>History</span></summary><nav aria-label="Saved reports">
           {!accessUncertain && reports.length>0 && <input aria-label="Search conversations" type="search" placeholder="Search" value={historySearch} onChange={e=>setHistorySearch(e.target.value)}/>}
           {(accessUncertain ? [] : reports).filter(r=>r.title.toLocaleLowerCase().includes(historySearch.toLocaleLowerCase())).map(r=><button type="button" key={`${r.ownerId}/${r.id}`} aria-current={r.id===report?.id && r.ownerId===report.ownerId ? 'page' : undefined} disabled={busy} onClick={()=>{setSurface('reports');void openReport(r);}}>{r.title}</button>)}
-          {agentChatConfigured && <button type="button" className="ally-guidance-history" onClick={()=>{historyMenu.current?.removeAttribute('open');setSurface('chat');}}>Guidance chats</button>}
+          {agentChatConfigured && canUseGuidance && <button type="button" className="ally-guidance-history" onClick={()=>{historyMenu.current?.removeAttribute('open');setSurface('chat');}}>Guidance chats</button>}
         </nav></details>}
         <button type="button" className="ally-panel-new" aria-label="New chat" disabled={busy} onClick={openBlankReport}><Pencil size={18}/><span>New chat</span></button>
         <button className="ally-panel-expand" type="button" aria-label={expanded ? 'Restore Ally panel' : 'Expand Ally to full screen'} aria-pressed={expanded} title={expanded ? 'Restore panel' : 'Full screen'} onClick={()=>{if(expanded && documentVersion!==null) closeDocument();setExpanded(value=>!value);}}>{expanded ? <Minimize2 size={18} aria-hidden="true"/> : <Maximize2 size={18} aria-hidden="true"/>}</button>

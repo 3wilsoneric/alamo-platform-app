@@ -30,7 +30,9 @@ The owner approved the continuous conversation pass after reviewing the live
 report-first interface. The candidate keeps questions and earlier answers visible,
 with a compact searchable History menu, one data-question composer, readable
 findings, real execution states, Stop, and an optional native report reader.
-General guidance chats remain accessible from History. New chat returns to data
+General guidance chats remain accessible from History only for accounts with the
+existing guidance capability; report-only executives do not see a denied shortcut.
+New chat returns to data
 questions without mounting a second composer. Report versions, source controls,
 chart selections, sharing and freshly authorized PDF export retain their owners.
 
