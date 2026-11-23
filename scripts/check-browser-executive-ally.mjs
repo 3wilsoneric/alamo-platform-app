@@ -56,6 +56,11 @@ try { await withBrowserQa(async browser=>{
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);
     const small=await panel.locator('button:visible,input:visible,select:visible,summary:visible').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().height<43).map(el=>el.outerHTML));assert.deepEqual(small,[],'controls are at least 44px');
     await page.screenshot({path:path.join(output,`report-${width}.png`),fullPage:true});
+    await panel.getByLabel('More report actions').click();
+    const actionBox=await panel.getByRole('group',{name:'Report actions'}).boundingBox(),bodyBox=await panel.locator('.executive-ally-body').boundingBox();
+    assert(actionBox&&bodyBox&&actionBox.y>=bodyBox.y&&actionBox.y+actionBox.height<=bodyBox.y+bodyBox.height,'answer actions are fully visible above the composer');
+    await panel.getByLabel('More report actions').click();
+
     if(width===1440){
       const opened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const pdf=await opened;await pdf.getByRole('article',{name:'Report findings'}).waitFor();
       assert.equal(await pdf.getByRole('list',{name:'Discharges',exact:true}).count(),1,'PDF must retain the report’s default chart measure');
@@ -118,7 +123,10 @@ try { await withBrowserQa(async browser=>{
     }
     if(width===1440 && await panel.getByRole('button',{name:'Restore Ally panel'}).count()) await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});
-    await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();await panel.getByLabel('Saved conversations').click();await panel.getByRole('navigation',{name:'Saved reports'}).getByRole('button').first().click();
+    await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();await panel.getByLabel('Saved conversations').click();
+    const historyBox=await panel.getByRole('navigation',{name:'Saved reports'}).boundingBox();assert(historyBox&&historyBox.x>=0&&historyBox.x+historyBox.width<=width,`${width}px history stays inside the viewport`);
+    await page.screenshot({path:path.join(output,`saved-history-${width}.png`),fullPage:true});
+    await panel.getByRole('navigation',{name:'Saved reports'}).getByRole('button').first().click();
     await panel.getByRole('article',{name:'Report findings'}).last().waitFor();
     if(width===1440){await panel.locator('.ally-thread-turn[data-version="2"] article').waitFor();assert.equal(await panel.locator('.ally-thread-question').count(),2,'saved reopening restores the conversation');}
     if(width===390){await panel.getByRole('button',{name:'Open report',exact:true}).click();const readerView=panel.getByRole('complementary',{name:'Expanded report'});await readerView.waitFor();assert.equal(await panel.locator('.ally-conversation-column').isVisible(),false,'phone report uses one reading surface');await readerView.getByRole('button',{name:'Close report'}).click();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isVisible());}

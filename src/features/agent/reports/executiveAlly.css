@@ -136,6 +136,7 @@
 .ally-thread-actions {display:flex;align-items:center;gap:8px;}
 .ally-thread-actions>button {border-color:transparent;font-size:13px;padding-inline:0;color:var(--ally-muted);}
 .ally-thread-actions .ally-report-actions {margin-left:auto;}
+.executive-ally .ally-thread-actions .ally-report-actions>div {top:auto;bottom:calc(100% + 4px);}
 .executive-ally-header .ally-conversation-history {position:relative;margin-left:auto;flex:none;}
 .ally-conversation-history>summary {list-style:none;display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:8px;cursor:pointer;font-size:13px;}
 .ally-conversation-history>summary::-webkit-details-marker {display:none;}
@@ -162,6 +163,8 @@
   .ally-thread-question {max-width:94%;padding:10px 12px;}
   .ally-thread-turn {margin-bottom:30px;}
   .ally-conversation-history>summary span {display:none;}
+  .executive-ally-header .ally-conversation-history {position:static;}
+  .executive-ally-header .ally-conversation-history nav {right:12px;top:100%;}
   .ally-document-reader>header {padding:8px 12px;gap:4px;}
   .ally-document-body {padding:18px;}
 }
