@@ -28,10 +28,13 @@ live; the actual enabled worker branch passed without model calls, and the
 report scheduler is enabled. Ten fresh real answers now pass the checked figures,
 scope and source-limit assertions, including community filtering, counties,
 bed-days and current Pipeline stages. Twenty model calls settled at $0.112816
-(1.13¢ per answer). Correct default chart selection and saved reopening pass. The
-print view retains the chart; final native Network capture and actual PDF-file
-saving still await an accessible Chrome window. Native date-input acceptance is
-also pending; automation changed the DOM input but not the selected report scope.
+(1.13¢ per answer). Correct default chart selection and saved reopening pass. The native date control and saved two-page PDF now pass. Main Chrome's
+source/build-bound final check passes all 15 routes and 12 interactions with
+664 requests, one explicit cancellation, and no console or HTTP failures.
+A real owner question about planned admissions exposed a source gap: only stage
+totals were available. A local source correction now reuses the Admissions
+weekly schedule for aggregate planned move-ins by community. Its focused checks
+pass; release verification and a fresh live question remain required.
 Broader executive grants remain off.
 See the [current candidate and evidence](deployment-operations.md#platform-data-questions--november-23-local-candidate).
 

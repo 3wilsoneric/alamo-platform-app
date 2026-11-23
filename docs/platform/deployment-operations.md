@@ -61,8 +61,10 @@ Unrelated monitors and broader executive access remain off. Connection verificat
 expires December 23, 2026. Two fresh real-data questions completed: San Pablo's 22 available beds and its
 22/60 = 36.7% share. Both versions default to `availableBeds`; reload/reopen retains
 the answer, version and measure. The authorized print view retains that measure.
-Actual PDF-file saving remains unverified because Chrome's native window is
-unavailable. Four model calls settled at $0.019668, leaving $0.480332; this is
+Native Chrome saved the actual two-page A4 PDF at 15:58 UTC; both rendered pages
+retain the answer, selected measure, values, source note and timestamp without
+raw JSON or clipped text. Chrome's default background-graphics-off option omits
+colored bars; their labels/values and complete table remain. Four model calls settled at $0.019668, leaving $0.480332; this is
 token-rated model cost, excluding hosting. The 390×844 and 1440×900 live checks
 have no horizontal overflow. Screenshot evidence is in
 `generated/current-navigation-20261122/platform-daily-live/`. The partial-coverage
@@ -84,10 +86,10 @@ an unknown subject, a private resident dataset and direct grant-store access.
 No source writes or new permissions were introduced. Evidence:
 `platform-daily-live/broader-acceptance.json` within the folder above, and Suite
 `native-owner-platform-daily.{ten-answer-cost,source}.json`.
-The native date control still needs acceptance: automation filled its DOM value
-without changing the React scope. The retained scope and actual November 22
-source cutoff were correctly represented in answers; no application defect or
-date-control pass is claimed from that automation attempt.
+Native date editing now passes: the Through-day stepper changed November 23 to
+22 and updated the scope summary; restoring 23 restored the summary. Saved
+version 2 remained unchanged, with no model call or report write. The earlier
+DOM-fill attempt was an automation limitation, not a confirmed product defect.
 
 Production worker recovery was checked with report dispatch paused and no active
 runs or leases. `az functionapp restart` was acknowledged but did not replace the
@@ -112,9 +114,17 @@ Receipts are under `/Users/eric/suite-deploy/.state/`:
 `platform-priority-ui2-verified.json`, `ally-01811.api-update.verification.json`,
 `ally-01811.worker-update.verification.json`, `ally-01811.functions-proof.json`,
 and `native-owner-platform-daily.*.json`.
-The complete final signed-in Network check is still pending: main Chrome DOM
-controls work, but macOS is not exposing Chrome's native window. Earlier browser
-receipts do not certify this new image.
+The final signed-in check passed at 16:05 UTC on this exact live entry: 15 routes,
+12 interactions, 664 requests, one explicit cancellation, no console/HTTP errors.
+The canonical signed-in command accepted the source/build-bound receipt and all
+18 assertion regression groups passed. Earlier incomplete captures are retained;
+main Chrome was reconnected in the same signed-in browser, with no session export.
+Evidence: `platform-daily-live/final-main-chrome-reconnected/evidence.json` and
+`platform-daily-live/native-date-acceptance.json`. The actual PDF is Suite
+`.state/Ally Platform available beds 2026-11-23.pdf`. At 16:04 UTC all 22 model
+calls were settled at $0.120954; no active runs or model leases remained. A fresh
+16:07 UTC source proof reads the November 23 publication and verifies all five
+capabilities plus the existing three denial cases.
 
 Rollback UI to Carelog's current base
 `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:dfc49a1a2bba53914b7af983b2f5fa629a09f48fe29f424b4b1240de50a5d57d`
@@ -123,6 +133,25 @@ Stop the report schedule, verify drain, then disable worker execution before any
 worker restore; never enable an older worker that lacks the daily cap. If a day
 has over 20 investigations, retain the new API reader: 0.18.10 cannot parse that
 larger request list. Source records, counting definitions and grants are unchanged.
+
+## Planned-admission question — November 23, local candidate
+
+The owner's saved “Admits planned this week” question correctly refused to infer
+scheduled admissions from 11 accepted workspaces. The source now adds the
+`pipeline-summary` view `planned-admissions`, reusing the canonical Admissions
+weekly briefing rather than reconstructing dates from stage totals. It emits
+community counts only, with the published Monday–Sunday Pacific period. Missing
+schedule coverage fails closed; a prior-week publication is marked partial.
+The prior default stages view, permissions and source records are unchanged.
+
+Focused checks cover week boundaries, cancellations/denials, community scope,
+covered zero versus unavailable data, unmapped destinations, stale weeks and
+private-field removal. The pre-change test fails on the unsupported view; the
+new source passes. This is an aggregate current-week schedule, not a historical
+schedule archive or proof of admission. Revisit the bounded date selector only
+when future/historical schedule questions require a producer contract for those
+periods. Full release and live model acceptance are pending; no new deployment
+is claimed by the source change.
 
 <a id="combined-ally-and-proforma-release--november-23-preparing"></a>
 ## Combined Ally and ProForma release — November 23, owner pilot live

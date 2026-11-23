@@ -6,7 +6,8 @@ import { getReportsSummaryData } from './platform-data.mjs';
 import { buildResidentFlowReport } from './resident-flow-report.mjs';
 import { listAllyPlatformDataSources, readAllyPlatformData } from './ally-data-source.mjs';
 import { getPipelineAdmissionsSummary } from './pipeline-admissions-summary.mjs';
-import { facilityIdForPipelineCommunity } from './admissions-dashboard.mjs';
+import { buildAdmissionsDashboard, facilityIdForPipelineCommunity } from './admissions-dashboard.mjs';
+import { getReportingDateKey } from '../shared/reporting-date.mjs';
 import { activeIntakeCards, hasCompleteIntakeBoard, intakeStage, INTAKE_STAGES } from '../shared/admissions-intake.mjs';
 import { getLicensingLibrary } from './licensing-library.mjs';
 import { createWorkflowKnowledgeSource } from './workflow-knowledge-source.mjs';
@@ -18,14 +19,15 @@ const schemas = {
   'platform-data': objectSchema({ slice: string, operation: { enum: ['rows', 'count', 'sum', 'average'] }, groupBy: strings, measure: string,
     dateField: { type: ['string', 'null'] }, limit: { type: 'integer', minimum: 1, maximum: 100 },
     filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains'] }, value: string }) } }),
-  'resident-flow': objectSchema({ view: { enum: ['communities', 'counties', 'occupancy'] } }), 'pipeline-summary': objectSchema({}),
+  'resident-flow': objectSchema({ view: { enum: ['communities', 'counties', 'occupancy'] } }),
+  'pipeline-summary': objectSchema({ view: { enum: ['stages', 'planned-admissions'] } }),
   'licensing-search': objectSchema({ query: string, type: { enum: ['Complaint', 'Inspection', 'Other'] } }),
   'proforma-search': objectSchema({ query: string })
 };
 const metadata = {
   'platform-data': ['Governed Platform data', 'Query published source grains. Counts count rows, not necessarily unique clients. Dates and communities are enforced. Never sum census across dates.'],
   'resident-flow': ['Admissions, discharges and bed use', 'Reconciled admission episodes in the selected period; repeat stays count separately. Use view counties for counties of those admissions, not current residents. Use view occupancy for latest published census, operating capacity and available beds; occupancy is a current snapshot, not historical utilization. Default communities shows period admissions/discharges, opening/closing census and bed-days.'],
-  'pipeline-summary': ['Current referral pipeline', 'Current published referral stages and decisions. This is a current snapshot, not all referral event history.'],
+  'pipeline-summary': ['Current referral pipeline', 'Current published referral stages and decisions. Use view planned-admissions for move-ins scheduled this week, by community; plans are not confirmed admissions. The schedule carries its own Monday–Sunday Pacific period. Default stages shows current active workspaces. Neither view is historical referral event history.'],
   'licensing-search': ['State licensing reports', 'Dated inspection and complaint metadata for selected communities. Separate from internal incidents.'],
   'proforma-search': ['ProForma procedures', 'Source-linked draft procedure excerpts. Draft references are not approved policy.']
 };
@@ -147,25 +149,56 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
         result.rows.map(row => Object.fromEntries(columns.map(column => [column.key, column.type === 'number' ? numericCell(row[column.key]) : row[column.key] ?? null]))),
         columns, time);
     } else if (step.capability === 'pipeline-summary') {
-      reportObject(args, []);
+      reportObject(args, [], ['view']);
+      const view = args.view ?? 'stages';
+      if (!['stages', 'planned-admissions'].includes(view)) throw Error('Choose a supported pipeline view.');
       const source = await pipeline();
       if (source.status !== 'connected') throw Error('Pipeline source unavailable.');
-      if (!hasCompleteIntakeBoard(source)) throw Error('A complete active referral count is unavailable.');
-      const active = activeIntakeCards(source);
-      const facilityFor = item => item.facilityId ?? facilityIdForPipelineCommunity(item.community);
-      if (active.some(item => !ALAMO_FACILITIES.some(facility => facility.facilityId === facilityFor(item)) ||
-          item.facilityId && facilityIdForPipelineCommunity(item.community) && item.facilityId !== facilityIdForPipelineCommunity(item.community))) {
-        throw Error('Active referral community scope could not be verified.');
+      if (view === 'planned-admissions') {
+        if (source.briefing?.status !== 'ready' || source.briefing.coverage.moveIns !== true) {
+          throw Error('A complete planned-admission schedule is unavailable.');
+        }
+        // Use the same weekly membership and cancellations as the Admissions
+        // page. Never send its underlying named-person schedule to the model.
+        const briefing = buildAdmissionsDashboard(await snapshot(), {referralPipeline: source}).briefing;
+        if (briefing.plannedMoveIns.some(row => !ALAMO_FACILITIES.some(f => f.facilityId === row.facilityId))) {
+          throw Error('Planned admission community scope could not be verified.');
+        }
+        const rows = ALAMO_FACILITIES.filter(f => authorization.communities.includes(f.facilityId)).map(f => ({
+          community: f.shortName,
+          plannedAdmissions: briefing.plannedMoveIns.filter(row => row.facilityId === f.facilityId).length
+        }));
+        result = { generatedAt: source.generatedAt,
+          period: { start: briefing.weekStart, through: briefing.weekEnd, timezone: source.briefing.timezone, asOfDate: briefing.pipelineAsOfDate },
+          communities: rows, total: rows.reduce((total, row) => total + row.plannedAdmissions, 0),
+          definition: 'Planned move-ins in the published weekly Pipeline schedule; not confirmed admissions.' };
+        base.title = 'Planned admissions'; base.observedAt = source.generatedAt;
+        base.period = `${briefing.weekStart}–${briefing.weekEnd}`; base.grain = 'community planned move-ins';
+        base.note = 'Pipeline weekly schedule, Monday–Sunday in Pacific time. Plans are not confirmed admissions. This current schedule does not provide historical admission totals.';
+        const today = getReportingDateKey(now());
+        if (today < briefing.weekStart || today > briefing.weekEnd) {
+          base.coverage = 'partial'; base.note += ' The published schedule does not cover the current week.';
+        }
+        dataset = scopedDataset('Planned admissions', rows,
+          [{key:'community',label:'Community',type:'string'},{key:'plannedAdmissions',label:'Planned admissions',type:'number'}], 'categories');
+      } else {
+        if (!hasCompleteIntakeBoard(source)) throw Error('A complete active referral count is unavailable.');
+        const active = activeIntakeCards(source);
+        const facilityFor = item => item.facilityId ?? facilityIdForPipelineCommunity(item.community);
+        if (active.some(item => !ALAMO_FACILITIES.some(facility => facility.facilityId === facilityFor(item)) ||
+            item.facilityId && facilityIdForPipelineCommunity(item.community) && item.facilityId !== facilityIdForPipelineCommunity(item.community))) {
+          throw Error('Active referral community scope could not be verified.');
+        }
+        const cards = active.filter(item => authorization.communities.includes(facilityFor(item)));
+        const columns = INTAKE_STAGES.map(stage => ({ key: stage.key, title: stage.label, count: cards.filter(card => intakeStage(card) === stage.key).length }));
+        // Counts share the same complete active population as the Admissions UI.
+        // The broader producer awaiting-admission metric is not a stage subtotal.
+        result = { generatedAt: source.generatedAt, columns, truncated: false,
+          metrics: { activeReferrals: cards.length, awaitingAdmission: columns.find(column => column.key === 'arrival')?.count ?? 0 } };
+        base.observedAt = source.generatedAt; base.period = `Current snapshot as of ${source.generatedAt.slice(0, 10)}`; base.grain = 'referral workspace stage';
+        base.note = 'Complete active Pipeline workspaces in the selected communities. Stages are mutually exclusive; admitted and closed workspaces are excluded. This is a current snapshot, not referral event history.';
+        dataset = scopedDataset('Current workspaces', columns.map(c => ({ stage: c.title, count: c.count })), [{ key: 'stage', label: 'Stage', type: 'string' }, { key: 'count', label: 'Workspaces', type: 'number' }], 'categories');
       }
-      const cards = active.filter(item => authorization.communities.includes(facilityFor(item)));
-      const columns = INTAKE_STAGES.map(stage => ({ key: stage.key, title: stage.label, count: cards.filter(card => intakeStage(card) === stage.key).length }));
-      // Counts share the same complete active population as the Admissions UI.
-      // The broader producer awaiting-admission metric is not a stage subtotal.
-      result = { generatedAt: source.generatedAt, columns, truncated: false,
-        metrics: { activeReferrals: cards.length, awaitingAdmission: columns.find(column => column.key === 'arrival')?.count ?? 0 } };
-      base.observedAt = source.generatedAt; base.period = `Current snapshot as of ${source.generatedAt.slice(0, 10)}`; base.grain = 'referral workspace stage';
-      base.note = 'Complete active Pipeline workspaces in the selected communities. Stages are mutually exclusive; admitted and closed workspaces are excluded. This is a current snapshot, not referral event history.';
-      dataset = scopedDataset('Current workspaces', columns.map(c => ({ stage: c.title, count: c.count })), [{ key: 'stage', label: 'Stage', type: 'string' }, { key: 'count', label: 'Workspaces', type: 'number' }], 'categories');
     } else if (step.capability === 'licensing-search') {
       reportObject(args, [], ['query', 'type']);
       const url = new URL('https://platform.invalid/api/platform/licensing');

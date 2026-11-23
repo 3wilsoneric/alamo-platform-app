@@ -223,3 +223,48 @@ flowSnapshot.snapshot.as_of_date='2026-06-30';
 flowSnapshot.reportsSummary.toolContext.tables.census_weekly_by_community=ALAMO_FACILITIES.map(f=>({facility_id:f.facilityId,census_date:'2026-06-30',census:1}));
 const historical=await readView('occupancy');assert.equal(historical.coverage,'partial');assert(historical.dataset.rows.every(r=>r.operatingCapacity===null&&r.availableBeds===null),'current operating limits cannot be applied before their effective dates');
 console.log('Executive views: scoped admission counties, actual occupancy limits, unavailable history, and aggregate privacy passed.');
+
+// The real weekly briefing owns schedule membership and date boundaries. Ally
+// receives community totals only, never its client/owner/contact fields.
+const schedule = {
+  status: 'connected', generatedAt: '2026-11-23T14:00:00Z',
+  board: { cards: [] }, history: { monthly: [] },
+  briefing: { status: 'ready', timezone: 'America/Los_Angeles', windowEnd: '2026-11-23',
+    weekStart: '2026-11-23', weekEnd: '2026-11-29', coverage: { moveIns: true },
+    recentReferrals: [], upcomingAssessments: [], admittedLastWeek: [], movingThrough: [], weeklyTrend: [],
+    plannedMoveIns: [
+      ['San Pablo', '2026-11-23', 'Accepted'], ['San Pablo', '2026-11-29', 'Accepted'],
+      ['Turlock', '2026-11-24', 'Accepted'], ['Santa Clarita', '2026-11-25', 'Accepted'],
+      ['San Pablo', '2026-11-22', 'Accepted'], ['San Pablo', '2026-11-30', 'Accepted'],
+      ['San Pablo', '2026-11-24', 'Cancelled'], ['San Pablo', '2026-11-25', 'Denied']
+    ].map(([community, date, status], i) => ({ community, plannedAt: date+'T00:00:00', status,
+      clientName: 'PRIVATE_SCHEDULE_CLIENT', owner: 'PRIVATE_OWNER', referralId: 9000+i,
+      pipelineUrl: 'https://example.test/private', readiness: 'ready' })) }
+};
+const scheduleSnapshot = { snapshot: { as_of_date: '2026-11-23' }, reportsSummary: { toolContext: { tables: {
+  community_operating_summary: ALAMO_FACILITIES.map(f => ({ facility_id: f.facilityId, census: 1 }))
+} } } };
+let scheduleNow = Date.parse('2026-11-23T16:00:00Z');
+const scheduledSources = createPlatformReportSources({ pipeline: async()=>schedule, snapshot: async()=>scheduleSnapshot, now: ()=>scheduleNow });
+const plannedStep = { id: 'planned', capability: 'pipeline-summary', input: { view: 'planned-admissions' } };
+const readPlanned = (ids=['337','344']) => scheduledSources.read({ scope: {...flowScope, communityIds:ids}, step: plannedStep },
+  { ...flowAuthorization, communities:ids });
+const planned = validateReportEvidence(await readPlanned(), plannedStep, flowScope);
+assert.equal(planned.period, '2026-11-23–2026-11-29');
+assert.equal(planned.coverage, 'complete');
+assert.deepEqual(planned.dataset.rows, [{community:'San Pablo',plannedAdmissions:2},{community:'Turlock',plannedAdmissions:1}]);
+assert.equal(JSON.parse(planned.answer).total, 3);
+assert.match(planned.note, /not confirmed admissions/);
+assert(!JSON.stringify(planned).match(/PRIVATE_|9000|example\.test|Santa Clarita/), 'only scoped aggregate schedule data may leave Platform');
+assert.deepEqual((await readPlanned(['342'])).dataset.rows, [{community:"Victoria's House",plannedAdmissions:0}], 'covered zero is distinct from missing schedule coverage');
+schedule.briefing.coverage.moveIns = false;
+await assert.rejects(readPlanned(), /complete planned-admission schedule/);
+schedule.briefing.coverage.moveIns = true;
+schedule.briefing.plannedMoveIns.push({...schedule.briefing.plannedMoveIns[0],community:'Unknown'});
+await assert.rejects(readPlanned(), /community scope/);
+schedule.briefing.plannedMoveIns.pop();
+scheduleNow = Date.parse('2026-11-30T16:00:00Z');
+assert.equal((await readPlanned()).coverage, 'partial', 'a prior-week publication cannot claim to answer this week');
+assert.match((await readPlanned()).note, /does not cover the current week/);
+await assert.rejects(scheduledSources.read({scope:flowScope,step:{...plannedStep,input:{view:'invented'}}},flowAuthorization), /supported pipeline view/);
+console.log('Planned admission view: canonical weekly schedule, scoped counts, zero/unknown coverage, boundaries, exclusions and private-field removal passed.');
