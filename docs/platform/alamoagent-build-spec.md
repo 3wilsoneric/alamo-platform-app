@@ -15,14 +15,19 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 ### November 23 combined ProForma release
 
-Eric authorized one coordinated release. ProForma source `ddad581` is integrated
-with the current native report/PDF/read-recovery changes. Its API 0.18.8 is already
-live under the ProForma release; executive compatibility passes 39 tests and
-preserved report configuration is verified. The combined Platform artifact and
-full gate are pending. Suite binds cutover to the current API state, preserving
-its guidance configuration and refusing drift. Report execution and expanded
-executive access remain off. The [combined release receipt](deployment-operations.md#combined-ally-and-proforma-release--november-23-preparing)
-owns current deployment evidence.
+The combined Platform design, native report/PDF/read-recovery changes and
+ProForma integration are live for Eric's pilot from `8634641`, after the complete
+predeployment gate. API 0.18.9 preserves the report configuration and passes all
+five existing executive source-access checks. Its live published-guidance question
+still failed during discovery; the API-only 0.18.10 diagnostic correction is
+separately reviewed, not yet verified deployed. The postdeployment gate stopped
+after 19 passing stages when a resident-search test sampled the roster while it
+was loading. The bounded readiness wait now passes all 8 scenarios / 19 turns without
+changing its assertions or application behavior; remaining release stages continue. All 15 live page checks and 12 navigation
+interactions pass; complete native Network evidence remains outstanding.
+Report execution and expanded executive access remain off. The
+[combined release receipt](deployment-operations.md#combined-ally-and-proforma-release--november-23-preparing)
+owns current deployment evidence and the usable rollback.
 
 ### November 23 Azure read deadline
 

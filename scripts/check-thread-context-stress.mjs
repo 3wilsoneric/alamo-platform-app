@@ -387,6 +387,17 @@ async function runScenario(page, scenario, scenarioIndex, screenshotDir) {
         await waitForStoredFrame(page, turn.expectFrame, `${scenario.id} step ${turnIndex + 1} frame`);
       }
 
+      if (scenario.id === "resident-miss-does-not-fall-back-to-random-roster" && turnIndex === 0) {
+        // This surface fetches its roster after the chat's thinking state ends.
+        // Observe its existing readiness signal within the same assertion budget;
+        // the unchanged positive-count/content checks below still reject errors.
+        await page.waitForFunction(() => {
+          const latest = [...document.querySelectorAll("[data-chat-item-id]")].at(-1);
+          const count = latest?.querySelector('[data-resident-result-count="true"]');
+          return Boolean(count && !/Loading/i.test(count.textContent || ""));
+        }, undefined, { timeout: TIMEOUT_MS });
+      }
+
       const result = await validateTurn(page, turn, scenario.id, turnIndex + 1);
       await page.screenshot({ path: screenshotPath, fullPage: false });
       turns.push({ ...result, screenshotPath });

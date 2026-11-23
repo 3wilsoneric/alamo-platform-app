@@ -1,6 +1,44 @@
 # Deployment And Operations
 
-## Combined Ally and ProForma release — November 23, preparing
+<a id="combined-ally-and-proforma-release--november-23-preparing"></a>
+## Combined Ally and ProForma release — November 23, owner pilot live
+
+Current Platform source `8634641` is deployed as
+`alamo-platform-prod-web--ally-native-1123-final`, image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:22682554622ece5a5d28367a18de94cb6049becdfa430251c6e61e72eba1ac44`.
+The complete 28-stage predeployment gate passed; cutover and exact runtime/file
+preservation were verified at 05:29:56 UTC. The live entry is
+`/assets/index-ezkWWaEF.js`. Suite receipts are
+`/Users/eric/suite-deploy/.state/platform-production-ally-native-1123-final.{plan,deployment,verification}.json`.
+Rollback remains the Carelog-preserving `76f01e1d` base described below.
+
+The postdeployment full gate passed its first 19 stages, then failed the
+resident-search turn in `check:thread-context-stress`: the test sampled the
+independently loading roster after a fixed 350 ms delay. The failed receipt is
+retained as `generated/current-navigation-20261122/combined-brand-postdeploy-failed.json`.
+The test now waits for the existing result-count loading state to settle within
+its unchanged 35-second timeout, before applying the unchanged content and
+positive-count assertions. The focused rerun passes all 8 scenarios / 19 turns with no console or request
+failures. The remaining release stages continue from stage 21; prior passing
+stages are retained. This test-only correction does not change the deployed application.
+
+Main Chrome passed all 15 current/legacy routes and 12 navigation interactions
+with no captured console errors. Evidence is in
+`generated/current-navigation-20261122/combined-brand-live/navigation-only.json`.
+The native Network capture was interrupted and includes unverified request
+statuses; this is explicitly not a complete passing signed-in release receipt.
+Saved-report reopening and source expansion were also checked without generation.
+
+Ally API 0.18.9 is live on image `7655fd54`; its report settings and five existing
+executive data-source capabilities passed independent checks. A real published
+ProForma guidance question still failed during source discovery. API 0.18.10
+diagnostics/display-label correction `49e6191` is separately reviewed and awaiting
+its guarded API-only cutover receipt. No additional executive grants, worker
+execution, schedules or paid model calls are enabled by this release. The shared
+$10 development campaign retains $9.981116 in reservations, including unknown
+outcomes; this is a reserved ceiling, not a billing total.
+
+Preparation history follows; its pending statements describe earlier candidates.
 
 Eric authorized coordination of the overlapping releases. ProForma source
 `ddad581` is fast-forwarded into the native executive integration branch, including
@@ -17,11 +55,9 @@ to the actual API state and refuses drift at cutover; its 21 tests pass. The liv
 report-configuration comparison also passes. Report-worker execution, report
 campaign budget and executive membership remain unchanged by this integration.
 
-One canonical preparer now combines the native UI, report source endpoint,
-bounded snapshot reader and four-file ProForma guidance extension. The full
-combined container/release checks and signed-in acceptance are still required.
-The production Platform/rollback base remains `76f01e1d`. No combined Platform
-cutover has occurred. The source contract is described in
+One canonical preparer combines the native UI, report source endpoint,
+bounded snapshot reader and four-file ProForma guidance extension. Its completed
+cutover and remaining acceptance checks are recorded above. The source contract is described in
 [ProForma guidance](#proforma-guidance-in-the-combined-ally-release).
 
 ## Azure read deadline — November 23, awaiting release
