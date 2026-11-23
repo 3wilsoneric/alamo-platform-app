@@ -25,10 +25,13 @@ measure mismatch; the live UI now honors the independently validated measure
 binding in saved views and PDFs, with user choices taking precedence. The owner
 authorized a 50¢ UTC-day pilot cap. API/worker 0.18.11 and the matching UI are
 live; the actual enabled worker branch passed without model calls, and the
-report scheduler is enabled. Two fresh real answers, correct default chart selection,
-saved reopening and token-cost settlement pass: $0.019668 for both answers. The
+report scheduler is enabled. Ten fresh real answers now pass the checked figures,
+scope and source-limit assertions, including community filtering, counties,
+bed-days and current Pipeline stages. Twenty model calls settled at $0.112816
+(1.13¢ per answer). Correct default chart selection and saved reopening pass. The
 print view retains the chart; final native Network capture and actual PDF-file
-saving still await an accessible Chrome window.
+saving still await an accessible Chrome window. Native date-input acceptance is
+also pending; automation changed the DOM input but not the selected report scope.
 Broader executive grants remain off.
 See the [current candidate and evidence](deployment-operations.md#platform-data-questions--november-23-local-candidate).
 

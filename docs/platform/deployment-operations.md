@@ -69,6 +69,44 @@ have no horizontal overflow. Screenshot evidence is in
 follow-up implies other communities might be omitted even though all five appear;
 record that as an imprecise caveat, not a count error or missing-community finding.
 
+Eight subsequent real-data questions pass their numeric, scope and evidence
+checks: annual admissions/discharges/net growth; bed-days and daily census;
+18 admission counties; Turlock-only scope; current Pipeline stage totals;
+unsupported wait-time/causal claims; source freshness; and a fresh growth repeat.
+The independent baseline matches 413 admissions, 287 discharges, +126 net,
+162,346 occupied bed-days, and 41 current Pipeline workspaces (0/28/2/11).
+These are implementation-authored development checks, not held-out tests or
+human usefulness ratings. The complete ten answers cost an estimated $0.112816
+across 20 settled model calls, leaving $0.387184 of the daily allowance.
+The repeat was not cache-served: partial-coverage results remain uncached.
+Fresh source authorization proofs pass all five capabilities and return 403 for
+an unknown subject, a private resident dataset and direct grant-store access.
+No source writes or new permissions were introduced. Evidence:
+`platform-daily-live/broader-acceptance.json` within the folder above, and Suite
+`native-owner-platform-daily.{ten-answer-cost,source}.json`.
+The native date control still needs acceptance: automation filled its DOM value
+without changing the React scope. The retained scope and actual November 22
+source cutoff were correctly represented in answers; no application defect or
+date-control pass is claimed from that automation attempt.
+
+Production worker recovery was checked with report dispatch paused and no active
+runs or leases. `az functionapp restart` was acknowledged but did not replace the
+observed host process. A controlled stop, at least 90 seconds after observing
+`Stopped`, then start reached a replacement process. The host's reported start
+time was 09:08:54 UTC, versus 08:58:41 before recovery, and its instance identity
+changed. It was observed running after start; a newly submitted Durable stale-run
+probe completed on the enabled branch with `paused, claimed: false`.
+Report/index/model-state hashes, both spending ledgers and request history were
+unchanged. No model calls or source writes were added. Exact app configuration
+and all 134 worker file hashes were rechecked before restoring the report timer
+with the same 50¢ cap; unrelated monitors remain disabled. This is a verified
+recovery path, not a guaranteed stop interval or a claim that plain ARM restart
+works. Receipts: `native-owner-platform-daily.recovery-*.json` and
+`native-owner-platform-daily.resume-schedule-recovery-a.json` in Suite state.
+The loaded host's own `/admin/functions` response at 09:13 UTC confirms the
+report activity and timer enabled, the unrelated monitor timer disabled, and all
+10 functions present.
+
 Receipts are under `/Users/eric/suite-deploy/.state/`:
 `platform-priority-ui2.{plan,verification,predeploy}.json`,
 `platform-priority-ui2-verified.json`, `ally-01811.api-update.verification.json`,
