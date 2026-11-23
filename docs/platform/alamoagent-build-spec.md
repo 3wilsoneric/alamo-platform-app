@@ -16,14 +16,19 @@ Update that spec in every relevant change; do not start a competing Platform pla
 ### November 23 priority: Ally in Platform
 
 The owner deferred ProForma acceptance to prioritize useful Platform data questions,
-follow-ups, saved reports and exports. The local UI opens the existing report
+follow-ups, saved reports and exports. The deployed UI opens the existing report
 composer directly, retaining optional general chat and the answer canvas. Pending
 chat sends are visible immediately and automatic refresh waits for completion;
 explicit authorization rechecks and cancellation remain available. Desktop and
 phone report/chat checks pass. A bounded live census answer and follow-up passed. That test exposed a chart
-measure mismatch; the candidate now honors the independently validated measure
+measure mismatch; the live UI now honors the independently validated measure
 binding in saved views and PDFs, with user choices taking precedence. The owner
-authorized a 50¢ daily pilot cap; its durable worker enforcement is being verified.
+authorized a 50¢ UTC-day pilot cap. API/worker 0.18.11 and the matching UI are
+live; the actual enabled worker branch passed without model calls, and the
+report scheduler is enabled. Two fresh real answers, correct default chart selection,
+saved reopening and token-cost settlement pass: $0.019668 for both answers. The
+print view retains the chart; final native Network capture and actual PDF-file
+saving still await an accessible Chrome window.
 Broader executive grants remain off.
 See the [current candidate and evidence](deployment-operations.md#platform-data-questions--november-23-local-candidate).
 

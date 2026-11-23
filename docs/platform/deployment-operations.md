@@ -13,7 +13,8 @@ sustained load verification remains in progress. The immutable prior resource
 configuration and verification are in Suite
 `.state/platform-production-ally-platform-1123-memory.{plan,deployment,verification}.json`.
 
-## Platform data questions — November 23, local candidate
+<a id="platform-data-questions--november-23-local-candidate"></a>
+## Platform data questions — November 23, owner pilot live
 
 Ally now opens Platform's existing data-question/report surface by default, with
 one composer at desktop and phone widths. General chat remains in New; an existing
@@ -28,8 +29,62 @@ and focus return. The held-model conversation check crosses the five-second poll
 boundary and verifies no duplicate automatic read while a send is pending.
 Screenshots and logs are in `generated/current-navigation-20261122/` and
 `generated/platform-page-screenshots-2026-11-22/`.
-These interface changes are not deployed yet. The production worker remains
-separately controlled; source records and counting definitions are unchanged.
+Platform source `75aa993` is now live as
+`alamo-platform-prod-web--ally-platform-1123-ui2`, image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:b8e37dccd3fe0a12a904a5a0078f0c538e9c0790da37443e990b9c57d06b23dd`.
+Its entry `/assets/index-BALokCJd.js` hashes to
+`49da760b3748c3994f48811b70e41b2f9fd70333e7eaf2f4dc30764070a68f94`.
+All 28 predeployment stages passed at 08:20 UTC. The tested 826 source hashes
+and 40 browser asset changes are unchanged. Carelog deployed 0.1.27 concurrently;
+the first cutover correctly stopped on configuration drift. Rebuilding these same
+browser bytes on Carelog's `dfc49a1a` image preserves its 0.1.27 assets and every
+one of the 19,944 base files outside the 40-file allowlist. Inherited changes are
+confined to Carelog/Fleet assets. Exact configuration, health 200, anonymous 401,
+and one healthy active revision with 100% traffic passed at 08:29 UTC.
+
+Ally API/worker 0.18.11, source `73438b8`, are deployed. API image:
+`alamoallywqqka6kfae5ma.azurecr.io/ally@sha256:e85db3937047d0327f722970c98feedf5747c56bafaec6ddfe2d3ea008ea6f9c`,
+revision `alamo-ally-prod-api--platform-01811-1123`. Health 200, anonymous 401,
+untrusted origin 403, keyless API and owner-only scope pass. All 134 worker files
+match package SHA-256 `590dd6c3e0895eee8807b01608e2cb77eb13cc6e1499c86c1497b44ffb3e64a6`.
+The real local Functions/Azurite host passed eight lifecycle checks, with fictional
+records and canned responses; this does not prove cloud recovery latency.
+
+The owner authorized 50¢ per UTC day for the report worker. Conditional storage
+reserves a conservative maximum before each model call and settles verified
+completed-response token usage. Unknown outcomes retain their full reservation.
+The 100-investigations/day abuse ceiling and 100 saved-report limit remain.
+The original $11 evaluation campaign is closed with all 239 reservations retained.
+No ledger or request history was reset. A deliberately stale run probe of a paused
+record returned `paused, claimed: false`; only the report timer is now enabled.
+Unrelated monitors and broader executive access remain off. Connection verification
+expires December 23, 2026. Two fresh real-data questions completed: San Pablo's 22 available beds and its
+22/60 = 36.7% share. Both versions default to `availableBeds`; reload/reopen retains
+the answer, version and measure. The authorized print view retains that measure.
+Actual PDF-file saving remains unverified because Chrome's native window is
+unavailable. Four model calls settled at $0.019668, leaving $0.480332; this is
+token-rated model cost, excluding hosting. The 390×844 and 1440×900 live checks
+have no horizontal overflow. Screenshot evidence is in
+`generated/current-navigation-20261122/platform-daily-live/`. The partial-coverage
+follow-up implies other communities might be omitted even though all five appear;
+record that as an imprecise caveat, not a count error or missing-community finding.
+
+Receipts are under `/Users/eric/suite-deploy/.state/`:
+`platform-priority-ui2.{plan,verification,predeploy}.json`,
+`platform-priority-ui2-verified.json`, `ally-01811.api-update.verification.json`,
+`ally-01811.worker-update.verification.json`, `ally-01811.functions-proof.json`,
+and `native-owner-platform-daily.*.json`.
+The complete final signed-in Network check is still pending: main Chrome DOM
+controls work, but macOS is not exposing Chrome's native window. Earlier browser
+receipts do not certify this new image.
+
+Rollback UI to Carelog's current base
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:dfc49a1a2bba53914b7af983b2f5fa629a09f48fe29f424b4b1240de50a5d57d`
+using the prepared UI2 restore plan, retaining 1 CPU / 2 GiB and Carelog 0.1.27.
+Stop the report schedule, verify drain, then disable worker execution before any
+worker restore; never enable an older worker that lacks the daily cap. If a day
+has over 20 investigations, retain the new API reader: 0.18.10 cannot parse that
+larger request list. Source records, counting definitions and grants are unchanged.
 
 <a id="combined-ally-and-proforma-release--november-23-preparing"></a>
 ## Combined Ally and ProForma release — November 23, owner pilot live
