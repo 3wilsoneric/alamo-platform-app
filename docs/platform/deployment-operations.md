@@ -6019,3 +6019,22 @@ No source records, grants, emails or wider executive access changed. Canonical
 worker 0.18.7 stays disabled. Resolve actual worker configuration recovery and the
 obsolete signed-in test expectations before another release; a healthy recovery
 is not an executive acceptance pass.
+
+### ProForma guidance in the combined Ally release
+
+`prepare-executive-ally-release.mjs` owns the single native UI release. Its
+`prepare-proforma-guidance-overlay.mjs` helper patches only the deployed process
+service, workflow routing, typed error handling and published-guidance reader.
+The reader in `deploy/proforma-guidance-discovery.mjs` is a reviewed copy of
+ProForma's `src/server/guidance-discovery.mjs`; update it explicitly from that
+authoring source. No cross-application runtime or database client is imported.
+The release fingerprints the copy and helper and verifies the exact delta
+against the immutable live image. Existing authoring, review, publication,
+owner authorization and storage stay source-owned.
+
+Run `npm run check:proforma-guidance-overlay` before preparation. The image check
+also exercises anonymous guidance denial and the native `/workflow` entry.
+Signed-in acceptance must separately prove delegated Ally access, a current
+publication citation and saved-chat reopen. Deployment-configured document IDs
+only narrow source authorization; new guides require an explicit binding update.
+A seeded demonstration or engineering tutorial is not approved clinical policy.

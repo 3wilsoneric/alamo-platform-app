@@ -7,6 +7,7 @@ import path from 'node:path';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
 import { build, loadEnv } from 'vite';
 import { executiveAllyReleaseMode } from './executive-ally-release-mode.mjs';
+import { guidanceOverlay, guidancePaths, guidanceSourcePath } from './prepare-proforma-guidance-overlay.mjs';
 
 const base = process.env.PLATFORM_UI_BASE_IMAGE;
 assert.match(base ?? '', /^pipelineprodacra6qdvl6ebenac\.azurecr\.io\/alamo-platform@sha256:[a-f0-9]{64}$/, 'Set PLATFORM_UI_BASE_IMAGE to the reviewed current immutable image.');
@@ -100,6 +101,16 @@ api = 'import { handlePlatformReportSourceRequest } from "../server/ally-report-
   '  const requestPath = String(req.url ?? "").split("?", 1)[0] ?? "";',
   '  const requestPath = String(req.url ?? "").split("?", 1)[0] ?? "";\n  if (requestPath === "/api/platform/ally-source/v1") { await handlePlatformReportSourceRequest(req, res); return; }');
 await write('api/platform.js', api);
+// Read the exact live ProForma implementation and add its bounded published
+// guide reader. The canonical manifest records all four files and source bytes.
+const guidanceBase = {};
+for (const file of Object.values(guidancePaths).filter(file => file !== guidancePaths.reader)) guidanceBase[file] = readImage(file);
+const existingReader = run('docker', ['run', '--rm', '--platform', 'linux/amd64', '--network', 'none', '--entrypoint', 'node', base,
+  '--input-type=module', '-e', `import {readFileSync,existsSync} from 'node:fs';const p='/app/${guidancePaths.reader}';process.stdout.write(JSON.stringify(existsSync(p)?readFileSync(p,'utf8'):null));`]);
+if (JSON.parse(existingReader) !== null) guidanceBase[guidancePaths.reader] = JSON.parse(existingReader);
+for (const [file, content] of Object.entries(guidanceOverlay(guidanceBase, await source(guidanceSourcePath)))) await write(file, content);
+await source('scripts/prepare-proforma-guidance-overlay.mjs');
+
 // The live host has a static CSP, unlike the staging wrapper. Permit exactly
 // the configured service; retain every other directive and server byte.
 if (enabled) await write('server/app-server.mjs', once(readImage('server/app-server.mjs'),
