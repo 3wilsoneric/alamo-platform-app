@@ -1,5 +1,29 @@
 # Deployment And Operations
 
+## Combined Ally and ProForma release — November 23, preparing
+
+Eric authorized coordination of the overlapping releases. ProForma source
+`ddad581` is fast-forwarded into the native executive integration branch, including
+`8562631` and the selected-measure PDF repair. The earlier `627dd9ce` image and
+`ally-native-1123-read` plan are superseded before cutover. Their verifier passed
+against the current Carelog base; their full gate was intentionally stopped for
+this integration, with the interruption and partial results retained under
+`generated/current-navigation-20261122/pre-proforma-read-candidate/`.
+
+ProForma's owner has deployed Ally API 0.18.8, immutable image `6523a987`, while
+preserving the report configuration. All 39 executive-report regressions pass
+against that source. Suite's updated controller binds the next Platform plan
+to the actual API state and refuses drift at cutover; its 21 tests pass. The live
+report-configuration comparison also passes. Report-worker execution, report
+campaign budget and executive membership remain unchanged by this integration.
+
+One canonical preparer now combines the native UI, report source endpoint,
+bounded snapshot reader and four-file ProForma guidance extension. The full
+combined container/release checks and signed-in acceptance are still required.
+The production Platform/rollback base remains `76f01e1d`. No combined Platform
+cutover has occurred. The source contract is described in
+[ProForma guidance](#proforma-guidance-in-the-combined-ally-release).
+
 ## Azure read deadline — November 23, awaiting release
 
 The full `native-pdf-predeploy` run stopped at stage 8 after its context process

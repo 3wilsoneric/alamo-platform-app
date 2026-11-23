@@ -13,6 +13,17 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 23 combined ProForma release
+
+Eric authorized one coordinated release. ProForma source `ddad581` is integrated
+with the current native report/PDF/read-recovery changes. Its API 0.18.8 is already
+live under the ProForma release; executive compatibility passes 39 tests and
+preserved report configuration is verified. The combined Platform artifact and
+full gate are pending. Suite binds cutover to the current API state, preserving
+its guidance configuration and refusing drift. Report execution and expanded
+executive access remain off. The [combined release receipt](deployment-operations.md#combined-ally-and-proforma-release--november-23-preparing)
+owns current deployment evidence.
+
 ### November 23 Azure read deadline
 
 The release run exposed an indefinitely stalled snapshot response. The local
