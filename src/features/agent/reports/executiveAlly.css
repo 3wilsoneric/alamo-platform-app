@@ -173,7 +173,7 @@
   .ally-conversation--document .ally-conversation-column {display:none;}
   .ally-document-reader {flex:1;border:0;}
 }
-.executive-ally-header .ally-panel-new {font-size:13px;gap:6px;}
+.executive-ally-header .ally-panel-new {margin-left:0;font-size:13px;gap:6px;}
 .executive-ally-header .ally-panel-new span {font:inherit;margin:0;color:inherit;}
 .executive-ally-header .ally-guidance-history {border-top:1px solid var(--ally-rule);margin-top:6px;}
 @media(max-width:700px){.executive-ally-header .ally-panel-new span{display:none;}}
