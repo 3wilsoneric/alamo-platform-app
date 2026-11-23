@@ -154,6 +154,15 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       if (!['stages', 'planned-admissions'].includes(view)) throw Error('Choose a supported pipeline view.');
       const source = await pipeline();
       if (source.status !== 'connected') throw Error('Pipeline source unavailable.');
+      if (!hasCompleteIntakeBoard(source)) throw Error('A complete active referral count is unavailable.');
+      const active = activeIntakeCards(source);
+      const facilityFor = item => item.facilityId ?? facilityIdForPipelineCommunity(item.community);
+      if (active.some(item => !ALAMO_FACILITIES.some(facility => facility.facilityId === facilityFor(item)) ||
+          item.facilityId && facilityIdForPipelineCommunity(item.community) && item.facilityId !== facilityIdForPipelineCommunity(item.community))) {
+        throw Error('Active referral community scope could not be verified.');
+      }
+      const cards = active.filter(item => authorization.communities.includes(facilityFor(item)));
+      const columns = INTAKE_STAGES.map(stage => ({ key: stage.key, title: stage.label, count: cards.filter(card => intakeStage(card) === stage.key).length }));
       if (view === 'planned-admissions') {
         if (source.briefing?.status !== 'ready' || source.briefing.coverage.moveIns !== true) {
           throw Error('A complete planned-admission schedule is unavailable.');
@@ -166,31 +175,24 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
         }
         const rows = ALAMO_FACILITIES.filter(f => authorization.communities.includes(f.facilityId)).map(f => ({
           community: f.shortName,
-          plannedAdmissions: briefing.plannedMoveIns.filter(row => row.facilityId === f.facilityId).length
+          plannedAdmissions: briefing.plannedMoveIns.filter(row => row.facilityId === f.facilityId).length,
+          awaitingDate: cards.filter(card => facilityFor(card) === f.facilityId && intakeStage(card) === 'arrival' && !card.plannedAdmissionDate).length
         }));
         result = { generatedAt: source.generatedAt,
           period: { start: briefing.weekStart, through: briefing.weekEnd, timezone: source.briefing.timezone, asOfDate: briefing.pipelineAsOfDate },
           communities: rows, total: rows.reduce((total, row) => total + row.plannedAdmissions, 0),
-          definition: 'Planned move-ins in the published weekly Pipeline schedule; not confirmed admissions.' };
+          awaitingDate: rows.reduce((total, row) => total + row.awaitingDate, 0),
+          definition: 'Planned move-ins in the published weekly Pipeline schedule; not confirmed admissions. Awaiting date counts active accepted workspaces with no planned admission date; their arrival week is unknown.' };
         base.title = 'Planned admissions'; base.observedAt = source.generatedAt;
         base.period = `${briefing.weekStart}–${briefing.weekEnd}`; base.grain = 'community planned move-ins';
-        base.note = 'Pipeline weekly schedule, Monday–Sunday in Pacific time. Plans are not confirmed admissions. This current schedule does not provide historical admission totals.';
+        base.note = 'Pipeline weekly schedule, Monday–Sunday in Pacific time. Plans are not confirmed admissions. Accepted workspaces without a date cannot be assigned to this week. This current schedule does not provide historical admission totals.';
         const today = getReportingDateKey(now());
         if (today < briefing.weekStart || today > briefing.weekEnd) {
           base.coverage = 'partial'; base.note += ' The published schedule does not cover the current week.';
         }
         dataset = scopedDataset('Planned admissions', rows,
-          [{key:'community',label:'Community',type:'string'},{key:'plannedAdmissions',label:'Planned admissions',type:'number'}], 'categories');
+          [{key:'community',label:'Community',type:'string'},{key:'plannedAdmissions',label:'Planned admissions',type:'number'},{key:'awaitingDate',label:'Awaiting date',type:'number'}], 'categories');
       } else {
-        if (!hasCompleteIntakeBoard(source)) throw Error('A complete active referral count is unavailable.');
-        const active = activeIntakeCards(source);
-        const facilityFor = item => item.facilityId ?? facilityIdForPipelineCommunity(item.community);
-        if (active.some(item => !ALAMO_FACILITIES.some(facility => facility.facilityId === facilityFor(item)) ||
-            item.facilityId && facilityIdForPipelineCommunity(item.community) && item.facilityId !== facilityIdForPipelineCommunity(item.community))) {
-          throw Error('Active referral community scope could not be verified.');
-        }
-        const cards = active.filter(item => authorization.communities.includes(facilityFor(item)));
-        const columns = INTAKE_STAGES.map(stage => ({ key: stage.key, title: stage.label, count: cards.filter(card => intakeStage(card) === stage.key).length }));
         // Counts share the same complete active population as the Admissions UI.
         // The broader producer awaiting-admission metric is not a stage subtotal.
         result = { generatedAt: source.generatedAt, columns, truncated: false,

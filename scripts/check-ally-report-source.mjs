@@ -228,7 +228,11 @@ console.log('Executive views: scoped admission counties, actual occupancy limits
 // receives community totals only, never its client/owner/contact fields.
 const schedule = {
   status: 'connected', generatedAt: '2026-11-23T14:00:00Z',
-  board: { cards: [] }, history: { monthly: [] },
+  metrics: {activeReferrals:3}, board: { total:3, truncated:false, cards: [
+    {column:'decision',status:'Accepted, requirements open',community:'San Pablo',plannedAdmissionDate:null,flags:{}},
+    {column:'in_progress',status:'Assessment underway',community:'San Pablo',plannedAdmissionDate:null,flags:{}},
+    {column:'decision',status:'Accepted, requirements open',community:'Santa Clarita',plannedAdmissionDate:null,flags:{}}
+  ] }, history: { monthly: [] },
   briefing: { status: 'ready', timezone: 'America/Los_Angeles', windowEnd: '2026-11-23',
     weekStart: '2026-11-23', weekEnd: '2026-11-29', coverage: { moveIns: true },
     recentReferrals: [], upcomingAssessments: [], admittedLastWeek: [], movingThrough: [], weeklyTrend: [],
@@ -252,11 +256,12 @@ const readPlanned = (ids=['337','344']) => scheduledSources.read({ scope: {...fl
 const planned = validateReportEvidence(await readPlanned(), plannedStep, flowScope);
 assert.equal(planned.period, '2026-11-23–2026-11-29');
 assert.equal(planned.coverage, 'complete');
-assert.deepEqual(planned.dataset.rows, [{community:'San Pablo',plannedAdmissions:2},{community:'Turlock',plannedAdmissions:1}]);
+assert.deepEqual(planned.dataset.rows, [{community:'San Pablo',plannedAdmissions:2,awaitingDate:1},{community:'Turlock',plannedAdmissions:1,awaitingDate:0}]);
 assert.equal(JSON.parse(planned.answer).total, 3);
+assert.equal(JSON.parse(planned.answer).awaitingDate, 1, 'only accepted active workspaces without dates belong in the unknown-week count');
 assert.match(planned.note, /not confirmed admissions/);
 assert(!JSON.stringify(planned).match(/PRIVATE_|9000|example\.test|Santa Clarita/), 'only scoped aggregate schedule data may leave Platform');
-assert.deepEqual((await readPlanned(['342'])).dataset.rows, [{community:"Victoria's House",plannedAdmissions:0}], 'covered zero is distinct from missing schedule coverage');
+assert.deepEqual((await readPlanned(['342'])).dataset.rows, [{community:"Victoria's House",plannedAdmissions:0,awaitingDate:0}], 'covered zero is distinct from missing schedule coverage');
 schedule.briefing.coverage.moveIns = false;
 await assert.rejects(readPlanned(), /complete planned-admission schedule/);
 schedule.briefing.coverage.moveIns = true;
