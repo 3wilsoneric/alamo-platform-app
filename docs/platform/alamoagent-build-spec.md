@@ -13,9 +13,9 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
-Current rollout evidence is recorded in [Executive Ally conversations](deployment-operations.md#executive-ally-conversations--november-23). Older dated entries below retain their historical scope; they do not override the current release.
+Current rollout evidence is recorded in [Ally readability and response latency](deployment-operations.md#ally-readability-and-response-latency--november-23). Older dated entries below retain their historical scope; they do not override the current release.
 
-### November 23 readability and responsive data — local candidate
+### November 23 readability and responsive data — deployed and verified
 
 Canonical display labels now normalize database field names in new source datasets
 and existing saved reports without rewriting evidence or changing field bindings.
@@ -29,7 +29,13 @@ open the matching saved report section and restore keyboard focus on close.
 Repeated citations, source-grain metadata, duplicate table captions and raw JSON
 are removed from presentation; saved evidence and access checks stay intact.
 Paragraphs, lists and bold emphasis render as text-safe native markup. Data limits
-remain visible. Deployment and real-data visual acceptance remain pending.
+remain visible. Source `bf2335e` is deployed. All 28 predeployment stages and four
+postdeployment stages passed. Main Chrome verified 15 routes, 12 interactions,
+619 requests, one explicit cancellation and no console or HTTP errors. An actual
+saved report passed readable labels/dates, collapsed sources, exact-section links,
+keyboard focus restoration and zero horizontal overflow at desktop and 390/320px.
+The normal viewport was restored. API/worker 0.18.13 is also live; the fresh
+14.309-second answer is a measured sample, not a general speedup claim.
 
 ### November 23 executive expansion — live and verified
 

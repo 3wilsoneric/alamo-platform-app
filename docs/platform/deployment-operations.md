@@ -1,5 +1,65 @@
 # Deployment And Operations
 
+## Ally readability and response latency — November 23
+
+Platform source `bf2335e` is live in image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:211d4343ca7da14f8c1004cd7b47a4e9b24e76492783c4157f247b47e9085502`,
+revision `alamo-platform-prod-web--ally-readability-final-1123`. Exact
+configuration, one healthy active revision with all traffic, health 200 and
+anonymous source/API denial 401 passed at 22:44 UTC. The initial verification
+observed the normal transition before the ready revision caught up; read-only
+verification passed after cutover. The deployment was not applied twice.
+
+The replacement changes 41 allowed files: browser assets and the existing bundled
+source adapter's display labels. All 19,971 other image files, Carelog 0.1.27,
+resource limits, source authority, three-account membership and credit settings
+are preserved. Browser entry `/assets/index-D853tz6S.js` has SHA-256
+`387e3c5e4c6cc07dfd5ceddd428c5244b90d83c9e320652e3bf6db3f24157bb0`.
+
+Database-style field names become readable labels in both new and saved reports.
+Numbers and dates use product formatting; narrow tables become labeled records,
+and chart axes stay readable without shrinking SVG text. Answers support
+paragraphs, lists and selective emphasis. One collapsed Sources disclosure uses
+readable links to the exact saved report section; raw JSON, repeated citations
+and technical metadata no longer interrupt the answer. Stored evidence and
+current/historical authorization remain intact. PDF retains the complete table.
+
+The full predeployment gate passed **28/28** at 22:40 UTC. The final gate passed
+**4/4** at 22:52 UTC. The current-build main-Chrome audit passed all 15 routes
+and 12 interactions across 619 captured requests, with one explicit cancellation
+and no console or HTTP failures. Eric's actual saved census/capacity answer passed
+source-link keyboard activation and focus return, readable labels and dates,
+collapsed sources, and zero horizontal overflow at desktop and 390/320px. The
+composer stays inside the compact phone viewport. The 1470 × 636 viewport was
+restored. Real-data screenshots, the build-bound network evidence and gate
+receipts are under `generated/ally-readability-20261123/`. Synthetic browser/PDF
+fixtures additionally cover long names, negative values, null gaps and literal
+model HTML; they do not stand in for the actual saved-answer check.
+
+Ally API/worker **0.18.13**, source `3e459f1`, is live at
+`alamoallywqqka6kfae5ma.azurecr.io/ally@sha256:68ec41bb9527e689dd17b6e5a2f3826b7e31bd9d4602d9c69b0e08712146078a`,
+revision `alamo-ally-prod-api--speed-01813-1123`. Native Linux Functions CI
+45265914787 passed. All 134 worker files and ten Functions match the verified
+package. Read-only discovery uses three concurrent reads; the latest version
+avoids duplicate authorization while every request still checks current grants.
+Idle Durable queue polling is capped at two seconds. Models, model concurrency,
+source grants, the three participants and the cumulative prepaid allowance are
+unchanged. All 15 pre-change reports and historical ledgers retain their hashes.
+
+For the same 15 reports, list reads measured 1,861 ms before and 1,422 ms after.
+A fresh one-source answer completed on its first attempt in 14.309 seconds,
+including 6.705 seconds in model phases. This does not establish a consistent
+full-answer speedup. A request interrupted during the worker restart completed
+through Resume; its paused elapsed time is excluded. No active run or model lease
+remained at the final engine verification.
+
+Private Suite receipts: `.state/platform-readability-final-1123.*.json`,
+`.state/ally-speed-runtime.*.json`, `.state/native-owner-speed-*.readiness.json`
+and `.state/ally-latency-*.json`. Platform rollback restores image `6b5540b8`
+from the exact saved plan. Engine rollback pauses dispatch and restores the
+saved 0.18.12 worker/API/configuration. Neither rollback resets reports or ledgers.
+Older dated entries below describe earlier releases.
+
 ## Executive Ally conversations — November 23
 
 Eric authorized deployment for Eric Wilson, Andrew Dominici and Betty Dominici,
