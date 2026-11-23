@@ -12,12 +12,19 @@ The local reader was older than production. It now starts from the exact live
 reader (`e7f5b60`, SHA-256 `2b577edfd96749e6991a8fd7aab9ecff41bf0dfea557cce3673d4d020b33a447`),
 preserving managed identity, compressed publications, ETag revalidation and data
 validation. The production-relative change adds one 60-second abort deadline per
-Azure read, spanning metadata and the response body. No source writes or counting
-rules change. A real-SDK local HTTP regression fails before the change and passes
+Azure read, spanning metadata and the response body. The credential factory uses
+one shared client constructor, with all three existing authentication modes
+covered by assertions. No source writes or counting rules change. A real-SDK local HTTP regression fails before the change and passes
 after it: stalled headers/body, concurrent readers, retry after failure, compressed
-and raw reads, missing/invalid/denied sources. Ten existing revalidation cases,
+and raw reads, missing/invalid/denied sources. Thirteen credential/revalidation cases,
 client integration, server typecheck, focused lint, unused-code and API checks pass.
 The candidate verifier now runs that transport check inside the built container.
+The fixture advances its controlled deadline only after the intended request
+exists; it passes natively and inside the container without relying on CPU speed.
+The subsequent full gate stopped at duplicate detection; consolidating the
+credential factory resolves that finding without changing its choices. Focused
+transport, credential, duplication, type and lint checks pass. The full gate must
+run again against the rebuilt candidate.
 
 The live-data context rerun passed all 635 turns across 130 sessions. The
 `0db1b47d` plan remains historical and must not be deployed. Rebuild and verify

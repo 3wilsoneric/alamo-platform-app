@@ -17,7 +17,8 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 The release run exposed an indefinitely stalled snapshot response. The local
 reader is now reconciled with the exact deployed compression/identity/cache owner,
-with a bounded 60-second read deadline as the only production-relative change.
+with a bounded 60-second read deadline and equivalent credential-constructor
+consolidation. All three authentication modes have focused assertions.
 The real-SDK stalled-response regression fails before and passes after; data,
 authorization and recovery checks pass. The existing candidate is superseded,
 not deployed. The [operations receipt](deployment-operations.md#azure-read-deadline--november-23-awaiting-release)

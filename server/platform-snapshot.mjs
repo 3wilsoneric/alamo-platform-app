@@ -524,18 +524,9 @@ function createBlobServiceClient(config) {
     return BlobServiceClient.fromConnectionString(config.connectionString);
   }
 
-  if (config.authMode === "managed-identity") {
-    return new BlobServiceClient(
-      `https://${config.account}.blob.core.windows.net`,
-      new ManagedIdentityCredential(config.managedIdentityClientId)
-    );
-  }
-
-  const credential = new ClientSecretCredential(
-    config.tenantId,
-    config.clientId,
-    config.clientSecret
-  );
+  const credential = config.authMode === "managed-identity"
+    ? new ManagedIdentityCredential(config.managedIdentityClientId)
+    : new ClientSecretCredential(config.tenantId, config.clientId, config.clientSecret);
 
   return new BlobServiceClient(`https://${config.account}.blob.core.windows.net`, credential);
 }

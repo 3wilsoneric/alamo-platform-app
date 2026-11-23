@@ -14,7 +14,20 @@ const source = readFileSync(new URL("../server/platform-snapshot.mjs", import.me
 const sandbox = vm.createContext({ path, fileURLToPath: () => "/fixture/server/platform-snapshot.mjs",
   promisify, gzipCallback: gzip, gunzipCallback: gunzip, gunzipSync, getBoundedIntegerEnv,
   isProductionLikeRuntime, Buffer, AbortSignal, process: { env: {} }, console });
-vm.runInContext(`${source}\nglobalThis.reader = readAzureSnapshot;`, sandbox);
+vm.runInContext(`${source}\nglobalThis.reader = readAzureSnapshot; globalThis.makeService = createBlobServiceClient;`, sandbox);
+sandbox.ClientSecretCredential = class { constructor(...args) { this.kind = "secret"; this.args = args; } };
+sandbox.ManagedIdentityCredential = class { constructor(id) { this.kind = "managed"; this.id = id; } };
+sandbox.BlobServiceClient = class {
+  constructor(url, credential) { this.url = url; this.credential = credential; }
+  static fromConnectionString(value) { return { connectionString: value }; }
+};
+assert.equal(sandbox.makeService({ authMode: "connection-string", connectionString: "fixture" }).connectionString, "fixture");
+const managed = sandbox.makeService({ authMode: "managed-identity", account: "fixture", managedIdentityClientId: "fixture-id" });
+assert.equal(managed.url, "https://fixture.blob.core.windows.net");
+assert.equal(managed.credential.kind, "managed"); assert.equal(managed.credential.id, "fixture-id");
+const secret = sandbox.makeService({ authMode: "entra-client-secret", account: "fixture", tenantId: "tenant", clientId: "client", clientSecret: "fictional" });
+assert.equal(secret.url, managed.url); assert.equal(secret.credential.kind, "secret");
+assert.deepEqual(secret.credential.args, ["tenant", "client", "fictional"]);
 const fixture = JSON.parse(readFileSync(new URL("./fixtures/pipeline-clinical-snapshot.sanitized.json", import.meta.url)));
 const blobs = new Map();
 let propertiesReads = 0;
@@ -64,4 +77,4 @@ await assert.rejects(sandbox.reader(), /Storage unavailable/, "revalidation must
 storageFailure = false;
 publish("root/latest.json", { invalid: true }, '"invalid-publication"');
 await assert.rejects(sandbox.reader(), /snapshot|health|communities/, "changed invalid publications must still be validated");
-console.log(JSON.stringify({ ok: true, checks: 10, scope: "actual Azure reader ETag revalidation, replacement, deletion and fail-closed validation" }));
+console.log(JSON.stringify({ ok: true, checks: 13, scope: "Azure credential selection, reader ETag revalidation, replacement, deletion and fail-closed validation" }));
