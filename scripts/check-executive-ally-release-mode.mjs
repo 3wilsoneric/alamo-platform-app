@@ -20,7 +20,7 @@ test('first production artifact admits only the verified owner to its display ga
   assert.equal(pilot.suffix, '-pilot');
 });
 test('ambiguous, repeated and unrecognized release switches cannot broaden access', () => {
-  for (const args of [['--enabled-preview', '--owner-pilot'], ['--owner-pilot', '--owner-pilot'], ['--all'], ['--owner-pilot', 'anything'], ['']]) {
+  for (const args of [['--enabled-preview', '--owner-pilot'], ['--owner-pilot', '--owner-pilot'], ['--owner-pilot', '--executives'], ['--executives', '--enabled-preview'], ['--all'], ['--owner-pilot', 'anything'], ['']]) {
     assert.throws(() => executiveAllyReleaseMode(args));
   }
 });
@@ -33,4 +33,16 @@ test('native preparation rejects missing, mutable and unrelated base images befo
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Set PLATFORM_UI_BASE_IMAGE to the reviewed current immutable image/);
   }
+});
+
+test('authorized executive release names only Eric, Andrew and Betty', () => {
+  const release=executiveAllyReleaseMode(['--executives']);
+  assert.equal(release.enabled,true); assert.equal(release.preview,false); assert.equal(release.pilot,false);
+  assert.deepEqual(release.participants,[
+    {id:'f73371d5-d2b4-48b4-a32b-1edc7c88869f',name:'Eric Wilson'},
+    {id:'e9f39185-d751-45c0-bcf5-c24d3565bdd9',name:'Andrew Dominici'},
+    {id:'424b21d4-605a-43a6-8dff-2a89a846e698',name:'Betty Dominici'}
+  ]);
+  assert.equal(release.display.origin,executiveAllyReleaseMode(['--owner-pilot']).display.origin);
+  assert.equal(release.suffix,'-executives');
 });

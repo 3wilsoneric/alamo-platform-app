@@ -35,5 +35,5 @@ export function useReportHistory(report: ExecutiveReport | null, enabled: boolea
     return ()=>{disposed=true;controller?.abort();clearInterval(timer);document.removeEventListener('visibilitychange',visibility);};
   }, [client,enabled,key,version,retry]);
   useEffect(()=>{latest.current=report;},[report]);
-  return {...(enabled && state.key===key ? state : {answers:[],unavailable:false,loading:false}), retry:()=>setRetry(value=>value+1)};
+  return {...(enabled && state.key===key ? state : {answers:[],unavailable:false,loading:Boolean(enabled && report?.versions.some(v=>v.version<version))}), retry:()=>setRetry(value=>value+1)};
 }

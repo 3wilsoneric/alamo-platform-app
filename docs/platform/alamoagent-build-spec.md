@@ -13,6 +13,17 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 23 executive expansion — authorized, not yet deployed
+
+The owner explicitly authorized Eric Wilson, Andrew Dominici and Betty Dominici,
+with the available prepaid credits replacing the owner-only 50¢ daily cap.
+Betty's enabled tenant object was verified directly in Entra; the release switch
+names only those three accounts. UI visibility, independent API membership and
+source grants remain separate checks. The matching OpenAI project shows $199.09
+available, auto-reload off and expiration December 17. Deployment must retain
+existing saved reports, source restrictions and spent-credit history. No purchase,
+new top-up or outbound notification is authorized by this change.
+
 ### November 23 conversation UX — local candidate
 
 The owner approved the continuous conversation pass after reviewing the live

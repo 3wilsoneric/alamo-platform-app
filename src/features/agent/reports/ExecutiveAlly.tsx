@@ -79,11 +79,11 @@ export default function ExecutiveAlly() {
     setAwayFromLatest(false);
   }
   useEffect(() => {
-    if (revealLatest.current && (report || pendingQuestion)) {
+    if (revealLatest.current && (pendingQuestion || report && !history.loading)) {
       revealLatest.current = false;
       requestAnimationFrame(() => scrollToLatest());
     }
-  }, [report?.id, report?.selectedVersion, pendingQuestion]);
+  }, [report?.id, report?.selectedVersion, pendingQuestion, history.loading]);
   useEffect(() => {
     const el = dialog.current;
     if (!el) return;
@@ -209,7 +209,7 @@ export default function ExecutiveAlly() {
   </div></details>;
   const reportSurface = <div className={`executive-ally-report-surface ally-conversation${documentReport ? ' ally-conversation--document' : ''}`}>
     <div className="ally-conversation-column">
-      <div ref={body} className="executive-ally-body" onScroll={() => {if(body.current && latestTurn.current) setAwayFromLatest(latestTurn.current.getBoundingClientRect().top > body.current.getBoundingClientRect().bottom - 48);}}>
+      <div ref={body} className="executive-ally-body" onWheel={() => {revealLatest.current=false;}} onPointerDown={() => {revealLatest.current=false;}} onScroll={() => {if(body.current && latestTurn.current) setAwayFromLatest(latestTurn.current.getBoundingClientRect().top > body.current.getBoundingClientRect().bottom - 48);}}>
         {error && <div role="alert" className="ally-report-error"><p>{error}</p><button onClick={() => {if(report) void openReport(report); else {setError(null);setRetryList(v=>v+1);}}}>Refresh reports</button><button onClick={() => void transport.connect().then(()=>setRetryList(v=>v+1)).catch(()=>setError('Sign-in was not completed.'))}>Connect sign-in</button></div>}
         {!report && !busy && !error && <div className="executive-ally-empty"><h2>Ask Ally</h2></div>}
         <div className="ally-conversation-thread" aria-label="Conversation">
