@@ -1,3 +1,4 @@
+import { validateFlow, flowGaps, renderFlow } from './flow-contract.mjs'
 // Shared authoring rules. The stored structure is canonical; body is a projection.
 export const SOP_LIMITS = Object.freeze({ steps: 100, section: 2000, role: 160, action: 2000, reference: 1000, notes: 40000, body: 40000 })
 const idPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/
@@ -31,9 +32,9 @@ export function sopFromCapture(capture, sourceNotes = '') {
 }
 
 export function validateSop(value) {
-  shape(value, ['schemaVersion', ...sections.map(([key]) => key), 'sourceNotes', 'steps'])
-  if (value.schemaVersion !== 1) invalid('This SOP version is not supported.')
-  const sop = { schemaVersion: 1 }
+  shape(value, ['schemaVersion', ...sections.map(([key]) => key), 'sourceNotes', 'steps', ...(value?.schemaVersion === 2 ? ['flow'] : [])])
+  if (![1, 2].includes(value.schemaVersion)) invalid('This SOP version is not supported.')
+  const sop = { schemaVersion: value.schemaVersion }
   for (const [key, label] of sections) sop[key] = text(value[key], key === 'ownerRole' ? SOP_LIMITS.role : SOP_LIMITS.section, label)
   sop.sourceNotes = text(value.sourceNotes, SOP_LIMITS.notes, 'source notes')
   if (!Array.isArray(value.steps) || value.steps.length > SOP_LIMITS.steps) invalid('An SOP can contain up to 100 steps.')
@@ -52,6 +53,7 @@ export function validateSop(value) {
     }
     return normalized
   })
+  if (value.schemaVersion === 2) sop.flow = validateFlow(value.flow, sop.steps.map(step => step.id))
   if (renderSop(sop).length > SOP_LIMITS.body) invalid('The complete SOP exceeds 40,000 characters. Shorten the sections or source notes before saving.')
   return sop
 }
@@ -64,6 +66,7 @@ export function sopGaps(sop) {
       if (!step[key].trim()) gaps.push(`Step ${index + 1}: ${label}`)
     }
   })
+  if (sop.schemaVersion === 2) gaps.push(...flowGaps(sop.flow, sop.steps))
   return gaps
 }
 
@@ -81,6 +84,7 @@ export function renderSop(sop) {
       ...(step.evidenceReference.trim() ? [`   Author-supplied reference: ${step.evidenceReference.trim()}`] : []),
       ...(step.captureStepId ? [`   Captured interaction: ${step.captureStepId} (observed label; outcome and policy unverified)`] : []), '',
     ]) : ['[No steps added]', '']),
+    ...(sop.schemaVersion === 2 && sop.flow ? renderFlow(sop.flow, sop.steps) : []),
     ...sections.slice(4).flatMap(([key, label]) => [label, shown(sop[key]), '']),
     ...(sop.sourceNotes.trim() ? ['Source notes / previous instructions', sop.sourceNotes.trim()] : []),
   ].join('\n').trim()

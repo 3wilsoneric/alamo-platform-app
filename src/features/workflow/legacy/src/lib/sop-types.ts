@@ -1,3 +1,4 @@
+import type { SopFlow } from './flow-types.js'
 export type SopStep = {
   id: string
   action: string
@@ -9,7 +10,8 @@ export type SopStep = {
 }
 
 export type StructuredSop = {
-  schemaVersion: 1
+  schemaVersion: 1 | 2
+  flow?: SopFlow
   trigger: string
   applicability: string
   ownerRole: string

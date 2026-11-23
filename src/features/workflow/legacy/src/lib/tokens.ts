@@ -17,5 +17,4 @@ export const C = {
     bgCream: '#F3F6FB',
 } as const
 
-export const SIDEBAR_W = 248
 export const SIDEBAR_COL = 72

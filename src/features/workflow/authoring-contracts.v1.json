@@ -1,28 +1,228 @@
 {
   "schemaVersion": 1,
-  "owner": "Alamo Workflow",
-  "contractVersion": 1,
-  "rendererVersion": 1,
+  "owner": "ProForma",
+  "contractVersion": 2,
+  "rendererVersion": 2,
   "files": [
+    {
+      "source": "src/lib/media-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/media-types.ts",
+      "sha256": "f65d42dfe4a2ff71f061b3c99ba64d84ec2aa64a5536af6983257f6daf1223de"
+    },
+    {
+      "source": "src/lib/media-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/media-contract.mjs",
+      "sha256": "e32fc2b692bcef6a1b1b3dca3e04d1bf7f01041be7787145d9b1f16e48b23569"
+    },
+    {
+      "source": "src/lib/media-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/media-contract.d.mts",
+      "sha256": "ce53cc931685867e0909aa286a5f86ebb6dd45647b2b71b4c597723e1531016e"
+    },
+    {
+      "source": "src/server/media-service.mjs",
+      "destination": "server/workflow/media-service.mjs",
+      "sha256": "4f7e025a9320ceb3c754abcd6ad6ddb399ea222ed2e3d0300e54268cacf5d798"
+    },
+    {
+      "source": "src/lib/attachment-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/attachment-contract.mjs",
+      "sha256": "2efc1c333ff9d178227b9c623be9187a8e35747259657bed06200bd3f0b3f58f"
+    },
+    {
+      "source": "src/lib/attachment-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/attachment-contract.d.mts",
+      "sha256": "1b13797e40eb0bcf3e86daa63731792b31bc947095739d90767de564ca88ec99"
+    },
+    {
+      "source": "src/lib/source-inspection.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/source-inspection.mjs",
+      "sha256": "3363a8a699c85b1f354e5420f42b5720c26fe702fcf795b65075272f575d54ec"
+    },
+    {
+      "source": "src/lib/source-inspection.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/source-inspection.d.mts",
+      "sha256": "2563ac52d1338546fd0d0f7a771ad8f3579127b3d9224f33aba745662d49935e"
+    },
+    {
+      "source": "src/server/process-impact.mjs",
+      "destination": "server/workflow/process-impact.mjs",
+      "sha256": "ffd6e715110b8900a966816b568937588acfaf93126e7a8a777e1ab55fb17b04"
+    },
+    {
+      "source": "src/server/process-handoff.mjs",
+      "destination": "server/workflow/process-handoff.mjs",
+      "sha256": "7c51d19eb8cc64e80f8e49c584cb08718b3427b685ac186b8d992bdd01145a2a"
+    },
+    {
+      "source": "src/server/process-requests.mjs",
+      "destination": "server/workflow/process-requests.mjs",
+      "sha256": "f88c403e54f8b62c4980dc5e5ede9d1a22076807cec2519ff91b008151cb80a3"
+    },
+    {
+      "source": "src/server/request-sources.mjs",
+      "destination": "server/workflow/request-sources.mjs",
+      "sha256": "1871877e25f51ce16b1132ee45744e760113558fa2af4afcb4eaa1ffaafc22c2"
+    },
+    {
+      "source": "src/server/retained-original.mjs",
+      "destination": "server/workflow/retained-original.mjs",
+      "sha256": "6b60c47f71bdcb2d1e15b852a9b14a3dade42312e7f205bfa2ba4b807ea8efd2"
+    },
+    {
+      "source": "src/server/process-history.mjs",
+      "destination": "server/workflow/process-history.mjs",
+      "sha256": "e388ea59bc7a987698b0270bd14085730ed7b427794986903663c265a17282b1"
+    },
+    {
+      "source": "src/server/question-sources.mjs",
+      "destination": "server/workflow/question-sources.mjs",
+      "sha256": "964853c26e4a092e38cab155af47f0193ce57c113546b2bd692b0c3c8a63afbd"
+    },
+    {
+      "source": "src/server/source-selection.mjs",
+      "destination": "server/workflow/source-selection.mjs",
+      "sha256": "2245976c807114ca8b8a23edd32de012e43dbe82c94c44ab1e468d66127c1a71"
+    },
+    {
+      "source": "src/server/process-intent.mjs",
+      "destination": "server/workflow/process-intent.mjs",
+      "sha256": "eb257263a49f0f09ba71b906dbbff335bf981af48da44fbc7b962c5974eb7ee0"
+    },
+    {
+      "source": "src/server/structured-provider.mjs",
+      "destination": "server/workflow/structured-provider.mjs",
+      "sha256": "6ab850c7b8143e7ce1d3441c0e426140472a72a038fbc8453b648c2f8bb1f33c"
+    },
+    {
+      "source": "src/server/knowledge-sources.mjs",
+      "destination": "server/workflow/knowledge-sources.mjs",
+      "sha256": "6954ec89244c2be17f7df198e4c3886f9399c5f519b5d812343711b36af37cab"
+    },
+    {
+      "source": "src/server/knowledge-retrieval.mjs",
+      "destination": "server/workflow/knowledge-retrieval.mjs",
+      "sha256": "e3c28f56887a39e80694189d5ed3e6bf587256f2ec2f6c7a04c3cdd970e47cb8"
+    },
+    {
+      "source": "src/server/knowledge-answer.mjs",
+      "destination": "server/workflow/knowledge-answer.mjs",
+      "sha256": "8fe8db6e83b2726b75dc3fcb91beaff176956376dcb6f514f8365a468581537c"
+    },
+    {
+      "source": "src/server/visual-service.mjs",
+      "destination": "server/workflow/visual-service.mjs",
+      "sha256": "2cce441dd78b6cbeeb40d57a9b479af63ec1880de4382c21d83d34b7cf186d41"
+    },
+    {
+      "source": "src/server/visual-parser-worker.mjs",
+      "destination": "server/workflow/visual-parser-worker.mjs",
+      "sha256": "9ff9805e7ab89ebf0b39854609b697dc38ad191c87c38b6e1d25ab0199a574ce"
+    },
+    {
+      "source": "src/server/parser-runner.mjs",
+      "destination": "server/workflow/parser-runner.mjs",
+      "sha256": "0917e48f049075184b29e3f6f29da69bcb715578e211641add1db556dee7b9f7"
+    },
+    {
+      "source": "src/lib/visual-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/visual-types.ts",
+      "sha256": "d67262d4867a755e989da798c3b91de59007675897e3ac21b3a4d286d5cbc9cd"
+    },
+    {
+      "source": "src/lib/visual-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/visual-contract.mjs",
+      "sha256": "1595f67648c8f2697b6c7ce4a7af50366fb928c5600bf4b49ed5f9d9c9103044"
+    },
+    {
+      "source": "src/lib/visual-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/visual-contract.d.mts",
+      "sha256": "78648a139b889386e103377ca59a518f7ea576399525d3faf6db3bb21c6b37c0"
+    },
+    {
+      "source": "src/server/document-source.mjs",
+      "destination": "server/workflow/document-source.mjs",
+      "sha256": "70bc79a37a2d30022d7116a98913e32b05c9a9ee765678eb92ef4c54003b88cb"
+    },
+    {
+      "source": "src/server/document-parser.mjs",
+      "destination": "server/workflow/document-parser.mjs",
+      "sha256": "ea93e9c142e71ddbb80f7a34129e143c952f9aae88020372fb770f7f5b27cf30"
+    },
+    {
+      "source": "src/server/document-parser-worker.mjs",
+      "destination": "server/workflow/document-parser-worker.mjs",
+      "sha256": "b6e169218b55514ee7f1a3ecd88cfaa1a03f83b2de7a9508d6d50a56c37f35f1"
+    },
+    {
+      "source": "src/server/maintenance-model.mjs",
+      "destination": "server/workflow/maintenance-model.mjs",
+      "sha256": "1151f6079acb33cffa87d00209f371fe6a1e948d1faa5fda8ef54d214d3070d8"
+    },
+    {
+      "source": "src/lib/maintenance-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/maintenance-types.ts",
+      "sha256": "559f4f1a9b7379253f99371424f755cef650673a10434f393c3ae1232eb51a25"
+    },
+    {
+      "source": "src/lib/file-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/file-contract.mjs",
+      "sha256": "233bb4f8104b427d20ebbf292a461bf84fe93d16ae217cb4bfee67a1efd7cde0"
+    },
+    {
+      "source": "src/lib/file-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/file-contract.d.mts",
+      "sha256": "7351cfd37601a90d3b5bf0dd08e984bf2bc33d91d4cffed340b4dc6dd7aae578"
+    },
+    {
+      "source": "src/lib/file-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/file-types.ts",
+      "sha256": "a78c61f66658be10ad1242e79687510c91e4dce893c03fbf508fad30dec590c7"
+    },
+    {
+      "source": "src/server/file-service.mjs",
+      "destination": "server/workflow/file-service.mjs",
+      "sha256": "9607dcf10795f23c1bb2a0ded1f00286769ca9d54bca321c2961387327e60608"
+    },
+    {
+      "source": "src/lib/learning-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/learning-types.ts",
+      "sha256": "91db4b225a96e97a9ca41845ba021477e96ff2e9419e8ee27f8263669c640cb2"
+    },
+    {
+      "source": "src/lib/flow-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/flow-contract.mjs",
+      "sha256": "c137431126e4a4c7d6f374e2766856aaf0cac834b0106c696d0b48ea1c626717"
+    },
+    {
+      "source": "src/lib/flow-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/flow-contract.d.mts",
+      "sha256": "527ff2b4f4f83f6b6ff9b8caca7afad9e4c7438b06bc3cbf7a9c260eaa5f7db4"
+    },
+    {
+      "source": "src/lib/flow-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/flow-types.ts",
+      "sha256": "83775f046fa3921de3148bffce8ac0edab5f20a7f7d93e55d86b8daeb27537da"
+    },
     {
       "source": "src/lib/capture-contract.mjs",
       "destination": "src/features/workflow/legacy/src/lib/capture-contract.mjs",
-      "sha256": "f5614630d77e58f3c5c929b05556259eebc85ccb322c0cf24fe94c3bf5cd9972"
+      "sha256": "14732d3472008c7e664cff540bbd74784c3e65ecd7458b8de2a043d06d084033"
     },
     {
       "source": "src/lib/capture-contract.d.mts",
       "destination": "src/features/workflow/legacy/src/lib/capture-contract.d.mts",
-      "sha256": "3ca53635b90cd45377206bd37ce0bd1a1a5882eba01d16023f43f162af330a3a"
+      "sha256": "7369d0f41bb2e95f7afded3802a2be319bece53a4cc6e70354c55f62308ad91e"
     },
     {
       "source": "src/lib/capture-types.ts",
       "destination": "src/features/workflow/legacy/src/lib/capture-types.ts",
-      "sha256": "e8f66e85d40f10a821a564950113f676b59d494cc69c340eff6ac8eb3641c5aa"
+      "sha256": "b7814d0e2c608cc2e2f4709a4048d6949fea0be63d86362b4a3e428fcd0caaf0"
     },
     {
       "source": "src/lib/sop-contract.mjs",
       "destination": "src/features/workflow/legacy/src/lib/sop-contract.mjs",
-      "sha256": "a18d0605fd0fda7b4de0cd5a091cadb024ce421f70c89f713bccfb616c430376"
+      "sha256": "3473d56360605adaf72bc1cd364b7dfaf69c08ac45c373c923cb6b16a781e719"
     },
     {
       "source": "src/lib/sop-contract.d.mts",
@@ -32,7 +232,102 @@
     {
       "source": "src/lib/sop-types.ts",
       "destination": "src/features/workflow/legacy/src/lib/sop-types.ts",
-      "sha256": "b2f91837f2287095abaa580df3bda52406091e2aae9d6111df9b1b32474dfc3e"
+      "sha256": "adbb08756151b6a6fc798ada385dfc81d5e1beec4dc80f794d7d432c1e45b38b"
+    },
+    {
+      "source": "src/lib/intake-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/intake-contract.mjs",
+      "sha256": "4e79699571d698ffcacc0cfb6282b3fa331c99433c0ff23a366154ce011d642b"
+    },
+    {
+      "source": "src/lib/intake-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/intake-contract.d.mts",
+      "sha256": "cb22eeae21af07a6bf9a0f1e7689033e3b1a65c061f6557f10848a880978b29b"
+    },
+    {
+      "source": "src/lib/intake-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/intake-types.ts",
+      "sha256": "d8a0226660152e74e2bc24bcaea0a9c6fa0b7290e2d5d68a8071991925ce6584"
+    },
+    {
+      "source": "src/server/intake-builder.mjs",
+      "destination": "server/workflow/intake-builder.mjs",
+      "sha256": "a5990e66b1a77ecdeea3bfbd38aef803210f6bcfebb5c1ff07112585138f29c4"
+    },
+    {
+      "source": "src/lib/teaching-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/teaching-contract.mjs",
+      "sha256": "ff4603a54eb9a038246712718c5d659506c5de927986a193419a486c96c61fc9"
+    },
+    {
+      "source": "src/lib/teaching-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/teaching-contract.d.mts",
+      "sha256": "0f63704665714669f3b30f6ed2a66c3163c0be2bb4dea7f912d8576dcca158df"
+    },
+    {
+      "source": "src/lib/teaching-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/teaching-types.ts",
+      "sha256": "4e91286124850c951e09676f4bd45089ac1525025c10f60ecc1022c3462b9a0c"
+    },
+    {
+      "source": "src/lib/demonstration-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/demonstration-contract.mjs",
+      "sha256": "234477734e2adf03bffde35771566b79938f9fd972f064d60f563e7038e04f10"
+    },
+    {
+      "source": "src/lib/demonstration-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/demonstration-contract.d.mts",
+      "sha256": "39fedd53c19945e97404bf8733c45b59fbb102b302ae2c6c4ff8ec0891235256"
+    },
+    {
+      "source": "src/lib/demonstration-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/demonstration-types.ts",
+      "sha256": "812311639c3c4a053c92d9ec2e7e22b6aa210716c8d26ccc6bb2448eac377ab7"
+    },
+    {
+      "source": "src/lib/conversation-contract.mjs",
+      "destination": "src/features/workflow/legacy/src/lib/conversation-contract.mjs",
+      "sha256": "55e8584385098b72cf87988397dd9976ffb033aacff5ca67f5e2e044fa78ff25"
+    },
+    {
+      "source": "src/lib/conversation-contract.d.mts",
+      "destination": "src/features/workflow/legacy/src/lib/conversation-contract.d.mts",
+      "sha256": "aaf3318fc204c14bda379cb9a42b596b5fe4aee5bbcab5d64b5c1210123c052e"
+    },
+    {
+      "source": "src/lib/conversation-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/conversation-types.ts",
+      "sha256": "d21e97940abafcd0e59824ee03c2483c1b617a3e818d1546f6598c8f4380e2fb"
+    },
+    {
+      "source": "src/server/conversation-builder.mjs",
+      "destination": "server/workflow/conversation-builder.mjs",
+      "sha256": "6fcffb09f801b1649b1ee0177d5e479e4783697a59ddaaeaabb9e24541fa82d7"
+    },
+    {
+      "source": "src/lib/process-types.ts",
+      "destination": "src/features/workflow/legacy/src/lib/process-types.ts",
+      "sha256": "78db916bd5277df6d5b2f3ce67114aa5e9b4a82493d6f541c985e357d4616a61"
+    },
+    {
+      "source": "src/server/process-model.mjs",
+      "destination": "server/workflow/process-model.mjs",
+      "sha256": "0887aebbea7ee0591ede0e145a65f58c2c152b01441d7bf77894ed6cb4c8cc7c"
+    },
+    {
+      "source": "src/server/process-service.mjs",
+      "destination": "server/workflow/process-service.mjs",
+      "sha256": "39f6a1aaf7b7ab2f6f0941ed0075ff304e90f213b8e7a70e0d959e1d194eae76"
+    },
+    {
+      "source": "src/server/publication-dependencies.mjs",
+      "destination": "server/workflow/publication-dependencies.mjs",
+      "sha256": "7216cd1393899a991568bcb899f294c3c3c62680635acb5601377b472e140915"
+    },
+    {
+      "source": "src/server/learning-model.mjs",
+      "destination": "server/workflow/learning-model.mjs",
+      "sha256": "6d204f34e427cf6537132113a3908d82a428238a4a6668a8882db226c99a74b3"
     }
   ]
 }

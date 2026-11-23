@@ -1,6 +1,13 @@
 'use client'
+import { SquarePen } from 'lucide-react'
+import CaptureImage from './CaptureImage'
+
+import SourceAttachments from './SourceAttachments'
+import { conversationAttachments } from '@/lib/attachment-contract.mjs'
+import OriginalSource from './OriginalSource'
 
 import { useEffect, useRef, useState } from 'react'
+import { workflowParams, replaceWorkflowParams } from '@/lib/workflow-navigation'
 import { authoringClient, AuthoringRequestError } from '@/lib/authoring-client'
 import type { AuthoringClient, DraftAction, DraftContent, DraftDetail, DraftRevision, DraftSummary } from '@/lib/authoring-types'
 import DraftKnowledgeLinks from '@/components/knowledge/DraftKnowledgeLinks'
@@ -10,16 +17,27 @@ import CaptureImport from './CaptureImport'
 import SopEditor from './SopEditor'
 import { emptySop, renderSop, sopFromCapture, sopGaps } from '@/lib/sop-contract.mjs'
 import type { StructuredSop } from '@/lib/sop-types'
+import KnowledgeIntake from './KnowledgeIntake'
+import TeachIntake from './TeachIntake'
+import TeachingWorkspace from './TeachingWorkspace'
+import { intakeQuestions } from '@/lib/intake-contract.mjs'
 import './drafts-workspace.css'
 
 const emptyContent: DraftContent = { title: '', kind: 'procedure', audience: '', purpose: '', sourceReference: '', body: '' }
 const stateLabel = (state: string) => ({ draft: 'Draft', in_review: 'Submitted for review', approved: 'Approved', published: 'Published' } as Record<string, string>)[state] ?? state
-const actionLabel = (action: DraftAction) => ({ save: 'Saved draft', submit: 'Submitted for review', reopen: 'Returned to draft', approve: 'Approved document', reject: 'Requested changes', publish: 'Published version', retract: 'Retracted publication', import_capture: 'Imported browser capture' })[action]
+const actionLabel = (action: DraftAction) => ({ save: 'Saved draft', submit: 'Submitted for review', reopen: 'Returned to draft', approve: 'Approved document', reject: 'Requested changes', publish: 'Published version', retract: 'Retracted publication', import_capture: 'Imported browser capture', import_source: 'Created from source', start_teaching: 'Started teaching session', answer_teaching: 'Added explanation', converse: 'Conversation saved' })[action]
 const dateLabel = (value: string) => new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'The draft could not be loaded or saved.'
 const summaryOf = (doc: DraftRevision): DraftSummary => ({ id: doc.id, revision: doc.revision, state: doc.state, updatedAt: doc.updatedAt,
   title: doc.content.title, kind: doc.content.kind, audience: doc.content.audience })
-type Destination = { type: 'new'; guided?: boolean } | { type: 'open'; id: string } | { type: 'list' } | { type: 'capture' }
+type Destination = { type: 'new'; guided?: boolean } | { type: 'open'; id: string } | { type: 'list' } | { type: 'capture' } | { type: 'intake' } | { type: 'teach' }
+
+function focusTitleAfterRender(input: { current: HTMLInputElement | null }) {
+  const previous = document.activeElement
+  requestAnimationFrame(() => {
+    if (document.activeElement === previous && !previous?.matches('input, textarea, select')) input.current?.focus()
+  })
+}
 
 export default function DraftsWorkspace({ client = authoringClient, onUnsavedChange }: {
   client?: AuthoringClient
@@ -38,10 +56,12 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
   const [conflict, setConflict] = useState(false)
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState(() => { const status = workflowParams().get('status') ?? ''; return ['draft', 'in_review', 'approved', 'published'].includes(status) ? status : 'all' })
   const [pending, setPending] = useState<Destination | null>(null)
   const [historical, setHistorical] = useState<DraftRevision | null>(null)
   const [knowledgeDirty, setKnowledgeDirty] = useState(false)
+  const [intakeOpen, setIntakeOpen] = useState(false)
+  const [teachOpen, setTeachOpen] = useState(false)
   const [captureOpen, setCaptureOpen] = useState(false)
   const [captureDirty, setCaptureDirty] = useState(false)
   const [connectionEditorKey, setConnectionEditorKey] = useState(0)
@@ -53,8 +73,31 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
 
   useEffect(() => {
     let active = true
-    Promise.all([client.list(), workflowSession()]).then(([result, identity]) => { if (active) { setDocuments(result.documents); setSession(identity); setReady(true) } })
-      .catch(error => { if (active) setError(messageOf(error)) })
+    async function load() {
+      try {
+        const [result, identity] = await Promise.all([client.list(), workflowSession()])
+        if (!active) return
+        setDocuments(result.documents); setReady(true)
+        setSession(identity)
+        const params = workflowParams(), draft = params.get('draft'), action = params.get('action')
+        if (draft) {
+          setBusy(true)
+          const loaded = await client.get(draft)
+          if (active) { setId(loaded.document.id); setDetail(loaded); setContent(loaded.document.content); setTeachOpen((action === 'chat' || action === 'teach' || !!(loaded.document.teaching || loaded.document.conversation || (params.get('maintenance') && loaded.document.content.sop))) && action !== 'edit') }
+        } else if (identity.permissions.includes('contribute')) {
+          if (action === 'teach') setTeachOpen(true)
+          if (action === 'intake') setIntakeOpen(true)
+          if (action === 'capture') setCaptureOpen(true)
+          if (action === 'sop' || action === 'new') {
+            const sop = action === 'sop' ? emptySop() : undefined
+            setId(crypto.randomUUID()); setContent({ ...emptyContent, ...(sop ? { sop, body: renderSop(sop) } : {}) })
+            focusTitleAfterRender(titleInput)
+          }
+        }
+      } catch (error) { if (active) setError(messageOf(error)) }
+      finally { if (active) setBusy(false) }
+    }
+    void load()
     return () => { active = false }
   }, [client])
 
@@ -66,6 +109,7 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
   }, [dirty, busy, knowledgeDirty, reviewDirty, captureDirty])
 
   function applyDetail(result: DraftDetail) {
+    replaceWorkflowParams({ view: 'drafts', draft: result.document.id, action: ['edit', 'chat'].includes(workflowParams().get('action') ?? '') ? workflowParams().get('action')! : undefined })
     setId(result.document.id)
     setDetail(result)
     setContent(result.document.content)
@@ -76,18 +120,19 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
   }
 
   async function navigate(destination: Destination) {
+    replaceWorkflowParams({ maintenance: undefined, draft: destination.type === 'open' ? destination.id : undefined, action: destination.type === 'new' ? destination.guided ? 'sop' : 'new' : destination.type === 'capture' ? 'capture' : destination.type === 'intake' ? 'intake' : destination.type === 'teach' ? 'teach' : undefined })
     setError(''); setNotice(''); setPending(null); setHistorical(null)
-    setCaptureOpen(destination.type === 'capture'); setCaptureDirty(false)
+    setTeachOpen(destination.type === 'teach'); setIntakeOpen(destination.type === 'intake'); setCaptureOpen(destination.type === 'capture'); setCaptureDirty(false)
     setKnowledgeDirty(false); setReviewDirty(false); setConnectionEditorKey(current => current + 1)
     if (destination.type === 'new') {
       const sop = destination.guided ? emptySop() : undefined
       setId(crypto.randomUUID()); setDetail(null); setContent({ ...emptyContent, ...(sop ? { sop, body: renderSop(sop) } : {}) }); setConflict(false)
-      requestAnimationFrame(() => titleInput.current?.focus())
-    } else if (destination.type === 'list' || destination.type === 'capture') {
+      focusTitleAfterRender(titleInput)
+    } else if (destination.type === 'list' || destination.type === 'capture' || destination.type === 'intake' || destination.type === 'teach') {
       setId(null); setDetail(null); setContent(emptyContent); setConflict(false)
     } else {
       setBusy(true)
-      try { applyDetail(await client.get(destination.id)) }
+      try { const result = await client.get(destination.id); applyDetail(result); setTeachOpen(!!(result.document.teaching || result.document.conversation)) }
       catch (error) { setError(messageOf(error)) }
       finally { setBusy(false) }
     }
@@ -99,7 +144,7 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
     else void navigate(destination)
   }
 
-  async function mutate(action: Exclude<DraftAction, 'import_capture'>, note?: string, proposalIds?: string[]): Promise<boolean> {
+  async function mutate(action: Exclude<DraftAction, 'import_capture' | 'import_source' | 'start_teaching' | 'answer_teaching' | 'converse'>, note?: string, proposalIds?: string[]): Promise<boolean> {
     if (!id || busy) return false
     setBusy(true); setError(''); setNotice('')
     try {
@@ -148,27 +193,27 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
     setNotice('Guided sections added. Your previous instructions are retained in source notes; captured labels are proposed actions. Review each step before submission.')
   }
   return (
-    <section className="drafts-workspace" aria-label="Drafts and review">
+    <section className={`drafts-workspace ${teachOpen ? 'drafts-conversation-mode' : ''}`} aria-label="Drafts and review">
       <header className="drafts-heading">
-        <div><div className="drafts-eyebrow">Authoring</div><h1>Drafts & review</h1><p>Build a guide, keep its history, and prepare it for review.</p></div>
-        <div className="drafts-actions"><button disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'capture' })}>Import capture</button><button disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'new' })}>+ New draft</button><button className="drafts-primary" disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'new', guided: true })}>Create SOP</button></div>
+        <h1 className="sr-only">Drafts & review</h1>
+        <div><div className="drafts-actions"><button className="drafts-new-document" aria-label="New guide" title="New guide" disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'teach' })}><SquarePen size={18} aria-hidden="true" /><span>Write a document</span></button>{teachOpen && <button disabled={busy} onClick={() => go({ type: 'list' })}>All drafts</button>}</div>
+        {!teachOpen && <details className="teach-more-starts"><summary>Other starting points</summary><div className="drafts-actions"><button className="drafts-primary" disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'intake' })}>Add knowledge</button><button disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'capture' })}>Import capture</button><button disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'new' })}>+ New draft</button><button className="drafts-primary" disabled={!ready || busy || !canContribute} onClick={() => go({ type: 'new', guided: true })}>Create SOP</button></div></details>}</div>
       </header>
-      <p className="drafts-preview">Shared Workflow · {session?.actor.name ?? 'Verifying identity…'} · {session?.storage === 'azure_blob' ? 'Azure storage' : 'Isolated test storage'} · Owner-only pilot</p>
       {error && <div className="drafts-alert" role="alert"><p>{error}</p>
         {!ready && <button onClick={retryList} disabled={busy}>Retry connection</button>}
-        {id && <div className="drafts-actions"><button onClick={downloadCopy}>Download my text</button>
+        {id && <div className="drafts-actions">{!teachOpen && <button onClick={downloadCopy}>Download my text</button>}
           <button disabled={busy} onClick={() => go({ type: 'open', id })}>Load latest revision</button></div>}
       </div>}
       {notice && <p className="drafts-notice" role="status">{notice}</p>}
       {pending && <div className="drafts-alert" role="alert"><p>You have unsaved changes. Keep editing or discard them to continue.</p>
-        <div className="drafts-actions"><button onClick={() => setPending(null)}>Keep editing</button><button onClick={downloadCopy}>Download my text</button>
+        <div className="drafts-actions"><button onClick={() => setPending(null)}>Keep editing</button>{!teachOpen && <button onClick={downloadCopy}>Download my text</button>}
           <button onClick={() => void navigate(pending)}>Discard and continue</button></div></div>}
       {!ready ? <div className="drafts-empty"><h2>{error ? 'Authoring is not connected' : 'Loading saved drafts…'}</h2>
         <p>{error ? 'Your source library remains available in Documents. Your signed-in identity and shared storage must be available to create drafts.' : 'Checking the server for your saved work.'}</p></div> :
-        <div className={`drafts-layout ${id || captureOpen ? 'drafts-has-editor' : ''}`}>
+        <div className={`drafts-layout ${id || captureOpen || intakeOpen || teachOpen ? 'drafts-has-editor' : ''} ${teachOpen ? 'drafts-teaching' : ''}`}>
           <aside className="drafts-list" aria-label="Saved drafts">
             <label>Find a draft<input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search title or audience" /></label>
-            <label>Status<select value={filter} onChange={event => setFilter(event.target.value)}><option value="all">All drafts</option><option value="draft">Draft</option><option value="in_review">Submitted for review</option><option value="approved">Approved</option><option value="published">Published</option></select></label>
+            <label>Status<select aria-label="Status" value={filter} onChange={event => { setFilter(event.target.value); replaceWorkflowParams({ status: event.target.value === 'all' ? undefined : event.target.value }) }}><option value="all">All drafts</option><option value="draft">Draft</option><option value="in_review">Submitted for review</option><option value="approved">Approved</option><option value="published">Published</option></select></label>
             <p className="drafts-count">{visible.length} {visible.length === 1 ? 'document' : 'documents'}</p>
             {!visible.length && <p className="drafts-muted">{documents.length ? 'No matching drafts.' : 'Your saved drafts will appear here.'}</p>}
             {visible.map(doc => <button key={doc.id} className="drafts-list-item" aria-current={id === doc.id ? 'true' : undefined} disabled={busy} onClick={() => go({ type: 'open', id: doc.id })}>
@@ -176,7 +221,7 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
               <strong>{doc.title}</strong><span>{doc.kind} · Revision {doc.revision}</span><small>{dateLabel(doc.updatedAt)}</small>
             </button>)}
           </aside>
-          {captureOpen ? <div><button className="drafts-mobile-back" disabled={busy} onClick={() => go({ type: 'list' })}>← All drafts</button><CaptureImport key={connectionEditorKey} client={client} onBusyChange={setBusy} onUnsavedChange={setCaptureDirty} onCreated={result => { applyDetail(result); setCaptureDirty(false); setCaptureOpen(false); setNotice('Capture retained with the draft. Add the missing process context before review.') }} /></div> : !id ? <div className="drafts-empty"><h2>{documents.length ? 'Choose a draft to continue' : 'A place to build the next guide'}</h2><p>{documents.length ? 'Open a saved draft to edit it or inspect its review history.' : 'Start with what the team needs to do, who it is for, and the source it should follow. Save a draft at any point.'}</p><button className="drafts-primary" disabled={busy || !canContribute} onClick={() => go({ type: 'new' })}>Create a draft</button></div> :
+          {teachOpen ? <div>{detail ? <TeachingWorkspace key={detail.document.id} detail={detail} client={client} onSaved={applyDetail} onBusyChange={setBusy} onUnsavedChange={setCaptureDirty} readOnly={!canContribute} permissions={session?.permissions ?? []} onEdit={() => { setTeachOpen(false); setCaptureDirty(false); replaceWorkflowParams({ action: 'edit' }) }} /> : <TeachIntake key={connectionEditorKey} client={client} onBusyChange={setBusy} onUnsavedChange={setCaptureDirty} onCreated={result => { applyDetail(result); setCaptureDirty(false); setTeachOpen(true) }} />}</div> : intakeOpen ? <div><button className="drafts-mobile-back" disabled={busy} onClick={() => go({ type: 'list' })}>← All drafts</button><KnowledgeIntake key={connectionEditorKey} client={client} onBusyChange={setBusy} onUnsavedChange={setCaptureDirty} onCapture={() => go({ type: 'capture' })} onCreated={result => { applyDetail(result); setCaptureDirty(false); setIntakeOpen(false); setNotice('Source retained. Complete the missing details, then review suggested knowledge connections below.') }} /></div> : captureOpen ? <div><button className="drafts-mobile-back" disabled={busy} onClick={() => go({ type: 'list' })}>← All drafts</button><CaptureImport key={connectionEditorKey} client={client} onBusyChange={setBusy} onUnsavedChange={setCaptureDirty} onCreated={result => { applyDetail(result); setCaptureDirty(false); setCaptureOpen(false); setNotice('Capture retained with the draft. Add the missing process context before review.') }} /></div> : !id ? <div className="drafts-empty"><p>{filter === 'in_review' ? visible.length ? 'Choose a guide to review' : 'Nothing awaiting review' : documents.length ? 'Choose a draft to continue' : 'No saved drafts.'}</p><button className="drafts-primary" disabled={busy || !canContribute} onClick={() => go({ type: 'new' })}>Create a draft</button></div> :
             <div className="drafts-editor">
               <div className="drafts-editor-bar"><button className="drafts-mobile-back" disabled={busy} onClick={() => go({ type: 'list' })}>← All drafts</button>
                 <span className={`drafts-badge ${locked ? 'drafts-badge-review' : ''}`}>{detail ? stateLabel(detail.document.state) : 'New draft'}</span>
@@ -184,6 +229,7 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
               </div>
               {locked && <p className="drafts-review-note">This content is locked for review or publication. Return it to draft to edit; prior decisions and publications remain in history.</p>}
               {conflict && <p className="drafts-review-note">Your editor text is preserved. Download it before loading the latest revision.</p>}
+              {detail && <button disabled={busy || dirty || knowledgeDirty} onClick={() => { setTeachOpen(true); replaceWorkflowParams({ action: 'chat' }) }}>Open document & chat</button>}
               <form onSubmit={event => { event.preventDefault(); void mutate('save') }}>
                 <fieldset disabled={busy || locked || !canContribute}>
                   <label>Title<input ref={titleInput} required maxLength={160} value={content.title} onChange={event => update('title', event.target.value)} placeholder="Give the guide a clear, specific name" /></label>
@@ -198,7 +244,7 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
                 </fieldset>
                 {content.sop && <>
                   <section className="sop-readiness" aria-label="SOP readiness"><h3>{gaps.length ? `${gaps.length} details to add before review` : 'Ready to submit for review'}</h3>
-                    {gaps.length ? <><p>Save at any time. Complete these sections, or explain why a section does not apply.</p><ul>{gaps.slice(0, 8).map(gap => <li key={gap}>{gap}</li>)}</ul>{gaps.length > 8 && <p>Plus {gaps.length - 8} remaining details.</p>}</> : <p>Required sections are filled. A reviewer still needs to check accuracy and supporting evidence.</p>}
+                    {gaps.length ? <><p>Save at any time. Complete these sections, or explain why a section does not apply.</p><ul>{gaps.slice(0, 8).map(gap => <li key={gap}>{intakeQuestions(content).find(item => item.field === gap)?.question ?? gap}</li>)}</ul>{gaps.length > 8 && <p>Plus {gaps.length - 8} remaining details.</p>}</> : <p>Required sections are filled. A reviewer still needs to check accuracy and supporting evidence.</p>}
                   </section>
                   <details className="capture-preview sop-preview"><summary>Preview guide</summary><h2>{content.title || 'Untitled SOP'}</h2><p>{content.purpose || 'Purpose not provided'}</p><p>Audience: {content.audience || 'Not provided'}</p><p>Source reference: {content.sourceReference || 'Not provided'}</p><pre>{content.body}</pre></details>
                 </>}
@@ -209,15 +255,17 @@ export default function DraftsWorkspace({ client = authoringClient, onUnsavedCha
                   <button type="button" onClick={downloadCopy}>Download my text</button>
                 </div><small>{dirty ? 'Save your changes before submitting for review.' : 'Drafts stay separate from the procedure and learning libraries.'}</small></div>
               </form>
+              {detail?.document.intake && <details className="capture-preview"><summary>Original source & extraction evidence</summary><OriginalSource evidence={detail.document.intake} client={client} /></details>}
+              {detail && <SourceAttachments attachments={conversationAttachments(detail.document)} client={client} />}
               {detail?.document.capture && <details className="capture-preview"><summary>Original browser capture · {detail.document.capture.bundle.steps.length} steps</summary>
                 <p>Contributor-reviewed source labels; not independently verified activity. Editing this guide preserves the imported capture.</p>
                 <p>{detail.document.capture.bundle.origin} · {dateLabel(detail.document.capture.bundle.startedAt)}</p>
-                <ol className="capture-steps">{detail.document.capture.bundle.steps.map(step => <li key={step.id}><strong>{step.kind === 'click' ? 'Activate' : 'Change'} {step.control}: {step.label}</strong><small>{dateLabel(step.at)}</small></li>)}</ol>
+                <ol className="capture-steps">{detail.document.capture.bundle.steps.map(step => <li key={step.id}><strong>{step.kind === 'click' ? 'Activate' : 'Change'} {step.control}: {step.label}</strong><small>{dateLabel(step.at)}</small>{step.visual&&<CaptureImage visual={step.visual} client={client}/>}</li>)}</ol>
                 <small>Capture {detail.document.capture.bundle.id}<br />SHA-256 {detail.document.capture.digest}</small>
               </details>}
               {detail && <DraftKnowledgeLinks key={`knowledge:${detail.document.id}:${connectionEditorKey}`} document={detail.document} permissions={session?.permissions ?? []} disabled={dirty || busy || !!locked || conflict || !canContribute} onUnsavedChange={setKnowledgeDirty} />}
               {detail && session && <WorkflowReviewPanel key={`review:${detail.document.id}:${connectionEditorKey}`} document={detail.document} permissions={session.permissions} disabled={dirty || busy || knowledgeDirty} onAction={mutate} onUnsavedChange={setReviewDirty} />}
-              {detail && <section className="drafts-history" aria-label="Revision history"><h2>Revision history</h2><p>Every accepted save and review transition is retained.</p>
+              {detail && <section className="drafts-history" aria-label="Revision history"><h2>Revision history</h2>
                 <ol>{detail.history.map(version => <li key={version.revision}><div><strong>Revision {version.revision} · {actionLabel(version.action)}</strong><span>{dateLabel(version.updatedAt)} · {version.updatedBy.name}</span></div>
                   <button disabled={busy} onClick={() => void openRevision(version.revision)}>View revision {version.revision}</button></li>)}</ol>
                 {historical && <article className="drafts-history-preview"><div className="drafts-editor-bar"><h3>Revision {historical.revision}</h3><button onClick={() => setHistorical(null)}>Close revision</button></div>

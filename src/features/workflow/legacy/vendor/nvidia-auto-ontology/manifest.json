@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/NVIDIA/auto-ontology",
+  "commit": "cdaf61e1bd0cf3820d11d72b43bb460816aebbd3",
+  "sourcePath": "auto_ontology/server/model_interchange/schemas.py",
+  "license": "Apache-2.0",
+  "generator": "scripts/check-ontology-upstream.py",
+  "pydanticVersion": "2.13.5",
+  "files": {
+    "schemas.py": "54e3d56e3ffb1178d5b4bfc2872fce761ede8461c3d8ea0a753f7a0fa7ecfc39",
+    "LICENSE": "f30c028cc160cd27972bf845c9e44c703201903d226cecaf827b39fbf8f61d5e",
+    "model.schema.json": "aec44641cc3670ab1c94dc2e73920ace0632005d084ef4af304b2922692a5a88"
+  }
+}

@@ -20,7 +20,7 @@ const PLATFORM_PAGES = [
   { id: "clients", label: "Clients", href: "/analytics?report=residents" },
   { id: "incidents", label: "Incidents", href: "/incidents" },
   { id: "licensing", label: "Licensing", href: "/analytics/licensing", licensingOnly: true },
-  { id: "workflow", label: "Workflow", href: "/workflow", ownerOnly: true },
+  { id: "workflow", label: "ProForma", href: "/workflow", ownerOnly: true },
   { id: "personnel", label: "Workforce", href: "/personnel", ownerOnly: true }
 ];
 

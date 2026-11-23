@@ -1,0 +1,29 @@
+.knowledge-intake { min-width: 0; padding: 26px; border: 1px solid #c9bdab; border-radius: 6px; background: #fffdf7; color: #302d29; }
+.intake-heading h2 { font-size: 28px; margin: 8px 0; letter-spacing: -.03em; }
+.intake-heading p, .intake-note { color: #655f55; line-height: 1.6; }
+.intake-progress { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 18px 0; margin: 0 0 16px; list-style: none; border-bottom: 1px solid #ddd3c5; font-size: 13px; color: #746f65; }
+.intake-progress [aria-current] { color: #285865; font-weight: 700; }
+.knowledge-intake fieldset { border: 0; padding: 0; min-width: 0; }
+.knowledge-intake label:not(.intake-check) { display: grid; gap: 7px; margin: 0 0 18px; font-size: 14px; font-weight: 650; }
+.knowledge-intake input:not([type=checkbox]), .knowledge-intake textarea { width: 100%; min-width: 0; box-sizing: border-box; padding: 11px; border: 1px solid #c9bdab; border-radius: 4px; background: white; font: inherit; font-weight: 400; }
+.knowledge-intake textarea { resize: vertical; line-height: 1.6; }
+.knowledge-intake small { font-size: 12px; font-weight: 400; line-height: 1.5; color: #655f55; }
+.intake-alternative { margin-top: 28px; padding-top: 18px; border-top: 1px solid #ddd3c5; }
+.intake-alternative p, .intake-note { font-size: 13px; }
+.intake-result h3 { font-size: 23px; margin: 16px 0 8px; }
+.intake-steps { padding: 0; list-style: none; }
+.intake-steps li { padding: 16px 0; border-top: 1px solid #e2d9cc; overflow-wrap: anywhere; }
+.intake-steps p { margin: 6px 0; font-size: 13px; color: #655f55; }
+.intake-questions { margin: 20px 0; padding: 18px; border-left: 3px solid #9b7140; background: #f7f0e3; }
+.intake-questions h3 { margin: 0; font-size: 17px; }
+.intake-questions li { margin-bottom: 8px; line-height: 1.5; }
+.intake-check { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0 20px; line-height: 1.5; }
+.intake-check input { margin-top: 5px; width: 17px; height: 17px; }
+.intake-suggestions { margin: 18px 0; padding: 18px; border: 1px solid #b7c5c8; border-radius: 5px; background: #f2f6f5; }
+.intake-suggestions h3 { margin-top: 0; }
+.intake-suggestions article { border-top: 1px solid #ccd6d6; padding: 14px 0; }
+.intake-suggestions blockquote { margin: 10px 0; padding-left: 12px; border-left: 2px solid #95adb4; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .knowledge-intake { padding: 18px 14px; } .knowledge-intake input:not([type=checkbox]), .knowledge-intake textarea { font-size: 16px; } .intake-progress { gap: 10px; } .intake-suggestions { padding: 13px; } }
+
+.workflow-app .drafts-workspace label.intake-check { flex-direction: row; align-items: flex-start; gap: 10px; min-height: 44px; font-weight: 500; }
+.workflow-app .drafts-workspace label.intake-check input[type=checkbox] { flex: 0 0 18px; width: 18px; height: 18px; min-height: 18px; padding: 0; margin: 3px 0 0; accent-color: #285865; }

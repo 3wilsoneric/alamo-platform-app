@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { workflowParams, replaceWorkflowParams } from '@/lib/workflow-navigation'
 import { mockProcedures } from '@/lib/data'
 import type { Procedure, WalkthroughLaunchContext } from '@/lib/types'
 import HR from '@/components/ui/HR'
@@ -15,12 +16,12 @@ interface ProceduresViewProps {
 }
 
 export default function ProceduresView({ onStartWalkthrough }: ProceduresViewProps) {
-  const [selected, setSelected] = useState<Procedure | null>(null)
+  const [selected, setSelected] = useState<Procedure | null>(() => mockProcedures.find(procedure => String(procedure.id) === workflowParams().get('procedure')) ?? null)
   const [typeFilter, setTypeFilter] = useState('All')
   const [deptFilter, setDeptFilter] = useState('All')
 
   if (selected) {
-    return <ProcedureDetail proc={selected} onBack={() => setSelected(null)} onStartWalkthrough={onStartWalkthrough} />
+    return <ProcedureDetail proc={selected} onBack={() => { setSelected(null); replaceWorkflowParams({ procedure: undefined }) }} onStartWalkthrough={onStartWalkthrough} />
   }
 
   const filtered = mockProcedures.filter((procedure) =>
@@ -59,11 +60,10 @@ export default function ProceduresView({ onStartWalkthrough }: ProceduresViewPro
       </div>
 
       <div className="procedure-list flex-1 overflow-y-auto px-6 pt-7 lg:px-9">
-        <div className="mb-6 border-b border-border pb-5">
-          <div className="mb-2 font-sans text-[10px] font-bold uppercase tracking-[0.15em] text-[#087b60]">Guidance library / Browse</div>
-          <h1 className="font-sans text-[30px] font-semibold tracking-[-0.05em] text-ink">Procedures</h1>
+        <div className="mb-2 text-[12px] text-ink3">
+          <h1 className="sr-only">Procedures</h1>
           <div className="mt-1 font-sans text-[13px] text-ink3">
-            {filtered.length} procedure{filtered.length !== 1 ? 's' : ''} in this view
+            {filtered.length} procedure{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
         <div className="procedure-head grid gap-x-4 px-3 py-3" style={{ gridTemplateColumns: '68px 1fr 140px 108px 72px' }}>
@@ -76,7 +76,7 @@ export default function ProceduresView({ onStartWalkthrough }: ProceduresViewPro
         {filtered.map((procedure, i) => (
           <div key={procedure.id}>
             <button
-              onClick={() => setSelected(procedure)}
+              onClick={() => { setSelected(procedure); replaceWorkflowParams({ view: 'procedures', procedure: String(procedure.id) }) }}
               className="procedure-row grid w-full cursor-pointer items-center gap-x-4 bg-transparent px-3 py-4 text-left transition-colors"
               style={{ gridTemplateColumns: '68px 1fr 140px 108px 72px' }}
             >

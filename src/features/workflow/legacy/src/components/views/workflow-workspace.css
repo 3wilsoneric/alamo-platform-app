@@ -1,0 +1,214 @@
+/* Suite colors frame the workspace; editable documents remain white. */
+.workflow-app { --commonplace-ink:#232323; --commonplace-paper:#fff; --commonplace-rule:#e5e5e2; background:#f7f8fa; }
+.workflow-app .workflow-surface { background:#f7f8fa; }
+.workflow-app .workflow-sidebar { background:#f8f9fb!important; border-right-color:#e0e3e9!important; }
+.workflow-app .workflow-header { height:52px; background:#fff; border-bottom:1px solid #e5e7eb; padding-inline:24px; }
+.workflow-app .sidebar-brand { height:52px; }
+.workflow-app .sidebar-session { color:#68717e; font-size:11px; }
+.workflow-app .sidebar-nav-item { --nav-tone:#315c79; --nav-soft:#eaf0f7; border-radius:6px; }
+.workflow-app .sidebar-nav-item[data-destination="drafts"],.workflow-app .sidebar-nav-item[data-destination="procedures"] { --nav-tone:#926024; --nav-soft:#fbf0dd; }
+.workflow-app .sidebar-nav-item[data-destination="role_library"],.workflow-app .sidebar-nav-item[data-destination="training"] { --nav-tone:#744762; --nav-soft:#f4eaf0; }
+.workflow-app .sidebar-nav-item>span:first-child { color:var(--nav-tone); }
+.workflow-app .workflow-sidebar .sidebar-nav-item[data-active="true"] { color:var(--nav-tone); background:var(--nav-soft); box-shadow:inset 3px 0 var(--nav-tone); }
+.workflow-app .sidebar-section-label { letter-spacing:.06em; font-weight:600; color:#858b94; }
+.workflow-app .workflow-surface :is(button,summary,a):focus-visible { outline:2px solid #315c79; outline-offset:3px; }
+.workflow-app .workflow-surface button:not(:disabled),.workflow-app summary { cursor:pointer; }
+.workflow-app .workflow-surface button:disabled { cursor:not-allowed; }
+.workflow-app :is(.drafts-workspace,.knowledge-workspace,.pw-workspace) { max-width:1600px; margin-inline:auto; }
+.workflow-app :is(.drafts-editor,.drafts-list,.drafts-empty,.knowledge-directory,.knowledge-detail,.knowledge-panel,.pw-context,.pw-library) { background:#fff; box-shadow:none; border-color:#e0e3e9; border-radius:6px; }
+.workflow-app .drafts-heading { padding-bottom:12px; margin-bottom:16px; }
+.workflow-app .drafts-heading .teach-more-starts { margin-top:8px; }
+.workflow-app .drafts-editor>.drafts-editor-bar { background:#faf7f1; border-color:#e6ded0; }
+.workflow-app .drafts-editor form>fieldset>label:first-child input { font-family:var(--commonplace-sans); background:#fff; }
+.workflow-app .drafts-list { border-top:3px solid #bf8b45; }
+.workflow-app .knowledge-directory,.workflow-app .knowledge-detail,.workflow-app .knowledge-panel { border-top:3px solid #4e779b; }
+.workflow-app .pw-library { border-top:3px solid #4e779b; }
+.workflow-app .pw-context { border-top:3px solid #4e779b; max-height:none; }
+.workflow-app .pw-context h2 { font-family:var(--commonplace-sans); font-weight:650; }
+.workflow-app .pw-conversation { background:#f0f4f9; border-color:#d6e0eb; }
+.workflow-app .pw-list button[aria-current="true"] { background:#eaf0f7; border-color:#96adc4; }
+.workflow-app .pw-step-number { background:#eaf0f7; border-color:#c5d4e4; color:#315c79; }
+.workflow-app .pw-tabs button[aria-current] { color:#315c79; border-color:#315c79; }
+/* The guide and its conversation are one working surface. */
+.workflow-app .drafts-conversation-mode { padding:16px 24px 28px; }
+.workflow-app .drafts-conversation-mode>.drafts-heading { margin:0; border:0; }
+.workflow-app .drafts-conversation-mode>.drafts-muted { font-size:11px; margin:0 0 4px; }
+.workflow-app .drafts-conversation-mode .process-heading { padding:10px 0; min-height:48px; flex-direction:row; align-items:center; }
+.process-heading-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.workflow-app .process-heading-actions button { display:inline-flex; gap:6px; align-items:center; justify-content:center; padding:6px 10px; border:1px solid #dedfe4; border-radius:5px; min-height:36px; font-size:12px; background:white; }
+.workflow-app .process-heading p { margin:0; font-size:11px; }
+.workflow-app .process-conversation-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,360px); grid-template-areas:'guide chat'; border:1px solid #e0e3e9; border-radius:8px; background:#fff; overflow:clip; }
+.workflow-app .process-artifact { grid-area:guide; min-width:0; border:0; padding:clamp(24px,4vw,56px); background:#fff; color:#232323; }
+.workflow-app .process-artifact>h3 { font:700 clamp(25px,2.8vw,38px)/1.2 var(--commonplace-sans); letter-spacing:-.04em; margin-top:0; }
+.workflow-app .process-artifact>p { font-size:15px; color:#606773; }
+.workflow-app .process-artifact :is(h4,dt,dd,p) { color:inherit; }
+.workflow-app .process-guide-steps h4 { font-size:16px; font-weight:600; }
+.workflow-app .process-guide-steps li { padding:18px 0 18px 8px; border-color:#eee; }
+.workflow-app .process-artifact .process-evidence { border-top:1px solid #e6e8ec; padding-top:18px; }
+.workflow-app .process-chat { grid-area:chat; display:flex; flex-direction:column; align-self:start; position:sticky; top:60px; padding:18px; background:#f5f7fa; border-left:1px solid #e0e3e9; max-height:calc(100dvh - 76px); overflow-y:auto; }
+.workflow-app .process-chat[hidden] { display:none; }
+.workflow-app .process-transcript { min-height:120px; max-height:none; overflow:auto; flex:1 1 auto; padding:0; }
+.workflow-app .process-message { font-size:13px; padding:12px 0; }
+.workflow-app .process-message-user { padding:12px; margin-left:12px; background:#e8eef6; border-radius:7px; }
+.workflow-app .process-speaker { font-size:10px; letter-spacing:.06em; color:#64748b; }
+.workflow-app .process-composer { margin-top:12px; flex:none; background:#fff; border:1px solid #cbd4e0; box-shadow:0 2px 5px #172a4210; border-radius:8px; }
+.workflow-app .process-composer textarea { font-size:14px; min-height:85px; height:100px; padding:12px!important; }
+.workflow-app .process-composer>div { flex-wrap:wrap; gap:8px; }
+.workflow-app .process-composer>div>small { flex:1; }
+.workflow-app .process-composer:focus-within { outline:2px solid #9baec7; outline-offset:1px; }
+.workflow-app .process-composer button { font-size:12px; padding:7px 10px; }
+.workflow-app .conversation-sources { padding:9px; font-size:11px; }
+.workflow-app .conversation-sources>button { font-size:11px; padding:6px 9px; margin-right:4px; }
+.workflow-app .process-conversation[data-chat-open="false"] .process-conversation-layout { grid-template-columns:minmax(0,1fr); grid-template-areas:'guide'; max-width:1000px; margin:auto; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-conversation-layout { display:block; max-width:760px; margin:24px auto; border:0; background:transparent; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-artifact { display:none; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-chat { position:static; padding:0; border:0; background:transparent; max-height:none; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-transcript { min-height:0; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-message { padding:16px 0; font-size:17px; }
+/* Inline structured blocks keep the SOP schema, source anchors and step IDs. */
+.workflow-app .guide-page-editor { min-width:0; }
+.workflow-app .guide-page-toolbar { position:sticky; top:52px; z-index:3; background:#fffffff5; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; margin:-20px 0 28px; padding:10px 0; border-bottom:1px solid #eee; font-size:11px; color:#6c7179; }
+.workflow-app .guide-page-toolbar>div { display:flex; gap:6px; }
+.workflow-app .guide-page-toolbar button { padding:6px 9px; min-height:36px; font-size:12px; }
+.workflow-app .guide-page-editor fieldset { padding:0; border:0; min-width:0; }
+.workflow-app .guide-page-editor label { font-size:12px; font-weight:500; color:#666; }
+.workflow-app .guide-page-editor :is(input,textarea) { border:1px solid transparent; background:transparent; border-radius:4px; color:#232323; padding:7px 8px; font:400 14px/1.65 var(--commonplace-sans); box-shadow:none; }
+.workflow-app .guide-page-editor :is(input,textarea):hover { background:#f8f9fa; }
+.workflow-app .guide-page-editor :is(input,textarea):focus { border-color:#a9b7c8; background:#fff; }
+.workflow-app .guide-page-editor .guide-title-field textarea { font-size:clamp(25px,2.8vw,38px); font-weight:700; letter-spacing:-.04em; line-height:1.2; min-height:84px; resize:vertical; }
+.workflow-app .guide-page-editor .guide-purpose-field textarea { font-size:15px; }
+.workflow-app .guide-properties { border-block:1px solid #ededeb; margin:0 0 24px; padding:10px 0; }
+.workflow-app .guide-properties>summary { font-size:12px; color:#68717e; margin-bottom:8px; }
+.workflow-app .guide-page-editor .sop-step { position:relative; border:0; border-top:1px solid #e9eaed; border-radius:0; background:#fff; padding:18px 0; margin:0; }
+.workflow-app .guide-page-editor .sop-step-bar { background:transparent; }
+.workflow-app .guide-page-editor .sop-step-bar h3 { font-size:12px; color:#9b6a2a; margin:0; }
+.workflow-app .guide-page-editor .sop-step-bar button { min-height:32px; padding:4px 8px; font-size:11px; border:0; background:transparent; color:#737a85; }
+.workflow-app .guide-page-editor .sop-step-bar button:hover { background:#f2f3f5; color:#232323; }
+.workflow-app .guide-page-editor .sop-step>label:first-of-type textarea { font-size:16px; font-weight:600; }
+.workflow-app .guide-page-editor .sop-step small { font-size:10px; font-weight:400; }
+.workflow-app .guide-page-editor .sop-add { border-top:1px solid #eee; padding-top:14px; }
+.workflow-app .guide-page-editor .sop-add button { background:transparent; border:1px dashed #d5dae2; color:#52647b; }
+.workflow-app .guide-page-editor .sop-source-note { background:#f1f5fa; }
+@media(min-width:1000px) { .guide-page-editor .sop-step-bar .drafts-actions { opacity:0; } .guide-page-editor .sop-step:is(:hover,:focus-within) .drafts-actions { opacity:1; } }
+@media(max-width:1100px) { .workflow-app .process-conversation-layout { grid-template-columns:minmax(0,1fr) 300px; } .workflow-app .process-artifact { padding:24px; } }
+@media(max-width:850px) {
+ .workflow-app .drafts-conversation-mode { padding:12px; }
+ .workflow-app .process-conversation-layout { display:flex; flex-direction:column; }
+ .workflow-app .process-artifact { order:0; padding:24px 16px; width:100%; margin:0; }
+ .workflow-app .process-chat { order:1; position:static; border:0; border-top:1px solid #e0e3e9; max-height:none; width:100%; }
+ .workflow-app .process-transcript { max-height:300px; }
+ .workflow-app .process-heading-actions button { min-height:40px; }
+ .workflow-app .process-heading { gap:8px; flex-wrap:wrap; }
+ .workflow-app .guide-page-toolbar { top:52px; margin-top:-10px; }
+ .workflow-app .guide-page-editor :is(input,textarea) { font-size:16px; }
+ .workflow-app .guide-page-editor .drafts-field-row { grid-template-columns:1fr; }
+ .workflow-app .workflow-home-actions { gap:8px; }
+ .workflow-app .workflow-create-menu>summary { font-size:12px; }
+ .workflow-app .workflow-create-menu>div { min-width:210px; }
+}
+
+.workflow-app .guide-page-editor :is(input,textarea) { width:100%; field-sizing:content; }
+.workflow-app .guide-page-editor textarea { min-height:40px; resize:vertical; }
+.workflow-app .guide-page-editor .guide-title-field textarea { min-height:50px; }
+.workflow-app .guide-page-editor .sop-context { border-bottom:1px solid #eee; padding:12px 0; margin-bottom:20px; }
+.workflow-app .guide-page-editor .sop-context>summary { color:#69717c; font-size:12px; }
+.workflow-app .guide-page-editor .sop-context[open]>summary { margin-bottom:18px; }
+.workflow-app .guide-page-editor .sop-step-properties { margin-top:12px; color:#666; }
+.workflow-app .guide-page-editor .sop-step-properties>summary { font-size:12px; color:#68788e; }
+.workflow-app .guide-page-editor .sop-step-properties[open]>summary { margin-bottom:12px; }
+.workflow-app .guide-page-editor .sop-notes { margin-top:20px; font-size:12px; }
+
+/* Conversation starts with the editable surface, not a launcher card. */
+.workflow-app .process-conversation[data-has-guide="false"] .process-heading { display:none; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-conversation-layout { margin:0 auto; }
+.workflow-app .workflow-home-compose .process-conversation-layout { max-width:none; }
+.workflow-app .process-composer { display:flex; flex-direction:column; padding:8px; }
+.workflow-app .process-composer textarea { order:0; border:0; width:100%; background:transparent; outline:none; resize:vertical; }
+.workflow-app .process-composer .conversation-sources { order:1; border:0; }
+.workflow-app .process-composer>.process-send-row { order:2; display:flex; align-items:center; justify-content:space-between; padding:4px 8px; }
+.workflow-app .process-composer .process-send-row>button { flex:none; display:flex; align-items:center; justify-content:center; width:36px; height:36px; padding:6px; border-radius:50%; background:#26364b; color:white; border:0; }
+.workflow-app .process-composer .process-send-row>button:disabled { opacity:.35; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-composer { margin:0; border-radius:14px; border-color:#d8dde5; box-shadow:0 3px 12px #18263b08; }
+.workflow-app .process-conversation[data-has-guide="false"] .process-composer textarea { font-size:20px; line-height:1.55; height:145px; padding:20px!important; }
+.workflow-app .process-composer .conversation-sources>button { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:36px; min-height:36px; border:0; background:transparent; color:#68717e; margin-right:4px; }
+.workflow-app .process-composer .conversation-sources>button:hover { background:#edf0f6; color:#26364b; }
+.workflow-app .drafts-workspace .drafts-primary { background:#26364b; border-color:#26364b; color:white; }
+.workflow-app .drafts-heading .drafts-new-document { display:inline-flex; align-items:center; justify-content:center; background:transparent; border:0; width:36px; height:36px; color:#606e80; }
+.workflow-app .guide-page-editor .drafts-primary { background:#26364b; color:white; border-color:#26364b; }
+@media(max-width:600px) { .workflow-app .process-conversation[data-has-guide="false"] .process-composer textarea { font-size:17px; padding:12px!important; } }
+
+/* Mobile navigation overlays the page; writing keeps the full viewport width. */
+.workflow-nav-toggle,.workflow-nav-backdrop,.process-mobile-panes { display:none; }
+@media(max-width:900px) {
+ .workflow-app>.workflow-content { margin-left:0!important; transition:none; }
+ .workflow-app .workflow-header { padding-inline:12px; gap:10px; }
+ .workflow-app .workflow-nav-toggle { display:inline-flex; align-items:center; justify-content:center; flex:none; width:40px; height:40px; border:0; border-radius:6px; background:transparent; color:#315c79; cursor:pointer; }
+ .workflow-app .workflow-nav-toggle:hover { background:#eaf0f7; }
+ .workflow-app .workflow-sidebar { display:none; }
+ .workflow-app .workflow-sidebar[data-compact="true"][data-collapsed="false"] { display:flex; width:min(280px,calc(100vw - 48px))!important; box-shadow:10px 0 30px #18263b18; }
+ .workflow-app .workflow-nav-backdrop { display:block; position:fixed; inset:0; z-index:45; border:0; background:#18263b55; cursor:pointer; }
+ .workflow-app .workflow-content[inert] { pointer-events:none; }
+}
+@media(max-width:850px) {
+ .workflow-app .drafts-conversation-mode { padding:0; }
+ .workflow-app .workflow-surface--drafts { overflow:clip; }
+ .workflow-app .process-conversation-layout { border:0; border-radius:0; min-height:calc(100dvh - 190px); }
+ .workflow-app .drafts-conversation-mode .process-heading { position:sticky; top:52px; z-index:5; margin:0; padding:12px 16px 0; flex-wrap:wrap; background:#fff; border-bottom:1px solid #e0e3e9; }
+ .workflow-app .process-heading h2 { position:static; width:auto; height:auto; margin:0 0 4px; clip:auto; clip-path:none; white-space:normal; font:600 15px/1.4 var(--commonplace-sans); overflow-wrap:anywhere; }
+ .workflow-app .process-conversation[data-mobile-pane="guide"] .process-heading h2 { display:none; }
+ .workflow-app .process-heading-actions { align-self:flex-end; }
+ .workflow-app .process-heading-actions .process-desktop-chat-toggle { display:none; }
+ .workflow-app .process-mobile-panes { display:flex; align-items:center; width:100%; gap:4px; padding-top:4px; }
+ .workflow-app .process-mobile-panes button { min-height:44px; padding:8px 18px; background:transparent; border:0; border-bottom:2px solid transparent; border-radius:0; color:#68717e; }
+ .workflow-app .process-mobile-panes button[aria-pressed="true"] { color:#315c79; border-color:#315c79; }
+ .workflow-app .process-mobile-panes small { color:#68717e; font-size:11px; line-height:1.5; }
+ .workflow-app .process-conversation[data-has-guide="true"][data-mobile-pane="chat"] .process-artifact,
+ .workflow-app .process-conversation[data-has-guide="true"][data-mobile-pane="guide"] .process-chat { display:none; }
+ .workflow-app .process-conversation[data-mobile-pane="chat"] .process-chat { display:flex; border:0; padding:16px; }
+ .workflow-app .process-transcript { max-height:none; min-height:0; }
+ .workflow-app .process-artifact { border:0; padding:24px 20px; }
+ .workflow-app .guide-page-toolbar { position:static; }
+ .workflow-app .process-composer textarea { font-size:16px; }
+}
+
+/* Home uses the existing process conversation, with its history and source inspector. */
+.workflow-app .pw-home { padding:0; margin:0; max-width:none; }
+.workflow-app .pw-home .pw-layout { display:block; }
+.workflow-app .pw-home .pw-conversation { padding:0; background:transparent; border:0; border-radius:0; }
+.workflow-app .pw-home .pw-turns { max-height:none; }
+.workflow-app .pw-home .pw-turns>article { padding:18px 0; border-bottom:1px solid #e5e7eb; margin-bottom:16px; }
+.workflow-app .pw-home .pw-turns>article:has(.pw-question) { font-size:14px; }
+.workflow-app .pw-home .pw-composer { align-items:stretch; gap:0; border-radius:14px; border-color:#d8dde5; box-shadow:0 3px 12px #18263b08; }
+.workflow-app .pw-home .pw-composer>textarea { font-size:20px; line-height:1.55; min-height:145px; height:145px; max-height:420px; padding:20px!important; }
+.workflow-app .pw-home .pw-context { margin-top:24px; border-radius:6px; max-height:none; }
+.workflow-app .pw-home .pw-command-help { color:#68717e; margin:10px 0; }
+.workflow-app .pw-home .pw-question { font-weight:600; color:#26364b; }
+.workflow-app .pw-home .pw-error { background:#fff8ed; border-color:#e4d9c8; }
+.workflow-app .pw-home .pw-error button { background:#26364b; }
+@media(max-width:600px) { .workflow-app .pw-home .pw-composer>textarea { font-size:17px; padding:12px!important; } }
+
+/* Recording uses the same fields in Home and beside an existing guide. */
+.workflow-app .process-composer .record-source { gap:12px; font-size:13px; color:#26364b; border-color:#d8dde5; }
+.workflow-app .process-composer .record-source label { display:flex; flex-direction:column; gap:8px; align-items:stretch; text-align:left; margin:0; font-size:12px; }
+.workflow-app .process-composer .record-source label.record-source-check { flex-direction:row; align-items:flex-start; min-height:44px; font-weight:400; }
+.workflow-app .process-composer .record-source input[type="checkbox"] { flex:0 0 18px; width:18px; height:18px; min-height:18px; padding:0; margin:2px 0 0; accent-color:#426789; }
+.workflow-app .process-composer .record-source input:not([type="checkbox"]),
+.workflow-app .process-composer .record-source select { width:100%; min-width:0; min-height:44px; border:1px solid #cbd4e0; border-radius:5px; background:#fff; padding:10px 12px; font-size:14px; color:#26364b; }
+.workflow-app :is(.pw-home,.process-conversation) .process-composer .record-source textarea { min-height:105px; height:120px; max-height:300px; border:1px solid #cbd4e0!important; border-radius:5px; padding:10px 12px!important; font-size:14px; line-height:1.5; }
+.workflow-app .process-composer .record-source p { margin:0; font-size:12px; line-height:1.6; }
+.workflow-app .process-composer .record-source button { min-height:44px; padding:10px 14px; background:#fff; border:1px solid #cbd4e0; border-radius:5px; color:#26364b; }
+.workflow-app .process-composer .record-source button:hover:not(:disabled) { background:#edf2f8; }
+.workflow-app .process-composer .record-source .record-source-attach { background:#26364b; border-color:#26364b; color:#fff; }
+.workflow-app .process-composer .record-source .record-source-attach:hover:not(:disabled) { background:#354c69; }
+@media(max-width:600px) {
+  .workflow-app .process-composer .record-source input:not([type="checkbox"]),
+  .workflow-app .process-composer .record-source select,
+  .workflow-app :is(.pw-home,.process-conversation) .process-composer .record-source textarea { font-size:16px; }
+}
+
+/* Guide controls use the same restrained blue as the conversation. */
+.workflow-app .drafts-conversation-mode button:not(.drafts-primary):not([aria-pressed]) { color:#435a73; border-color:#ccd5df; }
+.workflow-app .drafts-conversation-mode button:not(.drafts-primary):not([aria-pressed]):hover:not(:disabled) { background:#edf2f8; border-color:#a8b9cb; }
+.workflow-app .drafts-conversation-mode :is(button,input,select,textarea):focus-visible { outline-color:#426789; }
+
+.workflow-app :is(.workflow-nav-toggle,.workflow-sidebar button,.workflow-sidebar a):focus-visible { outline:2px solid #426789; outline-offset:2px; }

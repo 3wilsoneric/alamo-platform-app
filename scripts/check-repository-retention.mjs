@@ -75,7 +75,8 @@ const referenceDocs = [
   "docs/reference/private-behavioral-health-operator-filtering-universe.md"
 ];
 
-const approvedDocs = new Set(["AGENTS.md", "README.md", ...platformDocs, ...referenceDocs]);
+const approvedDocs = new Set([
+  "src/features/workflow/legacy/vendor/nvidia-auto-ontology/README.md","AGENTS.md", "README.md", ...platformDocs, ...referenceDocs]);
 const approvedApiFiles = new Set([
   "api/analytics-summary.js",
   "api/chat.js",
@@ -206,7 +207,9 @@ function ownershipClass(file) {
   if (rootFiles.has(file)) return "app shell and tooling";
   if (approvedDeploymentOverlayFiles.has(file)) return "app shell and tooling";
   if (approvedDocs.has(file)) return file.startsWith("docs/reference/") ? "live specification" : "handbook";
-  if (/^src\/features\/workflow\/legacy\/src\/lib\/(?:capture|sop)-contract\.(?:mjs|d\.mts)$/.test(file)) return "pinned Workflow authoring contract";
+  if (/^src\/features\/workflow\/legacy\/src\/lib\/(?:attachment|capture|conversation|demonstration|file|flow|intake|media|sop|teaching|visual)-contract\.(?:mjs|d\.mts)$/.test(file)) return "pinned Workflow authoring contract";
+  if (/^src\/features\/workflow\/legacy\/src\/lib\/source-inspection\.(?:mjs|d\.mts)$/.test(file)) return "pinned ProForma source inspection contract";
+  if (/^src\/features\/workflow\/legacy\/vendor\/nvidia-auto-ontology\/(?:LICENSE|schemas\.py)$/.test(file)) return "pinned ontology reference";
   if (/^src\/.+\.(?:ts|tsx|css|json)$/.test(file)) return "browser runtime";
   if (/^config\/.+\.json$/.test(file)) return "data ingestion configuration";
   if (/^public\/.+\.(?:svg|png|jpg|jpeg|webp|ico|json|html|js|woff2)$/.test(file)) return "static browser asset";

@@ -7,6 +7,6 @@ export type WorkflowSession = { mode: 'platform-owner-pilot'; storage: string; a
 export async function workflowSession(): Promise<WorkflowSession> {
   const response = await authenticatedWorkflowFetch('/api/platform/workflow/v1/session', { cache: 'no-store' })
   const data = await response.json()
-  if (!response.ok) throw new Error(data?.error?.message ?? 'Workflow is unavailable.')
+  if (!response.ok) throw new Error(data?.error?.message ?? 'ProForma is unavailable.')
   return data
 }

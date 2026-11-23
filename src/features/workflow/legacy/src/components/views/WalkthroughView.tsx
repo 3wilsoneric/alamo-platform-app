@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { replaceWorkflowParams } from '@/lib/workflow-navigation'
 import { mockProcedures } from '@/lib/data'
 import type { Procedure, WalkthroughLaunchContext, WalkthroughSession } from '@/lib/types'
 import HR from '@/components/ui/HR'
@@ -24,17 +25,20 @@ export default function WalkthroughView({ startProcId, startContext }: Walkthrou
   const [session, setSession] = useState<WalkthroughSession>(EMPTY_SESSION)
 
   const selectProc = (procedure: Procedure) => {
+    replaceWorkflowParams({ view: 'walkthrough', procedure: String(procedure.id) })
     setProc(procedure)
     setSession(EMPTY_SESSION)
     setStage('running')
   }
 
   const finish = () => {
+    replaceWorkflowParams({ procedure: undefined })
     setProc(null)
     setStage('picker')
   }
 
   const exit = () => {
+    replaceWorkflowParams({ procedure: undefined })
     setSession(EMPTY_SESSION)
     setProc(null)
     setStage('picker')

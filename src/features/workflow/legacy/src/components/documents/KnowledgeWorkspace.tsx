@@ -51,11 +51,11 @@ const NOTE_TYPE_RULES: Record<
 > = {
   Workflow: {
     requiredSections: ['Situation', 'Operational flow', 'Key decisions'],
-    productTargets: ['Workflow'],
+    productTargets: ['ProForma'],
   },
   'Policy Note': {
     requiredSections: ['What this policy means operationally', 'What staff should do'],
-    productTargets: ['Workflow', 'Incident Center'],
+    productTargets: ['ProForma', 'Incident Center'],
   },
   'Case Pattern': {
     requiredSections: ['Keep across shifts', 'Good handoff language'],
@@ -67,7 +67,7 @@ const NOTE_TYPE_RULES: Record<
   },
   Reference: {
     requiredSections: [],
-    productTargets: ['Workflow'],
+    productTargets: ['ProForma'],
   },
 }
 
@@ -243,7 +243,7 @@ export default function KnowledgeWorkspace({ onClose }: KnowledgeWorkspaceProps)
       </button>
       <aside className="w-[236px] shrink-0 border-r border-[#E2E8F2] bg-white">
         <div className="border-b border-[#E8EDF6] px-4 py-3">
-          <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#7387B3]">Workflow workspace</div>
+          <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#7387B3]">ProForma workspace</div>
           <div className="mt-1 text-[0.8rem] font-semibold text-[#1A2535]">Knowledge files</div>
         </div>
         <div className="border-b border-[#E8EDF6] px-4 py-3">

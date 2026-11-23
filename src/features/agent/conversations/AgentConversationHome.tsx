@@ -7,12 +7,12 @@ import AllyAnswerCanvas from "./AllyAnswerCanvas";
 import type { AgentTransport } from "./agentTransport";
 import "./conversations.css";
 
-const skillTitle = (id: string) => id === "licensing" ? "Licensing" : "Admissions";
+const skillTitle = (id: string) => id === "proforma-guidance" ? "ProForma" : id === "licensing" ? "Licensing" : "Admissions";
 export default function AgentConversationHome({ transport, conversationId, onNavigate, expanded = false, workspaceCanvas, canvasFocusSignal = 0 }: {
   transport: AgentTransport; conversationId: string | null; onNavigate: (id: string | null) => void;
   expanded?: boolean; workspaceCanvas?: ReactNode; canvasFocusSignal?: number;
 }) {
-  const [list, setList] = useState<ConversationList | null>(null);
+  const [list, setList] = useState<(ConversationList & {availableSkillIds?: string[]}) | null>(null);
   const [chat, setChat] = useState<AgentConversation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -73,7 +73,7 @@ export default function AgentConversationHome({ transport, conversationId, onNav
     inflight.current = true; setBusy(true); setError(null);
     let createdId: string | null = null;
     try {
-      const created = await transport.conversations.command({ action: "create", requestId: crypto.randomUUID(), skillIds: ["licensing", "admissions-watch"] });
+      const created = await transport.conversations.command({ action: "create", requestId: crypto.randomUUID(), skillIds: list?.availableSkillIds ?? ["licensing", "admissions-watch"] });
       if (!("id" in created)) throw new Error("Ally could not start a chat.");
       createdId = created.id;
       await transport.conversations.command({ action: "send", requestId: crypto.randomUUID(), conversationId: created.id, expectedVersion: created.version, text });
@@ -109,14 +109,14 @@ export default function AgentConversationHome({ transport, conversationId, onNav
       {list?.conversations.length === 0 && <p>No saved chats.</p>}
     </aside></details>}<main>
       {conversationId ? chat && <>
-        <div className="agent-conversation-scope" aria-label="Chat scope">{chat.scope.map(scope => <span key={scope.skillId}>{skillTitle(scope.skillId)}{scope.communityIds.length ? ` · ${scope.communityIds.length} ${scope.communityIds.length === 1 ? "community" : "communities"}` : " · aggregates"}</span>)}</div>
+        <div className="agent-conversation-scope" aria-label="Chat scope">{chat.scope.map(scope => <span key={scope.skillId}>{skillTitle(scope.skillId)}{scope.communityIds.length ? ` · ${scope.communityIds.length} ${scope.communityIds.length === 1 ? "community" : "communities"}` : scope.skillId === "proforma-guidance" ? " · published guides" : " · aggregates"}</span>)}</div>
         <ConversationMessages chat={chat} compact={expanded} selectedTurnId={selectedTurnId} onSelectTurn={id => { setSelectedTurnId(id); setWorkspaceView("canvas"); }} onCancel={turnId => { void command({ action: "cancel", conversationId: chat.id, turnId }); }} />
         {list?.modelAvailable === false && <p role="status">Chat answers are not configured yet. Saved work remains available.</p>}
         <ConversationalPrompt compact agent draft={draft} onDraftChange={setDraft} sending={busy || Boolean(working) || list?.modelAvailable === false} onOpenLibrary={() => {}} onSubmit={text => { void command({ action: "send", conversationId: chat.id, requestId: crypto.randomUUID(), expectedVersion: chat.version, text }); }} />
       </> : <div className="agent-conversation-new" aria-label="New chat">
         <h2>Ask Ally</h2>
-        <p className="agent-conversation-hint">Ask about admissions, licensing, or a community. Ally will show the answer here.</p>
-        <ConversationalPrompt compact agent draft={draft} onDraftChange={setDraft} sending={busy || list?.modelAvailable === false} onOpenLibrary={() => {}} onSubmit={text => { void startWithQuestion(text); }} />
+        <p className="agent-conversation-hint">{list?.availableSkillIds?.includes("proforma-guidance") ? "Ask about your published guides and procedures." : "Ask about admissions, licensing, or a community."}</p>
+        <ConversationalPrompt compact agent draft={draft} onDraftChange={setDraft} sending={busy || !list || list.modelAvailable === false} onOpenLibrary={() => {}} onSubmit={text => { void startWithQuestion(text); }} />
         {list?.modelAvailable === false && <p role="status">Chat answers are unavailable right now.</p>}
       </div>}
     </main></div>{expanded && <div className={`agent-conversation-canvas${workspaceCanvas ? " agent-conversation-canvas--report" : ""}`}>{workspaceCanvas ?? <AllyAnswerCanvas chat={chat} selectedTurnId={selectedTurnId} />}</div>}</div>

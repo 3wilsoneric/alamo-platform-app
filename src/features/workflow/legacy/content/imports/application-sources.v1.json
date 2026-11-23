@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "kind": "proforma.application-sources",
+  "status": "source-reference",
+  "revision": "3e14881165a7a3ae0c393e3e661420cb1df841c3",
+  "entries": [
+    {
+      "id": "pipeline:referral-contact-fields",
+      "applicationId": "pipeline",
+      "title": "Pipeline referral contact fields",
+      "workflowIds": [
+        "intake-register",
+        "intake-complete"
+      ],
+      "authority": "source-code-not-policy",
+      "excerpt": "  phone: { label: \"Referrer phone:\", value: \"\", placeholder: \"Phone number\" },\n  email: { label: \"Referrer email:\", value: \"\", placeholder: \"Email address\" },\n  referrerName: { label: \"Referrer name:\", value: \"\", placeholder: \"Name\" },\n",
+      "excerptHash": "11a7f4096ea2d28a2805153523765ccc78cca1129ed0d3bca2f8f7ade483c64d",
+      "location": {
+        "repository": "pipeline-app",
+        "commit": "3e14881165a7a3ae0c393e3e661420cb1df841c3",
+        "path": "components/pipeline/ReferralPacketCanvas.tsx",
+        "fileHash": "8a74c94f15a8ea360a6e2e0287d90a91faa573d6638cf616835e322ccf34c316",
+        "startLine": 254,
+        "endLine": 256
+      }
+    },
+    {
+      "id": "pipeline:scheduling-contact-readiness",
+      "applicationId": "pipeline",
+      "title": "Pipeline scheduling contact readiness",
+      "workflowIds": [
+        "coord-schedule"
+      ],
+      "authority": "source-code-not-policy",
+      "excerpt": "export async function getContactSchedulingReadiness(\n  referralId: number,\n  referral: { phone?: string | null; email?: string | null },\n): Promise<ContactSchedulingReadiness> {\n  const hasReachableReferrer = Boolean(referral.phone?.trim() || referral.email?.trim());\n  const links = await listReferralContacts(referralId);\n  const hasPrimarySchedulingContact = links.some((link) =>\n    link.primaryForScheduling && link.contact.active && Boolean(link.contact.phone.trim() || link.contact.email.trim()),\n  );\n  const ready = hasReachableReferrer || hasPrimarySchedulingContact;\n  return {\n    ready,\n    hasReachableReferrer,\n    hasPrimarySchedulingContact,\n    blockers: ready ? [] : [\"Add a referrer phone/email or a reachable primary scheduling contact before scheduling.\"],\n  };\n}\n",
+      "excerptHash": "c4cb6d2ba25d278d9ada015ca2279a9ab0d62f951792cb6755b8627a9cabecfe",
+      "location": {
+        "repository": "pipeline-app",
+        "commit": "3e14881165a7a3ae0c393e3e661420cb1df841c3",
+        "path": "lib/pipeline/contact-store.ts",
+        "fileHash": "3cfc6c6c83be5b8b160617adaaa4c0efea074308ce50ade9bacd592aef8c227e",
+        "startLine": 193,
+        "endLine": 209
+      }
+    }
+  ]
+}

@@ -120,6 +120,7 @@ export type NavPage =
     | 'organization'
     | 'documents'
     | 'drafts'
+    | 'processes'
     | 'knowledge'
     | 'incident_center'
     | 'eldermark_agent'

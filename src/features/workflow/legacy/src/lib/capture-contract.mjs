@@ -1,4 +1,5 @@
 // Portable interchange rules: no browser, model, storage, or identity dependency.
+import {validateVisual,VISUAL_LIMITS} from './visual-contract.mjs'
 export const CAPTURE_LIMITS = Object.freeze({ steps: 100, bytes: 65536, label: 120, title: 160 })
 const idPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/
 const invalid = message => { throw new Error(message) }
@@ -20,17 +21,18 @@ const timestamp = value => {
 
 export function validateCapture(value) {
   shape(value, ['schemaVersion', 'id', 'title', 'origin', 'startedAt', 'endedAt', 'reviewedAt', 'steps'])
-  if (value.schemaVersion !== 1) invalid('This capture version is not supported.')
+  if (![1,2].includes(value.schemaVersion)) invalid('This capture version is not supported.')
   let url
   try { url = new URL(value.origin) } catch { invalid('The capture needs a website origin.') }
   if (!['http:', 'https:'].includes(url.protocol) || value.origin !== url.origin || value.origin.length > 250) invalid('Only the website origin is allowed; remove URL paths, credentials, queries and fragments.')
   const startedAt = timestamp(value.startedAt), endedAt = timestamp(value.endedAt), reviewedAt = timestamp(value.reviewedAt)
   if (endedAt < startedAt || reviewedAt < endedAt) invalid('The capture times are out of order.')
   if (!Array.isArray(value.steps) || !value.steps.length || value.steps.length > CAPTURE_LIMITS.steps) invalid('Choose a capture with 1–100 steps.')
-  const ids = new Set()
+  const ids = new Set(), images = new Set()
+  let imageBytes = 0
   let previousTime = startedAt
   const steps = value.steps.map(step => {
-    shape(step, ['id', 'kind', 'label', 'control', 'at'])
+    shape(step, ['id', 'kind', 'label', 'control', 'at', ...(value.schemaVersion===2?['visual']:[])])
     const id = identifier(step.id), at = timestamp(step.at)
     if (ids.has(id)) invalid('Capture step identifiers must be unique.')
     ids.add(id)
@@ -39,9 +41,31 @@ export function validateCapture(value) {
       || (step.kind === 'change' && !['checkbox', 'radio', 'select'].includes(step.control))) invalid('The capture contains an unsupported action or control.')
     if (at < previousTime || at > endedAt) invalid('Capture step times are out of order.')
     previousTime = at
-    return { id, kind: step.kind, label: text(step.label, CAPTURE_LIMITS.label), control: step.control, at }
+    const visual = step.visual ? validateVisual(step.visual) : undefined
+    if ('visual' in step && !visual) invalid('A screenshot reference cannot be empty.')
+    if (visual) {
+      if (visual.capturedAt<at || visual.capturedAt>endedAt || visual.reviewedAt>reviewedAt) invalid('The screenshot must identify one captured step and be reviewed before export.')
+      if (!images.has(visual.id)) imageBytes+=visual.bytes
+      images.add(visual.id)
+      if(images.size>VISUAL_LIMITS.images || imageBytes>VISUAL_LIMITS.totalBytes) invalid('Use at most 12 screenshots and 6 MiB of reviewed images per capture.')
+    }
+    return { id, kind: step.kind, label: text(step.label, CAPTURE_LIMITS.label), control: step.control, at, ...(visual?{visual}:{}) }
   })
-  return { schemaVersion: 1, id: identifier(value.id), title: text(value.title, CAPTURE_LIMITS.title), origin: url.origin, startedAt, endedAt, reviewedAt, steps }
+  return { schemaVersion: value.schemaVersion, id: identifier(value.id), title: text(value.title, CAPTURE_LIMITS.title), origin: url.origin, startedAt, endedAt, reviewedAt, steps }
+}
+
+export function parseCapturePackage(value) {
+  if (value?.kind !== 'proforma-visual-capture') return {capture:validateCapture(value),images:[]}
+  shape(value,['schemaVersion','kind','capture','images'])
+  if(value.schemaVersion!==1 || !Array.isArray(value.images) || value.images.length>VISUAL_LIMITS.images) invalid('The visual capture package is invalid.')
+  const capture=validateCapture(value.capture), refs=new Map(capture.steps.filter(step=>step.visual).map(step=>[step.visual.id,step.visual]))
+  if(capture.schemaVersion!==2 || !refs.size || refs.size!==value.images.length) invalid('Each screenshot needs its captured step and reviewed image.')
+  const images=value.images.map(image=>{
+    shape(image,['id','base64']);const ref=refs.get(image.id)
+    if(!ref || typeof image.base64!=='string' || image.base64.length!==Math.ceil(ref.bytes/3)*4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(image.base64)) invalid('The screenshot bytes do not match their reference.')
+    refs.delete(image.id);return {id:image.id,base64:image.base64}
+  })
+  return {capture,images}
 }
 
 export function captureToContent(input) {

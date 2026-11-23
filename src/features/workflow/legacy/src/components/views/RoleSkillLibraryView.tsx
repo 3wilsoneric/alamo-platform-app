@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { workflowHref } from '@/lib/workflow-navigation'
 import roleCatalog from '../../../content/roles/role-library.v1.json'
 import skillSnapshot from '../../../content/imports/alamoagent-skills.v1.json'
 
@@ -62,8 +63,8 @@ export default function RoleSkillLibraryView() {
   const [tab, setTab] = useState<LibraryTab>('roles')
   const [query, setQuery] = useState('')
   const [appFilter, setAppFilter] = useState('all')
-  const [selectedRoleId, setSelectedRoleId] = useState(roleCatalog.roles[0]!.id)
-  const [selectedSkillId, setSelectedSkillId] = useState(skillSnapshot.skills[0]!.id)
+  const [selectedRoleId, setSelectedRoleId] = useState(roleCatalog.roles[0]?.id ?? '')
+  const [selectedSkillId, setSelectedSkillId] = useState(skillSnapshot.skills[0]?.id ?? '')
   const [mobileDetail, setMobileDetail] = useState(false)
   const listRef = useRef<HTMLElement>(null)
   const detailRef = useRef<HTMLElement>(null)
@@ -108,17 +109,15 @@ export default function RoleSkillLibraryView() {
   return (
     <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#f3f5f6] text-[#1d2931]">
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-7 lg:px-9">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-[#d6dfe0] pb-5">
+        <div className="commonplace-role-heading mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#087b60]">Alamo Workflow / Learning</p>
-            <h1 className="text-[27px] font-semibold tracking-[-0.04em]">Roles & skills</h1>
-            <p className="mt-1 max-w-[720px] text-[13px] leading-5 text-[#617079]">Find the work a role handles, its handoffs, learning topics, and proposed agent skill designs.</p>
+            <h1 className="sr-only">Roles & workflows</h1>
           </div>
           <span className="rounded-full border border-[#d9cbaa] bg-[#faf6ed] px-3 py-1.5 text-[11px] font-semibold text-[#806124]">Role drafts · rev {roleCatalog.revision}</span>
         </div>
 
-        <div className="mb-5 rounded-md border-l-[3px] border-[#987b41] bg-[#fffdf8] px-4 py-3 text-[12px] leading-5 text-[#565b59]">
-          Workflow owns draft roles, workflows, and learning. AlamoAgent skill cards are imported read-only (rev {skillSnapshot.revision}). These are not approved procedures, staff assignments, permission grants, or enabled agents. Alamo Workforce owns staff and credential records.
+        <div className="pf-role-notice mb-5 rounded-md border-l-[3px] border-[#987b41] bg-[#fffdf8] px-4 py-3 text-[12px] leading-5 text-[#565b59]">
+          Draft role definitions · Read-only skill designs (rev {skillSnapshot.revision})
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -184,9 +183,9 @@ function RoleDetail({ role, onOpenRole, onOpenSkill }: { role: Role; onOpenRole:
       <div className="mt-3 flex flex-wrap gap-1.5">{role.applications.map((id) => <span key={id} className="rounded border border-[#dce6e2] bg-[#f5f9f7] px-2 py-1 text-[11px] text-[#326153]">{appById.get(id) ?? id}</span>)}</div>
     </div>
     <div className="grid gap-6 border-b border-[#e0e6e6] py-5 lg:grid-cols-2">
-      <section><Label>Scope</Label><p className="text-[13px] leading-6 text-[#42515a]">{role.scope}</p></section>
+      <section><a className="text-[13px] font-semibold text-[#0b6654] underline" href={workflowHref('knowledge', { entity: `role:${role.id}`, type: 'role' })}>View role connections →</a><Label>Scope</Label><p className="text-[13px] leading-6 text-[#42515a]">{role.scope}</p></section>
       <InfoBlock title="Working rhythm" items={role.cadence} />
-      <InfoBlock title="What this role needs to know" items={role.knowledge} />
+      <section><InfoBlock title="What this role needs to know" items={role.knowledge} /><a className="text-[13px] text-[#0b6654] underline" href={workflowHref('training', { role: `role:${role.id}` })}>Read guidance & practice →</a></section>
       <InfoBlock title="Proposed measures" items={role.measures} />
     </div>
     <section className="py-5">
@@ -195,7 +194,7 @@ function RoleDetail({ role, onOpenRole, onOpenSkill }: { role: Role; onOpenRole:
         <summary className="cursor-pointer list-none font-semibold text-[14px] text-[#26363d] [&::-webkit-details-marker]:hidden"><span className="mr-3 text-[11px] font-mono text-[#76858b]">{String(index + 1).padStart(2, '0')}</span>{flow.title}<span className="float-right text-[#7f8b8e] group-open:rotate-180">⌄</span><span className="mt-1 block pl-7 text-[11px] font-normal text-[#728087]">{flow.grounding === 'source-supported' ? 'Source-supported workflow' : 'Inferred workflow - staff review needed'}</span></summary>
         <div className="mt-4 grid gap-4 border-t border-[#e2e8e8] pt-4 lg:grid-cols-2">
           <section><Label>Trigger</Label><p className="text-[13px] leading-5 text-[#42515a]">{flow.trigger}</p></section>
-          <InfoBlock title="Inputs to check" items={flow.inputs} />
+          <a className="text-[13px] font-semibold text-[#0b6654] underline" href={workflowHref('knowledge', { entity: `workflow:${flow.id}`, type: 'workflow' })}>View connections & SOP starters →</a><InfoBlock title="Inputs to check" items={flow.inputs} />
           <div className="lg:col-span-2"><InfoBlock title="Working path" items={flow.steps} /></div>
           <section><Label>Source outcome to verify</Label><p className="text-[13px] leading-6 text-[#42515a]">{flow.sourceOutcome}</p></section>
           <section><Label>Exception / stop</Label><p className="text-[13px] leading-6 text-[#42515a]">{flow.exception}</p></section>

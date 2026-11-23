@@ -1,0 +1,465 @@
+{
+  "$defs": {
+    "ModelColumn": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "type": {
+          "default": "",
+          "title": "Type",
+          "type": "string"
+        },
+        "sample_values": {
+          "items": {},
+          "title": "Sample Values",
+          "type": "array"
+        },
+        "is_nullable": {
+          "default": true,
+          "title": "Is Nullable",
+          "type": "boolean"
+        },
+        "is_unique": {
+          "default": false,
+          "title": "Is Unique",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelColumn",
+      "type": "object"
+    },
+    "ModelColumnAttribute": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "column_id": {
+          "default": "",
+          "title": "Column Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelColumnAttribute",
+      "type": "object"
+    },
+    "ModelCustomAnalysis": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "sql": {
+          "default": "",
+          "title": "Sql",
+          "type": "string"
+        },
+        "sql_column_is": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sql Column Is",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelCustomAnalysis",
+      "type": "object"
+    },
+    "ModelDataLayer": {
+      "properties": {
+        "databases": {
+          "items": {
+            "$ref": "#/$defs/ModelDatabase"
+          },
+          "title": "Databases",
+          "type": "array"
+        },
+        "foreign_keys": {
+          "items": {
+            "$ref": "#/$defs/ModelForeignKey"
+          },
+          "title": "Foreign Keys",
+          "type": "array"
+        },
+        "joins": {
+          "items": {
+            "$ref": "#/$defs/ModelJoin"
+          },
+          "title": "Joins",
+          "type": "array"
+        }
+      },
+      "title": "ModelDataLayer",
+      "type": "object"
+    },
+    "ModelDatabase": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "dialect": {
+          "default": "",
+          "title": "Dialect",
+          "type": "string"
+        },
+        "schemas": {
+          "items": {
+            "$ref": "#/$defs/ModelSchema"
+          },
+          "title": "Schemas",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelDatabase",
+      "type": "object"
+    },
+    "ModelForeignKey": {
+      "properties": {
+        "source_column_id": {
+          "title": "Source Column Id",
+          "type": "string"
+        },
+        "target_column_id": {
+          "title": "Target Column Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_column_id",
+        "target_column_id"
+      ],
+      "title": "ModelForeignKey",
+      "type": "object"
+    },
+    "ModelJoin": {
+      "properties": {
+        "source_table_id": {
+          "title": "Source Table Id",
+          "type": "string"
+        },
+        "target_table_id": {
+          "title": "Target Table Id",
+          "type": "string"
+        },
+        "join_columns": {
+          "items": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "title": "Join Columns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_table_id",
+        "target_table_id"
+      ],
+      "title": "ModelJoin",
+      "type": "object"
+    },
+    "ModelSchema": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "database_name": {
+          "default": "",
+          "title": "Database Name",
+          "type": "string"
+        },
+        "tables": {
+          "items": {
+            "$ref": "#/$defs/ModelTable"
+          },
+          "title": "Tables",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelSchema",
+      "type": "object"
+    },
+    "ModelSemanticFk": {
+      "properties": {
+        "column_attribute_id": {
+          "title": "Column Attribute Id",
+          "type": "string"
+        },
+        "column_id": {
+          "title": "Column Id",
+          "type": "string"
+        },
+        "use_in_join_paths": {
+          "default": true,
+          "title": "Use In Join Paths",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "column_attribute_id",
+        "column_id"
+      ],
+      "title": "ModelSemanticFk",
+      "type": "object"
+    },
+    "ModelSemanticLayer": {
+      "properties": {
+        "terms": {
+          "items": {
+            "$ref": "#/$defs/ModelTerm"
+          },
+          "title": "Terms",
+          "type": "array"
+        },
+        "semantic_fks": {
+          "items": {
+            "$ref": "#/$defs/ModelSemanticFk"
+          },
+          "title": "Semantic Fks",
+          "type": "array"
+        },
+        "sql_attributes": {
+          "$ref": "#/$defs/ModelSqlAttributesBySource"
+        },
+        "custom_analyses": {
+          "items": {
+            "$ref": "#/$defs/ModelCustomAnalysis"
+          },
+          "title": "Custom Analyses",
+          "type": "array"
+        }
+      },
+      "title": "ModelSemanticLayer",
+      "type": "object"
+    },
+    "ModelSqlAttribute": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "sql": {
+          "default": "",
+          "title": "Sql",
+          "type": "string"
+        },
+        "sql_column_is": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sql Column Is",
+          "type": "array"
+        },
+        "term_id": {
+          "default": "",
+          "title": "Term Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelSqlAttribute",
+      "type": "object"
+    },
+    "ModelSqlAttributesBySource": {
+      "properties": {
+        "manual": {
+          "items": {
+            "$ref": "#/$defs/ModelSqlAttribute"
+          },
+          "title": "Manual",
+          "type": "array"
+        },
+        "table": {
+          "items": {
+            "$ref": "#/$defs/ModelSqlAttribute"
+          },
+          "title": "Table",
+          "type": "array"
+        },
+        "sql": {
+          "items": {
+            "$ref": "#/$defs/ModelSqlAttribute"
+          },
+          "title": "Sql",
+          "type": "array"
+        },
+        "bridge_table": {
+          "items": {
+            "$ref": "#/$defs/ModelSqlAttribute"
+          },
+          "title": "Bridge Table",
+          "type": "array"
+        }
+      },
+      "title": "ModelSqlAttributesBySource",
+      "type": "object"
+    },
+    "ModelTable": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "pk": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Pk",
+          "type": "array"
+        },
+        "type": {
+          "default": "",
+          "title": "Type",
+          "type": "string"
+        },
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/ModelColumn"
+          },
+          "title": "Columns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelTable",
+      "type": "object"
+    },
+    "ModelTerm": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "represents": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Represents",
+          "type": "array"
+        },
+        "columns_attributes": {
+          "items": {
+            "$ref": "#/$defs/ModelColumnAttribute"
+          },
+          "title": "Columns Attributes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModelTerm",
+      "type": "object"
+    }
+  },
+  "description": "Top-level Auto Ontology model document exchanged as YAML.",
+  "properties": {
+    "data_layer": {
+      "$ref": "#/$defs/ModelDataLayer"
+    },
+    "semantic_layer": {
+      "$ref": "#/$defs/ModelSemanticLayer"
+    },
+    "zones": {
+      "items": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "title": "Zones",
+      "type": "array"
+    }
+  },
+  "title": "AutoOntologyModelDocument",
+  "type": "object"
+}

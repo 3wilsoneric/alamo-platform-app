@@ -1,0 +1,118 @@
+/* ProForma uses Platform's ink, paper and ruled records; color identifies the work. */
+.workflow-app {
+  --commonplace-sans: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --commonplace-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --commonplace-ink: #16283a;
+  --commonplace-muted: #65717d;
+  --commonplace-paper: #fcfbf7;
+  --commonplace-rule: #d3d8dd;
+  --commonplace-accent: #315c79;
+  --commonplace-soft: #eaf0f4;
+  background: #f1f2ef;
+  font-family: var(--commonplace-sans);
+}
+.workflow-app[data-page="role_library"], .workflow-app[data-page="training"] { --commonplace-accent: #704461; --commonplace-soft: #f2ebef; }
+.workflow-app[data-page="drafts"], .workflow-app[data-page="documents"] { --commonplace-accent: #93652c; --commonplace-soft: #f6efdf; }
+.workflow-app[data-page="policies"] { --commonplace-accent: #345e51; --commonplace-soft: #eaf0eb; }
+.workflow-app .font-sans { font-family: var(--commonplace-sans); }
+.workflow-app .workflow-surface { background: #f1f2ef; }
+.workflow-app :is(.workflow-home,.drafts-workspace,.knowledge-workspace) { font-family: var(--commonplace-sans); color: var(--commonplace-ink); }
+.workflow-app .workflow-surface :is(.drafts-heading,.knowledge-heading,.commonplace-role-heading) h1 { font: 700 clamp(26px,2.5vw,32px)/1.15 var(--commonplace-sans); letter-spacing: -.04em; color: var(--commonplace-ink); }
+.workflow-app :is(.drafts-heading,.knowledge-heading,.commonplace-role-heading) { border-bottom: 1px solid #cdd3d6; padding-bottom: 22px; margin-bottom: 20px; }
+.workflow-app :is(.drafts-eyebrow,.knowledge-eyebrow,.commonplace-role-heading > div > p:first-child) { color: var(--commonplace-accent); font-size: 12px; font-weight: 650; letter-spacing: .075em; }
+.workflow-app :is(.drafts-preview,.knowledge-preview) { border: 0; border-left: 3px solid var(--commonplace-accent); border-radius: 0; background: #e9ebe7; color: #52616d; font-size: 12px; padding: 10px 14px; }
+.workflow-app :is(.drafts-workspace,.knowledge-workspace) { max-width: 1500px; padding: 28px 32px 48px; }
+.workflow-app :is(.drafts-workspace,.knowledge-workspace) button { min-height: 40px; }
+.workflow-app :is(.drafts-workspace,.knowledge-workspace) :is(input,select) { min-height: 44px; }
+.workflow-app .workflow-sidebar { background: #fcfbf7 !important; border-right-color: #cdd3d6 !important; box-shadow: none; }
+.workflow-app .workflow-header { box-shadow: none; border-bottom-color: #cdd3d6; }
+.workflow-app .sidebar-nav-item { border-radius: 3px; min-height: 44px; }
+.workflow-app .workflow-sidebar .sidebar-nav-item[data-active="true"] { color: var(--commonplace-accent); background: var(--commonplace-soft); border-color: transparent; box-shadow: inset 3px 0 var(--commonplace-accent); }
+.workflow-app .workflow-sidebar .sidebar-nav-item[data-active="true"] span { color: inherit; }
+.workflow-app .sidebar-nav-item[title] { width: calc(100% - 16px); }
+.workflow-app .sidebar-section-label { font-size: 10px; letter-spacing: .08em; }
+.workflow-app .sidebar-footer { background: #f1f2ef; }
+.workflow-app :is(a,button,summary):focus-visible { outline: 2px solid #087d64; outline-offset: 3px; }
+
+/* Authoring reads as a working document with a stock-colored control rail. */
+.workflow-app .drafts-layout { gap: 22px; }
+.workflow-app .drafts-list { border: 1px solid #cdd3d6; border-top: 4px solid #93652c; border-radius: 3px; background: #fcfbf7; }
+.workflow-app button.drafts-list-item { border: 0; border-top: 1px solid #d9d9d1; border-radius: 0; margin: 0; padding: 15px 10px; background: transparent; }
+.workflow-app button.drafts-list-item[aria-current="true"] { background: #f5eddb; box-shadow: inset 3px 0 #93652c; }
+.workflow-app .drafts-editor { background: #fcfbf7; border: 1px solid #bfa77d; border-radius: 4px; box-shadow: 0 7px 22px #16283a0c; }
+.workflow-app .drafts-editor > .drafts-editor-bar { margin: -24px -24px 24px; padding: 14px 24px; border-bottom: 1px solid #c8b48b; background: #e9d8b6; border-radius: 3px 3px 0 0; color: #53452e; }
+.workflow-app .drafts-editor form > fieldset > label:first-child input { font-family: var(--commonplace-serif); font-size: 23px; line-height: 1.3; min-height: 52px; background: #fffefb; }
+.workflow-app .drafts-editor h2 { font-family: var(--commonplace-serif); font-size: 26px; }
+.workflow-app .drafts-editor h3 { font-family: var(--commonplace-sans); }
+.workflow-app .drafts-workspace :is(input,textarea,select) { border-color: #c5c9ca; border-radius: 3px; }
+.workflow-app .drafts-empty { border: 1px solid #cdd3d6; border-top: 4px solid #93652c; border-radius: 3px; background: #fcfbf7; text-align: left; padding: 36px; }
+.workflow-app .drafts-empty p { margin: 12px 0 22px; }
+.workflow-app .drafts-empty h2 { font-family: var(--commonplace-serif); font-size: 28px; }
+.workflow-app .sop-step { border: 1px solid #dad7ce; border-left: 3px solid #b19462; border-radius: 2px; background: #f6f4ed; }
+.workflow-app .sop-source-note { background: #e9eef1; color: #456076; }
+.workflow-app .sop-readiness { background: #f5f1e7; border-color: #d6c9af; border-radius: 3px; }
+.workflow-app .sop-readiness p { color: #665b45; }
+.workflow-app .capture-import { border-top: 4px solid #93652c; }
+.workflow-app .capture-summary { background: #f5f1e7; border: 1px solid #d6c9af; border-radius: 3px; }
+
+/* The knowledge workspace is a blue atlas, with labeled entity families. */
+.workflow-app .knowledge-workspace :is(h2,h3) { font-family: var(--commonplace-sans); color: #16283a; }
+.workflow-app :is(.knowledge-directory,.knowledge-detail,.knowledge-panel) { background: #fcfbf7; border: 1px solid #cdd3d6; border-top: 4px solid #315c79; border-radius: 3px; box-shadow: 0 5px 18px #16283a08; }
+.workflow-app .knowledge-stats { background: transparent; border: 0; border-block: 1px solid #cdd3d6; border-radius: 0; margin: 20px 0; }
+.workflow-app .knowledge-stats > div { padding: 14px 18px; border-color: #cdd3d6; }
+.workflow-app .knowledge-stats strong { color: #315c79; font-weight: 650; font-size: 25px; }
+.workflow-app .knowledge-stats span { color: #65717d; font-size: 12px; }
+.workflow-app .knowledge-tabs { border-color: #cdd3d6; }
+.workflow-app .knowledge-tabs button { font-size: 13px; }
+.workflow-app .knowledge-tabs button[aria-current="page"] { color: #315c79; box-shadow: 0 3px #315c79; }
+.workflow-app .knowledge-workspace :is(button,input,select) { border-color: #c4ced5; color: #294f6b; border-radius: 3px; }
+.workflow-app .knowledge-workspace button:hover:not(:disabled) { background: #eaf0f4; border-color: #557e99; }
+.workflow-app .knowledge-entity-list button { border: 0; border-bottom: 1px solid #e0e3e1; border-radius: 0; padding: 14px 10px; margin: 0; }
+.workflow-app .knowledge-entity-list button[aria-current="true"] { background: #eaf0f4; box-shadow: inset 3px 0 #315c79; }
+.workflow-app .knowledge-entity-list :is(strong,span) { color: #29475d; }
+.workflow-app .knowledge-entity-list strong { font-size: 13px; font-weight: 600; }
+.workflow-app .knowledge-entity-list span { font-size: 11px; }
+.workflow-app .knowledge-map-wrap { background: #edf2f5; border-color: #d0dce4; }
+.workflow-app .knowledge-map { --entity-tone: #315c79; --entity-soft: #edf2f5; background-image: radial-gradient(#beced9 .8px, transparent .8px); background-size: 18px 18px; }
+.workflow-app .knowledge-map line { stroke: #8da5b8; }
+.workflow-app .knowledge-map line.proposed { stroke: #a47c39; }
+.workflow-app .knowledge-map-center, .workflow-app .knowledge-map button.knowledge-map-node { border-radius: 3px; }
+.workflow-app .knowledge-map [data-kind="role"] { --entity-tone: #704461; --entity-soft: #f2ebef; }
+.workflow-app .knowledge-map :is([data-kind="procedure"],[data-kind="sop_starter"],[data-kind="document"]) { --entity-tone: #93652c; --entity-soft: #f6efdf; }
+.workflow-app .knowledge-map [data-kind="skill"] { --entity-tone: #345e51; --entity-soft: #eaf0eb; }
+.workflow-app .knowledge-map-center { background: var(--entity-tone); border-color: var(--entity-tone); }
+.workflow-app .knowledge-map button.knowledge-map-node { border-color: var(--entity-tone); border-top-width: 3px; color: var(--entity-tone); background: var(--entity-soft); }
+.workflow-app .knowledge-map-wrap figcaption { color: #526c7f; font-size: 11px; }
+.workflow-app .knowledge-next { background: #edf2f5; border-color: #d0dce4; }
+.workflow-app .knowledge-next :is(p,small) { color: #526c7f; }
+.workflow-app .knowledge-poc-nav button[aria-pressed="true"] { background: #e3ecf2; border-color: #557e99; }
+.workflow-app .knowledge-badge:not(.knowledge-warning) { background: #edf2f5; border-color: #cedae3; color: #36586f; }
+.workflow-app .knowledge-workspace button.knowledge-text-button { color: #294f6b; text-decoration-color: #b9cad6; }
+.workflow-app .knowledge-relation { color: #526c7f; font-size: 11px; }
+.workflow-app .knowledge-connection small { font-size: 11px; color: #65717d; }
+.workflow-app .knowledge-heading p, .workflow-app .knowledge-entity-heading > p { color: #65717d; }
+
+/* Roles use the same index and reading-sheet layout as Platform reports. */
+.workflow-app .workflow-surface--role_library > div { background: #f1f2ef; }
+.workflow-app .workflow-surface--role_library :is(aside,main) { background: #fcfbf7; border-radius: 3px; border: 1px solid #cdd3d6; border-top: 4px solid #704461; box-shadow: 0 5px 18px #16283a08; }
+.workflow-app .workflow-surface--role_library details[open] { border-left-color: #704461; }
+.workflow-app .workflow-surface--role_library main h2 { font-family: var(--commonplace-serif); color: #492e40; }
+.workflow-app .workflow-surface--documents .workflow-library-heading { border-top: 4px solid #93652c; }
+.workflow-app .workflow-surface--policies .workflow-library-heading { border-top: 4px solid #345e51; }
+.workflow-app .workflow-surface--training .workflow-library-heading { border-top: 4px solid #704461; }
+@media(max-width: 1100px) { .workflow-app :is(.drafts-workspace,.knowledge-workspace) { padding: 24px 20px 40px; } .workflow-app .drafts-editor > .drafts-editor-bar { margin: -20px -20px 20px; padding-inline: 20px; } }
+@media(max-width: 760px) {
+  .workflow-app :is(.drafts-workspace,.knowledge-workspace) { padding: 22px 14px 36px; }
+  .workflow-app :is(.drafts-workspace,.knowledge-workspace) button { min-height: 44px; }
+  .workflow-app :is(.drafts-workspace,.knowledge-workspace) :is(input,select,textarea) { font-size: 16px; }
+  .workflow-app .drafts-editor > .drafts-editor-bar { margin: -16px -16px 20px; padding: 12px 16px; }
+  .workflow-app .drafts-empty { padding: 26px 20px; }
+  .workflow-app .drafts-editor form > fieldset > label:first-child input { font-size: 20px; }
+  .workflow-app .knowledge-tabs { gap: 18px; }
+  .workflow-app .knowledge-stats > div { padding: 14px 10px; }
+}
+@media(prefers-reduced-motion: reduce) { .workflow-app, .workflow-app * { scroll-behavior: auto !important; transition-duration: 0s !important; } }
+
+.workflow-app .knowledge-tabs button { border-radius: 0; }
+
+.workflow-app .workflow-surface h1:not(.workflow-procedure-title) { font-family: var(--commonplace-sans); font-weight: 700; line-height: 1.15; letter-spacing: -.04em; }

@@ -547,3 +547,10 @@ Visual capture, AI drafting, automatic entity/assertion extraction and authorize
 agent consumption remain subsequent work. The current graph uses reviewed quoted
 connections; free-text role/system labels are not automatically resolved entities.
 No agent activation, notifications, staff grants or new consumer were added.
+
+
+## ProForma guidance integration, November 23
+
+The owner requested completion and live deployment through Ally. The native Platform route restores the reviewed November 17 ProForma application, preserving its owner gate and detailed assessor procedures. The header opens the existing single Ally component. New conversations use server-advertised capabilities and show ProForma source citations. The independent Ally 0.18.8 API owns source discovery, bounded model tool calls, transcript persistence and current-source reauthorization. ProForma retains publication authority. The four-file source overlay adds published-guidance discovery without importing Ally runtime or changing source permissions. Engine deployment is healthy; Platform deployment and signed-in acceptance are still pending.
+
+Imported source context JSON and the pinned upstream ontology schema intentionally repeat evidence and schema shapes; duplicate-code checking excludes these immutable data files while retaining the zero-duplication rule for application code.

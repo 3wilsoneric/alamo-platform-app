@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "repository": "pipeline-app",
+  "artifactCommit": "8aaa2a48d3f53ddb02331783d65343d998338079",
+  "artifactPath": "content/proforma/pipeline-catalog.v1.json",
+  "sourceRevision": "0c15a382eeddb5b72c9e516bded64e4235e244d2",
+  "sha256": "925ef0a3c91fb6ce5c69d12274cf4410e3beb58aeb27b5d64186cdec1d495932",
+  "authority": "source-code-not-policy",
+  "localArtifact": "pipeline-catalog.925ef0a3c91fb6ce5c69d12274cf4410e3beb58aeb27b5d64186cdec1d495932.json"
+}

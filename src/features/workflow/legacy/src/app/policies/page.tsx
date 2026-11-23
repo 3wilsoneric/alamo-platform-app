@@ -186,9 +186,8 @@ export default function PoliciesPage() {
             <div className="flex-1 overflow-y-auto bg-cream">
                 {/* Toolbar */}
                 <div className="workflow-library-heading bg-bg border-b border-border px-8 py-4 sticky top-0 z-10">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#087b60]">Governance library</div>
                     <div className="flex flex-wrap items-end justify-between gap-3">
-                        <h1 className="font-sans text-[29px] font-semibold tracking-[-0.045em] text-ink">Policies</h1>
+                        <h1 className="sr-only">Policies</h1>
                         <div className="flex flex-wrap items-center gap-4 text-[12px] text-ink3">
                             <span>{filtered.length} polic{filtered.length !== 1 ? 'ies' : 'y'}</span>
                             {expiring > 0 && <span className="text-red">{expiring} expiring soon</span>}

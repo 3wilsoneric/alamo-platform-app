@@ -254,7 +254,7 @@ const SLIDES = [
     ),
     copy: [
       'The first point of value is plain-language intake. The staff member does not need to know a procedure code, policy number, or document title.',
-      'The job of Workflow at this point is to reduce friction. It should let someone describe the situation in operational language and move quickly into the right guidance path.',
+      'The job of ProForma at this point is to reduce friction. It should let someone describe the situation in operational language and move quickly into the right guidance path.',
     ],
   },
   {
@@ -263,7 +263,7 @@ const SLIDES = [
     title: 'The knowledge base resolves the best-fit workflow',
     image: <AssistFrame />,
     copy: [
-      'This is where Workflow becomes more than a repository. It matches the situation to the best-fit procedure, shows the connected source basis, and makes clear why the procedure applies.',
+      'This is where ProForma becomes more than a repository. It matches the situation to the best-fit procedure, shows the connected source basis, and makes clear why the procedure applies.',
       'That matters because staff do not just need a title. They need confidence that the guidance is the right fit for the operational situation in front of them.',
     ],
   },
@@ -273,7 +273,7 @@ const SLIDES = [
     title: 'The helper turns knowledge into guided actions',
     image: <WalkthroughFrame />,
     copy: [
-      'Once the right procedure is identified, the helper layer turns that knowledge into next actions. This is where Workflow stops being informational and starts being operational.',
+      'Once the right procedure is identified, the helper layer turns that knowledge into next actions. This is where ProForma stops being informational and starts being operational.',
       'The point is not to overwhelm the user with the whole SOP. The point is to surface the immediate action, the documentation-sensitive parts, and the safest next move.',
     ],
   },
@@ -284,7 +284,7 @@ const SLIDES = [
     image: <ElderMarkFrame />,
     copy: [
       'The action summary matters because useful operational guidance should not disappear when the moment is over. Saving the matched guidance and follow-up context creates continuity.',
-      'This is where Workflow starts to become part of the organization’s longer operational memory, rather than just a momentary lookup tool.',
+      'This is where ProForma starts to become part of the organization’s longer operational memory, rather than just a momentary lookup tool.',
     ],
   },
 ]
@@ -335,7 +335,7 @@ export default function DemoView({ onExit }: DemoViewProps) {
       <div className="relative px-10 py-8">
         <div className="mb-8 flex items-start justify-between gap-6">
           <div>
-            <div className="mb-3 font-mono text-[9px] uppercase tracking-[0.14em] text-[#6E84BF]">Workflow Demo</div>
+            <div className="mb-3 font-mono text-[9px] uppercase tracking-[0.14em] text-[#6E84BF]">ProForma Demo</div>
             <div className="mb-2 font-sans text-[2.35rem] font-semibold tracking-[-0.06em] text-ink">
               One clean story from knowledge base to helper.
             </div>

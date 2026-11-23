@@ -66,7 +66,7 @@ export default function DocumentsPage() {
             <div className="overflow-y-auto bg-cream" style={{ height: 'calc(100vh - 54px)' }}>
                 <div className="px-5 sm:px-12 pt-9 pb-20 max-w-[880px]">
                     <button onClick={() => setSelectedDoc(null)} className="font-sans text-[13px] text-navy bg-transparent border-none cursor-pointer p-0 mb-7 underline underline-offset-2">
-                        ← Document repository
+                        ← Source library
                     </button>
                     <div className="flex items-baseline gap-3 mb-2">
                         <span className="font-mono text-[10.5px] text-ink3">{doc.code}</span>
@@ -243,8 +243,6 @@ export default function DocumentsPage() {
     }
 
     // ── Repository ───────────────────────────────────────────────────────────────
-    const expiring = REPO_DOCS.filter(d => d.status === 'expiring').length
-    const inReview = REPO_DOCS.filter(d => d.status === 'review').length
 
     return (
         <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 54px)' }}>
@@ -268,12 +266,9 @@ export default function DocumentsPage() {
             <div className="flex-1 overflow-y-auto bg-cream">
                 <div className="workflow-library-heading bg-bg border-b border-border px-8 py-4 sticky top-0 z-10 flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#087b60]">Source library</div>
-                        <h1 className="font-sans text-[29px] font-semibold tracking-[-0.045em] text-ink">Documents</h1>
+                        <h1 className="sr-only">Source library</h1>
                         <div className="flex flex-wrap gap-4 text-[12px] text-ink3">
-                            <span>{filtered.length} document{filtered.length !== 1 ? 's' : ''}</span>
-                            {expiring > 0 && <span className="text-red">{expiring} expiring soon</span>}
-                            {inReview > 0 && <span className="text-[#a26720]">{inReview} in review</span>}
+                            <span>{filtered.length} reference items · Includes drafts and sample documents</span>
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">

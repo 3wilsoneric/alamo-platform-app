@@ -3,3 +3,5 @@ import type { DraftContent } from './authoring-types'
 export const CAPTURE_LIMITS: Readonly<{ steps: number; bytes: number; label: number; title: number }>
 export function validateCapture(value: unknown): WorkflowCapture
 export function captureToContent(value: unknown): DraftContent
+
+export function parseCapturePackage(value:unknown):{capture:WorkflowCapture;images:{id:string;base64:string}[]}

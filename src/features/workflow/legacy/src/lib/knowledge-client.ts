@@ -19,5 +19,5 @@ export const knowledgeClient = {
 }
 const relationshipLabels: Record<string, string> = { for_role: 'For role', documents_workflow: 'Documents workflow', uses_application: 'Uses application',
   governed_by: 'Governed by', teaches: 'Teaches', related_to: 'Related to', performs: 'Performs', hands_off_to: 'Hands off to', references_skill: 'References skill design',
-  needs_knowledge: 'Needs knowledge', has_guidance: 'Has guidance', has_step: 'Has step' }
+  needs_knowledge: 'Needs knowledge', has_guidance: 'Has guidance', has_step: 'Has step', has_evidence: 'Has evidence', performed_by: 'Performed by', followed_by: 'Followed by', has_outcome: 'Has outcome', continues_to: 'Continues to' }
 export const relationshipLabel = (value: string) => relationshipLabels[value] ?? value.replaceAll('_', ' ')

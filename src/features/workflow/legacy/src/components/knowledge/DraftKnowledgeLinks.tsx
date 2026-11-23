@@ -5,6 +5,7 @@ import type { DraftRevision } from '@/lib/authoring-types'
 import type { KnowledgeGraph, KnowledgeProposal } from '@/lib/knowledge-types'
 import { knowledgeClient, relationshipLabel } from '@/lib/knowledge-client'
 import EvidenceButton from './EvidenceButton'
+import SuggestedConnections from './SuggestedConnections'
 import './knowledge.css'
 
 const messageOf = (error: unknown) => error instanceof Error ? error.message : 'The knowledge connection could not be saved.'
@@ -38,6 +39,7 @@ export default function DraftKnowledgeLinks({ document, disabled, permissions, o
     catch (error) { setError(messageOf(error)) }
     finally { setBusy(false) }
   }
+  useEffect(() => { attemptId.current = null }, [predicate, targetId, quote, rationale])
   async function propose() {
     if (!graph || disabled || busy) return
     const target = graph.nodes.find(node => node.id === targetId)
@@ -85,6 +87,9 @@ export default function DraftKnowledgeLinks({ document, disabled, permissions, o
         <button type="button" disabled={busy || !reviewNote.trim() || item.freshness !== 'current'} onClick={() => void decide(item, 'approve')}>Approve connection</button><button type="button" disabled={busy || !reviewNote.trim()} onClick={() => void decide(item, 'reject')}>Reject connection</button><button type="button" disabled={busy} onClick={() => { setReviewNote(''); setReviewing(null) }}>Cancel decision</button>
       </div></div>}</article>)}
     {!connections.length && graph && <p className="knowledge-muted">No proposed connections yet.</p>}
+    {graph && !open && <SuggestedConnections document={document} graph={graph} disabled={disabled || busy} onChoose={item => {
+      setPredicate(item.predicate); setTargetId(item.targetId); setQuote(item.quote); setRationale(item.rationale); setQuery(''); setNotice(''); attemptId.current = null; setOpen(true)
+    }} />}
     {!open ? <div className="knowledge-actions"><button type="button" disabled={disabled || busy || !graph} onClick={() => { setOpen(true); setNotice('') }}>+ Connect knowledge</button></div> :
       <form onSubmit={event => { event.preventDefault(); void propose() }}><fieldset disabled={disabled || busy}>
         <label>Relationship<select aria-label="Relationship" value={predicate} onChange={event => { setPredicate(event.target.value); setTargetId('') }}>{Object.keys(graph?.predicates ?? {}).map(key => <option key={key} value={key}>{relationshipLabel(key)}</option>)}</select></label>

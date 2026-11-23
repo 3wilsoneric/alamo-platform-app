@@ -64,6 +64,12 @@
 .knowledge-panel { border: 1px solid #d2dfd5; border-radius: 7px; padding: 24px; background: #fffefa; }
 .knowledge-panel > h2 { margin-top: 0; }
 .knowledge-panel > p { margin-bottom: 20px; max-width: 800px; }
+.knowledge-poc-nav { margin: 0 0 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+.knowledge-poc-nav p { flex-basis: 100%; margin-bottom: 4px; color: #60746c; }
+.knowledge-poc-nav button[aria-pressed="true"] { background: #e2efe6; border-color: #528a72; }
+.knowledge-sop-starter { padding: 18px 24px; border-top: 1px solid #d4dfd7; }
+.knowledge-sop-starter p { margin: 8px 0 14px; }
+.knowledge-sop-starter pre { font: 12px/1.7 monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow-y: auto; padding: 14px; background: #f0f4ed; margin: 12px 0; }
 .knowledge-proposal { margin-top: 18px; padding: 18px; border: 1px solid #d7e2d9; background: #fff; border-radius: 6px; overflow-wrap: anywhere; }
 .knowledge-proposal h3 { margin: 10px 0 4px; }
 .knowledge-proposal p { font-size: 12px; margin: 7px 0; }
@@ -112,3 +118,16 @@
   .knowledge-evidence { padding: 18px; }
   .knowledge-evidence h2 { font-size: 20px; }
 }
+
+.knowledge-next { padding: 18px 24px; border-top: 1px solid #d4dfd7; background: #edf4ee; }
+.knowledge-next > p { color: #63776a; font-size: 12px; margin: 6px 0 12px; }
+.knowledge-next button { display: block; width: 100%; text-align: left; margin-top: 8px; }
+.knowledge-next :is(strong,small) { display: block; }
+.knowledge-next small { font-size: 10px; color: #6a7d6d; margin-bottom: 3px; }
+
+.knowledge-next[aria-label="Owning guide"] { display:flex; flex-wrap:wrap; gap:10px 20px; }
+.knowledge-next[aria-label="Owning guide"] > span { flex-basis:100%; font-size:12px; color:#63776a; }
+.knowledge-evidence .source-inspector { margin:0; border:0; padding:0; }
+.knowledge-evidence .source-reading dl { font-size:13px; }
+.knowledge-evidence .source-reading dd { font-family:inherit; margin-left:0; }
+.knowledge-evidence .source-inspector header button { max-width:none; white-space:nowrap; padding:8px; }

@@ -120,3 +120,5 @@
 @media (prefers-reduced-motion: reduce) {
   .org-page * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+.org-chat-layout--empty { grid-template-columns: minmax(0, 1fr); }

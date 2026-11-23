@@ -116,16 +116,16 @@ export default function OrganizationView() {
             </aside>
           </div>
         ) : (
-          <div className="org-chat-layout">
+          <div className={`org-chat-layout ${exchanges.length ? '' : 'org-chat-layout--empty'}`}>
             <div className="org-chat-main">
               {exchanges.length === 0 ? (
-                <div className="org-chat-empty"><span className="org-section-index">02 / ASK THE ORGANIZATION</span><div className="org-chat-mark"><MessageSquareText size={25} /></div><h2>Where does this work go?</h2><p>Ask about a community or function. Answers stay grounded in this preview directory.</p><div className="org-suggestions">{STARTER_QUESTIONS.map((question) => <button type="button" key={question} onClick={() => ask(question)}>{question}<ArrowUpRight size={15} /></button>)}</div></div>
+                <div className="org-chat-empty"><div className="org-suggestions">{STARTER_QUESTIONS.map((question) => <button type="button" key={question} onClick={() => ask(question)}>{question}<ArrowUpRight size={15} /></button>)}</div></div>
               ) : (
                 <div className="org-conversation" aria-live="polite">{exchanges.map((exchange, index) => <div className="org-exchange" key={`${exchange.question}-${index}`}><div className="org-question"><span>YOU / {String(index + 1).padStart(2, '0')}</span><p>{exchange.question}</p></div><div className="org-answer"><span className="org-answer-mark"><MessageSquareText size={17} /></span><div><small>ORGANIZATION PREVIEW</small><h3>{exchange.answer.heading}</h3><p>{exchange.answer.body}</p>{exchange.answer.nodeId && <button type="button" onClick={() => { setSelectedId(exchange.answer.nodeId!); setMode('map') }}>Show on map <ArrowUpRight size={15} /></button>}</div></div></div>)}</div>
               )}
-              <form className="org-composer" onSubmit={handleSubmit}><label htmlFor="org-question-input">ASK ABOUT A ROLE, FUNCTION, OR COMMUNITY</label><div><input id="org-question-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Who supports staffing across communities?" maxLength={220} /><button type="submit" disabled={!draft.trim()} aria-label="Ask organization"><CornerDownLeft size={18} /></button></div><p>Preview answers only. No employee assignments or contact details are available.</p></form>
+              <form className="org-composer" onSubmit={handleSubmit}><label htmlFor="org-question-input">Question</label><div><input id="org-question-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ask about a function or community" maxLength={220} /><button type="submit" disabled={!draft.trim()} aria-label="Ask organization"><CornerDownLeft size={18} /></button></div><p>Preview directory · No staff assignments or contact details.</p></form>
             </div>
-            <aside className="org-chat-side"><span className="org-section-index">EXPLORE THE MAP</span><h3>Start with a place or a function.</h3><p>Choose a question, or name any of the five communities and executive areas.</p><div className="org-chat-side-lines" aria-hidden="true"><span /><span /><span /><span /><span /></div><div className="org-chat-side-prompts">{(exchanges.at(-1)?.answer.related ?? STARTER_QUESTIONS).map((question) => <button type="button" key={question} onClick={() => question === 'View functional map' ? setMode('map') : ask(question)}>{question}<ArrowRight size={15} /></button>)}</div><button className="org-back-map" type="button" onClick={() => setMode('map')}>Open organization map <ArrowUpRight size={16} /></button></aside>
+            {exchanges.length > 0 && <aside className="org-chat-side"><div className="org-chat-side-prompts">{(exchanges.at(-1)?.answer.related ?? STARTER_QUESTIONS).map((question) => <button type="button" key={question} onClick={() => question === 'View functional map' ? setMode('map') : ask(question)}>{question}<ArrowRight size={15} /></button>)}</div><button className="org-back-map" type="button" onClick={() => setMode('map')}>Open organization map <ArrowUpRight size={16} /></button></aside>}
           </div>
         )}
       </div>

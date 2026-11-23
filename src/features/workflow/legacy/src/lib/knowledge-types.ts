@@ -1,9 +1,12 @@
+import type { ProcessCitation } from './process-types.js'
+
 export type KnowledgeNode = {
-  id: string; type: string; title: string; description: string; origin: 'library' | 'draft';
+  id: string; type: string; title: string; description: string; origin: 'library' | 'draft' | 'projection';
+  citation?: ProcessCitation; process?: { id: string; documentId: string; title: string; revision: number };
   status: string; grounding: string; fingerprint: string; draftRevision?: number
 }
 export type KnowledgeEdge = {
-  id: string; from: string; to: string; predicate: string; status: string; origin: 'library' | 'proposal';
+  id: string; from: string; to: string; predicate: string; status: string; origin: 'library' | 'proposal' | 'projection'; citation?: ProcessCitation;
   grounding: string; freshness?: 'current' | 'needs_review'; proposalId?: string
 }
 export type KnowledgeProposal = {
