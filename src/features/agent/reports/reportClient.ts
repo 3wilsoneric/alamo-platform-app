@@ -11,8 +11,8 @@ export type ExecutiveReport = ReportSummary & { selectedVersion: number; canEdit
 // Matches the service's existing bounded investigation history. Raise only
 // with paginated authorized history reads; the server remains authoritative.
 export const reportCanExtend = (report: ExecutiveReport) => report.versions.length < 12;
-export const reportRunning = (status: string) => ['queued', 'reading', 'analyzing'].includes(status);
-export const reportStatus = (status: string) => ({ queued: 'Queued', reading: 'Reading sources', analyzing: 'Preparing findings', ready: 'Ready', partial: 'Partial coverage', paused: 'Paused', failed: 'Interrupted', cancelled: 'Stopped' })[status] ?? status;
+export const reportRunning = (status: string) => ['queued', 'planning', 'reading', 'analyzing'].includes(status);
+export const reportStatus = (status: string) => ({ queued: 'Queued', planning: 'Preparing your question', reading: 'Reading sources', analyzing: 'Preparing findings', ready: 'Ready', partial: 'Partial coverage', paused: 'Paused', failed: 'Interrupted', cancelled: 'Stopped' })[status] ?? status;
 export function createReportClient(transport: AgentTransport) {
   const endpoint = '/api/agent/v1/reports';
   const post = (operation: string, input: unknown, signal?: AbortSignal) => transport.requestJson<ReportSummary>(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({operation, input}), ...(signal ? {signal} : {}) });

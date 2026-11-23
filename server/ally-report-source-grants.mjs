@@ -4,7 +4,7 @@ import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { createHttpError } from './http-error-contract.mjs';
 
 const facilities = new Set(ALAMO_FACILITIES.map(f => f.facilityId));
-export const REPORT_CAPABILITIES = ['platform-data', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search'];
+export const REPORT_CAPABILITIES = ['platform-data', 'incident-summary', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search'];
 export const REPORT_AGGREGATE_SLICES = new Set(['community_operating_summary', 'incident_monthly_by_community_category', 'census_monthly_by_community', 'census_weekly_by_community', 'resident_flow_weekly_by_community', 'resident_flow_monthly_by_community', 'current_resident_county_by_community', 'mar_daily_by_community_90d']);
 const deny = () => { throw createHttpError(403, 'report_source_denied', 'This report source is unavailable for the requested scope.'); };
 // Aggregate access cannot be turned into a named-person lookup by grouping or

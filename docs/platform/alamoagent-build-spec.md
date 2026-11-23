@@ -15,6 +15,18 @@ Update that spec in every relevant change; do not start a competing Platform pla
 
 Current rollout evidence is recorded in [Ally readability and response latency](deployment-operations.md#ally-readability-and-response-latency--november-23). Older dated entries below retain their historical scope; they do not override the current release.
 
+### November 23 incident response — local candidate
+
+The production History menu escaped its clipping side panel despite viewport-only
+checks. Its anchor is now the header, with panel-relative width and keyboard/scroll
+regressions. Daily-priority incident questions now have an aggregate-only adapter
+using the same incident register, dates and priority rules as the Incidents page.
+Monthly queries that cannot represent the requested dates yield explicit unavailable
+evidence instead of a generic outage. New `incident-summary` grants are required;
+no private incident fields are returned. The owner directed a bounded Ally release
+gate; unrelated generated-answer and whole-app repetitions remain in the full suite.
+Release status is tracked in the operations record; not deployed yet.
+
 ### November 23 readability and responsive data — deployed and verified
 
 Canonical display labels now normalize database field names in new source datasets

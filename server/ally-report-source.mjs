@@ -1,4 +1,4 @@
-import { reportHash, reportObject, reportText } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
+import { reportHash, reportObject, reportText, validateReportScope } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
 import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { ANALYSIS_SLICE_CATALOG } from '../shared/analysis-slice-catalog.mjs';
 import { readPlatformSnapshot } from './platform-snapshot.mjs';
@@ -12,6 +12,7 @@ import { activeIntakeCards, hasCompleteIntakeBoard, intakeStage, INTAKE_STAGES }
 import { getLicensingLibrary } from './licensing-library.mjs';
 import { createWorkflowKnowledgeSource } from './workflow-knowledge-source.mjs';
 import { reportAggregateFields, reportNumericField } from './ally-report-source-grants.mjs';
+import { getExecutiveDirectorIncidents } from './executive-director-incidents.mjs';
 import { reportColumnLabel } from '../shared/report-display.mjs';
 
 const objectSchema = properties => ({ type: 'object', properties, additionalProperties: false });
@@ -20,6 +21,7 @@ const schemas = {
   'platform-data': objectSchema({ slice: string, operation: { enum: ['rows', 'count', 'sum', 'average'] }, groupBy: strings, measure: string,
     dateField: { type: ['string', 'null'] }, limit: { type: 'integer', minimum: 1, maximum: 100 },
     filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains'] }, value: string }) } }),
+  'incident-summary': objectSchema({ from: string, through: string, communityIds: { type: 'array', items: string, maxItems: 5 }, priority: { enum: ['high', 'medium', 'low', 'unknown'] } }),
   'resident-flow': objectSchema({ view: { enum: ['communities', 'counties', 'occupancy'] } }),
   'pipeline-summary': objectSchema({ view: { enum: ['stages', 'planned-admissions'] } }),
   'licensing-search': objectSchema({ query: string, type: { enum: ['Complaint', 'Inspection', 'Other'] } }),
@@ -27,6 +29,7 @@ const schemas = {
 };
 const metadata = {
   'platform-data': ['Governed Platform data', 'Query published source grains. Counts count rows, not necessarily unique clients. Dates and communities are enforced. Never sum census across dates.'],
+  'incident-summary': ['Incident counts by date and priority', 'Use for daily incidents, yesterday, and high/medium/low priority questions. Returns aggregate counts from the same incident register as the Incidents page, with exact occurrence-date filters and optional narrower communityIds. Community IDs: 337 San Pablo, 342 Victoria’s House, 343 JC Wallace House, 344 Turlock, 345 Santa Clarita. High means a sentinel event or emergency-services notification; this is operational priority, not a clinical severity grade. Snapshot fallback is explicitly partial. No client details are returned.'],
   'resident-flow': ['Admissions, discharges and bed use', 'Reconciled admission episodes in the selected period; repeat stays count separately. Use view counties for counties of those admissions, not current residents. Use view occupancy for latest published census, operating capacity and available beds; occupancy is a current snapshot, not historical utilization. Default communities shows period admissions/discharges, opening/closing census and bed-days.'],
   'pipeline-summary': ['Current referral pipeline', 'Current published referral stages and decisions. Use view planned-admissions for move-ins scheduled this week, by community; plans are not confirmed admissions. The schedule carries its own Monday–Sunday Pacific period. Default stages shows current active workspaces. Neither view is historical referral event history.'],
   'licensing-search': ['State licensing reports', 'Dated inspection and complaint metadata for selected communities. Separate from internal incidents.'],
@@ -70,7 +73,7 @@ function platformDataset(title, rows, columns, time) {
 }
 
 export function createPlatformReportSources({ snapshot = readPlatformSnapshot, summary = getReportsSummaryData, data = readAllyPlatformData,
-  pipeline = getPipelineAdmissionsSummary, licensing = getLicensingLibrary, knowledge = createWorkflowKnowledgeSource(), now = Date.now } = {}) {
+  pipeline = getPipelineAdmissionsSummary, incidents = getExecutiveDirectorIncidents, licensing = getLicensingLibrary, knowledge = createWorkflowKnowledgeSource(), now = Date.now } = {}) {
   async function catalog(authorization) {
     const sources = listAllyPlatformDataSources(await summary()).filter(s => authorization.grant.slices.includes(s.id) && facilityField(s.fields))
       .map(s => ({ ...s, fields: authorization.grant.detail ? s.fields : reportAggregateFields(s.fields) }));
@@ -84,7 +87,33 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       observedAt: new Date(now()).toISOString(), period: `${scope.from}–${scope.through}`, grain: 'source observation',
       status: 'verified', coverage: 'complete', title: metadata[step.capability][0], note: '', answer: '', revision: '' };
     let result, dataset;
-    if (step.capability === 'resident-flow') {
+    if (step.capability === 'incident-summary') {
+      reportObject(args, [], ['from', 'through', 'communityIds', 'priority']);
+      const selected = validateReportScope({ communityIds: args.communityIds ?? authorization.communities,
+        from: args.from ?? scope.from, through: args.through ?? scope.through });
+      if (!selected.communityIds.length || selected.communityIds.some(id => !authorization.communities.includes(id)) ||
+          selected.from < scope.from || selected.through > scope.through ||
+          args.priority !== undefined && !['high', 'medium', 'low', 'unknown'].includes(args.priority)) throw Error('Choose incident filters within the authorized report scope.');
+      const results = [];
+      for (const facilityId of selected.communityIds) {
+        const response = await incidents({ facilityId, from: selected.from, to: selected.through, priority: args.priority, limit: 1 });
+        if (response.status !== 'ready' || typeof response.matchingIncidents !== 'number' || !Number.isSafeInteger(response.matchingIncidents) || response.matchingIncidents < 0) throw Error('Incident counts are unavailable.');
+        const facility = ALAMO_FACILITIES.find(f => f.facilityId === facilityId);
+        if (!facility) throw Error('Choose a listed community.');
+        results.push({ community: facility.shortName,
+          incidents: response.matchingIncidents, complete: response.coverage.status === 'complete' && !response.freshness?.stale,
+          observedAt: response.generatedAt });
+      }
+      const rows = results.map(({community, incidents}) => ({community, incidents}));
+      base.period = `${selected.from}–${selected.through}`; base.grain = 'incident occurrence by community';
+      base.observedAt = results.map(r => r.observedAt).sort()[0];
+      base.coverage = results.every(r => r.complete) ? 'complete' : 'partial';
+      base.note = 'Same occurrence dates and operational priority as the Incidents page. High means a sentinel event or emergency-services notification; it is not a clinical severity grade.';
+      if (base.coverage === 'partial') base.note += ' Published snapshot only: newer or older records may be missing; these are available-record counts, not confirmed complete totals.';
+      result = { from: selected.from, through: selected.through, priority: args.priority ?? 'all',
+        communities: rows, total: rows.reduce((total, row) => total + row.incidents, 0), coverage: base.coverage, definition: base.note };
+      dataset = scopedDataset('Incidents', rows, [{key:'community',label:'Community',type:'string'},{key:'incidents',label:'Incidents',type:'number'}], 'categories');
+    } else if (step.capability === 'resident-flow') {
       reportObject(args, [], ['view']);
       const view = args.view ?? 'communities';
       if (!['communities', 'counties', 'occupancy'].includes(view)) throw Error('Choose a supported resident-flow view.');
@@ -138,7 +167,10 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       const constraints = [{ field, op: 'in', value: authorization.communities }];
       if (time && /month/.test(time)) {
         const lastDay = new Date(Date.UTC(Number(scope.through.slice(0, 4)), Number(scope.through.slice(5, 7)), 0)).toISOString().slice(0, 10);
-        if (!scope.from.endsWith('-01') || scope.through !== lastDay) throw Error('Use a daily source for a partial month.');
+        if (!scope.from.endsWith('-01') || scope.through !== lastDay) {
+          const note = 'This monthly source cannot establish totals for a partial month or a specific day. Use a daily source for the requested dates.';
+          return { ...base, status: 'unavailable', coverage: 'partial', answer: null, note, revision: reportHash({args, scope, note}) };
+        }
         constraints.push({ field: time, op: 'gte', value: scope.from.slice(0, 7) }, { field: time, op: 'lte', value: scope.through.slice(0, 7) + '-31' });
       } else if (time) constraints.push({ field: time, op: 'day-gte', value: scope.from }, { field: time, op: 'day-lte', value: scope.through });
       const { dateField: _date, ...query } = args;

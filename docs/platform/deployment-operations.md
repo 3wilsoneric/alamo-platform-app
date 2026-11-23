@@ -1,5 +1,16 @@
 # Deployment And Operations
 
+## Ally History and incident recovery — November 23 candidate
+
+The owner reported clipped History and a queued request that paused as a source/model
+outage. Metadata proved planning succeeded; its monthly incident query rejected a
+partial month. The new daily aggregate adapter reuses the incident-register owner,
+and monthly-grain limits become unavailable evidence. Source/grant and live-answer
+verification remain required before this candidate is called deployed. The History
+containment regression fails on the old CSS and passes on the corrected anchor.
+The scoped nine-stage Ally gate replaces the unrelated 28-stage repetition for
+this bounded release; broad releases retain the full gate.
+
 ## Ally readability and response latency — November 23
 
 Platform source `bf2335e` is live in image

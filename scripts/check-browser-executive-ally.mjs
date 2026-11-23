@@ -26,7 +26,8 @@ try { await withBrowserQa(async browser=>{
   for(const width of [1440,390,320]) {
     console.log(`Executive Ally: checking ${width}px`);
     const store=createExecutiveReportStore({azure:false,localRoot:path.join(localRoot,String(width))});
-    const service=createExecutiveReportService({store,source,model,allowedSubjects:[owner,reader]});
+    let fixtureTime=Date.now();
+    const service=createExecutiveReportService({store,source,model,allowedSubjects:[owner,reader],now:()=>fixtureTime});
     const context=await browser.newContext({viewport:{width,height:width===1440?1000:844},hasTouch:width<700,reducedMotion:width===320?'reduce':'no-preference'});
     await context.addInitScript(()=>{window.print=()=>{};});
     const page=await context.newPage(),errors=[];let loseResponse=false,hold=false,denyHistory=false,currentAuth=auth;
@@ -159,7 +160,7 @@ try { await withBrowserQa(async browser=>{
     if(width===1440 && await panel.getByRole('button',{name:'Restore Ally panel'}).count()) await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});
     await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();await panel.getByLabel('Saved conversations').click();
-    const historyBox=await panel.getByRole('navigation',{name:'Saved reports'}).boundingBox();assert(historyBox&&historyBox.x>=0&&historyBox.x+historyBox.width<=width,`${width}px history stays inside the viewport`);
+    const historyBox=await panel.getByRole('navigation',{name:'Saved reports'}).boundingBox(),panelBox=await panel.boundingBox();assert(historyBox&&panelBox&&historyBox.x>=panelBox.x&&historyBox.x+historyBox.width<=panelBox.x+panelBox.width&&historyBox.y>=panelBox.y&&historyBox.y+historyBox.height<=panelBox.y+panelBox.height,`${width}px history stays inside its panel, not merely the page viewport`);
     await page.screenshot({path:path.join(output,`saved-history-${width}.png`),fullPage:true});
     await panel.getByRole('navigation',{name:'Saved reports'}).getByRole('button').first().click();
     await panel.getByRole('article',{name:'Report findings'}).last().waitFor();
@@ -211,6 +212,24 @@ try { await withBrowserQa(async browser=>{
       await pdf.pdf({path:path.join(output,'Ally trend report.pdf'),format:'A4',printBackground:true});await pdf.close();
     }
     trendFixture=false;
+    // Dense history in the normal side panel was the production failure. Check
+    // clipping ancestors and real hit testing, not just page-level overflow.
+    fixtureTime+=24*60*60*1000; // Separate history-layout fixtures from the earlier daily quota tests.
+    for(let i=0;i<8;i++) await service.create(auth,{requestId:crypto.randomUUID(),objective:`History fixture ${i}: compare a deliberately long community name and its incident counts across the selected dates.`,scope:{communityIds:[],from:'2026-01-01',through:'2026-11-23'}});
+    await page.goto(`${BASE_URL}/admissions`,{waitUntil:'domcontentloaded'});
+    await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();
+    for(const expanded of width===1440?[false,true]:[false]){
+      if(expanded)await panel.getByRole('button',{name:'Expand Ally to full screen'}).click();
+      await panel.getByLabel('Saved conversations').click();
+      const menu=panel.getByRole('navigation',{name:'Saved reports'});
+      await menu.getByLabel('Search conversations').fill('History fixture');assert.equal(await menu.getByRole('button').count(),8);
+      const bounds=await menu.evaluate(el=>{const r=el.getBoundingClientRect(),p=el.closest('dialog').getBoundingClientRect();return {inside:r.left>=p.left&&r.right<=p.right&&r.bottom<=p.bottom,scrolls:el.scrollHeight>el.clientHeight};});
+      assert(bounds.inside&&bounds.scrolls,'long history is contained and independently scrollable');
+      await menu.getByRole('button').last().scrollIntoViewIfNeeded();
+      assert(await menu.getByRole('button').last().evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.left+4,r.top+r.height/2));}),'the start of the title is visible and clickable');
+      await page.screenshot({path:path.join(output,`history-dense-${width}-${expanded?'expanded':'panel'}.png`)});
+      await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false);assert(await panel.getByLabel('Saved conversations').evaluate(el=>el===document.activeElement));
+    }
     assert.deepEqual(errors,[]);await context.close();
   }
 },{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, conversation/history, stable scrolling/drafts, IME, versioning, shared links, recipient controls, current and historical revocation, PDF, cancellation and saved reopening passed.'); }

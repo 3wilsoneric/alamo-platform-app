@@ -16,6 +16,14 @@ const BROWSER_STAGE_SETTLE_MS = Number(
 );
 
 const commandProfiles = {
+  // Bounded Ally releases: native report UI and governed report adapters only.
+  // Broad shell, authentication, publishing or unrelated feature changes use full.
+  ally: [
+    "check:docs", "typecheck", "typecheck:server", "check:source-syntax",
+    "check:dependencies", "check:platform-api", "check:executive-reports",
+    "check:browser-executive-ally", "build"
+  ],
+  "ally-live": ["check:production-smoke", "check:production-signed-in-smoke"],
   quick: [
     "check:docs",
     "check:desktop",

@@ -157,7 +157,8 @@ try {
   await assert.rejects(connection.read(user,bothScope,pipelineStep),'conflicting community identity cannot choose an authorized scope');
   delete pipelineSnapshot.board.cards[0].facilityId;registry.grants[0].communityIds.pop();
 
-  await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth),/partial month/);
+  const partialMonth=await sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth);
+  assert.equal(partialMonth.status,'unavailable');assert.equal(partialMonth.coverage,'partial');assert.equal(partialMonth.answer,null);assert.equal(partialMonth.dataset,undefined);assert.match(partialMonth.note,/partial month/);
   await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth),/across dates/);
   // Saved output must obey the recipient's projection, not merely permission
   // to issue the same query (which returns fewer fields for aggregate readers).
