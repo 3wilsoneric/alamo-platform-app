@@ -20,8 +20,11 @@ follow-ups, saved reports and exports. The local UI opens the existing report
 composer directly, retaining optional general chat and the answer canvas. Pending
 chat sends are visible immediately and automatic refresh waits for completion;
 explicit authorization rechecks and cancellation remain available. Desktop and
-phone report/chat checks pass. The shared report worker is still being prepared
-for a bounded real-data test, not ongoing execution or broader executive grants.
+phone report/chat checks pass. A bounded live census answer and follow-up passed. That test exposed a chart
+measure mismatch; the candidate now honors the independently validated measure
+binding in saved views and PDFs, with user choices taking precedence. The owner
+authorized a 50¢ daily pilot cap; its durable worker enforcement is being verified.
+Broader executive grants remain off.
 See the [current candidate and evidence](deployment-operations.md#platform-data-questions--november-23-local-candidate).
 
 ### November 23 combined ProForma release

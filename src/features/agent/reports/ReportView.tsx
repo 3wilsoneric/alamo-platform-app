@@ -33,7 +33,7 @@ export default function ReportView({report, canvas = false, measures = {}, onMea
     {artifact.gaps.length > 0 && <details className="ally-report-gaps" open><summary>Coverage limits</summary><ul>{artifact.gaps.map((g,i) => <li key={i}>{g}</li>)}</ul></details>}
     {artifact.sections.map(section => { const block = report.view?.blocks.find(b => b.datasetId === section.id && b.sourceIds.includes(section.id));
       return <section id={`ally-${section.id}`} key={section.id} className="ally-report-source"><h3>{section.title}</h3>{!canvas && <p className="ally-report-source-date">{section.period} · {section.grain}</p>}
-        {section.dataset && <DataView key={`${report.selectedVersion}-${section.id}`} dataset={section.dataset} component={block?.componentId ?? 'table'} measure={measures[section.id]} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>}
+        {section.dataset && <DataView key={`${report.selectedVersion}-${section.id}`} dataset={section.dataset} component={block?.componentId ?? 'table'} measure={measures[section.id] ?? block?.measureKey ?? undefined} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>}
         {!canvas && <details><summary>Source evidence</summary><p>{section.note}</p><p>Observed {new Date(section.observedAt).toLocaleString()}</p>{section.answer && <pre>{section.answer}</pre>}</details>}
       </section>;
     })}

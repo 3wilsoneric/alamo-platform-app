@@ -1,5 +1,18 @@
 # Deployment And Operations
 
+## Platform runtime recovery — November 23
+
+At 07:09–07:20 UTC, production logged five JavaScript heap exhaustion crashes
+at roughly 512 MB. Public requests timed out while the container restarted.
+The resource-only recovery retains image `22682554`, all environment values,
+identity, source grants, scaling rules and application files. It changes the
+container from 0.5 CPU / 1 GiB to 1 CPU / 2 GiB, using revision
+`alamo-platform-prod-web--ally-platform-1123-memory`. Exact configuration and
+public health/root/anonymous-denial checks pass. This is a runtime headroom fix;
+sustained load verification remains in progress. The immutable prior resource
+configuration and verification are in Suite
+`.state/platform-production-ally-platform-1123-memory.{plan,deployment,verification}.json`.
+
 ## Platform data questions — November 23, local candidate
 
 Ally now opens Platform's existing data-question/report surface by default, with
@@ -6125,3 +6138,18 @@ Signed-in acceptance must separately prove delegated Ally access, a current
 publication citation and saved-chat reopen. Deployment-configured document IDs
 only narrow source authorization; new guides require an explicit binding update.
 A seeded demonstration or engineering tutorial is not approved clinical policy.
+
+### Platform chart measure binding — November 23 candidate
+
+The live census follow-up answered available beds correctly but rendered census
+by default. ReportView now uses the validated API `measureKey` when the user has
+not made an explicit choice. Old saved views keep their prior fallback. PDF uses
+the same precedence. The browser regression supplies the independent API's new
+optional wire field explicitly while retaining the host's real persisted fixture
+service for retries, authorization, sharing and history.
+
+Typecheck and the browser regression pass at 1440, 390 and 320 pixels, including
+default and user-selected PDF measures, legacy views, historical version choices,
+reopening and revocation. The 390px screenshot was inspected. Evidence:
+`generated/current-navigation-20261122/platform-report-measure-browser.log`.
+This entry records source validation, not deployment. The full gate is running.

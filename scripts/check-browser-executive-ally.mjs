@@ -35,6 +35,9 @@ try { await withBrowserQa(async browser=>{
         if(req.method()==='POST') {const body=req.postDataJSON();result=await service[body.operation](currentAuth,body.input);if(loseResponse){loseResponse=false;await route.abort();return;}}
         else if(url.searchParams.has('id')) {const id=url.searchParams.get('id');if(!hold)for(let i=0;i<3;i++)await service.advance({ownerId:owner,id});result=await service.get(currentAuth,url.searchParams.get('ownerId'),id,url.searchParams.has('version')?Number(url.searchParams.get('version')):null);}
         else result={reports:await service.list(currentAuth)};
+        // The independent API adds a validated optional measureKey. Keep this
+        // wire fixture separate from the host’s older source-runtime package.
+        if (result?.view && result.selectedVersion !== 2) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:'discharges'}))}};
         await route.fulfill({status:200,json:result,headers:{'cache-control':'no-store'}});
       } catch(e){await route.fulfill({status:e.statusCode??503,json:{code:e.code??'report_unavailable'}});}
     });
@@ -45,14 +48,16 @@ try { await withBrowserQa(async browser=>{
     if(width===1440){await panel.getByRole('alert').waitFor();await panel.getByRole('button',{name:'Send question'}).click();}
     await panel.getByText('40 admission episodes and 25 discharges produced 15 net additions.',{exact:true}).waitFor();
     assert.equal((await service.list(auth)).length,1,'lost acknowledgement retry must not duplicate the investigation');
-    await panel.getByLabel('Chart measure').selectOption('discharges');await panel.getByText('View data table').click();await panel.getByRole('table').first().waitFor();
+    assert.equal(await panel.getByLabel('Chart measure').inputValue(),'discharges','the chart must use the saved measure, not the first numeric column');
+    assert.equal(await panel.getByRole('list',{name:'Discharges',exact:true}).count(),1);
+    await panel.getByText('View data table').click();await panel.getByRole('table').first().waitFor();
     await panel.getByText('View data table').click();
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);
     const small=await panel.locator('button:visible,input:visible,select:visible,summary:visible').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().height<43).map(el=>el.outerHTML));assert.deepEqual(small,[],'controls are at least 44px');
     await page.screenshot({path:path.join(output,`report-${width}.png`),fullPage:true});
     if(width===1440){
       const opened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const pdf=await opened;await pdf.getByRole('article',{name:'Report findings'}).waitFor();
-      assert.equal(await pdf.getByRole('list',{name:'Discharges',exact:true}).count(),1,'PDF must retain the selected chart measure');
+      assert.equal(await pdf.getByRole('list',{name:'Discharges',exact:true}).count(),1,'PDF must retain the report’s default chart measure');
       await pdf.pdf({path:path.join(output,'Ally fixture report.pdf'),format:'A4',printBackground:true});await pdf.close();
       await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Share report'}).click();await panel.getByLabel('Test reviewer').click(); await page.waitForFunction(()=>document.querySelector('.ally-report-sharing input')?.checked === true);
       await panel.getByLabel('Test reviewer').waitFor();assert.equal((await service.list({...auth,claims:{...auth.claims,oid:reader}})).length,1);
@@ -64,11 +69,14 @@ try { await withBrowserQa(async browser=>{
       sourceReady=false;await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await panel.getByRole('alert').waitFor();
       assert.equal(await panel.getByRole('article',{name:'Report findings'}).count(),0);assert.equal(await panel.getByLabel('Saved reports').locator('option').count(),1,'revocation clears cached report titles too');
       sourceReady=true;currentAuth=auth;await page.goto(sharedLink,{waitUntil:'domcontentloaded'});await panel.getByRole('article',{name:'Report findings'}).waitFor();
-      await panel.getByLabel('Chart measure').selectOption('discharges');
+      assert.equal(await panel.getByLabel('Chart measure').inputValue(),'discharges','reopening keeps the source-bound chart measure');
+      await panel.getByLabel('Chart measure').selectOption('admissions');
+      const overrideOpened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const overridePdf=await overrideOpened;await overridePdf.getByRole('article',{name:'Report findings'}).waitFor();
+      assert.equal(await overridePdf.getByRole('list',{name:'Admissions',exact:true}).count(),1,'explicit user choice takes precedence in PDF');await overridePdf.close();
       await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Refresh report',exact:true}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='2');
-      assert.equal(await panel.getByLabel('Chart measure').inputValue(),'admissions','a new version must not inherit another version’s chart choice');
+      assert.equal(await panel.getByLabel('Chart measure').inputValue(),'admissions','legacy versions without a measure retain first-column behavior');
       await panel.getByLabel('Report version').selectOption('1');await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='1');assert.equal(await panel.getByRole('button',{name:/^(Refresh report|Share report)$/,includeHidden:true}).count(),0,'historical versions have no owner mutation controls');
-      assert.equal(await panel.getByLabel('Chart measure').inputValue(),'discharges','returning to the selected version keeps its export and chart consistent');
+      assert.equal(await panel.getByLabel('Chart measure').inputValue(),'admissions','returning to the selected version keeps its explicit override');
       await panel.getByLabel('Report version').selectOption('2');await panel.getByRole('textbox',{name:'Follow-up question'}).fill('Explain the net additions and show the supporting values.');await panel.getByRole('button',{name:'Send question'}).click();await page.waitForFunction(()=>document.querySelector('select[aria-label="Report version"]')?.value==='3');
     }
     await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.equal(await panel.isVisible(),false);await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).evaluate(el=>{if(document.activeElement!==el)throw Error('Focus not restored');});

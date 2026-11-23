@@ -7,7 +7,7 @@ export type ReportSection = { id: string; title: string; observedAt: string; sta
 export type ExecutiveReport = ReportSummary & { selectedVersion: number; canEdit: boolean; readers: string[]; scope: ReportScope; objective: string; error: string | null;
   sourceProgress: Array<{id: string; title: string; status: string}>; versions: Array<{version: number; createdAt: string; status: string}>;
   artifact: null | { title: string; generatedAt: string; coverage: string; findings: Array<{text: string; sourceIds: string[]}>; sections: ReportSection[]; gaps: string[] };
-  view: null | { blocks: Array<{id: string; componentId: string; datasetId: string; sourceIds: string[]}> } };
+  view: null | { blocks: Array<{id: string; componentId: string; datasetId: string; sourceIds: string[]; measureKey?: string | null}> } };
 export const reportRunning = (status: string) => ['queued', 'reading', 'analyzing'].includes(status);
 export const reportStatus = (status: string) => ({ queued: 'Queued', reading: 'Reading sources', analyzing: 'Preparing findings', ready: 'Ready', partial: 'Partial coverage', paused: 'Paused', failed: 'Interrupted', cancelled: 'Stopped' })[status] ?? status;
 export function createReportClient(transport: AgentTransport) {
