@@ -29,8 +29,8 @@ export default function AgentConversationHome({ transport, conversationId, onNav
   const lastRefresh = useRef(0);
   const pendingTurn = useRef(false);
   pendingTurn.current = Boolean(chat?.turns.some(turn => turn.status === "working"));
-  const refresh = useCallback(async () => {
-    if (document.visibilityState === "hidden" || refreshing.current) return;
+  const refresh = useCallback(async (explicit = false) => {
+    if (document.visibilityState === "hidden" || refreshing.current || (inflight.current && !explicit)) return;
     const controller = new AbortController();
     refreshing.current = controller; lastRefresh.current = Date.now();
     const requested = ++generation.current;
@@ -47,21 +47,26 @@ export default function AgentConversationHome({ transport, conversationId, onNav
       if (document.visibilityState === "hidden") { ++generation.current; refreshing.current?.abort(); refreshing.current = null; setChat(null); setList(null); }
       else void refresh();
     };
-    const timer = window.setInterval(() => { if (inflight.current || pendingTurn.current || Date.now() - lastRefresh.current >= 30_000) void refresh(); }, 5000);
+    const timer = window.setInterval(() => { if (!inflight.current && (pendingTurn.current || Date.now() - lastRefresh.current >= 30_000)) void refresh(); }, 5000);
     document.addEventListener("visibilitychange", visibility);
     return () => { active.current = false; ++generation.current; refreshing.current?.abort(); refreshing.current = null; window.clearInterval(timer); document.removeEventListener("visibilitychange", visibility); };
   }, [refresh]);
+  function interruptRefresh() {
+    ++generation.current; refreshing.current?.abort(); refreshing.current = null;
+  }
   async function command(input: ConversationCommand) {
     if (inflight.current && input.action !== "cancel") return;
     const cancel = input.action === "cancel";
     if (!cancel) { inflight.current = true; setBusy(true); setRetry(input); }
-    ++generation.current; refreshing.current?.abort(); refreshing.current = null;
+    interruptRefresh();
     try {
       const result = await transport.conversations.command(input);
       if (!active.current) return;
+      interruptRefresh();
       setRetry(null); setError(null);
       if ("id" in result && input.action === "create") onNavigate(result.id);
-      else await refresh();
+      else if ("id" in result && document.visibilityState !== "hidden") { setChat(result); setDraft(""); }
+      else await refresh(true);
     } catch (caught) {
       if (active.current) { if (input.action === "send") setDraft(input.text); setError(caught instanceof Error ? caught.message : "The request could not be completed."); }
     } finally {
@@ -71,13 +76,16 @@ export default function AgentConversationHome({ transport, conversationId, onNav
   async function startWithQuestion(text: string) {
     if (inflight.current) return;
     inflight.current = true; setBusy(true); setError(null);
+    interruptRefresh();
     let createdId: string | null = null;
     try {
       const created = await transport.conversations.command({ action: "create", requestId: crypto.randomUUID(), skillIds: list?.availableSkillIds ?? ["licensing", "admissions-watch"] });
       if (!("id" in created)) throw new Error("Ally could not start a chat.");
       createdId = created.id;
-      await transport.conversations.command({ action: "send", requestId: crypto.randomUUID(), conversationId: created.id, expectedVersion: created.version, text });
-      if (active.current) { setDraft(""); onNavigate(created.id); }
+      const input: ConversationCommand = { action: "send", requestId: crypto.randomUUID(), conversationId: created.id, expectedVersion: created.version, text };
+      if (active.current && document.visibilityState !== "hidden") { setChat(created); setRetry(input); setDraft(""); }
+      await transport.conversations.command(input);
+      if (active.current) { setRetry(null); setDraft(""); onNavigate(created.id); }
     } catch (caught) {
       if (active.current) { setDraft(text); if (createdId) onNavigate(createdId); setError(caught instanceof Error ? caught.message : "Ally could not start a chat."); }
     } finally { inflight.current = false; if (active.current) setBusy(false); }
@@ -97,10 +105,11 @@ export default function AgentConversationHome({ transport, conversationId, onNav
       setWorkspaceView("canvas");
     }
   }, [canvasFocusSignal]);
-  const toolbar = <header className="agent-conversation-toolbar"><span>Conversation</span><button type="button" aria-label="Refresh chats" onClick={() => { void refresh(); }}><RefreshCw size={17} /></button></header>;
-  return <section className={`agent-conversation-home${expanded ? " agent-conversation-home--workspace" : ""}${expanded && !conversationId && !workspaceCanvas ? " agent-conversation-home--empty" : ""}`} aria-label="Ally chats">
+  const pendingSend = busy && retry?.action === "send" ? retry : null;
+  const toolbar = <header className="agent-conversation-toolbar"><span>Conversation</span><button type="button" aria-label="Refresh chats" onClick={() => { void refresh(true); }}><RefreshCw size={17} /></button></header>;
+  return <section className={`agent-conversation-home${expanded ? " agent-conversation-home--workspace" : ""}${expanded && !conversationId && !chat && !workspaceCanvas ? " agent-conversation-home--empty" : ""}`} aria-label="Ally chats">
     {!expanded && Boolean(conversationId || list?.conversations.length) && toolbar}
-    {error && <div role="alert" className="agent-conversation-error">{error}<button type="button" onClick={() => { void transport.connect().then(refresh).catch(() => setError("Sign-in could not be completed.")); }}>Connect</button>
+    {error && <div role="alert" className="agent-conversation-error">{error}<button type="button" onClick={() => { void transport.connect().then(() => refresh(true)).catch(() => setError("Sign-in could not be completed.")); }}>Connect</button>
       {retry?.action === "send" && <button type="button" onClick={() => { void command({ action: "cancel", conversationId: retry.conversationId, turnId: retry.requestId }); }}>Stop request</button>}
       {retry && <button type="button" disabled={busy} onClick={() => { void command(retry); }}>Retry request</button>}</div>}
     {expanded && <nav className="agent-conversation-workspace-tabs" aria-label="Ally workspace view"><button type="button" aria-pressed={workspaceView === "chat"} onClick={() => setWorkspaceView("chat")}>Chat</button><button type="button" aria-pressed={workspaceView === "canvas"} onClick={() => setWorkspaceView("canvas")}>{workspaceCanvas ? "Report" : "Answer"}</button></nav>}
@@ -108,9 +117,9 @@ export default function AgentConversationHome({ transport, conversationId, onNav
       {list?.conversations.map(item => <button type="button" key={item.id} aria-current={item.id === conversationId ? "page" : undefined} disabled={item.locked} onClick={() => onNavigate(item.id)}>{item.title}</button>)}
       {list?.conversations.length === 0 && <p>No saved chats.</p>}
     </aside></details>}<main>
-      {conversationId ? chat && <>
+      {conversationId || chat ? chat && <>
         <div className="agent-conversation-scope" aria-label="Chat scope">{chat.scope.map(scope => <span key={scope.skillId}>{skillTitle(scope.skillId)}{scope.communityIds.length ? ` · ${scope.communityIds.length} ${scope.communityIds.length === 1 ? "community" : "communities"}` : scope.skillId === "proforma-guidance" ? " · published guides" : " · aggregates"}</span>)}</div>
-        <ConversationMessages chat={chat} compact={expanded} selectedTurnId={selectedTurnId} onSelectTurn={id => { setSelectedTurnId(id); setWorkspaceView("canvas"); }} onCancel={turnId => { void command({ action: "cancel", conversationId: chat.id, turnId }); }} />
+        <ConversationMessages chat={chat} pendingSend={pendingSend} compact={expanded} selectedTurnId={selectedTurnId} onSelectTurn={id => { setSelectedTurnId(id); setWorkspaceView("canvas"); }} onCancel={turnId => { void command({ action: "cancel", conversationId: chat.id, turnId }); }} />
         {list?.modelAvailable === false && <p role="status">Chat answers are not configured yet. Saved work remains available.</p>}
         <ConversationalPrompt compact agent draft={draft} onDraftChange={setDraft} sending={busy || Boolean(working) || list?.modelAvailable === false} onOpenLibrary={() => {}} onSubmit={text => { void command({ action: "send", conversationId: chat.id, requestId: crypto.randomUUID(), expectedVersion: chat.version, text }); }} />
       </> : <div className="agent-conversation-new" aria-label="New chat">

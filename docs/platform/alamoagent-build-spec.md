@@ -13,17 +13,28 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 23 priority: Ally in Platform
+
+The owner deferred ProForma acceptance to prioritize useful Platform data questions,
+follow-ups, saved reports and exports. The local UI opens the existing report
+composer directly, retaining optional general chat and the answer canvas. Pending
+chat sends are visible immediately and automatic refresh waits for completion;
+explicit authorization rechecks and cancellation remain available. Desktop and
+phone report/chat checks pass. The shared report worker is still being prepared
+for a bounded real-data test, not ongoing execution or broader executive grants.
+See the [current candidate and evidence](deployment-operations.md#platform-data-questions--november-23-local-candidate).
+
 ### November 23 combined ProForma release
 
 The combined Platform design, native report/PDF/read-recovery changes and
 ProForma integration are live for Eric's pilot from `8634641`, after the complete
-predeployment gate. API 0.18.9 preserves the report configuration and passes all
-five existing executive source-access checks. Its live published-guidance question
-still failed during discovery; the API-only 0.18.10 diagnostic correction is
-separately reviewed, not yet verified deployed. The postdeployment gate stopped
+predeployment gate. API 0.18.10 preserves report configuration and passes all five existing executive
+source-access checks. Its live published-guidance answer completed and was saved;
+a subsequent UI source recheck timed out. ProForma acceptance is deferred. The postdeployment gate stopped
 after 19 passing stages when a resident-search test sampled the roster while it
 was loading. The bounded readiness wait now passes all 8 scenarios / 19 turns without
-changing its assertions or application behavior; remaining release stages continue. All 15 live page checks and 12 navigation
+changing its assertions or application behavior; stages 21–28 also pass. Stage 29 remains blocked on a complete native Network
+receipt. All 15 live page checks and 12 navigation
 interactions pass; complete native Network evidence remains outstanding.
 Report execution and expanded executive access remain off. The
 [combined release receipt](deployment-operations.md#combined-ally-and-proforma-release--november-23-preparing)

@@ -27,7 +27,7 @@ export default function ExecutiveAlly() {
   const client = useMemo(() => createReportClient(transport), [transport]);
   const [open, setOpen] = useState(false), [reports, setReports] = useState<ReportSummary[]>([]);
   const [expanded, setExpanded] = useState(false);
-  const [surface, setSurface] = useState<'chat'|'reports'>(agentChatConfigured ? 'chat' : 'reports');
+  const [surface, setSurface] = useState<'chat'|'reports'>('reports');
   const [chatId, setChatId] = useState<string | null>(null);
   const [canvasFocusSignal, setCanvasFocusSignal] = useState(0);
   const [report, setReport] = useState<ExecutiveReport | null>(null), [draft, setDraft] = useState('');
@@ -62,7 +62,7 @@ export default function ExecutiveAlly() {
   }, [open]);
   const changeOpen = useAllyTransition(open, setOpen, dialog);
   useEffect(() => {
-    const toggleFromHeader = () => { if (!open) setSurface(agentChatConfigured ? 'chat' : 'reports'); changeOpen(!open); };
+    const toggleFromHeader = () => { if (!open) setSurface('reports'); changeOpen(!open); };
     window.addEventListener(OPEN_ALLY_EVENT, toggleFromHeader);
     return () => window.removeEventListener(OPEN_ALLY_EVENT, toggleFromHeader);
   }, [changeOpen, open]);
@@ -167,7 +167,7 @@ export default function ExecutiveAlly() {
   return <div className="executive-ally">
     <dialog ref={dialog} className={`executive-ally-panel${surface === 'chat' ? ' executive-ally-panel--chat' : ''}${expanded ? ' executive-ally-panel--expanded' : ''}`} aria-label="Ally" onKeyDown={e => {if(e.key==='Escape'){e.preventDefault(); if (newMenu.current?.open) newMenu.current.open = false; else if (matchMedia('(max-width: 700px)').matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false);}}} onCancel={e => {e.preventDefault(); if (matchMedia('(max-width: 700px)').matches) changeOpen(false); else if (expanded) setExpanded(false); else changeOpen(false);}}>
       <header className="executive-ally-header"><AllyMark className="ally-panel-mark" /><strong>Ally</strong>{surface === 'chat' && !chatId ? <button type="button" className="ally-panel-report" disabled={busy} onClick={openBlankReport}>Report</button> : <details ref={newMenu} className="ally-panel-create"><summary><Plus size={18} aria-hidden="true" />New</summary><div role="group" aria-label="Start new work">{agentChatConfigured && <button type="button" onClick={() => { newMenu.current?.removeAttribute('open'); setChatId(null); setSurface('chat'); }}><Pencil size={17} aria-hidden="true" />New chat</button>}<button type="button" aria-label="New report" disabled={busy} onClick={openBlankReport}><Plus size={17} aria-hidden="true" />New report</button></div></details>}<button className="ally-panel-expand" type="button" aria-label={expanded ? 'Restore Ally panel' : 'Expand Ally to full screen'} aria-pressed={expanded} title={expanded ? 'Restore panel' : 'Full screen'} onClick={() => setExpanded(value => !value)}>{expanded ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button><button aria-label="Close Ally" autoFocus onClick={() => changeOpen(false)}><X size={20}/></button></header>
-      {surface === 'chat' || (expanded && agentChatConfigured) ? <div className="executive-ally-chat"><AgentConversationHome transport={transport} conversationId={chatId} onNavigate={setChatId} expanded={expanded} workspaceCanvas={expanded && surface === 'reports' ? reportSurface : undefined} canvasFocusSignal={canvasFocusSignal} /></div> : reportSurface}
+      {surface === 'chat' || (expanded && agentChatConfigured && chatId) ? <div className="executive-ally-chat"><AgentConversationHome transport={transport} conversationId={chatId} onNavigate={setChatId} expanded={expanded} workspaceCanvas={expanded && surface === 'reports' ? reportSurface : undefined} canvasFocusSignal={canvasFocusSignal} /></div> : reportSurface}
     </dialog>
   </div>;
 }

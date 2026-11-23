@@ -36,6 +36,8 @@ try {
       const context = await browser.newContext({ viewport: { width, height: width === 1440 ? 1000 : 844 } });
       const page = await context.newPage();
       const errors = [];
+      let conversationReads = 0;
+      page.on("request", request => { if (request.method() === "GET" && request.url().includes("/api/agent/v1/conversations")) conversationReads++; });
       page.on("pageerror", error => errors.push(error.message));
       await bridge(page, fixture.clients[0]);
       await page.goto(fixture.base, { waitUntil: "domcontentloaded" });
@@ -46,8 +48,20 @@ try {
       });
       assert.doesNotMatch(await page.locator("body").innerText(), /Welcome|Your assistant|What do you need to know|I’m AlamoAgent/);
       assert.equal(await page.getByRole("textbox").count(), 1, "direct home has one place to ask");
+      let releaseInitial, initialStarted;
+      const initialModelStarted = new Promise(resolve => { initialStarted = resolve; });
+      if (width === 320) fixture.modelState.wait = () => new Promise(resolve => { releaseInitial = resolve; initialStarted(); });
       await input.fill("Summarize this inspection and link the original.");
       await input.press("Enter");
+      if (width === 320) {
+        await initialModelStarted;
+        await page.getByRole("button", { name: "Stop", exact: true }).waitFor({timeout:1500});
+        assert.match(await page.locator('.agent-conversation-user').innerText(), /Summarize this inspection/);
+        const readsBefore = conversationReads;
+        await page.waitForTimeout(6200); // Cross the actual five-second polling boundary with a held model response.
+        assert.equal(conversationReads, readsBefore, "a pending first send must not poll history or selected chat");
+        releaseInitial(); fixture.modelState.wait = async () => {};
+      }
       await page.getByLabel("Ally answer").first().waitFor().catch(async error => {
         await page.screenshot({ path: path.join(output, `failed-answer-${width}.png`), fullPage: true });
         console.error("Direct chat answer state:", await page.locator("body").innerText(), errors);
@@ -83,11 +97,16 @@ try {
       await page.getByRole("textbox", { name: "Ask Ally" }).waitFor();
       assert.equal(await page.getByRole("textbox", { name: "Ask Ally" }).inputValue(), "Keep this unsent draft", "focus revalidation must preserve an unsent draft in memory");
       if (width === 1440) {
-        let release;
-        fixture.modelState.wait = () => new Promise(resolve => { release = resolve; });
+        let release, signalStarted;
+        const modelStarted = new Promise(resolve => { signalStarted = resolve; });
+        fixture.modelState.wait = () => new Promise(resolve => { release = resolve; signalStarted(); });
         await page.getByRole("textbox", { name: "Ask Ally" }).fill("Explain the evidence.");
         await page.getByRole("button", { name: "Send question" }).click();
         await page.getByRole("button", { name: "Stop", exact: true }).waitFor();
+        await modelStarted;
+        const readsBefore = conversationReads;
+        await page.waitForTimeout(6200);
+        assert.equal(conversationReads, readsBefore, "a pending follow-up must not poll history or selected chat");
         fixture.sourceFixture.state.document.grants[0].revoked = true;
         await page.getByRole("button", { name: "Refresh chats" }).click();
         const canceledResponse = page.waitForResponse(response => response.url().includes("/api/agent/v1/conversations") && response.request().method() === "POST" && response.request().postDataJSON()?.action === "cancel");

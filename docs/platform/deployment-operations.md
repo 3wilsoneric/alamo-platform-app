@@ -1,5 +1,23 @@
 # Deployment And Operations
 
+## Platform data questions — November 23, local candidate
+
+Ally now opens Platform's existing data-question/report surface by default, with
+one composer at desktop and phone widths. General chat remains in New; an existing
+chat can still keep its answer beside a report. Sending a chat immediately shows
+the question and pending state, prevents overlapping automatic refresh reads,
+and preserves explicit access rechecks and cancellation. Trusted transient source
+failures offer reopening the saved chat rather than implying revoked access.
+
+Browser checks pass for 320/390/1440px report creation, follow-up, saved reopening,
+versioning, chart measures, PDF, cancellation, revoked access, full-screen transitions
+and focus return. The held-model conversation check crosses the five-second poll
+boundary and verifies no duplicate automatic read while a send is pending.
+Screenshots and logs are in `generated/current-navigation-20261122/` and
+`generated/platform-page-screenshots-2026-11-22/`.
+These interface changes are not deployed yet. The production worker remains
+separately controlled; source records and counting definitions are unchanged.
+
 <a id="combined-ally-and-proforma-release--november-23-preparing"></a>
 ## Combined Ally and ProForma release — November 23, owner pilot live
 
@@ -19,8 +37,9 @@ retained as `generated/current-navigation-20261122/combined-brand-postdeploy-fai
 The test now waits for the existing result-count loading state to settle within
 its unchanged 35-second timeout, before applying the unchanged content and
 positive-count assertions. The focused rerun passes all 8 scenarios / 19 turns with no console or request
-failures. The remaining release stages continue from stage 21; prior passing
-stages are retained. This test-only correction does not change the deployed application.
+failures. Stages 21–28 also passed. Stage 29 stopped because the native
+Network receipt is incomplete; prior passing stages are retained. This test-only
+correction does not change the deployed application.
 
 Main Chrome passed all 15 current/legacy routes and 12 navigation interactions
 with no captured console errors. Evidence is in
@@ -29,14 +48,22 @@ The native Network capture was interrupted and includes unverified request
 statuses; this is explicitly not a complete passing signed-in release receipt.
 Saved-report reopening and source expansion were also checked without generation.
 
-Ally API 0.18.9 is live on image `7655fd54`; its report settings and five existing
-executive data-source capabilities passed independent checks. A real published
-ProForma guidance question still failed during source discovery. API 0.18.10
-diagnostics/display-label correction `49e6191` is separately reviewed and awaiting
-its guarded API-only cutover receipt. No additional executive grants, worker
-execution, schedules or paid model calls are enabled by this release. The shared
-$10 development campaign retains $9.981116 in reservations, including unknown
-outcomes; this is a reserved ceiling, not a billing total.
+Ally API 0.18.10 is live on image `c1b30010`, revision
+`alamo-ally-prod-api--proforma-01810-1123`. Independent checks at 07:00 UTC
+confirmed exact runtime/report-authority preservation and all five delegated
+source reads, with no model calls or source/report writes. The live model answer
+completed and was saved at 07:01 UTC (three calls, 5,300 input / 585 output tokens).
+Its subsequent UI reopen failed on repeated 12-second source-read timeouts;
+this does not pass end-to-end acceptance. The owner has now prioritized Platform
+reporting; ProForma acceptance is not a prerequisite for that work.
+
+The owner explicitly approved an additional $1 in the coordinated ProForma chat.
+The shared campaign retains its original pricing and every prior reservation,
+with an append-only $10→$11 cap amendment. Total reservations are $10.381116;
+$0.618884 remains. This is a reserved ceiling, not a billing total. The combined
+Ally source passes the full engine suite, API/worker builds, installed-package
+check and all 44 evaluation tests. No additional executive grants, report-worker
+execution or schedules are enabled by these checks.
 
 Preparation history follows; its pending statements describe earlier candidates.
 

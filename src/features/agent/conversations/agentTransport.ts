@@ -33,6 +33,7 @@ export function createAgentTransport(instance: IPublicClientApplication) {
     if (!response.ok) {
       const problem = await readBoundedJsonResponse<{ code?: string }>(response, 4096).catch(() => ({} as { code?: string }));
       const messages: Record<string, string> = {
+        conversation_source_temporarily_unavailable: "The source is temporarily unavailable. Refresh to reopen your saved chat.",
         conversation_source_unavailable: "This chat’s guidance changed or access was removed. Start a new chat to read the current guide.",
         conversation_changed: "This chat changed. Refresh before sending again.",
         conversation_capacity: "The chat limit has been reached. Your existing conversations are saved.",

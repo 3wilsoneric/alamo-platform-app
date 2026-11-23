@@ -30,7 +30,7 @@ await withBrowserQa(async browser => {
     assert.equal(await page.locator("[data-ally-flight]").count(), 0);
     assert.equal(await panel.locator(".ally-panel-mark").evaluate(mark => getComputedStyle(mark).visibility), "visible");
     const compact = await panel.boundingBox();
-    const chatSurface = panel.locator(".everyagent-companion-body, .executive-ally-chat").first();
+    const chatSurface = panel.locator(".everyagent-companion-body, .executive-ally-report-surface, .executive-ally-chat").first();
     await chatSurface.evaluate(element => { element.dataset.allyStateProbe = "same"; });
     if (width > 700) await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
     const expanded = await panel.boundingBox();
@@ -44,7 +44,7 @@ await withBrowserQa(async browser => {
       assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 1, "chat controls remain available");
       await panel.locator(".ally-panel-create summary").click();
     } else assert.equal(await panel.getByRole("button", { name: "New chat" }).count(), 0, "an empty chat does not show a redundant new-chat action");
-    assert.equal(await chatSurface.getAttribute("data-ally-state-probe"), "same", "the existing chat stays mounted");
+    assert.equal(await chatSurface.getAttribute("data-ally-state-probe"), "same", "the current Ally surface stays mounted");
     if (width > 700) {
       await page.keyboard.press("Escape");
       assert.equal(await panel.getByRole("button", { name: "Expand Ally to full screen" }).count(), 1, "Escape restores the panel first");

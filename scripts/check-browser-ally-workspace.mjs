@@ -33,20 +33,7 @@ await withBrowserQa(async browser => {
           dataset: { title: "Community flow", shape: "categories", columns: [{ key: "community", label: "Community", type: "string" }, { key: "admissions", label: "Admissions", type: "number" }, { key: "discharges", label: "Discharges", type: "number" }],
             rows: [{ community: "San Pablo", admissions: 18, discharges: 11 }, { community: "Santa Clarita", admissions: 15, discharges: 8 }, { community: "JC Wallace House", admissions: 12, discharges: 12 }, { community: "Turlock", admissions: 10, discharges: 6 }, { community: "Victoria’s House", admissions: 6, discharges: 3 }] } }] },
       view: { blocks: [{ id: "flow-chart", componentId: "comparison", datasetId: "flow", sourceIds: ["flow"] }] } };
-    await page.route(url => url.origin === BASE_URL && url.pathname.startsWith("/api/"), route => route.fulfill({ json: {} }));
-    await page.route("https://agent.example.test/api/agent/v1/**", async route => {
-      const request = route.request();
-      const url = new URL(request.url());
-      if (url.pathname.endsWith("/reports")) {
-        if (request.method() === "POST") { reportCreated = true; return route.fulfill({ json: reportSummary }); }
-        return route.fulfill({ json: url.searchParams.has("id") ? report : { reports: reportCreated ? [reportSummary] : [] } });
-      }
-      if (request.method() === "POST") {
-        const command = request.postDataJSON();
-        if (command.action === "create") { created = true; return route.fulfill({ json: { id, version: 1 } }); }
-        if (command.action === "send") { question = command.text; return route.fulfill({ json: { id, version: 2 } }); }
-      }
-      if (url.searchParams.has("id")) return route.fulfill({ json: {
+    const conversation = () => ({
         id, version: 2, createdAt: "2026-11-22T15:00:00Z", workId: null,
         scope: [{ skillId: "admissions-watch", communityIds: [] }],
         turns: [{ id: "22222222-2222-4222-8222-222222222222", text: question, status: "complete", createdAt: "2026-11-22T15:00:00Z",
@@ -57,7 +44,21 @@ await withBrowserQa(async browser => {
           ] },
           evidence: [{ id: "pipeline", skillId: "admissions-watch", title: "Pipeline referral records", text: "Synthetic interface fixture", observedAt: "2026-11-22T15:00:00Z", links: [{ href: "https://www.alamoplatform.com/admissions", title: "Admissions" }] }],
         }],
-      } });
+    });
+    await page.route(url => url.origin === BASE_URL && url.pathname.startsWith("/api/"), route => route.fulfill({ json: {} }));
+    await page.route("https://agent.example.test/api/agent/v1/**", async route => {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (url.pathname.endsWith("/reports")) {
+        if (request.method() === "POST") { reportCreated = true; return route.fulfill({ json: reportSummary }); }
+        return route.fulfill({ json: url.searchParams.has("id") ? report : { reports: reportCreated ? [reportSummary] : [] } });
+      }
+      if (request.method() === "POST") {
+        const command = request.postDataJSON();
+        if (command.action === "create") { created = true; return route.fulfill({ json: { ...conversation(), turns: [], version: 1 } }); }
+        if (command.action === "send") { question = command.text; return route.fulfill({ json: conversation() }); }
+      }
+      if (url.searchParams.has("id")) return route.fulfill({ json: conversation() });
       return route.fulfill({ json: { modelAvailable: true, conversations: created ? [{ id, title: question || "Admissions review", createdAt: "2026-11-22T15:00:00Z", locked: false }] : [] } });
     });
     if (width === 1440) {
@@ -82,6 +83,17 @@ await withBrowserQa(async browser => {
     await page.locator(".platform-ally-header-button:visible").first().click();
     const panel = page.getByRole("dialog", { name: "Ally" });
     if (width > 700) await panel.getByRole("button", { name: "Expand Ally to full screen" }).click();
+    const initialReport = panel.locator(".executive-ally-report-surface");
+    await initialReport.waitFor();
+    assert.equal(await panel.locator(".executive-ally-chat").count(), 0, "Platform opens its data questions without a parallel chat");
+    assert.equal(await panel.locator("textarea:visible").count(), 1, "the initial report has one composer");
+    await initialReport.getByRole("textbox", { name: "Ask Ally" }).fill("Compare admissions and discharges across communities.");
+    await initialReport.getByRole("button", { name: "Send question" }).click();
+    await initialReport.getByRole("article", { name: "Report findings" }).waitFor();
+    assert.equal(await initialReport.locator(".ally-report-comparison li").count(), 5);
+    await panel.screenshot({ path: path.join(output, `ally-workspace-default-report-${width}.png`) });
+    await panel.locator(".ally-panel-create summary").click();
+    await panel.getByRole("button", { name: "New chat" }).click();
     if (width <= 390) assert.equal(await panel.getByRole("button", { name: "Answer" }).count(), 0, "the empty phone view starts with one composer");
     assert.equal(await panel.getByRole("textbox", { name: "Ask Ally" }).count(), 1, "the empty workspace has one input");
     await panel.getByRole("textbox", { name: "Ask Ally" }).fill("Which accepted clients are still waiting for a move-in date?");

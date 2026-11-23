@@ -2,7 +2,7 @@ import type { AgentConversation } from "../../../../shared/everyagent-conversati
 import { FormattedMessageText } from "../../home/components/FormattedMessageText";
 import { ArrowUpRight } from "lucide-react";
 
-export default function ConversationMessages({ chat, onCancel, compact = false, selectedTurnId, onSelectTurn }: { chat: AgentConversation; onCancel: (id: string) => void; compact?: boolean; selectedTurnId?: string | null; onSelectTurn?: (id: string) => void }) {
+export default function ConversationMessages({ chat, pendingSend, onCancel, compact = false, selectedTurnId, onSelectTurn }: { chat: AgentConversation; pendingSend?: { requestId: string; text: string } | null; onCancel: (id: string) => void; compact?: boolean; selectedTurnId?: string | null; onSelectTurn?: (id: string) => void }) {
   return <div className="agent-conversation-messages" aria-label="Messages" aria-live="polite">
     {chat.turns.map(turn => <section key={turn.id} className="agent-conversation-turn">
       <div className="agent-conversation-user"><span className="sr-only">You: </span>{turn.text}</div>
@@ -20,6 +20,10 @@ export default function ConversationMessages({ chat, onCancel, compact = false, 
         </div>)}
       </div>}
     </section>)}
-    {!chat.turns.length && <p className="agent-conversation-empty">No messages yet.</p>}
+    {pendingSend && !chat.turns.some(turn => turn.id === pendingSend.requestId) && <section className="agent-conversation-turn">
+      <div className="agent-conversation-user"><span className="sr-only">You: </span>{pendingSend.text}</div>
+      <div role="status" className="agent-conversation-progress">Reading sources and preparing an answer…<button type="button" onClick={() => onCancel(pendingSend.requestId)}>Stop</button></div>
+    </section>}
+    {!chat.turns.length && !pendingSend && <p className="agent-conversation-empty">No messages yet.</p>}
   </div>;
 }
