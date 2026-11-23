@@ -1,5 +1,25 @@
 # Deployment And Operations
 
+## Ally PDF chart selection — November 23, awaiting release
+
+Visual review found that selecting Discharges still exported an Admissions chart.
+The focused browser regression reproduced the mismatch. The report workspace now
+owns the selected measures for the open report version and passes them to the
+reauthorized print renderer. Saved report/source data and access checks are
+unchanged. The browser suite passes at 320/390/1440px, including the selected PDF
+measure, isolation between versions, historical selection, revocation and saved
+reopening. Typecheck and focused ESLint pass; the rendered PDF preserves the
+selection, full source table and long labels without clipping.
+
+The preceding full gate was deliberately stopped after 15 passing stages when
+this mismatch was found. Its log and interruption receipt are retained as
+`native-final-ui-predeploy-batches.log` and
+`native-final-ui-predeploy-pdf-interrupted.json`. The `68437690` artifact lacks
+this correction and must not be promoted. Rebuild and verify the candidate, then
+complete its full release gate. Production remains `555272da`; model execution,
+campaign budget and executive grants are unchanged. Regression logs use the
+`pdf-measure-` prefix under `generated/current-navigation-20261122/`.
+
 ## Native Ally on the live design — November 22, prepared only
 
 The design chat's 28-command predeployment gate passed and its UI is live on
@@ -46,7 +66,8 @@ passed all 200 entries; rail validation passed 150 prompts, 48 cache requests,
 `cache-yield.log` and `cache-yield-rails.log`. Another complete gate is required.
 The current full run has since passed both corrected batches, 635 context turns,
 Ally report interactions and 68 mobile route/viewport checks plus safe-area
-checks. It is still running; these completed stages are not a release pass.
+checks. It was subsequently stopped for the PDF correction above; these completed
+stages are not a release pass.
 The precise stalled request
 was not captured; yielding prevents a tight microtask chain but does not add a
 transport deadline or establish a general network-availability guarantee.

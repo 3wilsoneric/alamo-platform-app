@@ -6,7 +6,7 @@ import { ALAMO_FACILITIES } from '../../../../shared/community-names.mjs';
 import { createAgentTransport } from '../conversations/agentTransport';
 import { createReportClient, reportRunning, reportStatus, type ExecutiveReport, type ReportScope, type ReportSummary } from './reportClient';
 import { reportParticipants } from './reportAccess';
-import ReportView from './ReportView';
+import ReportView, { type ReportMeasures } from './ReportView';
 import AgentConversationHome from '../conversations/AgentConversationHome';
 import { agentChatConfigured } from '../conversations/agentTransport';
 import { OPEN_ALLY_EVENT } from '../allyLauncher';
@@ -31,6 +31,9 @@ export default function ExecutiveAlly() {
   const [chatId, setChatId] = useState<string | null>(null);
   const [canvasFocusSignal, setCanvasFocusSignal] = useState(0);
   const [report, setReport] = useState<ExecutiveReport | null>(null), [draft, setDraft] = useState('');
+  const [chartSelection, setChartSelection] = useState<{key: string; measures: ReportMeasures}>({key: '', measures: {}});
+  const reportKey = report ? `${report.ownerId}/${report.id}/${report.selectedVersion}` : '';
+  const measures = chartSelection.key === reportKey ? chartSelection.measures : {};
   const [scope, setScope] = useState(() => initialScope(location.search));
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [share, setShare] = useState(false), [retryList, setRetryList] = useState(0);
@@ -136,7 +139,7 @@ export default function ExecutiveAlly() {
     target.opener = null; target.document.title = 'Preparing report';
     try {
       const fresh = await client.get(report, report.selectedVersion);
-      const {printReport} = await import('./printReport'); await printReport(target, fresh);
+      const {printReport} = await import('./printReport'); await printReport(target, fresh, measures);
     } catch (e) { target.close(); setReport(null); setError(e instanceof Error ? e.message : 'Report export unavailable.'); }
   }
   const editable = report?.canEdit && report.selectedVersion === report.version;
@@ -153,7 +156,7 @@ export default function ExecutiveAlly() {
         </div>}
         {report?.error && <p role="status">{report.error}</p>}
         {share && report && <fieldset className="ally-report-sharing"><legend>Report access</legend>{reportParticipants().filter(p=>p.id!==report.ownerId).map(p => <label key={p.id}><input type="checkbox" checked={report.readers.includes(p.id)} disabled={busy} onChange={e => void command(e.target.checked ? 'share' : 'unshare', {readerId:p.id})}/>{p.name}</label>)}<p>Recipients need their own source access.</p><button onClick={() => {const url=new URL(location.pathname,window.location.origin);url.searchParams.set('allyReport',`${report.ownerId}/${report.id}`);void navigator.clipboard.writeText(url.href).catch(()=>setError('The report link could not be copied.'));}}>Copy link</button></fieldset>}
-        {report && <ReportView report={report} canvas={expanded}/>}
+        {report && <ReportView report={report} canvas={expanded} measures={measures} onMeasureChange={(sectionId, measure) => setChartSelection(current => ({key: reportKey, measures: {...(current.key === reportKey ? current.measures : {}), [sectionId]: measure}}))}/>}
         {busy && <p role="status">Saving…</p>}
       </div>
       <form className="executive-ally-composer" onSubmit={e => void submit(e)}>

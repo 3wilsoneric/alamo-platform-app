@@ -13,6 +13,16 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 [application connector guide](/Users/eric/CareEngineMain/alamoagent/docs/connectors.md).
 Update that spec in every relevant change; do not start a competing Platform plan.
 
+### November 23 PDF chart selection
+
+The print renderer now receives the open report version's selected chart measures
+after fresh authorization. A failing-before/passing-after browser check proves
+that choosing Discharges exports Discharges; version isolation and historical
+selection also pass. Typecheck, focused ESLint and rendered PDF review pass.
+The previous full gate was deliberately stopped at 15 completed stages; its
+`68437690` candidate lacks this correction and needs replacement before release.
+See the [PDF correction receipt](deployment-operations.md#ally-pdf-chart-selection--november-23-awaiting-release).
+
 ### November 22 Platform control cleanup
 
 The Platform Ally UI candidate now starts with one centered composer in full
