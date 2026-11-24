@@ -6496,3 +6496,45 @@ default and user-selected PDF measures, legacy views, historical version choices
 reopening and revocation. The 390px screenshot was inspected. Evidence:
 `generated/current-navigation-20261122/platform-report-measure-browser.log`.
 This entry records source validation, not deployment. The full gate is running.
+
+### Ally complete-data analyst — November 23
+
+Platform source/UI commit `2d683c5` deployed as revision
+`alamo-platform-prod-web--ally-analyst-1124`, image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:ee87ab9991fdf6420cf3dfcf66bb950797914b0ef68db066f92ecb6650c4f463`.
+The full predeploy gate passed 28/28. Immutable comparison preserved 19,989 base
+files except the 42 reviewed changes and retained runtime configuration. Main
+Chrome verification passed 15 routes and 12 interactions: 615 network requests,
+one cancellation, zero HTTP failures and zero console errors; postdeploy passed
+2/2. Receipt: `/Users/eric/suite-deploy/.state/analyst-main-chrome-1124/evidence.json`.
+
+Ally 0.18.16 source `b209813` uses API image
+`alamoallywqqka6kfae5ma.azurecr.io/ally@sha256:066d4e3c130a622bd24039a27a26e6a4a5a6c5f0d2b2f0177823a16c0eef7afe`
+and worker package SHA-256
+`3f02099b0215bc71fbda37dc238f7859b054ebd0b557487f16cba2548dba63c4`.
+The actual native activity proved adoption. Exact prior recovery CI source hashes
+are in `ally-01816.evidence-reuse.json`; spending integration has separate tests
+and live settlement evidence. All 20 original chats and prior ledger entries
+survived the release. Four real turns matched independent age/incident calculations
+and preserved contextual rewrite evidence; 16.582–32.829 seconds, $0.157062 total.
+These are measured examples, not a general performance guarantee.
+
+The exact six source grants (API/worker for Eric, Andrew and Betty) now include
+discovery and the 28 reviewed Platform slices. Unlisted subjects/communities
+remain denied. The publisher notebook preserves SELECT grants on view updates;
+its exact exported hash is
+`a39b5ca1076dd3bde35ad33c20c1de906655687e86f7334c3a5e8277e8bfe1fb`.
+The scheduled job was not run during this release. Source records are unchanged.
+Grant and notebook changes have conditional before/after recovery receipts.
+
+Private evidence is under `/Users/eric/suite-deploy/.state/`: prefixes
+`ally-analyst-final-runtime`, `platform-analyst-1124`, `analyst-publisher`,
+`analyst-source-grants`, `analyst-source-acceptance`, `analyst-age-baseline`,
+`analyst-incident-baseline`, `analyst-acceptance-1124`, and `worker-01816-adoption`.
+The runtime driver supports conditional `restore`/`resume-restore`. Rollback API:
+`alamoallywqqka6kfae5ma.azurecr.io/ally@sha256:e33fe2b1eaf4476cbfd2bb8eb624b18b7052c8d128bd2af7a2a4a87dd72087a0`.
+Use the verified `ally-production-worker-01814-compatible.zip` alongside it;
+plain 0.18.14 rejects the new spending receipts. Never reset or rewrite the ledger.
+Platform rollback to the prior immutable image is separately guarded and must
+preserve any intervening release. The report table rendering correction is a
+separate UI candidate, not included in the image above.

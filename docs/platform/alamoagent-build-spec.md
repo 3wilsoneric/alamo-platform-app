@@ -732,3 +732,27 @@ real model answer/rewrite acceptance and the applicable release gates remain.
 A lossless publisher contract would permit more snapshot queries; revisit the
 conservative fallback when measured detailed queries justify that publication
 change. Do not create an agent-owned copy of the warehouse.
+
+
+### Live acceptance follow-up — November 23
+
+Engine 0.18.16 and the complete-data adapter are live for Eric, Andrew and Betty.
+The source independently returns Santa Clarita's 136 known ages, zero missing,
+mean 44.88970588235294 for each participant; unlisted subjects and communities
+are denied. All 20 pre-existing conversations and the spending ledger were
+preserved. The live average-age answer and contextual five-community comparison
+match the independent warehouse calculation. A contextual rewrite reuses the same
+version's evidence, and a separate daily incident question matches the warehouse
+zero count with complete coverage. These four turns took 16.582, 32.829, 16.235
+and 25.176 seconds and settled $0.157062 in model charges. The comparison is still
+slow; these examples do not establish a latency SLO or complete question coverage.
+Current runtime receipts and compatibility rollback are recorded in
+[deployment operations](deployment-operations.md#ally-complete-data-analyst--november-23).
+
+The comparison exposed literal Markdown table syntax in report prose. The focused
+UI correction reuses the existing table syntax helpers and the report's native
+table/mobile-record renderer. It preserves stored wording and numeric values;
+malformed rows stay literal rather than silently losing cells. Browser regressions
+cover 1440/390/320px, long labels and inert HTML. This formatting correction is not
+yet deployed. The existing bounded parser is sufficient for flat report tables;
+use a maintained Markdown parser if nested or escaped table syntax becomes required.

@@ -1,3 +1,4 @@
+import { splitMarkdownTableRow, isMarkdownTableSeparator } from "../../../../shared/markdown-table.mjs";
 import { memo, useMemo } from "react";
 
 type MessageBlock =
@@ -20,19 +21,6 @@ function getDeltaDisplayTone(value: string) {
   const text = value.trim();
   if (!/^[-+]/.test(text)) return "text-[#3e3429]";
   return text.startsWith("+") ? "text-[#0f7a65]" : "text-[#a04436]";
-}
-
-function splitMarkdownTableRow(line: string) {
-  return line
-    .trim()
-    .replace(/^\|/, "")
-    .replace(/\|$/, "")
-    .split("|")
-    .map((cell) => cell.trim());
-}
-
-function isMarkdownTableSeparator(line: string) {
-  return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
 }
 
 function isMessageSectionLine(line: string) {

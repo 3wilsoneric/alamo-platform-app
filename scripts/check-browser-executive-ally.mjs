@@ -15,13 +15,14 @@ process.env.VITE_ALLY_REPORTS_ENABLED='true';process.env.VITE_ALLY_REPORT_PARTIC
 const output=path.resolve('generated/executive-ally-browser');await mkdir(output,{recursive:true});
 const localRoot=await mkdtemp(path.join(os.tmpdir(),'platform-report-browser-'));
 const auth={authenticated:true,mode:'entra-delegated',claims:{tid:EVERYAGENT_TENANT,oid:owner}};
-let sourceReady=true, sourceReads=0, trendFixture=false;
+let sourceReady=true, sourceReads=0, trendFixture=false, proseTableFixture=false;
+const proseDataset={title:'Community ages',shape:'records',columns:[{key:'community',label:'Community',type:'string'},{key:'age',label:'Average age',type:'number'},{key:'known',label:'Known ages',type:'number'},{key:'missing',label:'Missing ages',type:'number'}],rows:[{community:'A deliberately long fictional community name',age:44.9,known:136,missing:0},{community:'Another community <img src=x onerror=alert()>',age:40.7,known:138,missing:1}]};
 const trendDataset={title:'Monthly occupied bed-days',shape:'series',columns:[{key:'as_of_date',label:'as_of_date',type:'string'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'}],rows:[{as_of_date:'2026-01-01',occupied_bed_days:-1200},{as_of_date:'2026-02-01',occupied_bed_days:null},{as_of_date:'2026-03-01',occupied_bed_days:150443},{as_of_date:'2026-04-01',occupied_bed_days:130000}]};
 const source={authorize:async()=>sourceReady?{revision:reportHash('fixture-grant'),detail:false}:false,catalog:async()=>[{id:'resident-flow',title:'Resident flow',inputSchema:{type:'object'}}],read:async(subject,scope,step)=>{
   sourceReads++;
-  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
+  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:proseTableFixture?JSON.stringify(proseDataset.rows):'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:proseTableFixture?proseDataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
 }};
-const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:trendFixture?'Monthly occupied bed-days.\n\n**Context**\n- Missing values stay missing.\n- Negative values stay below zero.\n\n<img src=x onerror=alert()>':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
+const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:proseTableFixture?'| Community | Average age | Known ages | Missing ages |\n|---|---:|---:|---:|\n| A deliberately long fictional community name | 44.9 | 136 | 0 |\n| Another community <img src=x onerror=alert()> | 40.7 | 138 | 1 |\n\n**Summary**\nThe missing age remains missing.':trendFixture?'Monthly occupied bed-days.\n\n**Context**\n- Missing values stay missing.\n- Negative values stay below zero.\n\n<img src=x onerror=alert()>':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:proseTableFixture?[{id:'ages',componentId:'table',datasetId:'source-1'}]:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
 try { await withBrowserQa(async browser=>{
   for(const width of [1440,390,320]) {
     console.log(`Executive Ally: checking ${width}px`);
@@ -80,7 +81,7 @@ try { await withBrowserQa(async browser=>{
     assert.equal(await sourceLink.evaluate(el=>el===document.activeElement),true,'closing a source returns focus to its link');
     await references.getByText('Sources',{exact:true}).click();
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);
-    const small=await panel.locator('button:visible,input:visible,select:visible,summary:visible').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().height<43).map(el=>el.outerHTML));assert.deepEqual(small,[],'controls are at least 44px');
+    const small=await panel.locator('button:visible,input:visible,select:visible,summary:visible').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().height<43).map(el=>({html:el.outerHTML,height:el.getBoundingClientRect().height,minHeight:getComputedStyle(el).minHeight,connected:el.isConnected,transform:getComputedStyle(el).transform})));assert.deepEqual(small,[],'controls are at least 44px');
     await page.screenshot({path:path.join(output,`report-${width}.png`),fullPage:true});
     await panel.getByLabel('More report actions').click();
     const actionBox=await panel.getByRole('group',{name:'Report actions'}).boundingBox(),bodyBox=await panel.locator('.executive-ally-body').boundingBox();
@@ -211,7 +212,27 @@ try { await withBrowserQa(async browser=>{
       assert.equal(await pdf.getByRole('columnheader',{name:'Occupied bed-days',exact:true}).count(),1);
       await pdf.pdf({path:path.join(output,'Ally trend report.pdf'),format:'A4',printBackground:true});await pdf.close();
     }
-    trendFixture=false;
+    trendFixture=false;proseTableFixture=true;
+    await panel.getByRole('button',{name:'New chat',exact:true}).click();
+    await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Compare the fictional community ages in a table.');
+    await panel.getByRole('button',{name:'Send question'}).click();
+    const prose=panel.locator('.ally-report-prose');
+    try { await prose.getByText('The missing age remains missing.',{exact:false}).waitFor(); }
+    catch(error) { console.error('Prose table fixture:',await panel.innerText(),errors); throw error; }
+    assert.equal(await prose.locator('strong').innerText(),'Summary');
+    assert.equal(await prose.locator('img,a,script').count(),0,'table cells do not turn model markup into active content');
+    assert.equal((await prose.innerText()).includes('|---'),false,'model Markdown tables render as tables, not pipe-delimited prose');
+    if(width<700){
+      const records=prose.locator('.ally-report-records');assert(await records.isVisible());
+      assert.equal(await records.evaluate(el=>getComputedStyle(el).listStyleType),'none','mobile record cards do not inherit prose bullets');
+      assert.equal(await records.locator('li').count(),2);assert.match(await records.innerText(),/Missing ages/);assert.match(await records.innerText(),/40\.7/);
+      const bounds=await records.evaluate(el=>({overflow:el.scrollWidth-el.clientWidth,right:el.getBoundingClientRect().right}));assert(bounds.overflow<=1&&bounds.right<=width);
+    }else{
+      const table=prose.getByRole('table');assert(await table.isVisible());assert.equal(await table.getByRole('columnheader').count(),4);
+      assert.equal(await table.getByRole('cell',{name:'136',exact:true}).count(),1);assert.equal(await table.getByRole('cell',{name:'1',exact:true}).count(),1);
+    }
+    await page.screenshot({path:path.join(output,`prose-table-${width}.png`),fullPage:true});
+    proseTableFixture=false;
     // Dense history in the normal side panel was the production failure. Check
     // clipping ancestors and real hit testing, not just page-level overflow.
     fixtureTime+=24*60*60*1000; // Separate history-layout fixtures from the earlier daily quota tests.

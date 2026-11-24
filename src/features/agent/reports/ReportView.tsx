@@ -1,25 +1,10 @@
+import SourceTable from './ReportTable';
 import ReportProse from './ReportProse';
 import { formatDisplayDate } from '../../../../shared/display-date.mjs';
 import type { ExecutiveReport, ReportDataset } from './reportClient';
 import { reportColumnLabel, reportCellValue as displayValue } from '../../../../shared/report-display.mjs';
 export type ReportMeasures = Record<string, string>;
 
-function SourceTable({dataset}: {dataset: ReportDataset}) {
-  const columns = dataset.columns.map(column => ({...column, label:reportColumnLabel(column)}));
-  const identity = columns.find(column => column.type === 'string');
-  return <>
-    <div className="ally-report-table" tabIndex={0} role="region" aria-label={`${dataset.title} data`}>
-      <table aria-label={dataset.title}><thead><tr>{columns.map(c => <th key={c.key} scope="col">{c.label}</th>)}</tr></thead>
-        <tbody>{dataset.rows.map((row,i) => <tr key={i}>{columns.map(c => <td key={c.key} data-numeric={c.type==='number'}>{displayValue(row[c.key])}</td>)}</tr>)}</tbody>
-      </table>
-    </div>
-    <ul className="ally-report-records" aria-label={dataset.title}>{dataset.rows.map((row,i) => <li key={i}>
-      {identity && <h4>{displayValue(row[identity.key])}</h4>}
-      <dl>{columns.filter(column => column !== identity).map(column => <div key={column.key}><dt>{column.label}</dt><dd>{displayValue(row[column.key])}</dd></div>)}</dl>
-    </li>)}</ul>
-    {!dataset.rows.length && <p>No records in this scope.</p>}
-  </>;
-}
 function DataView({dataset, component, measure, onMeasureChange}: {dataset: ReportDataset; component: string; measure: string | undefined; onMeasureChange: ((measure: string) => void) | undefined}) {
   const columns = dataset.columns.map(column => ({...column,label:reportColumnLabel(column)}));
   const label = columns.find(c => c.type === 'string');
