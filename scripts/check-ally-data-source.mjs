@@ -26,9 +26,7 @@ const rows = await readAllyPlatformData({ slice: "notes_summary", filters: [{ fi
 assert.equal(rows.returnedRows, 1);
 assert.equal(rows.hasMore, true);
 assert.match(rows.coverage, /partial: 2 of 4/);
-const count = await readAllyPlatformData({ slice: "notes_summary", operation: "count", filters: [{ field: "Facility", op: "eq", value: "337" }] }, { load, execute: fail });
-assert.equal(count.rows[0].result, 2);
-assert.match(count.coverage, /partial/);
+await assert.rejects(readAllyPlatformData({ slice: "notes_summary", operation: "count", filters: [{ field: "Facility", op: "eq", value: "337" }] }, { load, execute: fail }), /incomplete published sample/);
 const warehouse = await readAllyPlatformData({ slice: "notes_summary", operation: "count" }, { load, execute: async sql => {
   assert.match(sql, /v_tool_notes_summary/); return [{ result: 4 }];
 } });
@@ -63,3 +61,50 @@ delete operating.toolContext.tables.community_operating_summary[0].Facility;
 delete operating.toolContext.tables.community_operating_summary[0].facility_id;
 await assert.rejects(readAllyPlatformData({slice:'community_operating_summary',operation:'count'},scoped),/required query field/);
 console.log("Ally Platform data catalog, safe query compilation, source read, and partial snapshot fallback passed.");
+
+const profiles={toolContext:{manifest:[{slice_name:'resident_profile',grain:'current resident',row_count:5,fields:['Facility','Res_Number','Age','resident_name']}],tables:{resident_profile:[
+  {Facility:'337',Res_Number:'1',Age:20,resident_name:'Synthetic A'},
+  {Facility:'337',Res_Number:'2',Age:40,resident_name:'Synthetic B'},
+  {Facility:'337',Res_Number:'3',Age:60,resident_name:'Synthetic C'},
+  {Facility:'337',Res_Number:'4',Age:null,resident_name:'Synthetic D'},
+  {Facility:'345',Res_Number:'1',Age:100,resident_name:'OTHER_COMMUNITY'}
+]}}};
+const profileOptions={load:async()=>profiles,execute:fail,constraints:[{field:'Facility',op:'in',value:['337']}]};
+for(const [operation,expected] of [['average',40],['median',40],['minimum',20],['maximum',60],['distinct',3]]) {
+  const read=await readAllyPlatformData({slice:'resident_profile',operation,measure:'Age'},profileOptions);
+  assert.deepEqual(read.rows,[{result:expected}]);
+}
+const statistics=await readAllyPlatformData({slice:'resident_profile',operation:'statistics',measure:'Age'},profileOptions);
+assert.deepEqual(statistics.rows,[{records:4,known:3,missing:1,mean:40,median:40,minimum:20,maximum:60}]);
+const emptyStatistics=await readAllyPlatformData({slice:'resident_profile',operation:'statistics',measure:'Age',filters:[{field:'Age',op:'number-gte',value:'120'}]},profileOptions);
+assert.deepEqual(emptyStatistics.rows,[{records:0,known:0,missing:0,mean:null,median:null,minimum:null,maximum:null}]);
+const selected=await readAllyPlatformData({slice:'resident_profile',operation:'rows',columns:['Age'],orderBy:[{field:'Age',direction:'desc'}],limit:2},profileOptions);
+assert.deepEqual(selected.rows,[{Age:60},{Age:40}]);assert.equal(selected.hasMore,true);
+const groupedSorted=await readAllyPlatformData({slice:'resident_profile',operation:'count',groupBy:['Age'],orderBy:[{field:'Age',direction:'desc'}],limit:1},profileOptions);
+assert.deepEqual(groupedSorted.rows,[{Age:60,result:1}]);
+const numeric=compileAllyPlatformDataQuery({slice:'resident_profile',operation:'statistics',measure:'Age',filters:[{field:'Age',op:'number-lte',value:'50'}]},listAllyPlatformDataSources(profiles)[0],profileOptions.constraints);
+assert.match(numeric.sql,/COUNT\(\*\) AS records/);assert.match(numeric.sql,/PERCENTILE_CONT\(0\.5\)/);assert.match(numeric.sql,/try_cast\(`Age` AS DOUBLE\) <= 50/);assert.match(numeric.sql,/`Facility`/);
+for(const query of [{columns:['password']},{orderBy:[{field:'Age; DROP TABLE x',direction:'desc'}]},{filters:[{field:'Age',op:'number-gte',value:'0 OR 1=1'}]}]) await assert.rejects(readAllyPlatformData({slice:'resident_profile',...query},profileOptions));
+console.log('Analyst statistics, missing ages, scope, projected columns, numeric filters, ranking and SQL injection boundaries passed.');
+
+// Publisher null-to-zero coercion must never become a fabricated zero age.
+const publishedProfiles=structuredClone(profiles);
+publishedProfiles.toolContext.manifest[0].generated_at='2026-11-23T13:00:00Z';
+publishedProfiles.toolContext.tables.resident_profile=profiles.toolContext.tables.resident_profile.map(({Facility,Res_Number,Age,resident_name})=>({facility_id:Facility,res_number:Res_Number,age:Age??0,resident_name}));
+let warehouseReads=0;
+const faithfulOptions={...profileOptions,load:async()=>publishedProfiles,execute:async()=>{warehouseReads++;return statistics.rows;}};
+const faithful=await readAllyPlatformData({slice:'resident_profile',operation:'statistics',measure:'Age'},faithfulOptions);
+assert.equal(warehouseReads,1);assert.equal(faithful.readMode,'governed-view');assert.deepEqual(faithful.rows,statistics.rows);
+await assert.rejects(readAllyPlatformData({slice:'resident_profile',operation:'average',measure:'Age'},{...faithfulOptions,execute:fail}),/missing value from zero/);
+const complete=structuredClone(profiles);complete.toolContext.manifest[0].generated_at='2026-11-23T13:00:00Z';
+let unnecessaryReads=0;
+const fast=await readAllyPlatformData({slice:'resident_profile',operation:'statistics',measure:'Age'},{...profileOptions,load:async()=>complete,execute:async()=>{unnecessaryReads++;throw Error('Must use complete faithful snapshot');}});
+assert.equal(unnecessaryReads,0);assert.deepEqual(fast.rows,statistics.rows);assert.equal(fast.readMode,'published-snapshot');
+console.log('Complete faithful snapshots avoid the warehouse; lossy zero ages require the full view and fail closed on outage.');
+const otherCommunity=await readAllyPlatformData({slice:'resident_profile',operation:'statistics',measure:'Age'},{...faithfulOptions,constraints:[{field:'Facility',op:'in',value:['345']}],execute:async()=>{throw Error('An unrelated community must not force a warehouse read.');}});
+assert.equal(otherCommunity.readMode,'published-snapshot');assert.deepEqual(otherCommunity.rows,[{records:1,known:1,missing:0,mean:100,median:100,minimum:100,maximum:100}]);
+const flags={toolContext:{manifest:[{slice_name:'mar_exception_detail_90d',grain:'event',row_count:1,fields:['Facility','is_refusal'],generated_at:'2026-11-23T13:00:00Z'}],tables:{mar_exception_detail_90d:[{facility_id:'337',is_refusal:true}]}}};
+const flagQuery={slice:'mar_exception_detail_90d',operation:'count',filters:[{field:'is_refusal',op:'eq',value:'1'}]};
+const flagResult=await readAllyPlatformData(flagQuery,{load:async()=>flags,execute:async()=>[{result:1}]});
+assert.equal(flagResult.readMode,'governed-view');assert.deepEqual(flagResult.rows,[{result:1}]);
+await assert.rejects(readAllyPlatformData(flagQuery,{load:async()=>flags,execute:fail}),/coerced the original numeric flag/);

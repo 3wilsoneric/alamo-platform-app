@@ -650,7 +650,7 @@ function assertCensusTransformContracts() {
   );
   assert.match(
     toolContextSource,
-    /def rebind_existing_view\([\s\S]*?information_schema\.views[\s\S]*?CREATE OR REPLACE VIEW[\s\S]*?rebinding its stored definition/,
+    /def rebind_existing_view\([\s\S]*?information_schema\.views[\s\S]*?ALTER VIEW[\s\S]*?rebinding its stored definition/,
     "tool context source validation should rebind stale stored definitions without inventing replacement logic"
   );
   assert.match(

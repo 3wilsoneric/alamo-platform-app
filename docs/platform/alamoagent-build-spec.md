@@ -692,3 +692,43 @@ No agent activation, notifications, staff grants or new consumer were added.
 The owner requested completion and live deployment through Ally. The native Platform route restores the reviewed November 17 ProForma application, preserving its owner gate and detailed assessor procedures. The header opens the existing single Ally component. New conversations use server-advertised capabilities and show ProForma source citations. The independent Ally 0.18.8 API owns source discovery, bounded model tool calls, transcript persistence and current-source reauthorization. ProForma retains publication authority. The four-file source overlay adds published-guidance discovery without importing Ally runtime or changing source permissions. Engine deployment is healthy; Platform deployment and signed-in acceptance are still pending.
 
 Imported source context JSON and the pinned upstream ontology schema intentionally repeat evidence and schema shapes; duplicate-code checking excludes these immutable data files while retaining the zero-duplication rule for application code.
+
+## November 23 analyst retrieval and conversation rebuild
+
+The owner authorized read-only analysis of all available Platform data for the
+existing Eric, Andrew and Betty participants. This does not enable source writes,
+outbound communication, other applications' private records or additional users.
+
+The candidate reuses the existing source catalog, reviewed warehouse views and
+report service. Discovery includes actual columns, grain, date basis, population
+and published completeness. Queries project relevant columns and calculate
+statistics at the source, including known/missing counts, median and distinct
+values. Complete, faithful published rows are the fast path; partial samples
+cannot establish aggregate totals. Legacy snapshots that converted missing ages
+or other nullable measures to zero require the full view. Current cohorts,
+admission episodes, ongoing stays and completed stays remain distinct.
+
+The engine can inspect evidence, request additional authorized reads, preserve
+recent conversation and rewrite frozen findings without querying again. It
+retains six reads and four paid calls per answer. Explicitly selected visuals
+appear inline; prose-only answers retain accessible source tables in the reader.
+Consecutive durable phases run in one activity while preserving per-phase
+checkpoints, leases, cancellation and spending checks.
+
+Production diagnosis: a Santa Clarita age answer took 34.808 seconds, including
+7.971 seconds in model phases. The actual operating average was 44.88970588235294;
+the aggregate allowlist omitted it. Daily CREATE OR REPLACE view refreshes also
+removed the Platform reader's SELECT grants. Read access to 28 reviewed views is
+restored and a native query confirms 136 recorded ages, mean 44.88970588235294,
+minimum 23 and maximum 74. No resident records changed. The publisher candidate
+uses ALTER VIEW to retain grants; an isolated native warehouse probe verified
+retained identity/grants, updated results and schema evolution, then was removed.
+
+Candidate checks cover null/zero distinctions, partial-total rejection, date and
+community scope, field projection, source discovery, warehouse connection
+isolation, adaptive investigation, contextual rewrites and validated rounding.
+The source and engine candidates are not yet deployed. Production timing,
+real model answer/rewrite acceptance and the applicable release gates remain.
+A lossless publisher contract would permit more snapshot queries; revisit the
+conservative fallback when measured detailed queries justify that publication
+change. Do not create an agent-owned copy of the warehouse.

@@ -72,8 +72,8 @@ try {
   assert.deepEqual(evidence.dataset.columns.map(column=>column.label),['Severity','Records']);
   assert.equal(evidence.requiresDetail,false);
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
-  const sqlResult=await readAllyPlatformData(step.input,{load:async()=>published,execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
-  published.toolContext.manifest[0].row_count=10;assert.equal((await connection.read(user,scope,step)).coverage,'partial');published.toolContext.manifest[0].row_count=4;
+  const sqlResult=await readAllyPlatformData(step.input,{load:async()=>({...published,toolContext:{...published.toolContext,tables:{}}}),execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
+  published.toolContext.manifest[0].row_count=10;await assert.rejects(connection.read(user,scope,step));published.toolContext.manifest[0].row_count=4;
   // A newly published field must not expand an aggregate-only grant.
   const aggregate=published.toolContext.manifest[1];aggregate.fields.push('private_case_note','private_date_of_birth');
   Object.assign(published.toolContext.tables.census_monthly_by_community[0],{private_case_note:'REDACTION_PROBE',private_date_of_birth:'1980-01-01',undeclared_secret:'UNDECLARED_PROBE'});
@@ -93,7 +93,7 @@ try {
     registry.grants[0].slices.push(slice);
     published.toolContext.manifest.push({slice_name:slice,grain:'published aggregate',row_count:1,fields:[...Object.keys(row),'private_case_note']});
     published.toolContext.tables[slice]=[{...row,private_case_note:'PRIVATE_AGGREGATE_PROBE'}];
-    const publishedEvidence=await connection.read(user,scope,{id:'source-4',capability:'platform-data',input:{slice,operation:'rows'}});
+    const publishedEvidence=await connection.read(user,{...scope,through:'2026-11-30'},{id:'source-4',capability:'platform-data',input:{slice,operation:'rows'}});
     assert.deepEqual(publishedEvidence.dataset.rows,[{...row,[numeric]:Number(row[numeric])}]);
     assert.equal(publishedEvidence.dataset.columns.find(c=>c.key===numeric).type,'number');
     assert(!JSON.stringify(publishedEvidence).includes('PRIVATE_AGGREGATE_PROBE'));
@@ -286,3 +286,29 @@ assert.equal((await readPlanned()).coverage, 'partial', 'a prior-week publicatio
 assert.match((await readPlanned()).note, /does not cover the current week/);
 await assert.rejects(scheduledSources.read({scope:flowScope,step:{...plannedStep,input:{view:'invented'}}},flowAuthorization), /supported pipeline view/);
 console.log('Planned admission view: canonical weekly schedule, scoped counts, zero/unknown coverage, boundaries, exclusions and private-field removal passed.');
+
+// Source-owned catalog and analytical queries retain detail and date boundaries.
+const analystSummary={toolContext:{manifest:[
+  {slice_name:'resident_profile',grain:'current resident',row_count:3,fields:['Facility','resident_name','Age'],generated_at:'2026-11-23T13:00:00Z'},
+  {slice_name:'community_operating_summary',grain:'community',row_count:1,fields:['Facility','Facility_Name','average_age'],generated_at:'2026-11-23T13:00:00Z'},
+  {slice_name:'notes_summary',grain:'resident note',row_count:1,fields:['Facility','note_date','note_text'],generated_at:'2026-11-23T13:00:00Z'}
+],tables:{resident_profile:[{Facility:'337',resident_name:'Fictional A',Age:20},{Facility:'337',resident_name:'Fictional B',Age:null},{Facility:'345',resident_name:'OTHER_COMMUNITY',Age:100}],community_operating_summary:[{Facility:'337',Facility_Name:'San Pablo',average_age:44.9}],notes_summary:[{Facility:'337',note_date:'2026-11-20',note_text:'Fictional note'}]}}};
+const analystSources=createPlatformReportSources({summary:async()=>analystSummary,data:(q,o)=>readAllyPlatformData(q,{...o,execute:async()=>{throw Error('Offline warehouse');}})});
+const analystAuth={communities:['337'],grant:{capabilities:['platform-data','data-catalog'],slices:['resident_profile','community_operating_summary','notes_summary'],detail:true},receipt:{revision:'a'.repeat(64)}};
+const statisticStep={id:'source-1',capability:'platform-data',input:{slice:'resident_profile',operation:'statistics',measure:'Age'}};
+const statisticEvidence=await analystSources.read({scope,step:statisticStep},analystAuth);
+assert.deepEqual(statisticEvidence.dataset.rows,[{records:2,known:1,missing:1,mean:20,median:20,minimum:20,maximum:20}]);
+assert(!JSON.stringify(statisticEvidence).includes('OTHER_COMMUNITY'));
+const discovered=JSON.parse((await analystSources.read({scope,step:{id:'catalog',capability:'data-catalog',input:{query:'age'}}},analystAuth)).answer);
+assert(discovered.sources.some(s=>s.id==='resident_profile'&&s.numericFields.includes('Age')));
+const aggregateAuth={...analystAuth,grant:{...analystAuth.grant,detail:false,slices:['community_operating_summary']}};
+const aggregateSources=await analystSources.catalog(aggregateAuth);
+assert.deepEqual(aggregateSources.find(s=>s.id==='platform-data').sources.map(s=>s.id),['community_operating_summary']);
+const ageEvidence=await analystSources.read({scope,step:{id:'age',capability:'platform-data',input:{slice:'community_operating_summary',operation:'rows',columns:['Facility_Name','average_age']}}},aggregateAuth);
+assert.equal(ageEvidence.dataset.rows[0].average_age,44.9);assert.equal(ageEvidence.dataset.columns[1].label,'Average age');
+await assert.rejects(analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:null}}},analystAuth),/require a date field/);
+console.log('Analyst discovery, exact missing-age statistics, readable averages, authorized source visibility and mandatory date scope passed.');
+analystSummary.toolContext.tables.notes_summary[0].note_text='SOURCE_TEXT_PRIVATE '.repeat(6000);
+const oversized=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'rows',limit:1}}},analystAuth);
+assert.equal(oversized.status,'unavailable');assert.equal(oversized.answer,null);assert.match(oversized.note,/fewer rows and columns/);assert(!JSON.stringify(oversized).includes('SOURCE_TEXT_PRIVATE'));
+console.log('Oversized source selections produce bounded refinement feedback without exposing their body or inventing an empty result.');

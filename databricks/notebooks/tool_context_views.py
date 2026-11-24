@@ -43,7 +43,14 @@ PLACEHOLDER_RESIDENT_SQL_PATTERN = r"(?i)^(resident|client|patient|unknown|unk|n
 
 def create_view(name: str, sql: str, schema_evolution: bool = False) -> None:
     schema_clause = " WITH SCHEMA EVOLUTION" if schema_evolution else ""
-    spark.sql(f"CREATE OR REPLACE VIEW {target}.{name}{schema_clause} AS {sql}")
+    if qualified_table_exists(f"{target}.{name}"):
+        # CREATE OR REPLACE drops Unity Catalog grants. Daily refreshes must
+        # retain the reviewed readers of an existing analytical view.
+        spark.sql(f"ALTER VIEW {target}.{name} AS {sql}")
+        if schema_evolution:
+            spark.sql(f"ALTER VIEW {target}.{name}{schema_clause}")
+    else:
+        spark.sql(f"CREATE VIEW {target}.{name}{schema_clause} AS {sql}")
     print(f"created -> {target}.{name}")
 
 
@@ -223,7 +230,7 @@ def rebind_existing_view(view_name: str) -> None:
         raise RuntimeError(f"Required source view {target}.{view_name} does not exist")
 
     definition = row["view_definition"].strip().rstrip(";")
-    spark.sql(f"CREATE OR REPLACE VIEW {target}.`{view_name}` AS {definition}")
+    spark.sql(f"ALTER VIEW {target}.`{view_name}` AS {definition}")
     print(f"rebound -> {target}.{view_name}")
 
 

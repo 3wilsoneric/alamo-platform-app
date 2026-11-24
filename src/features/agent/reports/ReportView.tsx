@@ -57,7 +57,7 @@ export default function ReportView({report, canvas = false, anchorPrefix = 'ally
     {!canvas && <header><h2>{artifact.title}</h2><p>{formatDisplayDate(report.scope.from,{month:'short'})} – {formatDisplayDate(report.scope.through,{month:'short'})}</p></header>}
     {artifact.findings.map((finding,i) => <section className="ally-report-finding" key={i}><ReportProse text={finding.text}/></section>)}
     {artifact.gaps.length > 0 && <details className="ally-report-gaps" open><summary>Data limits</summary><ul>{artifact.gaps.map((gap,i) => <li key={i}><ReportProse text={gap}/></li>)}</ul></details>}
-    {artifact.sections.filter(section=>section.dataset).map(section => { const block = report.view?.blocks.find(b => b.datasetId === section.id && b.sourceIds.includes(section.id));
+    {artifact.sections.filter(section=>section.dataset && (!canvas || !report.view || report.view.blocks.some(block=>block.datasetId===section.id && block.sourceIds.includes(section.id)))).map(section => { const block = report.view?.blocks.find(b => b.datasetId === section.id && b.sourceIds.includes(section.id));
       return <section id={`${anchorPrefix}-${section.id}`} tabIndex={-1} key={section.id} className="ally-report-source"><h3>{section.dataset!.title}</h3>
         <DataView key={`${report.selectedVersion}-${section.id}`} dataset={section.dataset!} component={block?.componentId ?? 'table'} measure={measures[section.id] ?? block?.measureKey ?? undefined} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>
       </section>;

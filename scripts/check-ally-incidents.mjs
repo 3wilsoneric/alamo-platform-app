@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createPlatformReportSources } from '../server/ally-report-source.mjs';
 import { authorizePlatformReportSource } from '../server/ally-report-source-grants.mjs';
-import { reportHash, validateReportEvidence } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
+import { validateReportEvidence } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
 import { EVERYAGENT_TENANT } from '../shared/everyagent-identity.mjs';
 const id='11111111-1111-4111-8111-111111111111';
 const scope={communityIds:['345'],from:'2026-01-01',through:'2026-11-23'};

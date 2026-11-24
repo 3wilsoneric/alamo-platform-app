@@ -4,7 +4,7 @@ import { ANALYSIS_SLICE_CATALOG } from '../shared/analysis-slice-catalog.mjs';
 import { readPlatformSnapshot } from './platform-snapshot.mjs';
 import { getReportsSummaryData } from './platform-data.mjs';
 import { buildResidentFlowReport } from './resident-flow-report.mjs';
-import { listAllyPlatformDataSources, readAllyPlatformData } from './ally-data-source.mjs';
+import { listAllyPlatformDataSources, readAllyPlatformData, aggregateFields } from './ally-data-source.mjs';
 import { getPipelineAdmissionsSummary } from './pipeline-admissions-summary.mjs';
 import { buildAdmissionsDashboard, facilityIdForPipelineCommunity } from './admissions-dashboard.mjs';
 import { getReportingDateKey } from '../shared/reporting-date.mjs';
@@ -14,14 +14,17 @@ import { createWorkflowKnowledgeSource } from './workflow-knowledge-source.mjs';
 import { reportAggregateFields, reportNumericField } from './ally-report-source-grants.mjs';
 import { getExecutiveDirectorIncidents } from './executive-director-incidents.mjs';
 import { reportColumnLabel } from '../shared/report-display.mjs';
+import { ANALYST_SOURCES, ANALYST_NUMERIC_FIELDS, analystSourceDefinition } from './ally-analyst-catalog.mjs';
 
 const objectSchema = properties => ({ type: 'object', properties, additionalProperties: false });
 const string = { type: 'string' }, strings = { type: 'array', items: string, maxItems: 3 };
 const schemas = {
-  'platform-data': objectSchema({ slice: string, operation: { enum: ['rows', 'count', 'sum', 'average'] }, groupBy: strings, measure: string,
+  'platform-data': objectSchema({ slice: string, operation: { enum: ['rows', 'count', 'sum', 'average', 'minimum', 'maximum', 'median', 'distinct', 'statistics'] }, groupBy: strings, measure: string,
+    columns:{type:'array',items:string,maxItems:40}, orderBy:{type:'array',maxItems:3,items:objectSchema({field:string,direction:{enum:['asc','desc']}})},
     dateField: { type: ['string', 'null'] }, limit: { type: 'integer', minimum: 1, maximum: 100 },
-    filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains'] }, value: string }) } }),
+    filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains', 'number-gte', 'number-lte'] }, value: string }) } }),
   'incident-summary': objectSchema({ from: string, through: string, communityIds: { type: 'array', items: string, maxItems: 5 }, priority: { enum: ['high', 'medium', 'low', 'unknown'] } }),
+  'data-catalog': objectSchema({query:string,slice:string}),
   'resident-flow': objectSchema({ view: { enum: ['communities', 'counties', 'occupancy'] } }),
   'pipeline-summary': objectSchema({ view: { enum: ['stages', 'planned-admissions'] } }),
   'licensing-search': objectSchema({ query: string, type: { enum: ['Complaint', 'Inspection', 'Other'] } }),
@@ -29,6 +32,7 @@ const schemas = {
 };
 const metadata = {
   'platform-data': ['Governed Platform data', 'Query published source grains. Counts count rows, not necessarily unique clients. Dates and communities are enforced. Never sum census across dates.'],
+  'data-catalog': ['Find and describe data', 'Search authorized datasets by topic or describe one slice. Returns actual columns, meanings, date basis and coverage. Use this when the first source is insufficient; lack of a field in one dataset does not mean the organization lacks the data.'],
   'incident-summary': ['Incident counts by date and priority', 'Use for daily incidents, yesterday, and high/medium/low priority questions. Returns aggregate counts from the same incident register as the Incidents page, with exact occurrence-date filters and optional narrower communityIds. Community IDs: 337 San Pablo, 342 Victoria’s House, 343 JC Wallace House, 344 Turlock, 345 Santa Clarita. High means a sentinel event or emergency-services notification; this is operational priority, not a clinical severity grade. Snapshot fallback is explicitly partial. No client details are returned.'],
   'resident-flow': ['Admissions, discharges and bed use', 'Reconciled admission episodes in the selected period; repeat stays count separately. Use view counties for counties of those admissions, not current residents. Use view occupancy for latest published census, operating capacity and available beds; occupancy is a current snapshot, not historical utilization. Default communities shows period admissions/discharges, opening/closing census and bed-days.'],
   'pipeline-summary': ['Current referral pipeline', 'Current published referral stages and decisions. Use view planned-admissions for move-ins scheduled this week, by community; plans are not confirmed admissions. The schedule carries its own Monday–Sunday Pacific period. Default stages shows current active workspaces. Neither view is historical referral event history.'],
@@ -78,7 +82,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
     const sources = listAllyPlatformDataSources(await summary()).filter(s => authorization.grant.slices.includes(s.id) && facilityField(s.fields))
       .map(s => ({ ...s, fields: authorization.grant.detail ? s.fields : reportAggregateFields(s.fields) }));
     return authorization.grant.capabilities.map(id => ({ id, title: metadata[id][0], description: metadata[id][1], inputSchema: schemas[id],
-      ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...s, definition: definition(s.id)?.title, dateFields: s.fields.filter(f => /(?:date|month|week|period|time)/i.test(f)), detailAllowed: authorization.grant.detail })) } : {}) }));
+      ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...analystSourceDefinition(s), definition: definition(s.id)?.title, detailAllowed: authorization.grant.detail })) } : {}) }));
   }
   async function read(input, authorization) {
     const { step, scope } = input, args = step.input;
@@ -87,7 +91,16 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       observedAt: new Date(now()).toISOString(), period: `${scope.from}–${scope.through}`, grain: 'source observation',
       status: 'verified', coverage: 'complete', title: metadata[step.capability][0], note: '', answer: '', revision: '' };
     let result, dataset;
-    if (step.capability === 'incident-summary') {
+    if (step.capability === 'data-catalog') {
+      reportObject(args, [], ['query','slice']);
+      if (args.query !== undefined) reportText(args.query,240);
+      if (args.slice !== undefined) reportText(args.slice,80);
+      const sources=(await catalog(authorization)).find(item=>item.id==='platform-data')?.sources ?? [];
+      const words=(args.query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+      const selected=sources.filter(source => (!args.slice || source.id===args.slice) && (!words.length || words.some(word=>JSON.stringify(source).toLowerCase().includes(word))));
+      result={sources:selected.slice(0,4),otherMatches:selected.slice(4).map(source=>source.id),definition:'Dataset metadata only. sourceRows counts rows at the declared grain; it is not a client count. Only authorized sources are listed. Describe a slice by ID for its full definition.'};
+      base.title='Available data';base.grain='authorized dataset metadata';base.note='Search and schema discovery; metadata does not establish business facts.';
+    } else if (step.capability === 'incident-summary') {
       reportObject(args, [], ['from', 'through', 'communityIds', 'priority']);
       const selected = validateReportScope({ communityIds: args.communityIds ?? authorization.communities,
         from: args.from ?? scope.from, through: args.through ?? scope.through });
@@ -157,11 +170,14 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
           [{key:'community',label:'Community',type:'string'},...['census','operatingCapacity','availableBeds'].map(key=>({key,label:key,type:'number'})),{key:'capacityAsOf',label:'Capacity recorded',type:'string'}], 'categories');
       }
     } else if (step.capability === 'platform-data') {
-      reportObject(args, ['slice', 'operation'], ['groupBy', 'measure', 'dateField', 'limit', 'filters']);
-      const source = listAllyPlatformDataSources(await summary()).find(s => s.id === args.slice);
+      reportObject(args, ['slice', 'operation'], ['groupBy', 'measure', 'dateField', 'limit', 'filters','columns','orderBy']);
+      const publishedSummary=await summary();
+      const source = listAllyPlatformDataSources(publishedSummary).find(s => s.id === args.slice);
       const field = source && facilityField(source.fields);
       if (!source || !field) throw Error('This source has no enforceable community scope.');
-      const time = args.dateField;
+      const defaultDate=ANALYST_SOURCES[args.slice]?.dateField;
+      if (args.dateField === null && defaultDate && source.fields.includes(defaultDate)) throw Error('Dated records require a date field within the selected report period.');
+      const time = args.dateField !== undefined ? args.dateField : source.fields.includes(defaultDate) ? defaultDate : null;
       if (time !== null && time !== undefined && (!source.fields.includes(time) || !/(?:date|month|week|time|period)/i.test(time))) throw Error('Choose a source date field.');
       if (args.operation === 'sum' && /census/.test(args.slice) && !(args.groupBy ?? []).includes(time)) throw Error('Census cannot be summed across dates.');
       const constraints = [{ field, op: 'in', value: authorization.communities }];
@@ -174,14 +190,20 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
         constraints.push({ field: time, op: 'gte', value: scope.from.slice(0, 7) }, { field: time, op: 'lte', value: scope.through.slice(0, 7) + '-31' });
       } else if (time) constraints.push({ field: time, op: 'day-gte', value: scope.from }, { field: time, op: 'day-lte', value: scope.through });
       const { dateField: _date, ...query } = args;
-      result = await data(query, { constraints, ...(authorization.grant.detail ? {} : {allowedFields: reportAggregateFields(source.fields)}) }); base.grain = source.grain; base.observedAt = source.generatedAt ?? base.observedAt;
+      try { result = await data(query, { load:async()=>publishedSummary, constraints, ...(authorization.grant.detail ? {} : {allowedFields: reportAggregateFields(source.fields)}) }); }
+      catch(error) {
+        if(!error || typeof error !== 'object' || !('code' in error) || error.code !== 'analyst_result_too_large') throw error;
+        const note='This selection is too large. Request fewer rows and columns, add a narrower filter, or calculate an aggregate.';
+        return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+      }
+      base.grain = source.grain; base.observedAt = source.generatedAt ?? base.observedAt;
       if (!time) base.period = `Source snapshot as of ${base.observedAt.slice(0, 10)}; no event-date filter`;
       base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
       if (result.hasMore || result.coverage.startsWith('partial')) base.coverage = 'partial';
-      const keys = args.operation === 'rows' ? result.source.fields : [...(args.groupBy ?? []), 'result'];
+      const keys = args.operation === 'rows' ? args.columns ?? result.source.fields : [...(args.groupBy ?? []), ...aggregateFields(args.operation)];
       const resultLabel = args.operation === 'count' ? 'Records' : args.measure
-        ? `${args.operation === 'average' ? 'Average' : 'Total'} ${reportColumnLabel({key:args.measure}).toLowerCase()}` : 'Result';
-      const columns = keys.map(key => ({ key, label: key === 'result' ? resultLabel : key, type: key === 'result' || reportNumericField(key) ? 'number' : 'string' }));
+        ? `${({average:'Average',median:'Median',minimum:'Minimum',maximum:'Maximum',distinct:'Distinct',sum:'Total'})[args.operation] ?? 'Total'} ${reportColumnLabel({key:args.measure}).toLowerCase()}` : 'Result';
+      const columns = keys.map(key => ({ key, label: key === 'result' ? resultLabel : key, type: aggregateFields(args.operation).includes(key) || reportNumericField(key) || ANALYST_NUMERIC_FIELDS.has(key) ? 'number' : 'string' }));
       dataset = platformDataset(definition(args.slice)?.title ?? args.slice,
         result.rows.map(row => Object.fromEntries(columns.map(column => [column.key, column.type === 'number' ? numericCell(row[column.key]) : row[column.key] ?? null]))),
         columns, time);
@@ -255,7 +277,10 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       if (result.limited) base.coverage = 'partial';
     } else throw Error('Unregistered report capability.');
     base.answer = JSON.stringify(result);
-    if (base.answer.length > 16_000) throw Error('Narrow the report source selection.');
+    if (base.answer.length > 16_000) {
+      const note='This selection exceeds the answer context. Request fewer rows and columns, narrow the filter, or calculate an aggregate.';
+      return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+    }
     base.revision = reportHash(result);
     return { ...base, ...(dataset ? { dataset } : {}) };
   }

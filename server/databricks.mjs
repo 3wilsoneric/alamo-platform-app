@@ -1,17 +1,20 @@
 import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 
-let clientPromise = null;
+let clientConstructorPromise = null;
 
 async function getDatabricksClient() {
-  if (!clientPromise) {
-    clientPromise = import("@databricks/sql")
-      .then(({ DBSQLClient }) => new DBSQLClient())
+  if (!clientConstructorPromise) {
+    clientConstructorPromise = import("@databricks/sql")
+      .then(({ DBSQLClient }) => DBSQLClient)
       .catch((error) => {
-        clientPromise = null;
+        clientConstructorPromise = null;
         throw error;
       });
   }
-  return clientPromise;
+  // connect/close mutate the SDK client. A shared instance lets one request
+  // close another request's active sessions; only the module import is shared.
+  const Client = await clientConstructorPromise;
+  return new Client();
 }
 
 function getRequiredEnv(name) {
