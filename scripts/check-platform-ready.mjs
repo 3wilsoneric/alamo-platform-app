@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
@@ -113,6 +113,14 @@ export function releaseBudget(profile) {
     : profile === "ally-live" ? 120_000 : null;
 }
 
+export function browserCaptureDuration(evidence, now = Date.now()) {
+  const start = Date.parse(evidence?.startedAt), end = Date.parse(evidence?.completedAt);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start || end > now) {
+    throw new Error("The live check needs a completed, timed browser capture.");
+  }
+  return end - start;
+}
+
 // Publisher changes add their actual mapping/null/grant/transport checks, not
 // every unrelated historical UI journey. Production data QA still runs before
 // publication; this profile does not authorize publishing an unchecked snapshot.
@@ -212,6 +220,11 @@ async function main() {
   const artifactDir = path.join(ROOT, "generated", "platform-ready");
   await mkdir(artifactDir, { recursive: true });
   const startedAt = Date.now();
+  // Main-Chrome inspection happens before this CLI validates its receipt. Count
+  // that real work too; a quick receipt check cannot hide a long browser audit.
+  const capturedBrowserMs = PROFILE === 'ally-live' && process.env.PRODUCTION_MAIN_CHROME_EVIDENCE
+    ? browserCaptureDuration(JSON.parse(await readFile(path.resolve(ROOT, process.env.PRODUCTION_MAIN_CHROME_EVIDENCE), 'utf8')))
+    : 0;
   const results = [];
 
   console.log(
@@ -219,7 +232,7 @@ async function main() {
   );
   for (const [index, command] of commands.entries()) {
     console.log(`\n=== platform-ready [${startIndex + index + 1}/${profileCommands.length}]: npm run ${command} ===`);
-    const remainingMs = budgetMs === null ? null : budgetMs - (Date.now() - startedAt);
+    const remainingMs = budgetMs === null ? null : budgetMs - capturedBrowserMs - (Date.now() - startedAt);
     const result = remainingMs !== null && remainingMs <= 0
       ? { command, status: "fail", exitCode: 124, timedOut: true, elapsedMs: 0,
           stdout: "", stderr: "Release check budget exhausted before this stage." }
@@ -246,7 +259,8 @@ async function main() {
     profile: PROFILE,
     status: failed.length ? "fail" : "pass",
     passed: failed.length === 0,
-    elapsedMs: Date.now() - startedAt,
+    elapsedMs: capturedBrowserMs + Date.now() - startedAt,
+    capturedBrowserMs,
     budgetMs,
     options: {
       includeBrowser: INCLUDE_BROWSER,

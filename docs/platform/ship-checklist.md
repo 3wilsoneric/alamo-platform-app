@@ -20,6 +20,10 @@ enforces those limits, stops its own child processes on timeout, records a faile
 receipt, and rejects skipped stages. A timeout requires investigating that check;
 it never makes a candidate eligible to ship. Do not restart the full app suite
 because the scoped gate timed out.
+The two-minute live budget includes the recorded main-Chrome capture duration,
+not just the later receipt-validation command. The runner subtracts that elapsed
+capture time before starting validation. An over-budget capture fails immediately;
+repeated browser inspection is not outside the release clock.
 
 - Report UI, governed adapters, and runtime-package updates use
   `npm run check:ship:ally:predeploy`.

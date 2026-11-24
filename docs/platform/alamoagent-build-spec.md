@@ -999,3 +999,8 @@ than a verified zero-match result. The real transportation-note search exposed
 this distinction. Focused source checks preserve both genuine zero matches on
 populated text and the count of existing notes whose text is unknown. This is a
 shared source-boundary repair, separate from republishing the actual note bodies.
+
+The live release runner now includes main-Chrome capture time in its two-minute
+budget. Validating a receipt quickly cannot conceal a long browser check. Regression
+coverage verifies both the remaining time calculation and a real CLI invocation
+that records timeout without launching any check after a 121-second capture.
