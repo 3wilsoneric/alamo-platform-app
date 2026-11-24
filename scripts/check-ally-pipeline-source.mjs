@@ -27,6 +27,10 @@ const previous=result.revision;data.blocks[0].version++;
 await assert.rejects(()=>source({...args,offset:8000,revision:previous},actor),/changed/);
 for(const patch of [{url:'https://evil.example'},{subjectId:id},{method:'PATCH'},{body:{edit:true}}]) await assert.rejects(()=>source({...args,...patch},actor));
 status=403;await assert.rejects(()=>source(args,actor),/403/);status=200;
+for (const [code,expected] of [[400,'report_source_query_invalid'],[422,'report_source_query_invalid'],[409,'report_source_revision_changed'],[401,'report_source_access_changed'],[403,'report_source_access_changed'],[404,'report_source_access_changed']]) {
+  await assert.rejects(()=>readNativeJsonResponse(new Response('PRIVATE UPSTREAM BODY',{status:code}),'Pipeline'),
+    error=>error.statusCode===code&&error.code===expected&&!error.message.includes('PRIVATE'));
+}
 contentType='text/html';await assert.rejects(()=>source(args,actor),/record/);contentType='application/json';
 env.ALLY_PIPELINE_ORIGIN='http://pipeline.example.test';await assert.rejects(()=>source(args,actor),/connection/);env.ALLY_PIPELINE_ORIGIN='https://pipeline.example.test';
 

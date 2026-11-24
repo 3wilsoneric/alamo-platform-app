@@ -78,6 +78,15 @@ Workforce's current deployed pilot is configured with placeholder data. Do not
 present that feed as measured staffing or use it as real-data benchmark evidence.
 Locate an authoritative personnel feed before activating executive HR analysis.
 
+Candidate source-error correction (not deployed): the shared native reader keeps
+the owning API's safe HTTP class for invalid queries (400/422), changed revisions
+(409) and lost access (401/403/404), without exposing upstream bodies. Invalid
+selectors and unbound continuations use those same classes. Other failures remain
+unavailable. This lets the engine correct a read instead of treating every rejected
+query as an outage; it does not broaden grants or weaken response validation.
+Pipeline/Carelog boundary tests cover these classes, revision binding and privacy.
+The frozen real benchmark continues against the unchanged deployed source reader.
+
 ## November 24 companion repair — candidate
 
 The engine 0.18.19 companion retains conversational context, validates derived

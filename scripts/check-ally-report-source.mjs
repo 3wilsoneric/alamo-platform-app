@@ -20,6 +20,7 @@ import { reportViewContext } from '@alamo/agent-runtime/shared/executive-report-
 import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { reportColumnLabel, reportCellValue } from '../shared/report-display.mjs';
 import { analystSourceDefinition } from '../server/ally-analyst-catalog.mjs';
+import { readNativeJsonResponse } from '../server/ally-native-record.mjs';
 
 assert.deepEqual(analystSourceDefinition({id:'census_data_quality',fields:['latest_census_month','latest_monthly_census','weekly_census_rows','min_week','max_week','monthly_census_minus_active_roster']}).dateFields,['latest_census_month','min_week','max_week']);
 
@@ -40,8 +41,8 @@ const rows=[{facility_id:'337',incident_date:'2026-11-20T23:59:59',severity:'med
 const published={toolContext:{manifest:[{slice_name:'incident_detail_history',grain:'incident',row_count:4,fields:Object.keys(rows[0]),generated_at:new Date().toISOString()}, {slice_name:'census_monthly_by_community',grain:'community month',row_count:1,fields:['facility_id','month','census']}],tables:{incident_detail_history:rows,census_monthly_by_community:[{facility_id:'337',month:'2026-11',census:40}]}}};
 const step={id:'source-1',capability:'platform-data',input:{slice:'incident_detail_history',operation:'count',groupBy:['severity'],dateField:'incident_date'}};
 const pipelineSnapshot={status:'connected',generatedAt:new Date().toISOString(),metrics:{activeReferrals:2,awaitingAdmission:900},board:{total:2,truncated:false,columns:[{key:'decision',label:'Decision',count:99}],cards:[{column:'in_progress',status:'Assessment underway',community:'San Pablo'},{column:'decision',status:'Accepted, requirements open',community:'Santa Clarita'}]}};
-let reads=0, afterRead=()=>{}, warehouseRows=null;
-const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot)});
+let reads=0, afterRead=()=>{}, warehouseRows=null, nativeFailure=0;
+const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;if(nativeFailure)return readNativeJsonResponse(new Response('PRIVATE UPSTREAM BODY',{status:nativeFailure}),'Pipeline');const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot)});
 const {publicKey,privateKey}=await generateKeyPair('RS256');const jwk=await exportJWK(publicKey);
 const sign=(claims={})=>new SignJWT({tid:EVERYAGENT_TENANT,oid:principalId,azp:clientId,roles:['AlamoAgent.Source.Read'],ver:'2.0',iss:`https://login.microsoftonline.com/${EVERYAGENT_TENANT}/v2.0`,aud:audience,iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600,...claims}).setProtectedHeader({alg:'RS256',kid:'test'}).sign(privateKey);
 const handler=createPlatformReportSourceHandler({authorize:createPlatformAgentSourceAuthorizer({audience,keySet:createLocalJWKSet({keys:[{...jwk,kid:'test',alg:'RS256'}]})}),readGrants:async()=>structuredClone(registry),sources});
@@ -70,6 +71,13 @@ try {
   assert.equal((await send({...input,untrustedAction:'send-email'})).status,400);
   assert.equal((await send('x'.repeat(17000))).status,413);
   const connection=createExecutiveReportSource({origin:'https://source.example.test',getToken:async()=>({token,expiresOnTimestamp:Date.now()+60000}),fetchImpl:(url,init)=>fetch(base+new URL(url).pathname,init)});
+  for(const status of [400,409,422,401,403,404,503]) {
+    nativeFailure=status;
+    const failed=await send();assert.equal(failed.status,status);
+    assert(!(await failed.text()).includes('PRIVATE'));
+    await assert.rejects(connection.read(user,scope,step),error=>error.statusCode===status);
+  }
+  nativeFailure=0;
   // Use the canonical knowledge reader and its versioned contract, rather than
   // a permissive fake that would accept an invalid cross-application request.
   const knowledgeStep={id:'knowledge',capability:'proforma-search',input:{query:'intake'}};

@@ -1,7 +1,17 @@
 import { reportHash } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
+import { createHttpError } from './http-error-contract.mjs';
 
 export async function readNativeJsonResponse(response, source) {
-  if (!response.ok) { await response.body?.cancel(); throw Error(`${source} source returned ${response.status}.`); }
+  if (!response.ok) {
+    await response.body?.cancel();
+    // Retain the owning API's error class without exposing its response body.
+    // An invalid read or stale continuation is not a source outage.
+    const code = [400, 422].includes(response.status) ? 'report_source_query_invalid'
+      : response.status === 409 ? 'report_source_revision_changed'
+      : [401, 403, 404].includes(response.status) ? 'report_source_access_changed' : null;
+    if (code) throw createHttpError(response.status, code, `${source} source returned ${response.status}.`);
+    throw Error(`${source} source returned ${response.status}.`);
+  }
   if (!response.headers.get('content-type')?.includes('application/json')) { await response.body?.cancel(); throw Error(`${source} source did not return a record.`); }
   const reader = response.body?.getReader();
   if (!reader) throw Error(`${source} source has no response body.`);
@@ -21,25 +31,26 @@ export async function readNativeJsonResponse(response, source) {
 // selected response. Revision checks prevent mixing pieces of changing records.
 export function projectNativeRecord(data, args, source = 'Source') {
   const revision = reportHash(data), offset = args.offset ?? 0;
-  if (!Number.isSafeInteger(offset) || offset < 0 || args.revision !== undefined && args.revision !== revision || offset > 0 && args.revision !== revision) throw Error(`The ${source} response changed or its continuation is unbound. Read it again.`);
+  if (!Number.isSafeInteger(offset) || offset < 0) throw createHttpError(400, 'report_source_query_invalid', 'Choose a nonnegative integer offset.');
+  if (args.revision !== undefined && args.revision !== revision || offset > 0 && args.revision !== revision) throw createHttpError(409, 'report_source_revision_changed', `The ${source} response changed or its continuation is unbound. Read it again.`);
   const pointer = args.pointer ?? '';
-  if (typeof pointer !== 'string' || pointer.length > 1000 || pointer && !pointer.startsWith('/') || /~(?![01])/.test(pointer)) throw Error('Choose a valid JSON pointer from the record.');
+  if (typeof pointer !== 'string' || pointer.length > 1000 || pointer && !pointer.startsWith('/') || /~(?![01])/.test(pointer)) throw createHttpError(400, 'report_source_query_invalid', 'Choose a valid JSON pointer from the record.');
   let value = data;
   for (const segment of pointer ? pointer.slice(1).split('/').map(part => part.replace(/~1/g,'/').replace(/~0/g,'~')) : []) {
-    if (!value || typeof value !== 'object' || !Object.hasOwn(value,segment)) throw Error(`That field is not in the ${source} response.`);
+    if (!value || typeof value !== 'object' || !Object.hasOwn(value,segment)) throw createHttpError(400, 'report_source_query_invalid', `That field is not in the ${source} response.`);
     value = value[segment];
   }
   const columns = args.columns;
-  if (columns !== undefined && (!Array.isArray(columns) || !columns.length || columns.length > 20 || columns.some(column => typeof column !== 'string' || column.length > 150))) throw Error('Choose up to twenty record fields.');
+  if (columns !== undefined && (!Array.isArray(columns) || !columns.length || columns.length > 20 || columns.some(column => typeof column !== 'string' || column.length > 150))) throw createHttpError(400, 'report_source_query_invalid', 'Choose up to twenty record fields.');
   const select = row => {
     if (!columns) return row;
-    if (!row || typeof row !== 'object' || Array.isArray(row) || columns.some(column => !Object.hasOwn(row, column))) throw Error('A selected field is not present in this record.');
+    if (!row || typeof row !== 'object' || Array.isArray(row) || columns.some(column => !Object.hasOwn(row, column))) throw createHttpError(400, 'report_source_query_invalid', 'A selected field is not present in this record.');
     return Object.fromEntries(columns.map(column => [column,row[column]]));
   };
   const base = { revision, pointer, operation: args.path, parameters: args.parameters ?? {},
     meaning: `Native ${source} response. Its query parameters, paging and source dates define the population; the report page dates do not filter this record.` };
   if (Array.isArray(value)) {
-    if (offset > value.length) throw Error(`${source} response offset is out of range.`);
+    if (offset > value.length) throw createHttpError(400, 'report_source_query_invalid', `${source} response offset is out of range.`);
     const items = []; let size = 0;
     for (const row of value.slice(offset, offset + 20)) {
       const item = select(row), bytes = JSON.stringify(item).length;
@@ -53,7 +64,7 @@ export function projectNativeRecord(data, args, source = 'Source') {
   }
   if (typeof value === 'string') return { ...base, text: value.slice(offset, offset + 8000), characters: value.length,
     nextOffset: offset + 8000 < value.length ? offset + 8000 : null, incomplete: offset > 0 || value.length > 8000 };
-  if (offset) throw Error('Only text and arrays support response offsets.');
+  if (offset) throw createHttpError(400, 'report_source_query_invalid', 'Only text and arrays support response offsets.');
   const selected = select(value);
   if (JSON.stringify(selected).length > 10_000) return { ...base, fields: Object.keys(value), incomplete: true,
     note: 'Open a field with its JSON pointer or select columns to read this record in full.' };
