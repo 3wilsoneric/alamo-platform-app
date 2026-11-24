@@ -120,7 +120,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
         if (!facility) throw Error('Choose a listed community.');
         results.push({ community: facility.shortName,
           incidents: response.matchingIncidents, complete: response.coverage.status === 'complete' && !response.freshness?.stale,
-          observedAt: response.generatedAt, publishedThrough: response.coverage.requestedPeriodComplete ? response.asOfDate : null });
+          observedAt: response.generatedAt, publishedThrough: 'requestedPeriodComplete' in response.coverage && response.coverage.requestedPeriodComplete ? response.asOfDate : null });
       }
       const rows = results.map(({community, incidents}) => ({community, incidents}));
       base.period = `${selected.from}–${selected.through}`; base.grain = 'incident occurrence by community';
