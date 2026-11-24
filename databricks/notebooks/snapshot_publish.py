@@ -1135,8 +1135,6 @@ def build_tool_context_summary():
             "prior_placement": normalize_nullable(row["prior_placement"]),
             "episode_status": normalize_str(row["episode_status"]),
             "month_bucket": normalize_str(row["month_bucket"]),
-            "service_minutes": None if row["service_minutes"] is None else normalize_float(row["service_minutes"]),
-            "service_visits": None if row["service_visits"] is None else normalize_float(row["service_visits"]),
             "source_table": normalize_str(row["source_table"]),
         }
         for row in resident_episode_rows

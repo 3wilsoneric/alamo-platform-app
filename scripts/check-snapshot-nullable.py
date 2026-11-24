@@ -63,3 +63,13 @@ for column in ['Service_Month','Minutes_of_Service','Visits']:
     assert f's.`{column}`' in service_sql
 assert 'AS service_minutes' in service_sql and 'AS service_visits' in service_sql
 print("Monthly client-service archives keep exact units and exclude employee schedules.")
+
+# Exercise episode serialization with only the columns its real SELECT returns.
+# A permissive defaultdict would hide a publisher reference to another dataset.
+episode_sql = projections["resident_episode_rows"].value.args[0].value
+episode_columns = [column.strip() for column in episode_sql.split("SELECT", 1)[1].split("FROM", 1)[0].split(",")]
+namespace["resident_episode_rows"] = [{column: None for column in episode_columns}]
+exec(compile(ast.Module(body=[projections["resident_episode_history"]], type_ignores=[]), "publisher", "exec"), namespace)
+assert len(namespace["resident_episode_history"]) == 1
+assert namespace["resident_episode_history"][0]["discharge_date"] is None
+print("Episode serialization uses only columns returned by its source query.")
