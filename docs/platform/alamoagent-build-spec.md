@@ -753,6 +753,7 @@ The comparison exposed literal Markdown table syntax in report prose. The focuse
 UI correction reuses the existing table syntax helpers and the report's native
 table/mobile-record renderer. It preserves stored wording and numeric values;
 malformed rows stay literal rather than silently losing cells. Browser regressions
-cover 1440/390/320px, long labels and inert HTML. This formatting correction is not
-yet deployed. The existing bounded parser is sufficient for flat report tables;
+cover 1440/390/320px, long labels and inert HTML. This correction is now deployed;
+the real saved comparison and History were checked at desktop, 390px and 320px.
+See the [UI release receipt](deployment-operations.md#ally-prose-table-release--november-23). The existing bounded parser is sufficient for flat report tables;
 use a maintained Markdown parser if nested or escaped table syntax becomes required.

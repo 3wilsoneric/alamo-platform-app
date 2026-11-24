@@ -6538,3 +6538,36 @@ plain 0.18.14 rejects the new spending receipts. Never reset or rewrite the ledg
 Platform rollback to the prior immutable image is separately guarded and must
 preserve any intervening release. The report table rendering correction is a
 separate UI candidate, not included in the image above.
+
+### Ally prose table release — November 23
+
+Source `d055533` adds the shared flat-table helpers and existing responsive report
+renderer to saved prose. Test-only `7f203ec` fixes a measurement race: a transient
+Latest button was detached between locator resolution and size measurement. The
+check now queries and measures current visible controls in one DOM evaluation;
+the touch-size threshold is unchanged. `platform-prose-table-1124.test-only-revision.json`
+proves this changes no application or image bytes.
+
+Deployed image:
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:31c8d8e3c8e9464b7ddbd6630949f32c87dd52ba7b85eff9fd8368045673d7ab`
+Revision: `alamo-platform-prod-web--ally-prose-table-1124`.
+Entry: `/assets/index-HVJ_pzpp.js`. Configuration and all non-overlay files are
+unchanged: 19,995 base files, 40 browser-overlay files. The first verification
+observed the old revision still draining; the subsequent read confirmed one
+healthy active revision, 100% traffic, health 200 and anonymous API denial 401.
+No update mutation was repeated.
+
+The scoped predeploy gate passed 9/9 and postdeploy 2/2. Main Chrome checked
+15 routes and 12 interactions, observing 466 requests, one cancellation, zero HTTP
+failures and zero console errors. The actual saved age comparison displays the
+five correct rows on desktop and five readable cards on 390/320px phones. History
+is contained and scrollable, keyboard reopening works, and the pages have zero
+horizontal overflow. No new model call was needed for these saved-report checks.
+
+Private receipts: `/Users/eric/suite-deploy/.state/platform-prose-table-1124.*`.
+The deployed-entry-bound browser evidence and desktop/phone screenshots are in
+`/Users/eric/suite-deploy/.state/ally-prose-table-live-1124/`.
+Conditional rollback uses the prior `ee87ab9991fdf6420cf3dfcf66bb950797914b0ef68db066f92ecb6650c4f463`
+image through `deploy-platform-prose-table-1124.mjs restore`; it checks for
+intervening configuration changes before applying. The analyst engine, sources,
+permissions, grants, report content and spending ledger remain unchanged.
