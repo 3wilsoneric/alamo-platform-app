@@ -788,12 +788,12 @@ $0.156994. Source and model time remain material; consistently sub-ten-second
 answers are not achieved. See the
 [release and recovery record](deployment-operations.md#ally-latency-and-build-cost-release--november-23).
 
-## November 23 lossless snapshot candidate
+## November 24 lossless snapshot release
 
 The owner requested ordinary answers under ten seconds without loss of accuracy.
-The candidate preserves null Age, LOS_Days and days_since_last_note values in the
-canonical resident-profile projection and declares those nullable fields in its
-manifest. Older publications still require the warehouse when zero is ambiguous;
+The publisher preserves null Age, LOS_Days and days_since_last_note values in the
+canonical resident-profile projection. Its manifest declares the existing Age and
+LOS_Days fields nullable; it does not advertise an undeclared note-gap field. Older publications still require the warehouse when zero is ambiguous;
 a partial sample cannot establish a total. Dashboard roster projections and
 source records remain unchanged.
 
@@ -804,7 +804,8 @@ leaving normal investigation available. Per-query and final grant checks remain.
 Engine 0.18.18 can answer a supported initial question with one model call and
 reuse an exact validated answer only after collecting matching current evidence.
 Scope, missing-value behavior, corrected observations and revocation have focused
-regressions. Publication, production accuracy and end-to-end timing are pending.
+regressions. The publisher, source adapter and engine 0.18.18 are deployed.
+Production accuracy and measured limitations are recorded below.
 
 Bounded total/high-priority incident counts may also use the canonical incident
 reader's snapshot when every intersecting month reconciles before filtering,
@@ -813,3 +814,45 @@ months, mismatches, future dates and lossy low/unknown priority flags retain the
 live-query path. Ordinary incident browsing remains live-first. The real November
 22 Santa Clarita high-priority count matches the independent warehouse zero and
 reads in 25 ms from the published snapshot; this is source time, not answer latency.
+
+
+The production publication reconciles 545 current residents, 544 known ages and
+one missing age. All census identities and counts are unchanged. Twenty-two other
+tool tables match the prior publication; the three normally refreshed medication
+tables independently match all 691 current warehouse rows. Data as of November 23
+is distinct from the November 24 UTC publication timestamp.
+
+Deployment acceptance caught a stale bundled source handler: the production API
+imports `server/ally-report-source-release.mjs`, so replacing its raw source alone
+did not activate it. The final image rebuilds and tests that actual bundle. This
+also qualifies the preceding latency-release narrative: its engine changes were
+active, but raw source-file replacement did not prove the bundled adapter active.
+The final bundle directly accepts preparation and rejects unauthorized scope and
+revocation during collection. See the
+[release receipts](deployment-operations.md#ally-lossless-snapshot-release--november-24).
+
+A repeated live age question completed in 3.226s in Chrome, with zero model calls
+and matching freshly collected evidence. Fresh census and capacity questions took
+11.581s and 13.565s in Chrome; the initial age answer took 16.341s server-side.
+A November 22 daily incident question answered the independently verified zero
+in 11.440s in Chrome. The model remains a significant delay: snapshot preparation
+measured 0.083–0.700s, while synthesis took 5–12s in the first normal examples.
+These observations do not meet a consistent sub-ten-second user-visible target.
+A bounded `reasoning=none` experiment was rejected by this model with HTTP 400;
+live model settings remain unchanged. Do not trade verified coverage or grant
+checks for a latency claim.
+
+A same-evidence bed-availability rewrite succeeded in 14.238s. A separate request
+for every community's percentage of total returned a partial answer with one
+finding withheld by numeric validation; its full rejected proposal was not
+retained, so the precise model-calculation error is unconfirmed. Keep this real
+case in the next analytical-quality evaluation. Do not weaken validation or claim
+complete follow-up acceptance. History reopened the real saved bed report and
+its desktop dropdown stayed within the panel. Phone behavior was not freshly
+checked after the owner closed the tab; the browser entry is unchanged from the
+previous verified release.
+
+The seven live turns above used nine model calls and settled $0.193514 in total.
+The exact repeat made no paid model request. No active model lease remained at
+the final read; the two separate HTTP-400 experiments have no usage receipt and
+retain their conservative local reservations.

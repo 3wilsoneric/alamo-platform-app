@@ -6639,3 +6639,67 @@ x64/ARM64 release packaging, install/recovery and security checks remain. GitHub
 existing Actions budget blocked the two new Carelog cloud jobs before execution;
 that is not a passing cloud check. YAML/trigger assertions ran locally. No Actions
 budget increase, signed Windows rebuild or artifact purge was performed.
+
+
+### Ally lossless snapshot release — November 24
+
+Authorized by the owner request for faster accurate ordinary answers and standing
+deployment approval. Platform source candidate `c8cd0383f344109237ca6ff5f5db0b47bb30f125`;
+engine `0a3ba7f9d89efa87fb567c4cb4d48cbb994e0851` (0.18.18). No source-record,
+source-grant, participant or UI changes. Eric, Andrew and Betty retain their
+existing allowance and saved reports.
+
+- Platform revision `alamo-platform-prod-web--ally-snapshot4-1124`, image
+  `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:1c65830af9bbe895a8fc68fb359e0a3e312508fb0a662bb8f90e2d80d9d6a398`.
+- Ally API revision `alamo-ally-prod-api--snapshot-01818-1124`, image
+  `alamoallywqqka6kfae5ma.azurecr.io/ally@sha256:2efb6d77e19f935ce9ba0c759609adb5a6c6511a50d3ef38adbc52d208b88a1a`.
+- Worker package SHA-256
+  `2244c65f53266f9d27c4da1089db8d7499ffc4a64c4fec02d0b29246f80ffff8`.
+  A native Durable activity proved enabled-branch adoption after stop/start.
+- Canonical Databricks publisher QA run `844089458175866` passed both tasks;
+  publish-only run `832824241106297`, task `144024801408862`, succeeded.
+  Data date is November 23; UTC publication date is November 24.
+
+The full data-publication predeploy gate passed 28/28. After the final type
+narrowing, affected server/source checks passed again. Engine full tests,
+build/package and native Functions recovery passed. Postdeploy resumed at the
+production boundary and passed all four selected stages, including build; this
+is retained predeploy evidence plus fresh postdeploy evidence, not a second fresh
+31-stage run. Main Chrome observed 15 routes and 12 interactions, 617 requests,
+one navigation cancellation, no HTTP failures and no console errors.
+
+The first deployed Platform artifact preserved an obsolete release bundle and
+rejected `prepare`. Before worker activation, the final artifact regenerated
+`server/ally-report-source-release.mjs` from the tested canonical source. Its
+SHA-256 is `dc8e4302fa8be4f8ea5d6023474e7960da16664d9002cefd08f3d74d3923a74e`.
+Artifact-level tests verify the actual handler's prepare, authorization, revocation
+and malformed-request behavior. The final image changes that bundle and four
+reviewed raw server files relative to the original image; the browser entry stays
+`/assets/index-HVJ_pzpp.js`, SHA-256
+`d2ff3fa13d028384aee47a39e1eaa79327990ec9c0c9273d29e52345c7c00bf7`.
+
+Private receipts in `/Users/eric/suite-deploy/.state/`:
+`platform-ally-snapshot4-1124.verification.json`,
+`ally-snapshot-01818-runtime.*`, `worker-01818-adopted.verified.json`,
+`fast-snapshot.publication-verified.json`, `fast-snapshot.refreshed-tables.json`,
+`snapshot18-source-acceptance.json`, `snapshot18-acceptance-1124.json`,
+`snapshot18-main-chrome-1124/evidence.json`. Full snapshots contain private data;
+do not commit them. All 24 conversations and existing spending receipts were
+verified unchanged before the new authorized test questions.
+
+Recovery: first restore the previous Ally 0.18.17 API/worker using the conditional
+runtime driver. Retain API digest
+`168fca90a101a172eefa5e6bd7f2b8f4bb2316fe8f5546e889a910bf146e3cc1`
+and worker SHA-256
+`977d88df141ac45b29119d334d678c6d4876dbdf3773ccd0e7a1a4954248ca7f`.
+Then use candidate-4 and candidate-3 conditional Platform restore drivers in that
+order to reach original image digest
+`2d071a5b621b700118caa2a69d15afaede9a626f25a9a9e4d4a1d68f7b7526a7`.
+Publisher and prior publication are backed up privately; do not overwrite a newer
+publication or reset records, grants or spending during recovery.
+
+Observed exact-repeat latency is 3.226s in Chrome, with zero model calls. Fresh
+census/capacity/incident turns are 11–14s; the initial age turn took 16.341s
+server-side. This is an improvement path, not a consistently sub-ten-second result.
+The successful same-evidence rewrite and the rejected percentage-breakdown case
+are recorded in the living spec; the latter remains an analytical-quality gap.
