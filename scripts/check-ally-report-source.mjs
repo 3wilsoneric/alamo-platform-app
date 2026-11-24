@@ -315,6 +315,8 @@ assert.equal(countyView.dataset.shape,'categories');assert.equal(countyView.data
 assert(!countyView.answer.includes('Alameda'),'current resident counties cannot replace the admission cohort');
 assert(!JSON.stringify(countyView).includes('PRIVATE_PERSON_PROBE'));
 const occupancy=await readView('occupancy');
+assert.deepEqual(JSON.parse(occupancy.answer).totals,{census:4,operatingCapacity:259,availableBeds:255,occupancyPercent:1.5},'portfolio totals use only the selected authorized communities');
+assert.deepEqual(JSON.parse((await readView('occupancy',{...flowScope,communityIds:['337']})).answer).totals,{census:2,operatingCapacity:175,availableBeds:173,occupancyPercent:1.1});
 assert.deepEqual(occupancy.dataset.rows,[{community:'San Pablo',census:2,operatingCapacity:175,availableBeds:173,occupancyPercent:1.1,capacityAsOf:'2026-07-30'},{community:'Turlock',census:2,operatingCapacity:84,availableBeds:82,occupancyPercent:2.4,capacityAsOf:'2026-07-30'}]);
 assert(!JSON.stringify(occupancy).includes('PRIVATE_PERSON_PROBE'));assert(!occupancy.answer.includes('Santa Clarita'));
 assert.equal((await readView('occupancy',{...flowScope,through:'2026-11-02'})).period,'Current census as of 2026-11-21','current occupancy is labeled as the source snapshot, not a historical denominator');
@@ -329,6 +331,7 @@ const unavailableCounty=await readView('counties');assert.equal(unavailableCount
 flowSnapshot.snapshot.as_of_date='2026-06-30';
 flowSnapshot.reportsSummary.toolContext.tables.census_weekly_by_community=ALAMO_FACILITIES.map(f=>({facility_id:f.facilityId,census_date:'2026-06-30',census:1}));
 const historical=await readView('occupancy');assert.equal(historical.coverage,'partial');assert(historical.dataset.rows.every(r=>r.operatingCapacity===null&&r.availableBeds===null),'current operating limits cannot be applied before their effective dates');
+assert.deepEqual(JSON.parse(historical.answer).totals,{census:2,operatingCapacity:null,availableBeds:null,occupancyPercent:null},'unknown capacity is not silently summed as zero');
 console.log('Executive views: scoped admission counties, actual occupancy limits, unavailable history, and aggregate privacy passed.');
 
 // The real weekly briefing owns schedule membership and date boundaries. Ally

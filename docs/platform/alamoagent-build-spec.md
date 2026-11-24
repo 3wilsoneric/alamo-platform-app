@@ -1,4 +1,4 @@
-## November 24 full-data analyst — candidate, not deployed
+## November 24 full-data analyst — source connections deployed, engine evaluation pending
 
 The owner now authorizes full organizational read access for signed-in Ally
 participants across all connected apps. Page community/date filters are query
@@ -11,7 +11,7 @@ page search and fact provenance. Document text reads continue with an exact
 source revision and offset. Missing extraction is explicit; it does not imply
 an empty document. Whole-client detail requires the organization-wide read
 grant because histories can span communities. That grant is authorized for the
-executive participants; activation of this new capability is still pending.
+executive participants. Its live grant and current/historical directory reads are verified.
 
 Large published tool tables now have immutable gzip assets with checked SHA-256,
 compressed/uncompressed byte counts and row counts. Validation runs on the full
@@ -28,16 +28,20 @@ publication keeps the previous complete pointer and never drops records.
 The shared read cache retains at most 96 MiB serialized
 table data; application projections retain their current publication separately.
 
-Candidate protocol, clinical projection, shard-integrity/transport and server
-type checks pass. Real source reconciliation, full-suite connections, integrated
-model benchmarks and production release remain unfinished. See the canonical
-Ally build spec for the complete execution status.
+Protocol, clinical projection, shard-integrity/transport and server checks pass.
+The source image and corrected publication are live: 5.18 MB manifest and 62.79 MB
+of checked immutable table assets. Independent warehouse queries provide the
+answer oracle. The rebuilt engine is not deployed; its full real benchmark,
+semantic review and final runtime release remain unfinished. See the canonical
+Ally build spec and private Suite repair receipts for the execution evidence.
 
 Native Carelog/Fleet discovery and read projection now use the source's exact
 registered GET routes, parameter types, managed workload identity and represented
 executive. Response paging is revision-bound; native list limits are never a
-population denominator. Its companion Carelog change passes 971 unit and 82
-architecture tests on the current live source base, but is not deployed or granted.
+population denominator. Its companion Carelog change passes 972 unit and 82
+architecture tests and is deployed. The dedicated application role is assigned
+to the exact Platform workload; real catalog and unfinished-document reads pass.
+That last collection returned no rows, so it is not populated clinical-content proof.
 
 The ProForma reader is integrated through the current source-owned service,
 including drafts, publications, retained originals and exact citations. A minimal
@@ -50,8 +54,9 @@ organizational read grant controls this analyst capability.
 
 `prepare-ally-source-release.mjs` prepares this backend boundary on an exact current
 image, preserving UI, installed source owners and runtime settings. It does not
-activate grants or publish snapshots. Package/manifest verification, real signed-in
-answers and conditional rollout are still required.
+activate grants or publish snapshots itself. These source connections and the
+new publication have now been activated with conditional rollout receipts;
+real signed-in answers from the rebuilt engine are still required.
 
 Pipeline now has a companion read-only source on its actual production source
 base (`a8f14b35`). Its canonical readers expose all workspace states except trash,
@@ -62,9 +67,12 @@ is required in Platform. No source credential is supplied to the model. Native
 Carelog and Pipeline responses share one bounded, revision-aware reader, including
 complete-text continuation and sanitized transport errors. The input filters and
 source dates define these reads, not the report page context. Pipeline original
-file bytes/full OCR and complete activity history are still gaps, explicitly
-declared by its catalog. The adapter, source route, context regressions and route
-policy checks pass locally; live activation and answer quality remain unverified.
+PDF/image page reads now reuse the existing extraction, malware and OCR owners.
+Current handoff communications use the canonical packet store. Legacy external
+email history and activity beyond the retained event window remain explicit gaps. The adapter, source route, context regressions and route
+policy checks pass. Native Linux OCR and packaged authentication checks passed
+on the immutable deployed image. All three executives passed live source catalog
+authorization and a real directory returned records. Answer quality remains under evaluation.
 
 Workforce's current deployed pilot is configured with placeholder data. Do not
 present that feed as measured staffing or use it as real-data benchmark evidence.
@@ -1089,3 +1097,14 @@ The live release runner now includes main-Chrome capture time in its two-minute
 budget. Validating a receipt quickly cannot conceal a long browser check. Regression
 coverage verifies both the remaining time calculation and a real CLI invocation
 that records timeout without launching any check after a 121-second capture.
+
+
+### Scoped census totals — candidate
+
+The canonical occupancy reader now supplies census/capacity totals for exactly
+the selected authorized communities. Unknown operating capacity remains null,
+including the total, and availability remains the sum of each community's
+nonnegative available beds. This removes a repeated model-side addition for
+ordinary portfolio questions without caching permission or changing the census.
+Focused source tests verify single/multiple communities and historical unknown
+capacity. This small source update is prepared for the integrated release.

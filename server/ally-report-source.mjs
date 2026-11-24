@@ -229,7 +229,13 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
             availableBeds: capacity === null ? null : Math.max(0, capacity - site.closingCensus),
             occupancyPercent: capacity !== null && capacity > 0 ? Math.round(1000 * site.closingCensus / capacity) / 10 : null, capacityAsOf: facility.capacityAsOf };
         });
+        const census = rows.reduce((total, row) => total + row.census, 0);
+        const capacityKnown = rows.length > 0 && rows.every(row => row.operatingCapacity !== null);
+        const operatingCapacity = capacityKnown ? rows.reduce((total, row) => total + (row.operatingCapacity ?? 0), 0) : null;
         result = { asOfDate: flow.snapshot.asOfDate, communities: rows,
+          totals: { census, operatingCapacity,
+            availableBeds: capacityKnown ? rows.reduce((total, row) => total + (row.availableBeds ?? 0), 0) : null,
+            occupancyPercent: operatingCapacity !== null && operatingCapacity > 0 ? Math.round(1000 * census / operatingCapacity) / 10 : null },
           definitions: { census: 'Residents present at the latest published census date.', operatingCapacity: 'Recorded operating limit, not licensed capacity or a historical occupancy denominator.', occupancyPercent: 'Census divided by operating capacity, expressed as a percentage rounded to one decimal place.', availableBeds: 'Operating capacity minus census, floored at zero. This does not establish room or staffing availability.' } };
         base.period = `Current census as of ${flow.snapshot.asOfDate}`; base.grain = 'community census and operating capacity';
         if (rows.some(row => row.operatingCapacity === null)) { base.coverage = 'partial'; base.note += ' Recorded operating limits do not establish capacity before their effective dates.'; }
