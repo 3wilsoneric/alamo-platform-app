@@ -15,14 +15,15 @@ process.env.VITE_ALLY_REPORTS_ENABLED='true';process.env.VITE_ALLY_REPORT_PARTIC
 const output=path.resolve('generated/executive-ally-browser');await mkdir(output,{recursive:true});
 const localRoot=await mkdtemp(path.join(os.tmpdir(),'platform-report-browser-'));
 const auth={authenticated:true,mode:'entra-delegated',claims:{tid:EVERYAGENT_TENANT,oid:owner}};
-let sourceReady=true, sourceReads=0, trendFixture=false, proseTableFixture=false;
+let sourceReady=true, sourceReads=0, trendFixture=false, proseTableFixture=false, derivedFixture=false;
+const derivedDataset={title:'Occupied beds',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'census',label:'Census',type:'number'},{key:'capacity',label:'Capacity',type:'number'}],rows:[{community:'Alpha',census:4,capacity:8},{community:'Beta',census:9,capacity:10},{community:'Gamma',census:7,capacity:20}]};
 const proseDataset={title:'Community ages',shape:'records',columns:[{key:'community',label:'Community',type:'string'},{key:'age',label:'Average age',type:'number'},{key:'known',label:'Known ages',type:'number'},{key:'missing',label:'Missing ages',type:'number'}],rows:[{community:'A deliberately long fictional community name',age:44.9,known:136,missing:0},{community:'Another community <img src=x onerror=alert()>',age:40.7,known:138,missing:1}]};
 const trendDataset={title:'Monthly occupied bed-days',shape:'series',columns:[{key:'as_of_date',label:'as_of_date',type:'string'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'}],rows:[{as_of_date:'2026-01-01',occupied_bed_days:-1200},{as_of_date:'2026-02-01',occupied_bed_days:null},{as_of_date:'2026-03-01',occupied_bed_days:150443},{as_of_date:'2026-04-01',occupied_bed_days:130000}]};
 const source={authorize:async()=>sourceReady?{revision:reportHash('fixture-grant'),detail:false}:false,catalog:async()=>[{id:'resident-flow',title:'Resident flow',inputSchema:{type:'object'}}],read:async(subject,scope,step)=>{
   sourceReads++;
-  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:proseTableFixture?JSON.stringify(proseDataset.rows):'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:proseTableFixture?proseDataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
+  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:derivedFixture?JSON.stringify(derivedDataset.rows):proseTableFixture?JSON.stringify(proseDataset.rows):'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:derivedFixture?derivedDataset:proseTableFixture?proseDataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
 }};
-const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:proseTableFixture?'| Community | Average age | Known ages | Missing ages |\n|---|---:|---:|---:|\n| A deliberately long fictional community name | 44.9 | 136 | 0 |\n| Another community <img src=x onerror=alert()> | 40.7 | 138 | 1 |\n\n**Summary**\nThe missing age remains missing.':trendFixture?'Monthly occupied bed-days.\n\n**Context**\n- Missing values stay missing.\n- Negative values stay below zero.\n\n<img src=x onerror=alert()>':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:proseTableFixture?[{id:'ages',componentId:'table',datasetId:'source-1'}]:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
+const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:derivedFixture?'Recorded census is 4, 9 and 7.':proseTableFixture?'| Community | Average age | Known ages | Missing ages |\n|---|---:|---:|---:|\n| A deliberately long fictional community name | 44.9 | 136 | 0 |\n| Another community <img src=x onerror=alert()> | 40.7 | 138 | 1 |\n\n**Summary**\nThe missing age remains missing.':trendFixture?'Monthly occupied bed-days.\n\n**Context**\n- Missing values stay missing.\n- Negative values stay below zero.\n\n<img src=x onerror=alert()>':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:derivedFixture?[{id:'derived',componentId:'comparison',datasetId:'source-1',measureKey:'census',sort:{key:'derived_occupancy',direction:'desc'},computedColumns:[{key:'derived_occupancy',label:'Occupancy percent',operation:'percent',left:'census',right:'capacity'}]}]:proseTableFixture?[{id:'ages',componentId:'table',datasetId:'source-1'}]:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
 try { await withBrowserQa(async browser=>{
   for(const width of [1440,390,320]) {
     console.log(`Executive Ally: checking ${width}px`);
@@ -41,7 +42,7 @@ try { await withBrowserQa(async browser=>{
         else result={reports:await service.list(currentAuth)};
         // The independent API adds a validated optional measureKey. Keep this
         // wire fixture separate from the host’s older source-runtime package.
-        if (result?.view && result.selectedVersion !== 2) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:trendFixture?'occupied_bed_days':'discharges'}))}};
+        if (result?.view && result.selectedVersion !== 2 && !derivedFixture) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:trendFixture?'occupied_bed_days':'discharges'}))}};
         await route.fulfill({status:200,json:result,headers:{'cache-control':'no-store'}});
       } catch(e){await route.fulfill({status:e.statusCode??503,json:{code:e.code??'report_unavailable'}});}
     });
@@ -240,6 +241,28 @@ try { await withBrowserQa(async browser=>{
     }
     await page.screenshot({path:path.join(output,`prose-table-${width}.png`),fullPage:true});
     proseTableFixture=false;
+    fixtureTime+=24*60*60*1000;
+    derivedFixture=true;
+    await panel.getByRole('button',{name:'New chat',exact:true}).click();
+    await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Rank by occupancy, then chart census.');
+    await panel.getByRole('button',{name:'Send question'}).click();
+    await panel.getByText('Recorded census is 4, 9 and 7.',{exact:true}).waitFor();
+    const ranked=panel.getByRole('list',{name:'Census',exact:true});
+    assert.deepEqual(await ranked.locator('li>span').allTextContents(),['Beta','Alpha','Gamma'],'bars use calculated occupancy order, not census order or prose only');
+    assert.deepEqual(await ranked.locator('li>strong').allTextContents(),['9','4','7']);
+    await panel.getByLabel('Chart measure').selectOption('derived_occupancy');
+    const ratios=panel.getByRole('list',{name:'Occupancy percent',exact:true});
+    assert.deepEqual(await ratios.locator('li>strong').allTextContents(),['90','50','35']);
+    if(width===1440){
+      const opened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const pdf=await opened;
+      const printed=pdf.getByRole('list',{name:'Occupancy percent',exact:true});await printed.waitFor();
+      assert.deepEqual(await printed.locator('li>span').allTextContents(),['Beta','Alpha','Gamma']);
+      await pdf.emulateMedia({media:'print'});
+      assert.equal(await pdf.getByRole('table',{name:'Occupied beds',exact:true}).count(),1,'one exact table prints per chart');
+      await pdf.pdf({path:path.join(output,'Ally derived report.pdf'),format:'A4',printBackground:true});await pdf.close();
+    }
+    await page.screenshot({path:path.join(output,`derived-chart-${width}.png`),fullPage:true});
+    derivedFixture=false;
     // Dense history in the normal side panel was the production failure. Check
     // clipping ancestors and real hit testing, not just page-level overflow.
     fixtureTime+=24*60*60*1000; // Separate history-layout fixtures from the earlier daily quota tests.

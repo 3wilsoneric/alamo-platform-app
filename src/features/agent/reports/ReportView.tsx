@@ -1,3 +1,4 @@
+import { applyViewCalculations } from '@alamo/agent-runtime/shared/executive-report-views.mjs';
 import SourceTable from './ReportTable';
 import ReportProse from './ReportProse';
 import { formatDisplayDate } from '../../../../shared/display-date.mjs';
@@ -5,13 +6,14 @@ import type { ExecutiveReport, ReportDataset } from './reportClient';
 import { reportColumnLabel, reportCellValue as displayValue } from '../../../../shared/report-display.mjs';
 export type ReportMeasures = Record<string, string>;
 
-function DataView({dataset, component, measure, onMeasureChange}: {dataset: ReportDataset; component: string; measure: string | undefined; onMeasureChange: ((measure: string) => void) | undefined}) {
+function DataView({dataset, component, measure, sort, onMeasureChange}: {dataset: ReportDataset; component: string; measure: string | undefined; sort?: {key:string;direction:'asc'|'desc'} | null; onMeasureChange: ((measure: string) => void) | undefined}) {
   const columns = dataset.columns.map(column => ({...column,label:reportColumnLabel(column)}));
   const label = columns.find(c => c.type === 'string');
   const numbers = columns.filter(c => c.type === 'number');
   const metric = numbers.find(c => c.key === measure) ?? numbers[0];
   const chart = component !== 'table' && label && metric && dataset.rows.length > 0 && dataset.rows.length <= (component === 'comparison' ? 20 : 100);
-  const rows = component === 'trend' && label ? [...dataset.rows].sort((a,b) => String(a[label.key]).localeCompare(String(b[label.key]))) : dataset.rows;
+  const sorted = sort && columns.some(column=>column.key===sort.key) ? [...dataset.rows].sort((a,b)=>{const left=a[sort.key],right=b[sort.key];if(left==null)return right==null?0:1;if(right==null)return -1;const order=typeof left==='number'&&typeof right==='number'?left-right:String(left).localeCompare(String(right));return sort.direction==='desc'?-order:order;}) : dataset.rows;
+  const rows = sort ? sorted : component === 'trend' && label ? [...dataset.rows].sort((a,b) => String(a[label.key]).localeCompare(String(b[label.key]))) : dataset.rows;
   const values = metric ? rows.map(r => typeof r[metric.key] === 'number' ? Number(r[metric.key]) : null) : [];
   const min = Math.min(0, ...values.filter((v): v is number => v !== null)), max = Math.max(0, ...values.filter((v): v is number => v !== null));
   const range = max - min || 1;
@@ -30,9 +32,9 @@ function DataView({dataset, component, measure, onMeasureChange}: {dataset: Repo
       <div className="ally-report-trend-labels"><span>{displayValue(rows[0]?.[label.key])}</span><span>{displayValue(rows.at(-1)?.[label.key])}</span></div>
     </figure>
       : <ul className="ally-report-comparison" aria-label={metric.label}>{rows.map((r,i) => <li key={i}><span>{displayValue(r[label.key])}</span><strong>{values[i]?.toLocaleString() ?? 'Not recorded'}</strong><div className="ally-report-track" aria-hidden="true"><i style={{left: `${(Math.min(values[i] ?? 0,0)-min)/range*100}%`, width: `${Math.abs(values[i] ?? 0)/range*100}%`}}/></div></li>)}</ul>
-      : <SourceTable dataset={dataset}/>}
-    {chart && <details className="ally-report-data-table"><summary>View data table</summary><SourceTable dataset={dataset}/></details>}
-    {chart && <div className="ally-report-print-values"><SourceTable dataset={dataset}/></div>}
+      : <SourceTable dataset={{...dataset,rows}}/>}
+    {chart && <details className="ally-report-data-table"><summary>View data table</summary><SourceTable dataset={{...dataset,rows}}/></details>}
+    {chart && <div className="ally-report-print-values"><SourceTable dataset={{...dataset,rows}}/></div>}
   </div>;
 }
 export default function ReportView({report, canvas = false, anchorPrefix = 'ally', measures = {}, onMeasureChange, onOpenSource}: {report: ExecutiveReport; canvas?: boolean; anchorPrefix?: string; measures?: ReportMeasures; onMeasureChange?: (sectionId: string, measure: string) => void; onOpenSource?: (sectionId:string, opener:HTMLElement) => void}) {
@@ -44,7 +46,7 @@ export default function ReportView({report, canvas = false, anchorPrefix = 'ally
     {artifact.gaps.length > 0 && <details className="ally-report-gaps" open><summary>Data limits</summary><ul>{artifact.gaps.map((gap,i) => <li key={i}><ReportProse text={gap}/></li>)}</ul></details>}
     {artifact.sections.filter(section=>section.dataset && (!canvas || !report.view || report.view.blocks.some(block=>block.datasetId===section.id && block.sourceIds.includes(section.id)))).map(section => { const block = report.view?.blocks.find(b => b.datasetId === section.id && b.sourceIds.includes(section.id));
       return <section id={`${anchorPrefix}-${section.id}`} tabIndex={-1} key={section.id} className="ally-report-source"><h3>{section.dataset!.title}</h3>
-        <DataView key={`${report.selectedVersion}-${section.id}`} dataset={section.dataset!} component={block?.componentId ?? 'table'} measure={measures[section.id] ?? block?.measureKey ?? undefined} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>
+        <DataView key={`${report.selectedVersion}-${section.id}`} dataset={applyViewCalculations(section.dataset!,block?.computedColumns)} component={block?.componentId ?? 'table'} measure={measures[section.id] ?? block?.measureKey ?? undefined} sort={block?.sort ?? null} onMeasureChange={onMeasureChange && (measure => onMeasureChange(section.id, measure))}/>
       </section>;
     })}
     <details className="ally-report-sources"><summary>Sources</summary><ul>{artifact.sections.map(section => <li key={section.id} {...(!section.dataset ? {id:`${anchorPrefix}-${section.id}`,tabIndex:-1} : {})}>

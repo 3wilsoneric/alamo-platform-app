@@ -123,7 +123,7 @@ for (const result of [...browserChunks, serverOutput[0]]) for (const id of Objec
   const file = id.split('?')[0];
   if (file.startsWith(root + '/') && !file.includes('/node_modules/')) await source(path.relative(root, file));
 }
-for (const file of ['package.json', 'package-lock.json', 'vite.config.ts', 'vendor/alamo-agent-runtime-0.18.7.tgz',
+for (const file of ['package.json', 'package-lock.json', 'vite.config.ts', JSON.parse(await readFile('package.json','utf8')).dependencies['@alamo/agent-runtime'].replace(/^file:/,''),
   'scripts/prepare-executive-ally-release.mjs', 'scripts/executive-ally-release-mode.mjs', 'scripts/prepare-platform-ui-release.mjs',
   'scripts/stage-spa-route-indexes.mjs', 'scripts/compress-browser-dist.mjs']) await source(file);
 assert.equal(currentImage(), base, 'Production changed during preparation; prepare again against its reviewed current image.');

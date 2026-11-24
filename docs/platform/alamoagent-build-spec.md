@@ -1,3 +1,26 @@
+## November 24 companion repair — candidate
+
+The engine 0.18.19 companion retains conversational context, validates derived
+claims with a bounded repair loop, and executes source-bound chart sorting and
+calculations in the screen and export. Platform pins that package. The new query
+contract accepts redundant, authorized aggregate projections without changing
+the input population; only an unambiguous measure sort maps to its returned
+`result`. Unknown fields, private projections and ambiguous statistics still fail.
+
+Source publication corrects the missing notes Comment mapping, derives note gaps
+from the full current roster, publishes monthly census and preserves nulls.
+Monthly service history now uses the service archive and explicitly separates
+visits and minutes. Its available data ends in April 2026; a November request
+must disclose missing coverage, not report zero activity. Read-only candidate
+queries reconcile with independent source aggregates. The running full release
+gate is required because publication changes are in scope.
+
+Four new real-model rounds are retained alongside the frozen 50-conversation
+baseline. They currently use the candidate engine and **old production source**.
+Latest source and cohort-label changes are not yet live-quality evidence. No
+record writes or source-grant changes are made. Release evidence and outstanding
+coverage are tracked in the engine living spec and private Suite repair receipts.
+
 # AlamoAgent build spec — source ownership
 
 - purpose: point to the independent agent engine's single living build spec
@@ -14,6 +37,76 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 Update that spec in every relevant change; do not start a competing Platform plan.
 
 Current rollout evidence is recorded in [Ally History and incident recovery](deployment-operations.md#ally-history-and-incident-recovery--november-23-deployed). Older dated entries below retain their historical scope; they do not override the current release.
+
+### November 24 source and reasoning repair — candidate only
+
+The companion engine 0.18.19 candidate is pinned for source/view integration.
+The data connector now describes field availability from complete published
+rows, exposes recoverable query-validation feedback, and honors an explicitly
+filtered full-month interval within a wider page scope. These changes preserve
+community/detail grants and exact source revisions. Metadata is not business
+measurement evidence.
+
+The governed note projection uses ElderMark's actual `Comment` column. Current
+resident note gaps join the full dated note history by facility/resident, not an
+exception-only extract. Monthly census and the already-built enriched roster
+are published under their existing canonical manifests. Candidate SQL yields
+224,180 dated note records with 223,986 populated comments and 545 current
+residents. These are read-only comparisons; production publication is pending.
+
+The client-service projection now reads resident/service/month archives, with
+separate minutes and visits. Employee schedules cannot masquerade as delivered
+client care. Independent raw-source checks match counts, known recipients,
+month ranges, minutes and visits in all eleven source facilities. The five
+operating communities' archives end in April 2026; later periods are explicitly
+unavailable, never zero. Raw cancellation codes do not prove completion. Daily
+QA checks preserve source population, units and missingness; ALTER VIEW retains
+grants. The existing slice stays within current source authorization.
+
+Pipeline's existing monthly portfolio history and whitelisted active workspace
+metadata are available through its canonical protected summary. Historical
+community breakdown is unavailable in that producer and stays unavailable.
+Named workspaces require detail access; clinical content is excluded. Occupancy
+includes its source-calculated percentage. Saved charts can sort by one measure
+while displaying another, with bounded calculated columns shared by browser and
+export, without mutating saved source rows.
+
+Fresh real-model suites and the original failures are both retained. The current
+live model tests still read the deployed source, so they do not certify these
+unpublished feed repairs. Publication needs the full applicable gate, conditional
+notebook/snapshot recovery and post-publish population checks; the application
+needs the candidate bundle, signed-in question/history checks and real answer
+review. No production changes or broader grants are claimed here.
+
+### November 24 real-data baseline — no deployment change
+
+The owner prioritized all 50 real multi-step conversations before release-gate
+changes. The canonical engine build spec records the full baseline: 156 requests,
+8/50 conversations and 64/156 requests fully delivered, with uncached local-engine
+median/p95 of 15.932/36.973 seconds. Forty independent warehouse query sets and a
+direct protected Pipeline summary support review; the source-owned read-only
+answer-sheet script is [ally-real-expected-facts.py](../../scripts/ally-real-expected-facts.py).
+This script exports aggregates only to a private operator directory. It does not
+change clinical data, feed definitions, grants or application code.
+
+Actual main-Chrome checks reproduced a chart whose text sorted but bars did not.
+The table, composer and History fit 320/390px widths; exact History search and
+reopen work, while the tested semantic search does not. Export repeats source
+records. Final PDF pagination and distinct executive-reader sessions remain
+unverified. The large backend campaign uses isolated local report storage and
+does not prove production queue latency or concurrent executive load. The live
+UI spot check separately saved a real test conversation.
+
+Important source findings: the notes feed has no note text; enrichment lacks
+last-note values although a separate join to note dates evaluates all current
+residents; assessment statuses and service recipient/unit/status fields are
+missing; monthly census and Pipeline detail/history are not fully exposed to
+Ally. These are coverage/connection findings, not proof that the operational
+source systems lack the information. Existing passing checks did not detect
+the observed wrong-period answers or incomplete results. See the engine's
+November 24 entry and private Suite `.state/ally-real-50-report-20261124` report
+for grades, limitations and the ordered fixes. The application and release
+gates were deliberately left unchanged during this baseline.
 
 ### November 23 incident response — deployed and verified
 

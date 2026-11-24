@@ -785,6 +785,8 @@ def build_tool_context_summary():
           employee_id,
           service_status,
           service_units,
+          service_minutes,
+          service_visits,
           source_table
         FROM alamohealth.gold.v_tool_services_provided
         WHERE service_date >= add_months({SNAPSHOT_AS_OF_SQL}, -18)
@@ -927,6 +929,15 @@ def build_tool_context_summary():
         ORDER BY facility_id, resident_name, medication_name
         """,
         "v_tool_mar_medication_orders_current",
+    )
+
+    monthly_census_rows = required_rows(
+        """
+        SELECT Facility, month_bucket, snapshot_date, census, prior_census, census_delta
+        FROM alamohealth.gold.v_tool_census_monthly_by_community
+        ORDER BY month_bucket, Facility
+        """,
+        "v_tool_census_monthly_by_community",
     )
 
     manifest_rows = required_rows(
@@ -1122,6 +1133,8 @@ def build_tool_context_summary():
             "prior_placement": normalize_nullable(row["prior_placement"]),
             "episode_status": normalize_str(row["episode_status"]),
             "month_bucket": normalize_str(row["month_bucket"]),
+            "service_minutes": None if row["service_minutes"] is None else normalize_float(row["service_minutes"]),
+            "service_visits": None if row["service_visits"] is None else normalize_float(row["service_visits"]),
             "source_table": normalize_str(row["source_table"]),
         }
         for row in resident_episode_rows
@@ -1237,6 +1250,8 @@ def build_tool_context_summary():
             "employee_id": normalize_nullable(row["employee_id"]),
             "service_status": normalize_nullable(row["service_status"]),
             "service_units": None if row["service_units"] is None else normalize_float(row["service_units"]),
+            "service_minutes": None if row["service_minutes"] is None else normalize_float(row["service_minutes"]),
+            "service_visits": None if row["service_visits"] is None else normalize_float(row["service_visits"]),
             "source_table": normalize_str(row["source_table"]),
         }
         for row in services_provided_rows
@@ -1470,7 +1485,7 @@ def build_tool_context_summary():
             "as_of_date": expected_as_of_date,
             "nullable_fields": [field for field in ["Age", "LOS_Days", "days_since_last_note"]
                 if field in normalize_str(row["fields"]).split(",")]
-                if row["slice_name"] == "resident_profile" else [],
+                if row["slice_name"] in ["resident_profile", "resident_profile_enriched"] else [],
         }
         for row in manifest_rows
     ]
@@ -1500,6 +1515,15 @@ def build_tool_context_summary():
             "incident_detail_current_month": current_incident_details,
             "incident_detail_history": incident_detail_history,
             "resident_profile": resident_profiles,
+            "resident_profile_enriched": resident_profiles,
+            "census_monthly_by_community": [
+                {"Facility": normalize_str(row["Facility"]),
+                 "month_bucket": normalize_str(row["month_bucket"]),
+                 "snapshot_date": iso_value(row["snapshot_date"]),
+                 **{key: None if row[key] is None else normalize_int(row[key])
+                    for key in ["census", "prior_census", "census_delta"]}}
+                for row in monthly_census_rows
+            ],
             "current_resident_county_by_community": current_resident_county_by_community,
             "resident_incident_summary": resident_incident_summary,
             "resident_episode_history": resident_episode_history,

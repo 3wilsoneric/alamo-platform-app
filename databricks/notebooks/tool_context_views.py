@@ -928,78 +928,39 @@ def create_census_data_quality_view() -> None:
 
 
 def create_services_provided_view() -> None:
-    service_parts = []
-    for table_name, source_label, date_candidates in [
-        ("service_archive", "service_archive", ["Service_Date", "Date", "Create_Date"]),
-        ("scheduled_employee", "scheduled_employee", ["Service_Date", "Date", "Create_Date"]),
-    ]:
-        columns = table_columns(table_name)
-        if not columns:
-            continue
-        facility_expr = sql_value("s", columns, ["Facility", "facility", "__FACILITY_ID"])
-        resident_expr = sql_value("s", columns, ["Res_Number", "Resident_Number", "Resident_ID", "Client_ID"])
-        service_date_expr = sql_date("s", columns, date_candidates)
-        service_type_expr = sql_value("s", columns, ["Service_Type", "Service_Type_ID", "Service_Type_Code", "Service", "Description", "Service_Description", "Task"])
-        employee_expr = sql_value("s", columns, ["Employee_ID", "Emp_ID", "Employee", "Staff_ID", "Staff", "Assigned_To"])
-        status_expr = sql_value("s", columns, ["Status", "Service_Status", "Bill_Status", "Outcome"])
-        units_expr = sql_value("s", columns, ["Units", "Service_Units", "Hours", "Duration", "Minutes"], "double")
-        service_parts.append(
-            f"""
-            SELECT
-              {facility_expr} AS Facility,
-              {resident_expr} AS Res_Number,
-              {service_date_expr} AS service_date,
-              {service_type_expr} AS service_type,
-              {employee_expr} AS employee_id,
-              {status_expr} AS service_status,
-              {units_expr} AS service_units,
-              '{source_label}' AS source_table
-            FROM {source}.{table_name} s
-            """
-        )
-
-    if not service_parts:
-        create_empty_view(
-            "v_tool_services_provided",
-            [
-                ("Facility", "string"),
-                ("Facility_Name", "string"),
-                ("Res_Number", "string"),
-                ("resident_name", "string"),
-                ("service_date", "date"),
-                ("month_bucket", "string"),
-                ("service_type", "string"),
-                ("employee_id", "string"),
-                ("service_status", "string"),
-                ("service_units", "double"),
-                ("source_table", "string"),
-            ],
-        )
-        return
-
+    # ElderMark archives are resident/service/month records. Employee schedules
+    # have no recipient or completion evidence and cannot represent client care.
+    columns = table_columns("service_archive")
+    if not columns:
+        raise RuntimeError("The resident service archive is required for the services feed.")
+    facility = sql_value("s", columns, ["Facility", "facility", "__FACILITY_ID"])
+    resident = sql_value("s", columns, ["Res_Number", "Resident_Number", "Resident_ID"])
+    month = sql_date("s", columns, ["Service_Month"])
+    service_type = sql_value("s", columns, ["Service_Type"])
+    cancellation = sql_value("s", columns, ["Canceled_Code"])
+    minutes = sql_value("s", columns, ["Minutes_of_Service"], "double")
+    visits = sql_value("s", columns, ["Visits"], "double")
     create_view(
         "v_tool_services_provided",
         f"""
-        WITH base AS (
-          {' UNION ALL '.join(service_parts)}
-        )
         SELECT
-          coalesce(b.Facility, p.Facility) AS Facility,
-          coalesce(p.Facility_Name, b.Facility) AS Facility_Name,
-          b.Res_Number,
-          coalesce(p.resident_name, concat('Resident ', b.Res_Number)) AS resident_name,
-          b.service_date,
-          date_format(b.service_date, 'yyyy-MM') AS month_bucket,
-          coalesce(b.service_type, 'Unspecified service') AS service_type,
-          b.employee_id,
-          b.service_status,
-          b.service_units,
-          b.source_table
-        FROM base b
+          {facility} AS Facility,
+          coalesce(p.Facility_Name, {facility}) AS Facility_Name,
+          {resident} AS Res_Number,
+          coalesce(p.resident_name, concat('Resident ', {resident})) AS resident_name,
+          {month} AS service_date,
+          date_format({month}, 'yyyy-MM') AS month_bucket,
+          {service_type} AS service_type,
+          cast(NULL as string) AS employee_id,
+          {cancellation} AS service_status,
+          cast(NULL as double) AS service_units,
+          {minutes} AS service_minutes,
+          {visits} AS service_visits,
+          'service_archive' AS source_table
+        FROM {source}.service_archive s
         LEFT JOIN {target}.v_tool_resident_profile p
-          ON b.Res_Number = p.Res_Number
-         AND (b.Facility = p.Facility OR b.Facility IS NULL)
-        WHERE b.service_date IS NOT NULL
+          ON {resident} = p.Res_Number AND {facility} = p.Facility
+        WHERE {month} IS NOT NULL
         """
     )
 
@@ -1085,7 +1046,7 @@ def create_notes_summary_view() -> None:
     resident_expr = sql_value("n", columns, ["Res_Number", "Resident_Number", "Resident_ID", "Client_ID"])
     note_date_expr = sql_date("n", columns, ["Entry_Date", "Note_Date", "Create_Date"])
     note_type_expr = sql_value("n", columns, ["Note_Type", "Type", "Category", "Subject"])
-    note_text_expr = sql_value("n", columns, ["Note_Text", "Notes", "Narrative", "Description", "Text", "Comments"])
+    note_text_expr = sql_value("n", columns, ["Comment", "Note_Text", "Notes", "Narrative", "Description", "Text", "Comments"])
     action_date_expr = sql_date("n", columns, ["Action_Required_By_Date", "Followup_Date", "Due_Date"])
 
     create_view(
@@ -1426,6 +1387,8 @@ create_view(
 
 # COMMAND ----------
 
+create_notes_summary_view()
+
 create_view(
     "v_tool_resident_profile_enriched",
     f"""
@@ -1443,7 +1406,13 @@ create_view(
     LEFT JOIN {target}.v_tool_resident_incident_summary i
       ON p.Res_Number = i.Res_Number
      AND p.Facility = i.Facility
-    LEFT JOIN {target}.v_tool_documentation_status d
+    LEFT JOIN (
+      SELECT Facility, Res_Number, max(note_date) AS last_note_date,
+        datediff({WINDOW_AS_OF_SQL}, max(note_date)) AS days_since_last_note
+      FROM {target}.v_tool_notes_summary
+      WHERE note_date <= {WINDOW_AS_OF_SQL}
+      GROUP BY Facility, Res_Number
+    ) d
       ON p.Res_Number = d.Res_Number
      AND p.Facility = d.Facility
     """
@@ -1637,7 +1606,6 @@ create_assessment_summary_view()
 
 # COMMAND ----------
 
-create_notes_summary_view()
 
 # COMMAND ----------
 
@@ -1815,6 +1783,19 @@ create_view(
     UNION ALL
 
     SELECT
+      'census_monthly_by_community' AS slice_name,
+      'community_month_census' AS grain,
+      count(*) AS row_count,
+      cast(min(month_bucket) AS string) AS min_period,
+      cast(max(month_bucket) AS string) AS max_period,
+      concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
+      'Facility,month_bucket,snapshot_date,census,prior_census,census_delta' AS fields,
+      current_timestamp() AS generated_at
+    FROM {target}.v_tool_census_monthly_by_community
+
+    UNION ALL
+
+    SELECT
       'resident_profile_enriched' AS slice_name,
       'resident_current_enriched' AS grain,
       count(*) AS row_count,
@@ -1933,12 +1914,12 @@ create_view(
 
     SELECT
       'services_provided' AS slice_name,
-      'resident_service_detail' AS grain,
+      'resident_service_month' AS grain,
       count(*) AS row_count,
       cast(min(service_date) AS string) AS min_period,
       cast(max(service_date) AS string) AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'Facility,Facility_Name,Res_Number,resident_name,service_date,month_bucket,service_type,employee_id,service_status,service_units,source_table' AS fields,
+      'Facility,Facility_Name,Res_Number,resident_name,service_date,month_bucket,service_type,employee_id,service_status,service_units,service_minutes,service_visits,source_table' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_services_provided
 

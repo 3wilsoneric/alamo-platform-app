@@ -82,6 +82,12 @@ const selected=await readAllyPlatformData({slice:'resident_profile',operation:'r
 assert.deepEqual(selected.rows,[{Age:60},{Age:40}]);assert.equal(selected.hasMore,true);
 const groupedSorted=await readAllyPlatformData({slice:'resident_profile',operation:'count',groupBy:['Age'],orderBy:[{field:'Age',direction:'desc'}],limit:1},profileOptions);
 assert.deepEqual(groupedSorted.rows,[{Age:60,result:1}]);
+const redundant=await readAllyPlatformData({slice:'resident_profile',operation:'count',columns:['Age'],limit:1},profileOptions);
+assert.deepEqual(redundant.rows,[{result:4}],'projection and output limit cannot truncate the scoped input population');
+assert.deepEqual(redundant.query.columns,['result']);
+const ranked=compileAllyPlatformDataQuery({slice:'resident_profile',operation:'average',measure:'Age',groupBy:['Facility'],columns:['Age'],orderBy:[{field:'Age',direction:'desc'}]},listAllyPlatformDataSources(profiles)[0],profileOptions.constraints);
+assert.match(ranked.sql,/ORDER BY `result` DESC/);assert.deepEqual(ranked.columns,['Facility','result']);
+for(const query of [{operation:'count',columns:['password']},{operation:'statistics',measure:'Age',orderBy:[{field:'Age',direction:'desc'}]}])await assert.rejects(readAllyPlatformData({slice:'resident_profile',...query},profileOptions));
 const numeric=compileAllyPlatformDataQuery({slice:'resident_profile',operation:'statistics',measure:'Age',filters:[{field:'Age',op:'number-lte',value:'50'}]},listAllyPlatformDataSources(profiles)[0],profileOptions.constraints);
 assert.match(numeric.sql,/COUNT\(\*\) AS records/);assert.match(numeric.sql,/PERCENTILE_CONT\(0\.5\)/);assert.match(numeric.sql,/try_cast\(`Age` AS DOUBLE\) <= 50/);assert.match(numeric.sql,/`Facility`/);
 for(const query of [{columns:['password']},{orderBy:[{field:'Age; DROP TABLE x',direction:'desc'}]},{filters:[{field:'Age',op:'number-gte',value:'0 OR 1=1'}]}]) await assert.rejects(readAllyPlatformData({slice:'resident_profile',...query},profileOptions));

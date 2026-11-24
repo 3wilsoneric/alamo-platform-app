@@ -157,9 +157,73 @@ try {
   await assert.rejects(connection.read(user,bothScope,pipelineStep),'conflicting community identity cannot choose an authorized scope');
   delete pipelineSnapshot.board.cards[0].facilityId;registry.grants[0].communityIds.pop();
 
+  assert.equal((await send({...input,step:{id:'workspace-detail',capability:'pipeline-summary',input:{view:'current-workspaces'}}})).status,403);
+  registry.grants[0].detail=true;
+  Object.assign(pipelineSnapshot.board.cards[0],{clientName:'Synthetic A',owner:'Owner A',daysOpen:12,daysSinceUpdate:2,plannedAdmissionDate:null,pipelineUrl:'https://alamo-pipeline.com/?referralId=1',managementProfile:{overview:'PRIVATE_ASSESSMENT'}});
+  const detailStep={id:'workspace-detail',capability:'pipeline-summary',input:{view:'current-workspaces',query:'Owner A',stage:'assessment'}};
+  const workspace=await connection.read(user,scope,detailStep);
+  assert.equal(workspace.requiresDetail,true);assert.equal(workspace.dataset.rows.length,1);
+  assert.equal(workspace.dataset.rows[0].client,'Synthetic A');assert(!workspace.answer.includes('PRIVATE_ASSESSMENT'));
+  registry.grants[0].detail=false;
+  const historyStep={id:'history',capability:'pipeline-summary',input:{view:'monthly-history'}};
+  assert.equal((await connection.read(user,scope,historyStep)).status,'unavailable','portfolio history cannot answer a community-scoped request');
+  pipelineSnapshot.generatedAt='2026-11-24T15:00:00Z';
+  pipelineSnapshot.history={coverageStartMonth:'2026-09',monthly:[{month:'2026-09',received:9,accepted:6,declined:1,admitted:4},{month:'2026-10',received:10,accepted:7,declined:2,admitted:5},{month:'2026-11',received:8,accepted:5,declined:1,admitted:3}]};
+  const savedCommunities=[...registry.grants[0].communityIds];registry.grants[0].communityIds=ALAMO_FACILITIES.map(f=>f.facilityId);
+  const historicalScope={communityIds:registry.grants[0].communityIds,from:'2026-09-01',through:'2026-10-31'};
+  const pipelineHistory=await connection.read(user,historicalScope,historyStep);
+  assert.equal(pipelineHistory.coverage,'complete');assert.equal(pipelineHistory.dataset.rows.length,2);assert.equal(pipelineHistory.dataset.rows[1].admitted,5);
+  assert.equal((await connection.read(user,{...historicalScope,from:'2026-01-01'},historyStep)).coverage,'partial');
+  assert.equal((await connection.read(user,{...historicalScope,from:'2026-10-15'},historyStep)).status,'unavailable');
+  registry.grants[0].communityIds=savedCommunities;
+
   const partialMonth=await sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth);
   assert.equal(partialMonth.status,'unavailable');assert.equal(partialMonth.coverage,'partial');assert.equal(partialMonth.answer,null);assert.equal(partialMonth.dataset,undefined);assert.match(partialMonth.note,/partial month/);
   await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth),/across dates/);
+  const originalMonthlyRows=published.toolContext.tables.census_monthly_by_community, originalMonthlyCount=aggregate.row_count;
+  // Narrow month comparisons remain valid within a page ending mid-month.
+  published.toolContext.tables.census_monthly_by_community = [
+    {facility_id:'337',month:'2026-08',census:37},
+    {facility_id:'337',month:'2026-09',census:38},
+    {facility_id:'337',month:'2026-10',census:39},
+    {facility_id:'337',month:'2026-11',census:40}
+  ];
+  aggregate.row_count=4;
+  const monthStep={id:'months',capability:'platform-data',input:{slice:'census_monthly_by_community',operation:'rows',columns:['month','census'],dateField:'month',filters:[{field:'month',op:'gte',value:'2026-09'},{field:'month',op:'lte',value:'2026-10'}]}};
+  const broadScope={...scope,from:'2026-01-01',through:'2026-11-24'};
+  const monthAnswer=await connection.read(user,broadScope,monthStep);
+  assert.equal(monthAnswer.status,'verified');
+  assert.equal(monthAnswer.period,'2026-09-01–2026-10-31');
+  assert.deepEqual(monthAnswer.dataset.rows,[{month:'2026-09',census:38},{month:'2026-10',census:39}]);
+  assert.equal(monthAnswer.dataset.shape,'series');
+  const cut=await connection.read(user,{...broadScope,from:'2026-09-15'},monthStep);
+  assert.equal(cut.status,'unavailable','query dates cannot expand the authorized interval');
+  const projectedAggregate=await connection.read(user,broadScope,{...monthStep,input:{...monthStep.input,operation:'average',measure:'census'}});
+  assert.equal(projectedAggregate.status,'verified');assert.equal(projectedAggregate.dataset.rows[0].result,38.5,'redundant projection cannot change aggregate population');
+  await assert.rejects(connection.read(user,broadScope,{...monthStep,input:{...monthStep.input,operation:'average',measure:'census',columns:['nonexistent']}}),error=>error.statusCode===403,'redundant projection cannot bypass the grant field boundary');
+  const {columns:_columns,...repaired}=monthStep.input;
+  const repairedAnswer=await connection.read(user,broadScope,{...monthStep,input:{...repaired,operation:'average',measure:'census'}});
+  assert.equal(repairedAnswer.dataset.rows[0].result,38.5,'valid repaired query reads the same bounded population');
+  const measureOrder=await connection.read(user,broadScope,{...monthStep,input:{...repaired,operation:'average',measure:'census',orderBy:[{field:'census',direction:'desc'}]}});
+  assert.equal(measureOrder.status,'verified');assert.equal(measureOrder.dataset.rows[0].result,38.5);
+  const badOrder=await connection.read(user,broadScope,{...monthStep,input:{...repaired,operation:'statistics',measure:'census',orderBy:[{field:'census',direction:'desc'}]}});
+  assert.equal(badOrder.status,'unavailable');assert.match(badOrder.note,/returned fields/);
+  assert(!JSON.stringify(monthAnswer).includes('private_case_note'),'private schema coverage cannot escape the authorized projection');
+
+  published.toolContext.tables.census_monthly_by_community=originalMonthlyRows;aggregate.row_count=originalMonthlyCount;
+  const originalDetail=registry.grants[0].detail;
+  registry.grants[0].detail=true;registry.grants[0].slices.push('services_provided');
+  published.toolContext.manifest.push({slice_name:'services_provided',grain:'resident_service_month',row_count:2,min_period:'2026-03-01',max_period:'2026-04-01',fields:['Facility','month_bucket','service_date','service_minutes','service_visits']});
+  published.toolContext.tables.services_provided=[{Facility:'337',month_bucket:'2026-03',service_date:'2026-03-01',service_minutes:60,service_visits:3},{Facility:'337',month_bucket:'2026-04',service_date:'2026-04-01',service_minutes:80,service_visits:4}];
+  const archivedStep={id:'archive',capability:'platform-data',input:{slice:'services_provided',operation:'sum',measure:'service_visits',filters:[{field:'month_bucket',op:'eq',value:'2026-04'}]}};
+  const archived=await connection.read(user,broadScope,archivedStep);
+  assert.equal(archived.status,'verified');assert.equal(archived.dataset.rows[0].result,4);
+  const lateArchive=await connection.read(user,broadScope,{...archivedStep,input:{...archivedStep.input,filters:[{field:'month_bucket',op:'eq',value:'2026-10'}]}});
+  assert.equal(lateArchive.status,'unavailable');assert.match(lateArchive.note,/unavailable, not zero/);
+  const falseDaily=await connection.read(user,broadScope,{...archivedStep,input:{...archivedStep.input,dateField:'service_date'}});
+  assert.equal(falseDaily.status,'unavailable');assert.match(falseDaily.note,/not an individual visit/);
+  registry.grants[0].detail=originalDetail;registry.grants[0].slices.pop();published.toolContext.manifest.pop();delete published.toolContext.tables.services_provided;
+
   // Saved output must obey the recipient's projection, not merely permission
   // to issue the same query (which returns fewer fields for aggregate readers).
   const reader='55555555-5555-4555-8555-555555555555';
@@ -224,7 +288,7 @@ assert.equal(countyView.dataset.shape,'categories');assert.equal(countyView.data
 assert(!countyView.answer.includes('Alameda'),'current resident counties cannot replace the admission cohort');
 assert(!JSON.stringify(countyView).includes('PRIVATE_PERSON_PROBE'));
 const occupancy=await readView('occupancy');
-assert.deepEqual(occupancy.dataset.rows,[{community:'San Pablo',census:2,operatingCapacity:175,availableBeds:173,capacityAsOf:'2026-07-30'},{community:'Turlock',census:2,operatingCapacity:84,availableBeds:82,capacityAsOf:'2026-07-30'}]);
+assert.deepEqual(occupancy.dataset.rows,[{community:'San Pablo',census:2,operatingCapacity:175,availableBeds:173,occupancyPercent:1.1,capacityAsOf:'2026-07-30'},{community:'Turlock',census:2,operatingCapacity:84,availableBeds:82,occupancyPercent:2.4,capacityAsOf:'2026-07-30'}]);
 assert(!JSON.stringify(occupancy).includes('PRIVATE_PERSON_PROBE'));assert(!occupancy.answer.includes('Santa Clarita'));
 assert.equal((await readView('occupancy',{...flowScope,through:'2026-11-02'})).period,'Current census as of 2026-11-21','current occupancy is labeled as the source snapshot, not a historical denominator');
 const ordinary=await readView('communities');

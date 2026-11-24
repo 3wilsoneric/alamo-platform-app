@@ -214,7 +214,7 @@
     "check:ship:ally:postdeploy": "PRODUCTION_SIGNED_IN_REQUIRED=true PLATFORM_READY_PROFILE=ally-live PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready"
   },
   "dependencies": {
-    "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.7.tgz",
+    "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.19.tgz",
     "@alamo/agent-workflow-knowledge": "file:vendor/alamo-agent-workflow-knowledge-0.17.0.tgz",
     "@azure/identity": "^4.14.1",
     "@azure/msal-browser": "^4.26.0",

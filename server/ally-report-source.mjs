@@ -21,22 +21,22 @@ const objectSchema = properties => ({ type: 'object', properties, additionalProp
 const string = { type: 'string' }, strings = { type: 'array', items: string, maxItems: 3 };
 const schemas = {
   'platform-data': objectSchema({ slice: string, operation: { enum: ['rows', 'count', 'sum', 'average', 'minimum', 'maximum', 'median', 'distinct', 'statistics'] }, groupBy: strings, measure: string,
-    columns:{type:'array',items:string,maxItems:40}, orderBy:{type:'array',maxItems:3,items:objectSchema({field:string,direction:{enum:['asc','desc']}})},
+    columns:{type:'array',items:string,maxItems:40,description:'Projection for rows only. Omit for aggregates; valid redundant columns do not change the aggregate population.'}, orderBy:{type:'array',maxItems:3,description:'Use returned keys: groupBy fields and result for aggregates; named statistics for statistics.',items:objectSchema({field:string,direction:{enum:['asc','desc']}})},
     dateField: { type: ['string', 'null'] }, limit: { type: 'integer', minimum: 1, maximum: 100 },
     filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains', 'number-gte', 'number-lte'] }, value: string }) } }),
   'incident-summary': objectSchema({ from: string, through: string, communityIds: { type: 'array', items: string, maxItems: 5 }, priority: { enum: ['high', 'medium', 'low', 'unknown'] } }),
   'data-catalog': objectSchema({query:string,slice:string}),
   'resident-flow': objectSchema({ view: { enum: ['communities', 'counties', 'occupancy'] } }),
-  'pipeline-summary': objectSchema({ view: { enum: ['stages', 'planned-admissions'] } }),
+  'pipeline-summary': objectSchema({ view: { enum: ['stages', 'planned-admissions', 'current-workspaces', 'monthly-history'] }, query:string, stage:{enum:INTAKE_STAGES.map(stage=>stage.key)} }),
   'licensing-search': objectSchema({ query: string, type: { enum: ['Complaint', 'Inspection', 'Other'] } }),
   'proforma-search': objectSchema({ query: string })
 };
 const metadata = {
-  'platform-data': ['Governed Platform data', 'Query published source grains. Counts count rows, not necessarily unique clients. Dates and communities are enforced. Never sum census across dates.'],
+  'platform-data': ['Governed Platform data', 'Query source-owned data within authorized dates and communities. Counts count rows, not necessarily people. columns is only for rows; omit it for aggregates. Aggregates return groupBy fields and result. statistics returns records, known, missing, mean, median, minimum, maximum. orderBy uses these returned keys, not the original measure. Numeric filters use number-gte/number-lte; gte/lte are date filters. Never sum census across dates.'],
   'data-catalog': ['Find and describe data', 'Search authorized datasets by topic or describe one slice. Returns actual columns, meanings, date basis and coverage. Use this when the first source is insufficient; lack of a field in one dataset does not mean the organization lacks the data.'],
   'incident-summary': ['Incident counts by date and priority', 'Use for daily incidents, yesterday, and high/medium/low priority questions. Returns aggregate counts from the same incident register as the Incidents page, with exact occurrence-date filters and optional narrower communityIds. Community IDs: 337 San Pablo, 342 Victoria’s House, 343 JC Wallace House, 344 Turlock, 345 Santa Clarita. High means a sentinel event or emergency-services notification; this is operational priority, not a clinical severity grade. Snapshot fallback is explicitly partial. No client details are returned.'],
   'resident-flow': ['Admissions, discharges and bed use', 'Reconciled admission episodes in the selected period; repeat stays count separately. Use view counties for counties of those admissions, not current residents. Use view occupancy for latest published census, operating capacity and available beds; occupancy is a current snapshot, not historical utilization. Default communities shows period admissions/discharges, opening/closing census and bed-days.'],
-  'pipeline-summary': ['Current referral pipeline', 'Current published referral stages and decisions. Use view planned-admissions for move-ins scheduled this week, by community; plans are not confirmed admissions. The schedule carries its own Monday–Sunday Pacific period. Default stages shows current active workspaces. Neither view is historical referral event history.'],
+  'pipeline-summary': ['Current referral pipeline', 'Current published referral stages and decisions. Use view planned-admissions for move-ins scheduled this week, by community; plans are not confirmed admissions. The schedule carries its own Monday–Sunday Pacific period. Default stages shows current active workspaces. current-workspaces returns bounded named active workspace metadata for detail-authorized readers, optionally filtered by query or stage. monthly-history returns published monthly referral/decision/admission event counts for the entire portfolio only, within its stated historical coverage; these events are not a single conversion cohort.'],
   'licensing-search': ['State licensing reports', 'Dated inspection and complaint metadata for selected communities. Separate from internal incidents.'],
   'proforma-search': ['ProForma procedures', 'Source-linked draft procedure excerpts. Draft references are not approved policy.']
 };
@@ -69,13 +69,32 @@ function platformDataset(title, rows, columns, time) {
       communities.includes(column.key) && (communities.includes(other.key) || facilityIds.includes(other.key))));
   const date = dimensions.find(column => column.key === time && uniqueLabels(column.key) &&
     rows.every(row => /^\d{4}-\d{2}(?:-\d{2})?$/.test(row[column.key]) && Number.isFinite(Date.parse(row[column.key]))) &&
-    dimensions.every(other => other === column || constant(other.key)));
+    dimensions.every(other => other === column || constant(other.key) || other.key==='month_bucket' && rows.every(row=>String(row[other.key]).slice(0,7)===String(row[column.key]).slice(0,7))));
   const axis = label ?? date;
   if (axis) {
     dataset.shape = label ? 'categories' : 'series';
     dataset.columns = [axis, ...columns.filter(column => column !== axis)].map(column => ({...column,label:reportColumnLabel(column)}));
   }
   return dataset;
+}
+
+// Intersect query dates with the authorized scope; a page ending mid-month
+// must not reject a narrower, complete-month comparison. This never expands
+// permission and does not pretend a partial month is a full one.
+function queryPeriod(scope, filters, time) {
+  let from=scope.from, through=scope.through;
+  const monthEnd = month => new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).toISOString().slice(0,10);
+  for(const filter of filters ?? []) {
+    if(filter.field!==time || !['eq','gte','lte'].includes(filter.op)) continue;
+    const value=filter.value;
+    if(typeof value!=='string' || !/^20\d{2}-\d{2}(?:-\d{2})?$/.test(value)) continue;
+    const first=value.length===7?value+'-01':value;
+    if(!Number.isFinite(Date.parse(first)) || new Date(first+'T00:00:00Z').toISOString().slice(0,10)!==first) throw Error('Choose valid query dates.');
+    const last=value.length===7?monthEnd(value):value;
+    if(filter.op==='eq'||filter.op==='gte')from=from>first?from:first;
+    if(filter.op==='eq'||filter.op==='lte')through=through<last?through:last;
+  }
+  return {from,through};
 }
 
 // Reuse the canonical publication directly; normalize selected rows and bounded
@@ -85,7 +104,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
   pipeline = getPipelineAdmissionsSummary, incidents = getExecutiveDirectorIncidents, licensing = getLicensingLibrary, knowledge = createWorkflowKnowledgeSource(), now = Date.now } = {}) {
   async function catalog(authorization) {
     const sources = listAllyPlatformDataSources(await summary()).filter(s => authorization.grant.slices.includes(s.id) && facilityField(s.fields))
-      .map(s => ({ ...s, fields: authorization.grant.detail ? s.fields : reportAggregateFields(s.fields) }));
+      .map(s => { const fields=authorization.grant.detail?s.fields:reportAggregateFields(s.fields);return {...s,fields,fieldCoverage:s.fieldCoverage?Object.fromEntries(fields.map(field=>[field,s.fieldCoverage[field]])):null}; });
     return authorization.grant.capabilities.map(id => ({ id, title: metadata[id][0], description: metadata[id][1], inputSchema: schemas[id],
       ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...analystSourceDefinition(s), definition: sourceTitle(s.id), detailAllowed: authorization.grant.detail })) } : {}) }));
   }
@@ -167,14 +186,15 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
           if (!facility) throw Error('Census community has no recorded operating limit.');
           const capacity = facility.capacityAsOf <= flow.snapshot.asOfDate ? facility.operatingLimit : null;
           return { community: site.community, census: site.closingCensus, operatingCapacity: capacity,
-            availableBeds: capacity === null ? null : Math.max(0, capacity - site.closingCensus), capacityAsOf: facility.capacityAsOf };
+            availableBeds: capacity === null ? null : Math.max(0, capacity - site.closingCensus),
+            occupancyPercent: capacity !== null && capacity > 0 ? Math.round(1000 * site.closingCensus / capacity) / 10 : null, capacityAsOf: facility.capacityAsOf };
         });
         result = { asOfDate: flow.snapshot.asOfDate, communities: rows,
-          definitions: { census: 'Residents present at the latest published census date.', operatingCapacity: 'Recorded operating limit, not licensed capacity or a historical occupancy denominator.', availableBeds: 'Operating capacity minus census, floored at zero. This does not establish room or staffing availability.' } };
+          definitions: { census: 'Residents present at the latest published census date.', operatingCapacity: 'Recorded operating limit, not licensed capacity or a historical occupancy denominator.', occupancyPercent: 'Census divided by operating capacity, expressed as a percentage rounded to one decimal place.', availableBeds: 'Operating capacity minus census, floored at zero. This does not establish room or staffing availability.' } };
         base.period = `Current census as of ${flow.snapshot.asOfDate}`; base.grain = 'community census and operating capacity';
         if (rows.some(row => row.operatingCapacity === null)) { base.coverage = 'partial'; base.note += ' Recorded operating limits do not establish capacity before their effective dates.'; }
         dataset = scopedDataset('Census and operating capacity', rows,
-          [{key:'community',label:'Community',type:'string'},...['census','operatingCapacity','availableBeds'].map(key=>({key,label:key,type:'number'})),{key:'capacityAsOf',label:'Capacity recorded',type:'string'}], 'categories');
+          [{key:'community',label:'Community',type:'string'},...['census','operatingCapacity','availableBeds','occupancyPercent'].map(key=>({key,label:key,type:'number'})),{key:'capacityAsOf',label:'Capacity recorded',type:'string'}], 'categories');
       }
     } else if (step.capability === 'platform-data') {
       reportObject(args, ['slice', 'operation'], ['groupBy', 'measure', 'dateField', 'limit', 'filters','columns','orderBy']);
@@ -186,30 +206,51 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
       const defaultDate=ANALYST_SOURCES[args.slice]?.dateField;
       if (args.dateField === null && defaultDate && source.fields.includes(defaultDate)) throw Error('Dated records require a date field within the selected report period.');
       const time = args.dateField !== undefined ? args.dateField : source.fields.includes(defaultDate) ? defaultDate : null;
+      if (args.slice === 'services_provided' && time !== 'month_bucket') {
+        const note='Service archive records cover whole months. Use month_bucket and complete months; service_date is not an individual visit date.';
+        return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+      }
       if (time !== null && time !== undefined && (!source.fields.includes(time) || !/(?:date|month|week|time|period)/i.test(time))) throw Error('Choose a source date field.');
       if (args.operation === 'sum' && /census/.test(args.slice) && !(args.groupBy ?? []).includes(time)) throw Error('Census cannot be summed across dates.');
+      const selectedPeriod=queryPeriod(scope,args.filters,time);
+      if (args.slice === 'services_provided') {
+        const first=String(source.minPeriod ?? '').slice(0,7), last=String(source.maxPeriod ?? '').slice(0,7);
+        if (!/^20\d{2}-\d{2}$/.test(first) || !/^20\d{2}-\d{2}$/.test(last) || selectedPeriod.from.slice(0,7)<first || selectedPeriod.through.slice(0,7)>last) {
+          const note=`The archived client-service data covers ${first || 'an unknown start'} through ${last || 'an unknown end'}. Dates outside that archive are unavailable, not zero services.`;
+          return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+        }
+      }
+      if(time)base.period=`${selectedPeriod.from}–${selectedPeriod.through}`;
       const constraints = [{ field, op: 'in', value: authorization.communities }];
       if (time && /month/.test(time)) {
-        const lastDay = new Date(Date.UTC(Number(scope.through.slice(0, 4)), Number(scope.through.slice(5, 7)), 0)).toISOString().slice(0, 10);
-        if (!scope.from.endsWith('-01') || scope.through !== lastDay) {
+        const lastDay = new Date(Date.UTC(Number(selectedPeriod.through.slice(0, 4)), Number(selectedPeriod.through.slice(5, 7)), 0)).toISOString().slice(0, 10);
+        if (!selectedPeriod.from.endsWith('-01') || selectedPeriod.through !== lastDay) {
           const note = 'This monthly source cannot establish totals for a partial month or a specific day. Use a daily source for the requested dates.';
           return { ...base, status: 'unavailable', coverage: 'partial', answer: null, note, revision: reportHash({args, scope, note}) };
         }
-        constraints.push({ field: time, op: 'gte', value: scope.from.slice(0, 7) }, { field: time, op: 'lte', value: scope.through.slice(0, 7) + '-31' });
+        constraints.push({ field: time, op: 'gte', value: selectedPeriod.from.slice(0, 7) }, { field: time, op: 'lte', value: selectedPeriod.through.slice(0, 7) + '-31' });
       } else if (time) constraints.push({ field: time, op: 'day-gte', value: scope.from }, { field: time, op: 'day-lte', value: scope.through });
       const { dateField: _date, ...query } = args;
       try { result = await data(query, { load:async()=>publishedSummary, constraints, snapshotOnly, ...(authorization.grant.detail ? {} : {allowedFields: reportAggregateFields(source.fields)}) }); }
       catch(error) {
-        if(!error || typeof error !== 'object' || !('code' in error) || error.code !== 'analyst_result_too_large') throw error;
-        const note='This selection is too large. Request fewer rows and columns, add a narrower filter, or calculate an aggregate.';
+        if(!error || typeof error !== 'object' || !('code' in error) || !['analyst_result_too_large','ally_query_invalid'].includes(String(error.code))) throw error;
+        // These are source-owned validation messages, never database/provider
+        // exception bodies. Let the existing investigation loop repair the query.
+        const note=error.code==='ally_query_invalid' ? `Query needs correction: ${error instanceof Error ? error.message : 'Choose supported query fields.'}` : 'This selection is too large. Request fewer rows and columns, add a narrower filter, or calculate an aggregate.';
         return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
       }
       base.grain = source.grain; base.observedAt = source.generatedAt ?? base.observedAt;
+      const {fieldCoverage: _coverage, ...resultSource} = result.source;
+      result.source = resultSource;
+      if(time==='week_start')result.observationIntervals=[...new Set(result.rows.map(row=>row.week_start).filter(value=>typeof value==='string'&&/^20\d{2}-\d{2}-\d{2}$/.test(value)))].map(start=>({start,end:new Date(Date.parse(start+'T00:00:00Z')+6*86400000).toISOString().slice(0,10)}));
       if (!time) base.period = result.readMode === 'published-snapshot' && source.asOfDate
         ? `Source snapshot as of ${source.asOfDate}; no event-date filter`
         : `Published ${getReportingDateKey(base.observedAt)}; no event-date filter`;
+      const relevantFields=[args.measure,...(args.columns ?? []),...(args.groupBy ?? []),...(args.filters ?? []).map(filter=>filter.field)].filter(Boolean);
+      const emptyFields=relevantFields.filter(field=>source.fieldCoverage?.[field]?.records>0 && source.fieldCoverage[field].populated===0);
       base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
-      if (result.hasMore || result.coverage.startsWith('partial')) base.coverage = 'partial';
+      if(emptyFields.length)base.note+=` No populated values in the complete published data for: ${[...new Set(emptyFields)].slice(0,6).join(', ')}${new Set(emptyFields).size>6?' (and other requested fields)':''}. Missing values are not zero or evidence of no events.`;
+      if (result.hasMore || result.coverage.startsWith('partial') || emptyFields.length) base.coverage = 'partial';
       const keys = args.operation === 'rows' ? args.columns ?? result.source.fields : [...(args.groupBy ?? []), ...aggregateFields(args.operation)];
       const resultLabel = args.operation === 'count' ? 'Records' : args.measure
         ? `${({average:'Average',median:'Median',minimum:'Minimum',maximum:'Maximum',distinct:'Distinct',sum:'Total'})[args.operation] ?? 'Total'} ${reportColumnLabel({key:args.measure}).toLowerCase()}` : 'Result';
@@ -218,13 +259,14 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
         result.rows.map(row => Object.fromEntries(columns.map(column => [column.key, column.type === 'number' ? numericCell(row[column.key]) : row[column.key] ?? null]))),
         columns, time);
     } else if (step.capability === 'pipeline-summary') {
-      reportObject(args, [], ['view']);
+      reportObject(args, [], ['view','query','stage']);
       const view = args.view ?? 'stages';
-      if (!['stages', 'planned-admissions'].includes(view)) throw Error('Choose a supported pipeline view.');
+      if (!['stages', 'planned-admissions','current-workspaces','monthly-history'].includes(view)) throw Error('Choose a supported pipeline view.');
       const source = await pipeline();
       if (source.status !== 'connected') throw Error('Pipeline source unavailable.');
-      if (!hasCompleteIntakeBoard(source)) throw Error('A complete active referral count is unavailable.');
-      const active = activeIntakeCards(source);
+      if ((args.query!==undefined || args.stage!==undefined) && view!=='current-workspaces')throw Error('Workspace filters require current-workspaces.');
+      if (view !== 'monthly-history' && !hasCompleteIntakeBoard(source)) throw Error('A complete active referral count is unavailable.');
+      const active = view === 'monthly-history' ? [] : activeIntakeCards(/** @type {{board:{cards:import('../src/shared/types/platformSnapshot.js').AdmissionsBoardCard[]}}} */ (source));
       const facilityFor = item => item.facilityId ?? facilityIdForPipelineCommunity(item.community);
       if (active.some(item => !ALAMO_FACILITIES.some(facility => facility.facilityId === facilityFor(item)) ||
           item.facilityId && facilityIdForPipelineCommunity(item.community) && item.facilityId !== facilityIdForPipelineCommunity(item.community))) {
@@ -232,7 +274,39 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
       }
       const cards = active.filter(item => authorization.communities.includes(facilityFor(item)));
       const columns = INTAKE_STAGES.map(stage => ({ key: stage.key, title: stage.label, count: cards.filter(card => intakeStage(card) === stage.key).length }));
-      if (view === 'planned-admissions') {
+      if (view === 'monthly-history') {
+        const asOf=getReportingDateKey(Date.parse(source.generatedAt));
+        const lastDay=new Date(Date.UTC(Number(scope.through.slice(0,4)),Number(scope.through.slice(5,7)),0)).toISOString().slice(0,10);
+        const history=source.history;
+        const note=authorization.communities.length!==ALAMO_FACILITIES.length
+          ? 'Published Pipeline monthly history is portfolio-wide and cannot establish community-specific historical counts.'
+          : !scope.from.endsWith('-01') || scope.through!==lastDay && scope.through!==asOf
+          ? 'Published monthly history cannot establish this partial-month interval. Select complete months or the current published month through its snapshot date.'
+          : !history?.coverageStartMonth || !Array.isArray(history.monthly)
+          ? 'Pipeline monthly history is unavailable in this publication.' : null;
+        if(note)return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+        const rows=history.monthly.filter(row=>row.month>=scope.from.slice(0,7) && row.month<=scope.through.slice(0,7))
+          .map(({month,received,accepted,declined,admitted})=>({month,received,accepted,declined,admitted}));
+        base.title='Pipeline monthly activity';base.observedAt=source.generatedAt;base.grain='portfolio month';
+        base.note='Published Pipeline monthly events. Received, accepted, declined and admitted are separate events, not a single referral cohort or a conversion rate.';
+        if(scope.from.slice(0,7)<history.coverageStartMonth){base.coverage='partial';base.note+=` Available history begins ${history.coverageStartMonth}; earlier months are unavailable, not zero.`;}
+        if(scope.through>asOf){base.coverage='partial';base.note+=` Events after ${asOf} are not yet observed.`;}
+        base.period=`${scope.from}–${scope.through<asOf?scope.through:asOf}`;
+        result={rows,coverageStartMonth:history.coverageStartMonth,asOfDate:asOf,definition:base.note};
+        dataset=scopedDataset(base.title,rows,[{key:'month',label:'Month',type:'string'},...['received','accepted','declined','admitted'].map(key=>({key,label:reportColumnLabel({key}),type:'number'}))],'series');
+      } else if (view === 'current-workspaces') {
+        if(!authorization.grant.detail)throw Error('Named workspace detail is unavailable for this assignment.');
+        base.requiresDetail=true;
+        const query=args.query===undefined?'':reportText(args.query,120).toLowerCase();
+        if(args.stage!==undefined && !INTAKE_STAGES.some(stage=>stage.key===args.stage))throw Error('Choose a listed workspace stage.');
+        const selected=cards.filter(card=>(!args.stage||intakeStage(card)===args.stage) && (!query||[card.clientName,card.owner,card.status].some(value=>String(value??'').toLowerCase().includes(query))));
+        const rows=selected.slice(0,25).map(card=>({client:card.clientName,community:card.community,owner:card.owner,stage:INTAKE_STAGES.find(stage=>stage.key===intakeStage(card))?.label,status:card.status,daysOpen:card.daysOpen,daysSinceUpdate:card.daysSinceUpdate,plannedAdmissionDate:card.plannedAdmissionDate,workspace:card.pipelineUrl}));
+        base.title='Current workspaces';base.observedAt=source.generatedAt;base.period=`Current snapshot as of ${getReportingDateKey(Date.parse(source.generatedAt))}`;base.grain='active referral workspace';
+        base.note='Current active workspaces only. Days open is workspace age, not proven avoidable delay. Clinical assessment content is excluded.';
+        if(selected.length>rows.length){base.coverage='partial';base.note+=' Only the first 25 matches are shown; narrow the name, owner or stage filter for more detail.';}
+        result={matched:selected.length,rows,definition:base.note};
+        dataset=scopedDataset(base.title,rows,['client','community','owner','stage','status','daysOpen','daysSinceUpdate','plannedAdmissionDate','workspace'].map(key=>({key,label:reportColumnLabel({key}),type:['daysOpen','daysSinceUpdate'].includes(key)?'number':'string'})),'records');
+      } else if (view === 'planned-admissions') {
         if (source.briefing?.status !== 'ready' || source.briefing.coverage.moveIns !== true) {
           throw Error('A complete planned-admission schedule is unavailable.');
         }

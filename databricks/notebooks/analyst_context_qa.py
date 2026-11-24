@@ -219,8 +219,42 @@ resident_flow_week_gap_count = int(
 resident_flow_monthly_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_resident_flow_monthly_by_community") or 0)
 resident_unit_history_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_resident_unit_history") or 0)
 services_provided_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_services_provided") or 0)
+source_service_archive_count = int(scalar(f"SELECT count(*) AS value FROM {catalog}.silver.service_archive WHERE try_to_timestamp(Service_Month, 'd!M!yyyy') IS NOT NULL") or 0)
+non_archive_services_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_services_provided WHERE source_table <> 'service_archive' OR day(service_date) <> 1") or 0)
+service_measure_mismatches = int(scalar(f"""
+  WITH expected AS (
+    SELECT Facility, count(*) records, count(Minutes_of_Service) minutes_known,
+      count(Visits) visits_known, sum(try_cast(Minutes_of_Service as double)) minutes,
+      sum(try_cast(Visits as double)) visits
+    FROM {catalog}.silver.service_archive
+    WHERE try_to_timestamp(Service_Month, 'd!M!yyyy') IS NOT NULL GROUP BY Facility
+  ), actual AS (
+    SELECT Facility, count(*) records, count(service_minutes) minutes_known,
+      count(service_visits) visits_known, sum(service_minutes) minutes, sum(service_visits) visits
+    FROM {target}.v_tool_services_provided GROUP BY Facility
+  )
+  SELECT count(*) AS value FROM expected e FULL OUTER JOIN actual a ON e.Facility = a.Facility
+  WHERE NOT (e.records <=> a.records) OR NOT (e.minutes_known <=> a.minutes_known)
+     OR NOT (e.visits_known <=> a.visits_known) OR NOT (e.minutes <=> a.minutes)
+     OR NOT (e.visits <=> a.visits)
+""") or 0)
 assessment_summary_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_assessment_summary") or 0)
 notes_summary_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_notes_summary") or 0)
+# Published analytical fields must carry source values, not merely a schema.
+# Entry_Date_dt is the normalized ElderMark date from the silver transform.
+source_notes_with_text = int(scalar(f"SELECT count(*) AS value FROM {catalog}.silver.notes WHERE Entry_Date_dt IS NOT NULL AND nullif(trim(Comment), '') IS NOT NULL") or 0)
+published_notes_with_text = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_notes_summary WHERE nullif(trim(note_text), '') IS NOT NULL") or 0)
+resident_note_mismatches = int(scalar(f"""
+  WITH latest AS (
+    SELECT Facility, Res_Number, max(note_date) AS last_note_date
+    FROM {target}.v_tool_notes_summary WHERE note_date <= {QA_AS_OF_SQL}
+    GROUP BY Facility, Res_Number
+  )
+  SELECT count(*) AS value FROM {target}.v_tool_resident_profile_enriched p
+  LEFT JOIN latest n ON p.Facility = n.Facility AND p.Res_Number = n.Res_Number
+  WHERE NOT (p.last_note_date <=> n.last_note_date)
+     OR NOT (p.days_since_last_note <=> datediff({QA_AS_OF_SQL}, n.last_note_date))
+""") or 0)
 latest_incident_month = scalar(
     f"SELECT max(month_bucket) AS value FROM {target}.v_tool_incident_monthly_by_community_category"
 )
@@ -347,8 +381,12 @@ add_check(
 add_check("resident-flow-monthly-present", "residents", "critical", resident_flow_monthly_count > 0, ">0 rows", resident_flow_monthly_count, "Monthly resident intake/discharge movement rows are available.")
 add_check("resident-unit-history-present", "residents", "warning", resident_unit_history_count > 0, ">0 rows", resident_unit_history_count, "Resident unit history is available when ElderMark provides it.")
 add_check("services-provided-present", "services", "warning", services_provided_count > 0, ">0 rows", services_provided_count, "Services-provided detail is available when ElderMark provides it.")
+add_check("service-archive-population", "services", "critical", services_provided_count == source_service_archive_count, source_service_archive_count, services_provided_count, "Every dated resident service archive record is preserved exactly once; employee schedules do not count as care.")
+add_check("service-archive-measures", "services", "critical", non_archive_services_count + service_measure_mismatches == 0, 0, non_archive_services_count + service_measure_mismatches, "Archived service minutes and visits retain their separate source units.")
 add_check("assessment-summary-present", "assessments", "warning", assessment_summary_count > 0, ">0 rows", assessment_summary_count, "Assessment detail is available when ElderMark provides it.")
 add_check("notes-summary-present", "notes", "warning", notes_summary_count > 0, ">0 rows", notes_summary_count, "Resident note detail is available when ElderMark provides it.")
+add_check("notes-text-preserved", "notes", "critical", published_notes_with_text == source_notes_with_text, source_notes_with_text, published_notes_with_text, "Dated ElderMark note comments survive the governed projection.")
+add_check("resident-notes-population", "residents", "critical", resident_note_mismatches == 0, 0, resident_note_mismatches, "Last-note dates cover the full current roster, not only documentation exceptions; future notes do not set current gaps.")
 add_check("mar-administration-ids-unique", "medications", "critical", mar_quality["administration_rows"] == mar_quality["distinct_administration_ids"], mar_quality["administration_rows"], mar_quality["distinct_administration_ids"], "MAR administration IDs are unique.")
 add_check("mar-resident-summary-complete", "medications", "warning", mar_resident_summary_count == resident_count, resident_count, mar_resident_summary_count, "MAR resident summary coverage is tracked, but a coverage mismatch should not block census or incident snapshot publication.")
 add_check("mar-current-orders-present", "medications", "critical", mar_medication_order_count > 0, ">0 rows", mar_medication_order_count, "Current medication orders are available for resident medication profiles.")

@@ -38,6 +38,7 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
   if (grant.revoked || Date.parse(grant.expiresAt) <= now || communities.some(id => !grant.communityIds.includes(id))) deny();
   if (input.step) {
     if (!grant.capabilities.includes(input.step.capability)) deny();
+    if(input.step.capability==='pipeline-summary' && input.step.input?.view==='current-workspaces' && !grant.detail)deny();
     if (input.step.capability === 'platform-data') {
       const query = input.step.input;
       if (!grant.slices.includes(query?.slice) || query.groupBy !== undefined && !Array.isArray(query.groupBy)) deny();

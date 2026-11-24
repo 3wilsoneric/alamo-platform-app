@@ -33,33 +33,58 @@ export function listAllyPlatformDataSources(reportsSummary) {
     minPeriod: entry.min_period ?? null, maxPeriod: entry.max_period ?? null,
     facilityIds: entry.facility_ids ?? [], generatedAt: entry.generated_at ?? null,
     asOfDate: /^20\d{2}-\d{2}-\d{2}$/.test(entry.as_of_date ?? '') ? entry.as_of_date : null,
+    fieldCoverage: publishedFieldCoverage(entry, tables[entry.slice_name]),
     nullableFields: Array.isArray(entry.nullable_fields) && entry.nullable_fields.every(field => entry.fields.includes(field)) ? entry.nullable_fields : []
+  }));
+}
+
+const invalidQuery = message => Object.assign(Error(message), {code:'ally_query_invalid'});
+
+// Coverage is about the complete published row set, not merely whether a
+// column appears in the schema. No values or records enter the catalog.
+function publishedFieldCoverage(entry, rows) {
+  if(!Array.isArray(rows) || rows.length!==entry.row_count)return null;
+  const fields=entry.fields;
+  return Object.fromEntries(fields.map(field=>{
+    const alias=field==='Res_Number'&&['resident_episode_history','documentation_status','notes_summary','assessment_summary','services_provided','resident_unit_history'].includes(entry.slice_name)?'resident_id':PUBLISHED_FIELD_NAMES[field];
+    let present=0, populated=0;
+    for(const row of rows) {
+      const key=Object.hasOwn(row,field)?field:alias&&Object.hasOwn(row,alias)?alias:null;
+      if(!key)continue;
+      present++;
+      if(row[key]!==null&&row[key]!==undefined&&String(row[key]).trim()!=='')populated++;
+    }
+    return [field,{records:rows.length,present,populated}];
   }));
 }
 
 function validateQuery(query, source) {
   if (!query || typeof query !== "object" || Array.isArray(query) || !source || !ALLOWED_SLICES.has(source.id) ||
-    !Array.isArray(source.fields) || source.fields.some(field => !FIELD.test(field))) throw Error("Choose a listed Platform source.");
+    !Array.isArray(source.fields) || source.fields.some(field => !FIELD.test(field))) throw invalidQuery("Choose a listed Platform source.");
   const fields = new Set(source.fields);
   const filters = Array.isArray(query.filters) ? query.filters : [];
   if (filters.length > MAX_FILTERS || filters.some(filter => !filter || !fields.has(filter.field) ||
     !["eq", "gte", "lte", "contains", "number-gte", "number-lte"].includes(filter.op) ||
     (filter.op.startsWith('number-') && !Number.isFinite(Number(filter.value))) ||
     (["gte", "lte"].includes(filter.op) && !/(?:date|month|week|time|period)/i.test(filter.field)) ||
-    typeof filter.value !== "string" || !filter.value.trim() || filter.value.length > 200)) throw Error("Choose valid bounded source filters.");
+    typeof filter.value !== "string" || !filter.value.trim() || filter.value.length > 200)) throw invalidQuery("Choose valid bounded source filters.");
   const groupBy = Array.isArray(query.groupBy) ? query.groupBy : [];
-  if (groupBy.length > MAX_GROUPS || new Set(groupBy).size !== groupBy.length || groupBy.some(field => !fields.has(field))) throw Error("Choose listed grouping fields.");
+  if (groupBy.length > MAX_GROUPS || new Set(groupBy).size !== groupBy.length || groupBy.some(field => !fields.has(field))) throw invalidQuery("Choose listed grouping fields.");
   const operation = query.operation ?? "rows";
   if (!["rows", "count", "sum", "average", "minimum", "maximum", "median", "distinct", "statistics"].includes(operation) || operation === "rows" && groupBy.length ||
     ["sum", "average", "minimum", "maximum", "median", "distinct", "statistics"].includes(operation) && !fields.has(query.measure) ||
-    ["rows", "count"].includes(operation) && query.measure) throw Error("Choose a supported source operation.");
-  const columns = query.columns ?? source.fields;
-  if (!Array.isArray(columns) || !columns.length || (operation === 'rows' && columns.length > 40) || new Set(columns).size !== columns.length || columns.some(field => !fields.has(field)) || query.columns !== undefined && operation !== 'rows') throw Error('Choose listed result columns.');
-  const orderBy = query.orderBy ?? [];
+    ["rows", "count"].includes(operation) && query.measure) throw invalidQuery("Choose a supported source operation.");
+  const requestedColumns = query.columns ?? source.fields;
+  if (!Array.isArray(requestedColumns) || !requestedColumns.length || (query.columns !== undefined && requestedColumns.length > 40) || new Set(requestedColumns).size !== requestedColumns.length || requestedColumns.some(field => !fields.has(field))) throw invalidQuery('columns must contain listed source fields.');
+  // Projection cannot change an aggregate's population. Validate redundant
+  // columns, then retain only its actual output fields in the executed query.
+  const columns = operation === 'rows' ? requestedColumns : [...groupBy, ...aggregateFields(operation)];
+  const requestedOrder = query.orderBy ?? [];
+  const orderBy = Array.isArray(requestedOrder) ? requestedOrder.map(order => order && operation !== 'rows' && operation !== 'statistics' && order.field === query.measure && !groupBy.includes(order.field) ? {...order, field:'result'} : order) : requestedOrder;
   const resultFields = operation === 'rows' ? columns : [...groupBy, ...aggregateFields(operation)];
-  if (!Array.isArray(orderBy) || orderBy.length > 3 || orderBy.some(order => !order || !resultFields.includes(order.field) || !['asc','desc'].includes(order.direction))) throw Error('Choose valid result ordering.');
+  if (!Array.isArray(orderBy) || orderBy.length > 3 || orderBy.some(order => !order || !resultFields.includes(order.field) || !['asc','desc'].includes(order.direction))) throw invalidQuery('orderBy must use returned fields: selected columns for rows; groupBy fields plus result for aggregates; groupBy plus records, known, missing, mean, median, minimum, maximum for statistics.');
   const limit = Number(query.limit ?? 25);
-  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_ROWS) throw Error("Choose a row limit from 1 to 100.");
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_ROWS) throw invalidQuery("Choose a row limit from 1 to 100.");
   return { source, filters, groupBy, operation, measure: query.measure ?? null, columns, orderBy, limit };
 }
 
@@ -215,7 +240,9 @@ export async function readAllyPlatformData(query, { load = getReportsSummaryData
   // Both SQL and fallback rows use this same projection; new columns fail closed.
   if (allowedFields !== undefined) {
     if (!source || !Array.isArray(allowedFields) || !allowedFields.length || new Set(allowedFields).size !== allowedFields.length || allowedFields.some(field => !source.fields.includes(field))) throw Error('Invalid authorized source fields.');
-    source = { ...source, fields: source.fields.filter(field => allowedFields.includes(field)) };
+    source = { ...source, fields: source.fields.filter(field => allowedFields.includes(field)),
+      fieldCoverage: source.fieldCoverage ? Object.fromEntries(allowedFields.map(field => [field, source.fieldCoverage[field]])) : null };
+    source.nullableFields = source.nullableFields.filter(field => allowedFields.includes(field));
   }
   const input = compileAllyPlatformDataQuery(query, source, constraints);
   let rows; let readMode = "governed-view"; let coverage = "source-query";
