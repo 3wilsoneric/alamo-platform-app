@@ -46,7 +46,7 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
     if (input.step.capability === 'platform-data') {
       const query = input.step.input;
       if (!grant.slices.includes(query?.slice) || query.groupBy !== undefined && !Array.isArray(query.groupBy)) deny();
-      if (!grant.detail && (query.operation === 'rows' && !REPORT_AGGREGATE_SLICES.has(query.slice) ||
+      if (!grant.detail && (query.textExcerpt !== undefined || query.measureExpression !== undefined || query.operation === 'rows' && !REPORT_AGGREGATE_SLICES.has(query.slice) ||
           query.columns !== undefined && (!Array.isArray(query.columns) || query.columns.some(field=>!dimensions.has(field)&&!measures.has(field))) ||
           (query.groupBy ?? []).some(field => !dimensions.has(field)) ||
           query.filters !== undefined && (!Array.isArray(query.filters) || query.filters.some(filter => !dimensions.has(filter?.field))) ||

@@ -155,3 +155,25 @@ const flagQuery={slice:'mar_exception_detail_90d',operation:'count',filters:[{fi
 const flagResult=await readAllyPlatformData(flagQuery,{load:async()=>flags,execute:async()=>[{result:1}]});
 assert.equal(flagResult.readMode,'governed-view');assert.deepEqual(flagResult.rows,[{result:1}]);
 await assert.rejects(readAllyPlatformData(flagQuery,{load:async()=>flags,execute:fail}),/coerced the original numeric flag/);
+
+// Derived measures aggregate complete cohorts before limiting output rows.
+const episodeSource={id:'resident_episode_history',fields:['facility_id','admit_date','discharge_date','discharge_reason'],sourceRows:3};
+const expression={operation:'days-between',left:'admit_date',right:'discharge_date'};
+const derivedQuery={slice:episodeSource.id,operation:'statistics',measureExpression:expression,groupBy:['discharge_reason']};
+const derivedSql=compileAllyPlatformDataQuery(derivedQuery,episodeSource,[{field:'facility_id',op:'in',value:['337']}]);
+assert.match(derivedSql.sql,/DATEDIFF\(try_cast\(`discharge_date` AS DATE\), try_cast\(`admit_date` AS DATE\)\)/);
+assert.match(derivedSql.sql,/COUNT\(\*\) AS records/);assert.match(derivedSql.sql,/GROUP BY `discharge_reason`/);assert.match(derivedSql.sql,/`facility_id`/);
+const episodeSummary={toolContext:{manifest:[{slice_name:episodeSource.id,fields:episodeSource.fields,row_count:3,generated_at:'2026-11-24T12:00:00Z'}],tables:{[episodeSource.id]:[
+ {facility_id:'337',admit_date:'2026-01-01',discharge_date:'2026-01-11',discharge_reason:'Transfer'},
+ {facility_id:'337',admit_date:'2026-01-01',discharge_date:'2026-01-31',discharge_reason:'Transfer'},
+ {facility_id:'337',admit_date:null,discharge_date:'2026-01-31',discharge_reason:'Transfer'}]}}};
+const derived=await readAllyPlatformData(derivedQuery,{load:async()=>episodeSummary,execute:fail,constraints:[{field:'facility_id',op:'in',value:['337']}]});
+assert.deepEqual(derived.rows,[{discharge_reason:'Transfer',records:3,known:2,missing:1,mean:20,median:20,minimum:10,maximum:30}]);
+for(const measureExpression of [{...expression,left:'private'},{...expression,right:'discharge_date); DROP TABLE X'},{...expression,operation:'sql'},{...expression,extra:true}])assert.throws(()=>compileAllyPlatformDataQuery({...derivedQuery,measureExpression},episodeSource));
+assert.throws(()=>compileAllyPlatformDataQuery({...derivedQuery,measure:'admit_date'},episodeSource));
+const longText='a'.repeat(5000)+'transport appointment'+'z'.repeat(5000);
+const excerpt=await readAllyPlatformData({slice:'notes_summary',operation:'rows',columns:['Res_Number','note_text'],textExcerpt:{field:'note_text',query:'transport',characters:500},limit:10},{load,execute:async()=>[{Res_Number:'10',note_text:longText}]});
+assert(excerpt.rows[0].note_text.includes('transport appointment'));assert.equal(excerpt.rows[0].note_text.length,500);
+assert.equal(excerpt.textExcerpts[0].characters,longText.length);assert.equal(excerpt.textExcerpts[0].complete,false);
+assert.throws(()=>compileAllyPlatformDataQuery({slice:'notes_summary',textExcerpt:{field:'private',query:'x',characters:500}},catalog[0]));
+console.log('Derived cohort statistics and bounded text excerpts preserve source populations, unknowns and field authorization.');

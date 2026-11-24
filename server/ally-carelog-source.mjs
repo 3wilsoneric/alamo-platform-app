@@ -25,7 +25,7 @@ export function createCarelogAnalystSource({ env = process.env, fetchImpl = fetc
     return readNativeJsonResponse(response, 'Carelog');
   }
   return async (args, { subjectId }) => {
-    reportObject(args, [], ['view','query','path','parameters','pointer','columns','offset','revision']);
+    reportObject(args, [], ['view','query','path','parameters','pointer','paths','search','columns','offset','revision']);
     const view = args.view ?? 'catalog';
     if (!['catalog','read'].includes(view)) throw Error('Choose catalog or read.');
     if (args.query !== undefined && (typeof args.query !== 'string' || !args.query.trim() || args.query.length > 200)) throw Error('Choose a short source search.');

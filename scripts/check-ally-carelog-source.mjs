@@ -61,3 +61,14 @@ assert.equal(evidence.requiresDetail,true);assert.equal(evidence.coverage,'parti
 grant.detail=false;assert.throws(authorize);grant.detail=true;
 grant.revoked=true;assert.throws(authorize);
 console.log('Carelog: native catalog, exact parameters, represented identity, read-only transport, source paging, complete text continuation, source changes and permission revocation passed.');
+
+const nested={data:{record:{name:'Fictional client',notes:'before '.repeat(2500)+'transport appointment'+' after'.repeat(2500)},completion:{answered:9}}};
+const preview=projectCarelogRecord(nested,{path:'/api/example'});
+assert(preview.value.preview.data,'Large records expose navigable content rather than only field names');assert(preview.incomplete);
+const matched=projectCarelogRecord(nested,{path:'/api/example',search:'transport'});
+assert.equal(matched.matches[0].pointer,'/data/record/notes');assert(matched.matches[0].text.includes('transport appointment'));
+const selections=projectCarelogRecord(nested,{paths:['/data/record/name','/data/completion']});
+assert.equal(selections.selections[0].value,'Fictional client');assert.equal(selections.selections[1].value.answered,9);
+assert.throws(()=>projectCarelogRecord(nested,{paths:['/__proto__']}));assert.throws(()=>projectCarelogRecord(nested,{paths:['/data','/data']}));
+assert.throws(()=>projectCarelogRecord(nested,{search:'transport',offset:5}),/continuation/);
+console.log('Native record previews, multi-field reads and literal passage search preserve exact pointers and revision binding.');

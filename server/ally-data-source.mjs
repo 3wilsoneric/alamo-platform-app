@@ -63,6 +63,13 @@ function validateQuery(query, source) {
   if (!query || typeof query !== "object" || Array.isArray(query) || !source || !ALLOWED_SLICES.has(source.id) ||
     !Array.isArray(source.fields) || source.fields.some(field => !FIELD.test(field))) throw invalidQuery("Choose a listed Platform source.");
   const fields = new Set(source.fields);
+  const expression = query.measureExpression;
+  if (expression !== undefined && (!expression || typeof expression !== 'object' || Array.isArray(expression) ||
+    Object.keys(expression).sort().join(',') !== 'left,operation,right' ||
+    !['days-between','add','subtract','multiply','divide'].includes(expression.operation) ||
+    !fields.has(expression.left) || !fields.has(expression.right) || query.measure !== undefined ||
+    !['sum','average','minimum','maximum','median','statistics'].includes(query.operation))) throw invalidQuery('Choose one supported measure expression using two listed fields, without measure.');
+  if (expression?.operation === 'days-between' && [expression.left,expression.right].some(field=>!/(date|time|_at$)/i.test(field))) throw invalidQuery('Days between requires two date fields; left is the start, right is the end.');
   const filters = Array.isArray(query.filters) ? query.filters : [];
   if (filters.length > MAX_FILTERS || filters.some(filter => !filter || !fields.has(filter.field) ||
     !["eq", "gte", "lte", "contains", "number-gte", "number-lte"].includes(filter.op) ||
@@ -73,7 +80,7 @@ function validateQuery(query, source) {
   if (groupBy.length > MAX_GROUPS || new Set(groupBy).size !== groupBy.length || groupBy.some(field => !fields.has(field))) throw invalidQuery("Choose listed grouping fields.");
   const operation = query.operation ?? "rows";
   if (!["rows", "count", "sum", "average", "minimum", "maximum", "median", "distinct", "statistics"].includes(operation) || operation === "rows" && groupBy.length ||
-    ["sum", "average", "minimum", "maximum", "median", "distinct", "statistics"].includes(operation) && !fields.has(query.measure) ||
+    ["sum", "average", "minimum", "maximum", "median", "distinct", "statistics"].includes(operation) && !expression && !fields.has(query.measure) ||
     ["rows", "count"].includes(operation) && query.measure) throw invalidQuery("Choose a supported source operation.");
   const requestedColumns = query.columns ?? source.fields;
   if (!Array.isArray(requestedColumns) || !requestedColumns.length || (query.columns !== undefined && requestedColumns.length > 40) || new Set(requestedColumns).size !== requestedColumns.length || requestedColumns.some(field => !fields.has(field))) throw invalidQuery('columns must contain listed source fields.');
@@ -88,7 +95,11 @@ function validateQuery(query, source) {
   if (!Array.isArray(orderBy) || orderBy.length > 3 || orderBy.some(order => !order || !resultFields.includes(order.field) || !['asc','desc'].includes(order.direction))) throw invalidQuery('orderBy must use returned fields: selected columns for rows; groupBy fields plus result for aggregates; groupBy plus records, known, missing, mean, median, minimum, maximum for statistics.');
   const limit = Number(query.limit ?? 25);
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_ROWS) throw invalidQuery("Choose a row limit from 1 to 100.");
-  return { source, filters, groupBy, operation, measure: query.measure ?? null, columns, orderBy, limit };
+  const excerpt = query.textExcerpt;
+  if (excerpt !== undefined && (!excerpt || typeof excerpt !== 'object' || Array.isArray(excerpt) || Object.keys(excerpt).some(key=>!['field','query','characters'].includes(key)) ||
+    operation !== 'rows' || !columns.includes(excerpt.field) || typeof excerpt.query !== 'string' || excerpt.query.length > 200 ||
+    !Number.isSafeInteger(excerpt.characters) || excerpt.characters < 100 || excerpt.characters > 2000 || limit > 20)) throw invalidQuery('Text excerpts require a selected field, literal query (empty for the start), 100–2000 characters and at most twenty rows.');
+  return { source, filters, groupBy, operation, excerpt, measure: expression ? "_ally_measure" : query.measure ?? null, expression, columns, orderBy, limit };
 }
 
 function quotedField(field) { return `\`${field}\``; }
@@ -111,6 +122,13 @@ export function compileAllyPlatformDataQuery(query, source, constraints = []) {
       !['in', 'gte', 'lte', 'day-gte', 'day-lte'].includes(c.op) || (c.op === 'in' ? !Array.isArray(c.value) || !c.value.length || c.value.length > 25 || c.value.some(v => typeof v !== 'string' || v.length > 80) : typeof c.value !== 'string' || c.value.length > 80))) throw Error('Invalid enforced source scope.');
   input.filters = [...input.filters, ...constraints];
   const where = input.filters.map(filterSql);
+  const expressionSql = input.expression ? (()=>{
+    const {left,right,operation}=input.expression;
+    const a=`try_cast(${quotedField(left)} AS DOUBLE)`, b=`try_cast(${quotedField(right)} AS DOUBLE)`;
+    return operation==='days-between' ? `DATEDIFF(try_cast(${quotedField(right)} AS DATE), try_cast(${quotedField(left)} AS DATE))`
+      : `(${a} ${{add:'+',subtract:'-',multiply:'*',divide:'/'}[operation]} ${operation==='divide'?`NULLIF(${b}, 0)`:b})`;
+  })() : null;
+  const relation=expressionSql ? `(SELECT *, ${expressionSql} AS _ally_measure FROM alamohealth.gold.v_tool_${input.source.id}) AS measured` : `alamohealth.gold.v_tool_${input.source.id}`;
   const groupColumns = input.groupBy.map(quotedField);
   const metric = input.operation === "count" ? "COUNT(*) AS result"
     : input.operation === "sum" ? `SUM(try_cast(${quotedField(input.measure)} AS DOUBLE)) AS result`
@@ -121,7 +139,7 @@ export function compileAllyPlatformDataQuery(query, source, constraints = []) {
       : input.operation === "distinct" ? `COUNT(DISTINCT ${quotedField(input.measure)}) AS result`
       : input.operation === 'statistics' ? statisticsSql(quotedField(input.measure)) : input.columns.map(quotedField).join(', ');
   const projection = input.operation === "rows" ? metric : [...groupColumns, metric].join(", ");
-  const sql = `SELECT ${projection} FROM alamohealth.gold.v_tool_${input.source.id}` +
+  const sql = `SELECT ${projection} FROM ${relation}` +
     (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
     (groupColumns.length ? ` GROUP BY ${groupColumns.join(", ")}` : "") +
     (input.orderBy.length ? ` ORDER BY ${input.orderBy.map(order => `${quotedField(order.field)} ${order.direction.toUpperCase()} NULLS LAST`).join(', ')}` : '') +
@@ -161,7 +179,7 @@ const NULL_TO_ZERO_FIELDS = new Set(['Age','LOS_Days','average_age','average_los
   'incidents_per_100_residents','largest_documentation_gap_days','days_since_last_note','minutes_late','refusal_pct','compliance_pct',
   'latest_monthly_census','prior_census','census_7d_prior','census_change_7d']);
 function snapshotQueryRows(rows, input) {
-  const required = new Set([...input.filters.map(filter => filter.field), ...input.groupBy, ...(input.measure ? [input.measure] : []), ...(input.operation==='rows'?input.columns:[])]);
+  const required = new Set([...input.filters.map(filter => filter.field), ...input.groupBy, ...(input.expression ? [input.expression.left,input.expression.right] : input.measure ? [input.measure] : []), ...(input.operation==='rows'?input.columns:[])]);
   return rows.map(row => {
     let ambiguity = null;
     const projected = Object.fromEntries(input.source.fields.map(field => {
@@ -185,6 +203,14 @@ function snapshotQueryRows(rows, input) {
       return [field, key ? normalizeKnownCommunityNames(row[key]) : null];
     }));
     if (ambiguity && snapshotFilter([projected],input.filters).length) throw Error(ambiguity);
+    if (input.expression) {
+      const {left,right,operation}=input.expression;
+      const number=value=>value===null || value===undefined || String(value).trim()==='' || !Number.isFinite(Number(value)) ? null : Number(value);
+      const day=value=>{ const text=String(value??'').slice(0,10); const time=Date.parse(text+'T00:00:00Z'); return /^\d{4}-\d{2}-\d{2}$/.test(text) && Number.isFinite(time) && new Date(time).toISOString().slice(0,10)===text ? time/86400000 : null; };
+      const a=operation==='days-between'?day(projected[left]):number(projected[left]);
+      const b=operation==='days-between'?day(projected[right]):number(projected[right]);
+      projected._ally_measure=a===null || b===null || operation==='divide' && b===0 ? null : operation==='days-between'?b-a:operation==='add'?a+b:operation==='subtract'?a-b:operation==='multiply'?a*b:a/b;
+    }
     return projected;
   });
 }
@@ -289,6 +315,14 @@ export async function readAllyPlatformData(query, { load = async () => {
   const hasMore = rows.length > input.limit;
   const fields = input.operation === 'rows' ? input.columns : [...input.groupBy, ...aggregateFields(input.operation)];
   const returned = (hasMore ? rows.slice(0, input.limit) : rows).map(row => Object.fromEntries(fields.map(field => [field, row[field] ?? null])));
+  const excerpts = input.excerpt ? returned.map((row,index)=>{
+    const {field,query,characters}=input.excerpt, text=row[field];
+    if (typeof text !== 'string') return {row:index, field, characters:null, offset:0, complete:true};
+    const match=query ? text.toLowerCase().indexOf(query.toLowerCase()) : 0;
+    const offset=Math.max(0,match-Math.floor(characters/4));
+    row[field]=text.slice(offset,offset+characters);
+    return {row:index,field,characters:text.length,offset,complete:offset===0 && text.length<=characters,queryMatched:match>=0};
+  }) : null;
   // A failed search is not a demonstrated absence when its predicate has no
   // usable values. Profile only zero-match searches, keeping the enforced
   // community and date constraints; no note bodies enter this coverage result.
@@ -320,6 +354,7 @@ export async function readAllyPlatformData(query, { load = async () => {
   }
   if (Buffer.byteLength(JSON.stringify(returned), "utf8") > MAX_RESULT_BYTES) throw Object.assign(Error("The result is too large; narrow the filters or row limit."),{code:'analyst_result_too_large'});
   return { version: "ally-platform-data-v1", source: input.source, readMode, coverage,
-    query: { slice: input.source.id, filters: input.filters, operation: input.operation, groupBy: input.groupBy, measure: input.measure, columns:input.columns, orderBy:input.orderBy, limit: input.limit },
+    query: { slice: input.source.id, filters: input.filters, operation: input.operation, groupBy: input.groupBy, measure: input.expression ? null : input.measure, ...(input.expression?{measureExpression:input.expression}:{}), columns:input.columns, orderBy:input.orderBy, limit: input.limit },
+    ...(excerpts?{textExcerpts:excerpts,excerptNotice:"Text is an excerpt, not the complete note. Counts still require an aggregate over the filtered source population."}:{}),
     rows: returned, hasMore, returnedRows: returned.length, ...(searchCoverage?{searchCoverage}:{}) };
 }

@@ -1,3 +1,14 @@
+## November 24 investigation tools — candidate
+
+The shared native reader now exposes content previews, exact paths, multi-field
+reads and literal passage search instead of only names of large object fields.
+Pipeline defaults to the substantive record and supports its source-owned cohort
+assessment reader. Source identity, grants and response-revision checks remain.
+The existing safe query compiler adds row-level date intervals and arithmetic
+before full-population aggregation, plus explicit text excerpts for long notes.
+Unknown operands stay unknown; source scope is applied before aggregation.
+These are local candidates until immutable source deployment and real evaluation.
+
 ## November 24 full-data analyst — source connections deployed, engine evaluation pending
 
 The owner now authorizes full organizational read access for signed-in Ally
