@@ -241,29 +241,21 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
       const { dateField: _date, ...query } = args;
       try { result = await data(query, { load:async()=>publishedSummary, constraints, snapshotOnly, ...(authorization.grant.detail ? {} : {allowedFields: reportAggregateFields(source.fields)}) }); }
       catch(error) {
-        if(!error || typeof error !== 'object' || !('code' in error) || !['analyst_result_too_large','ally_query_invalid'].includes(String(error.code))) throw error;
+        if(!error || typeof error !== 'object' || !('code' in error) || !['analyst_result_too_large','ally_query_invalid','ally_field_coverage_unavailable'].includes(String(error.code))) throw error;
         // These are source-owned validation messages, never database/provider
         // exception bodies. Let the existing investigation loop repair the query.
-        const note=error.code==='ally_query_invalid' ? `Query needs correction: ${error instanceof Error ? error.message : 'Choose supported query fields.'}` : 'This selection is too large. Request fewer rows and columns, add a narrower filter, or calculate an aggregate.';
+        const note=error.code==='ally_field_coverage_unavailable' && error instanceof Error ? error.message : error.code==='ally_query_invalid' ? `Query needs correction: ${error instanceof Error ? error.message : 'Choose supported query fields.'}` : 'This selection is too large. Request fewer rows and columns, add a narrower filter, or calculate an aggregate.';
         return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
       }
       base.grain = source.grain; base.observedAt = source.generatedAt ?? base.observedAt;
       const {fieldCoverage: _coverage, ...resultSource} = result.source;
       result.source = resultSource;
-      if(time==='week_start')result.observationIntervals=[...new Set(result.rows.map(row=>row.week_start).filter(value=>typeof value==='string'&&/^20\d{2}-\d{2}-\d{2}$/.test(value)))].map(start=>({start,end:new Date(Date.parse(start+'T00:00:00Z')+6*86400000).toISOString().slice(0,10)}));
+      if(time==='week_start')result={...result,observationIntervals:[...new Set(result.rows.map(row=>row.week_start).filter(value=>typeof value==='string'&&/^20\d{2}-\d{2}-\d{2}$/.test(value)))].map(start=>({start,end:new Date(Date.parse(start+'T00:00:00Z')+6*86400000).toISOString().slice(0,10)}))};
       if (!time) base.period = result.readMode === 'published-snapshot' && source.asOfDate
         ? `Source snapshot as of ${source.asOfDate}; no event-date filter`
         : `Published ${getReportingDateKey(base.observedAt)}; no event-date filter`;
       const relevantFields=[args.measure,...(args.columns ?? []),...(args.groupBy ?? []),...(args.filters ?? []).map(filter=>filter.field)].filter(Boolean);
       const emptyFields=relevantFields.filter(field=>source.fieldCoverage?.[field]?.records>0 && source.fieldCoverage[field].populated===0);
-      // A predicate on an entirely empty publication cannot establish a zero
-      // cohort. Keep genuine zero matches on populated fields answerable.
-      const emptyPredicates=(args.filters ?? []).filter(filter=>emptyFields.includes(filter.field));
-      if(result.readMode==='published-snapshot' && emptyPredicates.length) {
-        const fields=[...new Set(emptyPredicates.map(filter=>filter.field))];
-        const note=`The published data has no populated values for the searched fields: ${fields.join(', ')}. Matching records cannot be determined; this is not a zero result.`;
-        return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,observedAt:base.observedAt,note})};
-      }
       base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
       if(emptyFields.length)base.note+=` No populated values in the complete published data for: ${[...new Set(emptyFields)].slice(0,6).join(', ')}${new Set(emptyFields).size>6?' (and other requested fields)':''}. Missing values are not zero or evidence of no events.`;
       if (result.hasMore || result.coverage.startsWith('partial') || emptyFields.length) base.coverage = 'partial';

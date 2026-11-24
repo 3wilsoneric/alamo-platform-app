@@ -994,11 +994,24 @@ The discovery catalog and execution boundary now use the same date-dimension
 classification, excluding numeric measures such as weekly census row counts and
 latest monthly census. Invalid date selectors return query correction feedback.
 
-An entirely empty published search field now returns unavailable evidence rather
-than a verified zero-match result. The real transportation-note search exposed
-this distinction. Focused source checks preserve both genuine zero matches on
-populated text and the count of existing notes whose text is unknown. This is a
-shared source-boundary repair, separate from republishing the actual note bodies.
+A zero-match search now checks the population of its predicate fields at the
+canonical data reader, for both warehouse and complete-snapshot queries. It keeps
+enforced community/date scope and the user's other filters. Fully empty fields
+return unavailable evidence, partial missingness is explicit, and a genuinely empty
+period remains a valid zero. Matching queries incur no extra coverage query. Failed
+or malformed population checks cannot become verified zero results.
+
+The real transportation-note search demonstrates why this belongs at that owner:
+the old warehouse projection reports zero populated note text across 31,755 scoped
+notes. The candidate reader correctly refuses to label that as no matches. A
+read-only candidate Comment projection returns 290 matches, identical to an
+independent raw-note query. No view or source record was changed for this proof.
+Focused data/report integration checks and server typechecking pass; this is
+separate from publishing the actual note bodies and is not a live fix claim.
+
+The engine's [November 24 architecture review](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-24-architecture-review--decisions-not-a-completed-rebuild)
+records the researched system direction, existing canonical owners and missing
+capabilities. No framework dependency or unrestricted SQL endpoint is introduced.
 
 The live release runner now includes main-Chrome capture time in its two-minute
 budget. Validating a receipt quickly cannot conceal a long browser check. Regression

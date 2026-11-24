@@ -93,21 +93,23 @@ function validateQuery(query, source) {
 function quotedField(field) { return `\`${field}\``; }
 function valueSql(value) { return `CAST(unbase64('${Buffer.from(value, "utf8").toString("base64")}') AS STRING)`; }
 
+function filterSql({ field, op, value }) {
+  const column = `CAST(${quotedField(field)} AS STRING)`;
+  if (op === 'in') return `${column} IN (${value.map(valueSql).join(', ')})`;
+  const literal = valueSql(value.trim());
+  if(op.startsWith('number-'))return `try_cast(${quotedField(field)} AS DOUBLE) ${op==='number-gte'?'>=':'<='} ${Number(value)}`;
+  if (op.startsWith('day-')) return `substring(${column}, 1, 10) ${op === 'day-gte' ? '>=' : '<='} ${literal}`;
+  if (op === "contains") return `contains(lower(${column}), lower(${literal}))`;
+  return `${column} ${op === "eq" ? "=" : op === "gte" ? ">=" : "<="} ${literal}`;
+}
+
 /** @param {any} query @param {any} source @param {Array<{field:string,op:string,value:any}>} [constraints] */
 export function compileAllyPlatformDataQuery(query, source, constraints = []) {
   const input = validateQuery(query, source);
   if (!Array.isArray(constraints) || constraints.length > 3 || constraints.some(c => !source.fields.includes(c.field) ||
       !['in', 'gte', 'lte', 'day-gte', 'day-lte'].includes(c.op) || (c.op === 'in' ? !Array.isArray(c.value) || !c.value.length || c.value.length > 25 || c.value.some(v => typeof v !== 'string' || v.length > 80) : typeof c.value !== 'string' || c.value.length > 80))) throw Error('Invalid enforced source scope.');
   input.filters = [...input.filters, ...constraints];
-  const where = input.filters.map(({ field, op, value }) => {
-    const column = `CAST(${quotedField(field)} AS STRING)`;
-    if (op === 'in') return `${column} IN (${value.map(valueSql).join(', ')})`;
-    const literal = valueSql(value.trim());
-    if(op.startsWith('number-'))return `try_cast(${quotedField(field)} AS DOUBLE) ${op==='number-gte'?'>=':'<='} ${Number(value)}`;
-    if (op.startsWith('day-')) return `substring(${column}, 1, 10) ${op === 'day-gte' ? '>=' : '<='} ${literal}`;
-    if (op === "contains") return `contains(lower(${column}), lower(${literal}))`;
-    return `${column} ${op === "eq" ? "=" : op === "gte" ? ">=" : "<="} ${literal}`;
-  });
+  const where = input.filters.map(filterSql);
   const groupColumns = input.groupBy.map(quotedField);
   const metric = input.operation === "count" ? "COUNT(*) AS result"
     : input.operation === "sum" ? `SUM(try_cast(${quotedField(input.measure)} AS DOUBLE)) AS result`
@@ -123,7 +125,17 @@ export function compileAllyPlatformDataQuery(query, source, constraints = []) {
     (groupColumns.length ? ` GROUP BY ${groupColumns.join(", ")}` : "") +
     (input.orderBy.length ? ` ORDER BY ${input.orderBy.map(order => `${quotedField(order.field)} ${order.direction.toUpperCase()} NULLS LAST`).join(', ')}` : '') +
     ` LIMIT ${input.limit + 1}`;
-  return { sql, ...input };
+  const searchFilters = (query.filters ?? []).filter(filter => !['gte','lte'].includes(filter.op));
+  const searchFields = [...new Set(searchFilters.map(filter => filter.field))];
+  const populationFilters = input.filters.filter(filter => !searchFilters.includes(filter));
+  const populationSql = searchFields.length ? `SELECT ${searchFields.flatMap((field,i)=>{
+    const other=searchFilters.filter(filter=>filter.field!==field).map(filterSql).join(' AND ');
+    const value=`NULLIF(TRIM(CAST(${quotedField(field)} AS STRING)), '')`;
+    return [`COUNT(${other?`CASE WHEN ${other} THEN 1 END`:'*'}) AS records_${i}`,
+      `COUNT(${other?`CASE WHEN ${other} THEN ${value} END`:value}) AS known_${i}`];
+  }).join(', ')} FROM alamohealth.gold.v_tool_${input.source.id}` +
+    (populationFilters.length ? ` WHERE ${populationFilters.map(filterSql).join(' AND ')}` : '') : null;
+  return { sql, searchFields, searchFilters, populationFilters, populationSql, ...input };
 }
 
 export const aggregateFields = operation => operation==='statistics' ? ['records','known','missing','mean','median','minimum','maximum'] : ['result'];
@@ -273,8 +285,37 @@ export async function readAllyPlatformData(query, { load = getReportsSummaryData
   const hasMore = rows.length > input.limit;
   const fields = input.operation === 'rows' ? input.columns : [...input.groupBy, ...aggregateFields(input.operation)];
   const returned = (hasMore ? rows.slice(0, input.limit) : rows).map(row => Object.fromEntries(fields.map(field => [field, row[field] ?? null])));
+  // A failed search is not a demonstrated absence when its predicate has no
+  // usable values. Profile only zero-match searches, keeping the enforced
+  // community and date constraints; no note bodies enter this coverage result.
+  const zero = value => value !== null && value !== undefined && String(value).trim() !== '' && Number(value) === 0;
+  const zeroMatches = !rows.length || ['count','distinct'].includes(input.operation) && rows.every(row=>zero(row.result)) ||
+    input.operation==='statistics' && rows.every(row=>zero(row.records));
+  let searchCoverage = null;
+  if (input.searchFields.length && zeroMatches) {
+    let population;
+    if (readMode === 'published-snapshot') {
+      const scoped = snapshotFilter(snapshotQueryRows(snapshotRows,input),input.populationFilters);
+      population = Object.fromEntries(input.searchFields.flatMap((field,i)=>{
+        const cohort=snapshotFilter(scoped,input.searchFilters.filter(filter=>filter.field!==field));
+        return [[`records_${i}`,cohort.length],[`known_${i}`,cohort.filter(row=>row[field]!==null&&String(row[field]??'').trim()!=='').length]];
+      }));
+    } else {
+      try { const profile=await execute(input.populationSql); if(Array.isArray(profile)&&profile.length===1)population=profile[0]; }
+      catch { /* An unverified search must not become a verified zero. */ }
+    }
+    const count = value => value !== null && value !== undefined && String(value).trim() !== '' && Number.isSafeInteger(Number(value)) && Number(value)>=0;
+    if (!population || input.searchFields.some((_,i)=>!count(population[`records_${i}`]) ||
+        !count(population[`known_${i}`]) || Number(population[`known_${i}`])>Number(population[`records_${i}`]))) {
+      throw Object.assign(Error('Search coverage could not be verified. Matching records are unknown, not zero.'),{code:'ally_field_coverage_unavailable'});
+    }
+    searchCoverage=input.searchFields.map((field,i)=>({field,records:Number(population[`records_${i}`]),known:Number(population[`known_${i}`])}));
+    const unknown=searchCoverage.filter(item=>item.records>0&&item.known===0).map(item=>item.field);
+    if(unknown.length)throw Object.assign(Error(`The searched fields have no populated values in this scope: ${unknown.join(', ')}. Matching records cannot be determined; this is not a zero result.`),{code:'ally_field_coverage_unavailable'});
+    if(searchCoverage.some(item=>item.known<item.records))coverage=(coverage.startsWith('partial')?coverage+'; ':'partial: ')+'some searched values are missing; zero matches applies only to recorded values';
+  }
   if (Buffer.byteLength(JSON.stringify(returned), "utf8") > MAX_RESULT_BYTES) throw Object.assign(Error("The result is too large; narrow the filters or row limit."),{code:'analyst_result_too_large'});
   return { version: "ally-platform-data-v1", source: input.source, readMode, coverage,
     query: { slice: input.source.id, filters: input.filters, operation: input.operation, groupBy: input.groupBy, measure: input.measure, columns:input.columns, orderBy:input.orderBy, limit: input.limit },
-    rows: returned, hasMore, returnedRows: returned.length };
+    rows: returned, hasMore, returnedRows: returned.length, ...(searchCoverage?{searchCoverage}:{}) };
 }

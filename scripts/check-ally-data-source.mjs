@@ -32,6 +32,32 @@ const warehouse = await readAllyPlatformData({ slice: "notes_summary", operation
 } });
 assert.equal(warehouse.coverage, "source-query");
 assert.equal(warehouse.rows[0].result, 4);
+const search={slice:'notes_summary',operation:'rows',filters:[{field:'note_text',op:'contains',value:'transport'},{field:'note_date',op:'gte',value:'2026-10-01'}]};
+const searchConstraints=[{field:'Facility',op:'in',value:['337']},{field:'note_date',op:'day-lte',value:'2026-10-31'}];
+let profiled=0;
+const searchOptions=(known,records=4)=>({load,constraints:searchConstraints,execute:async sql=>{
+  if(!sql.startsWith('SELECT COUNT(*) AS records'))return [];
+  profiled++;assert.match(sql,/`Facility`/);assert.match(sql,/substring\(CAST\(`note_date`/);assert.match(sql,/CAST\(`note_date` AS STRING\) >=/);
+  assert.doesNotMatch(sql,/contains\(/,'availability profile keeps scope and dates without applying the searched value');
+  return [{records_0:records,known_0:known}];
+}});
+await assert.rejects(readAllyPlatformData(search,searchOptions(0)),error=>error.code==='ally_field_coverage_unavailable'&&/not a zero result/.test(error.message));
+const trueZero=await readAllyPlatformData(search,searchOptions(4));
+assert.deepEqual(trueZero.rows,[]);assert.equal(trueZero.coverage,'source-query');assert.deepEqual(trueZero.searchCoverage,[{field:'note_text',records:4,known:4}]);
+const partialZero=await readAllyPlatformData(search,searchOptions(3));assert.match(partialZero.coverage,/partial:.*missing/);
+const emptyPeriod=await readAllyPlatformData(search,searchOptions(0,0));assert.equal(emptyPeriod.searchCoverage[0].records,0);
+for(const known of [null,-1,5])await assert.rejects(readAllyPlatformData(search,searchOptions(known)),/coverage could not be verified/);
+await assert.rejects(readAllyPlatformData(search,{...searchOptions(4),execute:async sql=>{if(sql.startsWith('SELECT COUNT(*) AS records'))throw Error('PRIVATE_DB_ERROR');return[];}}),error=>error.code==='ally_field_coverage_unavailable'&&!error.message.includes('PRIVATE_DB_ERROR'));
+const beforeProfile=profiled;
+await readAllyPlatformData(search,{...searchOptions(4),execute:async()=>[{Facility:'337',Res_Number:'10',note_date:'2026-10-01',note_text:'transport'}]});
+assert.equal(profiled,beforeProfile,'a matching query adds no availability query');
+const scopedEmpty=structuredClone(summary);scopedEmpty.toolContext.manifest[0].row_count=3;scopedEmpty.toolContext.manifest[0].generated_at='2026-11-24T13:00:00Z';
+scopedEmpty.toolContext.tables.notes_summary=[{Facility:'337',note_date:'2026-10-01',note_text:null,Res_Number:'10'},{Facility:'345',note_date:'2026-10-01',note_text:'transport',Res_Number:'11'},{Facility:'337',note_date:'2026-09-01',note_text:'transport',Res_Number:'12'}];
+await assert.rejects(readAllyPlatformData(search,{load:async()=>scopedEmpty,execute:fail,constraints:searchConstraints}),/no populated values/,'another community or date cannot establish search coverage within the selected scope');
+const selectedCommunity={...search,filters:[...search.filters,{field:'Facility',op:'eq',value:'337'}]};
+await assert.rejects(readAllyPlatformData(selectedCommunity,{load:async()=>scopedEmpty,execute:fail,constraints:[{field:'Facility',op:'in',value:['337','345']}]}),/no populated values/,'the user-selected community is retained while checking its missing text');
+const selectedSql=compileAllyPlatformDataQuery(selectedCommunity,catalog[0],searchConstraints).populationSql;
+assert.match(selectedSql,/CASE WHEN CAST\(`Facility` AS STRING\) = .* THEN NULLIF\(TRIM\(CAST\(`note_text`/,'warehouse text coverage retains the user-selected community as well as enforced scope');
 const allowedFields=['Facility','note_date'];
 const restricted=await readAllyPlatformData({slice:'notes_summary',operation:'rows'}, {load,execute:async sql=>{
   assert.match(sql,/SELECT `Facility`, `note_date` FROM/);assert.doesNotMatch(sql,/SELECT \*/);
