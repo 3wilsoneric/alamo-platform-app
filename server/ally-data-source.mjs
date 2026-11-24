@@ -32,6 +32,7 @@ export function listAllyPlatformDataSources(reportsSummary) {
     sourceRows: entry.row_count, snapshotRows: Array.isArray(tables[entry.slice_name]) ? tables[entry.slice_name].length : null,
     minPeriod: entry.min_period ?? null, maxPeriod: entry.max_period ?? null,
     facilityIds: entry.facility_ids ?? [], generatedAt: entry.generated_at ?? null,
+    asOfDate: /^20\d{2}-\d{2}-\d{2}$/.test(entry.as_of_date ?? '') ? entry.as_of_date : null,
     nullableFields: Array.isArray(entry.nullable_fields) && entry.nullable_fields.every(field => entry.fields.includes(field)) ? entry.nullable_fields : []
   }));
 }

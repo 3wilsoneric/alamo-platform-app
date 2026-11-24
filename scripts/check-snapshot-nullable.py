@@ -5,6 +5,7 @@ from pathlib import Path
 
 tree = ast.parse(Path("databricks/notebooks/snapshot_publish.py").read_text())
 namespace = {}
+namespace["expected_as_of_date"] = "2026-11-23"
 for node in tree.body:
     if isinstance(node, ast.FunctionDef) and node.name in {"normalize_str", "normalize_nullable", "normalize_int", "iso_value"}:
         exec(compile(ast.Module(body=[node], type_ignores=[]), "publisher", "exec"), namespace)
@@ -17,6 +18,7 @@ for key in ["resident_profiles", "manifest"]:
 for key in ["age", "los_days", "days_since_last_note"]:
     assert [row[key] for row in namespace["resident_profiles"]] == [None, 0, 37], key
 assert namespace["manifest"][0]["nullable_fields"] == ["Age", "LOS_Days", "days_since_last_note"]
+assert namespace["manifest"][0]["as_of_date"] == "2026-11-23"
 namespace["manifest_rows"][0]["fields"] = "Age,LOS_Days"
 exec(compile(ast.Module(body=[projections["manifest"]], type_ignores=[]), "publisher", "exec"), namespace)
 assert namespace["manifest"][0]["nullable_fields"] == ["Age", "LOS_Days"]

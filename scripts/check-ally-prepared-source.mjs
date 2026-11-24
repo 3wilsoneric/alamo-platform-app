@@ -13,7 +13,7 @@ function fixture() {
   const grant = { id: 'prepared-fixture', clientId, principalId, subjectId: user, communityIds: ['337'], capabilities: ['platform-data'], slices: ['resident_profile'], detail: true, expiresAt: new Date(now + 86400000).toISOString(), revoked: false };
   const registry = { version: 1, grants: [grant] };
   const published = { snapshot: { generated_at: new Date(now).toISOString(), as_of_date: '2026-11-23' }, reportsSummary: { toolContext: {
-    manifest: [{ slice_name: 'resident_profile', grain: 'current resident', row_count: 3, fields: ['Facility', 'Facility_Name', 'Age'], nullable_fields: ['Age'], generated_at: new Date(now).toISOString() }],
+    manifest: [{ slice_name: 'resident_profile', grain: 'current resident', row_count: 3, fields: ['Facility', 'Facility_Name', 'Age'], nullable_fields: ['Age'], generated_at: new Date(now).toISOString(), as_of_date: '2026-11-22' }],
     tables: { resident_profile: [{ facility_id: '337', facility_name: 'San Pablo', age: 40 }, { facility_id: '337', facility_name: 'San Pablo', age: null }, { facility_id: '345', facility_name: 'Santa Clarita', age: 80 }] }
   } } };
   let mutate = () => {}, warehouse = 0;
@@ -34,6 +34,7 @@ function fixture() {
 test('prepared facts are complete, scoped aggregates using the canonical source reader', async () => {
   const f = fixture(), response = await f.send(); assert.equal(response.status, 200);
   assert.equal(response.body.prepared.length, 1);
+  assert.equal(response.body.prepared[0].value.period, 'Source snapshot as of 2026-11-22; no event-date filter', 'publishing today does not make yesterday’s data current');
   assert.deepEqual(response.body.prepared[0].value.dataset.rows, [{ Facility_Name: 'San Pablo', records: 2, known: 1, missing: 1, mean: 40, median: 40, minimum: 40, maximum: 40 }]);
   assert.equal(f.warehouse(), 0); assert.equal(response.body.prepared[0].value.grantRevision, response.body.grant.revision);
   assert.equal((await f.send({ communityIds: ['345'], from: '2026-01-01', through: '2026-11-23' })).status, 403);

@@ -1467,6 +1467,7 @@ def build_tool_context_summary():
                 if field
             ],
             "generated_at": iso_value(row["generated_at"]),
+            "as_of_date": expected_as_of_date,
             "nullable_fields": [field for field in ["Age", "LOS_Days", "days_since_last_note"]
                 if field in normalize_str(row["fields"]).split(",")]
                 if row["slice_name"] == "resident_profile" else [],

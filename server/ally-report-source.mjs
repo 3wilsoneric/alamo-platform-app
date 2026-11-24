@@ -203,7 +203,9 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
         return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
       }
       base.grain = source.grain; base.observedAt = source.generatedAt ?? base.observedAt;
-      if (!time) base.period = `Source snapshot as of ${base.observedAt.slice(0, 10)}; no event-date filter`;
+      if (!time) base.period = result.readMode === 'published-snapshot' && source.asOfDate
+        ? `Source snapshot as of ${source.asOfDate}; no event-date filter`
+        : `Published ${getReportingDateKey(base.observedAt)}; no event-date filter`;
       base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
       if (result.hasMore || result.coverage.startsWith('partial')) base.coverage = 'partial';
       const keys = args.operation === 'rows' ? args.columns ?? result.source.fields : [...(args.groupBy ?? []), ...aggregateFields(args.operation)];
