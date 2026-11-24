@@ -256,6 +256,14 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
         : `Published ${getReportingDateKey(base.observedAt)}; no event-date filter`;
       const relevantFields=[args.measure,...(args.columns ?? []),...(args.groupBy ?? []),...(args.filters ?? []).map(filter=>filter.field)].filter(Boolean);
       const emptyFields=relevantFields.filter(field=>source.fieldCoverage?.[field]?.records>0 && source.fieldCoverage[field].populated===0);
+      // A predicate on an entirely empty publication cannot establish a zero
+      // cohort. Keep genuine zero matches on populated fields answerable.
+      const emptyPredicates=(args.filters ?? []).filter(filter=>emptyFields.includes(filter.field));
+      if(result.readMode==='published-snapshot' && emptyPredicates.length) {
+        const fields=[...new Set(emptyPredicates.map(filter=>filter.field))];
+        const note=`The published data has no populated values for the searched fields: ${fields.join(', ')}. Matching records cannot be determined; this is not a zero result.`;
+        return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,observedAt:base.observedAt,note})};
+      }
       base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
       if(emptyFields.length)base.note+=` No populated values in the complete published data for: ${[...new Set(emptyFields)].slice(0,6).join(', ')}${new Set(emptyFields).size>6?' (and other requested fields)':''}. Missing values are not zero or evidence of no events.`;
       if (result.hasMore || result.coverage.startsWith('partial') || emptyFields.length) base.coverage = 'partial';

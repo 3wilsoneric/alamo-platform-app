@@ -993,3 +993,9 @@ fixes are local and are not included in the frozen rerun's deployed adapter.
 The discovery catalog and execution boundary now use the same date-dimension
 classification, excluding numeric measures such as weekly census row counts and
 latest monthly census. Invalid date selectors return query correction feedback.
+
+An entirely empty published search field now returns unavailable evidence rather
+than a verified zero-match result. The real transportation-note search exposed
+this distinction. Focused source checks preserve both genuine zero matches on
+populated text and the count of existing notes whose text is unknown. This is a
+shared source-boundary repair, separate from republishing the actual note bodies.

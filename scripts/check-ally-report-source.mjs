@@ -393,6 +393,15 @@ const ageEvidence=await analystSources.read({scope,step:{id:'age',capability:'pl
 assert.equal(ageEvidence.dataset.rows[0].average_age,44.9);assert.equal(ageEvidence.dataset.columns[1].label,'Average age');
 await assert.rejects(analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:null}}},analystAuth),/require a date field/);
 console.log('Analyst discovery, exact missing-age statistics, readable averages, authorized source visibility and mandatory date scope passed.');
+const noteSearch={id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',filters:[{field:'note_text',op:'contains',value:'transport'}]}};
+const noMatchingNotes=await analystSources.read({scope,step:noteSearch},analystAuth);
+assert.equal(noMatchingNotes.status,'verified');assert.equal(noMatchingNotes.dataset.rows[0].result,0);
+analystSummary.toolContext.tables.notes_summary[0].note_text=null;
+const unknownMatchingNotes=await analystSources.read({scope,step:noteSearch},analystAuth);
+assert.equal(unknownMatchingNotes.status,'unavailable');assert.equal(unknownMatchingNotes.answer,null);assert.equal(unknownMatchingNotes.dataset,undefined);
+assert.match(unknownMatchingNotes.note,/cannot be determined.*not a zero result/);
+const noteCount=await analystSources.read({scope,step:{...noteSearch,input:{slice:'notes_summary',operation:'count'}}},analystAuth);
+assert.equal(noteCount.dataset.rows[0].result,1,'missing text does not erase the existence of the note');
 analystSummary.toolContext.tables.notes_summary[0].note_text='SOURCE_TEXT_PRIVATE '.repeat(6000);
 const oversized=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'rows',limit:1}}},analystAuth);
 assert.equal(oversized.status,'unavailable');assert.equal(oversized.answer,null);assert.match(oversized.note,/fewer rows and columns/);assert(!JSON.stringify(oversized).includes('SOURCE_TEXT_PRIVATE'));
