@@ -19,6 +19,9 @@ import { validateReportEvidence, EXECUTIVE_REPORT_SOURCE_PATH } from '@alamo/age
 import { reportViewContext } from '@alamo/agent-runtime/shared/executive-report-views.mjs';
 import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { reportColumnLabel, reportCellValue } from '../shared/report-display.mjs';
+import { analystSourceDefinition } from '../server/ally-analyst-catalog.mjs';
+
+assert.deepEqual(analystSourceDefinition({id:'census_data_quality',fields:['latest_census_month','latest_monthly_census','weekly_census_rows','min_week','max_week','monthly_census_minus_active_roster']}).dateFields,['latest_census_month','min_week','max_week']);
 
 for (const [key,expected] of [['operatingCapacity','Operating capacity'],['occupied_bed_days','Occupied bed-days'],['census_delta','Census delta'],['prn_given_count','PRN given count'],['FacilityID','Community ID']]) assert.equal(reportColumnLabel({key,label:key}),expected);
 assert.equal(reportColumnLabel({key:'bedDays',label:'Days occupied in this period'}),'Days occupied in this period','source-authored wording is preserved');
@@ -37,8 +40,8 @@ const rows=[{facility_id:'337',incident_date:'2026-11-20T23:59:59',severity:'med
 const published={toolContext:{manifest:[{slice_name:'incident_detail_history',grain:'incident',row_count:4,fields:Object.keys(rows[0]),generated_at:new Date().toISOString()}, {slice_name:'census_monthly_by_community',grain:'community month',row_count:1,fields:['facility_id','month','census']}],tables:{incident_detail_history:rows,census_monthly_by_community:[{facility_id:'337',month:'2026-11',census:40}]}}};
 const step={id:'source-1',capability:'platform-data',input:{slice:'incident_detail_history',operation:'count',groupBy:['severity'],dateField:'incident_date'}};
 const pipelineSnapshot={status:'connected',generatedAt:new Date().toISOString(),metrics:{activeReferrals:2,awaitingAdmission:900},board:{total:2,truncated:false,columns:[{key:'decision',label:'Decision',count:99}],cards:[{column:'in_progress',status:'Assessment underway',community:'San Pablo'},{column:'decision',status:'Accepted, requirements open',community:'Santa Clarita'}]}};
-let reads=0, afterRead=()=>{};
-const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot)});
+let reads=0, afterRead=()=>{}, warehouseRows=null;
+const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot)});
 const {publicKey,privateKey}=await generateKeyPair('RS256');const jwk=await exportJWK(publicKey);
 const sign=(claims={})=>new SignJWT({tid:EVERYAGENT_TENANT,oid:principalId,azp:clientId,roles:['AlamoAgent.Source.Read'],ver:'2.0',iss:`https://login.microsoftonline.com/${EVERYAGENT_TENANT}/v2.0`,aud:audience,iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600,...claims}).setProtectedHeader({alg:'RS256',kid:'test'}).sign(privateKey);
 const handler=createPlatformReportSourceHandler({authorize:createPlatformAgentSourceAuthorizer({audience,keySet:createLocalJWKSet({keys:[{...jwk,kid:'test',alg:'RS256'}]})}),readGrants:async()=>structuredClone(registry),sources});
@@ -74,6 +77,16 @@ try {
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
   const sqlResult=await readAllyPlatformData(step.input,{load:async()=>({...published,toolContext:{...published.toolContext,tables:{}}}),execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
   published.toolContext.manifest[0].row_count=10;await assert.rejects(connection.read(user,scope,step));published.toolContext.manifest[0].row_count=4;
+  // Native SDK timestamp -> source formatting -> HTTP JSON -> engine contract.
+  // The live benchmark exposed Date cells becoming {} during name formatting.
+  published.toolContext.manifest[0].row_count=10;
+  registry.grants[0].detail=true;
+  warehouseRows=[{incident_date:new Date('2026-11-19T23:41:07.123Z'),severity:'medium'}];
+  const datedStep={id:'source-2',capability:'platform-data',input:{slice:'incident_detail_history',operation:'rows',columns:['incident_date','severity'],dateField:'incident_date'}};
+  const dated=validateReportEvidence(await connection.read(user,scope,datedStep),datedStep,scope);
+  assert.equal(dated.dataset.rows[0].incident_date,'2026-11-19T23:41:07.123Z');
+  assert.equal(JSON.parse(dated.answer).rows[0].incident_date,dated.dataset.rows[0].incident_date);
+  warehouseRows=null;registry.grants[0].detail=false;published.toolContext.manifest[0].row_count=4;
   // A newly published field must not expand an aggregate-only grant.
   const aggregate=published.toolContext.manifest[1];aggregate.fields.push('private_case_note','private_date_of_birth');
   Object.assign(published.toolContext.tables.census_monthly_by_community[0],{private_case_note:'REDACTION_PROBE',private_date_of_birth:'1980-01-01',undeclared_secret:'UNDECLARED_PROBE'});
@@ -364,9 +377,14 @@ const analystSources=createPlatformReportSources({summary:async()=>analystSummar
 const analystAuth={communities:['337'],grant:{capabilities:['platform-data','data-catalog'],slices:['resident_profile','community_operating_summary','notes_summary'],detail:true},receipt:{revision:'a'.repeat(64)}};
 const statisticStep={id:'source-1',capability:'platform-data',input:{slice:'resident_profile',operation:'statistics',measure:'Age'}};
 const statisticEvidence=await analystSources.read({scope,step:statisticStep},analystAuth);
+const badDate=await analystSources.read({scope,step:{...statisticStep,input:{...statisticStep.input,dateField:'Age'}}},analystAuth);
+assert.equal(badDate.status,'unavailable');assert.match(badDate.note,/listed date dimension/);
 assert.deepEqual(statisticEvidence.dataset.rows,[{records:2,known:1,missing:1,mean:20,median:20,minimum:20,maximum:20}]);
 assert(!JSON.stringify(statisticEvidence).includes('OTHER_COMMUNITY'));
 const discovered=JSON.parse((await analystSources.read({scope,step:{id:'catalog',capability:'data-catalog',input:{query:'age'}}},analystAuth)).answer);
+const longSearch=await analystSources.read({scope,step:{id:'catalog',capability:'data-catalog',input:{query:'x'.repeat(241)}}},analystAuth);
+assert.equal(longSearch.status,'unavailable');assert.match(longSearch.note,/1–240 characters/,'invalid model search text is correctable feedback, not a fake source outage');
+assert.equal(longSearch.answer,null);
 assert(discovered.sources.some(s=>s.id==='resident_profile'&&s.numericFields.includes('Age')));
 const aggregateAuth={...analystAuth,grant:{...analystAuth.grant,detail:false,slices:['community_operating_summary']}};
 const aggregateSources=await analystSources.catalog(aggregateAuth);

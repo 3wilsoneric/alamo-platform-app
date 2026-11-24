@@ -33,6 +33,8 @@ export const ANALYST_SOURCES = Object.freeze({
 
 export const ANALYST_NUMERIC_FIELDS = new Set(('is_countable_resident is_suspect_test_resident is_on_hold is_prn is_refusal is_over_60_minutes_late has_effectiveness_followup is_narcotic is_psychotropic census prior_census census_delta admissions discharges net_change occupied_bed_days bed_days resident_count resident_rows incident_count incidents count total service_count refusal_count scheduled_count completed_count given_count not_given_count pending_count missed_count late_given_count refused_count held_count other_not_given_count prn_given_count Age LOS_Days average_age average_los_days incidents_per_100_residents compliance_pct documentation_gap_rows largest_documentation_gap_days latest_monthly_census active_roster_residents current_active_roster_residents current_active_minus_latest_census monthly_census_minus_active_roster excluded_or_non_countable_rows suspected_test_rows weekly_census_rows days_since_last_note assessment_score administration_count awol_count hospital_count unknown_count active_medication_count active_psychotropic_count active_narcotic_count active_prn_count scheduled_7d given_7d refusals_7d scheduled_30d given_30d not_given_30d refusals_30d scheduled_90d given_90d not_given_90d refusals_90d prn_given_30d prn_followup_30d compliance_pct_30d total_scheduled given not_given refusals refusal_pct source_rows incident_count_all_time incident_count_30d incident_count_90d incident_count_180d service_units service_minutes service_visits minutes_late').split(' '));
 
+export const analystDateFields = fields => fields.filter(field => !ANALYST_NUMERIC_FIELDS.has(field) && /(?:date|month|week|time|period)/i.test(field));
+
 export function analystSourceDefinition(source) {
   const semantics=ANALYST_SOURCES[source.id];
   const {fieldCoverage,...description}=source;
@@ -40,5 +42,5 @@ export function analystSourceDefinition(source) {
     ...(fieldCoverage?{fieldAvailability:{basis:'complete-published-row-set',records:source.snapshotRows,emptyFields:Object.entries(fieldCoverage).filter(([,value])=>value.populated===0).map(([field])=>field),unpublishedFields:Object.entries(fieldCoverage).filter(([,value])=>value.present!==value.records).map(([field])=>field)}}:{}),
     completeness: source.snapshotRows === source.sourceRows ? 'complete-published-snapshot' : 'full-query-required',
     numericFields: source.fields.filter(field => ANALYST_NUMERIC_FIELDS.has(field)),
-    dateFields: source.fields.filter(field => /(?:date|month|week|time|period)/i.test(field)) };
+    dateFields: analystDateFields(source.fields) };
 }

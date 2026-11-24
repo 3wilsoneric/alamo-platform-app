@@ -982,3 +982,14 @@ composer interaction; the callback now preserves a focus the user has already
 chosen, and the test waits for scheduled restoration before asserting it. The
 320/390/1440 browser pass covers the original return-focus assertion and multiline
 input. No postdeployment check or deployment is implied by this local receipt.
+
+The real rerun also exposed warehouse timestamps being converted to empty objects
+by the shared community-name formatter. The candidate preserves native Date values
+so HTTP serializes them normally; the focused source integration now exercises a
+native warehouse Date through formatting, HTTP and the engine evidence validator.
+Search inputs publish their existing length bounds and oversized queries return
+bounded correction feedback rather than a generic source outage. These source
+fixes are local and are not included in the frozen rerun's deployed adapter.
+The discovery catalog and execution boundary now use the same date-dimension
+classification, excluding numeric measures such as weekly census row counts and
+latest monthly census. Invalid date selectors return query correction feedback.

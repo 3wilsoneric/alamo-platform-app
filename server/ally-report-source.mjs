@@ -15,7 +15,7 @@ import { createWorkflowKnowledgeSource } from './workflow-knowledge-source.mjs';
 import { reportAggregateFields, reportNumericField } from './ally-report-source-grants.mjs';
 import { getExecutiveDirectorIncidents } from './executive-director-incidents.mjs';
 import { reportColumnLabel } from '../shared/report-display.mjs';
-import { ANALYST_SOURCES, ANALYST_NUMERIC_FIELDS, analystSourceDefinition } from './ally-analyst-catalog.mjs';
+import { ANALYST_SOURCES, ANALYST_NUMERIC_FIELDS, analystSourceDefinition, analystDateFields } from './ally-analyst-catalog.mjs';
 
 const objectSchema = properties => ({ type: 'object', properties, additionalProperties: false });
 const string = { type: 'string' }, strings = { type: 'array', items: string, maxItems: 3 };
@@ -23,13 +23,13 @@ const schemas = {
   'platform-data': objectSchema({ slice: string, operation: { enum: ['rows', 'count', 'sum', 'average', 'minimum', 'maximum', 'median', 'distinct', 'statistics'] }, groupBy: strings, measure: string,
     columns:{type:'array',items:string,maxItems:40,description:'Projection for rows only. Omit for aggregates; valid redundant columns do not change the aggregate population.'}, orderBy:{type:'array',maxItems:3,description:'Use returned keys: groupBy fields and result for aggregates; named statistics for statistics.',items:objectSchema({field:string,direction:{enum:['asc','desc']}})},
     dateField: { type: ['string', 'null'] }, limit: { type: 'integer', minimum: 1, maximum: 100 },
-    filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains', 'number-gte', 'number-lte'] }, value: string }) } }),
+    filters: { type: 'array', maxItems: 6, items: objectSchema({ field: string, op: { enum: ['eq', 'gte', 'lte', 'contains', 'number-gte', 'number-lte'] }, value: {type:'string',minLength:1,maxLength:200} }) } }),
   'incident-summary': objectSchema({ from: string, through: string, communityIds: { type: 'array', items: string, maxItems: 5 }, priority: { enum: ['high', 'medium', 'low', 'unknown'] } }),
-  'data-catalog': objectSchema({query:string,slice:string}),
+  'data-catalog': objectSchema({query:{type:'string',minLength:1,maxLength:240},slice:{type:'string',minLength:1,maxLength:80}}),
   'resident-flow': objectSchema({ view: { enum: ['communities', 'counties', 'occupancy'] } }),
-  'pipeline-summary': objectSchema({ view: { enum: ['stages', 'planned-admissions', 'current-workspaces', 'monthly-history'] }, query:string, stage:{enum:INTAKE_STAGES.map(stage=>stage.key)} }),
-  'licensing-search': objectSchema({ query: string, type: { enum: ['Complaint', 'Inspection', 'Other'] } }),
-  'proforma-search': objectSchema({ query: string })
+  'pipeline-summary': objectSchema({ view: { enum: ['stages', 'planned-admissions', 'current-workspaces', 'monthly-history'] }, query:{type:'string',minLength:1,maxLength:120}, stage:{enum:INTAKE_STAGES.map(stage=>stage.key)} }),
+  'licensing-search': objectSchema({ query: {type:'string',minLength:1,maxLength:120}, type: { enum: ['Complaint', 'Inspection', 'Other'] } }),
+  'proforma-search': objectSchema({ query: {type:'string',minLength:1,maxLength:200} })
 };
 const metadata = {
   'platform-data': ['Governed Platform data', 'Query source-owned data within authorized dates and communities. Counts count rows, not necessarily people. columns is only for rows; omit it for aggregates. Aggregates return groupBy fields and result. statistics returns records, known, missing, mean, median, minimum, maximum. orderBy uses these returned keys, not the original measure. Numeric filters use number-gte/number-lte; gte/lte are date filters. Never sum census across dates.'],
@@ -114,6 +114,11 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
       requiresDetail: step.capability === 'platform-data' && authorization.grant.detail,
       observedAt: new Date(now()).toISOString(), period: `${scope.from}–${scope.through}`, grain: 'source observation',
       status: 'verified', coverage: 'complete', title: metadata[step.capability][0], note: '', answer: '', revision: '' };
+    const queryLimit=schemas[step.capability].properties.query?.maxLength;
+    if(queryLimit && args.query!==undefined && (typeof args.query!=='string' || !args.query.trim() || args.query.length>queryLimit)) {
+      const note=`Query needs correction: use a search phrase of 1–${queryLimit} characters, not the whole requested answer.`;
+      return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+    }
     let result, dataset;
     if (step.capability === 'data-catalog') {
       reportObject(args, [], ['query','slice']);
@@ -210,7 +215,10 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
         const note='Service archive records cover whole months. Use month_bucket and complete months; service_date is not an individual visit date.';
         return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
       }
-      if (time !== null && time !== undefined && (!source.fields.includes(time) || !/(?:date|month|week|time|period)/i.test(time))) throw Error('Choose a source date field.');
+      if (time !== null && time !== undefined && !analystDateFields(source.fields).includes(time)) {
+        const note='Query needs correction: choose a listed date dimension. A count or rate cannot be used as the event date.';
+        return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+      }
       if (args.operation === 'sum' && /census/.test(args.slice) && !(args.groupBy ?? []).includes(time)) throw Error('Census cannot be summed across dates.');
       const selectedPeriod=queryPeriod(scope,args.filters,time);
       if (args.slice === 'services_provided') {

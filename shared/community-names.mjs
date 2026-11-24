@@ -87,6 +87,9 @@ export function normalizeKnownCommunityNames(value) {
 export function normalizeKnownCommunityNamesDeep(value) {
   if (typeof value === "string") return normalizeKnownCommunityNames(value);
   if (Array.isArray(value)) return value.map(normalizeKnownCommunityNamesDeep);
+  // Warehouse timestamp cells are native Dates. Preserve their JSON encoding;
+  // enumerating a Date's properties turns a valid timestamp into an empty object.
+  if (value instanceof Date) return value;
   if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [key, normalizeKnownCommunityNamesDeep(entry)])
