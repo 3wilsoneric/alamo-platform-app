@@ -1,5 +1,5 @@
 import { reportHash, reportObject, reportText, validateReportScope } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
-import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
+import { ALAMO_FACILITIES, normalizeKnownCommunityNamesDeep } from '../shared/community-names.mjs';
 import { ANALYSIS_SLICE_CATALOG } from '../shared/analysis-slice-catalog.mjs';
 import { readPlatformSnapshot } from './platform-snapshot.mjs';
 import { getReportsSummaryData } from './platform-data.mjs';
@@ -77,7 +77,10 @@ function platformDataset(title, rows, columns, time) {
   return dataset;
 }
 
-export function createPlatformReportSources({ snapshot = readPlatformSnapshot, summary = getReportsSummaryData, data = readAllyPlatformData,
+// Reuse the canonical publication directly; normalize selected rows and bounded
+// output. The standard loader retains missing-publication/fallback behavior.
+export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
+  summary = async () => (await snapshot())?.reportsSummary || getReportsSummaryData(), data = readAllyPlatformData,
   pipeline = getPipelineAdmissionsSummary, incidents = getExecutiveDirectorIncidents, licensing = getLicensingLibrary, knowledge = createWorkflowKnowledgeSource(), now = Date.now } = {}) {
   async function catalog(authorization) {
     const sources = listAllyPlatformDataSources(await summary()).filter(s => authorization.grant.slices.includes(s.id) && facilityField(s.fields))
@@ -278,6 +281,10 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       base.observedAt = result.observedAt; base.period = `Document revisions as of ${result.observedAt.slice(0, 10)}`; base.grain = 'procedure excerpt'; base.note = result.notice;
       if (result.limited) base.coverage = 'partial';
     } else throw Error('Unregistered report capability.');
+    if (step.capability === 'platform-data') {
+      result = normalizeKnownCommunityNamesDeep(result);
+      if (dataset) dataset = normalizeKnownCommunityNamesDeep(dataset);
+    }
     base.answer = JSON.stringify(result);
     if (base.answer.length > 16_000) {
       const note='This selection exceeds the answer context. Request fewer rows and columns, narrow the filter, or calculate an aggregate.';

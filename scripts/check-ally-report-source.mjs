@@ -312,3 +312,20 @@ analystSummary.toolContext.tables.notes_summary[0].note_text='SOURCE_TEXT_PRIVAT
 const oversized=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'rows',limit:1}}},analystAuth);
 assert.equal(oversized.status,'unavailable');assert.equal(oversized.answer,null);assert.match(oversized.note,/fewer rows and columns/);assert(!JSON.stringify(oversized).includes('SOURCE_TEXT_PRIVATE'));
 console.log('Oversized source selections produce bounded refinement feedback without exposing their body or inventing an empty result.');
+
+
+// The source must not normalize/copy every private row just to list datasets.
+const leanPublication={toolContext:{manifest:[{slice_name:'community_operating_summary',grain:'community',row_count:1,fields:['Facility','Facility_Name','census'],generated_at:'2026-11-23T13:00:00Z'}],tables:{community_operating_summary:[{Facility:'337',Facility_Name:'J.C. Wallace',census:7}]}}};
+Object.defineProperty(leanPublication,'unrelatedClinicalRows',{enumerable:true,get(){throw Error('Full publication was traversed');}});
+const leanSource=createPlatformReportSources({snapshot:async()=>({reportsSummary:leanPublication}),data:(query,options)=>readAllyPlatformData(query,{...options,execute:async()=>{throw Error('Complete snapshot must be sufficient');}})});
+const leanAuth={communities:['337'],grant:{capabilities:['platform-data'],slices:['community_operating_summary'],detail:false},receipt:{revision:'a'.repeat(64)}};
+assert.equal((await leanSource.catalog(leanAuth))[0].sources.length,1);
+const leanResult=await leanSource.read({scope,step:{id:'lean',capability:'platform-data',input:{slice:'community_operating_summary',operation:'rows',columns:['Facility_Name','census']}}},leanAuth);
+const {normalizeKnownCommunityNames}=await import('../shared/community-names.mjs');
+assert.equal(leanResult.dataset.rows[0].Facility_Name,normalizeKnownCommunityNames('J.C. Wallace'));
+assert.equal(leanResult.dataset.rows[0].census,7);
+assert(!leanResult.answer.includes('unrelatedClinicalRows'));
+console.log('Catalog and bounded results skip unrelated clinical rows while preserving readable community names.');
+
+const labelFilter=await leanSource.read({scope,step:{id:'filtered',capability:'platform-data',input:{slice:'community_operating_summary',operation:'count',filters:[{field:'Facility_Name',op:'eq',value:normalizeKnownCommunityNames('J.C. Wallace')}]}}},leanAuth);
+assert.equal(labelFilter.dataset.rows[0].result,1,'canonical community filters work before as well as after projection');

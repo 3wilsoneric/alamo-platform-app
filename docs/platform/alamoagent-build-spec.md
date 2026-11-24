@@ -757,3 +757,20 @@ cover 1440/390/320px, long labels and inert HTML. This correction is now deploye
 the real saved comparison and History were checked at desktop, 390px and 320px.
 See the [UI release receipt](deployment-operations.md#ally-prose-table-release--november-23). The existing bounded parser is sufficient for flat report tables;
 use a maintained Markdown parser if nested or escaped table syntax becomes required.
+
+
+### November 23 latency correction — candidate
+
+Production measurements isolated 15.366 seconds in a warehouse age query,
+0.706–0.890 seconds repeatedly normalizing the full published summary, and
+0.384 seconds scanning the answer cache. Warm grant checks took 41–71ms.
+Ally now reads the same canonical publication and normalizes only its bounded
+answer and chart rows, leaving the standard dashboard loader unchanged. The
+source storage connection is reused; the grant document is freshly downloaded
+on every authorization and rechecked after collection. Scope, null/missing
+semantics, warehouse fallback and publication freshness are unchanged.
+
+Engine changes batch at most three independent reads, parallelize independent
+context checks, reduce idle dispatch from five to two seconds and prefer one
+statistics read to redundant average/count queries. Candidate validation and
+measured live timing remain required; no promised latency or completeness claim.

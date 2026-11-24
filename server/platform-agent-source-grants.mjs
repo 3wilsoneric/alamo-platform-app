@@ -46,16 +46,28 @@ export async function readPlatformReportSourceGrants() {
   return readSourceGrantBlob('agent-source/report-grants-v1.json');
 }
 
-async function readSourceGrantBlob(blobName) {
-  const account = process.env.PLATFORM_AGENT_SOURCE_STORAGE_ACCOUNT;
-  const container = process.env.PLATFORM_AGENT_SOURCE_STORAGE_CONTAINER;
-  const clientId = process.env.AZURE_CLIENT_ID;
-  if (!account || !container || !clientId) throw new Error("Configure source-owned grant storage.");
-  if (account === process.env.AZURE_STORAGE_ACCOUNT && container === process.env.AZURE_STORAGE_CONTAINER) throw new Error("Source grants require a separate private container from agent work state.");
-  const client = new BlobServiceClient(`https://${account}.blob.core.windows.net`, new ManagedIdentityCredential(clientId),
-    { retryOptions: { maxTries: 1 } }).getContainerClient(container).getBlobClient(blobName);
-  return readSourceGrantDocument(client);
+// Reuse the SDK connection and its expiring workload token, never the registry.
+// Each read still downloads the current document; configuration changes replace
+// the connection before any request can use a previous storage identity.
+export function createSourceGrantReader({ env = process.env, createContainer = (account, container, clientId) =>
+  new BlobServiceClient(`https://${account}.blob.core.windows.net`, new ManagedIdentityCredential(clientId),
+    { retryOptions: { maxTries: 1 } }).getContainerClient(container) } = {}) {
+  let connection = null, connectionKey = null;
+  return async blobName => {
+    const account = env.PLATFORM_AGENT_SOURCE_STORAGE_ACCOUNT;
+    const container = env.PLATFORM_AGENT_SOURCE_STORAGE_CONTAINER;
+    const clientId = env.AZURE_CLIENT_ID;
+    if (!account || !container || !clientId) throw new Error("Configure source-owned grant storage.");
+    if (account === env.AZURE_STORAGE_ACCOUNT && container === env.AZURE_STORAGE_CONTAINER) throw new Error("Source grants require a separate private container from agent work state.");
+    const key = JSON.stringify([account, container, clientId]);
+    if (key !== connectionKey) {
+      connection = createContainer(account, container, clientId);
+      connectionKey = key;
+    }
+    return readSourceGrantDocument(connection.getBlobClient(blobName));
+  };
 }
+const readSourceGrantBlob = createSourceGrantReader();
 
 export async function readSourceGrantDocument(client) {
   // downloadToBuffer requires the exact requested byte count, not an upper

@@ -1,3 +1,4 @@
+import { normalizeKnownCommunityNames } from "../shared/community-names.mjs";
 import { ANALYSIS_SLICE_CATALOG } from "../shared/analysis-slice-catalog.mjs";
 import { getReportsSummaryData } from "./platform-data.mjs";
 import { queryDatabricks } from "./databricks.mjs";
@@ -139,7 +140,7 @@ function snapshotQueryRows(rows, input) {
       if (key && normalized && input.operation === 'distinct' && input.measure === field && row[key] === '') {
         ambiguity = 'The published source cannot distinguish a missing value from an empty value.';
       }
-      return [field, key ? row[key] : null];
+      return [field, key ? normalizeKnownCommunityNames(row[key]) : null];
     }));
     if (ambiguity && snapshotFilter([projected],input.filters).length) throw Error(ambiguity);
     return projected;
