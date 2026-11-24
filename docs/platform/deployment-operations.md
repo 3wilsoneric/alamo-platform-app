@@ -6571,3 +6571,71 @@ Conditional rollback uses the prior `ee87ab9991fdf6420cf3dfcf66bb950797914b0ef68
 image through `deploy-platform-prose-table-1124.mjs restore`; it checks for
 intervening configuration changes before applying. The analyst engine, sources,
 permissions, grants, report content and spending ledger remain unchanged.
+
+### Ally latency and build-cost release — November 23
+
+Platform source `eb0eecc` is deployed as revision
+`alamo-platform-prod-web--ally-speed-1124`, image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:2d071a5b621b700118caa2a69d15afaede9a626f25a9a9e4d4a1d68f7b7526a7`.
+The exact image diff contains only `server/ally-report-source.mjs`,
+`server/ally-data-source.mjs` and `server/platform-agent-source-grants.mjs`.
+Configuration, participants, all other files and entry `/assets/index-HVJ_pzpp.js`
+are preserved. Source connections are reused, but grants remain fresh reads.
+Canonical snapshot coverage, missing values and warehouse fallback are unchanged.
+
+Ally source `fb5c7f5`, version 0.18.17, is deployed as API revision
+`alamo-ally-prod-api--speed-01817-1124`, image
+`alamoallywqqka6kfae5ma.azurecr.io/ally@sha256:168fca90a101a172eefa5e6bd7f2b8f4bb2316fe8f5546e889a910bf146e3cc1`.
+Worker package SHA-256:
+`977d88df141ac45b29119d334d678c6d4876dbdf3773ccd0e7a1a4954248ca7f`.
+Independent reads are joined in bounded batches of three; authorization,
+revocation, cancellation, checkpoint order and spending limits remain enforced.
+Idle dispatch is two seconds. The first post-enable activity proved the running
+host still used the paused configuration. A full stop/start cleared it; a fresh
+activity then proved enabled execution with no source/model calls or record writes.
+The first failed probe is retained, not marked as passing.
+
+Engine full tests, packaging and real Functions-host recovery passed. Platform's
+scoped predeploy gate passed 9/9; server typecheck and source checks were rerun
+after the final projection edit. Postdeploy passed 2/2. The navigation component
+reuses the still-fresh 03:11 UTC main-Chrome capture from
+`.state/ally-prose-table-live-1124/evidence.json`: the entry, navigation assertions,
+ordinary pages and their server files are byte-identical. This is evidence reuse,
+not a new Network capture; macOS exposed no native Chrome window during this pass.
+Fresh paid questions, source checks and desktop/mobile History observations cover
+the changed Ally path. No capture timestamp, test threshold or assertion changed.
+
+| Real question | Before | After |
+| --- | ---: | ---: |
+| Santa Clarita average age | 16.582s | 14.680s |
+| Five-community age comparison | 32.829s | 22.914s |
+| Rewrite the preceding findings | 16.235s | 15.679s |
+| Yesterday's high-priority Santa Clarita incidents | 25.176s | 20.252s |
+
+All four completed with correct source-backed results. The rewrite reused version
+two's evidence. Eight model calls settled $0.156994. All 22 prior conversations
+are unchanged; the tests added two conversations. Final readback found 24 chats,
+zero active runs/leases and all 34 spending receipts settled. The existing
+$199.09 credit allowance, expiry and three participants are unchanged. These
+examples show an improvement, not a general latency guarantee; a cold warehouse
+probe still took 13.761s. No clinical records or outbound messages changed.
+
+Private receipts are under `/Users/eric/suite-deploy/.state/`, prefixes
+`platform-ally-speed-1124`, `ally-speed-01817-runtime`, `worker-01817-fresh`,
+`ally-speed-live-1124` and `ally-speed-1124.acceptance-summary`.
+Platform recovery uses `deploy-platform-ally-speed-1124.mjs restore` and the prior
+`31c8d8e3c8e9464b7ddbd6630949f32c87dd52ba7b85eff9fd8368045673d7ab` image.
+Ally recovery uses `ally-speed-01817-runtime.mjs restore`/`resume-restore`, the
+previous 0.18.16 API digest `066d4e3c130a622bd24039a27a26e6a4a5a6c5f0d2b2f0177823a16c0eef7afe`
+and `.artifacts/ally-production-worker-01816.zip`. Both drivers check intervening
+state and preserve existing records and spending.
+
+GitHub cost reduction: Pipeline's scheduled no-op `Pipeline Guarded Codex Refactor`
+workflow (344701215) is disabled; normal CI/security/deploy workflows remain.
+Carelog's active Windows validation branch includes `6774877`: manual validation
+defaults to candidate-only, with explicit published-baseline comparisons still
+available, and PR diagnostic retention is seven days. PR harness checks, signed
+x64/ARM64 release packaging, install/recovery and security checks remain. GitHub's
+existing Actions budget blocked the two new Carelog cloud jobs before execution;
+that is not a passing cloud check. YAML/trigger assertions ran locally. No Actions
+budget increase, signed Windows rebuild or artifact purge was performed.

@@ -759,7 +759,7 @@ See the [UI release receipt](deployment-operations.md#ally-prose-table-release--
 use a maintained Markdown parser if nested or escaped table syntax becomes required.
 
 
-### November 23 latency correction — candidate
+### November 23 latency correction — deployed
 
 Production measurements isolated 15.366 seconds in a warehouse age query,
 0.706–0.890 seconds repeatedly normalizing the full published summary, and
@@ -772,5 +772,18 @@ semantics, warehouse fallback and publication freshness are unchanged.
 
 Engine changes batch at most three independent reads, parallelize independent
 context checks, reduce idle dispatch from five to two seconds and prefer one
-statistics read to redundant average/count queries. Candidate validation and
-measured live timing remain required; no promised latency or completeness claim.
+statistics read to redundant average/count queries. The scoped predeploy gate
+passed 9/9, with the final projection change's server typecheck/source tests
+rerun separately. Postdeploy passed 2/2: the unchanged browser and ordinary page
+code reuse their recent passing navigation/Network evidence, while fresh real
+Ally turns validate the changed source path. Exact image comparison limits this
+release to the three reviewed Ally server files.
+
+Four successful live turns took 14.680, 22.914, 15.679 and 20.252 seconds versus
+16.582, 32.829, 16.235 and 25.176 seconds previously. The comparison improved
+30.2%; these examples do not establish a general latency guarantee. All numbers
+matched independent source calculations, contextual rewriting reused its evidence,
+History reopened, and 390px checks showed no horizontal overflow. Model cost was
+$0.156994. Source and model time remain material; consistently sub-ten-second
+answers are not achieved. See the
+[release and recovery record](deployment-operations.md#ally-latency-and-build-cost-release--november-23).
