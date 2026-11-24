@@ -12,8 +12,8 @@ from the full current roster, publishes monthly census and preserves nulls.
 Monthly service history now uses the service archive and explicitly separates
 visits and minutes. Its available data ends in April 2026; a November request
 must disclose missing coverage, not report zero activity. Read-only candidate
-queries reconcile with independent source aggregates. The running full release
-gate is required because publication changes are in scope.
+queries reconcile with independent source aggregates. The scoped Ally data
+release gate applies because publication changes are in scope.
 
 Four new real-model rounds are retained alongside the frozen 50-conversation
 baseline. They currently use the candidate engine and **old production source**.
@@ -73,7 +73,7 @@ export, without mutating saved source rows.
 
 Fresh real-model suites and the original failures are both retained. The current
 live model tests still read the deployed source, so they do not certify these
-unpublished feed repairs. Publication needs the full applicable gate, conditional
+unpublished feed repairs. Publication needs the scoped data release gate, conditional
 notebook/snapshot recovery and post-publish population checks; the application
 needs the candidate bundle, signed-in question/history checks and real answer
 review. No production changes or broader grants are claimed here.
