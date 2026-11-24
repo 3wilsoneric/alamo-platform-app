@@ -40,6 +40,7 @@ const metadata = {
   'proforma-search': ['ProForma procedures', 'Source-linked draft procedure excerpts. Draft references are not approved policy.']
 };
 const definition = id => ANALYSIS_SLICE_CATALOG.find(s => s.id === id);
+const sourceTitle = id => definition(id)?.title ?? reportColumnLabel({key:id});
 const facilityField = fields => ['facility_id', 'Facility', 'facility', 'FacilityID'].find(f => fields.includes(f));
 function scopedDataset(title, rows, columns, shape = 'records') {
   return { title, shape, columns: columns.map(column => ({...column, label:reportColumnLabel(column)})), rows };
@@ -82,7 +83,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
     const sources = listAllyPlatformDataSources(await summary()).filter(s => authorization.grant.slices.includes(s.id) && facilityField(s.fields))
       .map(s => ({ ...s, fields: authorization.grant.detail ? s.fields : reportAggregateFields(s.fields) }));
     return authorization.grant.capabilities.map(id => ({ id, title: metadata[id][0], description: metadata[id][1], inputSchema: schemas[id],
-      ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...analystSourceDefinition(s), definition: definition(s.id)?.title, detailAllowed: authorization.grant.detail })) } : {}) }));
+      ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...analystSourceDefinition(s), definition: sourceTitle(s.id), detailAllowed: authorization.grant.detail })) } : {}) }));
   }
   async function read(input, authorization) {
     const { step, scope } = input, args = step.input;
@@ -173,6 +174,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       reportObject(args, ['slice', 'operation'], ['groupBy', 'measure', 'dateField', 'limit', 'filters','columns','orderBy']);
       const publishedSummary=await summary();
       const source = listAllyPlatformDataSources(publishedSummary).find(s => s.id === args.slice);
+      base.title = sourceTitle(args.slice);
       const field = source && facilityField(source.fields);
       if (!source || !field) throw Error('This source has no enforceable community scope.');
       const defaultDate=ANALYST_SOURCES[args.slice]?.dateField;
@@ -204,7 +206,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot, s
       const resultLabel = args.operation === 'count' ? 'Records' : args.measure
         ? `${({average:'Average',median:'Median',minimum:'Minimum',maximum:'Maximum',distinct:'Distinct',sum:'Total'})[args.operation] ?? 'Total'} ${reportColumnLabel({key:args.measure}).toLowerCase()}` : 'Result';
       const columns = keys.map(key => ({ key, label: key === 'result' ? resultLabel : key, type: aggregateFields(args.operation).includes(key) || reportNumericField(key) || ANALYST_NUMERIC_FIELDS.has(key) ? 'number' : 'string' }));
-      dataset = platformDataset(definition(args.slice)?.title ?? args.slice,
+      dataset = platformDataset(sourceTitle(args.slice),
         result.rows.map(row => Object.fromEntries(columns.map(column => [column.key, column.type === 'number' ? numericCell(row[column.key]) : row[column.key] ?? null]))),
         columns, time);
     } else if (step.capability === 'pipeline-summary') {
