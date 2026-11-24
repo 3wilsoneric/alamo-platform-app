@@ -250,7 +250,10 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
       const field = source && facilityField(source.fields);
       if (!source || !field) throw Error('This source has no enforceable community scope.');
       const defaultDate=ANALYST_SOURCES[args.slice]?.dateField;
-      if (args.dateField === null && defaultDate && source.fields.includes(defaultDate)) throw Error('Dated records require a date field within the selected report period.');
+      if (args.dateField === null && defaultDate && source.fields.includes(defaultDate)) {
+        const note=`Query needs correction: dated records require a date field, such as ${defaultDate}, within the selected report period. To investigate another period, submit that explicit scope instead of removing the date filter.`;
+        return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+      }
       const time = args.dateField !== undefined ? args.dateField : source.fields.includes(defaultDate) ? defaultDate : null;
       if (args.slice === 'services_provided' && time !== 'month_bucket') {
         const note='Service archive records cover whole months. Use month_bucket and complete months; service_date is not an individual visit date.';
@@ -260,7 +263,10 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
         const note='Query needs correction: choose a listed date dimension. A count or rate cannot be used as the event date.';
         return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
       }
-      if (args.operation === 'sum' && /census/.test(args.slice) && !(args.groupBy ?? []).includes(time)) throw Error('Census cannot be summed across dates.');
+      if (args.operation === 'sum' && /census/.test(args.slice) && !(args.groupBy ?? []).includes(time)) {
+        const note='Query needs correction: census cannot be summed across dates. Group by the date for a portfolio total, or compare dated observations.';
+        return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+      }
       const selectedPeriod=queryPeriod(scope,args.filters,time);
       if (args.slice === 'services_provided') {
         const first=String(source.minPeriod ?? '').slice(0,7), last=String(source.maxPeriod ?? '').slice(0,7);

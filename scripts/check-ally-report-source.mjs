@@ -214,7 +214,9 @@ try {
 
   const partialMonth=await sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth);
   assert.equal(partialMonth.status,'unavailable');assert.equal(partialMonth.coverage,'partial');assert.equal(partialMonth.answer,null);assert.equal(partialMonth.dataset,undefined);assert.match(partialMonth.note,/partial month/);
-  await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth),/across dates/);
+  const invalidCensus=await sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth);
+  assert.equal(invalidCensus.status,'unavailable');assert.equal(invalidCensus.answer,null);assert.equal(invalidCensus.dataset,undefined);
+  assert.match(invalidCensus.note,/cannot be summed across dates/);
   const originalMonthlyRows=published.toolContext.tables.census_monthly_by_community, originalMonthlyCount=aggregate.row_count;
   // Narrow month comparisons remain valid within a page ending mid-month.
   published.toolContext.tables.census_monthly_by_community = [
@@ -416,7 +418,11 @@ const aggregateSources=await analystSources.catalog(aggregateAuth);
 assert.deepEqual(aggregateSources.find(s=>s.id==='platform-data').sources.map(s=>s.id),['community_operating_summary']);
 const ageEvidence=await analystSources.read({scope,step:{id:'age',capability:'platform-data',input:{slice:'community_operating_summary',operation:'rows',columns:['Facility_Name','average_age']}}},aggregateAuth);
 assert.equal(ageEvidence.dataset.rows[0].average_age,44.9);assert.equal(ageEvidence.dataset.columns[1].label,'Average age');
-await assert.rejects(analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:null}}},analystAuth),/require a date field/);
+const rejectedDate=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:null}}},analystAuth);
+assert.equal(rejectedDate.status,'unavailable');assert.equal(rejectedDate.answer,null);assert.equal(rejectedDate.dataset,undefined);
+assert.match(rejectedDate.note,/require a date field.*note_date/);
+const correctedDate=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:'note_date'}}},analystAuth);
+assert.equal(correctedDate.status,'verified');assert.equal(correctedDate.dataset.rows[0].result,1);
 console.log('Analyst discovery, exact missing-age statistics, readable averages, authorized source visibility and mandatory date scope passed.');
 const noteSearch={id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',filters:[{field:'note_text',op:'contains',value:'transport'}]}};
 const noMatchingNotes=await analystSources.read({scope,step:noteSearch},analystAuth);

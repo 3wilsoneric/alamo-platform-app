@@ -1,5 +1,13 @@
 ## November 24 investigation tools — candidate
 
+The real rebuilt-agent benchmark exposed a query-contract error presented as a
+source outage: removing the date field from dated records returned HTTP 503.
+That selection remains rejected, but now produces bounded correction feedback
+with the required date dimension. Summing census across dates uses the same
+feedback convention. Neither returns rows, relaxes scope, nor fabricates a zero.
+Focused source tests cover rejection and the subsequent valid scoped query.
+This follow-up is local; the running benchmark retains the prior source revision.
+
 The shared native reader now exposes content previews, exact paths, multi-field
 reads and literal passage search instead of only names of large object fields.
 Pipeline defaults to the substantive record and supports its source-owned cohort
