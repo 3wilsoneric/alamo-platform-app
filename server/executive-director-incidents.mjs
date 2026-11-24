@@ -194,7 +194,7 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
   if (!source) return {
     ...base, status: "unavailable", totalIncidents: null, matchingIncidents: null,
     incidents: [], clients: [], clientCount: 0, clientOffset, unlinkedCount: 0, categories: [], types: [], years: [], nextCursor: null,
-    coverage: { status: "unavailable", startDate: null, endDate: null, reportedTotal, note: "Individual incident records are unavailable. Retry when the governed incident snapshot is available." }
+    coverage: { status: "unavailable", startDate: null, endDate: null, reportedTotal, requestedPeriodComplete: false, note: "Individual incident records are unavailable. Retry when the governed incident snapshot is available." }
   };
   // Scope before normalization, indexing, search, counts, facets, and cursor construction.
   const scoped = source.filter((row) => FACILITY_IDS.has(facilityIdFor(row)) && (facilityId === "all" || facilityIdFor(row) === facilityId)).map(normalizeExecutiveIncident);
@@ -221,6 +221,17 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
   }
   const months = new Set([...monthCounts.keys(), ...(aggregateMonths?.keys() ?? [])]);
   const complete = aggregateMonths !== null && [...months].every((month) => (monthCounts.get(month) ?? 0) === (aggregateMonths.get(month) ?? 0));
+  const requestedMonths = [];
+  if (from && to) {
+    for (let month = from.slice(0, 7); month <= to.slice(0, 7);) {
+      requestedMonths.push(month);
+      const next = new Date(`${month}-01T00:00:00Z`); next.setUTCMonth(next.getUTCMonth() + 1); month = next.toISOString().slice(0, 7);
+    }
+  }
+  // A bounded occurrence-date count can be complete even when older history
+  // is truncated. Every intersecting month must reconcile BEFORE filtering.
+  const requestedPeriodComplete = Boolean(requestedMonths.length && base.asOfDate && to <= base.asOfDate && !freshness.stale && aggregateMonths &&
+    requestedMonths.every(month => aggregateMonths.has(month) && (monthCounts.get(month) ?? 0) === aggregateMonths.get(month)));
   const dates = incidents.map((row) => row.date).filter(Boolean).sort();
   const normalizedQuery = query.toLocaleLowerCase("en-US");
   const matching = incidents.filter((row) => (
@@ -264,6 +275,7 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
       startDate: dates[0] ?? null,
       endDate: dates.at(-1) ?? null,
       reportedTotal,
+      requestedPeriodComplete,
       note: complete
         ? "Available records reconcile with published monthly totals, but snapshot history can omit older or undated incidents."
         : reportedTotal === null
@@ -273,8 +285,18 @@ export function buildExecutiveDirectorIncidentsResponse(snapshot, options, { all
   };
 }
 
-export async function getExecutiveDirectorIncidents(options, { readSnapshot = readPlatformSnapshot, query = queryDatabricks, allowPortfolio = false } = {}) {
+export async function getExecutiveDirectorIncidents(options, { readSnapshot = readPlatformSnapshot, query = queryDatabricks, allowPortfolio = false, preferPublishedCounts = false } = {}) {
   const filters = normalizeExecutiveIncidentOptions(options, { allowPortfolio });
+  // This opt-in belongs to aggregate report reads. Normal incident browsing
+  // remains live-first. Legacy nullable flags cannot prove low/unknown counts.
+  if (preferPublishedCounts && !filters.page && filters.from && filters.to && (!filters.priority || filters.priority === 'high')) {
+    try {
+      const response = buildExecutiveDirectorIncidentsResponse(await readSnapshot(), options, { allowPortfolio });
+      if (response.status === 'ready' && response.coverage.requestedPeriodComplete) return { ...response,
+        coverage: { ...response.coverage, status: 'complete', startDate: filters.from, endDate: filters.to,
+          note: 'Requested occurrence dates reconcile to complete published monthly counts through the source data date.' } };
+    } catch { /* A missing or unproved snapshot requires the full governed view. */ }
+  }
   // Never mix snapshot and live pages in the same result set.
   if (filters.page?.[0] !== 1) {
     try {

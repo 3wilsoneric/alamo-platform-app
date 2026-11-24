@@ -114,19 +114,21 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
           args.priority !== undefined && !['high', 'medium', 'low', 'unknown'].includes(args.priority)) throw Error('Choose incident filters within the authorized report scope.');
       const results = [];
       for (const facilityId of selected.communityIds) {
-        const response = await incidents({ facilityId, from: selected.from, to: selected.through, priority: args.priority, limit: 1 });
+        const response = await incidents({ facilityId, from: selected.from, to: selected.through, priority: args.priority, limit: 1 }, { preferPublishedCounts: true });
         if (response.status !== 'ready' || typeof response.matchingIncidents !== 'number' || !Number.isSafeInteger(response.matchingIncidents) || response.matchingIncidents < 0) throw Error('Incident counts are unavailable.');
         const facility = ALAMO_FACILITIES.find(f => f.facilityId === facilityId);
         if (!facility) throw Error('Choose a listed community.');
         results.push({ community: facility.shortName,
           incidents: response.matchingIncidents, complete: response.coverage.status === 'complete' && !response.freshness?.stale,
-          observedAt: response.generatedAt });
+          observedAt: response.generatedAt, publishedThrough: response.coverage.requestedPeriodComplete ? response.asOfDate : null });
       }
       const rows = results.map(({community, incidents}) => ({community, incidents}));
       base.period = `${selected.from}–${selected.through}`; base.grain = 'incident occurrence by community';
       base.observedAt = results.map(r => r.observedAt).sort()[0];
       base.coverage = results.every(r => r.complete) ? 'complete' : 'partial';
       base.note = 'Same occurrence dates and operational priority as the Incidents page. High means a sentinel event or emergency-services notification; it is not a clinical severity grade.';
+      const publishedThrough = results.map(row => row.publishedThrough).filter(Boolean).sort()[0];
+      if (publishedThrough) base.note += ` Published counts include data through ${publishedThrough}.`;
       if (base.coverage === 'partial') base.note += ' Published snapshot only: newer or older records may be missing; these are available-record counts, not confirmed complete totals.';
       result = { from: selected.from, through: selected.through, priority: args.priority ?? 'all',
         communities: rows, total: rows.reduce((total, row) => total + row.incidents, 0), coverage: base.coverage, definition: base.note };

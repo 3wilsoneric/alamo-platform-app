@@ -805,3 +805,11 @@ Engine 0.18.18 can answer a supported initial question with one model call and
 reuse an exact validated answer only after collecting matching current evidence.
 Scope, missing-value behavior, corrected observations and revocation have focused
 regressions. Publication, production accuracy and end-to-end timing are pending.
+
+Bounded total/high-priority incident counts may also use the canonical incident
+reader's snapshot when every intersecting month reconciles before filtering,
+the snapshot is fresh, and its data date covers the requested period. Missing
+months, mismatches, future dates and lossy low/unknown priority flags retain the
+live-query path. Ordinary incident browsing remains live-first. The real November
+22 Santa Clarita high-priority count matches the independent warehouse zero and
+reads in 25 ms from the published snapshot; this is source time, not answer latency.

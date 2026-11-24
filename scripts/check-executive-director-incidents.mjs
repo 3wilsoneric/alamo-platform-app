@@ -44,6 +44,29 @@ function snapshotFor(incidentRows) {
   };
 }
 const snapshot = snapshotFor(rows);
+// A complete recent month can prove a bounded count without claiming complete
+// all-time history. Coerced low/unknown flags still require the governed view.
+const recent = snapshotFor(rows);
+recent.snapshot = { generated_at: new Date().toISOString(), as_of_date: '2026-10-31' };
+const recentOptions = { facilityId: '344', from: '2026-10-27', to: '2026-10-28', priority: 'high', limit: 1 };
+let publishedQueries = 0;
+const recentRead = value => getExecutiveDirectorIncidents(recentOptions, { preferPublishedCounts: true, readSnapshot: async () => value, query: async () => { publishedQueries++; throw Error('Full source required'); } });
+const recentCount = await recentRead(recent);
+assert.equal(recentCount.coverage.status, 'complete'); assert.equal(recentCount.matchingIncidents, 1); assert.equal(publishedQueries, 0);
+for (const failure of ['missing-row', 'missing-month', 'stale', 'future-date']) {
+  const changed = structuredClone(recent);
+  if (failure === 'missing-row') changed.reportsSummary.toolContext.tables.incident_detail_history = rows.filter(row => row.id !== 'incident-002');
+  if (failure === 'missing-month') changed.communities.incidents = changed.communities.incidents.filter(row => row.month_bucket !== '2026-10');
+  if (failure === 'stale') changed.snapshot.generated_at = '2020-01-01T00:00:00Z';
+  if (failure === 'future-date') changed.snapshot.as_of_date = '2026-10-26';
+  const before = publishedQueries; const result = await recentRead(changed);
+  assert(publishedQueries > before, failure); assert.equal(result.coverage.status, 'partial', failure);
+}
+for (const priority of ['low', 'unknown']) {
+  let queried = false;
+  await getExecutiveDirectorIncidents({ ...recentOptions, priority }, { preferPublishedCounts: true, readSnapshot: async () => recent, query: async () => { queried = true; throw Error('Full source required'); } });
+  assert(queried, priority);
+}
 const options = { facilityId: "344" };
 const first = buildExecutiveDirectorIncidentsResponse(snapshot, options);
 assert.equal(first.totalIncidents, 77);
