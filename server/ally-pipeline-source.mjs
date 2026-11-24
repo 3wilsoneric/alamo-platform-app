@@ -7,7 +7,7 @@ import { projectNativeRecord, readNativeJsonResponse } from './ally-native-recor
 export function createPipelineAnalystSource({ env = process.env, fetchImpl = fetch } = {}) {
   return async (args, { subjectId }) => {
     reportSubject(subjectId);
-    reportObject(args, [], ['view','referralId','assessmentId','query','community','owner','month','workspaceStatus','cursor','sourceRevision','pointer','columns','offset','revision']);
+    reportObject(args, [], ['view','referralId','assessmentId','query','community','owner','month','workspaceStatus','cursor','sourceRevision','documentId','page','documentHash','pointer','columns','offset','revision']);
     const { pointer, columns, offset, revision, ...selection } = args;
     const origin = env.ALLY_PIPELINE_ORIGIN, secret = env.PIPELINE_ALLY_SOURCE_SECRET;
     if (!origin || !secret) throw Error('Pipeline analytical reads are not connected.');

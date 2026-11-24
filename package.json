@@ -213,7 +213,8 @@
     "check:executive-ally-release": "node --test scripts/check-executive-ally-release-mode.mjs && node scripts/check-executive-ally-release.mjs",
     "check:proforma-guidance-overlay": "node --test scripts/check-proforma-guidance-overlay.mjs",
     "check:ship:ally:predeploy": "BROWSER_QA_CLEAN_ROOM=true PLATFORM_READY_PROFILE=ally PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready",
-    "check:ship:ally:postdeploy": "PRODUCTION_SIGNED_IN_REQUIRED=true PLATFORM_READY_PROFILE=ally-live PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready"
+    "check:ship:ally:postdeploy": "PRODUCTION_SIGNED_IN_REQUIRED=true PLATFORM_READY_PROFILE=ally-live PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready",
+    "prepare:ally-source-release": "node scripts/prepare-ally-source-release.mjs"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.20.tgz",
