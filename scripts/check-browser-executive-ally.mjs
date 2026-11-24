@@ -81,7 +81,14 @@ try { await withBrowserQa(async browser=>{
     assert.equal(await sourceLink.evaluate(el=>el===document.activeElement),true,'closing a source returns focus to its link');
     await references.getByText('Sources',{exact:true}).click();
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);
-    const small=await panel.locator('button:visible,input:visible,select:visible,summary:visible').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().height<43).map(el=>({html:el.outerHTML,height:el.getBoundingClientRect().height,minHeight:getComputedStyle(el).minHeight,connected:el.isConnected,transform:getComputedStyle(el).transform})));assert.deepEqual(small,[],'controls are at least 44px');
+    // Query and measure in one DOM evaluation: the transient Latest button can
+    // disappear between locator resolution and evaluateAll, leaving a detached
+    // element with a zero box. Only current visible controls are touch targets.
+    const small=await panel.evaluate(panel=>[...panel.querySelectorAll('button,input,select,summary')]
+      .filter(el=>el.getClientRects().length && getComputedStyle(el).visibility==='visible')
+      .filter(el=>el.getBoundingClientRect().height<43)
+      .map(el=>({html:el.outerHTML,height:el.getBoundingClientRect().height})));
+    assert.deepEqual(small,[],'controls are at least 44px');
     await page.screenshot({path:path.join(output,`report-${width}.png`),fullPage:true});
     await panel.getByLabel('More report actions').click();
     const actionBox=await panel.getByRole('group',{name:'Report actions'}).boundingBox(),bodyBox=await panel.locator('.executive-ally-body').boundingBox();
