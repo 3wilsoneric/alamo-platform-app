@@ -1043,9 +1043,9 @@ def build_tool_context_summary():
             "resident_name": normalize_str(row["resident_name"]),
             "first_name": normalize_str(row["First_Name"]),
             "last_name": normalize_str(row["Last_Name"]),
-            "age": normalize_int(row["Age"]),
+            "age": normalize_int(row["Age"]) if row["Age"] is not None else None,
             "admit_date": iso_value(row["Admit_Date"]),
-            "los_days": normalize_int(row["LOS_Days"]),
+            "los_days": normalize_int(row["LOS_Days"]) if row["LOS_Days"] is not None else None,
             "facility_id": normalize_str(row["Facility"]),
             "facility_name": normalize_str(row["Facility_Name"]),
             "unit_number": normalize_nullable(row["Unit_Number"]),
@@ -1061,7 +1061,7 @@ def build_tool_context_summary():
             "last_incident_date": iso_value(row["last_incident_date"]),
             "last_incident_category": normalize_nullable(row["last_incident_category"]),
             "last_note_date": iso_value(row["last_note_date"]),
-            "days_since_last_note": normalize_int(row["days_since_last_note"]),
+            "days_since_last_note": normalize_int(row["days_since_last_note"]) if row["days_since_last_note"] is not None else None,
         }
         for row in resident_profile_rows
     ]
@@ -1467,6 +1467,9 @@ def build_tool_context_summary():
                 if field
             ],
             "generated_at": iso_value(row["generated_at"]),
+            "nullable_fields": [field for field in ["Age", "LOS_Days", "days_since_last_note"]
+                if field in normalize_str(row["fields"]).split(",")]
+                if row["slice_name"] == "resident_profile" else [],
         }
         for row in manifest_rows
     ]

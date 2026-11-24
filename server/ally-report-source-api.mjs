@@ -17,17 +17,26 @@ export function createPlatformReportSourceHandler({ authorize, readGrants, sourc
       let input;
       try {
         input = reportObject(await readJsonRequestBody(req, 16_000), ['version', 'operation', 'subjectId', 'scope', 'step']);
-        if (input.version !== 1 || !['authorize', 'catalog', 'read'].includes(input.operation)) throw Error();
+        if (input.version !== 1 || !['authorize', 'catalog', 'read', 'prepare'].includes(input.operation)) throw Error();
         reportSubject(input.subjectId); validateReportScope(input.scope);
         if (input.step !== null) { reportObject(input.step, ['id', 'capability', 'input']); reportJson(input.step, 9000); }
-        if (input.operation === 'read' && input.step === null || input.operation === 'catalog' && input.step !== null) throw Error();
+        if (input.operation === 'read' && input.step === null || ['catalog', 'prepare'].includes(input.operation) && input.step !== null) throw Error();
       } catch (error) { if (error instanceof HttpError) throw error; throw createHttpError(400, 'report_source_request_invalid', 'Choose a valid report source request.'); }
-      const authorization = authorizePlatformReportSource(identity, input, await readGrants(), now());
+      const registry = await readGrants();
+      const authorization = authorizePlatformReportSource(identity, input, registry, now());
       let data = {};
       if (input.operation === 'catalog') data = { catalog: await sources.catalog(authorization) };
       if (input.operation === 'read') data = { evidence: await sources.read(input, authorization) };
-      const latest = authorizePlatformReportSource(identity, input, await readGrants(), now());
+      if (input.operation === 'prepare') data = await sources.prepare(authorization, async step => {
+        const selected = { ...input, operation: 'read', step };
+        const allowed = authorizePlatformReportSource(identity, selected, registry, now());
+        try { return await sources.read(selected, allowed, { snapshotOnly: true }); }
+        catch { return null; } // Optional facts never turn a source outage into zero.
+      });
+      const latestRegistry = await readGrants();
+      const latest = authorizePlatformReportSource(identity, input, latestRegistry, now());
       if (latest.receipt.revision !== authorization.receipt.revision) throw createHttpError(403, 'report_source_grant_changed', 'Source access changed during this read.');
+      for (const prepared of data.prepared ?? []) authorizePlatformReportSource(identity, { ...input, step: prepared.step }, latestRegistry, now());
       res.status(200).json({ version: 1, subjectId: input.subjectId, requestHash: reportHash(input), grant: latest.receipt, ...data });
     } catch (error) {
       const publicError = error instanceof HttpError && error.statusCode >= 400 && error.statusCode < 500 ? error : null;

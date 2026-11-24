@@ -787,3 +787,21 @@ History reopened, and 390px checks showed no horizontal overflow. Model cost was
 $0.156994. Source and model time remain material; consistently sub-ten-second
 answers are not achieved. See the
 [release and recovery record](deployment-operations.md#ally-latency-and-build-cost-release--november-23).
+
+## November 23 lossless snapshot candidate
+
+The owner requested ordinary answers under ten seconds without loss of accuracy.
+The candidate preserves null Age, LOS_Days and days_since_last_note values in the
+canonical resident-profile projection and declares those nullable fields in its
+manifest. Older publications still require the warehouse when zero is ambiguous;
+a partial sample cannot establish a total. Dashboard roster projections and
+source records remain unchanged.
+
+The versioned report-source API adds bounded preparation of current census and
+age statistics using the existing readers. Preparation never starts a warehouse
+query; stale, unavailable, incomplete or unauthorized starter facts are omitted,
+leaving normal investigation available. Per-query and final grant checks remain.
+Engine 0.18.18 can answer a supported initial question with one model call and
+reuse an exact validated answer only after collecting matching current evidence.
+Scope, missing-value behavior, corrected observations and revocation have focused
+regressions. Publication, production accuracy and end-to-end timing are pending.

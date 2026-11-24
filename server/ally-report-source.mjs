@@ -2,6 +2,7 @@ import { reportHash, reportObject, reportText, validateReportScope } from '@alam
 import { ALAMO_FACILITIES, normalizeKnownCommunityNamesDeep } from '../shared/community-names.mjs';
 import { ANALYSIS_SLICE_CATALOG } from '../shared/analysis-slice-catalog.mjs';
 import { readPlatformSnapshot } from './platform-snapshot.mjs';
+import { getSnapshotFreshness } from './snapshot-status.mjs';
 import { getReportsSummaryData } from './platform-data.mjs';
 import { buildResidentFlowReport } from './resident-flow-report.mjs';
 import { listAllyPlatformDataSources, readAllyPlatformData, aggregateFields } from './ally-data-source.mjs';
@@ -88,7 +89,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
     return authorization.grant.capabilities.map(id => ({ id, title: metadata[id][0], description: metadata[id][1], inputSchema: schemas[id],
       ...(id === 'platform-data' ? { sources: sources.map(s => ({ ...analystSourceDefinition(s), definition: sourceTitle(s.id), detailAllowed: authorization.grant.detail })) } : {}) }));
   }
-  async function read(input, authorization) {
+  async function read(input, authorization, { snapshotOnly = false } = {}) {
     const { step, scope } = input, args = step.input;
     const base = { capability: step.capability, inputHash: reportHash(args), scope, grantRevision: authorization.receipt.revision,
       requiresDetail: step.capability === 'platform-data' && authorization.grant.detail,
@@ -195,7 +196,7 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
         constraints.push({ field: time, op: 'gte', value: scope.from.slice(0, 7) }, { field: time, op: 'lte', value: scope.through.slice(0, 7) + '-31' });
       } else if (time) constraints.push({ field: time, op: 'day-gte', value: scope.from }, { field: time, op: 'day-lte', value: scope.through });
       const { dateField: _date, ...query } = args;
-      try { result = await data(query, { load:async()=>publishedSummary, constraints, ...(authorization.grant.detail ? {} : {allowedFields: reportAggregateFields(source.fields)}) }); }
+      try { result = await data(query, { load:async()=>publishedSummary, constraints, snapshotOnly, ...(authorization.grant.detail ? {} : {allowedFields: reportAggregateFields(source.fields)}) }); }
       catch(error) {
         if(!error || typeof error !== 'object' || !('code' in error) || error.code !== 'analyst_result_too_large') throw error;
         const note='This selection is too large. Request fewer rows and columns, add a narrower filter, or calculate an aggregate.';
@@ -293,5 +294,24 @@ export function createPlatformReportSources({ snapshot = readPlatformSnapshot,
     base.revision = reportHash(result);
     return { ...base, ...(dataset ? { dataset } : {}) };
   }
-  return { catalog, read };
+  async function prepare(authorization, collect) {
+    const available = await catalog(authorization), prepared = [];
+    const published = await snapshot();
+    if (getSnapshotFreshness(published, { now: new Date(now()) }).stale) return { catalog: available, prepared };
+    // Small source-owned context, not a second warehouse or an intent router.
+    // Missing/partial snapshots simply leave the normal investigation available.
+    /** @type {Array<{capability:string,input:Record<string,any>}>} */
+    const candidates = [{ capability: 'resident-flow', input: { view: 'occupancy' } }];
+    if (authorization.grant.detail && authorization.grant.slices.includes('resident_profile')) {
+      candidates.push({ capability: 'platform-data', input: { slice: 'resident_profile', operation: 'statistics', measure: 'Age', groupBy: ['Facility_Name'], dateField: null } });
+    }
+    for (const candidate of candidates.filter(step => authorization.grant.capabilities.includes(step.capability))) {
+      const step = { id: `source-${prepared.length + 1}`, ...candidate };
+      const value = await collect(step);
+      if (value?.status === 'verified' && value.coverage === 'complete' &&
+          !getSnapshotFreshness({ generated_at: value.observedAt }, { now: new Date(now()) }).stale) prepared.push({ step, value });
+    }
+    return { catalog: available, prepared };
+  }
+  return { catalog, read, prepare };
 }

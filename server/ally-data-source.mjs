@@ -31,7 +31,8 @@ export function listAllyPlatformDataSources(reportsSummary) {
     id: entry.slice_name, grain: entry.grain, fields: entry.fields,
     sourceRows: entry.row_count, snapshotRows: Array.isArray(tables[entry.slice_name]) ? tables[entry.slice_name].length : null,
     minPeriod: entry.min_period ?? null, maxPeriod: entry.max_period ?? null,
-    facilityIds: entry.facility_ids ?? [], generatedAt: entry.generated_at ?? null
+    facilityIds: entry.facility_ids ?? [], generatedAt: entry.generated_at ?? null,
+    nullableFields: Array.isArray(entry.nullable_fields) && entry.nullable_fields.every(field => entry.fields.includes(field)) ? entry.nullable_fields : []
   }));
 }
 
@@ -131,7 +132,7 @@ function snapshotQueryRows(rows, input) {
       const key = Object.hasOwn(row, field) ? field : alias && Object.hasOwn(row, alias) ? alias : null;
       if (!key && required.has(field)) throw Error('The published source lacks a required query field.');
       const normalized = !Object.hasOwn(row,'Facility') && Object.hasOwn(row,'facility_id');
-      if (key && required.has(field) && normalized && NULL_TO_ZERO_FIELDS.has(field) && row[key] === 0) {
+      if (key && required.has(field) && normalized && NULL_TO_ZERO_FIELDS.has(field) && !input.source.nullableFields?.includes(field) && row[key] === 0) {
         ambiguity = 'The published source cannot distinguish a missing value from zero.';
       }
       if (key && required.has(field) && normalized && typeof row[key] === 'boolean') {
@@ -205,8 +206,8 @@ function orderRows(rows, orderBy) {
   }) : rows;
 }
 
-/** @param {any} query @param {{load?:Function,execute?:Function,constraints?:Array<{field:string,op:string,value:any}>,allowedFields?:string[]}} [options] */
-export async function readAllyPlatformData(query, { load = getReportsSummaryData, execute = queryDatabricks, constraints = [], allowedFields } = {}) {
+/** @param {any} query @param {{load?:Function,execute?:Function,constraints?:Array<{field:string,op:string,value:any}>,allowedFields?:string[],snapshotOnly?:boolean}} [options] */
+export async function readAllyPlatformData(query, { load = getReportsSummaryData, execute = queryDatabricks, constraints = [], allowedFields, snapshotOnly = false } = {}) {
   const reportsSummary = await load();
   let source = listAllyPlatformDataSources(reportsSummary).find(item => item.id === query?.slice);
   // Source-owned authorization narrows the manifest before query compilation.
@@ -230,6 +231,7 @@ export async function readAllyPlatformData(query, { load = getReportsSummaryData
     try { rows=fromSnapshot();readMode='published-snapshot';coverage='published-row-set'; }
     catch { /* A missing/conflicting required column needs the full view. */ }
   }
+  if (rows === undefined && snapshotOnly) throw Error('A complete, lossless published answer is unavailable.');
   if(rows===undefined) try {
     rows = await execute(input.sql);
     if (!Array.isArray(rows)) throw Error("Invalid source result.");
