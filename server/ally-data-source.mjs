@@ -80,7 +80,9 @@ function validateQuery(query, source) {
   // columns, then retain only its actual output fields in the executed query.
   const columns = operation === 'rows' ? requestedColumns : [...groupBy, ...aggregateFields(operation)];
   const requestedOrder = query.orderBy ?? [];
-  const orderBy = Array.isArray(requestedOrder) ? requestedOrder.map(order => order && operation !== 'rows' && operation !== 'statistics' && order.field === query.measure && !groupBy.includes(order.field) ? {...order, field:'result'} : order) : requestedOrder;
+  const orderBy = Array.isArray(requestedOrder) ? requestedOrder.map(order => order && operation !== 'rows' && operation !== 'statistics' &&
+    (order.field === query.measure || operation === 'count' && order.field === 'count') && !groupBy.includes(order.field)
+    ? {...order, field:'result'} : order) : requestedOrder;
   const resultFields = operation === 'rows' ? columns : [...groupBy, ...aggregateFields(operation)];
   if (!Array.isArray(orderBy) || orderBy.length > 3 || orderBy.some(order => !order || !resultFields.includes(order.field) || !['asc','desc'].includes(order.direction))) throw invalidQuery('orderBy must use returned fields: selected columns for rows; groupBy fields plus result for aggregates; groupBy plus records, known, missing, mean, median, minimum, maximum for statistics.');
   const limit = Number(query.limit ?? 25);

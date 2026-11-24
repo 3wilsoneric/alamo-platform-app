@@ -83,6 +83,11 @@ assert.deepEqual(selected.rows,[{Age:60},{Age:40}]);assert.equal(selected.hasMor
 const groupedSorted=await readAllyPlatformData({slice:'resident_profile',operation:'count',groupBy:['Age'],orderBy:[{field:'Age',direction:'desc'}],limit:1},profileOptions);
 assert.deepEqual(groupedSorted.rows,[{Age:60,result:1}]);
 const redundant=await readAllyPlatformData({slice:'resident_profile',operation:'count',columns:['Age'],limit:1},profileOptions);
+const countSort={slice:'resident_profile',operation:'count',groupBy:['Age'],orderBy:[{field:'count',direction:'desc'}],limit:100};
+const countProfiles=structuredClone(profiles);countProfiles.toolContext.tables.resident_profile[0].Age=60;
+const sortedCounts=await readAllyPlatformData(countSort,{...profileOptions,load:async()=>countProfiles});
+assert.deepEqual(sortedCounts.rows.map(row=>row.result),[2,1,1],'count alias sorts aggregate counts, not input ages');
+assert.match(compileAllyPlatformDataQuery(countSort,listAllyPlatformDataSources(profiles)[0],profileOptions.constraints).sql,/ORDER BY `result` DESC/,'SQL and snapshot use the same unambiguous count alias');
 assert.deepEqual(redundant.rows,[{result:4}],'projection and output limit cannot truncate the scoped input population');
 assert.deepEqual(redundant.query.columns,['result']);
 const ranked=compileAllyPlatformDataQuery({slice:'resident_profile',operation:'average',measure:'Age',groupBy:['Facility'],columns:['Age'],orderBy:[{field:'Age',direction:'desc'}]},listAllyPlatformDataSources(profiles)[0],profileOptions.constraints);

@@ -954,3 +954,31 @@ A final `minimal` probe also returned HTTP 400; the provider explicitly lists
 `low` as this model’s minimum supported effort. Live synthesis already uses it.
 All three rejected experiment reservations remain retained; do not report them
 as settled charges without provider usage receipts.
+
+
+## November 24 analytical repair and release-check budget
+
+Candidate source (not deployed): engine 0.18.19 retains reauthorized conversation
+context, repairs rejected numeric proofs within the existing call budget, supports
+explicit scenario assumptions and derived/sorted report columns. Platform source
+repairs cover complete-population queries, null/coverage distinctions, note text,
+full-roster last-note dates, and monthly service archive mappings. These repairs
+still need real answer-level acceptance; a `ready` status is not a correctness grade.
+
+The full real-data 50-conversation rerun is in progress against the candidate engine
+and currently deployed source endpoints. Its saved results distinguish those
+versions; the newer publisher/adapter changes are not yet live. Initial turns show
+successful answers but still include slow follow-ups and a partial answer. No claim
+of perfect answers or consistent sub-ten-second performance is warranted.
+
+The owner requires routine release checks to finish in about five minutes. The
+[scoped release policy](ship-checklist.md#november-24-owner-directed-five-minute-ally-releases)
+now has enforced 180-second predeploy and 120-second postdeploy budgets. The existing
+focused gate previously completed in 127–151 seconds. Four runner regression checks
+prove normal failure propagation, deadline failure, child-process cleanup and
+rejection of skipped stages. The current candidate `ally-data` gate passed all 12 stages in 66.967 seconds.
+An initial 48-second run caught asynchronous focus restoration racing a new
+composer interaction; the callback now preserves a focus the user has already
+chosen, and the test waits for scheduled restoration before asserting it. The
+320/390/1440 browser pass covers the original return-focus assertion and multiline
+input. No postdeployment check or deployment is implied by this local receipt.

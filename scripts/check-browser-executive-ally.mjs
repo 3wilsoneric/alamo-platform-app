@@ -79,6 +79,9 @@ try { await withBrowserQa(async browser=>{
     assert.equal(await sourceReader.locator('#ally-document-source-1').evaluate(el=>el===document.activeElement),true,'source link focuses the exact saved data view');
     assert.equal(await sourceReader.locator('pre').count(),0);
     await sourceReader.getByRole('button',{name:'Close report'}).click();
+    // closeDocument restores focus on the next animation frame. Check the
+    // observable result, after that scheduled work, rather than racing click().
+    await page.waitForFunction(link=>link===document.activeElement,await sourceLink.elementHandle(),{timeout:1500});
     assert.equal(await sourceLink.evaluate(el=>el===document.activeElement),true,'closing a source returns focus to its link');
     await references.getByText('Sources',{exact:true}).click();
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);

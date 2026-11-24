@@ -78,7 +78,15 @@ export default function ExecutiveAlly() {
     document.addEventListener('pointerdown',closeHistory);
     return () => document.removeEventListener('pointerdown',closeHistory);
   }, []);
-  function closeDocument() { setDocumentVersion(null); requestAnimationFrame(() => documentOpener.current?.focus({preventScroll:true})); }
+  function closeDocument() {
+    const opener = documentOpener.current;
+    setDocumentVersion(null);
+    requestAnimationFrame(() => {
+      // The reader's removal leaves focus on body. Do not steal it back if the
+      // user has already clicked the composer or another control in this frame.
+      if (document.activeElement === document.body) opener?.focus({preventScroll:true});
+    });
+  }
   function scrollToLatest(animate = false) {
     const container = body.current, turn = latestTurn.current;
     if (!container || !turn) return;

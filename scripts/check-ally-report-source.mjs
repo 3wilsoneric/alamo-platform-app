@@ -293,6 +293,9 @@ assert(!JSON.stringify(occupancy).includes('PRIVATE_PERSON_PROBE'));assert(!occu
 assert.equal((await readView('occupancy',{...flowScope,through:'2026-11-02'})).period,'Current census as of 2026-11-21','current occupancy is labeled as the source snapshot, not a historical denominator');
 const ordinary=await readView('communities');
 assert.deepEqual(ordinary.dataset.rows.map(r=>[r.community,r.admissions,r.discharges]),[['San Pablo',2,1],['Turlock',2,1]]);
+assert.deepEqual(JSON.parse(ordinary.answer).sites.map(site=>[site.completedStayCount,site.averageCompletedStayDays,site.medianCompletedStayDays]),[[1,1,1],[1,1,1]],'the canonical flow already owns completed-stay statistics; do not approximate from a bounded row sample');
+const flowCatalog=await createPlatformReportSources({snapshot:async()=>flowSnapshot,summary:async()=>({})}).catalog({...flowAuthorization,grant:{detail:false,capabilities:['resident-flow'],slices:[]}});
+assert.match(flowCatalog[0].description,/averageCompletedStayDays.*medianCompletedStayDays/,'derived completed-stay measures must be discoverable before guessing a new query');
 await assert.rejects(readView('invented'),/supported resident-flow view/);
 delete flowSnapshot.reportsSummary.toolContext.tables.resident_episode_history[1].admission_county;
 const unavailableCounty=await readView('counties');assert.equal(unavailableCounty.coverage,'partial');assert.deepEqual(unavailableCounty.dataset.rows,[]);

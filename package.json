@@ -133,6 +133,8 @@
     "check:production-responsive": "node scripts/check-production-responsive.mjs",
     "check:desktop": "node scripts/check-desktop-readiness.mjs",
     "check:production-guided-questions": "node scripts/check-production-guided-questions.mjs",
+    "check:release-budget": "node --test scripts/check-release-budget.mjs",
+    "check:ship:ally-data:predeploy": "BROWSER_QA_CLEAN_ROOM=true PLATFORM_READY_PROFILE=ally-data PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready",
     "check:platform-ready": "node scripts/check-platform-ready.mjs",
     "check:release": "BROWSER_QA_CLEAN_ROOM=true PRODUCTION_SIGNED_IN_REQUIRED=true PLATFORM_READY_PROFILE=release npm run check:platform-ready",
     "check:ship": "BROWSER_QA_CLEAN_ROOM=true PRODUCTION_SIGNED_IN_REQUIRED=true PLATFORM_READY_PROFILE=full PLATFORM_READY_INCLUDE_BUILD=true PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready",

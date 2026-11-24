@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
 
 const ROOT = process.cwd();
 const PROFILE = String(process.env.PLATFORM_READY_PROFILE || "full").toLowerCase();
@@ -19,7 +20,7 @@ const commandProfiles = {
   // Bounded Ally releases: native report UI and governed report adapters only.
   // Broad shell, authentication, publishing or unrelated feature changes use full.
   ally: [
-    "check:docs", "typecheck", "typecheck:server", "check:source-syntax",
+    "check:release-budget", "check:docs", "typecheck", "typecheck:server", "check:source-syntax",
     "check:dependencies", "check:platform-api", "check:executive-reports",
     "check:browser-executive-ally", "build"
   ],
@@ -105,6 +106,19 @@ const commandProfiles = {
   ]
 };
 
+// The routine release has one five-minute check budget: three before cutover,
+// two against the deployed candidate. These are ceilings, never pass criteria.
+export function releaseBudget(profile) {
+  return profile === "ally" || profile === "ally-data" ? 180_000
+    : profile === "ally-live" ? 120_000 : null;
+}
+
+// Publisher changes add their actual mapping/null/grant/transport checks, not
+// every unrelated historical UI journey. Production data QA still runs before
+// publication; this profile does not authorize publishing an unchecked snapshot.
+commandProfiles["ally-data"] = [...commandProfiles.ally.slice(0, -2),
+  "check:data-depth", "check:client-database", ...commandProfiles.ally.slice(-2)];
+
 function redacted(text) {
   return String(text)
     .replace(/sk-[a-zA-Z0-9_-]{12,}/g, "[redacted-key]")
@@ -116,46 +130,55 @@ function tail(value, maxLength = 18_000) {
   return text.length > maxLength ? text.slice(text.length - maxLength) : text;
 }
 
-function runNpmScript(scriptName) {
+export function runNpmScript(scriptName, { timeoutMs = null, cwd = ROOT,
+  executable = "npm", args = ["run", scriptName], quiet = false } = {}) {
   const startedAt = Date.now();
   return new Promise((resolve) => {
-    const child = spawn("npm", ["run", scriptName], {
-      cwd: ROOT,
+    const child = spawn(executable, args, {
+      cwd,
       env: process.env,
+      detached: process.platform !== "win32",
       stdio: ["ignore", "pipe", "pipe"]
     });
     let stdout = "";
     let stderr = "";
+    let timedOut = false;
+    let timer;
+    const finish = (code, error) => {
+      clearTimeout(timer);
+      resolve({ command: scriptName, status: !timedOut && code === 0 ? "pass" : "fail",
+        exitCode: timedOut ? 124 : code, timedOut, elapsedMs: Date.now() - startedAt,
+        stdout, stderr: error ? tail(`${stderr}\n${error.message}`) : stderr });
+    };
+    if (timeoutMs !== null) timer = setTimeout(() => {
+      timedOut = true;
+      stderr = tail(`${stderr}\nRelease check budget exhausted during ${scriptName}.`);
+      // Kill this check's process group, including npm's browser/server children.
+      // Never terminate the user's Chrome session or an unrelated process.
+      if (child.pid) {
+        try {
+          if (process.platform === "win32") {
+            spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+          } else process.kill(-child.pid, "SIGKILL");
+        } catch (error) { if (error.code !== "ESRCH") child.kill("SIGKILL"); }
+      }
+    }, Math.max(1, timeoutMs));
 
     child.stdout.on("data", (chunk) => {
       const text = redacted(chunk.toString("utf8"));
       stdout = tail(stdout + text);
-      process.stdout.write(text);
+      if (!quiet) process.stdout.write(text);
     });
     child.stderr.on("data", (chunk) => {
       const text = redacted(chunk.toString("utf8"));
       stderr = tail(stderr + text);
-      process.stderr.write(text);
+      if (!quiet) process.stderr.write(text);
     });
     child.on("error", (error) => {
-      resolve({
-        command: scriptName,
-        status: "fail",
-        exitCode: 1,
-        elapsedMs: Date.now() - startedAt,
-        stdout,
-        stderr: tail(`${stderr}\n${error instanceof Error ? error.message : String(error)}`)
-      });
+      finish(1, error);
     });
     child.on("close", (code) => {
-      resolve({
-        command: scriptName,
-        status: code === 0 ? "pass" : "fail",
-        exitCode: code,
-        elapsedMs: Date.now() - startedAt,
-        stdout,
-        stderr
-      });
+      finish(code);
     });
   });
 }
@@ -163,9 +186,12 @@ function runNpmScript(scriptName) {
 async function main() {
   const profileCommands = commandProfiles[PROFILE];
   if (!profileCommands) {
-    console.error(`Unknown PLATFORM_READY_PROFILE=${PROFILE}. Use quick, release, or full.`);
+    console.error(`Unknown PLATFORM_READY_PROFILE=${PROFILE}. Use ${Object.keys(commandProfiles).join(", ")}.`);
     process.exit(1);
   }
+
+  const budgetMs = releaseBudget(PROFILE);
+  if (budgetMs && START_AT) throw new Error("Scoped release checks cannot skip stages. Reuse an existing passing receipt only for the identical tested candidate.");
 
   let startIndex = 0;
   if (START_AT) {
@@ -193,12 +219,16 @@ async function main() {
   );
   for (const [index, command] of commands.entries()) {
     console.log(`\n=== platform-ready [${startIndex + index + 1}/${profileCommands.length}]: npm run ${command} ===`);
-    const result = await runNpmScript(command);
+    const remainingMs = budgetMs === null ? null : budgetMs - (Date.now() - startedAt);
+    const result = remainingMs !== null && remainingMs <= 0
+      ? { command, status: "fail", exitCode: 124, timedOut: true, elapsedMs: 0,
+          stdout: "", stderr: "Release check budget exhausted before this stage." }
+      : await runNpmScript(command, { timeoutMs: remainingMs });
     results.push(result);
     console.log(
       `platform-ready ${result.status}: ${command} in ${Math.round(result.elapsedMs / 1000)}s`
     );
-    if (result.status !== "pass" && STOP_ON_FAILURE) break;
+    if (result.status !== "pass" && (STOP_ON_FAILURE || budgetMs !== null)) break;
     const nextCommand = commands[index + 1];
     if (
       nextCommand &&
@@ -217,6 +247,7 @@ async function main() {
     status: failed.length ? "fail" : "pass",
     passed: failed.length === 0,
     elapsedMs: Date.now() - startedAt,
+    budgetMs,
     options: {
       includeBrowser: INCLUDE_BROWSER,
       includeBuild: INCLUDE_BUILD,
@@ -256,4 +287,4 @@ async function main() {
   );
 }
 
-await main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
