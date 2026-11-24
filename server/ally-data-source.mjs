@@ -2,6 +2,7 @@ import { normalizeKnownCommunityNames } from "../shared/community-names.mjs";
 import { ANALYSIS_SLICE_CATALOG } from "../shared/analysis-slice-catalog.mjs";
 import { getReportsSummaryData } from "./platform-data.mjs";
 import { queryDatabricks } from "./databricks.mjs";
+import { readPlatformSnapshot } from './platform-snapshot.mjs';
 
 // These are the governed view names published by tool_context_views.py. A
 // snapshot manifest may describe fields and coverage, but cannot register a
@@ -29,7 +30,7 @@ export function listAllyPlatformDataSources(reportsSummary) {
   const tables = reportsSummary?.toolContext?.tables ?? {};
   return sourceManifest(reportsSummary).map(entry => ({
     id: entry.slice_name, grain: entry.grain, fields: entry.fields,
-    sourceRows: entry.row_count, snapshotRows: Array.isArray(tables[entry.slice_name]) ? tables[entry.slice_name].length : null,
+    sourceRows: entry.row_count, snapshotRows: Array.isArray(tables[entry.slice_name]) ? tables[entry.slice_name].length : reportsSummary.toolContext.tableReferences?.[entry.slice_name]?.rows ?? null,
     minPeriod: entry.min_period ?? null, maxPeriod: entry.max_period ?? null,
     facilityIds: entry.facility_ids ?? [], generatedAt: entry.generated_at ?? null,
     asOfDate: /^20\d{2}-\d{2}-\d{2}$/.test(entry.as_of_date ?? '') ? entry.as_of_date : null,
@@ -247,7 +248,10 @@ function orderRows(rows, orderBy) {
 }
 
 /** @param {any} query @param {{load?:Function,execute?:Function,constraints?:Array<{field:string,op:string,value:any}>,allowedFields?:string[],snapshotOnly?:boolean}} [options] */
-export async function readAllyPlatformData(query, { load = getReportsSummaryData, execute = queryDatabricks, constraints = [], allowedFields, snapshotOnly = false } = {}) {
+export async function readAllyPlatformData(query, { load = async () => {
+  if (!ALLOWED_SLICES.has(query?.slice)) throw invalidQuery('Choose a listed Platform source.');
+  return (await readPlatformSnapshot({ tableNames: [query.slice] }))?.reportsSummary ?? getReportsSummaryData();
+}, execute = queryDatabricks, constraints = [], allowedFields, snapshotOnly = false } = {}) {
   const reportsSummary = await load();
   let source = listAllyPlatformDataSources(reportsSummary).find(item => item.id === query?.slice);
   // Source-owned authorization narrows the manifest before query compilation.

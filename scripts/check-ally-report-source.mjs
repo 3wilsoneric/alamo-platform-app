@@ -48,11 +48,25 @@ const handler=createPlatformReportSourceHandler({authorize:createPlatformAgentSo
 const server=createServer((req,response)=>{const res={setHeader:(k,v)=>response.setHeader(k,v),status(code){response.statusCode=code;return res;},json(value){response.setHeader('Content-Type','application/json');response.end(JSON.stringify(value));}};void handler(req,res).catch(e=>response.destroy(e));});
 server.listen(0,'127.0.0.1');await once(server,'listening');const base=`http://127.0.0.1:${server.address().port}`,token=await sign();
 const input={version:1,operation:'read',subjectId:user,scope,step};
+const clinicalInput={...input,step:{id:'client',capability:'client-records',input:{view:'directory'}}};
+const clinicalRegistry=structuredClone(registry);
+clinicalRegistry.grants[0].capabilities.push('client-records');
+assert.throws(()=>authorizePlatformReportSource({tenantId:EVERYAGENT_TENANT,clientId,principalId},clinicalInput,clinicalRegistry));
+clinicalRegistry.grants[0].detail=true;
+assert.throws(()=>authorizePlatformReportSource({tenantId:EVERYAGENT_TENANT,clientId,principalId},clinicalInput,clinicalRegistry),'A whole client history can span communities.');
+clinicalRegistry.grants[0].communityIds=ALAMO_FACILITIES.map(f=>f.facilityId);
+assert.equal(authorizePlatformReportSource({tenantId:EVERYAGENT_TENANT,clientId,principalId},clinicalInput,clinicalRegistry).receipt.detail,true);
 const send=(body=input,bearer=token)=>fetch(base+EXECUTIVE_REPORT_SOURCE_PATH,{method:'POST',headers:{Authorization:`Bearer ${bearer}`,'Content-Type':'application/json'},body:typeof body==='string'?body:JSON.stringify(body)});
 try {
   for(const claims of [{aud:'wrong'},{scp:'access_as_user'},{roles:[]},{oid:user},{tid:user},{exp:1}]) assert([401,403].includes((await send(input,await sign(claims))).status));
   for(const body of [{...input,subjectId:principalId},{...input,scope:{...scope,communityIds:[]}},{...input,step:{...step,input:{...step.input,operation:'rows',groupBy:[]}}},{...input,step:{...step,input:{...step.input,groupBy:['private_name']}}}]) assert.equal((await send(body)).status,403);
   assert.equal(reads,0);
+  const authorizationBatch={...input,operation:'authorize-batch',step:null,checks:[{scope,step:null},{scope,step},{scope:{...scope,communityIds:['345']},step:null},{scope,step:{...step,input:{...step.input,operation:'rows',groupBy:[]}}}]};
+  const batchResponse=await send(authorizationBatch);assert.equal(batchResponse.status,200);
+  const batch=await batchResponse.json();assert.equal(batch.grants.length,4);assert.deepEqual(batch.grants.slice(0,2),[batch.grant,batch.grant]);assert.deepEqual(batch.grants.slice(2),[null,null]);
+  assert.equal((await send({...authorizationBatch,checks:Array(33).fill({scope,step:null})})).status,400);
+  assert.equal((await send({...authorizationBatch,checks:[{scope,step:null,ignorePermission:true}]})).status,400);
+  registry.grants[0].revoked=true;assert.equal((await send(authorizationBatch)).status,403);registry.grants[0].revoked=false;
   assert.equal((await send({...input,untrustedAction:'send-email'})).status,400);
   assert.equal((await send('x'.repeat(17000))).status,413);
   const connection=createExecutiveReportSource({origin:'https://source.example.test',getToken:async()=>({token,expiresOnTimestamp:Date.now()+60000}),fetchImpl:(url,init)=>fetch(base+new URL(url).pathname,init)});

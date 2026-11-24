@@ -95,6 +95,7 @@ await write('server/ally-report-source-release.mjs', serverOutput[0].code);
 // Preserve the deployed reader's compressed publications and identity handling,
 // adding the reviewed read deadline and equivalent credential consolidation.
 await write('server/platform-snapshot.mjs', await source('server/platform-snapshot.mjs'));
+await write('server/platform-tool-tables.mjs', await source('server/platform-tool-tables.mjs'));
 let api = readImage('api/platform.js');
 assert(!api.includes('handlePlatformReportSourceRequest') && !api.includes('/api/platform/ally-source/v1'), 'The base already contains an Ally source endpoint; review its installed implementation before replacing it.');
 api = 'import { handlePlatformReportSourceRequest } from "../server/ally-report-source-release.mjs";\n' + once(api,

@@ -16,15 +16,25 @@ export function createPlatformReportSourceHandler({ authorize, readGrants, sourc
       if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); throw createHttpError(405, 'method_not_allowed', 'Method not allowed.'); }
       let input;
       try {
-        input = reportObject(await readJsonRequestBody(req, 16_000), ['version', 'operation', 'subjectId', 'scope', 'step']);
-        if (input.version !== 1 || !['authorize', 'catalog', 'read', 'prepare'].includes(input.operation)) throw Error();
+        input = reportObject(await readJsonRequestBody(req, 16_000), ['version', 'operation', 'subjectId', 'scope', 'step'], ['checks']);
+        if (input.version !== 1 || !['authorize', 'authorize-batch', 'catalog', 'read', 'prepare'].includes(input.operation)) throw Error();
+        reportJson(input,16_000);
         reportSubject(input.subjectId); validateReportScope(input.scope);
         if (input.step !== null) { reportObject(input.step, ['id', 'capability', 'input']); reportJson(input.step, 9000); }
         if (input.operation === 'read' && input.step === null || ['catalog', 'prepare'].includes(input.operation) && input.step !== null) throw Error();
+        if(input.operation==='authorize-batch'){
+          if(input.step!==null || !Array.isArray(input.checks) || !input.checks.length || input.checks.length>32)throw Error();
+          for(const check of input.checks){reportObject(check,['scope','step']);validateReportScope(check.scope);if(check.step!==null){reportObject(check.step,['id','capability','input']);reportJson(check.step,9000);}}
+        } else if(input.checks!==undefined)throw Error();
       } catch (error) { if (error instanceof HttpError) throw error; throw createHttpError(400, 'report_source_request_invalid', 'Choose a valid report source request.'); }
       const registry = await readGrants();
       const authorization = authorizePlatformReportSource(identity, input, registry, now());
       let data = {};
+      const batchGrants = selectedRegistry => input.checks.map(check=>{
+        try{return authorizePlatformReportSource(identity,{...input,...check},selectedRegistry,now()).receipt;}
+        catch(error){if(error instanceof HttpError && error.statusCode===403)return null;throw error;}
+      });
+      if(input.operation==='authorize-batch')data={grants:batchGrants(registry)};
       if (input.operation === 'catalog') data = { catalog: await sources.catalog(authorization) };
       if (input.operation === 'read') data = { evidence: await sources.read(input, authorization) };
       if (input.operation === 'prepare') data = await sources.prepare(authorization, async step => {
@@ -36,6 +46,7 @@ export function createPlatformReportSourceHandler({ authorize, readGrants, sourc
       const latestRegistry = await readGrants();
       const latest = authorizePlatformReportSource(identity, input, latestRegistry, now());
       if (latest.receipt.revision !== authorization.receipt.revision) throw createHttpError(403, 'report_source_grant_changed', 'Source access changed during this read.');
+      if(input.operation==='authorize-batch' && reportHash(data.grants)!==reportHash(batchGrants(latestRegistry)))throw createHttpError(403,'report_source_grant_changed','Source access changed during this read.');
       for (const prepared of data.prepared ?? []) authorizePlatformReportSource(identity, { ...input, step: prepared.step }, latestRegistry, now());
       res.status(200).json({ version: 1, subjectId: input.subjectId, requestHash: reportHash(input), grant: latest.receipt, ...data });
     } catch (error) {

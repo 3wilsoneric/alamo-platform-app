@@ -4,7 +4,7 @@ import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { createHttpError } from './http-error-contract.mjs';
 
 const facilities = new Set(ALAMO_FACILITIES.map(f => f.facilityId));
-export const REPORT_CAPABILITIES = ['platform-data', 'data-catalog', 'incident-summary', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search'];
+export const REPORT_CAPABILITIES = ['platform-data', 'data-catalog', 'client-records', 'carelog-records', 'proforma-records', 'pipeline-records', 'incident-summary', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search'];
 export const REPORT_AGGREGATE_SLICES = new Set(['community_operating_summary', 'incident_monthly_by_community_category', 'census_monthly_by_community', 'census_weekly_by_community', 'resident_flow_weekly_by_community', 'resident_flow_monthly_by_community', 'current_resident_county_by_community', 'mar_daily_by_community_90d']);
 const deny = () => { throw createHttpError(403, 'report_source_denied', 'This report source is unavailable for the requested scope.'); };
 // Aggregate access cannot be turned into a named-person lookup by grouping or
@@ -38,6 +38,10 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
   if (grant.revoked || Date.parse(grant.expiresAt) <= now || communities.some(id => !grant.communityIds.includes(id))) deny();
   if (input.step) {
     if (!grant.capabilities.includes(input.step.capability)) deny();
+    // A client can have records in several communities. Full-record reads need
+    // the organizational detail grant rather than leaking a cross-site history
+    // through a narrower aggregate grant. Current executive readers have it.
+    if (['client-records','carelog-records','proforma-records','pipeline-records'].includes(input.step.capability) && (!grant.detail || [...facilities].some(id => !grant.communityIds.includes(id)))) deny();
     if(input.step.capability==='pipeline-summary' && input.step.input?.view==='current-workspaces' && !grant.detail)deny();
     if (input.step.capability === 'platform-data') {
       const query = input.step.input;

@@ -35,6 +35,8 @@ dbutils.widgets.text("entra_client_secret_key", "")
 # COMMAND ----------
 
 import json
+import gzip
+import hashlib
 from calendar import monthrange
 from collections import Counter
 from datetime import date, datetime, timezone
@@ -1939,6 +1941,38 @@ def json_size_bytes(value):
     )
 
 
+def publish_tool_table_shards(payload, container_client):
+    """Keep full validated tables, loaded independently from the small manifest.
+
+    Upload immutable assets before advancing the publication pointer. A failed
+    upload leaves the previous complete publication usable. No rows are dropped.
+    """
+    context = payload.get("reportsSummary", {}).get("toolContext", {})
+    tables = context.get("tables", {})
+    references = {}
+    total_bytes = 0
+    for name, rows in list(tables.items()):
+        raw = json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        if len(raw) <= 2 * 1024 * 1024:
+            continue
+        if len(raw) > 64 * 1024 * 1024:
+            raise ValueError(f"Published tool table {name} exceeds its 64 MB partition limit")
+        total_bytes += len(raw)
+        if total_bytes > 64 * 1024 * 1024:
+            raise ValueError("Published tables exceed the complete-hydration memory budget")
+        digest = hashlib.sha256(raw).hexdigest()
+        blob_name = f"snapshots/tool-tables/v1/{name}/{digest}.json.gz"
+        compressed = gzip.compress(raw, mtime=0)
+        container_client.upload_blob(name=blob_name, data=compressed, overwrite=True,
+            content_settings=ContentSettings(content_type="application/gzip", cache_control="private, max-age=31536000, immutable"))
+        references[name] = {"path": blob_name, "sha256": digest, "bytes": len(raw),
+            "compressedBytes": len(compressed), "rows": len(rows)}
+        del tables[name]
+    if references:
+        context["tableReferences"] = references
+    return references
+
+
 def build_payload_size_report(payload):
     tool_tables = (
         payload.get("reportsSummary", {})
@@ -2443,6 +2477,7 @@ if not container_client.exists():
 client_database_pointer = load_client_database_pointer(container_client, client_database_pointer_blob)
 payload = build_payload(client_database_pointer)
 payload_audit = validate_snapshot_payload(payload, expected_as_of_date=expected_as_of_date)
+table_references = publish_tool_table_shards(payload, container_client)
 payload_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 payload_size_bytes = len(payload_json.encode("utf-8"))
 payload_size_limit_bytes = 64 * 1024 * 1024
@@ -2474,6 +2509,7 @@ result = {
     "payload_headroom_bytes": payload_size_limit_bytes - payload_size_bytes,
     "payload_size_report": payload_size_report,
     "payload_audit": payload_audit,
+    "table_references": table_references,
 }
 
 print(json.dumps(result, indent=2))

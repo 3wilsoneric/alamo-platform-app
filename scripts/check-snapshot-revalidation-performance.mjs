@@ -6,6 +6,8 @@ import { promisify } from "node:util";
 import { Readable } from "node:stream";
 import { gzip, gunzip, gunzipSync, gzipSync } from "node:zlib";
 import { getBoundedIntegerEnv, isProductionLikeRuntime } from "../server/runtime-environment.mjs";
+import { createHash } from 'node:crypto';
+import { assertToolTableReferences, decodeToolTable, TOOL_TABLE_MAX_BYTES } from '../server/platform-tool-tables.mjs';
 
 // Run the actual private reader with fake Azure objects: no network or PHI.
 const source = readFileSync(new URL("../server/platform-snapshot.mjs", import.meta.url), "utf8")
@@ -13,7 +15,7 @@ const source = readFileSync(new URL("../server/platform-snapshot.mjs", import.me
   .replace("import.meta.url", '"file:///fixture/server/platform-snapshot.mjs"');
 const sandbox = vm.createContext({ path, fileURLToPath: () => "/fixture/server/platform-snapshot.mjs",
   promisify, gzipCallback: gzip, gunzipCallback: gunzip, gunzipSync, getBoundedIntegerEnv,
-  isProductionLikeRuntime, Buffer, AbortSignal, process: { env: {} }, console });
+  isProductionLikeRuntime, assertToolTableReferences, decodeToolTable, TOOL_TABLE_MAX_BYTES, Buffer, AbortSignal, process: { env: {} }, console });
 vm.runInContext(`${source}\nglobalThis.reader = readAzureSnapshot; globalThis.makeService = createBlobServiceClient;`, sandbox);
 sandbox.ClientSecretCredential = class { constructor(...args) { this.kind = "secret"; this.args = args; } };
 sandbox.ManagedIdentityCredential = class { constructor(id) { this.kind = "managed"; this.id = id; } };
@@ -40,6 +42,7 @@ function publish(name, value, etag) {
 }
 const blob = (name) => ({
   url: `https://fixture.blob.core.windows.net/test/${name}`,
+  async exists() { if (storageFailure) throw Error('Storage unavailable'); return blobs.has(name); },
   async getProperties() {
     propertiesReads += 1;
     if (storageFailure) throw new Error("Storage unavailable");
@@ -77,4 +80,42 @@ await assert.rejects(sandbox.reader(), /Storage unavailable/, "revalidation must
 storageFailure = false;
 publish("root/latest.json", { invalid: true }, '"invalid-publication"');
 await assert.rejects(sandbox.reader(), /snapshot|health|communities/, "changed invalid publications must still be validated");
-console.log(JSON.stringify({ ok: true, checks: 13, scope: "Azure credential selection, reader ETag revalidation, replacement, deletion and fail-closed validation" }));
+
+const partitioned=structuredClone(fixture);
+partitioned.reportsSummary.toolContext={tables:{inline:[{count:3}]},tableReferences:{}};
+const originals={notes_summary:[{note_text:'Source text, intact',facility_id:'337'}],services_provided:[{visits:12}]};
+for(const [name,rows] of Object.entries(originals)){
+  const raw=Buffer.from(JSON.stringify(rows)),sha256=createHash('sha256').update(raw).digest('hex');
+  const reference={path:`snapshots/tool-tables/v1/${name}/${sha256}.json.gz`,sha256,bytes:raw.length,compressedBytes:gzipSync(raw).length,rows:rows.length};
+  partitioned.reportsSummary.toolContext.tableReferences[name]=reference;
+  publish(reference.path,rows,'"'+sha256+'"');
+}
+sandbox.partitioned=partitioned;
+vm.runInContext('readPublishedSnapshot = async () => partitioned; shouldPreferLocalSnapshot = () => false; globalThis.readSnapshot = readPlatformSnapshot;',sandbox);
+const beforeTables=downloads;
+const lean=await sandbox.readSnapshot({tableNames:[]});assert.equal(downloads,beforeTables);
+assert.equal(lean.reportsSummary.toolContext.tables.notes_summary,undefined);
+const [specific,concurrent]=await Promise.all([sandbox.readSnapshot({tableNames:['notes_summary']}),sandbox.readSnapshot({tableNames:['notes_summary']})]);
+assert.equal(downloads,beforeTables+1,'parallel reads share exactly one immutable table download');
+assert.deepEqual(specific.reportsSummary.toolContext.tables.notes_summary,originals.notes_summary);
+assert.strictEqual(specific.reportsSummary.toolContext.tables.notes_summary,concurrent.reportsSummary.toolContext.tables.notes_summary);
+const full=await sandbox.readSnapshot();assert.equal(downloads,beforeTables+2);
+assert.deepEqual(full.reportsSummary.toolContext.tables.services_provided,originals.services_provided);
+assert.equal(Object.keys(full.reportsSummary.toolContext.tableReferences).length,0);
+assert.strictEqual(await sandbox.readSnapshot(),full,'existing readers reuse a complete hydrated publication');
+assert.equal(lean.reportsSummary.toolContext.tables.notes_summary,undefined,'selective reads never mutate the manifest');
+
+for(const altered of [{rows:2},{bytes:999},{sha256:'a'.repeat(64),path:`snapshots/tool-tables/v1/notes_summary/${'a'.repeat(64)}.json.gz`}]){
+  const changed=structuredClone(partitioned);Object.assign(changed.reportsSummary.toolContext.tableReferences.notes_summary,altered);
+  sandbox.partitioned=changed;
+  await assert.rejects(sandbox.readSnapshot({tableNames:['notes_summary']}),/mismatch|unavailable/);
+}
+const ref=partitioned.reportsSummary.toolContext.tableReferences.notes_summary;
+for(const invalid of [{...ref,path:'https://outside.invalid/records'},{...ref,path:'snapshots/../private.json.gz'},{...ref,bytes:TOOL_TABLE_MAX_BYTES+1}]){
+  assert.throws(()=>assertToolTableReferences({tableReferences:{notes_summary:invalid}}));
+}
+assert.throws(()=>assertToolTableReferences({tables:{notes_summary:[]},tableReferences:{notes_summary:ref}}));
+assert.throws(()=>assertToolTableReferences({tableReferences:Object.fromEntries(['first_table','second_table'].map(name=>[name,
+  {...ref,path:`snapshots/tool-tables/v1/${name}/${ref.sha256}.json.gz`,bytes:TOOL_TABLE_MAX_BYTES/2+1}]))}),/memory budget/);
+assert.throws(()=>decodeToolTable(gzipSync(Buffer.from('[{"note":"different"}]')),ref));
+console.log(JSON.stringify({ok:true,scope:'Azure revalidation; source denial; immutable table integrity, lazy/concurrent reads, full application compatibility, path and population validation'}));

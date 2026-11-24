@@ -1,3 +1,75 @@
+## November 24 full-data analyst — candidate, not deployed
+
+The owner now authorizes full organizational read access for signed-in Ally
+participants across all connected apps. Page community/date filters are query
+context, not additional permission gates. Workload authentication, tenant
+isolation, source receipts and source-owned writes remain separate.
+
+The canonical client connector reuses the existing clinical reader for current
+and historical clients, profiles, episodes, extracted facts, document discovery,
+page search and fact provenance. Document text reads continue with an exact
+source revision and offset. Missing extraction is explicit; it does not imply
+an empty document. Whole-client detail requires the organization-wide read
+grant because histories can span communities. That grant is authorized for the
+executive participants; activation of this new capability is still pending.
+
+Large published tool tables now have immutable gzip assets with checked SHA-256,
+compressed/uncompressed byte counts and row counts. Validation runs on the full
+publication before assets are written and before the latest pointer advances.
+Existing application readers hydrate the complete publication; Ally loads only
+the requested table, keeping census/roster context small. Original monolithic
+publications remain readable. Deploy the reader **before** publishing references;
+rollback restores the prior publication pointer before an old reader image.
+Tables over 64 MiB require smaller source-owned partitions; do not drop rows or
+raise limits silently. References also have a combined 64 MiB decoded budget for
+legacy consumers that hydrate every table. If a real publication exceeds it,
+move those consumers to selective reads before increasing capacity; a failed
+publication keeps the previous complete pointer and never drops records.
+The shared read cache retains at most 96 MiB serialized
+table data; application projections retain their current publication separately.
+
+Candidate protocol, clinical projection, shard-integrity/transport and server
+type checks pass. Real source reconciliation, full-suite connections, integrated
+model benchmarks and production release remain unfinished. See the canonical
+Ally build spec for the complete execution status.
+
+Native Carelog/Fleet discovery and read projection now use the source's exact
+registered GET routes, parameter types, managed workload identity and represented
+executive. Response paging is revision-bound; native list limits are never a
+population denominator. Its companion Carelog change passes 971 unit and 82
+architecture tests on the current live source base, but is not deployed or granted.
+
+The ProForma reader is integrated through the current source-owned service,
+including drafts, publications, retained originals and exact citations. A minimal
+overlay adds only the read projection and prevents its catalog refresh from writing
+source state. The exact deployed runtime passed isolated discovery, paging, citation,
+full-text, search and revocation checks with zero writes; the persisted workspace
+was fictional. This is runtime integration evidence, not a live company-answer test.
+The ordinary browser authoring gate and permissions stay unchanged; the separate
+organizational read grant controls this analyst capability.
+
+`prepare-ally-source-release.mjs` prepares this backend boundary on an exact current
+image, preserving UI, installed source owners and runtime settings. It does not
+activate grants or publish snapshots. Package/manifest verification, real signed-in
+answers and conditional rollout are still required.
+
+Pipeline now has a companion read-only source on its actual production source
+base (`a8f14b35`). Its canonical readers expose all workspace states except trash,
+full assessment contexts, notes, imported ALLO text, contacts, file metadata,
+retained extraction and bounded activity. A separate source credential and exact
+tenant/represented executive protect the route; the current organizational grant
+is required in Platform. No source credential is supplied to the model. Native
+Carelog and Pipeline responses share one bounded, revision-aware reader, including
+complete-text continuation and sanitized transport errors. The input filters and
+source dates define these reads, not the report page context. Pipeline original
+file bytes/full OCR and complete activity history are still gaps, explicitly
+declared by its catalog. The adapter, source route, context regressions and route
+policy checks pass locally; live activation and answer quality remain unverified.
+
+Workforce's current deployed pilot is configured with placeholder data. Do not
+present that feed as measured staffing or use it as real-data benchmark evidence.
+Locate an authoritative personnel feed before activating executive HR analysis.
+
 ## November 24 companion repair — candidate
 
 The engine 0.18.19 companion retains conversational context, validates derived
