@@ -854,5 +854,10 @@ previous verified release.
 
 The seven live turns above used nine model calls and settled $0.193514 in total.
 The exact repeat made no paid model request. No active model lease remained at
-the final read; the two separate HTTP-400 experiments have no usage receipt and
+the final read; the three separate HTTP-400 experiments have no usage receipt and
 retain their conservative local reservations.
+
+A final `minimal` probe also returned HTTP 400; the provider explicitly lists
+`low` as this model’s minimum supported effort. Live synthesis already uses it.
+All three rejected experiment reservations remain retained; do not report them
+as settled charges without provider usage receipts.
