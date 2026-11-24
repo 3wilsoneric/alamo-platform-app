@@ -97,6 +97,13 @@ try {
   assert.deepEqual(evidence.dataset.columns.map(column=>column.label),['Severity','Records']);
   assert.equal(evidence.requiresDetail,false);
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
+  rows.push({facility_id:'337',incident_date:'1964-07-30',severity:'low',private_name:'Historical fixture'});
+  published.toolContext.manifest[0].row_count=5;
+  const preCenturyScope={...scope,from:'1900-01-01',through:'1964-12-31'};
+  const preCentury=validateReportEvidence(await connection.read(user,preCenturyScope,step),step,preCenturyScope);
+  assert.deepEqual(preCentury.dataset.rows,[{severity:'low',result:1}]);
+  await assert.rejects(()=>connection.read(user,{...preCenturyScope,communityIds:['345']},step));
+  rows.pop();published.toolContext.manifest[0].row_count=4;
   const sqlResult=await readAllyPlatformData(step.input,{load:async()=>({...published,toolContext:{...published.toolContext,tables:{}}}),execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
   published.toolContext.manifest[0].row_count=10;await assert.rejects(connection.read(user,scope,step));published.toolContext.manifest[0].row_count=4;
   // Native SDK timestamp -> source formatting -> HTTP JSON -> engine contract.

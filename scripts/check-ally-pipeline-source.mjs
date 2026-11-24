@@ -8,7 +8,7 @@ import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 
 const id='11111111-1111-1111-1111-111111111111',person='22222222-2222-2222-2222-222222222222';
 const env={ALLY_PIPELINE_ORIGIN:'https://pipeline.example.test',PIPELINE_ALLY_SOURCE_SECRET:'fixture-only'};
-let status=200, contentType='application/json', read=0;
+let status=200, contentType='application/json', read=0, listData=null;
 const data={blocks:[{block_key:'unified',body:'Retained fictional narrative. '.repeat(700),version:4}]};
 const source=createPipelineAnalystSource({env,fetchImpl:async(url,init)=>{
   const target=new URL(url), selection=JSON.parse(target.searchParams.get('input'));
@@ -17,7 +17,7 @@ const source=createPipelineAnalystSource({env,fetchImpl:async(url,init)=>{
   assert.equal(init.headers['x-ally-subject'],person);assert.equal(init.headers['x-ally-tenant'],EVERYAGENT_TENANT);
   assert.equal(selection.pointer,undefined);assert.equal(selection.offset,undefined);
   return new Response(JSON.stringify({schemaVersion:1,owner:'pipeline',view:selection.view??'catalog',complete:true,
-    readAt:new Date(Date.UTC(2026,10,24,0,0,read++)).toISOString(),data}),{status,headers:{'content-type':contentType}});
+    readAt:new Date(Date.UTC(2026,10,24,0,0,read++)).toISOString(),data:listData ?? data}),{status,headers:{'content-type':contentType}});
 }});
 const args={view:'notes',referralId:42,pointer:'/data/blocks/0/body'}, actor={subjectId:person};
 let result=await source(args,actor), text=result.text;
@@ -25,6 +25,20 @@ while(result.nextOffset!==null){result=await source({...args,offset:result.nextO
 assert.equal(text,data.blocks[0].body,'Long notes remain complete across transport timestamps.');
 const previous=result.revision;data.blocks[0].version++;
 await assert.rejects(()=>source({...args,offset:8000,revision:previous},actor),/changed/);
+listData={sourceRevision:8,referralRevision:10,total:23,next_cursor:'next-page',records:Array.from({length:20},(_,i)=>({referralId:i+1,owner:'Fictional assessor',answer:'Retained answer. '.repeat(60)}))};
+const page=await source({view:'assessment-review'},actor);
+assert.equal(page.pointer,'/data/records');assert.equal(page.items[0].owner,'Fictional assessor');
+assert.deepEqual(page.page,{sourceRevision:8,referralRevision:10,total:23,next_cursor:'next-page'});
+assert(page.nextOffset>0&&page.nextOffset<20);assert.equal(page.incomplete,true);
+const rest=await source({view:'assessment-review',offset:page.nextOffset,revision:page.revision},actor);
+assert.equal(rest.items[0].referralId,page.nextOffset+1,'Response continuation retains the list selection.');
+const projected=await source({view:'directory',columns:['referralId','owner']},actor);
+assert.equal(projected.items.length,20);assert.equal(projected.nextOffset,null);assert.equal(projected.page.next_cursor,'next-page');
+assert.equal(projected.items[0].answer,undefined);
+assert.equal((await source({view:'directory',pointer:'/data/total'},actor)).value,23,'Explicit pointers keep their existing meaning.');
+listData.sourceRevision++;
+await assert.rejects(()=>source({view:'assessment-review',offset:page.nextOffset,revision:page.revision},actor),/changed/);
+listData=null;
 for(const patch of [{url:'https://evil.example'},{subjectId:id},{method:'PATCH'},{body:{edit:true}}]) await assert.rejects(()=>source({...args,...patch},actor));
 status=403;await assert.rejects(()=>source(args,actor),/403/);status=200;
 for (const [code,expected] of [[400,'report_source_query_invalid'],[422,'report_source_query_invalid'],[409,'report_source_revision_changed'],[401,'report_source_access_changed'],[403,'report_source_access_changed'],[404,'report_source_access_changed']]) {

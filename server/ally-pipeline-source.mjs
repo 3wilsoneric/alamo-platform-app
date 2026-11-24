@@ -23,7 +23,12 @@ export function createPipelineAnalystSource({ env = process.env, fetchImpl = fet
     if (record?.schemaVersion !== 1 || record.owner !== 'pipeline' || record.view !== (selection.view ?? 'catalog') || typeof record.complete !== 'boolean' || !record.readAt) throw Error('Pipeline returned an invalid source record.');
     // Read time is transport metadata, not the version of the selected evidence.
     const { readAt, ...evidence } = record;
-    return { ...projectNativeRecord(evidence, { pointer: pointer ?? (selection.view === "assessment" ? "/data/record" : "/data"), paths, search, columns, offset, revision, path:record.view, parameters:selection }, 'Pipeline'),
-      readAt, sourceComplete:record.complete };
+    // Native lists already have a page boundary. Return useful rows and their
+    // cursor together instead of a wrapper preview requiring a second read.
+    const list = pointer === undefined && paths === undefined && search === undefined && Array.isArray(evidence.data?.records);
+    const { records: _records, ...page } = list ? evidence.data : {};
+    const selectedPointer = pointer ?? (list ? '/data/records' : selection.view === 'assessment' ? '/data/record' : '/data');
+    return { ...projectNativeRecord(evidence, { pointer:selectedPointer, paths, search, columns, offset, revision, path:record.view, parameters:selection }, 'Pipeline'),
+      ...(list ? {page} : {}), readAt, sourceComplete:record.complete };
   };
 }

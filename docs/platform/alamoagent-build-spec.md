@@ -1,3 +1,17 @@
+## November 24 investigation usability corrections — local candidate
+
+The canonical Pipeline projection now returns list rows together with the native
+cursor and revisions. Response-size paging remains explicit; the model no longer
+needs a paid discovery turn just to enter every page wrapper. Exact pointer,
+search and multi-path reads retain their existing behavior. The catalog describes
+current owner attribution separately from completed-assessment authorship.
+
+The pinned engine contract accepts valid historical periods before 2000 and keeps
+historical date labels out of numeric operands. Source integration tests verify a
+historical read through HTTP and preserve community-denial behavior. These local
+changes do not alter the frozen live 50-conversation benchmark; they require a
+separate real-query retest before deployment.
+
 ## November 24 investigation tools — candidate
 
 The real rebuilt-agent benchmark exposed a query-contract error presented as a
