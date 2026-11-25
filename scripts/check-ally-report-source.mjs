@@ -131,10 +131,12 @@ try {
   // The live benchmark exposed Date cells becoming {} during name formatting.
   published.toolContext.manifest[0].row_count=10;
   registry.grants[0].detail=true;
-  warehouseRows=[{incident_date:new Date('2026-11-19T23:41:07.123Z'),severity:'medium'}];
+  warehouseRows=[{incident_date:new Date('2026-11-19T23:41:07.123Z'),severity:'medium',
+    __ally_total_rows:1,__ally_result_revision:'a'.repeat(64),__ally_row_present:true}];
   const datedStep={id:'source-2',capability:'platform-data',input:{slice:'incident_detail_history',operation:'rows',columns:['incident_date','severity'],dateField:'incident_date'}};
   const dated=validateReportEvidence(await connection.read(user,scope,datedStep),datedStep,scope);
   assert.equal(dated.dataset.rows[0].incident_date,'2026-11-19T23:41:07.123Z');
+  assert.equal(JSON.parse(dated.answer).readMode,'governed-view');
   assert.equal(JSON.parse(dated.answer).rows[0].incident_date,dated.dataset.rows[0].incident_date);
   warehouseRows=null;registry.grants[0].detail=false;published.toolContext.manifest[0].row_count=4;
   // A newly published field must not expand an aggregate-only grant.
