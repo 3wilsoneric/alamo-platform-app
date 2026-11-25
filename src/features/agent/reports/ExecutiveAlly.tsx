@@ -56,11 +56,13 @@ export default function ExecutiveAlly() {
   const request = useRef<AbortController | null>(null), generation = useRef(0), running = useRef(false);
   const retryCommand = useRef<{key: string; id: string} | null>(null);
   const linkedReport = new URLSearchParams(location.search).get('allyReport');
+  const linkedVersion = new URLSearchParams(location.search).get('allyVersion');
   useEffect(() => {
     if (!linkedReport || !/^[a-f0-9-]{36}\/[a-f0-9]{64}$/.test(linkedReport)) return;
     const [ownerId,id] = linkedReport.split('/');
-    if (ownerId && id) { setOpen(true); setSurface('reports'); void openReport({ownerId,id}); }
-  }, [linkedReport]);
+    if (linkedVersion !== null && !/^(?:[1-9]|1[0-2])$/.test(linkedVersion)) return;
+    if (ownerId && id) { setOpen(true); setSurface('reports'); void openReport({ownerId,id},linkedVersion ? Number(linkedVersion) : undefined); }
+  }, [linkedReport,linkedVersion]);
   function commandId(key: string) {
     if (retryCommand.current?.key !== key) retryCommand.current = {key, id: crypto.randomUUID()};
     return retryCommand.current!.id;

@@ -1,5 +1,8 @@
 ## November 24 investigation usability corrections — local candidate
 
+Saved-report links now accept an explicit validated version through the existing
+report loader, so historical links do not silently open the latest answer.
+
 Real-answer replay exposed literal Markdown headings and table-cell formatting.
 The existing prose renderer now presents headings and the same safe bold, link
 and line-break formatting in desktop tables and phone records. Other HTML remains

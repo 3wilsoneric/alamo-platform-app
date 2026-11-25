@@ -23,7 +23,8 @@ await withBrowserQa(async browser => {
     let created = false;
     let question = "";
     let reportCreated = false;
-    const reportId = "33333333-3333-4333-8333-333333333333";
+    let requestedReportVersion = null;
+    const reportId = "3".repeat(64);
     const ownerId = "44444444-4444-4444-8444-444444444444";
     const reportSummary = { id: reportId, ownerId, title: "Community admissions and discharges", status: "ready", revision: 1, version: 1, updatedAt: "2026-11-22T15:00:00Z", completedSources: 1, totalSources: 1 };
     const report = { ...reportSummary, selectedVersion: 1, canEdit: true, readers: [], scope: { communityIds: [], from: "2026-01-01", through: "2026-11-22" }, objective: "Compare admissions and discharges across communities", error: null,
@@ -52,6 +53,7 @@ await withBrowserQa(async browser => {
       const request = route.request();
       const url = new URL(request.url());
       if (url.pathname.endsWith("/reports")) {
+        if(request.method()==='GET'&&url.searchParams.has('id'))requestedReportVersion=url.searchParams.get('version');
         if (request.method() === "POST") { reportCreated = true; return route.fulfill({ json: reportSummary }); }
         return route.fulfill({ json: url.searchParams.has("id") ? report : { reports: reportCreated ? [reportSummary] : [] } });
       }
@@ -145,6 +147,11 @@ await withBrowserQa(async browser => {
     assert.equal(await panel.evaluate(element => element.scrollLeft), 0, "the phone panel does not scroll sideways");
     assert.deepEqual(errors, []);
     await panel.screenshot({ path: path.join(output, `ally-workspace-report-${width}.png`) });
+    requestedReportVersion=null;
+    await page.goto(`${BASE_URL}/admissions?allyReport=${ownerId}/${reportId}&allyVersion=1`,{waitUntil:'domcontentloaded'});
+    await page.getByRole('article',{name:'Report findings'}).waitFor();
+    assert.equal(requestedReportVersion,'1','A saved version link must request that frozen version');
+    assert.deepEqual(errors,[]);
     await context.close();
   }
 });
