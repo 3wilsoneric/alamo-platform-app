@@ -42,7 +42,11 @@ const published={toolContext:{manifest:[{slice_name:'incident_detail_history',gr
 const step={id:'source-1',capability:'platform-data',input:{slice:'incident_detail_history',operation:'count',groupBy:['severity'],dateField:'incident_date'}};
 const pipelineSnapshot={status:'connected',generatedAt:new Date().toISOString(),metrics:{activeReferrals:2,awaitingAdmission:900},board:{total:2,truncated:false,columns:[{key:'decision',label:'Decision',count:99}],cards:[{column:'in_progress',status:'Assessment underway',community:'San Pablo'},{column:'decision',status:'Accepted, requirements open',community:'Santa Clarita'}]}};
 let reads=0, afterRead=()=>{}, warehouseRows=null, nativeFailure=0;
-const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;if(nativeFailure)return readNativeJsonResponse(new Response('PRIVATE UPSTREAM BODY',{status:nativeFailure}),'Pipeline');const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot)});
+const licenseRecord={id:'123456789-'+ 'a'.repeat(32),facilityId:'337',reportDate:'2026-11-10',title:'Fictional inspection',reportType:'Inspection',textSha256:'b'.repeat(64),retrievedAt:'2026-11-20T00:00:00Z',sourceUrl:'https://www.ccld.dss.ca.gov/carefacilitysearch/FacDetail/123456789',text:'Original archived findings. '.repeat(500)};
+let licenseReads=0,licenseChanged=false;
+const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;if(nativeFailure)return readNativeJsonResponse(new Response('PRIVATE UPSTREAM BODY',{status:nativeFailure}),'Pipeline');const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot),
+  licensing:async()=>({collectedAt:licenseRecord.retrievedAt,reports:[licenseRecord,{...licenseRecord,id:'123456789-'+ 'c'.repeat(32),facilityId:'345'}]}),
+  licensingReport:async()=>{licenseReads++;return {...licenseRecord,...(licenseChanged?{textSha256:'d'.repeat(64)}:{})};}});
 const {publicKey,privateKey}=await generateKeyPair('RS256');const jwk=await exportJWK(publicKey);
 const sign=(claims={})=>new SignJWT({tid:EVERYAGENT_TENANT,oid:principalId,azp:clientId,roles:['AlamoAgent.Source.Read'],ver:'2.0',iss:`https://login.microsoftonline.com/${EVERYAGENT_TENANT}/v2.0`,aud:audience,iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600,...claims}).setProtectedHeader({alg:'RS256',kid:'test'}).sign(privateKey);
 const handler=createPlatformReportSourceHandler({authorize:createPlatformAgentSourceAuthorizer({audience,keySet:createLocalJWKSet({keys:[{...jwk,kid:'test',alg:'RS256'}]})}),readGrants:async()=>structuredClone(registry),sources});
@@ -80,6 +84,20 @@ try {
     else await assert.rejects(connection.read(user,scope,step),error=>error.statusCode===status);
   }
   nativeFailure=0;
+  const licenseStep={id:'license',capability:'licensing-search',input:{reportId:licenseRecord.id}};
+  assert.equal((await send({...input,step:licenseStep})).status,403);assert.equal(licenseReads,0,'Metadata-only grants cannot read report text');
+  registry.grants[0].detail=true;
+  const listing=JSON.parse((await connection.read(user,scope,{...licenseStep,input:{}})).answer);
+  assert.equal(listing.reports.length,1);assert.match(listing.reports[0].href,/report=123456789-/);assert.equal(listing.reports[0].text,undefined);
+  const original=validateReportEvidence(await connection.read(user,scope,licenseStep),licenseStep,scope);assert.equal(original.requiresDetail,true);
+  const originalText=JSON.parse(original.answer);assert.equal(originalText.content.text,licenseRecord.text.slice(0,8000));assert.equal(originalText.content.nextOffset,8000);
+  const continuation={...licenseStep,input:{...licenseStep.input,offset:8000,revision:originalText.content.revision}};
+  assert.equal(JSON.parse((await connection.read(user,scope,continuation)).answer).content.text,licenseRecord.text.slice(8000));
+  const beforeDenied=licenseReads;
+  const unavailable=await connection.read(user,scope,{...licenseStep,input:{reportId:'123456789-'+ 'c'.repeat(32)}});
+  assert.equal(unavailable.status,'unavailable');assert.equal(unavailable.answer,null);assert.equal(licenseReads,beforeDenied,'Out-of-community reports never reach the text reader');
+  licenseChanged=true;assert.equal((await connection.read(user,scope,licenseStep)).status,'unavailable');licenseChanged=false;
+  registry.grants[0].detail=false;
   // Use the canonical knowledge reader and its versioned contract, rather than
   // a permissive fake that would accept an invalid cross-application request.
   const knowledgeStep={id:'knowledge',capability:'proforma-search',input:{query:'intake'}};

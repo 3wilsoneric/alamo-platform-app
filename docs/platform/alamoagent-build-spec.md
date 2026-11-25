@@ -1,5 +1,11 @@
 ## November 24 investigation usability corrections — local candidate
 
+Licensing discovery now links each archived report and permits detail-authorized
+reads through the existing licensing text owner. The report must first match the
+current community/date scope; revision-bound text paging and the source's archive
+coverage remain explicit. Metadata-only grants cannot retrieve text. This closes
+the metadata-only tool gap without another document index or ingestion pipeline.
+
 Invalid native read parameters, missing selections and stale continuation revisions
 now return bounded correction evidence to the analyst, allowing investigation to
 continue through the source catalog. They do not return records or prove an empty

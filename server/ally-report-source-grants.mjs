@@ -43,6 +43,7 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
     // through a narrower aggregate grant. Current executive readers have it.
     if (['client-records','carelog-records','proforma-records','pipeline-records'].includes(input.step.capability) && (!grant.detail || [...facilities].some(id => !grant.communityIds.includes(id)))) deny();
     if(input.step.capability==='pipeline-summary' && input.step.input?.view==='current-workspaces' && !grant.detail)deny();
+    if(input.step.capability==='licensing-search' && input.step.input?.reportId!==undefined && !grant.detail)deny();
     if (input.step.capability === 'platform-data') {
       const query = input.step.input;
       if (!grant.slices.includes(query?.slice) || query.groupBy !== undefined && !Array.isArray(query.groupBy)) deny();
