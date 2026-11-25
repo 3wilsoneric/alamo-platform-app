@@ -10,7 +10,7 @@ import { reportHash } from '@alamo/agent-runtime/shared/executive-report-contrac
 // new SQL target for Ally.
 const EXTRA_SLICES = [
   "incident_detail_current_month", "resident_profile",
-  "current_resident_county_by_community", "mar_daily_by_community_90d", "mar_monthly_by_community_medication"
+  "current_resident_county_by_community", "mar_daily_by_community_90d", "mar_monthly_by_community_medication", "mar_daily_by_community_medication"
 ];
 const ALLOWED_SLICES = new Set([...ANALYSIS_SLICE_CATALOG.map(slice => slice.id), ...EXTRA_SLICES]);
 const FIELD = /^[A-Za-z_][A-Za-z0-9_]*$/;

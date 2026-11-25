@@ -1,3 +1,28 @@
+## November 25 exact medication dates — local candidate
+
+The real medication follow-up could count refusals through November 24 but could
+not retrieve a matching scheduled-dose denominator for that partial month. The
+canonical tool-context publisher now defines an additive community/day/medication
+view over the same governed administration records. The manifest makes its exact
+date coverage discoverable; full population aggregates run in the warehouse, with
+no truncated event snapshot. Scheduled refusals and PRN refusals are separate;
+pending doses are not refusals. No clinical records or existing monthly measures
+change. Medication-level queries retain their existing detail requirement and
+need an explicit source-slice grant.
+
+The actual projection passes executable event-grain tests, including medication
+strength, community/date isolation, weighted denominators, pending and PRN cases.
+An independent read-only query reconciles all eleven January–November monthly
+rollups against the existing monthly view, including the current partial month.
+The authenticated source test verifies manifest discovery, exact date/community
+SQL constraints, grant denial and warehouse-outage failure. Publishing the view,
+manifest and existing executives' slice grants, then a real-model follow-up, remain
+pending. This is source access evidence, not a corrected benchmark answer.
+
+Known ceiling: the current day can contain pending scheduled doses. The catalog
+states that limitation explicitly. A completed-day KPI must exclude that day;
+this view does not redefine an unfinished day as fully observed.
+
 ## November 25 canonical record selection — local candidate
 
 Explicitly selecting `/data/records` now retains the same native cursor,

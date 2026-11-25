@@ -1473,6 +1473,33 @@ create_view(
 
 # COMMAND ----------
 
+# Exact dated medication denominators reuse the governed administration owner.
+# Keep scheduled and PRN refusals separate; neither monthly buckets nor an
+# exception-only extract can supply matched arbitrary-date refusal rates.
+create_view(
+    "v_tool_mar_daily_by_community_medication",
+    f"""
+    SELECT
+      facility_id,
+      max(facility_name) AS facility_name,
+      administration_date,
+      medication_name,
+      count(*) AS administration_count,
+      sum(CASE WHEN is_prn = 0 THEN 1 ELSE 0 END) AS scheduled_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS given_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'not_given' THEN 1 ELSE 0 END) AS not_given_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'unknown' THEN 1 ELSE 0 END) AS pending_count,
+      sum(is_refusal) AS refusal_count,
+      sum(CASE WHEN is_prn = 0 THEN is_refusal ELSE 0 END) AS scheduled_refusal_count,
+      sum(CASE WHEN is_prn = 1 THEN is_refusal ELSE 0 END) AS prn_refusal_count,
+      sum(CASE WHEN is_prn = 1 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS prn_given_count
+    FROM {target}.v_mar_administration_detail
+    GROUP BY facility_id, administration_date, medication_name
+    """
+)
+
+# COMMAND ----------
+
 create_view(
     "v_tool_mar_exception_detail_90d",
     f"""
@@ -2013,6 +2040,19 @@ create_view(
       'facility_id,facility_name,administration_date,scheduled_count,given_count,not_given_count,pending_count,missed_count,late_given_count,refused_count,held_count,other_not_given_count,prn_given_count' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_mar_daily_by_community_90d
+
+    UNION ALL
+
+    SELECT
+      'mar_daily_by_community_medication' AS slice_name,
+      'community_day_medication' AS grain,
+      count(*) AS row_count,
+      cast(min(administration_date) AS string) AS min_period,
+      cast(max(administration_date) AS string) AS max_period,
+      concat_ws(',', sort_array(collect_set(facility_id))) AS facility_ids,
+      'facility_id,facility_name,administration_date,medication_name,administration_count,scheduled_count,given_count,not_given_count,pending_count,refusal_count,scheduled_refusal_count,prn_refusal_count,prn_given_count' AS fields,
+      current_timestamp() AS generated_at
+    FROM {target}.v_tool_mar_daily_by_community_medication
 
     UNION ALL
 

@@ -41,10 +41,10 @@ const rows=[{facility_id:'337',incident_date:'2026-11-20T23:59:59',severity:'med
 const published={toolContext:{manifest:[{slice_name:'incident_detail_history',grain:'incident',row_count:4,fields:Object.keys(rows[0]),generated_at:new Date().toISOString()}, {slice_name:'census_monthly_by_community',grain:'community month',row_count:1,fields:['facility_id','month','census']}],tables:{incident_detail_history:rows,census_monthly_by_community:[{facility_id:'337',month:'2026-11',census:40}]}}};
 const step={id:'source-1',capability:'platform-data',input:{slice:'incident_detail_history',operation:'count',groupBy:['severity'],dateField:'incident_date'}};
 const pipelineSnapshot={status:'connected',generatedAt:new Date().toISOString(),metrics:{activeReferrals:2,awaitingAdmission:900},board:{total:2,truncated:false,columns:[{key:'decision',label:'Decision',count:99}],cards:[{column:'in_progress',status:'Assessment underway',community:'San Pablo'},{column:'decision',status:'Accepted, requirements open',community:'Santa Clarita'}]}};
-let reads=0, afterRead=()=>{}, warehouseRows=null, nativeFailure=0;
+let reads=0, afterRead=()=>{}, warehouseRows=null, warehouseSql='', nativeFailure=0;
 const licenseRecord={id:'123456789-'+ 'a'.repeat(32),facilityId:'337',reportDate:'2026-11-10',title:'Fictional inspection',reportType:'Inspection',textSha256:'b'.repeat(64),retrievedAt:'2026-11-20T00:00:00Z',sourceUrl:'https://www.ccld.dss.ca.gov/carefacilitysearch/FacDetail/123456789',text:'Original archived findings. '.repeat(500)};
 let licenseReads=0,licenseChanged=false;
-const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;if(nativeFailure)return readNativeJsonResponse(new Response('PRIVATE UPSTREAM BODY',{status:nativeFailure}),'Pipeline');const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot),
+const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;if(nativeFailure)return readNativeJsonResponse(new Response('PRIVATE UPSTREAM BODY',{status:nativeFailure}),'Pipeline');const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async sql=>{warehouseSql=sql;if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot),
   licensing:async()=>({collectedAt:licenseRecord.retrievedAt,reports:[licenseRecord,{...licenseRecord,id:'123456789-'+ 'c'.repeat(32),facilityId:'345'}]}),
   licensingReport:async()=>{licenseReads++;return {...licenseRecord,...(licenseChanged?{textSha256:'d'.repeat(64)}:{})};}});
 const {publicKey,privateKey}=await generateKeyPair('RS256');const jwk=await exportJWK(publicKey);
@@ -163,6 +163,36 @@ try {
     assert.equal(publishedEvidence.dataset.columns.find(c=>c.key===numeric).type,'number');
     assert(!JSON.stringify(publishedEvidence).includes('PRIVATE_AGGREGATE_PROBE'));
   }
+  // Daily medication coverage is a manifest, not a truncated copy of events.
+  // Exercise the authenticated source and SQL compiler for a partial month.
+  const dailySlice='mar_daily_by_community_medication';
+  published.toolContext.manifest.push({slice_name:dailySlice,grain:'community day medication',row_count:150000,
+    fields:['facility_id','administration_date','medication_name','scheduled_count','scheduled_refusal_count','prn_refusal_count'],generated_at:'2026-11-24T13:00:00Z'});
+  const dailyStep={id:'daily-medication',capability:'platform-data',input:{slice:dailySlice,operation:'sum',measure:'scheduled_refusal_count',groupBy:['medication_name'],dateField:'administration_date'}};
+  assert.equal((await send({...input,step:dailyStep})).status,403,'Publishing a view does not grant access');
+  registry.grants[0].slices.push(dailySlice);
+  assert.equal((await send({...input,step:dailyStep})).status,403,'Medication-level queries retain the existing detail grant');
+  registry.grants[0].detail=true;
+  const dailyCatalog=(await connection.catalog(user,scope)).find(c=>c.id==='platform-data').sources.find(s=>s.id===dailySlice);
+  assert.equal(dailyCatalog.completeness,'full-query-required');
+  assert(dailyCatalog.numericFields.includes('scheduled_refusal_count'));
+  assert.match(dailyCatalog.meaning,/sum\(scheduled_refusal_count\)\/sum\(scheduled_count\)/);
+  warehouseRows=[{medication_name:'Medicine A 5 mg',result:2}];
+  const dailyEvidence=validateReportEvidence(await connection.read(user,scope,dailyStep),dailyStep,scope);
+  assert.equal(dailyEvidence.status,'verified');assert.equal(dailyEvidence.coverage,'complete');
+  assert.equal(dailyEvidence.dataset.rows[0].result,2);
+  assert.match(warehouseSql,/v_tool_mar_daily_by_community_medication/);
+  assert.match(warehouseSql,/SUM\(try_cast\(`scheduled_refusal_count` AS DOUBLE\)\)/);
+  assert.match(warehouseSql,/CAST\(`facility_id` AS STRING\) IN/);
+  assert(warehouseSql.includes(Buffer.from('337').toString('base64')));
+  assert.match(warehouseSql,/substring\(CAST\(`administration_date` AS STRING\), 1, 10\) >=/);
+  assert.match(warehouseSql,/substring\(CAST\(`administration_date` AS STRING\), 1, 10\) <=/);
+  assert(warehouseSql.includes(Buffer.from(scope.from).toString('base64')));
+  assert(warehouseSql.includes(Buffer.from(scope.through).toString('base64')));
+  warehouseRows=null;
+  await assert.rejects(connection.read(user,scope,dailyStep),error=>error.statusCode===503,
+    'No snapshot fallback can invent a partial-month denominator');
+  registry.grants[0].detail=false;registry.grants[0].slices.pop();published.toolContext.manifest.pop();
   const county=published.toolContext.tables.current_resident_county_by_community[0];
   const countyStep={id:'source-4',capability:'platform-data',input:{slice:'current_resident_county_by_community',operation:'rows'}};
   for(const value of [null,0]) {
