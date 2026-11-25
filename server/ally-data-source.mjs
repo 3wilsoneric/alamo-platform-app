@@ -150,6 +150,18 @@ export function compileAllyPlatformDataQuery(query, source, constraints = []) {
     (groupColumns.length ? ` GROUP BY ${groupColumns.join(", ")}` : "") +
     (input.orderBy.length ? ` ORDER BY ${input.orderBy.map(order => `${quotedField(order.field)} ${order.direction.toUpperCase()} NULLS LAST`).join(', ')}` : '') +
     ` LIMIT ${input.limit + 1}`;
+  // A statement reads a consistent result set. Carry its complete multiset
+  // fingerprint with the page, then reject continuation after any source change.
+  // Ties across every projected value are indistinguishable duplicate rows;
+  // their multiplicity remains in both the fingerprint and total count.
+  const stableOrder = [...input.orderBy, ...input.columns.filter(field => !input.orderBy.some(order => order.field === field)).map(field => ({field,direction:'asc'}))];
+  const pagedSql = input.operation === 'rows' ? `WITH _ally_rows AS (` +
+    `SELECT ${projection} FROM ${relation}${where.length ? ` WHERE ${where.join(' AND ')}` : ''}` +
+    `), _ally_identity AS (SELECT COUNT(*) AS __ally_total_rows, ` +
+    `sha2(concat_ws('', sort_array(collect_list(sha2(to_json(struct(${input.columns.map(quotedField).join(', ')})), 256)))), 256) AS __ally_result_revision FROM _ally_rows), ` +
+    `_ally_page AS (SELECT ${input.columns.map(quotedField).join(', ')}, TRUE AS __ally_row_present FROM _ally_rows ORDER BY ${stableOrder.map(order=>`${quotedField(order.field)} ${order.direction.toUpperCase()} NULLS LAST`).join(', ')} LIMIT ${input.limit+1} OFFSET ${input.offset}) ` +
+    `SELECT _ally_page.*, _ally_identity.* FROM _ally_identity LEFT JOIN _ally_page ON TRUE ` +
+    `ORDER BY ${stableOrder.map(order=>`${quotedField(order.field)} ${order.direction.toUpperCase()} NULLS LAST`).join(', ')}` : null;
   const searchFilters = (query.filters ?? []).filter(filter => !['gte','lte'].includes(filter.op));
   const searchFields = [...new Set(searchFilters.map(filter => filter.field))];
   const populationFilters = input.filters.filter(filter => !searchFilters.includes(filter));
@@ -160,7 +172,7 @@ export function compileAllyPlatformDataQuery(query, source, constraints = []) {
       `COUNT(${other?`CASE WHEN ${other} THEN ${value} END`:value}) AS known_${i}`];
   }).join(', ')} FROM alamohealth.gold.v_tool_${input.source.id}` +
     (populationFilters.length ? ` WHERE ${populationFilters.map(filterSql).join(' AND ')}` : '') : null;
-  return { sql, searchFields, searchFilters, populationFilters, populationSql, ...input };
+  return { sql, pagedSql, searchFields, searchFilters, populationFilters, populationSql, ...input };
 }
 
 export const aggregateFields = operation => operation==='statistics' ? ['records','known','missing','mean','median','minimum','maximum'] : ['result'];
@@ -321,12 +333,27 @@ export async function readAllyPlatformData(query, { load = async () => {
     try { rows=fromSnapshot();readMode='published-snapshot';coverage='published-row-set'; }
     catch (error) { if (error && typeof error === 'object' && 'code' in error && error.code === 'ally_query_invalid') throw error; /* A missing/conflicting required column needs the full view. */ }
   }
-  if (rows === undefined && (input.offset || query.revision !== undefined)) throw invalidQuery('Continuation requires a complete published source. Narrow the source query instead.');
+  if (rows === undefined && (input.offset || query.revision !== undefined) && !input.pagedSql) throw invalidQuery('Continuation requires a complete published source. Narrow the source query instead.');
   if (rows === undefined && snapshotOnly) throw Error('A complete, lossless published answer is unavailable.');
   if(rows===undefined) try {
-    rows = await execute(input.sql);
+    rows = await execute(input.pagedSql ?? input.sql);
     if (!Array.isArray(rows)) throw Error("Invalid source result.");
-  } catch {
+    if (input.pagedSql) {
+      if (!rows.length || rows.some(row=>!row || typeof row!=='object' || !Object.hasOwn(row,'__ally_result_revision'))) throw Error('The warehouse did not return a continuation identity.');
+      const identity=rows[0], total=Number(identity.__ally_total_rows), fingerprint=identity.__ally_result_revision;
+      if (!Number.isSafeInteger(total) || total < 0 || typeof fingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(fingerprint) ||
+        rows.some(row=>row.__ally_result_revision!==fingerprint || Number(row.__ally_total_rows)!==total)) throw Error('Invalid warehouse continuation identity.');
+      const { offset: _offset, revision: _revision, limit: _limit, ...selection } = query;
+      const revision=reportHash({source:input.source, constraints, selection, warehouseResult:fingerprint,total});
+      if (query.revision !== undefined && query.revision!==revision) throw invalidQuery('The source or query changed. Restart from the first page.');
+      if (input.offset>total) throw invalidQuery('The continuation is outside this result. Restart from the first page.');
+      rows=rows.filter(row=>row.__ally_row_present===true);
+      if (rows.length!==Math.min(input.limit+1,Math.max(0,total-input.offset))) throw Error('The warehouse page is incomplete.');
+      Object.assign(continuation,{revision,totalRows:total,offset:input.offset});
+    }
+  } catch (error) {
+    if (error && typeof error==='object' && 'code' in error && error.code==='ally_query_invalid') throw error;
+    if (input.offset || query.revision!==undefined) throw invalidQuery('The source page is unavailable. Retry this revision; do not combine it with a different source.');
     rows=fromSnapshot();
     readMode = "published-snapshot";
     coverage = snapshotRows.length < input.source.sourceRows ? `partial: ${snapshotRows.length} of ${input.source.sourceRows} source rows published` : "published-row-set";

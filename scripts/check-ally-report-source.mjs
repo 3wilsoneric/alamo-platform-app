@@ -464,6 +464,9 @@ assert.equal(noteCount.dataset.rows[0].result,1,'missing text does not erase the
 analystSummary.toolContext.tables.notes_summary[0].note_text='SOURCE_TEXT_PRIVATE '.repeat(6000);
 const oversized=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'rows',limit:1}}},analystAuth);
 assert.equal(oversized.status,'unavailable');assert.equal(oversized.answer,null);assert.match(oversized.note,/fewer rows and columns/);assert(!JSON.stringify(oversized).includes('SOURCE_TEXT_PRIVATE'));
+const shortened=await analystSources.read({scope,step:{id:'excerpt',capability:'platform-data',input:{slice:'notes_summary',operation:'rows',limit:1,columns:['note_text'],textExcerpt:{field:'note_text',query:'',characters:100}}}},analystAuth);
+assert.equal(shortened.status,'verified');assert.equal(shortened.coverage,'partial');
+assert.equal(JSON.parse(shortened.answer).populationCoverage,'partial','a complete page of excerpts is not a complete note review');
 console.log('Oversized source selections produce bounded refinement feedback without exposing their body or inventing an empty result.');
 
 
@@ -484,9 +487,11 @@ const pageStep={id:'page',capability:'platform-data',input:{slice:'community_ope
 const firstPage=await leanSource.read({scope,step:pageStep},leanAuth);
 const continuation=JSON.parse(firstPage.answer);
 assert.equal(continuation.nextOffset,1);assert.equal(continuation.totalRows,2);
+assert.equal(firstPage.coverage,'partial');assert.equal(continuation.populationCoverage,'complete');
 const secondPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:continuation.nextOffset,revision:continuation.revision}}},leanAuth);
 assert.equal(JSON.parse(secondPage.answer).nextOffset,null);assert.equal(secondPage.dataset.rows[0].census,8);
 assert.equal(secondPage.coverage,'partial','The final page is not the entire source population');
+assert.equal(JSON.parse(secondPage.answer).populationCoverage,'complete','both intervals can establish the full population when combined');
 const changedPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:1,revision:'0'.repeat(64)}}},leanAuth);
 assert.equal(changedPage.status,'unavailable');assert.equal(changedPage.answer,null);
 assert.match(changedPage.note,/source or query changed/);

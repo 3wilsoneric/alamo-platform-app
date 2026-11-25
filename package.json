@@ -217,7 +217,7 @@
     "prepare:ally-source-release": "node scripts/prepare-ally-source-release.mjs"
   },
   "dependencies": {
-    "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.20.tgz",
+    "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.21.tgz",
     "@alamo/agent-workflow-knowledge": "file:vendor/alamo-agent-workflow-knowledge-0.17.0.tgz",
     "@azure/identity": "^4.14.1",
     "@azure/msal-browser": "^4.26.0",

@@ -1186,8 +1186,19 @@ published row sets. The revision binds the publication, authorized scope, query
 and ordered result. Changed content or scope requires restarting; it cannot silently
 skip or duplicate rows. The model receives total result rows and a next offset,
 while each response retains the existing row and context limits. No source records
-change. Warehouse-only and incomplete fallback results do not claim a stable cursor;
-add source-owned snapshot isolation if a required cohort cannot be published whole.
+change. The first implementation was deployed in `66d35cc`; real verification then
+found that notes publish only 15,000 of 224,180 rows, so published paging alone is
+insufficient. The next candidate queries the canonical warehouse view with a
+deterministic order, whole-result count and sorted content fingerprint in one
+statement. Continuation recomputes and verifies that fingerprint and the exact
+authorized query; changed results require restarting, and an unavailable page
+cannot fall back to a different population. Incomplete fallback results still
+cannot claim a stable cursor. Per-page evidence stays partial; source-issued
+population coverage lets the engine recognize a complete set of matching pages,
+without treating shortened notes or missing fields as complete evidence.
 A 119-row traversal and source-boundary checks cover every record, changed queries,
 revocation scope, refreshed content and page resizing. Real answer quality remains
-a separate pending corrective evaluation; this is not a deployment claim.
+a separate pending corrective evaluation. Warehouse continuation is still a
+candidate. It recomputes the filtered fingerprint for each page; if measured
+large-cohort latency becomes unacceptable, use source-owned immutable query
+results instead of relaxing revision checks or silently mixing snapshots.
