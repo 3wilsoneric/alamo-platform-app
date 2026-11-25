@@ -1,4 +1,4 @@
-## November 24 native investigation and calendar — local candidate
+## November 24 native investigation and calendar — source release, evaluation pending
 
 Selected native fields share one byte budget, retaining whole values instead of
 artificial equal-sized excerpts. Continuation carries the exact response revision;
@@ -14,8 +14,13 @@ available. Original data tables, known workspace links, keyboard focus and print
 export reuse existing owners. Model-authored HTML remains inert. The calendar
 contract is owned by the independent Ally engine; this host renders that contract.
 Desktop, 390 px and 320 px browser controls and TypeScript checks pass. These are
-rendering controls, not model-quality evidence. The source changes and UI remain
-local until the recorded release.
+rendering controls, not model-quality evidence. Candidate `282a141` is deployed as
+`alamo-platform-prod-web--ally-invest-v12`; the scoped predeployment gate passed
+10/10 in 140 seconds. Source reads and all three current executive grants pass.
+Main-Chrome sign-in and the home screen were observed, but the full live Network
+capture remains pending after browser inspection disconnected. Do not call that
+postdeployment gate complete. The engine remains unchanged pending real-answer
+evaluation. See [deployment operations](deployment-operations.md#november-24-investigation-source-release).
 
 ## November 24 investigation usability corrections — local candidate
 
@@ -29,7 +34,8 @@ remain. An individually oversized note requires its existing document/field read
 this change does not claim every possible source record fits a report response.
 Focused checks traverse seventeen varied long notes with exact text, no duplicates
 or gaps, and preserve unchanged revision and incomplete-excerpt rules. Source
-checks and server typechecking pass; this source change is not deployed.
+checks and server typechecking pass; this source change is included in the release
+recorded above.
 
 
 Saved-report links now accept an explicit validated version through the existing

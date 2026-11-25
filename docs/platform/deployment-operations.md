@@ -6732,3 +6732,28 @@ newer release, source publication or application configuration during recovery.
 Full answer quality is being measured in the separate `retest-full-v10` run:
 the original 50 conversations/156 turns, with unchanged questions and private
 artifacts. Navigation and contract passes are not semantic-answer acceptance.
+## November 24 investigation source release
+
+Source commit `282a1417712deb9d496397174007b9386574f985` is deployed as
+`alamo-platform-prod-web--ally-invest-v12`, image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:95dcd4fab2635d7b6de70fa0c6d9791f257871240a4b69f080f2f2f362f9ea97`.
+Rollback image:
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:350da8d2f55a5d0d3f4abd5a1f06bfbafe2d670e0863f688ee092188ac0e72fa`.
+
+The pinned overlay changes 46 files for source byte paging, complete native
+field/record collection and the registered calendar renderer. Existing host
+configuration, identity and the other application assets are preserved. The
+scoped gate passed 10/10 in 140 seconds; packaged file hashes/import passed.
+Public production smoke passed 4/4. All three authorized executive source grants
+and the Pipeline batch continuation passed against the deployed APIs.
+
+Main Chrome completed Microsoft sign-in and displayed the authenticated map.
+The native inspection call then timed out and the debugger detached; the full
+Network/navigation capture and `ally-live` receipt are outstanding. This is a
+partially verified release, not a completed release gate. Do not reuse a prior
+browser receipt for this build. The independent engine remains at its existing
+production version while the new candidate is evaluated separately.
+
+Private packaging, before/after configuration, live-source and rollback receipts:
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/investigation-v12/`.
+
