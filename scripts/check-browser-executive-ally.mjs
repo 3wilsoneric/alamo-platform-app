@@ -285,6 +285,26 @@ try { await withBrowserQa(async browser=>{
       await page.screenshot({path:path.join(output,`history-dense-${width}-${expanded?'expanded':'panel'}.png`)});
       await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false);assert(await panel.getByLabel('Saved conversations').evaluate(el=>el===document.activeElement));
     }
+    if(width===320) {
+      for(const [ids,label,choice] of [[[],'All communities',''],[['337','342','343','344','345'],'All communities',''],[['337','345'],'San Pablo, Santa Clarita','selected'],[['343'],'JC Wallace House','343']]) {
+        console.log(`Executive Ally: saved scope ${label}`);
+        fixtureTime+=24*60*60*1000;
+        let scoped=await service.create(auth,{requestId:crypto.randomUUID(),objective:'Check saved community selection',scope:{communityIds:ids,from:'2026-01-01',through:'2026-11-23'}});
+        for(let i=0;i<3;i++)await service.advance({ownerId:owner,id:scoped.id});
+        await page.goto(`${BASE_URL}/admissions?allyReport=${owner}/${scoped.id}`,{waitUntil:'domcontentloaded'});
+        const scopeControl=panel.locator('.ally-report-scope');
+        await scopeControl.getByText(label+' ·', {exact:false}).waitFor();
+        await scopeControl.locator('summary').click();
+        assert.equal(await scopeControl.getByRole('combobox').inputValue(),choice);
+        await scopeControl.getByLabel('Through',{exact:true}).fill('2026-11-24');
+        await panel.getByRole('textbox',{name:'Follow-up question'}).fill('Keep the same communities');
+        await panel.getByRole('button',{name:'Send question'}).click();
+        await panel.locator('.ally-thread-turn[data-version="2"]').waitFor();
+        scoped=await service.get(auth,owner,scoped.id);
+        assert.deepEqual(scoped.scope.communityIds,ids,'editing dates or following up must preserve the full saved community selection');
+        assert.equal(scoped.scope.through,'2026-11-24');
+      }
+    }
     assert.deepEqual(errors,[]);await context.close();
   }
 },{});console.log('Executive Ally browser: 320/390/1440, controls, reduced motion, retry, charts, conversation/history, stable scrolling/drafts, IME, versioning, shared links, recipient controls, current and historical revocation, PDF, cancellation and saved reopening passed.'); }

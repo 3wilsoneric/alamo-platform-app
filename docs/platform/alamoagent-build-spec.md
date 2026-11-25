@@ -1212,3 +1212,12 @@ release, not the quality of every generated answer. The unchanged 50-conversatio
 156-turn real-data suite is running separately against engine `90b8076`
 (0.18.22, workspace-v10). The production Ally engine has not been cut over.
 See [deployment evidence](deployment-operations.md#complete-cohort-source-release--november-24).
+
+The real-answer phone replay found a separate composer defect: a saved scope
+containing all five explicit community IDs displayed only its first community.
+The candidate now labels the complete set as All communities, preserves a
+multi-community subset as the selected option, and keeps the exact ID set when
+dates change or the user follows up. No source scope or permissions change.
+The 320/390/1440 browser suite passes, including saved empty/all/subset/single
+scope cases and date/follow-up preservation; typechecking passes. This UI fix is
+not yet deployed and does not change the frozen real-model evaluation.
