@@ -486,6 +486,7 @@ const continuation=JSON.parse(firstPage.answer);
 assert.equal(continuation.nextOffset,1);assert.equal(continuation.totalRows,2);
 const secondPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:continuation.nextOffset,revision:continuation.revision}}},leanAuth);
 assert.equal(JSON.parse(secondPage.answer).nextOffset,null);assert.equal(secondPage.dataset.rows[0].census,8);
+assert.equal(secondPage.coverage,'partial','The final page is not the entire source population');
 const changedPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:1,revision:'0'.repeat(64)}}},leanAuth);
 assert.equal(changedPage.status,'unavailable');assert.equal(changedPage.answer,null);
 assert.match(changedPage.note,/source or query changed/);

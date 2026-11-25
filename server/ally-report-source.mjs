@@ -306,9 +306,9 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
         : `Published ${getReportingDateKey(base.observedAt)}; no event-date filter`;
       const relevantFields=[args.measure,...(args.columns ?? []),...(args.groupBy ?? []),...(args.filters ?? []).map(filter=>filter.field)].filter(Boolean);
       const emptyFields=relevantFields.filter(field=>source.fieldCoverage?.[field]?.records>0 && source.fieldCoverage[field].populated===0);
-      base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? '; result truncated' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
+      base.note = `${result.readMode}; ${result.coverage}${result.hasMore ? result.nextOffset !== undefined ? '; more result pages available' : '; result truncated' : ''}${result.offset > 0 ? '; continued page, not the whole result' : ''}. ${time ? `Period applies to ${time}.` : 'Snapshot observation; not movement during the requested dates.'}`;
       if(emptyFields.length)base.note+=` No populated values in the complete published data for: ${[...new Set(emptyFields)].slice(0,6).join(', ')}${new Set(emptyFields).size>6?' (and other requested fields)':''}. Missing values are not zero or evidence of no events.`;
-      if (result.hasMore || result.coverage.startsWith('partial') || emptyFields.length) base.coverage = 'partial';
+      if (result.hasMore || result.offset > 0 || result.coverage.startsWith('partial') || emptyFields.length) base.coverage = 'partial';
       const keys = args.operation === 'rows' ? args.columns ?? result.source.fields : [...(args.groupBy ?? []), ...aggregateFields(args.operation)];
       const resultLabel = args.operation === 'count' ? 'Records' : args.measure
         ? `${({average:'Average',median:'Median',minimum:'Minimum',maximum:'Maximum',distinct:'Distinct',sum:'Total'})[args.operation] ?? 'Total'} ${reportColumnLabel({key:args.measure}).toLowerCase()}` : 'Result';
