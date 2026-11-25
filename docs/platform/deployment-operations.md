@@ -1,3 +1,33 @@
+## November 25: daily medication source staged, application publication pending
+
+Created only the derived warehouse view
+`alamohealth.gold.v_tool_mar_daily_by_community_medication` from the reviewed
+canonical notebook SELECT. Existing source records, views, manifest, nightly
+notebook, application snapshot and source grants were unchanged. `CREATE VIEW`
+was used deliberately, so a concurrent publisher could not be overwritten.
+
+The published view has 13 columns and 391,581 distinct daily community/medication
+groups covering 1,092,085 underlying administration records in January–November
+2026. An independent query reconciles all 11 months to the existing monthly
+medication view. Duplicate grains, missing dates, unknown PRN flags, scheduled
+outcome partition mismatches and scheduled/PRN refusal partition mismatches are
+all zero. Pending outcomes remain separate; medication identity includes the
+source's medication name/strength rather than an invented drug grouping.
+
+This is **not yet available through Ally's published catalog**. The tested
+Platform source-reader candidate remains `936ab032`; its scoped data gate passes
+12 commands in 151.7 seconds. Main-Chrome inspection cannot attach to the existing
+Platform tab, so the live release check remains incomplete. Source publication
+still needs the preserved owner notebook update, manifest entry, current grants
+and snapshot binding, with conditional before/after receipts. Do not assume that
+creating the SQL view enables the application.
+
+Private SQL, source-definition hashes, statement receipts, reconciliation results
+and the derived-view-only rollback are retained under
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/investigation-v14/medication-source/`.
+The source's declared as-of date must be preserved during publication; staging
+this view does not refresh the existing application snapshot.
+
 # Deployment And Operations
 
 ## Ally History and incident recovery — November 23, deployed
