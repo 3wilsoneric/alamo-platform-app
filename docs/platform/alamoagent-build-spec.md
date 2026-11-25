@@ -1221,3 +1221,21 @@ dates change or the user follows up. No source scope or permissions change.
 The 320/390/1440 browser suite passes, including saved empty/all/subset/single
 scope cases and date/follow-up preservation; typechecking passes. This UI fix is
 not yet deployed and does not change the frozen real-model evaluation.
+
+The same frozen real run exposed a second renderer defect in conversation 42:
+its census and incident plots shared one calculated dataset, so the section-based
+renderer selected only the first view. A retained real-answer replay fails with
+one plot instead of two. The candidate now renders every saved view, keeps each
+view's measure selection independent, and preserves those choices in export.
+Source anchors and single-view behavior remain unchanged. Conversation 43 also
+showed workspace destinations as raw strings; data cells now resolve registered
+links through the existing application-link validator and use their column labels.
+Unregistered or executable destinations remain plain text.
+
+The focused 320/390/1440 browser check passes, including independent chart changes,
+PDF output, registered/unregistered links, history and scope regressions; typechecking
+passes. The first real-answer replay passes 93 checks (31 saved answers across
+three widths), including actual chart sort, both trend measures, names and workspace
+links. These are local presentation repairs, not a rerun of the frozen model answers
+and not a production UI deployment. Full evaluation and remaining replay evidence
+will be recorded after the final conversation completes.

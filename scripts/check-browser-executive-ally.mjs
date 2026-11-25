@@ -15,8 +15,8 @@ process.env.VITE_ALLY_REPORTS_ENABLED='true';process.env.VITE_ALLY_REPORT_PARTIC
 const output=path.resolve('generated/executive-ally-browser');await mkdir(output,{recursive:true});
 const localRoot=await mkdtemp(path.join(os.tmpdir(),'platform-report-browser-'));
 const auth={authenticated:true,mode:'entra-delegated',claims:{tid:EVERYAGENT_TENANT,oid:owner}};
-let sourceReady=true, sourceReads=0, trendFixture=false, proseTableFixture=false, derivedFixture=false;
-const derivedDataset={title:'Occupied beds',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'census',label:'Census',type:'number'},{key:'capacity',label:'Capacity',type:'number'}],rows:[{community:'Alpha',census:4,capacity:8},{community:'Beta',census:9,capacity:10},{community:'Gamma',census:7,capacity:20}]};
+let sourceReady=true, sourceReads=0, trendFixture=false, proseTableFixture=false, derivedFixture=false, multipleViews=false;
+const derivedDataset={title:'Occupied beds',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'census',label:'Census',type:'number'},{key:'capacity',label:'Capacity',type:'number'},{key:'workspace',label:'Workspace',type:'string'}],rows:[{community:'Alpha',census:4,capacity:8,workspace:'https://alamo-pipeline.com/?view=referrals&screen=packet&referralId=1&workspaceView=files'},{community:'Beta',census:9,capacity:10,workspace:'https://unregistered.example/'},{community:'Gamma',census:7,capacity:20,workspace:'javascript:alert(1)'}]};
 const proseDataset={title:'Community ages',shape:'records',columns:[{key:'community',label:'Community',type:'string'},{key:'age',label:'Average age',type:'number'},{key:'known',label:'Known ages',type:'number'},{key:'missing',label:'Missing ages',type:'number'}],rows:[{community:'A deliberately long fictional community name',age:44.9,known:136,missing:0},{community:'Another community <img src=x onerror=alert()>',age:40.7,known:138,missing:1}]};
 const trendDataset={title:'Monthly occupied bed-days',shape:'series',columns:[{key:'as_of_date',label:'as_of_date',type:'string'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'}],rows:[{as_of_date:'2026-01-01',occupied_bed_days:-1200},{as_of_date:'2026-02-01',occupied_bed_days:null},{as_of_date:'2026-03-01',occupied_bed_days:150443},{as_of_date:'2026-04-01',occupied_bed_days:130000}]};
 const source={authorize:async()=>sourceReady?{revision:reportHash('fixture-grant'),detail:false}:false,catalog:async()=>[{id:'resident-flow',title:'Resident flow',inputSchema:{type:'object'}}],read:async(subject,scope,step)=>{
@@ -43,6 +43,7 @@ try { await withBrowserQa(async browser=>{
         // The independent API adds a validated optional measureKey. Keep this
         // wire fixture separate from the host’s older source-runtime package.
         if (result?.view && result.selectedVersion !== 2 && !derivedFixture) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:trendFixture?'occupied_bed_days':'discharges'}))}};
+        if (result?.view && multipleViews) result = {...result,view:{...result.view,blocks:[...result.view.blocks,{...result.view.blocks[0],id:'second-measure',measureKey:'admissions'}]}};
         await route.fulfill({status:200,json:result,headers:{'cache-control':'no-store'}});
       } catch(e){await route.fulfill({status:e.statusCode??503,json:{code:e.code??'report_unavailable'}});}
     });
@@ -254,6 +255,12 @@ try { await withBrowserQa(async browser=>{
     const ranked=panel.getByRole('list',{name:'Census',exact:true});
     assert.deepEqual(await ranked.locator('li>span').allTextContents(),['Beta','Alpha','Gamma'],'bars use calculated occupancy order, not census order or prose only');
     assert.deepEqual(await ranked.locator('li>strong').allTextContents(),['9','4','7']);
+    await panel.getByText('View data table',{exact:true}).click();
+    const recordLinks=panel.locator('.ally-report-data-table');
+    assert.equal(await recordLinks.getByRole('link',{name:'Workspace',exact:true}).count(),1,'registered record destinations become readable links');
+    assert.equal(await recordLinks.getByRole('link').count(),1,'unregistered and executable destinations remain plain text');
+    assert.equal(await recordLinks.getByRole('link').getAttribute('href'),'https://alamo-pipeline.com/?view=referrals&screen=packet&referralId=1&workspaceView=files');
+    await panel.getByText('View data table',{exact:true}).click();
     await panel.getByLabel('Chart measure').selectOption('derived_occupancy');
     const ratios=panel.getByRole('list',{name:'Occupancy percent',exact:true});
     assert.deepEqual(await ratios.locator('li>strong').allTextContents(),['90','50','35']);
@@ -267,6 +274,23 @@ try { await withBrowserQa(async browser=>{
     }
     await page.screenshot({path:path.join(output,`derived-chart-${width}.png`),fullPage:true});
     derivedFixture=false;
+    fixtureTime+=24*60*60*1000;
+    multipleViews=true;
+    await panel.getByRole('button',{name:'New chat',exact:true}).click();
+    await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Show separate charts for discharges and admissions.');
+    await panel.getByRole('button',{name:'Send question'}).click();
+    await panel.getByRole('list',{name:'Admissions',exact:true}).waitFor();
+    const selectors=panel.getByLabel('Chart measure');
+    assert.deepEqual(await selectors.evaluateAll(nodes=>nodes.map(node=>node.value)),['discharges','admissions'],'each view of the same dataset renders');
+    await selectors.nth(1).selectOption('operatingCapacity');
+    assert.deepEqual(await selectors.evaluateAll(nodes=>nodes.map(node=>node.value)),['discharges','operatingCapacity'],'changing one chart must not change its neighbor');
+    if(width===1440){
+      const opened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const pdf=await opened;
+      await pdf.getByRole('list',{name:'Operating capacity',exact:true}).waitFor();
+      assert.equal(await pdf.getByRole('list',{name:'Discharges',exact:true}).count(),1,'export retains both views and independent selections');
+      await pdf.close();
+    }
+    multipleViews=false;
     // Dense history in the normal side panel was the production failure. Check
     // clipping ancestors and real hit testing, not just page-level overflow.
     fixtureTime+=24*60*60*1000; // Separate history-layout fixtures from the earlier daily quota tests.
