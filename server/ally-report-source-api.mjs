@@ -36,7 +36,22 @@ export function createPlatformReportSourceHandler({ authorize, readGrants, sourc
       });
       if(input.operation==='authorize-batch')data={grants:batchGrants(registry)};
       if (input.operation === 'catalog') data = { catalog: await sources.catalog(authorization) };
-      if (input.operation === 'read') data = { evidence: await sources.read(input, authorization) };
+      if (input.operation === 'read') {
+        try { data = { evidence: await sources.read(input, authorization) }; }
+        catch (error) {
+          const corrections = {
+            report_source_query_invalid: 'The selected read is invalid. Inspect the source catalog and returned fields, correct the operation or parameters, then retry.',
+            report_source_revision_changed: 'The source changed during pagination. Restart this selection from its first page; do not combine the old pages with the new revision.',
+            report_source_selection_unavailable: 'This selection is unavailable. Use the source catalog or directory to verify its exact identifiers. This does not establish that the record does not exist.',
+          };
+          if (!(error instanceof HttpError) || !Object.hasOwn(corrections, error.code) || ![400,404,409,422].includes(error.statusCode)) throw error;
+          data = {evidence: {capability:input.step.capability,inputHash:reportHash(input.step.input),scope:input.scope,
+            grantRevision:authorization.receipt.revision,requiresDetail:authorization.grant.detail,
+            observedAt:new Date(now()).toISOString(),period:`${input.scope.from}–${input.scope.through}`,grain:'unavailable source selection',
+            status:'unavailable',coverage:'partial',title:'Read needs correction',answer:null,note:corrections[error.code],
+            revision:reportHash({step:input.step,scope:input.scope,code:error.code})}};
+        }
+      }
       if (input.operation === 'prepare') data = await sources.prepare(authorization, async step => {
         const selected = { ...input, operation: 'read', step };
         const allowed = authorizePlatformReportSource(identity, selected, registry, now());

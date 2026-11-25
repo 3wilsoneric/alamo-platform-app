@@ -73,9 +73,11 @@ try {
   const connection=createExecutiveReportSource({origin:'https://source.example.test',getToken:async()=>({token,expiresOnTimestamp:Date.now()+60000}),fetchImpl:(url,init)=>fetch(base+new URL(url).pathname,init)});
   for(const status of [400,409,422,401,403,404,503]) {
     nativeFailure=status;
-    const failed=await send();assert.equal(failed.status,status);
+    const correctable=[400,404,409,422].includes(status);
+    const failed=await send();assert.equal(failed.status,correctable?200:status);
     assert(!(await failed.text()).includes('PRIVATE'));
-    await assert.rejects(connection.read(user,scope,step),error=>error.statusCode===status);
+    if(correctable){const evidence=validateReportEvidence(await connection.read(user,scope,step),step,scope);assert.equal(evidence.status,'unavailable');assert.equal(evidence.answer,null);assert.equal(evidence.coverage,'partial');assert(evidence.note);}
+    else await assert.rejects(connection.read(user,scope,step),error=>error.statusCode===status);
   }
   nativeFailure=0;
   // Use the canonical knowledge reader and its versioned contract, rather than

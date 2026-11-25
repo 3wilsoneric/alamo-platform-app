@@ -1,5 +1,12 @@
 ## November 24 investigation usability corrections — local candidate
 
+Invalid native read parameters, missing selections and stale continuation revisions
+now return bounded correction evidence to the analyst, allowing investigation to
+continue through the source catalog. They do not return records or prove an empty
+population. Authentication and authorization denials remain hard failures; grants
+are rechecked before returning even correction feedback. Upstream response bodies
+remain private. Signed HTTP tests distinguish these outcomes from a source outage.
+
 The canonical Pipeline projection now returns list rows together with the native
 cursor and revisions. Response-size paging remains explicit; the model no longer
 needs a paid discovery turn just to enter every page wrapper. Exact pointer,

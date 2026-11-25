@@ -8,7 +8,8 @@ export async function readNativeJsonResponse(response, source) {
     // An invalid read or stale continuation is not a source outage.
     const code = [400, 422].includes(response.status) ? 'report_source_query_invalid'
       : response.status === 409 ? 'report_source_revision_changed'
-      : [401, 403, 404].includes(response.status) ? 'report_source_access_changed' : null;
+      : response.status === 404 ? 'report_source_selection_unavailable'
+      : [401, 403].includes(response.status) ? 'report_source_access_changed' : null;
     if (code) throw createHttpError(response.status, code, `${source} source returned ${response.status}.`);
     throw Error(`${source} source returned ${response.status}.`);
   }
