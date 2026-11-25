@@ -277,11 +277,11 @@ try { await withBrowserQa(async browser=>{
       if(expanded)await panel.getByRole('button',{name:'Expand Ally to full screen'}).click();
       await panel.getByLabel('Saved conversations').click();
       const menu=panel.getByRole('navigation',{name:'Saved reports'});
-      await menu.getByLabel('Search conversations').fill('History fixture');assert.equal(await menu.getByRole('button').count(),8);
+      await menu.getByLabel('Search conversations').fill('History fixture');assert.equal(await menu.locator('button:not(.ally-guidance-history)').count(),8);
       const bounds=await menu.evaluate(el=>{const r=el.getBoundingClientRect(),p=el.closest('dialog').getBoundingClientRect();return {inside:r.left>=p.left&&r.right<=p.right&&r.bottom<=p.bottom,scrolls:el.scrollHeight>el.clientHeight};});
       assert(bounds.inside&&bounds.scrolls,'long history is contained and independently scrollable');
-      await menu.getByRole('button').last().scrollIntoViewIfNeeded();
-      assert(await menu.getByRole('button').last().evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.left+4,r.top+r.height/2));}),'the start of the title is visible and clickable');
+      await menu.locator('button:not(.ally-guidance-history)').last().scrollIntoViewIfNeeded();
+      assert(await menu.locator('button:not(.ally-guidance-history)').last().evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.left+4,r.top+r.height/2));}),'the start of the title is visible and clickable');
       await page.screenshot({path:path.join(output,`history-dense-${width}-${expanded?'expanded':'panel'}.png`)});
       await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false);assert(await panel.getByLabel('Saved conversations').evaluate(el=>el===document.activeElement));
     }
