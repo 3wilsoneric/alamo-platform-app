@@ -1239,3 +1239,21 @@ three widths), including actual chart sort, both trend measures, names and works
 links. These are local presentation repairs, not a rerun of the frozen model answers
 and not a production UI deployment. Full evaluation and remaining replay evidence
 will be recorded after the final conversation completes.
+
+The complete unchanged real-model retest has now finished: 50 conversations,
+156 turns, 139 fully delivered turns with the starting renderer. The candidate
+renderer repair resolves the three missing-chart turns, for 142/156 and 40/50
+whole conversations. Fourteen remaining turns are partial; none lacks a substantive
+answer. This score does not turn truthful source gaps into full answers. The native
+Azure median/p95 was 18.176/55.909 seconds, excluding queue/browser time, so the
+engine is still short of the under-ten-second target and remains unpromoted.
+
+Actual saved-answer replays passed 120 unique turn/viewport combinations across
+12 conversations at 320/390/1440 px, with chart scrolling visually inspected.
+The final briefing was exported through the real application and all four PDF
+pages inspected: no essential clipping, but its prompt-like title and separate
+source page still need editorial refinement. Scoped browser regressions and
+source-release proofs remain separate from model quality and live sharing proof.
+Private report and evidence are under
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/retest-full-v10/`.
+The UI repairs remain local; no additional deployment is claimed.
