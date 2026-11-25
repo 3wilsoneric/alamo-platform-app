@@ -6787,3 +6787,36 @@ production version while the new candidate is evaluated separately.
 Private packaging, before/after configuration, live-source and rollback receipts:
 `/Users/eric/suite-deploy/.state/ally-system-repair-20261124/investigation-v12/`.
 
+
+
+## November 25 — Ally verified runtime update
+
+Owner-authorized deployment: browser source `05e288e`, engine `1b3c5a4` (0.18.41).
+Platform image `3b8d575ab445f11bfecfe606ae554f93e94f249572ae123c72bd35e3a9ab56d3`;
+Ally API image `5540ca879b7030368f1df11ad6b61386a48cc7a610e0a2ff63ecf271dc425b98`;
+worker ZIP SHA-256 `ac74e54a7b7780ed96f95e5a0609a4a5f9301e471f2984f65608265532d3f90d`.
+
+The UI removes the conversation turn ceiling and binds Stop to the selected
+version. Runtime fixes retain parallel investigation state and select refreshed
+evidence. Existing participants, model, allowance, source configuration and
+legacy writer are unchanged. Native Codex is not activated.
+
+The scoped predeployment gate passed 10/10 in 90 seconds; public probes passed
+4/4. Engine behavioral, type, package and native Functions recovery checks pass.
+The dependency scanner was corrected to parse actual imports instead of treating
+an isolated-container executable path as an imported package. Saved History
+opens in signed-in main Chrome, with no captured console errors. All 30 prior
+reports and the prepaid ledger were unchanged before resuming execution.
+
+The first adoption probe caught a warm worker retaining its disabled setting.
+Stopping and restarting with final settings resolved it; the actual Durable
+activity now returns the enabled stale-run result. The smoke question paused
+during that window was resumed; its answer is not counted as a quality result.
+The owner stopped whole-site checking. No full postdeployment site sweep or new
+50-question quality score is claimed.
+
+Private evidence and reader-preserving recovery instructions:
+`/Users/eric/suite-deploy/.state/ally-quick-01841/`. Browser rollback is the prior
+immutable `95dcd4fab2635d7b6de70fa0c6d9791f257871240a4b69f080f2f2f362f9ea97` image.
+After new-format writes, retain the new API readers while stopping/recovering the
+worker; do not blindly restore the old engine over forward-written reports.

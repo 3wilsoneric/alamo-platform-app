@@ -1,3 +1,13 @@
+## November 25 owner-directed change-scoped releases
+
+The owner explicitly requires checks of the changed behavior only and rejects
+whole-site checks for bounded deployments. For Ally-only changes, retain the
+relevant UI/runtime tests, immutable artifact/configuration verification, health
+and authorization boundaries, and actual worker adoption. Do not run the broad
+signed-in route sweep or a new quality benchmark as deployment paperwork.
+Existing required CI/security checks remain applicable. This supersedes the
+whole-site postdeployment sweep below for this bounded scope.
+
 # Ship Checklist
 
 - purpose: define the final Alamo Platform release gate for the rails-only analyst workspace
