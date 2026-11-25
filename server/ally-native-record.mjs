@@ -124,7 +124,7 @@ export function projectNativeRecord(data, args, source = 'Source') {
   }
   if (typeof value === 'string' && offset > value.length) throw createHttpError(400,'report_source_query_invalid','Text offset is out of range.');
   if (typeof value === 'string') {
-    if(offset && /[\uDC00-\uDFFF]/.test(value[offset]??'') && /[\uD800-\uDBFF]/.test(value[offset-1]))throw createHttpError(400,'report_source_query_invalid','Text offset splits a character. Use the returned continuation.');
+    if(offset && /[\uDC00-\uDFFF]/.test(value[offset]??'') && /[\uD800-\uDBFF]/.test(value[offset-1]??''))throw createHttpError(400,'report_source_query_invalid','Text offset splits a character. Use the returned continuation.');
     const text=textWithinBytes(value.slice(offset),8000),next=offset+text.length;
     return {...base,text,characters:value.length,nextOffset:next<value.length?next:null,incomplete:offset>0 || next<value.length};
   }
