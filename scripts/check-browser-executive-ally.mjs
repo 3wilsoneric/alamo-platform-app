@@ -32,12 +32,12 @@ try { await withBrowserQa(async browser=>{
     const service=createExecutiveReportService({store,source,model,allowedSubjects:[owner,reader],now:()=>fixtureTime});
     const context=await browser.newContext({viewport:{width,height:width===1440?1000:844},hasTouch:width<700,reducedMotion:width===320?'reduce':'no-preference'});
     await context.addInitScript(()=>{window.print=()=>{};});
-    const page=await context.newPage(),errors=[];let loseResponse=false,hold=false,denyHistory=false,currentAuth=auth;
+    const page=await context.newPage(),errors=[];let loseResponse=false,hold=false,denyHistory=false,advanceBeforeStop=false,currentAuth=auth;
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/api/agent/v1/reports*',async route=>{
       try {
         const req=route.request(),url=new URL(req.url());let result;
-        if(req.method()==='POST') {const body=req.postDataJSON();result=await service[body.operation](currentAuth,body.input);if(loseResponse){loseResponse=false;await route.abort();return;}}
+        if(req.method()==='POST') {const body=req.postDataJSON();if(advanceBeforeStop&&body.operation==='command'&&body.input.action==='cancel'){advanceBeforeStop=false;assert.equal(body.input.expectedVersion,1);await service.advance({ownerId:owner,id:body.input.id});}result=await service[body.operation](currentAuth,body.input);if(loseResponse){loseResponse=false;await route.abort();return;}}
         else if(url.searchParams.has('id')) {if(denyHistory && Number(url.searchParams.get('version'))>0 && Number(url.searchParams.get('version'))<3) {await route.fulfill({status:403,json:{code:'source_forbidden'}});return;}const id=url.searchParams.get('id');if(!hold)for(let i=0;i<3;i++)await service.advance({ownerId:owner,id});result=await service.get(currentAuth,url.searchParams.get('ownerId'),id,url.searchParams.has('version')?Number(url.searchParams.get('version')):null);}
         else result={reports:await service.list(currentAuth)};
         // The independent API adds a validated optional measureKey. Keep this
@@ -180,19 +180,23 @@ try { await withBrowserQa(async browser=>{
     await panel.getByRole('article',{name:'Report findings'}).last().waitFor();
     if(width===1440){await panel.locator('.ally-thread-turn[data-version="2"] article').waitFor();assert.equal(await panel.locator('.ally-thread-question').count(),2,'saved reopening restores the conversation');await page.waitForFunction(()=>{const body=document.querySelector('.executive-ally-body'),turn=document.querySelector('.ally-thread-turn[data-version="3"]');return body&&turn&&turn.getBoundingClientRect().top>=body.getBoundingClientRect().top&&turn.getBoundingClientRect().top<body.getBoundingClientRect().bottom;});}
     if(width===390){await panel.getByRole('button',{name:'Open report',exact:true}).click();const readerView=panel.getByRole('complementary',{name:'Expanded report'});await readerView.waitFor();assert.equal(await panel.locator('.ally-conversation-column').isVisible(),false,'phone report uses one reading surface');await readerView.getByRole('button',{name:'Close report'}).click();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isVisible());}
-    if(width===320){await panel.getByRole('button',{name:'New chat',exact:true}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
+    if(width===320){await panel.getByRole('button',{name:'New chat',exact:true}).click();hold=true;advanceBeforeStop=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
     if(width===320){
-      let full=await service.create(auth,{requestId:crypto.randomUUID(),objective:'At the conversation limit',scope:{communityIds:[],from:'2026-01-01',through:'2026-11-23'}});
-      for(let version=1;version<=12;version++){
+      let full=await service.create(auth,{requestId:crypto.randomUUID(),objective:'An ongoing investigation',scope:{communityIds:[],from:'2026-01-01',through:'2026-11-23'}});
+      for(let version=1;version<=13;version++){
         for(let step=0;step<3;step++)await service.advance({ownerId:owner,id:full.id});
         full=await service.get(auth,owner,full.id);
-        if(version<12)full=await service.command(auth,{ownerId:owner,id:full.id,revision:full.revision,action:'refresh',requestId:crypto.randomUUID()});
+        if(version<13)full=await service.command(auth,{ownerId:owner,id:full.id,revision:full.revision,action:'refresh',requestId:crypto.randomUUID()});
       }
       await page.reload({waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();
-      await panel.getByLabel('Saved conversations').click();await panel.getByRole('button',{name:'At the conversation limit',exact:true}).click();
-      await panel.getByText('Continue in a new chat.',{exact:true}).waitFor();
-      assert.equal(await panel.getByRole('textbox',{name:'Follow-up question'}).isEnabled(),false,'full conversations offer a usable next step before a failed submission');
-      assert.equal(await panel.getByRole('button',{name:'Refresh report',includeHidden:true}).count(),0);
+      await panel.getByLabel('Saved conversations').click();await panel.getByRole('button',{name:'An ongoing investigation',exact:true}).click();
+      const followup=panel.getByRole('textbox',{name:'Follow-up question'});await followup.waitFor();
+      assert(await followup.isEnabled(),'An existing conversation remains usable after twelve answers');
+      const before=await service.get(auth,owner,full.id,1);assert.equal(full.version,13);
+      await followup.fill('Continue the same investigation');await panel.getByRole('button',{name:'Send question'}).click();
+      await panel.locator('.ally-thread-turn[data-version="14"] article').waitFor();
+      assert.equal((await service.get(auth,owner,full.id)).version,14);
+      assert.deepEqual((await service.get(auth,owner,full.id,1)).artifact,before.artifact,'Continuing must preserve the original answer');
       await panel.getByRole('button',{name:'New chat',exact:true}).click();assert(await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).isEnabled());
       assert.equal(await panel.locator('.ally-thread-turn').count(),0,'new chat does not inherit previous questions');
     }

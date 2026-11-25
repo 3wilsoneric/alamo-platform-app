@@ -1331,3 +1331,26 @@ source-release proofs remain separate from model quality and live sharing proof.
 Private report and evidence are under
 `/Users/eric/suite-deploy/.state/ally-system-repair-20261124/retest-full-v10/`.
 The UI repairs remain local; no additional deployment is claimed.
+
+
+### November 25 — local conversation integration correction
+
+The native Codex comparison is running against pinned development sources; no
+production release is authorized. The latest full baseline is retained separately
+in the canonical engine audit. This browser still contained a twelve-answer
+ceiling after the engine removed it. That duplicate restriction and its forced
+new-chat message are removed. Stop now names the displayed question version;
+progress-only revision updates may not invalidate it, and it cannot cancel a
+later question. The local package pin must include engine 0.18.39's matching
+command validation before exercising this protocol. No production flag, source
+write, visual redesign or live package update is implied.
+
+
+November 25 local integration proof: pinned Ally **0.18.40**. The existing report
+UI now keeps a thirteenth answer open for a fourteenth follow-up, preserves its
+first immutable answer, and sends the displayed question version with Stop.
+A progress update injected before Stop no longer invalidates the command.
+The canonical browser check passes at 320/390/1440 pixels, including existing
+history, revoked access, charts, PDF and scope behavior; TypeScript passes.
+These are controlled interface checks, not new model-quality evidence. The
+native executor remains disabled in production, and no Platform release occurred.

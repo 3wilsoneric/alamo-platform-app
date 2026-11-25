@@ -6,7 +6,7 @@ import { useEveryAgentAccess } from '../../../shared/auth/everyAgentAccess';
 import { formatDisplayDate } from '../../../../shared/display-date.mjs';
 import { ALAMO_FACILITIES } from '../../../../shared/community-names.mjs';
 import { createAgentTransport } from '../conversations/agentTransport';
-import { createReportClient, reportCanExtend, reportRunning, reportStatus, type ExecutiveReport, type ReportScope, type ReportSummary } from './reportClient';
+import { createReportClient, reportRunning, reportStatus, type ExecutiveReport, type ReportScope, type ReportSummary } from './reportClient';
 import { reportParticipants } from './reportAccess';
 import { useReportHistory } from './useReportHistory';
 import ReportView, { type ReportMeasures } from './ReportView';
@@ -184,7 +184,7 @@ export default function ExecutiveAlly() {
     await perform(async signal => { const next = await client.command(report, action, extra, signal); return client.get(next, undefined, signal); });
   }
   async function submit(e: FormEvent) {
-    e.preventDefault(); const text = draft.trim(); if (!text || busy || report && (reportRunning(report.status) || !reportCanExtend(report))) return;
+    e.preventDefault(); const text = draft.trim(); if (!text || busy || report && reportRunning(report.status)) return;
     const key = JSON.stringify([report?.id, text, scope]);
     revealLatest.current = true; setPendingQuestion(text);
     const sent = await perform(async signal => {
@@ -208,7 +208,6 @@ export default function ExecutiveAlly() {
   }
   const editable = report?.canEdit && report.selectedVersion === report.version;
   const active = report && reportRunning(report.status);
-  const full = Boolean(report && !reportCanExtend(report));
   const answers = report && !accessUncertain && !error ? [...history.answers, report] : [];
   // A refresh replaces the presentation of the same question. Every saved
   // version remains available in the report reader.
@@ -222,7 +221,7 @@ export default function ExecutiveAlly() {
   }, [documentVersion, documentReport, history.loading]);
   const reportActions = report && (report.artifact || (editable && !active)) && <details className="ally-report-actions"><summary aria-label="More report actions" title="More report actions"><MoreHorizontal size={21}/></summary><div role="group" aria-label="Report actions">
     {report.artifact && <button type="button" disabled={busy} onClick={e => {e.currentTarget.closest('details')!.open=false; void exportReport();}}><Download size={17}/>Save PDF</button>}
-    {editable && !active && !full && <button type="button" disabled={busy} onClick={e => {e.currentTarget.closest('details')!.open=false; void command('refresh',{requestId:commandId(`refresh:${report.id}:${report.version}`)});}}><RefreshCw size={17}/>Refresh report</button>}
+    {editable && !active && <button type="button" disabled={busy} onClick={e => {e.currentTarget.closest('details')!.open=false; void command('refresh',{requestId:commandId(`refresh:${report.id}:${report.version}`)});}}><RefreshCw size={17}/>Refresh report</button>}
     {editable && !active && report.artifact && <button type="button" aria-expanded={share} onClick={e => {e.currentTarget.closest('details')!.open=false; setShare(!share);}}><Share2 size={17}/>Share report</button>}
   </div></details>;
   const allCommunities = scope.communityIds.length === 0 || ALAMO_FACILITIES.every(f => scope.communityIds.includes(f.facilityId));
@@ -252,9 +251,8 @@ export default function ExecutiveAlly() {
       </div>
       {awayFromLatest && <button className="ally-latest" aria-label="Go to latest answer" onClick={() => scrollToLatest(true)}><ArrowDown size={17}/>Latest</button>}
       <form className="executive-ally-composer" onSubmit={e => void submit(e)}>
-        {full && !active && <p className="ally-history-status" role="status">Continue in a new chat.</p>}
         <details className="ally-report-scope"><summary>{scopeLabel} · {formatDisplayDate(scope.from,{month:'short'})} – {formatDisplayDate(scope.through,{month:'short'})}</summary><div><label>Community<select value={scopeChoice} disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,communityIds:e.target.value?[e.target.value]:[]})}><option value="">All communities</option>{scopeChoice === 'selected' && <option value="selected" disabled>{scopeLabel}</option>}{ALAMO_FACILITIES.map(f=><option key={f.facilityId} value={f.facilityId}>{f.shortName}</option>)}</select></label><label>From<input type="date" value={scope.from} max={scope.through} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,from:e.target.value})}/></label><label>Through<input type="date" value={scope.through} min={scope.from} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,through:e.target.value})}/></label></div></details>
-        <div className="executive-ally-input"><textarea ref={input} aria-label={report ? 'Follow-up question' : 'Ask Ally'} placeholder="Ask Ally…" rows={2} maxLength={2000} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => {if(e.key==='Enter' && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault();if(!active && !busy) e.currentTarget.form?.requestSubmit();}}} disabled={busy || full || Boolean(report && !editable)}/>{active && editable ? <button type="button" aria-label="Stop" disabled={busy} onClick={() => void command('cancel')}><Square size={19}/></button> : <button type="submit" aria-label="Send question" disabled={busy || full || Boolean(active) || Boolean(report && !editable) || !draft.trim()}><ArrowUp size={22}/></button>}</div>
+        <div className="executive-ally-input"><textarea ref={input} aria-label={report ? 'Follow-up question' : 'Ask Ally'} placeholder="Ask Ally…" rows={2} maxLength={2000} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => {if(e.key==='Enter' && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault();if(!active && !busy) e.currentTarget.form?.requestSubmit();}}} disabled={busy || Boolean(report && !editable)}/>{active && editable ? <button type="button" aria-label="Stop" disabled={busy} onClick={() => void command('cancel')}><Square size={19}/></button> : <button type="submit" aria-label="Send question" disabled={busy || Boolean(active) || Boolean(report && !editable) || !draft.trim()}><ArrowUp size={22}/></button>}</div>
       </form>
     </div>
     {documentReport && <aside className="ally-document-reader" aria-label="Expanded report"><header><h2 ref={documentHeading} tabIndex={-1}>Report</h2>{report && report.versions.length > 1 && <select aria-label="Report version" value={documentVersion!} onChange={e=>{setDocumentSource(null);setDocumentVersion(Number(e.target.value));}}>{report.versions.filter(v=>v.version<=report.selectedVersion).map(v=><option key={v.version} value={v.version}>Version {v.version}</option>)}</select>}<button aria-label="Save PDF" title="Save PDF" disabled={busy} onClick={() => void exportReport(documentReport)}><Download size={19}/></button><button aria-label="Close report" onClick={closeDocument}><X size={20}/></button></header><div className="ally-document-body"><ReportView report={documentReport} anchorPrefix="ally-document" measures={measuresFor(documentReport)} onMeasureChange={(section,measure) => changeMeasure(documentReport,section,measure)}/></div></aside>}
