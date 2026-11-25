@@ -1,3 +1,14 @@
+## November 25 canonical record selection — local candidate
+
+Explicitly selecting `/data/records` now retains the same native cursor,
+revisions and requested workspace IDs as the implicit canonical list. Field
+projection remains unchanged. Scalar, search and other-path selections do not
+inherit collection metadata. The real October referral review exposed the lost
+metadata: all requested outcomes were returned but could not establish their
+selected-response completeness. The focused test fails on the prior adapter and
+passes on this candidate; current represented identity, revocation and byte-limit
+tests also pass. Source deployment and real-query retest remain pending.
+
 ## November 24 native investigation and calendar — source release, evaluation pending
 
 Selected native fields share one byte budget, retaining whole values instead of

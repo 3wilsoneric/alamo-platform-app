@@ -35,7 +35,11 @@ assert.equal(rest.items[0].referralId,page.nextOffset+1,'Response continuation r
 const projected=await source({view:'directory',columns:['referralId','owner']},actor);
 assert.equal(projected.items.length,20);assert.equal(projected.nextOffset,null);assert.equal(projected.page.next_cursor,'next-page');
 assert.equal(projected.items[0].answer,undefined);
+const explicit=await source({view:'directory',pointer:'/data/records',columns:['referralId','owner']},actor);
+assert.deepEqual(explicit.page,projected.page,'Selecting the canonical record array explicitly preserves native pagination.');
+assert.deepEqual(explicit.items,projected.items);assert.equal(explicit.revision,projected.revision);
 assert.equal((await source({view:'directory',pointer:'/data/total'},actor)).value,23,'Explicit pointers keep their existing meaning.');
+assert.equal((await source({view:'directory',pointer:'/data/total'},actor)).page,undefined,'Scalar selections do not inherit a collection proof.');
 listData.sourceRevision++;
 await assert.rejects(()=>source({view:'assessment-review',offset:page.nextOffset,revision:page.revision},actor),/changed/);
 listData=null;
@@ -57,7 +61,10 @@ const evidence=await sources.read(input,authorize());assert.equal(evidence.requi
 listData={requestedReferralIds:[42,43],records:[{referralId:42,notes:{blocks:[{body:'Complete fixture note',version:2}]}},{referralId:43,notes:{blocks:[]}}]};
 const batchInput={...input,step:{id:'review-batch',capability:'pipeline-records',input:{view:'workspace-review',referralIds:[42,43]}}};
 const batchEvidence=await sources.read(batchInput,authorize());const batch=JSON.parse(batchEvidence.answer);
-assert.deepEqual(batch.page.requestedReferralIds,[42,43]);assert.deepEqual(batch.items.map(item=>item.referralId),[42,43]);assert.equal(batch.contentComplete,true);assert.equal(batch.items[0].notes.blocks[0].body,'Complete fixture note');listData=null;
+assert.deepEqual(batch.page.requestedReferralIds,[42,43]);assert.deepEqual(batch.items.map(item=>item.referralId),[42,43]);assert.equal(batch.contentComplete,true);assert.equal(batch.items[0].notes.blocks[0].body,'Complete fixture note');
+const selectedBatch=await source({...batchInput.step.input,pointer:'/data/records',columns:['referralId']},actor);
+assert.deepEqual(selectedBatch.page.requestedReferralIds,[42,43]);assert.equal(selectedBatch.items[0].notes,undefined);
+listData=null;
 grant.detail=false;assert.throws(authorize);grant.detail=true;
 grant.communityIds.pop();assert.throws(authorize);grant.communityIds=ALAMO_FACILITIES.map(f=>f.facilityId);
 grant.revoked=true;assert.throws(authorize);

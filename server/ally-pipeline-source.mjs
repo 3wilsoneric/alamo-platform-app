@@ -25,7 +25,7 @@ export function createPipelineAnalystSource({ env = process.env, fetchImpl = fet
     const { readAt, ...evidence } = record;
     // Native lists already have a page boundary. Return useful rows and their
     // cursor together instead of a wrapper preview requiring a second read.
-    const list = pointer === undefined && paths === undefined && search === undefined && Array.isArray(evidence.data?.records);
+    const list = (pointer === undefined || pointer === '/data/records') && paths === undefined && search === undefined && Array.isArray(evidence.data?.records);
     const { records: _records, ...page } = list ? evidence.data : {};
     const selectedPointer = pointer ?? (list ? '/data/records' : selection.view === 'assessment' ? '/data/record' : '/data');
     return { ...projectNativeRecord(evidence, { pointer:selectedPointer, paths, search, columns, offset, revision, path:record.view, parameters:selection }, 'Pipeline'),
