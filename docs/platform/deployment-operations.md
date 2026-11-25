@@ -6703,3 +6703,32 @@ census/capacity/incident turns are 11–14s; the initial age turn took 16.341s
 server-side. This is an improvement path, not a consistently sub-ten-second result.
 The successful same-evidence rewrite and the rejected percentage-breakdown case
 are recorded in the living spec; the latter remains an analytical-quality gap.
+
+### Complete cohort source release — November 24
+
+The owner's full real-data retest and existing deployment authorization cover this
+source prerequisite. Candidate `0d64c7850452793c1db118bcb08d80108916576a`
+provides warehouse-backed, revision-bound pages at the canonical analytical reader.
+No business records, identity, participants, environment, secrets or credit
+allowance were changed. The actual deployed image/imports were verified before
+cutover; the frozen evaluation engine remains separate from production Ally.
+
+- Revision: `alamo-platform-prod-web--ally-cohorts-1124`.
+- Image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:350da8d2f55a5d0d3f4abd5a1f06bfbafe2d670e0863f688ee092188ac0e72fa`.
+- Recovery image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:83f4d2cf8abd2ca85f0f574c68109f61e55d561832b8d9f1cb841c3be86525b7`.
+- Scoped predeployment: 10/10 stages, 125 seconds. Postdeployment: 2/2,
+  46 seconds including browser capture; 18/18 production-boundary assertions.
+- Main Chrome: 15 routes, 12 interactions, 622 captured requests, one expected
+  navigation cancellation, no HTTP failures and no console errors.
+
+Private receipts are under
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/investigation-v9/`:
+`platform-intent.json`, `platform-image-proof.log`, `platform-deployed.json`
+and `live-browser/evidence.json`. The retained native warehouse two-page proof
+checks the whole-result count, identical content fingerprint and page boundary.
+Restore only the image after checking the current revision; do not overwrite a
+newer release, source publication or application configuration during recovery.
+
+Full answer quality is being measured in the separate `retest-full-v10` run:
+the original 50 conversations/156 turns, with unchanged questions and private
+artifacts. Navigation and contract passes are not semantic-answer acceptance.

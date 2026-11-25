@@ -1202,3 +1202,13 @@ a separate pending corrective evaluation. Warehouse continuation is still a
 candidate. It recomputes the filtered fingerprint for each page; if measured
 large-cohort latency becomes unacceptable, use source-owned immutable query
 results instead of relaxing revision checks or silently mixing snapshots.
+
+The warehouse continuation candidate `0d64c785` is now deployed in revision
+`alamo-platform-prod-web--ally-cohorts-1124`. The scoped predeployment gate
+passed 10/10 in 125 seconds; postdeployment passed 2/2 in 46 seconds including
+the main-Chrome capture. That capture checked 15 routes and 12 interactions,
+with no HTTP failures or console errors. This establishes the source/runtime
+release, not the quality of every generated answer. The unchanged 50-conversation,
+156-turn real-data suite is running separately against engine `90b8076`
+(0.18.22, workspace-v10). The production Ally engine has not been cut over.
+See [deployment evidence](deployment-operations.md#complete-cohort-source-release--november-24).
