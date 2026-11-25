@@ -97,6 +97,7 @@ try {
   assert.deepEqual(evidence.dataset.columns.map(column=>column.label),['Severity','Records']);
   assert.equal(evidence.requiresDetail,false);
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
+  assert.deepEqual(JSON.parse(evidence.answer).navigation,{label:'Open incident history',href:'/incidents/history?facilityId=337'});
   rows.push({facility_id:'337',incident_date:'1964-07-30',severity:'low',private_name:'Historical fixture'});
   published.toolContext.manifest[0].row_count=5;
   const preCenturyScope={...scope,from:'1900-01-01',through:'1964-12-31'};

@@ -12,6 +12,12 @@ historical read through HTTP and preserve community-denial behavior. These local
 changes do not alter the frozen live 50-conversation benchmark; they require a
 separate real-query retest before deployment.
 
+Incident evidence now includes the existing register/history navigation route.
+Report prose renders those registered links directly, using the shared resolver;
+unknown URLs and HTML remain text. This preserves the current answer layout and
+does not add an extra Sources panel or a new detail page. Browser checks cover
+the real destination and hostile links on desktop and narrow layouts.
+
 ## November 24 investigation tools — candidate
 
 The real rebuilt-agent benchmark exposed a query-contract error presented as a

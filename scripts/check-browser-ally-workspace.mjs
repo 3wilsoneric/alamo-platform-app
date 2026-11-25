@@ -33,6 +33,7 @@ await withBrowserQa(async browser => {
           dataset: { title: "Community flow", shape: "categories", columns: [{ key: "community", label: "Community", type: "string" }, { key: "admissions", label: "Admissions", type: "number" }, { key: "discharges", label: "Discharges", type: "number" }],
             rows: [{ community: "San Pablo", admissions: 18, discharges: 11 }, { community: "Santa Clarita", admissions: 15, discharges: 8 }, { community: "JC Wallace House", admissions: 12, discharges: 12 }, { community: "Turlock", admissions: 10, discharges: 6 }, { community: "Victoria’s House", admissions: 6, discharges: 3 }] } }] },
       view: { blocks: [{ id: "flow-chart", componentId: "comparison", datasetId: "flow", sourceIds: ["flow"] }] } };
+    report.artifact.findings.push({text:'[Open incident history](/incidents/history?facilityId=345)\n\n[Untrusted link](https://attacker.example/)\n\n[Invalid navigation](/incidents?redirect=https://attacker.example/)\n\n<script>window.reportScriptRan=true</script>',sourceIds:['flow']});
     const conversation = () => ({
         id, version: 2, createdAt: "2026-11-22T15:00:00Z", workId: null,
         scope: [{ skillId: "admissions-watch", communityIds: [] }],
@@ -90,6 +91,12 @@ await withBrowserQa(async browser => {
     await initialReport.getByRole("textbox", { name: "Ask Ally" }).fill("Compare admissions and discharges across communities.");
     await initialReport.getByRole("button", { name: "Send question" }).click();
     await initialReport.getByRole("article", { name: "Report findings" }).waitFor();
+    const historyLink=initialReport.getByRole('link',{name:'Open incident history'});
+    assert.equal(await historyLink.getAttribute('href'),'https://www.alamoplatform.com/incidents/history?facilityId=345');
+    assert.equal(await historyLink.getAttribute('rel'),'noopener noreferrer');
+    assert.equal(await initialReport.getByRole('link',{name:'Untrusted link'}).count(),0);
+    assert.equal(await initialReport.getByRole('link',{name:'Invalid navigation'}).count(),0);
+    assert.equal(await page.evaluate(()=>window.reportScriptRan),undefined);
     assert.equal(await initialReport.locator(".ally-report-comparison li").count(), 5);
     await panel.screenshot({ path: path.join(output, `ally-workspace-default-report-${width}.png`) });
     await panel.getByLabel("Saved conversations").click();

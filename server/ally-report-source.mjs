@@ -190,7 +190,8 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
       if (publishedThrough) base.note += ` Published counts include data through ${publishedThrough}.`;
       if (base.coverage === 'partial') base.note += ' Published snapshot only: newer or older records may be missing; these are available-record counts, not confirmed complete totals.';
       result = { from: selected.from, through: selected.through, priority: args.priority ?? 'all',
-        communities: rows, total: rows.reduce((total, row) => total + row.incidents, 0), coverage: base.coverage, definition: base.note };
+        communities: rows, total: rows.reduce((total, row) => total + row.incidents, 0), coverage: base.coverage, definition: base.note,
+        navigation:{label:'Open incident register',href:'/incidents'+(selected.communityIds.length===1?'?community='+selected.communityIds[0]:'')} };
       dataset = scopedDataset('Incidents', rows, [{key:'community',label:'Community',type:'string'},{key:'incidents',label:'Incidents',type:'number'}], 'categories');
     } else if (step.capability === 'resident-flow') {
       reportObject(args, [], ['view']);
@@ -418,6 +419,8 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
     if (step.capability === 'platform-data') {
       result = normalizeKnownCommunityNamesDeep(result);
       if (dataset) dataset = normalizeKnownCommunityNamesDeep(dataset);
+      if (args.slice.startsWith('incident_')) result={...result,navigation:{label:'Open incident history',
+        href:'/incidents/history'+(authorization.communities.length===1?'?facilityId='+authorization.communities[0]:'')}};
     }
     base.answer = JSON.stringify(result);
     if (base.answer.length > 16_000) {
