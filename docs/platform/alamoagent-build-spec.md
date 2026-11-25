@@ -1,4 +1,36 @@
+## November 24 native investigation and calendar — local candidate
+
+Selected native fields share one byte budget, retaining whole values instead of
+artificial equal-sized excerpts. Continuation carries the exact response revision;
+changed content, missing fields and shortened oversized values remain explicit.
+Pipeline's workspace-review batches expose full workflow/notes projections and
+requested identities; response-page completeness cannot become population
+completeness. The existing source grants, represented identity and read-only
+transport remain unchanged.
+
+A registered calendar now renders validated source date/name columns. Phone
+layouts show a readable agenda; all dates, long names and undated records remain
+available. Original data tables, known workspace links, keyboard focus and print
+export reuse existing owners. Model-authored HTML remains inert. The calendar
+contract is owned by the independent Ally engine; this host renders that contract.
+Desktop, 390 px and 320 px browser controls and TypeScript checks pass. These are
+rendering controls, not model-quality evidence. The source changes and UI remain
+local until the recorded release.
+
 ## November 24 investigation usability corrections — local candidate
+
+## Complete note paging — November 24 local candidate
+
+Revision-bound row queries now page by encoded size as well as row count,
+returning whole records and full text. Continuation offsets use the actual
+returned rows, so a long note cannot silently become a shortened population
+review. The existing query/revision, source authorization and 80 KB result ceiling
+remain. An individually oversized note requires its existing document/field read;
+this change does not claim every possible source record fits a report response.
+Focused checks traverse seventeen varied long notes with exact text, no duplicates
+or gaps, and preserve unchanged revision and incomplete-excerpt rules. Source
+checks and server typechecking pass; this source change is not deployed.
+
 
 Saved-report links now accept an explicit validated version through the existing
 report loader, so historical links do not silently open the latest answer.

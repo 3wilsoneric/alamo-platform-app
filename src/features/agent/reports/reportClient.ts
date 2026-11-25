@@ -7,7 +7,7 @@ export type ReportSection = { id: string; title: string; observedAt: string; sta
 export type ExecutiveReport = ReportSummary & { selectedVersion: number; canEdit: boolean; readers: string[]; scope: ReportScope; objective: string; error: string | null;
   sourceProgress: Array<{id: string; title: string; status: string}>; versions: Array<{version: number; createdAt: string; status: string}>;
   artifact: null | { title: string; generatedAt: string; coverage: string; findings: Array<{text: string; sourceIds: string[]}>; sections: ReportSection[]; gaps: string[] };
-  view: null | { blocks: Array<{id: string; componentId: string; datasetId: string; sourceIds: string[]; measureKey?: string | null; computedColumns?: Array<{key:string;label:string;operation:'add'|'subtract'|'multiply'|'divide'|'percent';left:string;right:string}>; sort?: {key: string; direction: 'asc' | 'desc'} | null}> } };
+  view: null | { blocks: Array<{id: string; componentId: string; datasetId: string; sourceIds: string[]; measureKey?: string | null; dateKey?: string | null; labelKey?: string | null; computedColumns?: Array<{key:string;label:string;operation:'add'|'subtract'|'multiply'|'divide'|'percent';left:string;right:string}>; sort?: {key: string; direction: 'asc' | 'desc'} | null}> } };
 // Matches the service's existing bounded investigation history. Raise only
 // with paginated authorized history reads; the server remains authoritative.
 export const reportCanExtend = (report: ExecutiveReport) => report.versions.length < 12;

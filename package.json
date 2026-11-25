@@ -207,14 +207,15 @@
     "release:incident-cards:prepare": "node scripts/prepare-platform-incident-cards-release.mjs",
     "release:community-dashboard:prepare": "node scripts/prepare-community-dashboard-release.mjs",
     "check:executive-reports": "node scripts/check-source-grant-blob.mjs && node scripts/check-ally-data-source.mjs && node --test scripts/check-ally-prepared-source.mjs && node scripts/check-ally-report-source.mjs && node scripts/check-ally-carelog-source.mjs && node scripts/check-ally-pipeline-source.mjs && node scripts/check-proforma-analyst.mjs && node scripts/check-ally-incidents.mjs && npm run check:resident-flow",
-    "check:browser-executive-ally": "node scripts/check-browser-executive-ally.mjs",
+    "check:browser-executive-ally": "node scripts/check-browser-executive-ally.mjs && node scripts/check-browser-ally-calendar.mjs",
     "release:executive-ally:prepare": "node scripts/prepare-executive-ally-release.mjs",
     "release:platform-ui:prepare": "node scripts/prepare-platform-ui-release.mjs",
     "check:executive-ally-release": "node --test scripts/check-executive-ally-release-mode.mjs && node scripts/check-executive-ally-release.mjs",
     "check:proforma-guidance-overlay": "node --test scripts/check-proforma-guidance-overlay.mjs",
     "check:ship:ally:predeploy": "BROWSER_QA_CLEAN_ROOM=true PLATFORM_READY_PROFILE=ally PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready",
     "check:ship:ally:postdeploy": "PRODUCTION_SIGNED_IN_REQUIRED=true PLATFORM_READY_PROFILE=ally-live PLATFORM_READY_STOP_ON_FAILURE=true npm run check:platform-ready",
-    "prepare:ally-source-release": "node scripts/prepare-ally-source-release.mjs"
+    "prepare:ally-source-release": "node scripts/prepare-ally-source-release.mjs",
+    "check:browser-ally-calendar": "node scripts/check-browser-ally-calendar.mjs"
   },
   "dependencies": {
     "@alamo/agent-runtime": "file:vendor/alamo-agent-runtime-0.18.21.tgz",

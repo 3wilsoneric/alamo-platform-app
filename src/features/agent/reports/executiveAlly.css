@@ -205,3 +205,41 @@
 .ally-report-sources .ally-report-prose p {font-size:13px;}
 .ally-report-source h3 {margin-bottom:14px;}
 @media print {.ally-report-sources {break-inside:avoid;}.ally-report-sources a {min-height:0;}}
+
+/* Calendar and agenda are two responsive views of the same bound source rows. */
+.ally-calendar {container-type:inline-size;min-width:0;margin-top:16px;}
+.ally-calendar h4 {font-size:17px;margin:16px 0 12px;}
+.ally-calendar :is(ol,ul) {list-style:none;padding:0;margin:0;}
+.ally-calendar-weekdays,.ally-calendar-days {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
+.ally-calendar-weekdays {font-size:12px;color:var(--ally-muted);border-bottom:2px solid var(--ally-ink);padding-bottom:8px;}
+.ally-calendar-weekdays span {padding-left:8px;}
+.ally-calendar-day,.ally-calendar-blank {min-width:0;min-height:96px;padding:8px;border-bottom:1px solid var(--ally-rule);border-right:1px solid var(--ally-rule);}
+.ally-calendar-day time {display:block;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;margin-bottom:8px;}
+.ally-calendar-weekday {display:none;}
+.ally-calendar-event {padding:8px 0;min-width:0;overflow-wrap:anywhere;font-size:13px;}
+.ally-calendar-event+.ally-calendar-event {border-top:1px solid var(--ally-rule);}
+.ally-calendar-event strong {display:block;font-size:14px;line-height:1.4;}
+.ally-calendar-event summary {font-size:14px;font-weight:650;line-height:1.4;overflow-wrap:anywhere;min-height:44px;cursor:pointer;}
+.ally-calendar-event dl {margin:8px 0 0;}
+.ally-calendar-event dt {font-size:12px;color:var(--ally-muted);}
+.ally-calendar-event dd {margin:0 0 6px;}
+.ally-calendar-event a {display:inline-block;padding-block:8px;color:var(--ally-accent);text-underline-offset:3px;}
+@container (max-width:660px) {
+  .ally-calendar-weekdays,.ally-calendar-blank,.ally-calendar-day--empty {display:none;}
+  .ally-calendar-days {display:block;border-top:2px solid var(--ally-ink);}
+  .ally-calendar-day {display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;min-height:0;padding:12px 0;border-right:0;}
+  .ally-calendar-days>.ally-calendar-day--empty {display:none;}
+  .ally-calendar-day time {padding-top:8px;font-size:16px;}
+  .ally-calendar-weekday {display:block;font-size:12px;color:var(--ally-muted);}
+  .ally-calendar-event strong,.ally-calendar-event summary {font-size:16px;}
+  .ally-calendar-event dl {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;}
+}
+@media print {
+  .ally-calendar {container-type:normal;}
+  .ally-calendar-days {display:block;}
+  .ally-calendar-weekdays,.ally-calendar-blank,.ally-calendar-days>.ally-calendar-day--empty {display:none;}
+  .ally-calendar-day {display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;border-right:0;}
+  .ally-calendar-weekday {display:block;}
+  .ally-calendar-day,.ally-calendar-event {break-inside:avoid;}
+  .ally-calendar-day {min-height:72px;}
+}

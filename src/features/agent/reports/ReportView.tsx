@@ -1,14 +1,16 @@
 import { applyViewCalculations } from '@alamo/agent-runtime/shared/executive-report-views.mjs';
 import SourceTable from './ReportTable';
 import ReportProse from './ReportProse';
+import ReportCalendar from './ReportCalendar';
 import { formatDisplayDate } from '../../../../shared/display-date.mjs';
 import type { ExecutiveReport, ReportDataset } from './reportClient';
 import { reportColumnLabel, reportCellValue as displayValue } from '../../../../shared/report-display.mjs';
 export type ReportMeasures = Record<string, string>;
 
-function DataView({dataset, component, measure, sort, onMeasureChange}: {dataset: ReportDataset; component: string; measure: string | undefined; sort?: {key:string;direction:'asc'|'desc'} | null; onMeasureChange: ((measure: string) => void) | undefined}) {
+function DataView({dataset, component, measure, dateKey, labelKey, sort, onMeasureChange}: {dataset: ReportDataset; component: string; measure: string | undefined; dateKey?:string|null; labelKey?:string|null; sort?: {key:string;direction:'asc'|'desc'} | null; onMeasureChange: ((measure: string) => void) | undefined}) {
+  if(component==='calendar')return <ReportCalendar dataset={dataset} dateKey={dateKey ?? null} labelKey={labelKey ?? null}/>;
   const columns = dataset.columns.map(column => ({...column,label:reportColumnLabel(column)}));
-  const label = columns.find(c => c.type === 'string');
+  const label = columns.find(c => c.key===labelKey && c.type==='string') ?? columns.find(c => c.type === 'string');
   const numbers = columns.filter(c => c.type === 'number');
   const metric = numbers.find(c => c.key === measure) ?? numbers[0];
   const chart = component !== 'table' && label && metric && dataset.rows.length > 0 && dataset.rows.length <= (component === 'comparison' ? 20 : 100);
@@ -49,7 +51,7 @@ export default function ReportView({report, canvas = false, anchorPrefix = 'ally
       return <section id={`${anchorPrefix}-${section.id}`} tabIndex={-1} key={section.id} className="ally-report-source"><h3>{section.dataset!.title}</h3>
         {(blocks.length ? blocks : [undefined]).map(block => {
           const selectionKey = blocks.length > 1 ? `${section.id}:${block!.id}` : section.id;
-          return <DataView key={`${report.selectedVersion}-${selectionKey}`} dataset={applyViewCalculations(section.dataset!,block?.computedColumns)} component={block?.componentId ?? 'table'} measure={measures[selectionKey] ?? block?.measureKey ?? undefined} sort={block?.sort ?? null} onMeasureChange={onMeasureChange && (measure => onMeasureChange(selectionKey, measure))}/>;
+          return <DataView key={`${report.selectedVersion}-${selectionKey}`} dataset={applyViewCalculations(section.dataset!,block?.computedColumns)} component={block?.componentId ?? 'table'} dateKey={block?.dateKey ?? null} labelKey={block?.labelKey ?? null} measure={measures[selectionKey] ?? block?.measureKey ?? undefined} sort={block?.sort ?? null} onMeasureChange={onMeasureChange && (measure => onMeasureChange(selectionKey, measure))}/>;
         })}
       </section>;
     })}

@@ -54,6 +54,10 @@ const authorize=()=>authorizePlatformReportSource({tenantId:EVERYAGENT_TENANT,cl
 const sources=createPlatformReportSources({pipelineRecords:source,summary:async()=>({})});
 const catalog=await sources.catalog(authorize());assert.equal(catalog[0].id,'pipeline-records');
 const evidence=await sources.read(input,authorize());assert.equal(evidence.requiresDetail,true);assert.equal(evidence.coverage,'partial');assert.equal(JSON.parse(evidence.answer).text.length,8000);
+listData={requestedReferralIds:[42,43],records:[{referralId:42,notes:{blocks:[{body:'Complete fixture note',version:2}]}},{referralId:43,notes:{blocks:[]}}]};
+const batchInput={...input,step:{id:'review-batch',capability:'pipeline-records',input:{view:'workspace-review',referralIds:[42,43]}}};
+const batchEvidence=await sources.read(batchInput,authorize());const batch=JSON.parse(batchEvidence.answer);
+assert.deepEqual(batch.page.requestedReferralIds,[42,43]);assert.deepEqual(batch.items.map(item=>item.referralId),[42,43]);assert.equal(batch.contentComplete,true);assert.equal(batch.items[0].notes.blocks[0].body,'Complete fixture note');listData=null;
 grant.detail=false;assert.throws(authorize);grant.detail=true;
 grant.communityIds.pop();assert.throws(authorize);grant.communityIds=ALAMO_FACILITIES.map(f=>f.facilityId);
 grant.revoked=true;assert.throws(authorize);

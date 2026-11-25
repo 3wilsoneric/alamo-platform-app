@@ -45,6 +45,19 @@ while(page.nextOffset!==null) {
 }
 assert.equal(allRows.length,119);assert.equal(new Set(allRows.map(row=>row.Res_Number)).size,119);
 assert.equal(page.hasMore,false);assert.equal(page.returnedRows,19);
+const longSummary=structuredClone(pageSummary);
+longSummary.toolContext.tables.notes_summary=longSummary.toolContext.tables.notes_summary.slice(0,17).map((row,i)=>({...row,note_text:`Full note ${i}: `+'complete text '.repeat(220)}));
+longSummary.toolContext.manifest[0].row_count=17;
+const longOptions={...pageOptions,load:async()=>longSummary};
+let longPage=await readAllyPlatformData(pageQuery,longOptions);
+assert(longPage.returnedRows<17);assert.equal(longPage.totalRows,17);
+const fullNotes=[...longPage.rows];
+while(longPage.nextOffset!==null){
+  longPage=await readAllyPlatformData({...pageQuery,offset:longPage.nextOffset,revision:longPage.revision},longOptions);
+  fullNotes.push(...longPage.rows);
+}
+assert.equal(fullNotes.length,17);assert.equal(new Set(fullNotes.map(row=>row.Res_Number)).size,17);
+for(const row of fullNotes)assert.equal(row.note_text,longSummary.toolContext.tables.notes_summary.find(original=>original.Res_Number===row.Res_Number).note_text);
 const resume={...pageQuery,offset:firstPage.nextOffset,revision:firstPage.revision};
 await assert.rejects(readAllyPlatformData({...resume,filters:[{field:'Res_Number',op:'eq',value:'1'}]},pageOptions),/source or query changed/);
 await assert.rejects(readAllyPlatformData(resume,{...pageOptions,constraints:[{field:'Facility',op:'in',value:['345']}]}),/source or query changed/);

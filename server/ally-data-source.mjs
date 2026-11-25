@@ -358,7 +358,7 @@ export async function readAllyPlatformData(query, { load = async () => {
     readMode = "published-snapshot";
     coverage = snapshotRows.length < input.source.sourceRows ? `partial: ${snapshotRows.length} of ${input.source.sourceRows} source rows published` : "published-row-set";
   }
-  const hasMore = rows.length > input.limit;
+  let hasMore = rows.length > input.limit;
   const fields = input.operation === 'rows' ? input.columns : [...input.groupBy, ...aggregateFields(input.operation)];
   const returned = (hasMore ? rows.slice(0, input.limit) : rows).map(row => Object.fromEntries(fields.map(field => [field, row[field] ?? null])));
   const excerpts = input.excerpt ? returned.map((row,index)=>{
@@ -397,6 +397,14 @@ export async function readAllyPlatformData(query, { load = async () => {
     const unknown=searchCoverage.filter(item=>item.records>0&&item.known===0).map(item=>item.field);
     if(unknown.length)throw Object.assign(Error(`The searched fields have no populated values in this scope: ${unknown.join(', ')}. Matching records cannot be determined; this is not a zero result.`),{code:'ally_field_coverage_unavailable'});
     if(searchCoverage.some(item=>item.known<item.records))coverage=(coverage.startsWith('partial')?coverage+'; ':'partial: ')+'some searched values are missing; zero matches applies only to recorded values';
+  }
+  // Page whole records by bytes as well as row count. Never shorten a note to
+  // make it fit: the continuation resumes after the last complete returned row.
+  // Without a source-issued complete result identity, truncation cannot safely
+  // establish a next page, so keep the existing explicit size failure.
+  if (continuation.revision && continuation.totalRows !== undefined && input.operation === 'rows' && !excerpts) {
+    while (returned.length > 1 && Buffer.byteLength(JSON.stringify(returned),'utf8') > 12_000) returned.pop();
+    hasMore = input.offset + returned.length < continuation.totalRows;
   }
   if (Buffer.byteLength(JSON.stringify(returned), "utf8") > MAX_RESULT_BYTES) throw Object.assign(Error("The result is too large; narrow the filters or row limit."),{code:'analyst_result_too_large'});
   return { version: "ally-platform-data-v1", source: input.source, readMode, coverage,

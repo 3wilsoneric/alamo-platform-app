@@ -31,6 +31,12 @@ export async function readNativeJsonResponse(response, source) {
 // Bounded content-first previews retain exact source paths. Large records must
 // expose useful values, not force a paid model turn for every wrapper object.
 const childPath = (path, key) => `${path}/${String(key).replace(/~/g, '~0').replace(/\//g, '~1')}`;
+const encodedBytes = value => Buffer.byteLength(JSON.stringify(value));
+function textWithinBytes(value, max) {
+  let bytes=0,end=0;
+  for(const character of value){bytes+=encodedBytes(character)-2;if(bytes>max)break;end+=character.length;}
+  return value.slice(0,end);
+}
 function resolvePointer(data, pointer, source) {
   if (typeof pointer !== 'string' || pointer.length > 1000 || pointer && !pointer.startsWith('/') || /~(?![01])/.test(pointer)) throw createHttpError(400, 'report_source_query_invalid', 'Choose a valid JSON pointer from the record.');
   let value = data;
@@ -41,10 +47,9 @@ function resolvePointer(data, pointer, source) {
   return value;
 }
 function previewValue(value, pointer, budget = 7500) {
-  const encoded = JSON.stringify(value);
-  if (encoded.length <= budget) return value;
+  if (encodedBytes(value) <= budget) return value;
   if (budget < 220) return {pointer, kind:Array.isArray(value)?'array':typeof value, incomplete:true};
-  if (typeof value === 'string') return { preview:value.slice(0,Math.max(0,budget-180)), characters:value.length, pointer, incomplete:true };
+  if (typeof value === 'string') return { preview:textWithinBytes(value,Math.max(0,budget-180)), characters:value.length, pointer, incomplete:true };
   if (value === null || typeof value !== 'object') return value;
   const entries = Object.entries(value), count = Math.min(entries.length, Array.isArray(value) ? 8 : 24);
   const allowance = Math.max(100,Math.floor((budget-300)/Math.max(1,count))-100);
@@ -78,9 +83,26 @@ export function projectNativeRecord(data, args, source = 'Source') {
   const base = { revision, pointer, operation: args.path, parameters: args.parameters ?? {},
     meaning: `Native ${source} response. Its query parameters, paging and source dates define the population; the report page dates do not filter this record.` };
   if (args.paths !== undefined) {
-    if (args.search !== undefined || offset || !Array.isArray(args.paths) || !args.paths.length || args.paths.length > 12 || new Set(args.paths).size !== args.paths.length) throw createHttpError(400,'report_source_query_invalid','Choose up to twelve distinct paths, without a search or offset.');
-    return {...base, selections:args.paths.map(path=>({pointer:path, value:previewValue(resolvePointer(data,path,source),path,Math.floor(8000/args.paths.length))})), incomplete:true,
-      note:'Selected source fields. Preview objects mark shortened content and provide exact paths for full reads.'};
+    if (args.search !== undefined || columns !== undefined || !Array.isArray(args.paths) || !args.paths.length || args.paths.length > 12 || new Set(args.paths).size !== args.paths.length) throw createHttpError(400,'report_source_query_invalid','Choose up to twelve distinct paths, without search or columns.');
+    // Validate the entire selection before paging. Tiny fields must not reserve
+    // an equal share of the payload and force useful neighboring fields into
+    // previews. Keep complete values together within one shared byte budget.
+    const selected=args.paths.map(path=>({pointer:path,value:resolvePointer(data,path,source)}));
+    if(offset>=selected.length)throw createHttpError(400,'report_source_query_invalid','Selected-field offset is out of range.');
+    const selections=[];let size=2,shortened=false;
+    for(const item of selected.slice(offset)){
+      const bytes=Buffer.byteLength(JSON.stringify(item))+1;
+      if(size+bytes>10_000){
+        if(selections.length)break;
+        selections.push({pointer:item.pointer,value:previewValue(item.value,item.pointer,2000)});shortened=true;break;
+      }
+      selections.push(item);size+=bytes;
+    }
+    const nextOffset=offset+selections.length<selected.length?offset+selections.length:null;
+    const complete=offset===0 && nextOffset===null && !shortened;
+    return {...base,selections,offset,nextOffset,totalSelections:selected.length,selectionComplete:complete,contentComplete:!shortened,
+      incomplete:!complete || Boolean(data?.complete===false || data?.hasMore || data?.nextCursor || data?.truncated || data?.limited),
+      note:'Exact selected fields. nextOffset + revision continues the same paths in this response. A preview marks a field larger than one response; open that pointer for full content. Field coverage is not whole-record or population coverage.'};
   }
   if (args.search !== undefined) {
     if (typeof args.search !== 'string' || args.search.trim().length < 2 || args.search.length > 200) throw createHttpError(400,'report_source_query_invalid','Search this record with two to two hundred characters.');
@@ -92,19 +114,22 @@ export function projectNativeRecord(data, args, source = 'Source') {
     if (offset > value.length) throw createHttpError(400, 'report_source_query_invalid', `${source} response offset is out of range.`);
     const items = []; let size = 0;
     for (const row of value.slice(offset, offset + 20)) {
-      const item = select(row), bytes = JSON.stringify(item).length;
+      const item = select(row), bytes = encodedBytes(item);
       if (size + bytes > 10_000) break;
       items.push(item); size += bytes;
     }
-    if (!items.length && offset < value.length) return { ...base, items:[previewValue(select(value[offset]),childPath(pointer,offset))], offset, nextOffset:offset+1<value.length?offset+1:null, totalResponseRows:value.length, incomplete:true, note:'This row is previewed with exact paths. Open its fields for full content.' };
+    if (!items.length && offset < value.length) return { ...base, items:[previewValue(select(value[offset]),childPath(pointer,offset))], offset, nextOffset:offset+1<value.length?offset+1:null, totalResponseRows:value.length, contentComplete:false, incomplete:true, note:'This row is previewed with exact paths. Open its fields for full content.' };
     return { ...base, totalResponseRows: value.length, offset, items, nextOffset: offset + items.length < value.length ? offset + items.length : null,
-      incomplete: true, note: 'These are rows in this response, not a population denominator. Use native source pagination for further source records.' };
+      contentComplete:true, incomplete: true, note: 'These are rows in this response, not a population denominator. Use native source pagination for further source records.' };
   }
   if (typeof value === 'string' && offset > value.length) throw createHttpError(400,'report_source_query_invalid','Text offset is out of range.');
-  if (typeof value === 'string') return { ...base, text: value.slice(offset, offset + 8000), characters: value.length,
-    nextOffset: offset + 8000 < value.length ? offset + 8000 : null, incomplete: offset > 0 || value.length > 8000 };
+  if (typeof value === 'string') {
+    if(offset && /[\uDC00-\uDFFF]/.test(value[offset]??'') && /[\uD800-\uDBFF]/.test(value[offset-1]))throw createHttpError(400,'report_source_query_invalid','Text offset splits a character. Use the returned continuation.');
+    const text=textWithinBytes(value.slice(offset),8000),next=offset+text.length;
+    return {...base,text,characters:value.length,nextOffset:next<value.length?next:null,incomplete:offset>0 || next<value.length};
+  }
   if (offset) throw createHttpError(400, 'report_source_query_invalid', 'Only text and arrays support response offsets.');
   const selected = select(value);
-  if (JSON.stringify(selected).length > 10_000) return { ...base, value:previewValue(selected,pointer), incomplete:true, note:'Content preview with exact paths. Use paths to read several fields together, search to find passages, or pointer for full content.' };
+  if (encodedBytes(selected) > 10_000) return { ...base, value:previewValue(selected,pointer), incomplete:true, note:'Content preview with exact paths. Use paths to read several fields together, search to find passages, or pointer for full content.' };
   return { ...base, value: selected, incomplete: Boolean(data?.complete === false || data?.hasMore || data?.nextCursor || data?.truncated || data?.limited), note: 'Record detail; do not infer a whole-population total from a native page or capped list.' };
 }
