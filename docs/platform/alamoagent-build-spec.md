@@ -1,5 +1,10 @@
 ## November 24 investigation usability corrections — local candidate
 
+Real-answer replay exposed literal Markdown headings and table-cell formatting.
+The existing prose renderer now presents headings and the same safe bold, link
+and line-break formatting in desktop tables and phone records. Other HTML remains
+escaped; raw datasets retain literal cell values. No saved wording is changed.
+
 Licensing discovery now links each archived report and permits detail-authorized
 reads through the existing licensing text owner. The report must first match the
 current community/date scope; revision-bound text paging and the source's archive

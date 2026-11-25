@@ -196,6 +196,7 @@
 .ally-report-prose>ol {list-style:decimal;}
 .ally-report-prose>:is(ul,ol)>li+li {margin-top:6px;}
 .ally-report-prose strong {font-weight:650;}
+.ally-report-prose>h4 {margin:0;font-size:inherit;font-weight:650;line-height:1.65;}
 .ally-report-sources {margin-top:12px;color:var(--ally-muted);font-size:13px;}
 .ally-report-sources summary {width:fit-content;}
 .ally-report-sources ul {list-style:none;margin:0;padding:0;}

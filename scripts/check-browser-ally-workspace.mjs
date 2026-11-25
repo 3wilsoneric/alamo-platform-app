@@ -34,6 +34,7 @@ await withBrowserQa(async browser => {
             rows: [{ community: "San Pablo", admissions: 18, discharges: 11 }, { community: "Santa Clarita", admissions: 15, discharges: 8 }, { community: "JC Wallace House", admissions: 12, discharges: 12 }, { community: "Turlock", admissions: 10, discharges: 6 }, { community: "Victoria’s House", admissions: 6, discharges: 3 }] } }] },
       view: { blocks: [{ id: "flow-chart", componentId: "comparison", datasetId: "flow", sourceIds: ["flow"] }] } };
     report.artifact.findings.push({text:'[Open incident history](/incidents/history?facilityId=345)\n\n[Untrusted link](https://attacker.example/)\n\n[Invalid navigation](/incidents?redirect=https://attacker.example/)\n\n<script>window.reportScriptRan=true</script>',sourceIds:['flow']});
+    report.artifact.findings.push({text:'## Planned arrivals\n\n| Monday | Tuesday |\n|---|---|\n| **Fictional Client**<br>San Pablo | <img src=x onerror=window.reportScriptRan=true> |',sourceIds:['flow']});
     const conversation = () => ({
         id, version: 2, createdAt: "2026-11-22T15:00:00Z", workId: null,
         scope: [{ skillId: "admissions-watch", communityIds: [] }],
@@ -97,6 +98,12 @@ await withBrowserQa(async browser => {
     assert.equal(await initialReport.getByRole('link',{name:'Untrusted link'}).count(),0);
     assert.equal(await initialReport.getByRole('link',{name:'Invalid navigation'}).count(),0);
     assert.equal(await page.evaluate(()=>window.reportScriptRan),undefined);
+    assert.equal(await initialReport.getByRole('heading',{name:'Planned arrivals'}).count(),1);
+    const proseTable=initialReport.locator('.ally-report-prose .ally-report-table');
+    assert.equal(await proseTable.locator('strong').innerText(),'Fictional Client');
+    assert.equal(await proseTable.locator('br').count(),1);
+    assert.equal(await initialReport.locator('.ally-report-prose img').count(),0);
+    assert.equal(await initialReport.locator('.ally-report-prose .ally-report-records strong').innerText(),'Fictional Client');
     assert.equal(await initialReport.locator(".ally-report-comparison li").count(), 5);
     await panel.screenshot({ path: path.join(output, `ally-workspace-default-report-${width}.png`) });
     await panel.getByLabel("Saved conversations").click();
