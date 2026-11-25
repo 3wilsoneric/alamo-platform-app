@@ -163,7 +163,8 @@ try { await withBrowserQa(async browser=>{
       denyHistory=false;await panel.getByRole('button',{name:'Retry',exact:true}).click();await second.getByRole('article',{name:'Report findings'}).waitFor();
       await panel.getByLabel('Saved conversations').click();
       const menu=panel.getByRole('navigation',{name:'Saved reports'});await menu.getByLabel('Search conversations').fill('Explain the net additions');
-      assert.equal(await menu.getByRole('button').count(),1,'history searches the saved conversations');
+      assert.equal(await menu.locator('button:not(.ally-guidance-history)').count(),1,'history searches the saved conversations; the separate guidance command is not a report');
+      assert.equal(await menu.getByRole('button',{name:'Explain the net additions',exact:true}).count(),1);
       await page.screenshot({path:path.join(output,'history-1440.png'),fullPage:true});
       await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false,'Escape closes history before the workspace');
 
