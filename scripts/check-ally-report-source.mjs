@@ -478,6 +478,18 @@ const {normalizeKnownCommunityNames}=await import('../shared/community-names.mjs
 assert.equal(leanResult.dataset.rows[0].Facility_Name,normalizeKnownCommunityNames('J.C. Wallace'));
 assert.equal(leanResult.dataset.rows[0].census,7);
 assert(!leanResult.answer.includes('unrelatedClinicalRows'));
+leanPublication.toolContext.tables.community_operating_summary.push({Facility:'337',Facility_Name:'San Pablo',census:8});
+leanPublication.toolContext.manifest[0].row_count=2;
+const pageStep={id:'page',capability:'platform-data',input:{slice:'community_operating_summary',operation:'rows',columns:['Facility_Name','census'],limit:1}};
+const firstPage=await leanSource.read({scope,step:pageStep},leanAuth);
+const continuation=JSON.parse(firstPage.answer);
+assert.equal(continuation.nextOffset,1);assert.equal(continuation.totalRows,2);
+const secondPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:continuation.nextOffset,revision:continuation.revision}}},leanAuth);
+assert.equal(JSON.parse(secondPage.answer).nextOffset,null);assert.equal(secondPage.dataset.rows[0].census,8);
+const changedPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:1,revision:'0'.repeat(64)}}},leanAuth);
+assert.equal(changedPage.status,'unavailable');assert.equal(changedPage.answer,null);
+assert.match(changedPage.note,/source or query changed/);
+console.log('Complete source pages preserve scope and publication identity through the actual report boundary.');
 console.log('Catalog and bounded results skip unrelated clinical rows while preserving readable community names.');
 
 const labelFilter=await leanSource.read({scope,step:{id:'filtered',capability:'platform-data',input:{slice:'community_operating_summary',operation:'count',filters:[{field:'Facility_Name',op:'eq',value:normalizeKnownCommunityNames('J.C. Wallace')}]}}},leanAuth);

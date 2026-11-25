@@ -26,6 +26,34 @@ const rows = await readAllyPlatformData({ slice: "notes_summary", filters: [{ fi
 assert.equal(rows.returnedRows, 1);
 assert.equal(rows.hasMore, true);
 assert.match(rows.coverage, /partial: 2 of 4/);
+// Complete reviews must traverse every row of the same authorized publication,
+// including duplicate sort keys. Neither a refresh nor changed scope can resume it.
+const pageSummary = structuredClone(summary);
+pageSummary.toolContext.manifest[0].row_count = 119;
+pageSummary.toolContext.manifest[0].generated_at = '2026-11-24T13:00:00Z';
+pageSummary.toolContext.tables.notes_summary = Array.from({length:119},(_,i)=>({Facility:'337',Res_Number:String(i),note_date:'2026-10-01',note_text:'Transport note '+i}));
+const pageQuery={slice:'notes_summary',operation:'rows',columns:['Res_Number','note_text'],limit:20,orderBy:[{field:'Res_Number',direction:'asc'}]};
+const pageOptions={load:async()=>pageSummary,execute:()=>assert.fail('A frozen page must not query the warehouse'),constraints:[{field:'Facility',op:'in',value:['337']}]};
+let page=await readAllyPlatformData(pageQuery,pageOptions), firstPage=page;
+const allRows=[...page.rows];
+while(page.nextOffset!==null) {
+  page=await readAllyPlatformData({...pageQuery,offset:page.nextOffset,revision:page.revision},pageOptions);
+  assert.equal(page.totalRows,119);assert.equal(page.revision,firstPage.revision);
+  allRows.push(...page.rows);
+}
+assert.equal(allRows.length,119);assert.equal(new Set(allRows.map(row=>row.Res_Number)).size,119);
+assert.equal(page.hasMore,false);assert.equal(page.returnedRows,19);
+const resume={...pageQuery,offset:firstPage.nextOffset,revision:firstPage.revision};
+await assert.rejects(readAllyPlatformData({...resume,filters:[{field:'Res_Number',op:'eq',value:'1'}]},pageOptions),/source or query changed/);
+await assert.rejects(readAllyPlatformData(resume,{...pageOptions,constraints:[{field:'Facility',op:'in',value:['345']}]}),/source or query changed/);
+await assert.rejects(readAllyPlatformData({...pageQuery,offset:20},pageOptions),/nextOffset and revision/);
+await assert.rejects(readAllyPlatformData({...resume,offset:120},pageOptions),/outside this result/);
+pageSummary.toolContext.tables.notes_summary[118].note_text='Changed after first page';
+await assert.rejects(readAllyPlatformData(resume,pageOptions),/source or query changed/);
+await assert.rejects(readAllyPlatformData(resume,{...pageOptions,load}),/complete published source/);
+const smallerPage=await readAllyPlatformData({...pageQuery,limit:10},pageOptions);
+const resizedPage=await readAllyPlatformData({...pageQuery,offset:smallerPage.nextOffset,revision:smallerPage.revision,limit:5},pageOptions);
+assert.equal(resizedPage.rows.length,5);assert.equal(resizedPage.nextOffset,15);
 await assert.rejects(readAllyPlatformData({ slice: "notes_summary", operation: "count", filters: [{ field: "Facility", op: "eq", value: "337" }] }, { load, execute: fail }), /incomplete published sample/);
 const warehouse = await readAllyPlatformData({ slice: "notes_summary", operation: "count" }, { load, execute: async sql => {
   assert.match(sql, /v_tool_notes_summary/); return [{ result: 4 }];

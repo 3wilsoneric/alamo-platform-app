@@ -1177,3 +1177,17 @@ nonnegative available beds. This removes a repeated model-side addition for
 ordinary portfolio questions without caching permission or changing the census.
 Focused source tests verify single/multiple communities and historical unknown
 capacity. This small source update is prepared for the integrated release.
+
+
+### Complete record review — November 24 candidate
+
+The canonical analytical reader now exposes revision-bound continuation for complete
+published row sets. The revision binds the publication, authorized scope, query
+and ordered result. Changed content or scope requires restarting; it cannot silently
+skip or duplicate rows. The model receives total result rows and a next offset,
+while each response retains the existing row and context limits. No source records
+change. Warehouse-only and incomplete fallback results do not claim a stable cursor;
+add source-owned snapshot isolation if a required cohort cannot be published whole.
+A 119-row traversal and source-boundary checks cover every record, changed queries,
+revocation scope, refreshed content and page resizing. Real answer quality remains
+a separate pending corrective evaluation; this is not a deployment claim.

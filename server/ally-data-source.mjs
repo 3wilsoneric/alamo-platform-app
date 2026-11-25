@@ -3,6 +3,7 @@ import { ANALYSIS_SLICE_CATALOG } from "../shared/analysis-slice-catalog.mjs";
 import { getReportsSummaryData } from "./platform-data.mjs";
 import { queryDatabricks } from "./databricks.mjs";
 import { readPlatformSnapshot } from './platform-snapshot.mjs';
+import { reportHash } from '@alamo/agent-runtime/shared/executive-report-contracts.mjs';
 
 // These are the governed view names published by tool_context_views.py. A
 // snapshot manifest may describe fields and coverage, but cannot register a
@@ -95,11 +96,16 @@ function validateQuery(query, source) {
   if (!Array.isArray(orderBy) || orderBy.length > 3 || orderBy.some(order => !order || !resultFields.includes(order.field) || !['asc','desc'].includes(order.direction))) throw invalidQuery('orderBy must use returned fields: selected columns for rows; groupBy fields plus result for aggregates; groupBy plus records, known, missing, mean, median, minimum, maximum for statistics.');
   const limit = Number(query.limit ?? 25);
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_ROWS) throw invalidQuery("Choose a row limit from 1 to 100.");
+  const offset = query.offset ?? 0;
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1_000_000 ||
+    offset && !query.revision || query.revision !== undefined && (typeof query.revision !== 'string' || !/^[a-f0-9]{64}$/.test(query.revision))) {
+    throw invalidQuery('Continue with the returned nextOffset and revision.');
+  }
   const excerpt = query.textExcerpt;
   if (excerpt !== undefined && (!excerpt || typeof excerpt !== 'object' || Array.isArray(excerpt) || Object.keys(excerpt).some(key=>!['field','query','characters'].includes(key)) ||
     operation !== 'rows' || !columns.includes(excerpt.field) || typeof excerpt.query !== 'string' || excerpt.query.length > 200 ||
     !Number.isSafeInteger(excerpt.characters) || excerpt.characters < 100 || excerpt.characters > 2000 || limit > 20)) throw invalidQuery('Text excerpts require a selected field, literal query (empty for the start), 100–2000 characters and at most twenty rows.');
-  return { source, filters, groupBy, operation, excerpt, measure: expression ? "_ally_measure" : query.measure ?? null, expression, columns, orderBy, limit };
+  return { source, filters, groupBy, operation, excerpt, measure: expression ? "_ally_measure" : query.measure ?? null, expression, columns, orderBy, limit, offset };
 }
 
 function quotedField(field) { return `\`${field}\``; }
@@ -290,19 +296,32 @@ export async function readAllyPlatformData(query, { load = async () => {
   }
   const input = compileAllyPlatformDataQuery(query, source, constraints);
   let rows; let readMode = "governed-view"; let coverage = "source-query";
+  /** @type {{revision?:string,totalRows?:number,offset?:number}} */
+  const continuation = {};
   const snapshotRows = reportsSummary.toolContext?.tables?.[input.source.id];
   const fromSnapshot=()=>{
     if (!Array.isArray(snapshotRows)) throw Error("The governed source is unavailable and no published rows exist for this slice.");
     if (snapshotRows.length < input.source.sourceRows && input.operation !== 'rows') throw Error('An incomplete published sample cannot establish an aggregate.');
     const filtered = snapshotFilter(snapshotQueryRows(snapshotRows, input), input.filters);
-    return orderRows(input.operation === "rows" ? filtered : snapshotAggregate(filtered, input), input.orderBy).slice(0,input.limit+1);
+    const ordered = orderRows(input.operation === "rows" ? filtered : snapshotAggregate(filtered, input), input.orderBy);
+    if (snapshotRows.length === input.source.sourceRows && Number.isFinite(Date.parse(input.source.generatedAt))) {
+      // Bind pages to the exact source, authorized scope, query and ordering.
+      // A refreshed publication or changed grant cannot silently skip records.
+      const { offset: _offset, revision: _revision, limit: _limit, ...selection } = query;
+      const revision = reportHash({ source: input.source, constraints, selection, rows: ordered });
+      if (query.revision !== undefined && query.revision !== revision) throw invalidQuery('The source or query changed. Restart from the first page.');
+      if (input.offset > ordered.length) throw invalidQuery('The continuation is outside this result. Restart from the first page.');
+      Object.assign(continuation, { revision, totalRows: ordered.length, offset: input.offset });
+    } else if (input.offset || query.revision !== undefined) throw invalidQuery('Continuation requires a complete published source. Narrow the source query instead.');
+    return ordered.slice(input.offset,input.offset+input.limit+1);
   };
   // Complete published data is already the versioned source used by Platform.
   // Never pay a warehouse round trip (or its failing permission check) for it.
   if(Array.isArray(snapshotRows) && snapshotRows.length===input.source.sourceRows && Number.isFinite(Date.parse(input.source.generatedAt))) {
     try { rows=fromSnapshot();readMode='published-snapshot';coverage='published-row-set'; }
-    catch { /* A missing/conflicting required column needs the full view. */ }
+    catch (error) { if (error && typeof error === 'object' && 'code' in error && error.code === 'ally_query_invalid') throw error; /* A missing/conflicting required column needs the full view. */ }
   }
+  if (rows === undefined && (input.offset || query.revision !== undefined)) throw invalidQuery('Continuation requires a complete published source. Narrow the source query instead.');
   if (rows === undefined && snapshotOnly) throw Error('A complete, lossless published answer is unavailable.');
   if(rows===undefined) try {
     rows = await execute(input.sql);
@@ -356,5 +375,7 @@ export async function readAllyPlatformData(query, { load = async () => {
   return { version: "ally-platform-data-v1", source: input.source, readMode, coverage,
     query: { slice: input.source.id, filters: input.filters, operation: input.operation, groupBy: input.groupBy, measure: input.expression ? null : input.measure, ...(input.expression?{measureExpression:input.expression}:{}), columns:input.columns, orderBy:input.orderBy, limit: input.limit },
     ...(excerpts?{textExcerpts:excerpts,excerptNotice:"Text is an excerpt, not the complete note. Counts still require an aggregate over the filtered source population."}:{}),
-    rows: returned, hasMore, returnedRows: returned.length, ...(searchCoverage?{searchCoverage}:{}) };
+    rows: returned, hasMore, returnedRows: returned.length,
+    ...(continuation.revision ? {...continuation, nextOffset: hasMore ? input.offset + returned.length : null} : {}),
+    ...(searchCoverage?{searchCoverage}:{}) };
 }
