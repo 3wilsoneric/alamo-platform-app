@@ -93,9 +93,6 @@
 .executive-ally-input button {flex:none;}
 .ally-report-error {border:1px solid var(--ally-ink);padding:12px;margin-bottom:16px;font-size:14px;}
 .ally-report-error button {margin:8px 6px 0 0;}
-.ally-report-notice {display:flex;gap:8px;align-items:flex-start;justify-content:space-between;border:1px dashed var(--ally-rule);padding:8px 10px;margin-bottom:16px;font-size:13px;color:var(--ally-muted);}
-.ally-report-notice p {margin:0;}
-.ally-report-notice button {flex:none;border:0;background:none;color:inherit;min-width:28px;min-height:28px;display:grid;place-items:center;}
 .ally-report-sharing {border:1px solid var(--ally-rule);padding:12px;margin-bottom:18px;}
 .ally-report-sharing label {display:flex;align-items:center;gap:10px;min-height:44px;}
 .ally-report-sharing p {font-size:12px;color:var(--ally-muted);}
@@ -145,10 +142,6 @@
 .ally-conversation .ally-thread-answer .ally-report-source {margin-top:20px;padding-top:20px;border-top:1px solid var(--ally-rule);}
 .ally-conversation .ally-thread-answer .ally-report-source h3 {font-size:15px;margin-bottom:14px;}
 .ally-thread-progress {display:flex;gap:10px;align-items:center;min-height:44px;color:var(--ally-muted);font-size:14px;}
-.ally-progress-summary {display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;min-width:0;flex:1 1 auto;}
-.ally-progress-count {font-variant-numeric:tabular-nums;}
-.ally-progress-step {min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ally-ink);}
-.ally-progress-elapsed {flex:none;margin-left:auto;font-variant-numeric:tabular-nums;font-size:13px;}
 .ally-working-dot {display:block;flex:none;width:7px;height:7px;border-radius:50%;background:var(--ally-accent);animation:ally-working 1.4s ease-in-out infinite;}
 @keyframes ally-working {50%{opacity:.35;}}
 .ally-thread-actions {display:flex;align-items:center;gap:8px;}
