@@ -1,6 +1,6 @@
 import { useMsal } from '@azure/msal-react';
 import { ArrowUp, ArrowDown, History, Pencil, X, Download, RefreshCw, Share2, Square, Maximize2, Minimize2, MoreHorizontal } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useEveryAgentAccess } from '../../../shared/auth/everyAgentAccess';
 import { formatDisplayDate } from '../../../../shared/display-date.mjs';
@@ -9,6 +9,10 @@ import { createAgentTransport } from '../conversations/agentTransport';
 import { createReportClient, reportRunning, reportStatus, type ExecutiveReport, type ReportScope, type ReportSummary } from './reportClient';
 import { reportParticipants } from './reportAccess';
 import { useReportHistory } from './useReportHistory';
+import { useReportEvents } from './useReportEvents';
+import { nextPollDelay, type ReportEvent } from './reportLive';
+import ReportProgress from './ReportProgress';
+import { isTransientAgentError } from '../conversations/agentErrors';
 import ReportView, { type ReportMeasures } from './ReportView';
 import AgentConversationHome from '../conversations/AgentConversationHome';
 import { agentChatConfigured } from '../conversations/agentTransport';
@@ -46,6 +50,10 @@ export default function ExecutiveAlly() {
   const [scope, setScope] = useState(() => initialScope(location.search));
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const [accessUncertain, setAccessUncertain] = useState(false);
+  // Non-destructive notices: a transient outage never clears what is shown.
+  const [reconnecting, setReconnecting] = useState<string | null>(null), [notice, setNotice] = useState<string | null>(null);
+  const [stopping, setStopping] = useState(false), [pollNudge, setPollNudge] = useState(0);
+  const handledNudge = useRef(0), listFailures = useRef(0);
   const [share, setShare] = useState(false), [retryList, setRetryList] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLTextAreaElement>(null);
   const historyMenu = useRef<HTMLDetailsElement>(null), body = useRef<HTMLDivElement>(null), latestTurn = useRef<HTMLDivElement>(null);
@@ -126,37 +134,62 @@ export default function ExecutiveAlly() {
   useEffect(() => {
     if (!open || surface !== 'reports') return;
     const controller = new AbortController();
-    client.list(controller.signal).then(v => { if (!controller.signal.aborted) setReports(v.reports); }).catch(e => { if (!controller.signal.aborted) { setReports([]); setError(e.message); } });
-    return () => controller.abort();
+    let retry: number | undefined;
+    client.list(controller.signal).then(v => { if (!controller.signal.aborted) { listFailures.current = 0; setReports(v.reports); setReconnecting(null); } }).catch(e => {
+      if (controller.signal.aborted) return;
+      if (isTransientAgentError(e)) { setReconnecting(e.message); retry = window.setTimeout(() => setRetryList(v => v+1), nextPollDelay(false, ++listFailures.current)); }
+      else { setReports([]); setError(e.message); }
+    });
+    return () => { controller.abort(); clearTimeout(retry); };
   }, [open, surface, client, retryList]);
+  const onReportEvent = useCallback((event: ReportEvent) => {
+    const patch = event.report;
+    // Terminal states wait for the full GET so "Ready" never shows without its answer.
+    if (patch && (!patch.status || reportRunning(patch.status))) setReport(current => current && current.id === (patch.id ?? current.id) && current.ownerId === (patch.ownerId ?? current.ownerId) && current.selectedVersion === current.version
+      ? {...current, ...patch, id: current.id, ownerId: current.ownerId, version: current.version} : current);
+    if (event.type === 'done' || (patch?.status && !reportRunning(patch.status))) setPollNudge(value => value + 1);
+  }, []);
+  const events = useReportEvents(report, open && surface === 'reports' && !busy, transport, onReportEvent);
   useEffect(() => {
     if (!open || surface !== 'reports' || !report || busy) return;
-    const controller = new AbortController(), current = generation.current;
-    let polling = false;
+    const controller = new AbortController(), current = generation.current, isRunning = reportRunning(report.status);
+    let polling = false, failures = 0, timer: number | undefined;
+    // While the event stream is live, polling only rechecks access.
+    const schedule = () => { clearTimeout(timer); timer = window.setTimeout(() => void poll(), events.live && failures === 0 ? 30_000 : nextPollDelay(isRunning, failures)); };
     const poll = async () => {
-      if (document.visibilityState === 'hidden' || polling) return;
+      if (controller.signal.aborted || polling) return;
+      if (document.visibilityState === 'hidden') { schedule(); return; }
       polling = true;
       try {
         const next = await client.get(report, report.selectedVersion === report.version ? undefined : report.selectedVersion, controller.signal);
-        if (!controller.signal.aborted && current === generation.current) { setReport(next); setAccessUncertain(false); setError(null); }
+        if (!controller.signal.aborted && current === generation.current) { failures = 0; setReport(next); setAccessUncertain(false); setError(null); setReconnecting(null); }
       }
-      catch (e) { if (!controller.signal.aborted && current === generation.current) { setReport(null); setDocumentVersion(null); setReports([]); setShare(false); setError(e instanceof Error ? e.message : 'Report access could not be verified.'); } }
-      finally { polling = false; }
+      catch (e) {
+        if (controller.signal.aborted || current !== generation.current) return;
+        // Keep the last good report, list and sharing state through outages.
+        if (isTransientAgentError(e)) { failures++; setReconnecting(e.message); }
+        else { setReport(null); setDocumentVersion(null); setReports([]); setShare(false); setReconnecting(null); setError(e instanceof Error ? e.message : 'Report access could not be verified.'); }
+      }
+      finally { polling = false; if (!controller.signal.aborted) schedule(); }
     };
     // Recheck saved content too, so a revoked share disappears without reload.
-    const timer = window.setInterval(() => void poll(), reportRunning(report.status) ? 2500 : 30_000);
+    if (pollNudge !== handledNudge.current) { handledNudge.current = pollNudge; void poll(); } else schedule();
     document.addEventListener('visibilitychange', poll);
-    return () => { controller.abort(); clearInterval(timer); document.removeEventListener('visibilitychange', poll); };
-  }, [open, surface, client, report?.id, report?.status, report?.version, report?.selectedVersion, busy]);
+    return () => { controller.abort(); clearTimeout(timer); document.removeEventListener('visibilitychange', poll); };
+  }, [open, surface, client, report?.id, report?.status, report?.version, report?.selectedVersion, busy, events.live, pollNudge]);
+  useEffect(() => { setStopping(false); }, [report?.id, report?.version]);
   async function perform(operation: (signal: AbortSignal) => Promise<ExecutiveReport>) {
     if (running.current) return false;
-    running.current = true; setBusy(true); setError(null);
+    running.current = true; setBusy(true); setError(null); setNotice(null);
     request.current?.abort(); const controller = new AbortController(); request.current = controller; const current = ++generation.current;
     try {
       const result = await operation(controller.signal);
       if (!controller.signal.aborted && current === generation.current) { setReport(result); setAccessUncertain(false); setScope(result.scope); setRetryList(v => v+1); retryCommand.current = null; return true; }
     }
-    catch (e) { if (!controller.signal.aborted && current === generation.current) { setAccessUncertain(true); setDocumentVersion(null); setError(e instanceof Error ? e.message : 'Try again.'); } }
+    catch (e) { if (!controller.signal.aborted && current === generation.current) {
+      if (isTransientAgentError(e)) setNotice(e.message);
+      else { setAccessUncertain(true); setDocumentVersion(null); setError(e instanceof Error ? e.message : 'Try again.'); }
+    } }
     finally { if (current === generation.current) {
       setBusy(false); running.current = false;
       // Disabling a submit/select during a request can move focus to body.
@@ -180,8 +213,13 @@ export default function ExecutiveAlly() {
     if (loaded && dialog.current?.open) input.current?.focus({preventScroll:true});
   }
   async function command(action: string, extra: Record<string, unknown> = {}) {
-    if (!report) return;
-    await perform(async signal => { const next = await client.command(report, action, extra, signal); return client.get(next, undefined, signal); });
+    if (!report) return false;
+    return perform(async signal => { const next = await client.command(report, action, extra, signal); return client.get(next, undefined, signal); });
+  }
+  async function stop() {
+    // Show the request immediately; the follow-up GET confirms "Stopped".
+    setStopping(true);
+    if (!await command('cancel')) setStopping(false);
   }
   async function submit(e: FormEvent) {
     e.preventDefault(); const text = draft.trim(); if (!text || busy || report && reportRunning(report.status)) return;
@@ -194,7 +232,7 @@ export default function ExecutiveAlly() {
     if (sent) setDraft('');
     setPendingQuestion(null);
   }
-  function startNew() { if (busy) return; ++generation.current; historyMenu.current?.removeAttribute('open'); setDocumentVersion(null); setChartSelection({}); setReport(null); setPendingQuestion(null); setError(null); setShare(false); setDraft(''); setScope(initialScope(location.search)); input.current?.focus(); }
+  function startNew() { if (busy) return; ++generation.current; historyMenu.current?.removeAttribute('open'); setDocumentVersion(null); setChartSelection({}); setReport(null); setPendingQuestion(null); setError(null); setNotice(null); setReconnecting(null); setShare(false); setDraft(''); setScope(initialScope(location.search)); input.current?.focus(); }
   function openBlankReport() { startNew(); setChatId(null); setSurface('reports'); requestAnimationFrame(()=>input.current?.focus()); }
   async function exportReport(value = report) {
     if (!value || busy) return;
@@ -204,7 +242,11 @@ export default function ExecutiveAlly() {
     try {
       const fresh = await client.get(value, value.selectedVersion);
       const {printReport} = await import('./printReport'); await printReport(target, fresh, measuresFor(value));
-    } catch (e) { target.close(); setReport(null); setDocumentVersion(null); setError(e instanceof Error ? e.message : 'Report export unavailable.'); }
+    } catch (e) {
+      target.close();
+      if (isTransientAgentError(e)) setNotice(e.message);
+      else { setReport(null); setDocumentVersion(null); setError(e instanceof Error ? e.message : 'Report export unavailable.'); }
+    }
   }
   const editable = report?.canEdit && report.selectedVersion === report.version;
   const active = report && reportRunning(report.status);
@@ -231,6 +273,7 @@ export default function ExecutiveAlly() {
     <div className="ally-conversation-column">
       <div ref={body} className="executive-ally-body" onWheel={() => {revealLatest.current=false;}} onPointerDown={() => {revealLatest.current=false;}} onScroll={() => {if(body.current && latestTurn.current) setAwayFromLatest(latestTurn.current.getBoundingClientRect().top > body.current.getBoundingClientRect().bottom - 48);}}>
         {error && <div role="alert" className="ally-report-error"><p>{error}</p><button onClick={() => {if(report) void openReport(report); else {setError(null);setRetryList(v=>v+1);}}}>Refresh reports</button><button onClick={() => void transport.connect().then(()=>setRetryList(v=>v+1)).catch(()=>setError('Sign-in was not completed.'))}>Connect sign-in</button></div>}
+        {!error && (reconnecting || notice) && <div className="ally-report-notice" role={notice ? 'alert' : 'status'}><p>{notice ?? "Ally is temporarily unavailable. Showing your last update while reconnecting…"}</p>{notice && <button type="button" aria-label="Dismiss notice" onClick={() => setNotice(null)}><X size={16}/></button>}</div>}
         {!report && !busy && !error && <div className="executive-ally-empty"><h2>Ask Ally</h2></div>}
         <div className="ally-conversation-thread" aria-label="Conversation">
           {history.loading && <p className="ally-history-status" role="status">Loading earlier answers…</p>}
@@ -238,7 +281,7 @@ export default function ExecutiveAlly() {
           {threadAnswers.map(value => <div className="ally-thread-turn" data-version={value.selectedVersion} data-working={reportRunning(value.status)} key={reportKey(value)} ref={value === report && !pendingQuestion ? latestTurn : undefined}>
             <div className="ally-thread-question"><span className="sr-only">You: </span>{value.objective}</div>
             <div className="ally-thread-answer"><span className="sr-only">Ally: </span>
-              {reportRunning(value.status) && <div className="ally-thread-progress" role="status"><span className="ally-working-dot" aria-hidden="true"/>{reportStatus(value.status)}{value.totalSources > 0 && <span>{value.completedSources}/{value.totalSources}</span>}</div>}
+              {reportRunning(value.status) && <ReportProgress report={value} liveSteps={value === report ? events.steps : []} stopping={value === report && stopping}/>}
               {value.error && <p role="status">{value.error}</p>}
               {['paused','failed','cancelled'].includes(value.status) && <div className="ally-thread-progress" role="status">{reportStatus(value.status)}{value === report && editable && value.status !== 'cancelled' && <button disabled={busy} onClick={() => void command('resume')}>Resume</button>}</div>}
               <ReportView report={value} canvas anchorPrefix={`ally-turn-${value.selectedVersion}`} measures={measuresFor(value)} onMeasureChange={(section,measure) => changeMeasure(value,section,measure)} onOpenSource={(section,opener)=>{documentOpener.current=opener;setDocumentSource(section);setExpanded(true);setDocumentVersion(value.selectedVersion);}}/>
@@ -252,7 +295,7 @@ export default function ExecutiveAlly() {
       {awayFromLatest && <button className="ally-latest" aria-label="Go to latest answer" onClick={() => scrollToLatest(true)}><ArrowDown size={17}/>Latest</button>}
       <form className="executive-ally-composer" onSubmit={e => void submit(e)}>
         <details className="ally-report-scope"><summary>{scopeLabel} · {formatDisplayDate(scope.from,{month:'short'})} – {formatDisplayDate(scope.through,{month:'short'})}</summary><div><label>Community<select value={scopeChoice} disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,communityIds:e.target.value?[e.target.value]:[]})}><option value="">All communities</option>{scopeChoice === 'selected' && <option value="selected" disabled>{scopeLabel}</option>}{ALAMO_FACILITIES.map(f=><option key={f.facilityId} value={f.facilityId}>{f.shortName}</option>)}</select></label><label>From<input type="date" value={scope.from} max={scope.through} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,from:e.target.value})}/></label><label>Through<input type="date" value={scope.through} min={scope.from} required disabled={busy || Boolean(active)} onChange={e=>setScope({...scope,through:e.target.value})}/></label></div></details>
-        <div className="executive-ally-input"><textarea ref={input} aria-label={report ? 'Follow-up question' : 'Ask Ally'} placeholder="Ask Ally…" rows={2} maxLength={2000} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => {if(e.key==='Enter' && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault();if(!active && !busy) e.currentTarget.form?.requestSubmit();}}} disabled={busy || Boolean(report && !editable)}/>{active && editable ? <button type="button" aria-label="Stop" disabled={busy} onClick={() => void command('cancel')}><Square size={19}/></button> : <button type="submit" aria-label="Send question" disabled={busy || Boolean(active) || Boolean(report && !editable) || !draft.trim()}><ArrowUp size={22}/></button>}</div>
+        <div className="executive-ally-input"><textarea ref={input} aria-label={report ? 'Follow-up question' : 'Ask Ally'} placeholder="Ask Ally…" rows={2} maxLength={2000} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => {if(e.key==='Enter' && !e.shiftKey && !e.nativeEvent.isComposing){e.preventDefault();if(!active && !busy) e.currentTarget.form?.requestSubmit();}}} disabled={busy || Boolean(report && !editable)}/>{active && editable ? <button type="button" aria-label="Stop" disabled={busy || stopping} onClick={() => void stop()}><Square size={19}/></button> : <button type="submit" aria-label="Send question" disabled={busy || Boolean(active) || Boolean(report && !editable) || !draft.trim()}><ArrowUp size={22}/></button>}</div>
       </form>
     </div>
     {documentReport && <aside className="ally-document-reader" aria-label="Expanded report"><header><h2 ref={documentHeading} tabIndex={-1}>Report</h2>{report && report.versions.length > 1 && <select aria-label="Report version" value={documentVersion!} onChange={e=>{setDocumentSource(null);setDocumentVersion(Number(e.target.value));}}>{report.versions.filter(v=>v.version<=report.selectedVersion).map(v=><option key={v.version} value={v.version}>Version {v.version}</option>)}</select>}<button aria-label="Save PDF" title="Save PDF" disabled={busy} onClick={() => void exportReport(documentReport)}><Download size={19}/></button><button aria-label="Close report" onClick={closeDocument}><X size={20}/></button></header><div className="ally-document-body"><ReportView report={documentReport} anchorPrefix="ally-document" measures={measuresFor(documentReport)} onMeasureChange={(section,measure) => changeMeasure(documentReport,section,measure)}/></div></aside>}

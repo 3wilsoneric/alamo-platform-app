@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { ALAMO_FACILITIES } from "../shared/community-names.mjs";
 import { createHttpError } from "./http-errors.mjs";
+import { incidentPrioritySql } from "../shared/incident-priority.mjs";
+
+// Shared incident priority scale, compiled once for the live register query.
+const PRIORITY_SQL = incidentPrioritySql({ sentinelEvent: "sentinel_event", emergencyServicesNotified: "emergency_services_notified", injuryOccurred: "injury_occurred" });
 
 // Inputs become UTF-8 hex expressions, never executable SQL fragments. LIKE is
 // deliberately avoided so %, _, quotes and backslashes remain literal searches.
@@ -83,14 +87,7 @@ export function buildExecutiveIncidentLiveSql(filters) {
       ELSE source_id END AS id
     FROM numbered
   ), prioritized AS (
-    SELECT *, CASE
-      WHEN lower(trim(sentinel_event)) IN ('yes', 'true', 'y', '1') OR lower(trim(emergency_services_notified)) IN ('yes', 'true', 'y', '1') THEN 'high'
-      WHEN lower(trim(injury_occurred)) IN ('yes', 'true', 'y', '1') THEN 'medium'
-      WHEN lower(trim(sentinel_event)) IN ('no', 'false', 'n', '0')
-        AND lower(trim(emergency_services_notified)) IN ('no', 'false', 'n', '0')
-        AND lower(trim(injury_occurred)) IN ('no', 'false', 'n', '0') THEN 'low'
-      ELSE 'unknown'
-    END AS priority FROM incidents
+    SELECT *, ${PRIORITY_SQL} AS priority FROM incidents
   ), matching AS (
     SELECT * FROM prioritized WHERE ${condition}
   ), client_latest AS (

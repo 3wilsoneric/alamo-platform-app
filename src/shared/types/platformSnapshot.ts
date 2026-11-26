@@ -73,7 +73,10 @@ export interface LiveCommunitiesDashboardResponse {
 
 export interface LiveIncidentRecord {
   id: string;
+  /** Legacy label; an unclassifiable incident is LOW here. Prefer priority_level. */
   priority: "HIGH" | "MEDIUM" | "LOW";
+  /** Exact shared scale (shared/incident-priority.mjs), including unknown. */
+  priority_level?: "high" | "medium" | "low" | "unknown";
   stage: string;
   facility_id: string;
   facility_name: string;

@@ -18,6 +18,9 @@ assert.equal(report.totals.net, 0); assert.equal(report.totals.bedDays, 165);
 assert.equal(report.period.through, "2026-02-02"); assert.equal(report.totals.averageDailyCensus, 5);
 assert.equal(report.totals.medianCompletedStayDays, 32); assert.equal(report.reconciliation.weeklyCensusPoints, 5);
 assert.equal(report.records.length, 10); assert.equal(report.totals.movedInAndOut, 0);
+// Named length-of-stay measures; the older names remain compatibility aliases.
+assert.equal(report.totals.completedStayLosMedianDays, 32); assert.equal(report.totals.completedStayLosAverageDays, report.totals.averageCompletedStayDays);
+assert.equal(report.totals.currentLengthOfStayCount, 5); assert.equal(report.totals.currentLengthOfStayAverageDays, 31, "2026-02-02 minus 2026-01-02");
 assert.deepEqual(report.counties.rows, [{ county: "Contra Costa", admissions: 5 }]);
 assert.equal(JSON.stringify(report).includes("resident_id"), false);
 assert.equal(JSON.stringify(report).includes("birth_date"), false);

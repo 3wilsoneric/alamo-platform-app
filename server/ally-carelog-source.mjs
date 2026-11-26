@@ -24,7 +24,14 @@ export function createCarelogAnalystSource({ env = process.env, fetchImpl = fetc
       headers: { authorization: `Bearer ${token.token}`, 'X-Ally-Subject': subjectId, accept: 'application/json' }, signal: AbortSignal.timeout(10_000) });
     return readNativeJsonResponse(response, 'Carelog');
   }
-  return async (args, { subjectId }) => {
+  // Identity links for the cross-app resident key; keys only, never names.
+  async function residentLinks(subjectId) {
+    const data = await request('/api/census/resident-links', subjectId);
+    if (!data || !Array.isArray(data.links) || !Number.isSafeInteger(data.ambiguousKeysExcluded) || data.links.length > 50_000 ||
+        data.links.some(link => !link || !UUID.test(link.clientId ?? '') || typeof link.facilityId !== 'string' || typeof link.externalResidentId !== 'string')) throw Error('Carelog resident links are unavailable.');
+    return { links: data.links.map(link => ({ clientId: link.clientId, facilityId: link.facilityId, residentNumber: link.externalResidentId.trim() })), ambiguousKeys: data.ambiguousKeysExcluded };
+  }
+  const read = async (args, { subjectId }) => {
     reportObject(args, [], ['view','query','path','parameters','pointer','paths','search','columns','offset','revision']);
     const view = args.view ?? 'catalog';
     if (!['catalog','read'].includes(view)) throw Error('Choose catalog or read.');
@@ -55,6 +62,7 @@ export function createCarelogAnalystSource({ env = process.env, fetchImpl = fetc
     const data = await request(`${path}?${query}`, subjectId);
     return projectNativeRecord(data, args, 'Carelog');
   };
+  return Object.assign(read, { residentLinks });
 }
 
 function validParameter(parameter, value) {

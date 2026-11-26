@@ -11,6 +11,9 @@
 dbutils.widgets.text("catalog", "alamohealth")
 dbutils.widgets.text("gold_schema", "gold")
 dbutils.widgets.text("date_partition", "")
+# auto = write the old-vs-new census reconciliation report only when no prior
+# report exists (first run of the episode-based census); always | never.
+dbutils.widgets.text("census_reconciliation_report", "auto")
 
 from calendar import monthrange
 from datetime import date, datetime, timezone
@@ -143,6 +146,140 @@ weekly_census_contract_failures = int(
     )
     or 0
 )
+# Owner-approved census: every published census must equal the canonical
+# daily census (v_tool_census_daily_by_community) on the same date.
+census_daily_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_census_daily_by_community") or 0)
+census_monthly_vs_daily_failures = int(
+    scalar(
+        f"""
+        SELECT count(*) AS value
+        FROM {target}.v_tool_census_monthly_by_community m
+        LEFT JOIN {target}.v_tool_census_daily_by_community d
+          ON d.Facility = m.Facility
+         AND d.census_date = m.snapshot_date
+        WHERE d.census_date IS NULL
+           OR d.is_month_snapshot_date <> 1
+           OR NOT (m.census <=> d.census)
+        """
+    )
+    or 0
+)
+census_average_daily_failures = int(
+    scalar(
+        f"""
+        WITH expected AS (
+          SELECT Facility, month_bucket, round(avg(cast(census AS double)), 2) AS average_daily_census
+          FROM {target}.v_tool_census_daily_by_community
+          WHERE census_date >= history_start_date
+          GROUP BY Facility, month_bucket
+        )
+        SELECT count(*) AS value
+        FROM {target}.v_tool_census_monthly_by_community m
+        LEFT JOIN expected e
+          ON e.Facility = m.Facility
+         AND e.month_bucket = m.month_bucket
+        WHERE NOT (m.average_daily_census <=> e.average_daily_census)
+        """
+    )
+    or 0
+)
+# gold.v_census (silver census_snapshot) feeds the dashboards' monthly census.
+census_published_monthly_vs_daily_failures = int(
+    scalar(
+        f"""
+        WITH published AS (
+          SELECT cast(Facility AS string) AS Facility, month_bucket, cast(census AS int) AS census
+          FROM {target}.v_census
+        ),
+        daily AS (
+          SELECT Facility, month_bucket, census
+          FROM {target}.v_tool_census_daily_by_community
+          WHERE is_month_snapshot_date = 1
+            AND census_date >= history_start_date
+        )
+        SELECT count(*) AS value
+        FROM published p
+        FULL OUTER JOIN daily d
+          ON p.Facility = d.Facility
+         AND p.month_bucket = d.month_bucket
+        WHERE coalesce(p.month_bucket, d.month_bucket) >= (
+            SELECT date_format(min(history_start_date), 'yyyy-MM') FROM {target}.v_tool_census_daily_by_community
+          )
+          AND coalesce(p.month_bucket, d.month_bucket) <= date_format({QA_AS_OF_SQL}, 'yyyy-MM')
+          AND coalesce(p.census, 0) <> coalesce(d.census, 0)
+        """
+    )
+    or 0
+)
+census_weekly_vs_daily_failures = int(
+    scalar(
+        f"""
+        SELECT count(*) AS value
+        FROM {target}.v_tool_census_weekly_by_community w
+        LEFT JOIN {target}.v_tool_census_daily_by_community d
+          ON d.Facility = w.Facility
+         AND d.census_date = w.census_date
+        LEFT JOIN {target}.v_tool_census_daily_by_community p
+          ON p.Facility = w.Facility
+         AND p.census_date = w.prior_census_date
+        WHERE NOT (w.census <=> d.census)
+           OR NOT (w.census_7d_prior <=> p.census)
+        """
+    )
+    or 0
+)
+
+census_reconciliation_mode = (dbutils.widgets.get("census_reconciliation_report") or "auto").strip().lower()
+census_reconciliation_table = f"{target}.census_definition_reconciliation"
+census_reconciliation_sql = f"""
+    WITH snapshot_dates AS (
+      SELECT DISTINCT month_bucket, census_date AS snapshot_date
+      FROM {target}.v_tool_census_daily_by_community
+      WHERE is_month_snapshot_date = 1
+        AND census_date >= history_start_date
+    ),
+    resident_table_census AS (
+      SELECT cast(r.Facility AS string) AS Facility, s.month_bucket, s.snapshot_date,
+        count(DISTINCT cast(r.Res_Number AS string)) AS resident_table_census
+      FROM snapshot_dates s
+      JOIN {catalog}.silver.resident r
+        ON coalesce(r.is_countable_resident, 0) = 1
+       AND r.Admit_Date_dt <= s.snapshot_date
+       AND (r.Discharge_Date_dt IS NULL OR r.Discharge_Date_dt > s.snapshot_date)
+      GROUP BY cast(r.Facility AS string), s.month_bucket, s.snapshot_date
+    ),
+    episode_census AS (
+      SELECT Facility, month_bucket, census_date AS snapshot_date, census AS episode_daily_census
+      FROM {target}.v_tool_census_daily_by_community
+      WHERE is_month_snapshot_date = 1
+        AND census_date >= history_start_date
+    )
+    SELECT
+      '{run_id}' AS run_id,
+      current_timestamp() AS generated_at,
+      coalesce(e.Facility, r.Facility) AS Facility,
+      coalesce(e.month_bucket, r.month_bucket) AS month_bucket,
+      coalesce(e.snapshot_date, r.snapshot_date) AS snapshot_date,
+      coalesce(r.resident_table_census, 0) AS old_resident_table_census,
+      coalesce(e.episode_daily_census, 0) AS new_episode_daily_census,
+      coalesce(e.episode_daily_census, 0) - coalesce(r.resident_table_census, 0) AS difference
+    FROM episode_census e
+    FULL OUTER JOIN resident_table_census r
+      ON e.Facility = r.Facility
+     AND e.month_bucket = r.month_bucket
+"""
+census_reconciliation_df = spark.sql(census_reconciliation_sql)
+census_reconciliation_differences = census_reconciliation_df.filter(F.col("difference") != 0).count()
+prior_reconciliation_rows = 0
+try:
+    prior_reconciliation_rows = int(scalar(f"SELECT count(*) AS value FROM {census_reconciliation_table}") or 0)
+except Exception:
+    prior_reconciliation_rows = 0
+if census_reconciliation_mode == "always" or (census_reconciliation_mode == "auto" and prior_reconciliation_rows == 0):
+    census_reconciliation_df.write.format("delta").mode("append").option("mergeSchema", "true").saveAsTable(census_reconciliation_table)
+    print(f"CENSUS_RECONCILIATION_REPORT written to {census_reconciliation_table} (run_id={run_id})")
+    display(census_reconciliation_df.filter(F.col("difference") != 0).orderBy(F.desc("month_bucket"), "Facility"))
+
 census_quality_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_census_data_quality") or 0)
 resident_countability_count = int(scalar(f"SELECT count(*) AS value FROM {target}.v_tool_resident_countability_audit") or 0)
 non_countable_profile_count = int(
@@ -347,6 +484,52 @@ add_check(
     weekly_census_contract_failures,
     "Every weekly census delta must compare its observation date with exactly seven days earlier and reconcile arithmetically.",
 )
+add_check("census-daily-present", "census", "critical", census_daily_count > 0, ">0 rows", census_daily_count, "Canonical daily census (admission episodes x countability) is available.")
+add_check(
+    "census-monthly-equals-daily",
+    "census",
+    "critical",
+    census_monthly_vs_daily_failures == 0,
+    "0 mismatched facility-months",
+    census_monthly_vs_daily_failures,
+    "Tool monthly census must equal the canonical daily census on its snapshot date (min(month end, as-of)).",
+)
+add_check(
+    "census-average-daily-equals-daily",
+    "census",
+    "critical",
+    census_average_daily_failures == 0,
+    "0 mismatched facility-months",
+    census_average_daily_failures,
+    "Monthly average daily census must be the mean of the canonical daily census in the month.",
+)
+add_check(
+    "census-published-monthly-equals-daily",
+    "census",
+    "critical",
+    census_published_monthly_vs_daily_failures == 0,
+    "0 mismatched facility-months",
+    census_published_monthly_vs_daily_failures,
+    "gold.v_census (silver census_snapshot, used by dashboards) must equal the canonical daily census on the same date.",
+)
+add_check(
+    "census-weekly-equals-daily",
+    "census",
+    "critical",
+    census_weekly_vs_daily_failures == 0,
+    "0 mismatched facility-weeks",
+    census_weekly_vs_daily_failures,
+    "Weekly census and its 7-day-prior value must equal the canonical daily census on census_date and prior_census_date.",
+)
+add_check(
+    "census-definition-reconciliation",
+    "census",
+    "warning",
+    census_reconciliation_differences == 0,
+    "0 facility-months where old Resident-table census differs",
+    census_reconciliation_differences,
+    f"Informational: old Resident-table census vs episode-based daily census per facility-month; detail in {census_reconciliation_table}.",
+)
 add_check("census-quality-present", "census", "critical", census_quality_count > 0, ">0 rows", census_quality_count, "Census data-quality rows are available.")
 add_check("resident-countability-audit-present", "census", "critical", resident_countability_count > 0, ">0 rows", resident_countability_count, "Resident countability audit rows are available.")
 add_check("resident-profile-countable-only", "census", "critical", non_countable_profile_count == 0, "0 rows", non_countable_profile_count, "Current resident profile excludes fake/test/non-countable residents.")
@@ -451,6 +634,11 @@ context_counts = {
     "manifest": manifest_count,
     "census_monthly": census_count,
     "census_weekly": census_weekly_count,
+    "census_daily": census_daily_count,
+    "census_monthly_vs_daily_failures": census_monthly_vs_daily_failures,
+    "census_published_monthly_vs_daily_failures": census_published_monthly_vs_daily_failures,
+    "census_weekly_vs_daily_failures": census_weekly_vs_daily_failures,
+    "census_definition_reconciliation_differences": census_reconciliation_differences,
     "census_quality": census_quality_count,
     "resident_countability": resident_countability_count,
     "current_resident_county": current_resident_county_count,

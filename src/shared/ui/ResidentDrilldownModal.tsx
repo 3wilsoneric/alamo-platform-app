@@ -31,7 +31,7 @@ export interface ResidentDrilldownIncident {
   received_at?: string | null;
   incident_type?: string;
   location?: string;
-  priority?: "HIGH" | "MEDIUM" | "LOW";
+  priority?: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
   email_body?: string | null;
   assistance_given?: string | null;
 }
@@ -56,7 +56,7 @@ function buildIncidentKey(incident: ResidentDrilldownIncident) {
   return "";
 }
 
-function getPriorityColors(priority?: "HIGH" | "MEDIUM" | "LOW") {
+function getPriorityColors(priority?: ResidentDrilldownIncident["priority"]) {
   if (priority === "HIGH") {
     return {
       border: "#d9a39b",

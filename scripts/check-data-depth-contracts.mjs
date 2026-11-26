@@ -311,6 +311,8 @@ function assertCensusTransformContracts() {
   const snapshotStatusSource = readFileSync("server/snapshot-status.mjs", "utf8");
   const qaSource = readFileSync("databricks/notebooks/analyst_context_qa.py", "utf8");
   const marSource = readFileSync("databricks/notebooks/mar_gold_views.py", "utf8");
+  assert.doesNotMatch(marSource, /CREATE OR REPLACE VIEW/, "MAR gold views must not drop Unity Catalog grants on refresh");
+  assert.match(marSource, /ALTER VIEW \{gold\}\.\{name\} AS/, "MAR gold views refresh existing views in place");
 
   assert.match(
     transformSource,
@@ -469,14 +471,20 @@ function assertCensusTransformContracts() {
     ["silver transform", transformSource],
     ["census rebuild", censusRebuildSource]
   ]) {
+    // Owner-approved census: countable admission episodes, strict countability.
     assert.match(
       source,
-      /eligible_residents\s*=\s*resident_df\.filter\(F\.col\("is_countable_resident"\)\s*==\s*1\)/,
-      `${label} should count only explicitly governed residents`
+      /eligible_episodes\s*=\s*build_countable_episodes\(resident_df,\s*admittance_df\)/,
+      `${label} should count only countable admission episodes`
+    );
+    assert.match(
+      source,
+      /F\.min\(F\.coalesce\(F\.col\("is_countable_resident"\),\s*F\.lit\(0\)\)\)[\s\S]*?\.filter\(F\.col\("is_countable_resident"\)\s*==\s*1\)/,
+      `${label} should require an explicitly countable Resident row for every episode`
     );
     assert.doesNotMatch(
       source,
-      /eligible_residents\s*=\s*resident_df\.filter\(F\.coalesce\(F\.col\("is_countable_resident"\),\s*F\.lit\(1\)\)/,
+      /F\.coalesce\(F\.col\("is_countable_resident"\),\s*F\.lit\(1\)\)/,
       `${label} must not default missing countability governance to included`
     );
   }
@@ -502,8 +510,8 @@ function assertCensusTransformContracts() {
   );
   assert.match(
     transformSource,
-    /eligible_residents\s*=\s*resident_df\.filter\([\s\S]*?is_countable_resident[\s\S]*?\)/,
-    "census snapshot should filter through is_countable_resident"
+    /def build_countable_episodes\([\s\S]*?is_countable_resident[\s\S]*?"inner"/,
+    "census snapshot should filter episodes through is_countable_resident"
   );
   assert.match(
     transformSource,
@@ -512,7 +520,7 @@ function assertCensusTransformContracts() {
   );
   assert.match(
     transformSource,
-    /snapshot_date\s*=\s*min\(month_end,\s*AS_OF_DATE\)[\s\S]*?F\.col\("r\.Discharge_Date_dt"\)\s*>\s*F\.col\("m\.snapshot_date"\)/,
+    /snapshot_date\s*=\s*min\(month_end,\s*AS_OF_DATE\)[\s\S]*?F\.col\("m\.snapshot_date"\)\s*<\s*F\.coalesce\(F\.col\("r\.discharge_date"\)/,
     "monthly census should exclude residents discharged on or before the governed snapshot date"
   );
   assert.match(
@@ -645,7 +653,7 @@ function assertCensusTransformContracts() {
   );
   assert.match(
     toolContextSource,
-    /def validate_required_source_views\(\)[\s\S]*?v_occupancy[\s\S]*?v_active_residents[\s\S]*?v_census[\s\S]*?v_incidents[\s\S]*?v_mar[\s\S]*?v_medication_compliance[\s\S]*?v_refusal_by_medication[\s\S]*?v_documentation_gaps[\s\S]*?validate_required_source_views\(\)/,
+    /def validate_required_source_views\(\)[\s\S]*?v_occupancy[\s\S]*?v_active_residents[\s\S]*?v_census[\s\S]*?v_incidents[\s\S]*?v_mar[\s\S]*?v_documentation_gaps[\s\S]*?validate_required_source_views\(\)/,
     "tool context views should validate every retained gold dependency before creating tool views"
   );
   assert.match(
@@ -687,7 +695,7 @@ function assertCensusTransformContracts() {
   assert.ok(toolCensusMonthlyBlock, "expected v_tool_census_monthly_by_community block");
   assert.match(
     toolCensusMonthlyBlock,
-    /WHERE\s+c\.month_bucket\s*<=\s*date_format\(\{WINDOW_AS_OF_SQL\},\s*'yyyy-MM'\)/i,
+    /WHERE\s+month_bucket\s*<=\s*date_format\(\{WINDOW_AS_OF_SQL\},\s*'yyyy-MM'\)/i,
     "tool census monthly view should not expose months after the requested as-of month"
   );
   assert.match(
@@ -737,8 +745,8 @@ function assertCensusTransformContracts() {
   );
   assert.match(
     censusAuditSource,
-    /WITH gold_census AS \([\s\S]*?bounds AS \([\s\S]*?min\(month_bucket\)[\s\S]*?max\(month_bucket\)[\s\S]*?FROM gold_census/,
-    "census recalculation should compare only the month window actually published to gold"
+    /WITH gold_census AS \([\s\S]*?v_tool_census_daily_by_community[\s\S]*?IN \(SELECT month_bucket FROM gold_census\)/,
+    "census gate should compare gold census to the canonical daily census only for the month window actually published"
   );
   assert.doesNotMatch(
     censusAuditSource,
@@ -768,7 +776,8 @@ function assertCensusTransformContracts() {
   const episodeBlock = toolContextSource.match(/"v_tool_resident_episode_history",\s*f"""[\s\S]*?"""\s*\)/)?.[0] ?? "";
   assert.ok(episodeBlock, "expected v_tool_resident_episode_history block");
   assert.match(episodeBlock, /v_tool_resident_countability_audit/, "resident episode history should join countability audit");
-  assert.match(episodeBlock, /coalesce\(q\.is_countable_resident,\s*1\)\s*=\s*1/i, "resident episode history should exclude non-countable residents");
+  assert.doesNotMatch(episodeBlock, /coalesce\(q\.is_countable_resident,\s*1\)/i, "resident episode history must not default unmatched episodes to countable");
+  assert.match(episodeBlock, /cr\.is_countable_resident\s*=\s*1/i, "resident episode history should require a countable countability-audit match");
   assert.match(
     episodeBlock,
     /AS discharge_destination/i,
@@ -782,19 +791,20 @@ function assertCensusTransformContracts() {
 
   const weeklyCensusBlock = toolContextSource.match(/"v_tool_census_weekly_by_community",\s*f"""[\s\S]*?"""\s*\)/)?.[0] ?? "";
   assert.ok(weeklyCensusBlock, "expected v_tool_census_weekly_by_community block");
-  assert.match(weeklyCensusBlock, /coalesce\(\{DATE_PARTITION_AS_OF_SQL\},\s*max\(snapshot_date\)\) AS report_end_date/, "weekly census should stop at the explicit source partition when provided");
+  assert.match(weeklyCensusBlock, /max\(as_of_date\) AS report_end_date[\s\S]*?FROM \{target\}\.v_tool_census_daily_by_community/, "weekly census should stop at the daily census as-of date");
   assert.match(
     weeklyCensusBlock,
-    /to_date\(concat\(min\(month_bucket\),\s*'-01'\)\)\s+AS history_start_date/,
-    "weekly census should begin at the first governed census month, not an untrusted legacy episode date"
+    /min\(history_start_date\) AS history_start_date/,
+    "weekly census should begin at the governed census window, not an untrusted legacy episode date"
   );
-  assert.match(weeklyCensusBlock, /date_sub\(max\(b\.report_end_date\),\s*pmod\(dayofweek\(max\(b\.report_end_date\)\) \+ 5,\s*7\)\) AS end_week/, "weekly census should derive the final Monday week start without rolling past the as-of date");
+  assert.match(weeklyCensusBlock, /date_sub\(report_end_date,\s*pmod\(dayofweek\(report_end_date\) \+ 5,\s*7\)\) AS end_week/, "weekly census should derive the final Monday week start without rolling past the as-of date");
   assert.doesNotMatch(weeklyCensusBlock, /current_date\(\)/, "weekly census should not extend to the Databricks wall clock");
   assert.match(
     weeklyCensusBlock,
-    /count\(\s*DISTINCT CASE[\s\S]*?\)\s+AS census/i,
-    "weekly census should count distinct active residents at each observation date"
+    /d\.census AS census[\s\S]*?v_tool_census_daily_by_community d[\s\S]*?d\.census_date = o\.census_date/i,
+    "weekly census should be the canonical daily census on census_date"
   );
+  assert.doesNotMatch(weeklyCensusBlock, /v_tool_resident_episode_history/, "weekly census must not recount episodes");
   assert.match(weeklyCensusBlock, /prior_census_date/, "weekly census should publish its exact prior observation date");
   assert.doesNotMatch(weeklyCensusBlock, /res_leave_of_absence|current_leave|prior_leave/i, "weekly census should include temporary leave residents");
   assert.match(weeklyCensusBlock, /AS census_7d_prior/i, "weekly census should calculate the census exactly seven days earlier");

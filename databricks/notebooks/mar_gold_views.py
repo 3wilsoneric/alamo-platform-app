@@ -41,8 +41,25 @@ silver = f"{catalog}.{silver_schema}"
 gold = f"{catalog}.{gold_schema}"
 
 
+def view_exists(fqn: str) -> bool:
+    try:
+        spark.sql(f"DESCRIBE TABLE {fqn}").limit(1).collect()
+        return True
+    except Exception as exc:
+        error_class_getter = getattr(exc, "getErrorClass", None)
+        error_class = error_class_getter() if callable(error_class_getter) else None
+        if error_class in {"TABLE_OR_VIEW_NOT_FOUND", "SCHEMA_NOT_FOUND"} or "TABLE_OR_VIEW_NOT_FOUND" in str(exc):
+            return False
+        raise RuntimeError(f"Could not inspect required view {fqn}") from exc
+
+
 def create_view(name: str, sql: str) -> None:
-    spark.sql(f"CREATE OR REPLACE VIEW {gold}.{name} AS {sql}")
+    # CREATE OR REPLACE drops Unity Catalog grants. Daily refreshes must retain
+    # the reviewed readers of an existing view (same pattern as tool_context_views).
+    if view_exists(f"{gold}.{name}"):
+        spark.sql(f"ALTER VIEW {gold}.{name} AS {sql}")
+    else:
+        spark.sql(f"CREATE VIEW {gold}.{name} AS {sql}")
     print(f"created -> {gold}.{name}")
 
 
@@ -293,6 +310,70 @@ create_view(
       ) AS compliance_pct
     FROM {gold}.v_mar_administration_detail
     GROUP BY facility_id, month_bucket, medication_name
+    """
+)
+
+# COMMAND ----------
+
+# Owner-approved medication definitions (single gold owner; replaces the
+# external v_medication_compliance / v_refusal_by_medication for every
+# Platform reader):
+# - Compliance = given / scheduled non-PRN administrations. PRN rows (including
+#   rows whose PRN result made administration_outcome = 'given') are reported
+#   separately and NEVER count toward compliance. is_prn is derived from the
+#   same PRN-result fields, so is_prn = 0 excludes every PRN-result "given".
+# - Refusal = MAR not-given reason only (is_refusal above). Incident
+#   "Medication Refusal" records are not refusals and stay out of incidents.
+# - Completed days only: the as-of business day is excluded so future
+#   scheduled doses cannot depress the rate.
+create_view(
+    "v_mar_compliance_monthly_by_community",
+    f"""
+    SELECT
+      facility_id,
+      max(facility_name) AS facility_name,
+      month_bucket,
+      sum(CASE WHEN is_prn = 0 THEN 1 ELSE 0 END) AS scheduled_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS given_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'not_given' THEN 1 ELSE 0 END) AS not_given_count,
+      sum(CASE WHEN is_prn = 0 AND administration_outcome = 'unknown' THEN 1 ELSE 0 END) AS pending_count,
+      sum(CASE WHEN is_prn = 0 THEN is_refusal ELSE 0 END) AS scheduled_refusal_count,
+      sum(CASE WHEN is_prn = 1 THEN 1 ELSE 0 END) AS prn_administration_count,
+      sum(CASE WHEN is_prn = 1 AND administration_outcome = 'given' THEN 1 ELSE 0 END) AS prn_given_count,
+      sum(CASE WHEN is_prn = 1 THEN is_refusal ELSE 0 END) AS prn_refusal_count,
+      round(
+        sum(CASE WHEN is_prn = 0 AND administration_outcome = 'given' THEN 1 ELSE 0 END) /
+        nullif(sum(CASE WHEN is_prn = 0 THEN 1 ELSE 0 END), 0) * 100,
+        2
+      ) AS compliance_pct
+    FROM {gold}.v_mar_administration_detail
+    WHERE administration_date < {AS_OF_SQL}
+    GROUP BY facility_id, month_bucket
+    """
+)
+
+# COMMAND ----------
+
+create_view(
+    "v_mar_refusal_by_medication",
+    f"""
+    SELECT
+      facility_id,
+      max(facility_name) AS facility_name,
+      medication_name,
+      sum(CASE WHEN is_prn = 0 THEN 1 ELSE 0 END) AS scheduled_count,
+      sum(CASE WHEN is_prn = 0 THEN is_refusal ELSE 0 END) AS scheduled_refusal_count,
+      sum(CASE WHEN is_prn = 1 THEN is_refusal ELSE 0 END) AS prn_refusal_count,
+      round(
+        sum(CASE WHEN is_prn = 0 THEN is_refusal ELSE 0 END) /
+        nullif(sum(CASE WHEN is_prn = 0 THEN 1 ELSE 0 END), 0) * 100,
+        2
+      ) AS refusal_pct,
+      date_sub({AS_OF_SQL}, 90) AS window_start_date,
+      date_sub({AS_OF_SQL}, 1) AS window_end_date
+    FROM {gold}.v_mar_administration_detail
+    WHERE administration_date BETWEEN date_sub({AS_OF_SQL}, 90) AND date_sub({AS_OF_SQL}, 1)
+    GROUP BY facility_id, medication_name
     """
 )
 

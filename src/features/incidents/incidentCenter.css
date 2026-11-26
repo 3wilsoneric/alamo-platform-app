@@ -27,10 +27,12 @@
 .incident-freshness > :last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .incident-warning { margin-block: 12px; padding: 12px 16px; border: 1px solid #e9c184; background: #fff7e8; color: #a15c07; }
 .incident-columns { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; }
+.incident-columns[data-incident-priority-count="4"] { grid-template-columns: repeat(4,minmax(0,1fr)); }
 .incident-priority-heading { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid; padding: 12px 0; margin-bottom: 14px; font-size: 16px; font-weight: 600; }
 .incident-priority-heading span { display: flex; align-items: center; gap: 8px; }
 .incident-priority-heading strong { font-size: 22px; font-variant-numeric: tabular-nums; }
 .incident-priority-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-bottom: 16px; }
+.incident-priority-tabs[data-incident-priority-count="4"] { grid-template-columns: repeat(4,minmax(0,1fr)); }
 .incident-priority-tabs button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 4px; border: 1px solid; border-radius: 4px; font: inherit; font-weight: 600; background: white; }
 .incident-card { min-width: 0; padding: 14px 16px 6px; border: 1px solid var(--platform-file-rule); border-left-width: 3px; border-radius: 4px; margin-bottom: 12px; background: white; overflow-wrap: anywhere; }
 .incident-card[data-incident-reviewed="true"] { border-left-color: var(--platform-file-rule) !important; }
@@ -92,7 +94,7 @@
 .incident-resident-fact[data-field="Diagnosis"] { grid-column: 1 / -1; }
 .incident-resident-fact dt { margin-bottom: 5px; font: 500 12px/1.3 var(--ap-sans); color: var(--ap-muted); }
 .incident-resident-fact dd { margin: 0; font: 500 14px/1.45 var(--ap-sans); overflow-wrap: anywhere; }
-.incident-history-priorities { order: -1; display: grid; grid-template-columns: minmax(0,1fr) repeat(3,max-content); align-items: center; gap: 18px; margin: 0; padding: 16px 0; border-bottom: 1px solid var(--platform-file-ink); }
+.incident-history-priorities { order: -1; display: grid; grid-template-columns: minmax(0,1fr); grid-auto-flow: column; grid-auto-columns: max-content; align-items: center; gap: 18px; margin: 0; padding: 16px 0; border-bottom: 1px solid var(--platform-file-ink); }
 .incident-history-priorities__item { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
 .incident-history-priorities dt { font: 600 11px/1.4 var(--ap-sans); }
 .incident-history-priorities dd { margin: 0; font: 600 20px/1 var(--ap-sans); font-variant-numeric: tabular-nums; }

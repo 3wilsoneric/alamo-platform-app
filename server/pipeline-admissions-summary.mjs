@@ -37,7 +37,35 @@ function counts(source, fields) {
   return result;
 }
 
-const MONTH_FIELDS = { received: "received", accepted: "accepted", declined: "declined", admitted: "admitted" };
+const MONTH_EVENT_FIELDS = { received: "received", accepted: "accepted", declined: "declined" };
+// Contract 3.6 (owner-approved admission definition): an admission is a
+// confirmed arrival only. Assumed arrivals (due, unconfirmed plans) and planned
+// arrivals (accepted plans not yet due) are separate and never admissions.
+const ADMISSION_SPLIT_FIELDS = { confirmedAdmissions: "confirmed_admissions", assumedArrivals: "assumed_arrivals", plannedArrivals: "planned_arrivals" };
+
+/**
+ * Month counts with the 3.6 split, falling back to a 3.5 producer. `admitted`
+ * is a deprecated alias that keeps the 3.5 meaning: confirmed + assumed.
+ * On a 3.5 response the split fields are null (unknown), never guessed.
+ * @param {any} source
+ */
+function monthCounts(source) {
+  const events = counts(source, MONTH_EVENT_FIELDS);
+  if (!events) return null;
+  const hasSplit = source.confirmed_admissions !== undefined;
+  const split = hasSplit ? counts(source, ADMISSION_SPLIT_FIELDS) : null;
+  if (hasSplit && !split) return null;
+  const admitted = source.admitted === undefined && split ? split.confirmedAdmissions + split.assumedArrivals : count(source.admitted);
+  if (admitted == null) return null;
+  return {
+    ...events,
+    admitted,
+    confirmedAdmissions: split?.confirmedAdmissions ?? null,
+    assumedArrivals: split?.assumedArrivals ?? null,
+    plannedArrivals: split?.plannedArrivals ?? null,
+    admissionBasis: split ? "confirmed-assumed-planned" : "combined-confirmed-or-assumed"
+  };
+}
 const BOARD_COLUMNS = new Set(["received", "in_progress", "decision"]);
 const MAX_CARDS = 300;
 const MAX_STATUSES = 12;
@@ -213,15 +241,19 @@ function normalizeBriefingMoveIn(row, pipelineOrigin) {
   };
 }
 
-function normalizeBriefingAdmission(row, pipelineOrigin) {
+/** @param {any} row @param {string} pipelineOrigin @param {"admitted_at" | "assumed_at"} [dateField] */
+function normalizeBriefingAdmission(row, pipelineOrigin, dateField = "admitted_at") {
   const referralId = count(row?.referral_id);
   const clientName = text(row?.client_name, 160);
-  const admittedAt = isoCalendarDate(row?.admitted_at);
+  const admittedAt = isoCalendarDate(row?.[dateField]);
   const community = text(row?.community, 80);
   const path = pipelineUrl(row?.pipeline_path, pipelineOrigin);
   if (referralId == null || !clientName || !admittedAt || !community || !path) return null;
+  const basis = row?.admission_basis === "confirmed" || row?.admission_basis === "assumed" ? row.admission_basis : null;
   return {
     referralId, clientName, admittedAt, community, facilityId: null,
+    ...(dateField === "assumed_at" ? { assumedAt: admittedAt } : {}),
+    ...(basis ? { admissionBasis: basis } : {}),
     owner: text(row?.owner, 80) ?? "Unassigned",
     sourceName: nullableText(row?.source_name, 160),
     referringCounty: nullableText(row?.referring_county, 120),
@@ -283,6 +315,29 @@ function normalizeBriefing(value, pipelineOrigin) {
   const admittedLastWeek = hasJourney && Array.isArray(value.admitted_last_week) && value.admitted_last_week.length <= MAX_RECENT_REFERRALS
     ? value.admitted_last_week.map((row) => normalizeBriefingAdmission(row, pipelineOrigin))
     : hasJourney ? null : [];
+  // 3.6 split (confirmed admissions vs assumed arrivals); absent on 3.5.
+  const hasSplit = value.confirmed_admissions_last_week !== undefined || value.assumed_arrivals_last_week !== undefined;
+  const splitRows = (rows, field) => Array.isArray(rows) && rows.length <= MAX_RECENT_REFERRALS
+    ? rows.map((row) => normalizeBriefingAdmission(row, pipelineOrigin, field)) : null;
+  const confirmedAdmissionsLastWeek = hasSplit ? splitRows(value.confirmed_admissions_last_week, "admitted_at") : null;
+  const assumedArrivalsLastWeek = hasSplit ? splitRows(value.assumed_arrivals_last_week, "assumed_at") : null;
+  const admissionsByCommunityLastWeek = value.admissions_by_community_last_week === undefined ? null
+    : Array.isArray(value.admissions_by_community_last_week) && value.admissions_by_community_last_week.length <= 50
+      ? value.admissions_by_community_last_week.map((row) => {
+        const community = text(row?.community, 80);
+        const confirmed = count(row?.confirmed_admissions), assumed = count(row?.assumed_arrivals);
+        const admitted = row?.admitted === undefined ? (confirmed != null && assumed != null ? confirmed + assumed : null) : count(row.admitted);
+        return community && confirmed != null && assumed != null && admitted != null
+          ? { community, facilityId: null, confirmedAdmissions: confirmed, assumedArrivals: assumed, admitted } : undefined;
+      })
+      : [undefined];
+  const plannedArrivalsByCommunityThisWeek = value.planned_arrivals_by_community_this_week === undefined ? null
+    : Array.isArray(value.planned_arrivals_by_community_this_week) && value.planned_arrivals_by_community_this_week.length <= 50
+      ? value.planned_arrivals_by_community_this_week.map((row) => {
+        const community = text(row?.community, 80), planned = count(row?.planned_arrivals);
+        return community && planned != null ? { community, facilityId: null, plannedArrivals: planned } : undefined;
+      })
+      : [undefined];
   const movingThrough = hasJourney && Array.isArray(value.moving_through) && value.moving_through.length <= MAX_RECENT_REFERRALS
     ? value.moving_through.map((row) => normalizeMovingThrough(row, pipelineOrigin))
     : hasJourney ? null : [];
@@ -304,7 +359,12 @@ function normalizeBriefing(value, pipelineOrigin) {
       recentReferrals: flag(coverage.recent_referrals_complete),
       assessments: flag(coverage.assessments_complete),
       moveIns: flag(coverage.move_ins_complete),
+      // Deprecated: admitted_last_week is confirmed + assumed (3.5 meaning).
       admittedLastWeek: hasJourney ? flag(coverage.admitted_last_week_complete) : false,
+      ...(hasSplit ? {
+        confirmedAdmissionsLastWeek: flag(coverage.confirmed_admissions_last_week_complete),
+        assumedArrivalsLastWeek: flag(coverage.assumed_arrivals_last_week_complete)
+      } : {}),
       movingThrough: hasJourney ? flag(coverage.moving_through_complete) : false,
       ...(hasDidNotMoveIn ? { didNotMoveIn: flag(coverage.did_not_move_in_complete) } : {}),
       weeklyTrend: flag(coverage.weekly_trend_complete)
@@ -321,6 +381,10 @@ function normalizeBriefing(value, pipelineOrigin) {
     !upcomingAssessments || upcomingAssessments.some((item) => !item) ||
     !plannedMoveIns || plannedMoveIns.some((item) => !item) ||
     !admittedLastWeek || admittedLastWeek.some((item) => !item) ||
+    (hasSplit && (!confirmedAdmissionsLastWeek || confirmedAdmissionsLastWeek.some((item) => !item) ||
+      !assumedArrivalsLastWeek || assumedArrivalsLastWeek.some((item) => !item))) ||
+    admissionsByCommunityLastWeek?.some((item) => !item) ||
+    plannedArrivalsByCommunityThisWeek?.some((item) => !item) ||
     !movingThrough || movingThrough.some((item) => !item) ||
     !didNotMoveIn || didNotMoveIn.some((item) => !item) ||
     (hasJourney && (!isoCalendarDate(value.last_week_start) || !isoCalendarDate(value.last_week_end))) ||
@@ -340,7 +404,14 @@ function normalizeBriefing(value, pipelineOrigin) {
     recentReferrals,
     upcomingAssessments,
     plannedMoveIns,
+    /** @deprecated confirmed + assumed arrivals; use confirmedAdmissionsLastWeek / assumedArrivalsLastWeek. */
     admittedLastWeek,
+    // null = a 3.5 producer that does not publish the split (unknown, not zero).
+    admissionBasis: hasSplit ? "confirmed-assumed-planned" : "combined-confirmed-or-assumed",
+    confirmedAdmissionsLastWeek,
+    assumedArrivalsLastWeek,
+    admissionsByCommunityLastWeek,
+    plannedArrivalsByCommunityThisWeek,
     movingThrough,
     didNotMoveIn,
     weeklyTrend
@@ -420,7 +491,7 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
   const briefing = normalizeBriefing(payload.briefing, pipelineOrigin);
   const normalizedMonthly = monthly.map((row) => {
     const month = text(row?.month, 7);
-    const values = counts(row, MONTH_FIELDS);
+    const values = monthCounts(row);
     return month && values ? { month, ...values } : null;
   });
   const onBoard = count(payload.metrics?.on_board);
@@ -431,6 +502,8 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
     ? null
     : { onBoard, stale, unassigned, awaitingAdmission };
   const total = count(board.total);
+  // Board status "Admitted" still follows Pipeline's deprecated combined rule
+  // (confirmed OR assumed). Behavior intentionally unchanged: owner decision pending.
   const isRecordedOutcome = (status) => /^(declined|denied|admitted\b|did not move in\b)/i.test(status.trim());
   const completeBoard = board.cards_truncated !== true && board.cards.length === total;
   const outcomeCount = normalizedColumns
@@ -448,7 +521,7 @@ export function normalizePipelineAdmissionsSummary(payload, pipelineOrigin = "ht
   const metrics = baseMetrics && activeReferrals != null
     ? { ...baseMetrics, activeReferrals }
     : null;
-  const monthOutcomes = counts(history.month_outcomes, MONTH_FIELDS);
+  const monthOutcomes = monthCounts(history.month_outcomes);
   const month = text(history.month_outcomes?.month, 7);
   const upcoming = counts(payload.upcoming_admissions, {
     next7Days: "next_7_days",

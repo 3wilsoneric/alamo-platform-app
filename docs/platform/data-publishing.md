@@ -309,6 +309,23 @@ the exact seven-day-prior census from governed resident episode history using
 the same active-resident rule as the weekly view. It never substitutes the
 previous available row or labels a shorter interval as a weekly change.
 
+## Dated Publication History And Shared Keys
+
+Every publish also writes `snapshots/daily/<UTC publication date>.json`. These
+are the only record of point-in-time facts (roster, countability audit,
+operating summary) because silver is fully overwritten. Ally reads them through
+`platform-data` with `publishedOn` (`server/platform-snapshot-history.mjs`):
+answers come only from that publication's complete rows, with the same grant,
+community and field rules, and report its own as-of date. `data-catalog`
+`publishedDates` lists what exists. Nothing deletes or rewrites them.
+
+Cross-app keys (`shared/identity-crosswalk.mjs`, Ally capability
+`identity-links`): community = ElderMark facility number; resident =
+`<facility>:<ElderMark resident number>`. Links come from their owners
+(Carelog `/api/census/resident-links`, Pipeline `resident-links`); Platform
+joins them on the key and never matches names. Decision record: Ally
+`docs/decisions/0015-shared-identity-keys-and-publication-history.md`.
+
 ## Data QA Gate
 
 Notebook:

@@ -241,8 +241,8 @@ def validate_required_source_views() -> None:
         "v_census",
         "v_incidents",
         "v_mar",
-        "v_medication_compliance",
-        "v_refusal_by_medication",
+        # v_medication_compliance / v_refusal_by_medication are no longer read:
+        # compliance and refusal come from mar_gold_views (one gold definition).
         "v_documentation_gaps",
     ]
     for view_name in required_views:
@@ -422,7 +422,7 @@ def create_resident_countability_audit_view() -> None:
     )
 
 
-def create_resident_episode_views() -> None:
+def create_resident_episode_history_view() -> None:
     # Reviewed missing-county resolutions are private data, never source-code literals.
     # Match the exact source admission; a later ElderMark value always wins.
     spark.sql(f"""CREATE TABLE IF NOT EXISTS {target}.report_admission_county_resolutions (
@@ -449,6 +449,7 @@ def create_resident_episode_views() -> None:
                 ("episode_status", "string"),
                 ("month_bucket", "string"),
                 ("source_table", "string"),
+                ("completed_stay_los_days", "int"),
             ],
         )
     else:
@@ -499,7 +500,16 @@ def create_resident_episode_views() -> None:
               b.prior_placement,
               CASE WHEN b.discharge_date IS NULL THEN 'active_or_unknown' ELSE 'discharged' END AS episode_status,
               date_format(b.admit_date, 'yyyy-MM') AS month_bucket,
-              'res_admittance_history' AS source_table
+              'res_admittance_history' AS source_table,
+              -- Owner-approved LOS measure 1 of 2: completed stays only,
+              -- attributed to the discharge date (never to the admit month).
+              CASE
+                WHEN b.admit_date IS NOT NULL
+                 AND b.discharge_date IS NOT NULL
+                 AND b.discharge_date >= b.admit_date
+                 AND b.discharge_date <= {WINDOW_AS_OF_SQL}
+                THEN datediff(b.discharge_date, b.admit_date)
+              END AS completed_stay_los_days
             FROM base b
             LEFT JOIN (
               SELECT history_id, facility_id, resident_id, admit_date,
@@ -515,11 +525,156 @@ def create_resident_episode_views() -> None:
             LEFT JOIN {target}.v_tool_resident_profile p
               ON b.Res_Number = p.Res_Number
              AND (b.Facility = p.Facility OR b.Facility IS NULL)
+            -- Countability (owner-approved census definition): an episode counts
+            -- only when its resident matches a governed countability-audit row
+            -- whose is_countable_resident = 1 (the silver Resident rule). Before
+            -- 2026-11 a missing audit match defaulted to countable (1), which
+            -- silently counted episodes with no matching Resident row.
+            JOIN (
+              SELECT Facility, Res_Number, min(coalesce(is_countable_resident, 0)) AS is_countable_resident
+              FROM {target}.v_tool_resident_countability_audit
+              GROUP BY Facility, Res_Number
+            ) cr
+              ON b.Res_Number = cr.Res_Number
+             AND cr.Facility = coalesce(b.Facility, q.Facility, p.Facility)
+             AND cr.is_countable_resident = 1
             WHERE b.Res_Number IS NOT NULL
               AND (b.admit_date IS NOT NULL OR b.discharge_date IS NOT NULL)
-              AND coalesce(q.is_countable_resident, 1) = 1
+              AND coalesce(q.is_countable_resident, 0) = 1
             """
         )
+
+
+CENSUS_HISTORY_MONTHS = 52  # Mirrors eldermark_staged_transform / eldermark_census_rebuild.
+
+
+def create_census_daily_view() -> None:
+    # Owner-approved census definition: ONE canonical daily census per
+    # facility x calendar day, from governed admission episodes. A resident is
+    # in census on day D when admit_date <= D < coalesce(discharge_date, far
+    # future). Monthly (month-end and average daily) and weekly census are
+    # derived from this view; analyst_context_qa fails the publish if any
+    # published monthly/weekly census differs from it on the same date.
+    create_view(
+        "v_tool_census_daily_by_community",
+        f"""
+        WITH bounds AS (
+          SELECT
+            add_months(trunc({WINDOW_AS_OF_SQL}, 'MM'), -({CENSUS_HISTORY_MONTHS} - 1)) AS start_date,
+            {WINDOW_AS_OF_SQL} AS as_of_date
+        ),
+        days AS (
+          -- 14 lead-in days give the first published week a real 7-day-prior
+          -- census; monthly views publish only months on/after start_date.
+          SELECT explode(sequence(date_sub(start_date, 14), as_of_date, interval 1 day)) AS census_date
+          FROM bounds
+        ),
+        episode AS (
+          SELECT Facility, Facility_Name, Res_Number, admit_date, discharge_date
+          FROM {target}.v_tool_resident_episode_history
+          WHERE admit_date IS NOT NULL
+            AND Facility IS NOT NULL
+        ),
+        facilities AS (
+          SELECT Facility, max(Facility_Name) AS Facility_Name
+          FROM episode
+          GROUP BY Facility
+        ),
+        daily_counts AS (
+          SELECT
+            e.Facility,
+            d.census_date,
+            count(DISTINCT e.Res_Number) AS census
+          FROM episode e
+          JOIN days d
+            ON e.admit_date <= d.census_date
+           AND d.census_date < coalesce(e.discharge_date, DATE '9999-12-31')
+          GROUP BY e.Facility, d.census_date
+        )
+        SELECT
+          f.Facility,
+          f.Facility_Name,
+          d.census_date,
+          date_format(d.census_date, 'yyyy-MM') AS month_bucket,
+          cast(coalesce(c.census, 0) AS int) AS census,
+          CASE WHEN d.census_date = least(last_day(d.census_date), b.as_of_date) THEN 1 ELSE 0 END AS is_month_snapshot_date,
+          b.as_of_date,
+          b.start_date AS history_start_date,
+          'admission_episodes' AS census_basis
+        FROM facilities f
+        CROSS JOIN days d
+        CROSS JOIN bounds b
+        LEFT JOIN daily_counts c
+          ON c.Facility = f.Facility
+         AND c.census_date = d.census_date
+        """
+    )
+
+
+def create_census_monthly_view() -> None:
+    # Month-end census = daily census on min(month_end, as_of).
+    # Average daily census = mean of the daily values in the month (through as_of).
+    # Months with no census on any day are omitted (matches silver census_snapshot).
+    create_view(
+        "v_tool_census_monthly_by_community",
+        f"""
+        WITH monthly AS (
+          SELECT
+            Facility,
+            month_bucket,
+            max(census_date) AS snapshot_date,
+            max_by(census, census_date) AS census,
+            avg(cast(census AS double)) AS average_daily_census,
+            count(*) AS days_observed
+          FROM {target}.v_tool_census_daily_by_community
+          WHERE census_date >= history_start_date
+          GROUP BY Facility, month_bucket
+        ),
+        populated AS (
+          SELECT *
+          FROM monthly
+          WHERE census > 0 OR average_daily_census > 0
+        )
+        SELECT
+          cast(Facility AS string) AS Facility,
+          month_bucket,
+          snapshot_date,
+          cast(census AS int) AS census,
+          lag(cast(census AS int)) OVER (
+            PARTITION BY cast(Facility AS string)
+            ORDER BY month_bucket
+          ) AS prior_census,
+          cast(census AS int) - lag(cast(census AS int)) OVER (
+            PARTITION BY cast(Facility AS string)
+            ORDER BY month_bucket
+          ) AS census_delta,
+          round(average_daily_census, 2) AS average_daily_census,
+          cast(days_observed AS int) AS days_observed
+        FROM populated
+        WHERE month_bucket <= date_format({WINDOW_AS_OF_SQL}, 'yyyy-MM')
+        """
+    )
+
+
+def create_completed_stay_los_view() -> None:
+    create_view(
+        "v_tool_completed_stay_los_monthly_by_community",
+        f"""
+        SELECT
+          Facility,
+          max(Facility_Name) AS Facility_Name,
+          date_format(discharge_date, 'yyyy-MM') AS discharge_month,
+          count(*) AS completed_stays,
+          round(avg(completed_stay_los_days), 1) AS average_completed_stay_los_days,
+          percentile_approx(completed_stay_los_days, 0.5) AS median_completed_stay_los_days
+        FROM {target}.v_tool_resident_episode_history
+        WHERE completed_stay_los_days IS NOT NULL
+        GROUP BY Facility, date_format(discharge_date, 'yyyy-MM')
+        """
+    )
+
+
+def create_resident_episode_views() -> None:
 
     create_view(
         "v_tool_resident_flow_weekly_by_community",
@@ -686,30 +841,24 @@ def create_resident_episode_views() -> None:
         """
     )
 
+    # Weekly census = the canonical daily census on census_date (the week's
+    # Sunday, or the as-of date for the partial current week). Never recount
+    # episodes here; v_tool_census_daily_by_community is the only census owner.
     create_view(
         "v_tool_census_weekly_by_community",
         f"""
         WITH report_bounds AS (
           SELECT
-            coalesce({DATE_PARTITION_AS_OF_SQL}, max(snapshot_date)) AS report_end_date,
-            to_date(concat(min(month_bucket), '-01')) AS history_start_date
-          FROM {target}.v_tool_census_monthly_by_community
-        ),
-        episode AS (
-          SELECT *
-          FROM {target}.v_tool_resident_episode_history
-          WHERE admit_date IS NOT NULL
+            max(as_of_date) AS report_end_date,
+            min(history_start_date) AS history_start_date
+          FROM {target}.v_tool_census_daily_by_community
         ),
         bounds AS (
           SELECT
-            date_sub(
-              max(b.history_start_date),
-              pmod(dayofweek(max(b.history_start_date)) + 5, 7)
-            ) AS start_week,
-            date_sub(max(b.report_end_date), pmod(dayofweek(max(b.report_end_date)) + 5, 7)) AS end_week,
-            max(b.report_end_date) AS report_end_date
-          FROM episode
-          CROSS JOIN report_bounds b
+            date_sub(history_start_date, pmod(dayofweek(history_start_date) + 5, 7)) AS start_week,
+            date_sub(report_end_date, pmod(dayofweek(report_end_date) + 5, 7)) AS end_week,
+            report_end_date
+          FROM report_bounds
         ),
         weeks AS (
           SELECT explode(sequence(start_week, end_week, interval 7 days)) AS week_start
@@ -718,17 +867,14 @@ def create_resident_episode_views() -> None:
         ),
         facilities AS (
           SELECT Facility, max(Facility_Name) AS Facility_Name
-          FROM episode
+          FROM {target}.v_tool_census_daily_by_community
           GROUP BY Facility
         ),
         observation_dates AS (
           SELECT
             w.week_start,
             least(date_add(w.week_start, 6), b.report_end_date) AS census_date,
-            date_sub(
-              least(date_add(w.week_start, 6), b.report_end_date),
-              7
-            ) AS prior_census_date
+            date_sub(least(date_add(w.week_start, 6), b.report_end_date), 7) AS prior_census_date
           FROM weeks w
           CROSS JOIN bounds b
         ),
@@ -739,31 +885,16 @@ def create_resident_episode_views() -> None:
             o.week_start,
             o.census_date,
             o.prior_census_date,
-            count(
-              DISTINCT CASE
-                WHEN e.admit_date <= o.census_date
-                 AND (e.discharge_date IS NULL OR e.discharge_date > o.census_date)
-                THEN e.Res_Number
-              END
-            ) AS census,
-            count(
-              DISTINCT CASE
-                WHEN e.admit_date <= o.prior_census_date
-                 AND (e.discharge_date IS NULL OR e.discharge_date > o.prior_census_date)
-                THEN e.Res_Number
-              END
-            ) AS census_7d_prior
+            d.census AS census,
+            p.census AS census_7d_prior
           FROM facilities f
           CROSS JOIN observation_dates o
-          LEFT JOIN episode e
-            ON e.Facility = f.Facility
-           AND e.admit_date <= o.census_date
-          GROUP BY
-            f.Facility,
-            f.Facility_Name,
-            o.week_start,
-            o.census_date,
-            o.prior_census_date
+          JOIN {target}.v_tool_census_daily_by_community d
+            ON d.Facility = f.Facility
+           AND d.census_date = o.census_date
+          LEFT JOIN {target}.v_tool_census_daily_by_community p
+            ON p.Facility = f.Facility
+           AND p.census_date = o.prior_census_date
         )
         SELECT
           Facility,
@@ -1219,32 +1350,6 @@ create_view(
 
 # COMMAND ----------
 
-census_columns = target_columns("v_census")
-census_snapshot_date_expr = sql_value("c", census_columns, ["snapshot_date"], "date")
-
-create_view(
-    "v_tool_census_monthly_by_community",
-    f"""
-    SELECT
-      cast(c.Facility AS string) AS Facility,
-      c.month_bucket,
-      coalesce({census_snapshot_date_expr}, last_day(to_date(concat(c.month_bucket, '-01')))) AS snapshot_date,
-      cast(c.census AS int) AS census,
-      lag(cast(c.census AS int)) OVER (
-        PARTITION BY cast(c.Facility AS string)
-        ORDER BY c.month_bucket
-      ) AS prior_census,
-      cast(c.census AS int) - lag(cast(c.census AS int)) OVER (
-        PARTITION BY cast(c.Facility AS string)
-        ORDER BY c.month_bucket
-      ) AS census_delta
-    FROM {target}.v_census c
-    WHERE c.month_bucket <= date_format({WINDOW_AS_OF_SQL}, 'yyyy-MM')
-    """
-)
-
-# COMMAND ----------
-
 create_view(
     "v_tool_resident_profile",
     f"""
@@ -1263,7 +1368,20 @@ create_view(
       r.Last_Name,
       cast(r.Age AS int) AS Age,
       cast({sql_safe_date("r", "Admit_Date")} AS string) AS Admit_Date,
-      cast(r.LOS_Days AS int) AS LOS_Days,
+      -- Owner-approved LOS measure 2 of 2: as_of - admit_date of the current
+      -- episode for current countable residents. LOS_Days is a DEPRECATED alias
+      -- with the same value, kept for snapshot/server consumers.
+      CASE
+        WHEN {sql_safe_date("r", "Admit_Date")} <= {WINDOW_AS_OF_SQL}
+        THEN datediff({WINDOW_AS_OF_SQL}, {sql_safe_date("r", "Admit_Date")})
+      END AS current_length_of_stay_days,
+      cast(coalesce(
+        CASE
+          WHEN {sql_safe_date("r", "Admit_Date")} <= {WINDOW_AS_OF_SQL}
+          THEN datediff({WINDOW_AS_OF_SQL}, {sql_safe_date("r", "Admit_Date")})
+        END,
+        r.LOS_Days
+      ) AS int) AS LOS_Days,
       cast(r.Facility AS string) AS Facility,
       r.Facility_Name,
       r.Unit_Number,
@@ -1279,6 +1397,15 @@ create_view(
     WHERE q.is_countable_resident = 1
     """
 )
+
+# COMMAND ----------
+
+# Census owner chain (order matters): episodes -> daily census -> monthly.
+# Weekly census and resident flow are built later from the same daily view.
+create_resident_episode_history_view()
+create_census_daily_view()
+create_census_monthly_view()
+create_completed_stay_los_view()
 
 # COMMAND ----------
 
@@ -1423,13 +1550,20 @@ create_view(
 create_view(
     "v_tool_medication_refusal_summary",
     f"""
+    -- Owner-approved refusal: MAR not-given reason only (gold is_refusal).
+    -- Rate = scheduled (non-PRN) refusals / scheduled administrations; PRN
+    -- refusals are reported separately. Incident "Medication Refusal" rows
+    -- are not refusals and stay excluded from incident counts (v_incidents).
     SELECT
-      cast(Facility AS string) AS Facility,
-      Medication,
-      cast(total_scheduled AS int) AS total_scheduled,
-      cast(refusals AS int) AS refusals,
-      cast(refusal_pct AS double) AS refusal_pct
-    FROM {target}.v_refusal_by_medication
+      cast(facility_id AS string) AS Facility,
+      medication_name AS Medication,
+      cast(scheduled_count AS int) AS total_scheduled,
+      cast(scheduled_refusal_count AS int) AS refusals,
+      cast(refusal_pct AS double) AS refusal_pct,
+      cast(prn_refusal_count AS int) AS prn_refusals,
+      window_start_date,
+      window_end_date
+    FROM {target}.v_mar_refusal_by_medication
     """
 )
 
@@ -1438,15 +1572,23 @@ create_view(
 create_view(
     "v_tool_medication_compliance_monthly",
     f"""
+    -- Owner-approved compliance: given / scheduled non-PRN administrations
+    -- from gold MAR. PRN administrations are reported separately and never
+    -- count as given toward compliance.
     SELECT
-      cast(Facility AS string) AS Facility,
-      Facility_Name,
+      cast(facility_id AS string) AS Facility,
+      facility_name AS Facility_Name,
       month_bucket,
-      cast(total_scheduled AS int) AS total_scheduled,
-      cast(given AS int) AS given,
-      cast(not_given AS int) AS not_given,
-      cast(compliance_pct AS double) AS compliance_pct
-    FROM {target}.v_medication_compliance
+      cast(scheduled_count AS int) AS total_scheduled,
+      cast(given_count AS int) AS given,
+      cast(not_given_count AS int) AS not_given,
+      cast(compliance_pct AS double) AS compliance_pct,
+      cast(pending_count AS int) AS pending,
+      cast(scheduled_refusal_count AS int) AS refusals,
+      cast(prn_administration_count AS int) AS prn_administrations,
+      cast(prn_given_count AS int) AS prn_given,
+      cast(prn_refusal_count AS int) AS prn_refusals
+    FROM {target}.v_mar_compliance_monthly_by_community
     """
 )
 
@@ -1668,12 +1810,8 @@ create_view(
         max(p.Facility_Name) AS Facility_Name,
         count(DISTINCT p.Res_Number) AS profile_rows_as_of_census,
         avg(cast(p.Age AS double)) AS average_age,
-        avg(
-          CASE
-            WHEN try_cast(p.Admit_Date AS date) IS NOT NULL THEN datediff(c.snapshot_date, try_cast(p.Admit_Date AS date))
-            ELSE cast(p.LOS_Days AS double)
-          END
-        ) AS average_los_days
+        -- Owner-approved current LOS (as_of - current admit, countable residents).
+        avg(cast(p.current_length_of_stay_days AS double)) AS average_current_length_of_stay_days
       FROM latest_census c
       LEFT JOIN {target}.v_tool_resident_profile p
         ON p.Facility = c.Facility
@@ -1713,7 +1851,9 @@ create_view(
         ELSE NULL
       END AS incidents_per_100_residents,
       r.average_age,
-      r.average_los_days,
+      r.average_current_length_of_stay_days,
+      -- DEPRECATED alias of average_current_length_of_stay_days (same value).
+      r.average_current_length_of_stay_days AS average_los_days,
       m.month_bucket AS medication_month,
       m.compliance_pct,
       coalesce(d.documentation_gap_rows, 0) AS documentation_gap_rows,
@@ -1738,7 +1878,7 @@ create_view(
       min(census_month) AS min_period,
       max(census_month) AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'Facility,Facility_Name,resident_rows,census_month,census,prior_census,census_delta,incident_month,incidents,incidents_per_100_residents,average_age,average_los_days,medication_month,compliance_pct,documentation_gap_rows,largest_documentation_gap_days' AS fields,
+      'Facility,Facility_Name,resident_rows,census_month,census,prior_census,census_delta,incident_month,incidents,incidents_per_100_residents,average_age,average_current_length_of_stay_days,average_los_days,medication_month,compliance_pct,documentation_gap_rows,largest_documentation_gap_days' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_community_operating_summary
 
@@ -1790,7 +1930,7 @@ create_view(
       NULL AS min_period,
       NULL AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'Res_Number,resident_name,First_Name,Last_Name,Age,Admit_Date,LOS_Days,Facility,Facility_Name,Unit_Number,Care_Level,Payor_Text,Primary_Diagnosis,Physician_Name,Diet' AS fields,
+      'Res_Number,resident_name,First_Name,Last_Name,Age,Admit_Date,current_length_of_stay_days,LOS_Days,Facility,Facility_Name,Unit_Number,Care_Level,Payor_Text,Primary_Diagnosis,Physician_Name,Diet' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_resident_profile
 
@@ -1816,9 +1956,35 @@ create_view(
       cast(min(month_bucket) AS string) AS min_period,
       cast(max(month_bucket) AS string) AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'Facility,month_bucket,snapshot_date,census,prior_census,census_delta' AS fields,
+      'Facility,month_bucket,snapshot_date,census,prior_census,census_delta,average_daily_census,days_observed' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_census_monthly_by_community
+
+    UNION ALL
+
+    SELECT
+      'census_daily_by_community' AS slice_name,
+      'community_day_census' AS grain,
+      count(*) AS row_count,
+      cast(min(census_date) AS string) AS min_period,
+      cast(max(census_date) AS string) AS max_period,
+      concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
+      'Facility,Facility_Name,census_date,month_bucket,census,is_month_snapshot_date,as_of_date,history_start_date,census_basis' AS fields,
+      current_timestamp() AS generated_at
+    FROM {target}.v_tool_census_daily_by_community
+
+    UNION ALL
+
+    SELECT
+      'completed_stay_los_monthly_by_community' AS slice_name,
+      'community_discharge_month' AS grain,
+      count(*) AS row_count,
+      min(discharge_month) AS min_period,
+      max(discharge_month) AS max_period,
+      concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
+      'Facility,Facility_Name,discharge_month,completed_stays,average_completed_stay_los_days,median_completed_stay_los_days' AS fields,
+      current_timestamp() AS generated_at
+    FROM {target}.v_tool_completed_stay_los_monthly_by_community
 
     UNION ALL
 
@@ -1829,7 +1995,7 @@ create_view(
       cast(min(last_incident_date) AS string) AS min_period,
       cast(max(last_incident_date) AS string) AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'Res_Number,resident_name,First_Name,Last_Name,Age,Admit_Date,LOS_Days,Facility,Facility_Name,Unit_Number,Care_Level,Payor_Text,Primary_Diagnosis,Physician_Name,Diet,incident_count_all_time,incident_count_30d,incident_count_90d,incident_count_180d,last_incident_date,last_incident_category,last_note_date,days_since_last_note' AS fields,
+      'Res_Number,resident_name,First_Name,Last_Name,Age,Admit_Date,current_length_of_stay_days,LOS_Days,Facility,Facility_Name,Unit_Number,Care_Level,Payor_Text,Primary_Diagnosis,Physician_Name,Diet,incident_count_all_time,incident_count_30d,incident_count_90d,incident_count_180d,last_incident_date,last_incident_category,last_note_date,days_since_last_note' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_resident_profile_enriched
 
@@ -1855,7 +2021,7 @@ create_view(
       cast(min(admit_date) AS string) AS min_period,
       cast(max(coalesce(discharge_date, admit_date)) AS string) AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'episode_id,Facility,Facility_Name,Res_Number,resident_name,admit_date,discharge_date,discharge_reason,discharge_destination,episode_status,month_bucket,source_table' AS fields,
+      'episode_id,Facility,Facility_Name,Res_Number,resident_name,admit_date,discharge_date,discharge_reason,discharge_destination,episode_status,month_bucket,source_table,completed_stay_los_days' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_resident_episode_history
 
@@ -1998,7 +2164,7 @@ create_view(
       NULL AS min_period,
       NULL AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'Facility,Medication,total_scheduled,refusals,refusal_pct' AS fields,
+      'Facility,Medication,total_scheduled,refusals,refusal_pct,prn_refusals,window_start_date,window_end_date' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_medication_refusal_summary
 
@@ -2011,7 +2177,7 @@ create_view(
       min(month_bucket) AS min_period,
       max(month_bucket) AS max_period,
       concat_ws(',', sort_array(collect_set(Facility))) AS facility_ids,
-      'Facility,Facility_Name,month_bucket,total_scheduled,given,not_given,compliance_pct' AS fields,
+      'Facility,Facility_Name,month_bucket,total_scheduled,given,not_given,compliance_pct,pending,refusals,prn_administrations,prn_given,prn_refusals' AS fields,
       current_timestamp() AS generated_at
     FROM {target}.v_tool_medication_compliance_monthly
 

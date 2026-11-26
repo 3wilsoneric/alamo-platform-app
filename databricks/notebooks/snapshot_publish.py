@@ -9,8 +9,8 @@
 # MAGIC - `alamohealth.gold.v_tool_resident_profile`
 # MAGIC - `alamohealth.gold.v_incidents`
 # MAGIC - `alamohealth.gold.v_census`
-# MAGIC - `alamohealth.gold.v_medication_compliance`
-# MAGIC - `alamohealth.gold.v_refusal_by_medication`
+# MAGIC - `alamohealth.gold.v_tool_medication_compliance_monthly` (gold MAR compliance)
+# MAGIC - `alamohealth.gold.v_tool_medication_refusal_summary` (gold MAR refusal)
 # MAGIC - `alamohealth.gold.v_documentation_gaps`
 # MAGIC
 # MAGIC Publishes:
@@ -188,35 +188,44 @@ def summarize_counts(values):
     ]
 
 
+def _recorded_boolean(value):
+    # Port of recordedBoolean in server/executive-director-incidents.mjs.
+    if isinstance(value, bool):
+        return value
+    if value == 1:
+        return True
+    if value == 0:
+        return False
+    text = normalize_str(value).strip().lower()
+    if text in {"yes", "true", "y", "1"}:
+        return True
+    if text in {"no", "false", "n", "0"}:
+        return False
+    return None
+
+
+def derive_incident_priority(sentinel_event, emergency_services_notified, injury_occurred):
+    # Exact port of deriveIncidentPriority in shared/incident-priority.mjs,
+    # the single source of truth used by the UI and Ally. Keep in lockstep;
+    # scripts/check-definitions-contracts.mjs fails if the rules diverge.
+    # Provisional operational sorting, not a clinical or licensing severity grade.
+    if sentinel_event is True or emergency_services_notified is True:
+        return "high"
+    if injury_occurred is True:
+        return "medium"
+    if sentinel_event is False and emergency_services_notified is False and injury_occurred is False:
+        return "low"
+    return "unknown"
+
+
 def priority_from_incident(row):
-    category = normalize_str(row.get("Incident_Category") or row.get("Type_of_Incident")).lower()
-    detail = normalize_str(row.get("What_Staff_Saw")).lower()
-    has_injury = normalize_str(row.get("Injuires_YN")).lower() == "yes"
-    sentinel = normalize_str(row.get("Sentinel_Event_YN")).lower() == "yes"
-    police = normalize_str(row.get("Notify_EmergSrvs_YN")).lower() == "yes"
-
-    if (
-        sentinel
-        or police
-        or has_injury
-        or "death" in category
-        or "aggression" in category
-        or "mental health crisis" in category
-        or "911" in category
-        or "arrested" in detail
-    ):
-        return "HIGH"
-
-    if (
-        "medication" in category
-        or "medical" in category
-        or "fall" in category
-        or "transport" in category
-        or "awol" in category
-    ):
-        return "MEDIUM"
-
-    return "LOW"
+    # Category text (aggression, crisis, death, medication, ...) no longer
+    # changes priority: one scale, owned by shared/incident-priority.mjs.
+    return derive_incident_priority(
+        _recorded_boolean(row.get("Sentinel_Event_YN")),
+        _recorded_boolean(row.get("Notify_EmergSrvs_YN")),
+        _recorded_boolean(row.get("Injuires_YN")),
+    ).upper()
 
 
 def incident_flags(row):
@@ -371,10 +380,14 @@ def build_reports_summary():
         """
     )
 
+    # One gold medication definition: compliance = given / scheduled non-PRN
+    # (PRN separate); refusal = MAR not-given reason only. Both tool views read
+    # mar_gold_views, never the external v_medication_compliance /
+    # v_refusal_by_medication.
     compliance_rows = rows(
         """
         SELECT Facility, Facility_Name, month_bucket, total_scheduled, given, not_given, compliance_pct
-        FROM alamohealth.gold.v_medication_compliance
+        FROM alamohealth.gold.v_tool_medication_compliance_monthly
         ORDER BY month_bucket DESC, Facility
         LIMIT 120
         """
@@ -383,7 +396,7 @@ def build_reports_summary():
     refusal_rows = rows(
         """
         SELECT Facility, Medication, total_scheduled, refusals, refusal_pct
-        FROM alamohealth.gold.v_refusal_by_medication
+        FROM alamohealth.gold.v_tool_medication_refusal_summary
         ORDER BY refusal_pct DESC, refusals DESC
         LIMIT 25
         """
@@ -465,6 +478,7 @@ def build_tool_context_summary():
           incidents,
           incidents_per_100_residents,
           average_age,
+          average_current_length_of_stay_days,
           average_los_days,
           medication_month,
           compliance_pct,
@@ -935,7 +949,7 @@ def build_tool_context_summary():
 
     monthly_census_rows = required_rows(
         """
-        SELECT Facility, month_bucket, snapshot_date, census, prior_census, census_delta
+        SELECT Facility, month_bucket, snapshot_date, census, prior_census, census_delta, average_daily_census
         FROM alamohealth.gold.v_tool_census_monthly_by_community
         ORDER BY month_bucket, Facility
         """,
@@ -989,6 +1003,8 @@ def build_tool_context_summary():
             "incidents": normalize_int(row["incidents"]),
             "incidents_per_100_residents": normalize_float(row["incidents_per_100_residents"]),
             "average_age": normalize_float(row["average_age"]),
+            "average_current_length_of_stay_days": normalize_float(row["average_current_length_of_stay_days"]),
+            # DEPRECATED alias of average_current_length_of_stay_days (same value).
             "average_los_days": normalize_float(row["average_los_days"]),
             "medication_month": normalize_str(row["medication_month"]),
             "compliance_pct": None if row["compliance_pct"] is None else normalize_float(row["compliance_pct"]),
@@ -1521,7 +1537,8 @@ def build_tool_context_summary():
                  "month_bucket": normalize_str(row["month_bucket"]),
                  "snapshot_date": iso_value(row["snapshot_date"]),
                  **{key: None if row[key] is None else normalize_int(row[key])
-                    for key in ["census", "prior_census", "census_delta"]}}
+                    for key in ["census", "prior_census", "census_delta"]},
+                 "average_daily_census": None if row["average_daily_census"] is None else normalize_float(row["average_daily_census"])}
                 for row in monthly_census_rows
             ],
             "current_resident_county_by_community": current_resident_county_by_community,

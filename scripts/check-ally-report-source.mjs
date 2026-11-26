@@ -263,11 +263,23 @@ try {
   const historyStep={id:'history',capability:'pipeline-summary',input:{view:'monthly-history'}};
   assert.equal((await connection.read(user,scope,historyStep)).status,'unavailable','portfolio history cannot answer a community-scoped request');
   pipelineSnapshot.generatedAt='2026-11-24T15:00:00Z';
-  pipelineSnapshot.history={coverageStartMonth:'2026-09',monthly:[{month:'2026-09',received:9,accepted:6,declined:1,admitted:4},{month:'2026-10',received:10,accepted:7,declined:2,admitted:5},{month:'2026-11',received:8,accepted:5,declined:1,admitted:3}]};
+  // Contract 3.6 split (normalized camelCase). admitted stays as the deprecated confirmed+assumed alias.
+  pipelineSnapshot.history={coverageStartMonth:'2026-09',monthly:[{month:'2026-09',received:9,accepted:6,declined:1,admitted:4,confirmedAdmissions:3,assumedArrivals:1,plannedArrivals:2},{month:'2026-10',received:10,accepted:7,declined:2,admitted:5,confirmedAdmissions:4,assumedArrivals:1,plannedArrivals:3},{month:'2026-11',received:8,accepted:5,declined:1,admitted:3,confirmedAdmissions:3,assumedArrivals:0,plannedArrivals:1}]};
   const savedCommunities=[...registry.grants[0].communityIds];registry.grants[0].communityIds=ALAMO_FACILITIES.map(f=>f.facilityId);
   const historicalScope={communityIds:registry.grants[0].communityIds,from:'2026-09-01',through:'2026-10-31'};
   const pipelineHistory=await connection.read(user,historicalScope,historyStep);
-  assert.equal(pipelineHistory.coverage,'complete');assert.equal(pipelineHistory.dataset.rows.length,2);assert.equal(pipelineHistory.dataset.rows[1].admitted,5);
+  assert.equal(pipelineHistory.coverage,'complete');assert.equal(pipelineHistory.dataset.rows.length,2);
+  // Admission definition: confirmed only; assumed/planned are separately labelled and never "admissions".
+  assert.deepEqual(pipelineHistory.dataset.rows[1],{month:'2026-10',received:10,accepted:7,declined:2,confirmed_admissions:4,assumed_arrivals:1,planned_arrivals:3});
+  assert.deepEqual(pipelineHistory.dataset.columns.slice(4).map(column=>column.label),['Confirmed admissions','Assumed arrivals (not admissions)','Planned arrivals (not admissions)']);
+  assert.equal(JSON.parse(pipelineHistory.answer).rows[1].admitted,5,'deprecated alias kept in the answer');
+  assert.match(JSON.parse(pipelineHistory.answer).definitions.admitted,/includes assumed dates/);
+  const splitHistory=pipelineSnapshot.history;
+  pipelineSnapshot.history={coverageStartMonth:'2026-09',monthly:splitHistory.monthly.map(({month,received,accepted,declined,admitted})=>({month,received,accepted,declined,admitted,confirmedAdmissions:null,assumedArrivals:null,plannedArrivals:null}))};
+  const legacyHistory=await connection.read(user,historicalScope,historyStep);
+  assert.equal(legacyHistory.coverage,'partial','a 3.5 producer cannot separate confirmed admissions');
+  assert.equal(legacyHistory.dataset.rows[1].confirmed_admissions,null);assert.match(legacyHistory.note,/predates the confirmed\/assumed\/planned split/);
+  pipelineSnapshot.history=splitHistory;
   assert.equal((await connection.read(user,{...historicalScope,from:'2026-01-01'},historyStep)).coverage,'partial');
   assert.equal((await connection.read(user,{...historicalScope,from:'2026-10-15'},historyStep)).status,'unavailable');
   registry.grants[0].communityIds=savedCommunities;
@@ -436,12 +448,14 @@ const readPlanned = (ids=['337','344']) => scheduledSources.read({ scope: {...fl
 const planned = validateReportEvidence(await readPlanned(), plannedStep, flowScope);
 assert.equal(planned.period, '2026-11-23–2026-11-29');
 assert.equal(planned.coverage, 'complete');
-assert.deepEqual(planned.dataset.rows, [{community:'San Pablo',plannedAdmissions:2,awaitingDate:1},{community:'Turlock',plannedAdmissions:1,awaitingDate:0}]);
+assert.deepEqual(planned.dataset.rows, [{community:'San Pablo',plannedArrivals:2,awaitingDate:1},{community:'Turlock',plannedArrivals:1,awaitingDate:0}]);
 assert.equal(JSON.parse(planned.answer).total, 3);
 assert.equal(JSON.parse(planned.answer).awaitingDate, 1, 'only accepted active workspaces without dates belong in the unknown-week count');
-assert.match(planned.note, /not confirmed admissions/);
+assert.match(planned.note, /Planned arrivals are not admissions/);
+assert.equal(JSON.parse(planned.answer).plannedArrivals, 3);
+assert.equal(JSON.parse(planned.answer).communities[0].plannedAdmissions, 2, 'deprecated alias kept in the answer');
 assert(!JSON.stringify(planned).match(/PRIVATE_|9000|example\.test|Santa Clarita/), 'only scoped aggregate schedule data may leave Platform');
-assert.deepEqual((await readPlanned(['342'])).dataset.rows, [{community:"Victoria's House",plannedAdmissions:0,awaitingDate:0}], 'covered zero is distinct from missing schedule coverage');
+assert.deepEqual((await readPlanned(['342'])).dataset.rows, [{community:"Victoria's House",plannedArrivals:0,awaitingDate:0}], 'covered zero is distinct from missing schedule coverage');
 schedule.briefing.coverage.moveIns = false;
 await assert.rejects(readPlanned(), /complete planned-admission schedule/);
 schedule.briefing.coverage.moveIns = true;

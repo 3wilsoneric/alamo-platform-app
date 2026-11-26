@@ -509,6 +509,17 @@ function getAzureSnapshotConfig() {
   };
 }
 
+// Dated-publication history (platform-snapshot-history.mjs) reads the same
+// container with the same credentials; it never writes or deletes.
+export function getPlatformSnapshotContainer() {
+  if (shouldPreferLocalSnapshot()) return null;
+  const config = getAzureSnapshotConfig();
+  if (!config) return null;
+  return { container: createBlobServiceClient(config).getContainerClient(config.container), root: config.root };
+}
+export const localSnapshotDirectory = () => snapshotDir;
+export const readPublishedToolTableReference = reference => readPublishedToolTable(reference);
+
 export function getAzureSnapshotStorageSummary() {
   const config = getAzureSnapshotConfig();
   if (!config) return null;

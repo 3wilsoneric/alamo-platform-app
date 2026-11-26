@@ -95,6 +95,40 @@ await withBrowserQa(async (browser) => {
   assert.equal(await emptyPage.locator('[data-incident-date-window="previous"]').isEnabled(), false);
   assert.equal(await emptyPage.getByRole('combobox', { name: 'Community' }).inputValue(), '345');
   await emptyPage.close();
+  // Unclassifiable incidents (all recorded flags blank) arrive as legacy LOW
+  // with priority_level "unknown" and must show as Unknown, never as Low.
+  const unknownRows = [
+    { ...rows[0], id: 'unknown-1', facility_id: '345', priority: 'LOW', priority_level: 'unknown', stage: 'new', received_at: '2026-11-18T17:00:00Z', flags: [] },
+    { ...rows[0], id: 'unknown-2', facility_id: '345', priority: 'LOW', priority_level: 'unknown', stage: 'new', received_at: '2026-11-18T17:00:00Z', flags: [] },
+    { ...rows[0], id: 'low-legacy', facility_id: '345', priority: 'LOW', stage: 'new', received_at: '2026-11-18T17:00:00Z', flags: [] },
+    { ...rows[0], id: 'high-level', facility_id: '345', priority: 'HIGH', priority_level: 'high', stage: 'new', received_at: '2026-11-18T17:00:00Z' }
+  ];
+  const unknownPage = await context.newPage();
+  await unknownPage.route('**/api/incidents', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ source: 'synthetic-test', incidents: unknownRows }) }));
+  await unknownPage.setViewportSize({ width: 390, height: 844 });
+  await unknownPage.goto(`${BASE_URL}/incidents?community=345`, { waitUntil: 'domcontentloaded' });
+  const unknownCenter = unknownPage.locator('[data-incident-center]');
+  await unknownCenter.locator('[data-incident-card]').first().waitFor();
+  assert.deepEqual(await unknownCenter.getByRole('tab').allTextContents(), ['High 1', 'Medium 0', 'Low 1', 'Unknown 2']);
+  await unknownCenter.getByRole('tab', { name: 'Unknown 2', exact: true }).click();
+  assert.equal(await unknownCenter.locator('[data-incident-priority-section="UNKNOWN"] [data-incident-card]').count(), 2);
+  await unknownCenter.getByRole('tab', { name: 'Unknown 2', exact: true }).press('ArrowRight');
+  assert.equal(await unknownCenter.getByRole('tab', { name: 'High 1', exact: true }).getAttribute('aria-selected'), 'true');
+  assert.ok(await unknownPage.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 2), '390: unknown tabs overflow');
+  await unknownPage.setViewportSize({ width: 320, height: 844 });
+  assert.ok(await unknownPage.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 2), '320: unknown tabs overflow');
+  await unknownPage.screenshot({ path: `${screenshotDir}/unknown-320.png`, fullPage: false });
+  await unknownPage.setViewportSize({ width: 1440, height: 900 });
+  await unknownCenter.locator('[data-incident-priority="UNKNOWN"]').waitFor();
+  assert.equal(await unknownCenter.locator('[data-incident-priority]').count(), 4);
+  assert.match(await unknownCenter.locator('[data-incident-priority="UNKNOWN"]').innerText(), /Unknown\s*2/);
+  assert.match(await unknownCenter.locator('[data-incident-priority="LOW"]').innerText(), /Low\s*1/);
+  await unknownPage.screenshot({ path: `${screenshotDir}/unknown-1440.png`, fullPage: false });
+  await unknownCenter.locator('[data-incident-resident-link]').first().click();
+  const unknownDialog = unknownPage.getByRole('dialog'); await unknownDialog.waitFor();
+  assert.deepEqual(await unknownDialog.locator('.incident-history-priorities__item dt').allTextContents(), ['HIGH', 'MEDIUM', 'LOW', 'UNKNOWN']);
+  await unknownPage.screenshot({ path: `${screenshotDir}/unknown-dialog.png`, fullPage: false });
+  await unknownPage.close();
   // The public launcher is navigation only. The canonical claims check controls
   // its owner marker; display-name spoofing must never expose either entry.
   const launcher = await readFile('public/point-of-care-launcher.js','utf8');
@@ -111,5 +145,5 @@ await withBrowserQa(async (browser) => {
     }
   }
   await context.close();
-  console.log('Incident cards: 320/390/768/1440 layouts, community/date scope, keyboard, details, dialog, refresh recovery, and owner-only launcher checks passed.');
+  console.log('Incident cards: 320/390/768/1440 layouts, community/date scope, keyboard, details, dialog, refresh recovery, Unknown priority, and owner-only launcher checks passed.');
 });

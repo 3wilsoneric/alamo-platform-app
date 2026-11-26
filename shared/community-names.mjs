@@ -1,3 +1,15 @@
+import { currentCapacity, firstCapacityDate } from "./community-capacity.mjs";
+
+// Capacity fields are compatibility projections of the effective-dated history
+// in community-capacity.mjs (latest record; capacityAsOf = first effective date).
+// Date-specific occupancy must call capacityOn(facility, date) instead.
+/** @param {string} facilityId */
+function capacityFields(facilityId) {
+  const record = currentCapacity(facilityId);
+  if (!record) throw Error(`Community ${facilityId} has no capacity history.`);
+  return { licensedCapacity: record.licensedCapacity, operatingLimit: record.operatingLimit, capacityAsOf: /** @type {string} */ (firstCapacityDate(facilityId)) };
+}
+
 /** @type {ReadonlyArray<readonly [RegExp, string]>} */
 const COMMUNITY_NAME_NORMALIZATIONS = [
   [/Victoria's Place/gi, "Victoria's House"],
@@ -13,9 +25,7 @@ export const ALAMO_FACILITIES = Object.freeze([
     code: "SP",
     city: "San Pablo",
     state: "CA",
-    licensedCapacity: 225,
-    operatingLimit: 175,
-    capacityAsOf: "2026-07-30",
+    ...capacityFields("337"),
     aliases: Object.freeze(["san pablo", "a and a health services san pablo", "a and a"])
   }),
   Object.freeze({
@@ -26,9 +36,7 @@ export const ALAMO_FACILITIES = Object.freeze([
     code: "VP",
     city: "Modesto",
     state: "CA",
-    licensedCapacity: 46,
-    operatingLimit: 46,
-    capacityAsOf: "2026-07-30",
+    ...capacityFields("342"),
     aliases: Object.freeze(["victoria's house", "victorias house", "victoria's place", "victorias place", "victoria"])
   }),
   Object.freeze({
@@ -39,9 +47,7 @@ export const ALAMO_FACILITIES = Object.freeze([
     code: "JCW",
     city: "Fresno",
     state: "CA",
-    licensedCapacity: 150,
-    operatingLimit: 150,
-    capacityAsOf: "2026-07-30",
+    ...capacityFields("343"),
     aliases: Object.freeze(["jc wallace house", "jc wallace", "wallace house", "wallace"])
   }),
   Object.freeze({
@@ -52,9 +58,7 @@ export const ALAMO_FACILITIES = Object.freeze([
     code: "TRK",
     city: "Turlock",
     state: "CA",
-    licensedCapacity: 84,
-    operatingLimit: 84,
-    capacityAsOf: "2026-07-30",
+    ...capacityFields("344"),
     aliases: Object.freeze(["ahs turlock op llc", "turlock"])
   }),
   Object.freeze({
@@ -65,9 +69,7 @@ export const ALAMO_FACILITIES = Object.freeze([
     code: "SC",
     city: "Santa Clarita",
     state: "CA",
-    licensedCapacity: 150,
-    operatingLimit: 150,
-    capacityAsOf: "2026-07-30",
+    ...capacityFields("345"),
     aliases: Object.freeze(["santa clarita"])
   })
 ]);

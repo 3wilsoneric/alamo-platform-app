@@ -1,5 +1,6 @@
 import { ALAMO_FACILITIES, normalizeKnownCommunityNames } from "../shared/community-names.mjs";
 import { buildVerifiedClientCountyRows } from "./admissions-county-crosswalk.mjs";
+import { capacityOn } from "../shared/community-capacity.mjs";
 
 // Leadership view of admissions. Census and resident-flow data stay aggregate:
 // the flow tables also carry admitted/discharged resident names, which are
@@ -390,6 +391,10 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
           upcomingAssessments: pipeline.briefing.upcomingAssessments.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
           plannedMoveIns: pipeline.briefing.plannedMoveIns.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
           admittedLastWeek: pipeline.briefing.admittedLastWeek.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
+          confirmedAdmissionsLastWeek: pipeline.briefing.confirmedAdmissionsLastWeek?.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })) ?? null,
+          assumedArrivalsLastWeek: pipeline.briefing.assumedArrivalsLastWeek?.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })) ?? null,
+          admissionsByCommunityLastWeek: pipeline.briefing.admissionsByCommunityLastWeek?.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })) ?? null,
+          plannedArrivalsByCommunityThisWeek: pipeline.briefing.plannedArrivalsByCommunityThisWeek?.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })) ?? null,
           movingThrough: pipeline.briefing.movingThrough.map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) })),
           didNotMoveIn: (pipeline.briefing.didNotMoveIn ?? []).map((row) => ({ ...row, facilityId: facilityIdForPipelineCommunity(row.community) }))
         }
@@ -410,7 +415,11 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
     const name = facility?.communityName
       ?? normalizeKnownCommunityNames(textValue(operating?.facility_name ?? ownMonthly[0]?.facility_name));
     const census = operating ? numberValue(operating.census) : null;
-    const operatingLimit = facility?.operatingLimit ?? null;
+    // Effective-dated capacity on the census date; unknown (null) before the
+    // community's first recorded effective date.
+    const capacityDate = isoDate(operating?.census_date) ?? asOfDate;
+    const capacity = capacityOn(id, capacityDate);
+    const operatingLimit = capacity?.operatingLimit ?? null;
     return {
       facilityId: id,
       communityName: name || "Community",
@@ -418,6 +427,8 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
       census,
       censusChange: operating ? numberValue(operating.census_delta) : null,
       operatingLimit,
+      licensedCapacity: capacity?.licensedCapacity ?? null,
+      capacityEffectiveFrom: capacity?.effectiveFrom ?? null,
       occupancyPct: census != null && operatingLimit ? Math.round((census / operatingLimit) * 1000) / 10 : null,
       monthToDate: flowTotals(ownMonthly.filter((row) => textValue(row.month_bucket) === asOfMonth)),
       lastMonth: flowTotals(ownMonthly.filter((row) => textValue(row.month_bucket) === lastMonth)),
@@ -428,7 +439,10 @@ export function buildAdmissionsDashboard(snapshot, options = {}) {
 
   const censusValues = communities.map((community) => community.census).filter((value) => value != null);
   const census = censusValues.length ? censusValues.reduce((total, value) => total + value, 0) : null;
-  const operatingLimit = communities.reduce((total, community) => total + (community.operatingLimit ?? 0), 0);
+  // A portfolio denominator exists only when every community with census has
+  // capacity in effect; a partial sum would overstate occupancy.
+  const capacityKnown = communities.every((community) => community.census == null || community.operatingLimit != null);
+  const operatingLimit = capacityKnown ? communities.reduce((total, community) => total + (community.operatingLimit ?? 0), 0) : 0;
 
   const briefing = buildWeeklyBriefing({
     asOfDate,

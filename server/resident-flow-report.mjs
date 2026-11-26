@@ -2,8 +2,8 @@ import { ALAMO_FACILITIES } from "../shared/community-names.mjs";
 import { readPlatformSnapshot } from "./platform-snapshot.mjs";
 import { createHttpError } from "./http-errors.mjs";
 import { getSnapshotFreshness } from "./snapshot-status.mjs";
+import { DAY_MS, censusBedDays, censusOnDay, presentOnDay } from "../shared/daily-census.mjs";
 
-const DAY_MS = 86_400_000;
 const facilities = new Map(ALAMO_FACILITIES.map((facility) => [facility.facilityId, facility]));
 const round = (value) => Math.round(value * 10) / 10;
 function day(value) {
@@ -58,7 +58,8 @@ export function buildResidentFlowReport(snapshot, facilityId = null, requestedYe
   const ids = episodes.map(({ row }) => row.episode_id);
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw createHttpError(503, "resident_stays_duplicate", "Client stay records need duplicate review.");
   const inPeriod = (value) => value !== null && value >= start && value < end;
-  const at = (rows, time) => rows.filter((row) => row.admitted <= time && (row.discharged === null || row.discharged > time)).length;
+  // Canonical daily census (shared/daily-census.mjs): admission day counted, discharge day not.
+  const at = censusOnDay;
   const allWeekly = source.census_weekly_by_community.filter((row) => facilities.has(String(row.facility_id)) && day(row.census_date) >= yearStart - 7 * DAY_MS && day(row.census_date) <= through);
   if (!allWeekly.length || allWeekly.some((row) => at(episodes.filter((episode) => episode.facilityId === String(row.facility_id)), day(row.census_date)) !== Number(row.census))) {
     throw createHttpError(503, "resident_census_mismatch", "Client stays and weekly census do not reconcile.");
@@ -87,15 +88,25 @@ export function buildResidentFlowReport(snapshot, facilityId = null, requestedYe
     const admitted = rows.filter((row) => inPeriod(row.admitted));
     const discharged = rows.filter((row) => inPeriod(row.discharged));
     const lengths = discharged.map((row) => (row.discharged - row.admitted) / DAY_MS);
-    const bedDays = rows.reduce((sum, row) => sum + Math.max(0, (Math.min(row.discharged ?? end, end) - Math.max(row.admitted, start)) / DAY_MS), 0);
+    const bedDays = censusBedDays(rows, start, through);
     const openingCensus = at(rows, start - DAY_MS), closingCensus = at(rows, through);
+    // Current length of stay: residents in the closing daily census, through − admit.
+    const current = rows.filter((row) => presentOnDay(row, through)).map((row) => (through - row.admitted) / DAY_MS);
+    const completedAverage = lengths.length ? round(lengths.reduce((sum, value) => sum + value, 0) / lengths.length) : null;
     if (openingCensus + admitted.length - discharged.length !== closingCensus) throw createHttpError(503, "resident_flow_mismatch", "Opening census and client movement do not reconcile.");
     return {
       admissions: admitted.length, discharges: discharged.length, net: admitted.length - discharged.length,
       openingCensus, closingCensus, bedDays, averageDailyCensus: round(bedDays / days),
       completedStayCount: lengths.length,
-      averageCompletedStayDays: lengths.length ? round(lengths.reduce((sum, value) => sum + value, 0) / lengths.length) : null,
+      // Completed-stay LOS (discharge cohort). averageCompletedStayDays and
+      // medianCompletedStayDays are retained compatibility aliases.
+      completedStayLosAverageDays: completedAverage,
+      completedStayLosMedianDays: median(lengths),
+      averageCompletedStayDays: completedAverage,
       medianCompletedStayDays: median(lengths),
+      currentLengthOfStayCount: current.length,
+      currentLengthOfStayAverageDays: current.length ? round(current.reduce((sum, value) => sum + value, 0) / current.length) : null,
+      currentLengthOfStayMedianDays: median(current),
       movedInAndOut: discharged.filter((row) => inPeriod(row.admitted)).length,
       dischargedWithin30Days: lengths.filter((length) => length <= 30).length
     };
