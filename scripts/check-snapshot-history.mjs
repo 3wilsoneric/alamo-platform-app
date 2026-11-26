@@ -95,3 +95,25 @@ test('real published snapshots read through the governed path (opt-in, read-only
     assert.equal(result.readMode, 'published-snapshot');
   }
 });
+
+test('the catalog points to dated publications when the current one lacks a dataset', async () => {
+  const { createPlatformReportSources } = await import('../server/ally-report-source.mjs');
+  const { target } = fakeContainer({
+    'snapshots/daily/2026-11-03.json': JSON.stringify({ snapshot: { as_of_date: '2026-11-03', generated_at: '2026-11-03T05:00:00Z' }, reportsSummary: {} }),
+    'snapshots/daily/2026-11-25.json': JSON.stringify(publication('2026-11-25', [{ facility_id: '337', res_number: '1' }])),
+    'snapshots/daily/2026-11-26.json': JSON.stringify({ snapshot: { as_of_date: '2026-11-26', generated_at: '2026-11-26T05:00:00Z' }, reportsSummary: {} }) });
+  const history = createSnapshotHistory({ container: () => target });
+  assert.deepEqual(await history.latestCatalog(), { publishedOn: '2026-11-25', asOfDate: '2026-11-25', slices: ['resident_profile'] }, 'Skips newer stubs without a catalog');
+  const sources = createPlatformReportSources({ history, summary: async () => ({ toolContext: { manifest: [], tables: {} } }) });
+  const authorization = { grant: { detail: true, slices: ['resident_profile'], capabilities: ['platform-data', 'data-catalog'], communityIds: ['337'] }, communities: ['337'], receipt: { revision: 'r' } };
+  const scope = { communityIds: ['337'], from: '2026-01-01', through: '2026-11-24' };
+  const search = JSON.parse((await sources.read({ step: { capability: 'data-catalog', input: { query: 'roster' } }, scope, subjectId: 's' }, authorization)).answer);
+  assert.match(search.publicationHint, /publication of 2026-11-25 .* contains: resident_profile/);
+  const dates = JSON.parse((await sources.read({ step: { capability: 'data-catalog', input: { publishedDates: true } }, scope, subjectId: 's' }, authorization)).answer);
+  assert.deepEqual(dates.publishedDates.latestCatalogPublication, { publishedOn: '2026-11-25', asOfDate: '2026-11-25', slices: ['resident_profile'] });
+  const read = await sources.read({ step: { capability: 'platform-data', input: { slice: 'resident_profile', operation: 'count' } }, scope, subjectId: 's' }, authorization);
+  assert.equal(read.status, 'unavailable'); assert.match(read.note, /repeat the read with publishedOn 2026-11-25/);
+  const narrow = { ...authorization, grant: { ...authorization.grant, slices: ['census_daily_by_community'] } };
+  const hidden = JSON.parse((await sources.read({ step: { capability: 'data-catalog', input: { publishedDates: true } }, scope, subjectId: 's' }, narrow)).answer);
+  assert.deepEqual(hidden.publishedDates.latestCatalogPublication.slices, [], 'Only granted slices are named');
+});

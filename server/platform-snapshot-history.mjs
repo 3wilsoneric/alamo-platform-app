@@ -109,5 +109,17 @@ export function createSnapshotHistory({ container = getPlatformSnapshotContainer
     return { ...value, reportsSummary: { ...value.reportsSummary, toolContext: { ...value.reportsSummary.toolContext, tables } } };
   }
 
-  return { dates, read, describe: async () => describePublishedDates(await dates()) };
+  /** Newest publication (within the last few) that carries a governed catalog, with its slice names. */
+  async function latestCatalog(maxTries = 5) {
+    const known = await dates();
+    for (const dateKey of known.slice(-maxTries).reverse()) {
+      try {
+        const value = await read(dateKey);
+        return { publishedOn: value.publishedOn, asOfDate: value.asOfDate, slices: value.reportsSummary.toolContext.manifest.map(entry => entry?.slice_name).filter(name => typeof name === 'string') };
+      } catch (error) { if (!(error instanceof PublishedSnapshotUnavailable)) throw error; }
+    }
+    return null;
+  }
+
+  return { dates, read, latestCatalog, describe: async () => describePublishedDates(await dates()) };
 }

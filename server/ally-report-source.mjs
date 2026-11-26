@@ -230,7 +230,14 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
       const sources=args.publishedDates ? [] : (await catalog(authorization)).find(item=>item.id==='platform-data')?.sources ?? [];
       const words=(args.query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
       const selected=sources.filter(source => (!args.slice || source.id===args.slice) && (!words.length || words.some(word=>JSON.stringify(source).toLowerCase().includes(word))));
-      if (args.publishedDates) result={publishedDates:{...await history.describe(),keyBasis:'UTC publication date. Each publishedOn read returns that publication\'s own as-of date; a missing day has no publication, not zero activity.'}};
+      const latestPublication = async () => { const latest = await history.latestCatalog(); return latest ? {...latest, slices: latest.slices.filter(id => authorization.grant.slices.includes(id))} : null; };
+      if (args.publishedDates) result={publishedDates:{...await history.describe(),latestCatalogPublication:await latestPublication(),keyBasis:'UTC publication date. Each publishedOn read returns that publication\'s own as-of date; a missing day has no publication, not zero activity.'}};
+      else if (!selected.length && (await history.dates()).length) {
+        const latest = await latestPublication();
+        result={sources:[],otherMatches:[],publicationHint:latest?.slices.length
+          ? `The current publication lists no matching dataset. The publication of ${latest.publishedOn} (as of ${latest.asOfDate}) contains: ${latest.slices.join(', ')}. Read one with platform-data and publishedOn ${latest.publishedOn}, or list dates with publishedDates.`
+          : 'The current publication lists no matching dataset, and no recent dated publication carries a readable catalog.'};
+      }
       else result={sources:selected.slice(0,4),otherMatches:selected.slice(4).map(source=>source.id),definition:'Dataset metadata only. sourceRows counts rows at the declared grain; it is not a client count. Only authorized sources are listed. Describe a slice by ID for its full definition.'};
       base.title='Available data';base.grain='authorized dataset metadata';base.note='Search and schema discovery; metadata does not establish business facts.';
     } else if (step.capability === 'client-records') {
@@ -357,6 +364,13 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
       const source = listAllyPlatformDataSources(publishedSummary).find(s => s.id === args.slice);
       base.title = sourceTitle(args.slice);
       const field = source && facilityField(source.fields);
+      if (!source && !publication) {
+        const latest = await history.latestCatalog().catch(() => null);
+        if (latest?.slices.includes(args.slice)) {
+          const note = `${args.slice} is not in the current publication. It is in the publication of ${latest.publishedOn} (as of ${latest.asOfDate}); repeat the read with publishedOn ${latest.publishedOn}.`;
+          return {...base,status:'unavailable',coverage:'partial',answer:null,note,revision:reportHash({args,scope,note})};
+        }
+      }
       if (!source || !field) throw Error('This source has no enforceable community scope.');
       const defaultDate=ANALYST_SOURCES[args.slice]?.dateField;
       if (args.dateField === null && defaultDate && source.fields.includes(defaultDate)) {
