@@ -117,3 +117,9 @@ test('the catalog points to dated publications when the current one lacks a data
   const hidden = JSON.parse((await sources.read({ step: { capability: 'data-catalog', input: { publishedDates: true } }, scope, subjectId: 's' }, narrow)).answer);
   assert.deepEqual(hidden.publishedDates.latestCatalogPublication.slices, [], 'Only granted slices are named');
 });
+
+test('a missing publication points census and movement questions to resident-flow', async () => {
+  const { target } = fakeContainer({ 'snapshots/daily/2026-11-01.json': JSON.stringify(publication('2026-11-01', [])) });
+  const history = createSnapshotHistory({ container: () => target });
+  await assert.rejects(history.read('2026-06-25'), error => /resident-flow with that date as the period/.test(error.message));
+});

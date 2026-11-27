@@ -95,7 +95,7 @@ export function createSnapshotHistory({ container = getPlatformSnapshotContainer
     const entry = await download(dateKey);
     if (!entry) {
       const known = describePublishedDates(await dates());
-      throw new PublishedSnapshotUnavailable(`No publication exists for ${dateKey}. Publications cover ${known.first ?? 'no dates'} through ${known.last ?? 'no dates'} with ${known.missingDays} missing days; list them with data-catalog publishedDates.`, 'published_snapshot_missing');
+      throw new PublishedSnapshotUnavailable(`No publication exists for ${dateKey}. Publications cover ${known.first ?? 'no dates'} through ${known.last ?? 'no dates'} with ${known.missingDays} missing days; list them with data-catalog publishedDates. Census, admissions and discharges for any date do not need a publication: read resident-flow with that date as the period.`, 'published_snapshot_missing');
     }
     const value = entry.value ?? publishedReportsSummary(entry.payload, dateKey);
     cache.delete(dateKey);
