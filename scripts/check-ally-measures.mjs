@@ -74,3 +74,17 @@ test('the measures capability returns governed rows, a dataset and a correctable
   const bad = await sources.read(step({ metrics: ['census'], date: '2025-01-01' }), authorization);
   assert.equal(bad.status, 'unavailable'); assert.match(bad.note, /period_outside_scope/); assert.equal(executed, 1);
 });
+
+test('measures evidence passes the real Ally evidence validator (dataset shape included)', async () => {
+  const { validateReportEvidence } = await import('@alamo/agent-runtime/shared/executive-report-contracts.mjs');
+  const { readDayMeasures } = await import('../server/ally-measures.mjs');
+  const rows = [{ facility_id: '337', admit_date: '2026-06-01', discharge_date: null }, { facility_id: '344', admit_date: '2026-06-20', discharge_date: null }];
+  const sources = createPlatformReportSources({ measureData: plan => readDayMeasures(plan, { execute: async sql => sql.includes('incident') ? [] : rows }) });
+  const authorization = { grant: { detail: false, capabilities: ['measures'], slices: ['resident_episode_history'] }, communities: all, receipt: { revision: 'a'.repeat(64) } };
+  for (const input of [{ metrics: ['census'], date: '2026-06-25' }, { metrics: ['census', 'admissions'], dimensions: ['community'], timeGrain: 'day', from: '2026-06-24', through: '2026-06-26' }]) {
+    const s = { id: 'source-1', capability: 'measures', input };
+    const value = await sources.read({ subjectId: user, scope, step: s }, authorization);
+    assert.equal(value.status, 'verified');
+    assert.doesNotThrow(() => validateReportEvidence(value, s, scope), JSON.stringify(value.dataset?.columns));
+  }
+});

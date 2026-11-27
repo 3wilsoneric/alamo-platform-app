@@ -577,7 +577,7 @@ export function createPlatformReportSources({ snapshot = () => readPlatformSnaps
       base.title = `Governed measures: ${plan.metrics.map(m => m.label).join(', ')}`.slice(0, 240);
       base.grain = `${plan.dimensions.length ? 'community × ' : ''}${plan.timeGrain === 'none' ? (plan.from === plan.through ? 'single day' : 'period') : plan.timeGrain}`;
       base.period = `${plan.from}–${plan.through}`; base.note = result.notes.join(' ');
-      if (result.rows.length <= 100) dataset = platformDataset(base.title, result.rows, result.columns.map(c => ({ ...c, label: c.metric ? DAY_MEASURES[c.metric].label : reportColumnLabel({ key: c.key }) })), plan.timeGrain === 'none' ? null : 'period');
+      if (result.rows.length <= 100) dataset = platformDataset(base.title, result.rows, result.columns.map(c => ({ key: c.key, label: c.metric ? DAY_MEASURES[/** @type {keyof typeof DAY_MEASURES} */ (c.metric)].label : reportColumnLabel({ key: c.key }), type: c.type })), plan.timeGrain === 'none' ? null : 'period');
     } else if (step.capability === 'identity-links') {
       reportObject(args, [], ['view','residentKey','pipelineReferralId','pipelineClientId','carelogClientId','linked','offset']);
       const view = args.view ?? 'communities';
