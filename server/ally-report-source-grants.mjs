@@ -3,9 +3,10 @@ import { EVERYAGENT_TENANT } from '../shared/everyagent-identity.mjs';
 import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { createHttpError } from './http-error-contract.mjs';
 import { planAllyMetricQuery, METRIC_SLICE_ALIASES } from './ally-data-source.mjs';
+import { planDayMeasures } from './ally-measures.mjs';
 
 const facilities = new Set(ALAMO_FACILITIES.map(f => f.facilityId));
-export const REPORT_CAPABILITIES = ['platform-data', 'data-catalog', 'client-records', 'carelog-records', 'proforma-records', 'pipeline-records', 'incident-summary', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search', 'identity-links'];
+export const REPORT_CAPABILITIES = ['platform-data', 'data-catalog', 'client-records', 'carelog-records', 'proforma-records', 'pipeline-records', 'incident-summary', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search', 'identity-links', 'measures'];
 export const REPORT_AGGREGATE_SLICES = new Set(['community_operating_summary', 'incident_monthly_by_community_category', 'census_monthly_by_community', 'census_weekly_by_community', 'resident_flow_weekly_by_community', 'resident_flow_monthly_by_community', 'current_resident_county_by_community', 'mar_daily_by_community_90d', 'census_daily_by_community']);
 // Each slice needs its own grant entry; no grant implies another slice.
 /** @param {{slices:string[]}} grant @param {string} slice */
@@ -50,6 +51,12 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
     if(input.step.capability==='licensing-search' && input.step.input?.reportId!==undefined && !grant.detail)deny();
     // Resident keys and linked client ids are record identifiers; counts are not.
     if(input.step.capability==='identity-links' && ['links','resolve'].includes(input.step.input?.view) && !grant.detail)deny();
+    // Governed measures read history slices; each must be granted like an aggregate read.
+    if (input.step.capability === 'measures') {
+      let plan; try { plan = planDayMeasures(input.step.input ?? {}, scope, communities); }
+      catch (error) { const v = /** @type {any} */ (error); if (v?.code !== 'ally_metric_invalid') throw error; throw createHttpError(400, v.metricCode ?? 'query_invalid', 'Choose a valid measure query.', { field: `input.${String(v.field ?? 'query').replace(/^query\./, '')}`, allowed: v.allowed }); }
+      for (const probe of plan.probes) allowPlatformDataQuery(grant, probe.input);
+    }
     if (input.step.capability === 'platform-data') {
       const query = input.step.input;
       allowPlatformDataQuery(grant, query);
