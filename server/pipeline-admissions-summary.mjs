@@ -4,9 +4,9 @@
 // displays the client and workflow fields needed for this board and never
 // calls Pipeline's internal APIs.
 
-const REQUEST_TIMEOUT_MS = 5_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 const CACHE_TTL_MS = 5 * 60_000;
-const FAILURE_RETRY_MS = 60_000;
+const FAILURE_RETRY_MS = 15_000;
 
 /** @type {{ value: any, expiresAt: number, promise: Promise<any> | null }} */
 let cache = { value: null, expiresAt: 0, promise: null };
