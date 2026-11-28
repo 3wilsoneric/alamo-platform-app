@@ -345,7 +345,7 @@ period_filter = (
 )
 
 run(
-    "Gold census vs recalculated silver resident month-end census",
+    "Old Resident-table census vs published episode-based census (informational reconciliation)",
     f"""
     WITH gold_census AS (
       SELECT cast(Facility AS string) AS Facility, month_bucket, cast(census AS int) AS gold_census
@@ -502,6 +502,10 @@ governed_profile_non_countable_count = int(
     )
     or 0
 )
+# Owner-approved census: gold.v_census (silver census_snapshot) must equal the
+# canonical daily census from admission episodes on each snapshot date. The
+# former Resident-table recalculation is now an informational reconciliation
+# (see the "Old Resident-table census vs ..." table above).
 census_recalc_mismatch_count = int(
     scalar(
         f"""
@@ -510,47 +514,19 @@ census_recalc_mismatch_count = int(
           FROM {gold}.v_census
           {period_filter}
         ),
-        eligible AS (
-          SELECT
-            cast(Facility AS string) AS Facility,
-            cast(Res_Number AS string) AS Res_Number,
-            Admit_Date_dt,
-            Discharge_Date_dt
-          FROM {silver}.resident r
-          WHERE {resident_countable_expr} = 1
-            AND Res_Number IS NOT NULL
-            AND Admit_Date_dt IS NOT NULL
-        ),
-        bounds AS (
-          SELECT
-            to_date(concat(min(month_bucket), '-01')) AS start_month,
-            to_date(concat(max(month_bucket), '-01')) AS end_month
-          FROM gold_census
-        ),
-        months AS (
-          SELECT explode(sequence(start_month, end_month, interval 1 month)) AS month_start
-          FROM bounds
-        ),
-        month_points AS (
-          SELECT
-            month_start,
-            least(last_day(month_start), {AS_OF_SQL_DATE}) AS census_date
-          FROM months
-        ),
-        recalculated AS (
-          SELECT e.Facility, date_format(m.month_start, 'yyyy-MM') AS month_bucket, count(DISTINCT e.Res_Number) AS recalculated_census
-          FROM month_points m
-          JOIN eligible e
-            ON e.Admit_Date_dt <= m.census_date
-           AND (e.Discharge_Date_dt IS NULL OR e.Discharge_Date_dt > m.census_date)
-          GROUP BY e.Facility, date_format(m.month_start, 'yyyy-MM')
+        daily AS (
+          SELECT Facility, month_bucket, census AS daily_census
+          FROM {gold}.v_tool_census_daily_by_community
+          WHERE is_month_snapshot_date = 1
+            AND census_date >= history_start_date
         )
         SELECT count(*) AS value
         FROM gold_census g
-        FULL OUTER JOIN recalculated r
-          ON g.Facility = r.Facility
-         AND g.month_bucket = r.month_bucket
-        WHERE coalesce(g.gold_census, -1) != coalesce(r.recalculated_census, -1)
+        FULL OUTER JOIN daily d
+          ON g.Facility = d.Facility
+         AND g.month_bucket = d.month_bucket
+        WHERE coalesce(g.month_bucket, d.month_bucket) IN (SELECT month_bucket FROM gold_census)
+          AND coalesce(g.gold_census, 0) != coalesce(d.daily_census, 0)
         """
     )
     or 0
@@ -657,7 +633,7 @@ if duplicate_active_count > 0:
     )
 if census_recalc_mismatch_count > 0:
     failures.append(
-        f"{census_recalc_mismatch_count} gold census rows differ from recalculated silver month-end census"
+        f"{census_recalc_mismatch_count} gold census rows differ from the canonical daily census (v_tool_census_daily_by_community) on the snapshot date"
     )
 if int(weekly_coverage["weekly_rows"] or 0) <= 0:
     failures.append("weekly census coverage is empty")

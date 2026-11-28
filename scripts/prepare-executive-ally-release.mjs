@@ -95,6 +95,7 @@ await write('server/ally-report-source-release.mjs', serverOutput[0].code);
 // Preserve the deployed reader's compressed publications and identity handling,
 // adding the reviewed read deadline and equivalent credential consolidation.
 await write('server/platform-snapshot.mjs', await source('server/platform-snapshot.mjs'));
+await write('server/platform-tool-tables.mjs', await source('server/platform-tool-tables.mjs'));
 let api = readImage('api/platform.js');
 assert(!api.includes('handlePlatformReportSourceRequest') && !api.includes('/api/platform/ally-source/v1'), 'The base already contains an Ally source endpoint; review its installed implementation before replacing it.');
 api = 'import { handlePlatformReportSourceRequest } from "../server/ally-report-source-release.mjs";\n' + once(api,
@@ -123,7 +124,7 @@ for (const result of [...browserChunks, serverOutput[0]]) for (const id of Objec
   const file = id.split('?')[0];
   if (file.startsWith(root + '/') && !file.includes('/node_modules/')) await source(path.relative(root, file));
 }
-for (const file of ['package.json', 'package-lock.json', 'vite.config.ts', 'vendor/alamo-agent-runtime-0.18.7.tgz',
+for (const file of ['package.json', 'package-lock.json', 'vite.config.ts', JSON.parse(await readFile('package.json','utf8')).dependencies['@alamo/agent-runtime'].replace(/^file:/,''),
   'scripts/prepare-executive-ally-release.mjs', 'scripts/executive-ally-release-mode.mjs', 'scripts/prepare-platform-ui-release.mjs',
   'scripts/stage-spa-route-indexes.mjs', 'scripts/compress-browser-dist.mjs']) await source(file);
 assert.equal(currentImage(), base, 'Production changed during preparation; prepare again against its reviewed current image.');

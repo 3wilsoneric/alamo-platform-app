@@ -216,18 +216,16 @@ show_dataset(
         cast(Facility AS string) AS Facility,
         concat(year(discharge_date), '-Q', quarter(discharge_date)) AS quarter,
         count(*) AS completed_stays,
-        round(avg(datediff(discharge_date, admit_date)), 1) AS average_completed_los_days,
-        percentile_approx(datediff(discharge_date, admit_date), 0.5)
-          AS median_completed_los_days,
+        round(avg(completed_stay_los_days), 1) AS average_completed_stay_los_days,
+        percentile_approx(completed_stay_los_days, 0.5)
+          AS median_completed_stay_los_days,
         round(
           sum(CASE WHEN nullif(trim(discharge_reason), '') IS NOT NULL THEN 1 ELSE 0 END)
           / count(*) * 100,
           1
         ) AS discharge_reason_coverage_pct
       FROM {gold}.v_tool_resident_episode_history
-      WHERE discharge_date IS NOT NULL
-        AND admit_date IS NOT NULL
-        AND discharge_date >= admit_date
+      WHERE completed_stay_los_days IS NOT NULL
         AND date_format(discharge_date, 'yyyy-MM') BETWEEN '{start_month}' AND '{end_month}'
         AND {scope("Facility")}
       GROUP BY Facility,
@@ -266,8 +264,8 @@ show_dataset(
       m.refusals,
       m.medication_compliance_pct,
       s.completed_stays,
-      s.average_completed_los_days,
-      s.median_completed_los_days,
+      s.average_completed_stay_los_days,
+      s.median_completed_stay_los_days,
       s.discharge_reason_coverage_pct
     FROM keys k
     LEFT JOIN overview_facilities f ON k.Facility = f.Facility
@@ -362,8 +360,9 @@ show_dataset(
 # MAGIC %md
 # MAGIC ## 4. Length of stay
 # MAGIC
-# MAGIC Current LOS describes the present roster. Completed LOS describes episodes
-# MAGIC that ended during the selected period. Keep both; they answer different questions.
+# MAGIC Two named measures (owner-approved): `current_length_of_stay_days` (as-of minus
+# MAGIC admit of the current episode, current countable residents) and
+# MAGIC `completed_stay_los_days` (discharge minus admit, attributed to the discharge date).
 
 # COMMAND ----------
 
@@ -374,12 +373,12 @@ show_dataset(
       cast(p.Facility AS string) AS facility_id,
       max(p.Facility_Name) AS facility_name,
       count(*) AS current_residents,
-      round(avg(p.LOS_Days), 1) AS average_los_days,
-      percentile_approx(p.LOS_Days, 0.5) AS median_los_days,
-      percentile_approx(p.LOS_Days, 0.25) AS p25_los_days,
-      percentile_approx(p.LOS_Days, 0.75) AS p75_los_days,
-      sum(CASE WHEN p.LOS_Days >= 365 THEN 1 ELSE 0 END) AS residents_365_plus_days,
-      round(sum(CASE WHEN p.LOS_Days >= 365 THEN 1 ELSE 0 END) / count(*) * 100, 1)
+      round(avg(p.current_length_of_stay_days), 1) AS average_current_length_of_stay_days,
+      percentile_approx(p.current_length_of_stay_days, 0.5) AS median_current_length_of_stay_days,
+      percentile_approx(p.current_length_of_stay_days, 0.25) AS p25_current_length_of_stay_days,
+      percentile_approx(p.current_length_of_stay_days, 0.75) AS p75_current_length_of_stay_days,
+      sum(CASE WHEN p.current_length_of_stay_days >= 365 THEN 1 ELSE 0 END) AS residents_365_plus_days,
+      round(sum(CASE WHEN p.current_length_of_stay_days >= 365 THEN 1 ELSE 0 END) / count(*) * 100, 1)
         AS residents_365_plus_pct
     FROM {gold}.v_tool_resident_profile_enriched p
     WHERE {scope("p.Facility")}
@@ -396,17 +395,12 @@ show_dataset(
       max(e.Facility_Name) AS facility_name,
       concat(year(e.discharge_date), '-Q', quarter(e.discharge_date)) AS discharge_quarter,
       count(*) AS completed_stays,
-      round(avg(datediff(e.discharge_date, e.admit_date)), 1) AS average_los_days,
-      percentile_approx(datediff(e.discharge_date, e.admit_date), 0.5)
-        AS median_los_days,
-      percentile_approx(datediff(e.discharge_date, e.admit_date), 0.25)
-        AS p25_los_days,
-      percentile_approx(datediff(e.discharge_date, e.admit_date), 0.75)
-        AS p75_los_days
+      round(avg(e.completed_stay_los_days), 1) AS average_completed_stay_los_days,
+      percentile_approx(e.completed_stay_los_days, 0.5) AS median_completed_stay_los_days,
+      percentile_approx(e.completed_stay_los_days, 0.25) AS p25_completed_stay_los_days,
+      percentile_approx(e.completed_stay_los_days, 0.75) AS p75_completed_stay_los_days
     FROM {gold}.v_tool_resident_episode_history e
-    WHERE e.admit_date IS NOT NULL
-      AND e.discharge_date IS NOT NULL
-      AND e.discharge_date >= e.admit_date
+    WHERE e.completed_stay_los_days IS NOT NULL
       AND date_format(e.discharge_date, 'yyyy-MM') BETWEEN '{start_month}' AND '{end_month}'
       AND {scope("e.Facility")}
     GROUP BY e.Facility,
@@ -800,8 +794,8 @@ show_dataset(
       max(Facility_Name) AS facility_name,
       count(*) AS current_residents,
       round(avg(Age), 1) AS average_age,
-      round(avg(LOS_Days), 1) AS average_los_days,
-      percentile_approx(LOS_Days, 0.5) AS median_los_days,
+      round(avg(current_length_of_stay_days), 1) AS average_current_length_of_stay_days,
+      percentile_approx(current_length_of_stay_days, 0.5) AS median_current_length_of_stay_days,
       sum(incident_count_30d) AS resident_incidents_30d,
       sum(incident_count_90d) AS resident_incidents_90d,
       sum(CASE WHEN days_since_last_note > 7 THEN 1 ELSE 0 END)

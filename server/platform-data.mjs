@@ -33,6 +33,7 @@ import {
 import { isProductionLikeRuntime } from "./runtime-environment.mjs";
 import { createHttpError } from "./http-errors.mjs";
 import { getGovernedIncidentDetailRows } from "./governed-incident-details.mjs";
+import { deriveIncidentPriority, legacyIncidentPriorityLabel } from "../shared/incident-priority.mjs";
 
 const liveCache = new Map();
 const GOVERNED_AS_OF_CTE = `report_context AS (
@@ -193,37 +194,42 @@ function getMonthBucket(value) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function priorityFromIncident(row) {
-  const category = normalizeString(row.Incident_Category || row.Type_of_Incident).toLowerCase();
-  const detail = normalizeString(row.What_Staff_Saw).toLowerCase();
-  const hasInjury = normalizeString(row.Injuires_YN).toLowerCase() === "yes";
-  const sentinel = normalizeString(row.Sentinel_Event_YN).toLowerCase() === "yes";
-  const police = normalizeString(row.Notify_EmergSrvs_YN).toLowerCase() === "yes";
+// Incident center priority comes from the single shared scale; category and
+// narrative keywords no longer raise priority (owner-approved definition).
+/** @param {unknown} value */
+function recordedFlag(value) {
+  const text = normalizeString(value).toLowerCase();
+  return ["yes", "true", "y", "1"].includes(text) ? true : ["no", "false", "n", "0"].includes(text) ? false : null;
+}
 
-  if (
-    sentinel ||
-    police ||
-    hasInjury ||
-    category.includes("death") ||
-    category.includes("aggression") ||
-    category.includes("mental health crisis") ||
-    category.includes("911") ||
-    detail.includes("arrested")
-  ) {
-    return "HIGH";
-  }
+function priorityLevelFromIncident(row) {
+  return deriveIncidentPriority({
+    sentinelEvent: recordedFlag(row.Sentinel_Event_YN),
+    emergencyServicesNotified: recordedFlag(row.Notify_EmergSrvs_YN),
+    injuryOccurred: recordedFlag(row.Injuires_YN)
+  });
+}
 
-  if (
-    category.includes("medication") ||
-    category.includes("medical") ||
-    category.includes("fall") ||
-    category.includes("transport") ||
-    category.includes("awol")
-  ) {
-    return "MEDIUM";
-  }
-
-  return "LOW";
+/**
+ * Published snapshot rows carry the publisher's own priority (injury and
+ * aggression were "high"). Re-derive from the recorded flags with the shared
+ * scale so the incident center and Ally agree.
+ * @param {unknown} rows
+ */
+export function applySharedIncidentPriority(rows) {
+  if (!Array.isArray(rows)) return rows;
+  return rows.map((row) => {
+    if (!row || typeof row !== "object") return row;
+    const flags = Array.isArray(row.flags) ? row.flags : [];
+    const known = (/** @type {unknown} */ value) => typeof value === "boolean" ? value : null;
+    const priorityLevel = deriveIncidentPriority({
+      sentinelEvent: typeof row.sentinel_event === "boolean" ? row.sentinel_event : flags.includes("sentinel") ? true : null,
+      emergencyServicesNotified: known(row.police_called) ?? (flags.includes("911") ? true : null),
+      injuryOccurred: known(row.injury_occurred) ?? (flags.includes("injury") ? true : null)
+    });
+    const priority = legacyIncidentPriorityLabel(priorityLevel);
+    return { ...row, priority, priority_level: priorityLevel, triage_score: priority === "HIGH" ? 90 : priority === "MEDIUM" ? 65 : 35 };
+  });
 }
 
 function incidentFlags(row) {
@@ -631,7 +637,10 @@ async function getIncidentStreamLive() {
     `);
 
     return rows.map((row) => {
-      const priority = priorityFromIncident(row);
+      const priorityLevel = priorityLevelFromIncident(row);
+      // Legacy HIGH/MEDIUM/LOW label for the existing UI; unknown maps to LOW
+      // there and is exposed exactly as priority_level.
+      const priority = legacyIncidentPriorityLabel(priorityLevel);
       const receivedAt =
         normalizeDisplayTimestamp(row.__TIMESTAMP) ||
         normalizeDisplayTimestamp(row.Incident_Date_parsed) ||
@@ -641,6 +650,7 @@ async function getIncidentStreamLive() {
       return {
         id: String(row.Unique_ID),
         priority,
+        priority_level: priorityLevel,
         stage: "new",
         facility_id: normalizeFacilityId(row.Facility),
         facility_name: normalizeCommunityName(row.Facility_Name),
@@ -837,7 +847,7 @@ export async function getDataExplorerData(kindValue, options = {}) {
 export async function getIncidentStream(options = {}) {
   if (options.preferSnapshot !== false) {
     const snapshotValue = await readSnapshotSection((snapshot) => snapshot.incidents?.incidents);
-    if (snapshotValue) return normalizeCommunityLabels(snapshotValue);
+    if (snapshotValue) return normalizeCommunityLabels(applySharedIncidentPriority(snapshotValue));
   }
 
   return getIncidentStreamLive();

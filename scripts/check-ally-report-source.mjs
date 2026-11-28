@@ -19,6 +19,10 @@ import { validateReportEvidence, EXECUTIVE_REPORT_SOURCE_PATH } from '@alamo/age
 import { reportViewContext } from '@alamo/agent-runtime/shared/executive-report-views.mjs';
 import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { reportColumnLabel, reportCellValue } from '../shared/report-display.mjs';
+import { analystSourceDefinition } from '../server/ally-analyst-catalog.mjs';
+import { readNativeJsonResponse } from '../server/ally-native-record.mjs';
+
+assert.deepEqual(analystSourceDefinition({id:'census_data_quality',fields:['latest_census_month','latest_monthly_census','weekly_census_rows','min_week','max_week','monthly_census_minus_active_roster']}).dateFields,['latest_census_month','min_week','max_week']);
 
 for (const [key,expected] of [['operatingCapacity','Operating capacity'],['occupied_bed_days','Occupied bed-days'],['census_delta','Census delta'],['prn_given_count','PRN given count'],['FacilityID','Community ID']]) assert.equal(reportColumnLabel({key,label:key}),expected);
 assert.equal(reportColumnLabel({key:'bedDays',label:'Days occupied in this period'}),'Days occupied in this period','source-authored wording is preserved');
@@ -37,22 +41,63 @@ const rows=[{facility_id:'337',incident_date:'2026-11-20T23:59:59',severity:'med
 const published={toolContext:{manifest:[{slice_name:'incident_detail_history',grain:'incident',row_count:4,fields:Object.keys(rows[0]),generated_at:new Date().toISOString()}, {slice_name:'census_monthly_by_community',grain:'community month',row_count:1,fields:['facility_id','month','census']}],tables:{incident_detail_history:rows,census_monthly_by_community:[{facility_id:'337',month:'2026-11',census:40}]}}};
 const step={id:'source-1',capability:'platform-data',input:{slice:'incident_detail_history',operation:'count',groupBy:['severity'],dateField:'incident_date'}};
 const pipelineSnapshot={status:'connected',generatedAt:new Date().toISOString(),metrics:{activeReferrals:2,awaitingAdmission:900},board:{total:2,truncated:false,columns:[{key:'decision',label:'Decision',count:99}],cards:[{column:'in_progress',status:'Assessment underway',community:'San Pablo'},{column:'decision',status:'Accepted, requirements open',community:'Santa Clarita'}]}};
-let reads=0, afterRead=()=>{};
-const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async()=>{throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot)});
+let reads=0, afterRead=()=>{}, warehouseRows=null, warehouseSql='', nativeFailure=0;
+const licenseRecord={id:'123456789-'+ 'a'.repeat(32),facilityId:'337',reportDate:'2026-11-10',title:'Fictional inspection',reportType:'Inspection',textSha256:'b'.repeat(64),retrievedAt:'2026-11-20T00:00:00Z',sourceUrl:'https://www.ccld.dss.ca.gov/carefacilitysearch/FacDetail/123456789',text:'Original archived findings. '.repeat(500)};
+let licenseReads=0,licenseChanged=false;
+const sources=createPlatformReportSources({summary:async()=>published,data:async(query,options)=>{reads++;if(nativeFailure)return readNativeJsonResponse(new Response('PRIVATE UPSTREAM BODY',{status:nativeFailure}),'Pipeline');const value=await readAllyPlatformData(query,{...options,load:async()=>published,execute:async sql=>{warehouseSql=sql;if(warehouseRows)return warehouseRows;throw Error('Offline fixture');}});afterRead();return value;},pipeline:async()=>structuredClone(pipelineSnapshot),
+  licensing:async()=>({collectedAt:licenseRecord.retrievedAt,reports:[licenseRecord,{...licenseRecord,id:'123456789-'+ 'c'.repeat(32),facilityId:'345'}]}),
+  licensingReport:async()=>{licenseReads++;return {...licenseRecord,...(licenseChanged?{textSha256:'d'.repeat(64)}:{})};}});
 const {publicKey,privateKey}=await generateKeyPair('RS256');const jwk=await exportJWK(publicKey);
 const sign=(claims={})=>new SignJWT({tid:EVERYAGENT_TENANT,oid:principalId,azp:clientId,roles:['AlamoAgent.Source.Read'],ver:'2.0',iss:`https://login.microsoftonline.com/${EVERYAGENT_TENANT}/v2.0`,aud:audience,iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600,...claims}).setProtectedHeader({alg:'RS256',kid:'test'}).sign(privateKey);
 const handler=createPlatformReportSourceHandler({authorize:createPlatformAgentSourceAuthorizer({audience,keySet:createLocalJWKSet({keys:[{...jwk,kid:'test',alg:'RS256'}]})}),readGrants:async()=>structuredClone(registry),sources});
 const server=createServer((req,response)=>{const res={setHeader:(k,v)=>response.setHeader(k,v),status(code){response.statusCode=code;return res;},json(value){response.setHeader('Content-Type','application/json');response.end(JSON.stringify(value));}};void handler(req,res).catch(e=>response.destroy(e));});
 server.listen(0,'127.0.0.1');await once(server,'listening');const base=`http://127.0.0.1:${server.address().port}`,token=await sign();
 const input={version:1,operation:'read',subjectId:user,scope,step};
+const clinicalInput={...input,step:{id:'client',capability:'client-records',input:{view:'directory'}}};
+const clinicalRegistry=structuredClone(registry);
+clinicalRegistry.grants[0].capabilities.push('client-records');
+assert.throws(()=>authorizePlatformReportSource({tenantId:EVERYAGENT_TENANT,clientId,principalId},clinicalInput,clinicalRegistry));
+clinicalRegistry.grants[0].detail=true;
+assert.throws(()=>authorizePlatformReportSource({tenantId:EVERYAGENT_TENANT,clientId,principalId},clinicalInput,clinicalRegistry),'A whole client history can span communities.');
+clinicalRegistry.grants[0].communityIds=ALAMO_FACILITIES.map(f=>f.facilityId);
+assert.equal(authorizePlatformReportSource({tenantId:EVERYAGENT_TENANT,clientId,principalId},clinicalInput,clinicalRegistry).receipt.detail,true);
 const send=(body=input,bearer=token)=>fetch(base+EXECUTIVE_REPORT_SOURCE_PATH,{method:'POST',headers:{Authorization:`Bearer ${bearer}`,'Content-Type':'application/json'},body:typeof body==='string'?body:JSON.stringify(body)});
 try {
   for(const claims of [{aud:'wrong'},{scp:'access_as_user'},{roles:[]},{oid:user},{tid:user},{exp:1}]) assert([401,403].includes((await send(input,await sign(claims))).status));
   for(const body of [{...input,subjectId:principalId},{...input,scope:{...scope,communityIds:[]}},{...input,step:{...step,input:{...step.input,operation:'rows',groupBy:[]}}},{...input,step:{...step,input:{...step.input,groupBy:['private_name']}}}]) assert.equal((await send(body)).status,403);
   assert.equal(reads,0);
+  const authorizationBatch={...input,operation:'authorize-batch',step:null,checks:[{scope,step:null},{scope,step},{scope:{...scope,communityIds:['345']},step:null},{scope,step:{...step,input:{...step.input,operation:'rows',groupBy:[]}}}]};
+  const batchResponse=await send(authorizationBatch);assert.equal(batchResponse.status,200);
+  const batch=await batchResponse.json();assert.equal(batch.grants.length,4);assert.deepEqual(batch.grants.slice(0,2),[batch.grant,batch.grant]);assert.deepEqual(batch.grants.slice(2),[null,null]);
+  assert.equal((await send({...authorizationBatch,checks:Array(33).fill({scope,step:null})})).status,400);
+  assert.equal((await send({...authorizationBatch,checks:[{scope,step:null,ignorePermission:true}]})).status,400);
+  registry.grants[0].revoked=true;assert.equal((await send(authorizationBatch)).status,403);registry.grants[0].revoked=false;
   assert.equal((await send({...input,untrustedAction:'send-email'})).status,400);
   assert.equal((await send('x'.repeat(17000))).status,413);
   const connection=createExecutiveReportSource({origin:'https://source.example.test',getToken:async()=>({token,expiresOnTimestamp:Date.now()+60000}),fetchImpl:(url,init)=>fetch(base+new URL(url).pathname,init)});
+  for(const status of [400,409,422,401,403,404,503]) {
+    nativeFailure=status;
+    const correctable=[400,404,409,422].includes(status);
+    const failed=await send();assert.equal(failed.status,correctable?200:status);
+    assert(!(await failed.text()).includes('PRIVATE'));
+    if(correctable){const evidence=validateReportEvidence(await connection.read(user,scope,step),step,scope);assert.equal(evidence.status,'unavailable');assert.equal(evidence.answer,null);assert.equal(evidence.coverage,'partial');assert(evidence.note);}
+    else await assert.rejects(connection.read(user,scope,step),error=>error.statusCode===status);
+  }
+  nativeFailure=0;
+  const licenseStep={id:'license',capability:'licensing-search',input:{reportId:licenseRecord.id}};
+  assert.equal((await send({...input,step:licenseStep})).status,403);assert.equal(licenseReads,0,'Metadata-only grants cannot read report text');
+  registry.grants[0].detail=true;
+  const listing=JSON.parse((await connection.read(user,scope,{...licenseStep,input:{}})).answer);
+  assert.equal(listing.reports.length,1);assert.match(listing.reports[0].href,/report=123456789-/);assert.equal(listing.reports[0].text,undefined);
+  const original=validateReportEvidence(await connection.read(user,scope,licenseStep),licenseStep,scope);assert.equal(original.requiresDetail,true);
+  const originalText=JSON.parse(original.answer);assert.equal(originalText.content.text,licenseRecord.text.slice(0,8000));assert.equal(originalText.content.nextOffset,8000);
+  const continuation={...licenseStep,input:{...licenseStep.input,offset:8000,revision:originalText.content.revision}};
+  assert.equal(JSON.parse((await connection.read(user,scope,continuation)).answer).content.text,licenseRecord.text.slice(8000));
+  const beforeDenied=licenseReads;
+  const unavailable=await connection.read(user,scope,{...licenseStep,input:{reportId:'123456789-'+ 'c'.repeat(32)}});
+  assert.equal(unavailable.status,'unavailable');assert.equal(unavailable.answer,null);assert.equal(licenseReads,beforeDenied,'Out-of-community reports never reach the text reader');
+  licenseChanged=true;assert.equal((await connection.read(user,scope,licenseStep)).status,'unavailable');licenseChanged=false;
+  registry.grants[0].detail=false;
   // Use the canonical knowledge reader and its versioned contract, rather than
   // a permissive fake that would accept an invalid cross-application request.
   const knowledgeStep={id:'knowledge',capability:'proforma-search',input:{query:'intake'}};
@@ -72,8 +117,28 @@ try {
   assert.deepEqual(evidence.dataset.columns.map(column=>column.label),['Severity','Records']);
   assert.equal(evidence.requiresDetail,false);
   assert.equal(evidence.coverage,'complete');assert.deepEqual(evidence.dataset.rows,[{severity:'medium',result:1},{severity:'low',result:1}]);assert(!evidence.answer.includes('OTHER_COMMUNITY'));assert(!evidence.answer.includes('Synthetic A'));
+  assert.deepEqual(JSON.parse(evidence.answer).navigation,{label:'Open incident history',href:'/incidents/history?facilityId=337'});
+  rows.push({facility_id:'337',incident_date:'1964-07-30',severity:'low',private_name:'Historical fixture'});
+  published.toolContext.manifest[0].row_count=5;
+  const preCenturyScope={...scope,from:'1900-01-01',through:'1964-12-31'};
+  const preCentury=validateReportEvidence(await connection.read(user,preCenturyScope,step),step,preCenturyScope);
+  assert.deepEqual(preCentury.dataset.rows,[{severity:'low',result:1}]);
+  await assert.rejects(()=>connection.read(user,{...preCenturyScope,communityIds:['345']},step));
+  rows.pop();published.toolContext.manifest[0].row_count=4;
   const sqlResult=await readAllyPlatformData(step.input,{load:async()=>({...published,toolContext:{...published.toolContext,tables:{}}}),execute:async sql=>{assert(sql.includes('substring(`')||sql.includes('substring(CAST'));return[{severity:'medium',result:1}];},constraints:[{field:'facility_id',op:'in',value:['337']},{field:'incident_date',op:'day-lte',value:'2026-11-20'}]});assert.equal(sqlResult.rows[0].result,1);
   published.toolContext.manifest[0].row_count=10;await assert.rejects(connection.read(user,scope,step));published.toolContext.manifest[0].row_count=4;
+  // Native SDK timestamp -> source formatting -> HTTP JSON -> engine contract.
+  // The live benchmark exposed Date cells becoming {} during name formatting.
+  published.toolContext.manifest[0].row_count=10;
+  registry.grants[0].detail=true;
+  warehouseRows=[{incident_date:new Date('2026-11-19T23:41:07.123Z'),severity:'medium',
+    __ally_total_rows:1,__ally_result_revision:'a'.repeat(64),__ally_row_present:true}];
+  const datedStep={id:'source-2',capability:'platform-data',input:{slice:'incident_detail_history',operation:'rows',columns:['incident_date','severity'],dateField:'incident_date'}};
+  const dated=validateReportEvidence(await connection.read(user,scope,datedStep),datedStep,scope);
+  assert.equal(dated.dataset.rows[0].incident_date,'2026-11-19T23:41:07.123Z');
+  assert.equal(JSON.parse(dated.answer).readMode,'governed-view');
+  assert.equal(JSON.parse(dated.answer).rows[0].incident_date,dated.dataset.rows[0].incident_date);
+  warehouseRows=null;registry.grants[0].detail=false;published.toolContext.manifest[0].row_count=4;
   // A newly published field must not expand an aggregate-only grant.
   const aggregate=published.toolContext.manifest[1];aggregate.fields.push('private_case_note','private_date_of_birth');
   Object.assign(published.toolContext.tables.census_monthly_by_community[0],{private_case_note:'REDACTION_PROBE',private_date_of_birth:'1980-01-01',undeclared_secret:'UNDECLARED_PROBE'});
@@ -98,6 +163,36 @@ try {
     assert.equal(publishedEvidence.dataset.columns.find(c=>c.key===numeric).type,'number');
     assert(!JSON.stringify(publishedEvidence).includes('PRIVATE_AGGREGATE_PROBE'));
   }
+  // Daily medication coverage is a manifest, not a truncated copy of events.
+  // Exercise the authenticated source and SQL compiler for a partial month.
+  const dailySlice='mar_daily_by_community_medication';
+  published.toolContext.manifest.push({slice_name:dailySlice,grain:'community day medication',row_count:150000,
+    fields:['facility_id','administration_date','medication_name','scheduled_count','scheduled_refusal_count','prn_refusal_count'],generated_at:'2026-11-24T13:00:00Z'});
+  const dailyStep={id:'daily-medication',capability:'platform-data',input:{slice:dailySlice,operation:'sum',measure:'scheduled_refusal_count',groupBy:['medication_name'],dateField:'administration_date'}};
+  assert.equal((await send({...input,step:dailyStep})).status,403,'Publishing a view does not grant access');
+  registry.grants[0].slices.push(dailySlice);
+  assert.equal((await send({...input,step:dailyStep})).status,403,'Medication-level queries retain the existing detail grant');
+  registry.grants[0].detail=true;
+  const dailyCatalog=(await connection.catalog(user,scope)).find(c=>c.id==='platform-data').sources.find(s=>s.id===dailySlice);
+  assert.equal(dailyCatalog.completeness,'full-query-required');
+  assert(dailyCatalog.numericFields.includes('scheduled_refusal_count'));
+  assert.match(dailyCatalog.meaning,/sum\(scheduled_refusal_count\)\/sum\(scheduled_count\)/);
+  warehouseRows=[{medication_name:'Medicine A 5 mg',result:2}];
+  const dailyEvidence=validateReportEvidence(await connection.read(user,scope,dailyStep),dailyStep,scope);
+  assert.equal(dailyEvidence.status,'verified');assert.equal(dailyEvidence.coverage,'complete');
+  assert.equal(dailyEvidence.dataset.rows[0].result,2);
+  assert.match(warehouseSql,/v_tool_mar_daily_by_community_medication/);
+  assert.match(warehouseSql,/SUM\(try_cast\(`scheduled_refusal_count` AS DOUBLE\)\)/);
+  assert.match(warehouseSql,/CAST\(`facility_id` AS STRING\) IN/);
+  assert(warehouseSql.includes(Buffer.from('337').toString('base64')));
+  assert.match(warehouseSql,/substring\(CAST\(`administration_date` AS STRING\), 1, 10\) >=/);
+  assert.match(warehouseSql,/substring\(CAST\(`administration_date` AS STRING\), 1, 10\) <=/);
+  assert(warehouseSql.includes(Buffer.from(scope.from).toString('base64')));
+  assert(warehouseSql.includes(Buffer.from(scope.through).toString('base64')));
+  warehouseRows=null;
+  await assert.rejects(connection.read(user,scope,dailyStep),error=>error.statusCode===503,
+    'No snapshot fallback can invent a partial-month denominator');
+  registry.grants[0].detail=false;registry.grants[0].slices.pop();published.toolContext.manifest.pop();
   const county=published.toolContext.tables.current_resident_county_by_community[0];
   const countyStep={id:'source-4',capability:'platform-data',input:{slice:'current_resident_county_by_community',operation:'rows'}};
   for(const value of [null,0]) {
@@ -157,9 +252,87 @@ try {
   await assert.rejects(connection.read(user,bothScope,pipelineStep),'conflicting community identity cannot choose an authorized scope');
   delete pipelineSnapshot.board.cards[0].facilityId;registry.grants[0].communityIds.pop();
 
+  assert.equal((await send({...input,step:{id:'workspace-detail',capability:'pipeline-summary',input:{view:'current-workspaces'}}})).status,403);
+  registry.grants[0].detail=true;
+  Object.assign(pipelineSnapshot.board.cards[0],{clientName:'Synthetic A',owner:'Owner A',daysOpen:12,daysSinceUpdate:2,plannedAdmissionDate:null,pipelineUrl:'https://alamo-pipeline.com/?referralId=1',managementProfile:{overview:'PRIVATE_ASSESSMENT'}});
+  const detailStep={id:'workspace-detail',capability:'pipeline-summary',input:{view:'current-workspaces',query:'Owner A',stage:'assessment'}};
+  const workspace=await connection.read(user,scope,detailStep);
+  assert.equal(workspace.requiresDetail,true);assert.equal(workspace.dataset.rows.length,1);
+  assert.equal(workspace.dataset.rows[0].client,'Synthetic A');assert(!workspace.answer.includes('PRIVATE_ASSESSMENT'));
+  registry.grants[0].detail=false;
+  const historyStep={id:'history',capability:'pipeline-summary',input:{view:'monthly-history'}};
+  assert.equal((await connection.read(user,scope,historyStep)).status,'unavailable','portfolio history cannot answer a community-scoped request');
+  pipelineSnapshot.generatedAt='2026-11-24T15:00:00Z';
+  // Contract 3.6 split (normalized camelCase). admitted stays as the deprecated confirmed+assumed alias.
+  pipelineSnapshot.history={coverageStartMonth:'2026-09',monthly:[{month:'2026-09',received:9,accepted:6,declined:1,admitted:4,confirmedAdmissions:3,assumedArrivals:1,plannedArrivals:2},{month:'2026-10',received:10,accepted:7,declined:2,admitted:5,confirmedAdmissions:4,assumedArrivals:1,plannedArrivals:3},{month:'2026-11',received:8,accepted:5,declined:1,admitted:3,confirmedAdmissions:3,assumedArrivals:0,plannedArrivals:1}]};
+  const savedCommunities=[...registry.grants[0].communityIds];registry.grants[0].communityIds=ALAMO_FACILITIES.map(f=>f.facilityId);
+  const historicalScope={communityIds:registry.grants[0].communityIds,from:'2026-09-01',through:'2026-10-31'};
+  const pipelineHistory=await connection.read(user,historicalScope,historyStep);
+  assert.equal(pipelineHistory.coverage,'complete');assert.equal(pipelineHistory.dataset.rows.length,2);
+  // Admission definition: confirmed only; assumed/planned are separately labelled and never "admissions".
+  assert.deepEqual(pipelineHistory.dataset.rows[1],{month:'2026-10',received:10,accepted:7,declined:2,confirmed_admissions:4,assumed_arrivals:1,planned_arrivals:3});
+  assert.deepEqual(pipelineHistory.dataset.columns.slice(4).map(column=>column.label),['Confirmed admissions','Assumed arrivals (not admissions)','Planned arrivals (not admissions)']);
+  assert.equal(JSON.parse(pipelineHistory.answer).rows[1].admitted,5,'deprecated alias kept in the answer');
+  assert.match(JSON.parse(pipelineHistory.answer).definitions.admitted,/includes assumed dates/);
+  const splitHistory=pipelineSnapshot.history;
+  pipelineSnapshot.history={coverageStartMonth:'2026-09',monthly:splitHistory.monthly.map(({month,received,accepted,declined,admitted})=>({month,received,accepted,declined,admitted,confirmedAdmissions:null,assumedArrivals:null,plannedArrivals:null}))};
+  const legacyHistory=await connection.read(user,historicalScope,historyStep);
+  assert.equal(legacyHistory.coverage,'partial','a 3.5 producer cannot separate confirmed admissions');
+  assert.equal(legacyHistory.dataset.rows[1].confirmed_admissions,null);assert.match(legacyHistory.note,/predates the confirmed\/assumed\/planned split/);
+  pipelineSnapshot.history=splitHistory;
+  assert.equal((await connection.read(user,{...historicalScope,from:'2026-01-01'},historyStep)).coverage,'partial');
+  assert.equal((await connection.read(user,{...historicalScope,from:'2026-10-15'},historyStep)).status,'unavailable');
+  registry.grants[0].communityIds=savedCommunities;
+
   const partialMonth=await sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',groupBy:['month'],dateField:'month'}}},auth);
   assert.equal(partialMonth.status,'unavailable');assert.equal(partialMonth.coverage,'partial');assert.equal(partialMonth.answer,null);assert.equal(partialMonth.dataset,undefined);assert.match(partialMonth.note,/partial month/);
-  await assert.rejects(sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth),/across dates/);
+  const invalidCensus=await sources.read({...input,step:{...step,input:{slice:'census_monthly_by_community',operation:'sum',measure:'census',dateField:'month'}}},auth);
+  assert.equal(invalidCensus.status,'unavailable');assert.equal(invalidCensus.answer,null);assert.equal(invalidCensus.dataset,undefined);
+  assert.match(invalidCensus.note,/cannot be summed across dates/);
+  const originalMonthlyRows=published.toolContext.tables.census_monthly_by_community, originalMonthlyCount=aggregate.row_count;
+  // Narrow month comparisons remain valid within a page ending mid-month.
+  published.toolContext.tables.census_monthly_by_community = [
+    {facility_id:'337',month:'2026-08',census:37},
+    {facility_id:'337',month:'2026-09',census:38},
+    {facility_id:'337',month:'2026-10',census:39},
+    {facility_id:'337',month:'2026-11',census:40}
+  ];
+  aggregate.row_count=4;
+  const monthStep={id:'months',capability:'platform-data',input:{slice:'census_monthly_by_community',operation:'rows',columns:['month','census'],dateField:'month',filters:[{field:'month',op:'gte',value:'2026-09'},{field:'month',op:'lte',value:'2026-10'}]}};
+  const broadScope={...scope,from:'2026-01-01',through:'2026-11-24'};
+  const monthAnswer=await connection.read(user,broadScope,monthStep);
+  assert.equal(monthAnswer.status,'verified');
+  assert.equal(monthAnswer.period,'2026-09-01–2026-10-31');
+  assert.deepEqual(monthAnswer.dataset.rows,[{month:'2026-09',census:38},{month:'2026-10',census:39}]);
+  assert.equal(monthAnswer.dataset.shape,'series');
+  const cut=await connection.read(user,{...broadScope,from:'2026-09-15'},monthStep);
+  assert.equal(cut.status,'unavailable','query dates cannot expand the authorized interval');
+  const projectedAggregate=await connection.read(user,broadScope,{...monthStep,input:{...monthStep.input,operation:'average',measure:'census'}});
+  assert.equal(projectedAggregate.status,'verified');assert.equal(projectedAggregate.dataset.rows[0].result,38.5,'redundant projection cannot change aggregate population');
+  await assert.rejects(connection.read(user,broadScope,{...monthStep,input:{...monthStep.input,operation:'average',measure:'census',columns:['nonexistent']}}),error=>error.statusCode===403,'redundant projection cannot bypass the grant field boundary');
+  const {columns:_columns,...repaired}=monthStep.input;
+  const repairedAnswer=await connection.read(user,broadScope,{...monthStep,input:{...repaired,operation:'average',measure:'census'}});
+  assert.equal(repairedAnswer.dataset.rows[0].result,38.5,'valid repaired query reads the same bounded population');
+  const measureOrder=await connection.read(user,broadScope,{...monthStep,input:{...repaired,operation:'average',measure:'census',orderBy:[{field:'census',direction:'desc'}]}});
+  assert.equal(measureOrder.status,'verified');assert.equal(measureOrder.dataset.rows[0].result,38.5);
+  const badOrder=await connection.read(user,broadScope,{...monthStep,input:{...repaired,operation:'statistics',measure:'census',orderBy:[{field:'census',direction:'desc'}]}});
+  assert.equal(badOrder.status,'unavailable');assert.match(badOrder.note,/returned fields/);
+  assert(!JSON.stringify(monthAnswer).includes('private_case_note'),'private schema coverage cannot escape the authorized projection');
+
+  published.toolContext.tables.census_monthly_by_community=originalMonthlyRows;aggregate.row_count=originalMonthlyCount;
+  const originalDetail=registry.grants[0].detail;
+  registry.grants[0].detail=true;registry.grants[0].slices.push('services_provided');
+  published.toolContext.manifest.push({slice_name:'services_provided',grain:'resident_service_month',row_count:2,min_period:'2026-03-01',max_period:'2026-04-01',fields:['Facility','month_bucket','service_date','service_minutes','service_visits']});
+  published.toolContext.tables.services_provided=[{Facility:'337',month_bucket:'2026-03',service_date:'2026-03-01',service_minutes:60,service_visits:3},{Facility:'337',month_bucket:'2026-04',service_date:'2026-04-01',service_minutes:80,service_visits:4}];
+  const archivedStep={id:'archive',capability:'platform-data',input:{slice:'services_provided',operation:'sum',measure:'service_visits',filters:[{field:'month_bucket',op:'eq',value:'2026-04'}]}};
+  const archived=await connection.read(user,broadScope,archivedStep);
+  assert.equal(archived.status,'verified');assert.equal(archived.dataset.rows[0].result,4);
+  const lateArchive=await connection.read(user,broadScope,{...archivedStep,input:{...archivedStep.input,filters:[{field:'month_bucket',op:'eq',value:'2026-10'}]}});
+  assert.equal(lateArchive.status,'unavailable');assert.match(lateArchive.note,/unavailable, not zero/);
+  const falseDaily=await connection.read(user,broadScope,{...archivedStep,input:{...archivedStep.input,dateField:'service_date'}});
+  assert.equal(falseDaily.status,'unavailable');assert.match(falseDaily.note,/not an individual visit/);
+  registry.grants[0].detail=originalDetail;registry.grants[0].slices.pop();published.toolContext.manifest.pop();delete published.toolContext.tables.services_provided;
+
   // Saved output must obey the recipient's projection, not merely permission
   // to issue the same query (which returns fewer fields for aggregate readers).
   const reader='55555555-5555-4555-8555-555555555555';
@@ -224,17 +397,23 @@ assert.equal(countyView.dataset.shape,'categories');assert.equal(countyView.data
 assert(!countyView.answer.includes('Alameda'),'current resident counties cannot replace the admission cohort');
 assert(!JSON.stringify(countyView).includes('PRIVATE_PERSON_PROBE'));
 const occupancy=await readView('occupancy');
-assert.deepEqual(occupancy.dataset.rows,[{community:'San Pablo',census:2,operatingCapacity:175,availableBeds:173,capacityAsOf:'2026-07-30'},{community:'Turlock',census:2,operatingCapacity:84,availableBeds:82,capacityAsOf:'2026-07-30'}]);
+assert.deepEqual(JSON.parse(occupancy.answer).totals,{census:4,operatingCapacity:259,availableBeds:255,occupancyPercent:1.5},'portfolio totals use only the selected authorized communities');
+assert.deepEqual(JSON.parse((await readView('occupancy',{...flowScope,communityIds:['337']})).answer).totals,{census:2,operatingCapacity:175,availableBeds:173,occupancyPercent:1.1});
+assert.deepEqual(occupancy.dataset.rows,[{community:'San Pablo',census:2,operatingCapacity:175,availableBeds:173,occupancyPercent:1.1,capacityAsOf:'2026-07-30'},{community:'Turlock',census:2,operatingCapacity:84,availableBeds:82,occupancyPercent:2.4,capacityAsOf:'2026-07-30'}]);
 assert(!JSON.stringify(occupancy).includes('PRIVATE_PERSON_PROBE'));assert(!occupancy.answer.includes('Santa Clarita'));
 assert.equal((await readView('occupancy',{...flowScope,through:'2026-11-02'})).period,'Current census as of 2026-11-21','current occupancy is labeled as the source snapshot, not a historical denominator');
 const ordinary=await readView('communities');
 assert.deepEqual(ordinary.dataset.rows.map(r=>[r.community,r.admissions,r.discharges]),[['San Pablo',2,1],['Turlock',2,1]]);
+assert.deepEqual(JSON.parse(ordinary.answer).sites.map(site=>[site.completedStayCount,site.averageCompletedStayDays,site.medianCompletedStayDays]),[[1,1,1],[1,1,1]],'the canonical flow already owns completed-stay statistics; do not approximate from a bounded row sample');
+const flowCatalog=await createPlatformReportSources({snapshot:async()=>flowSnapshot,summary:async()=>({})}).catalog({...flowAuthorization,grant:{detail:false,capabilities:['resident-flow'],slices:[]}});
+assert.match(flowCatalog[0].description,/averageCompletedStayDays.*medianCompletedStayDays/,'derived completed-stay measures must be discoverable before guessing a new query');
 await assert.rejects(readView('invented'),/supported resident-flow view/);
 delete flowSnapshot.reportsSummary.toolContext.tables.resident_episode_history[1].admission_county;
 const unavailableCounty=await readView('counties');assert.equal(unavailableCounty.coverage,'partial');assert.deepEqual(unavailableCounty.dataset.rows,[]);
 flowSnapshot.snapshot.as_of_date='2026-06-30';
 flowSnapshot.reportsSummary.toolContext.tables.census_weekly_by_community=ALAMO_FACILITIES.map(f=>({facility_id:f.facilityId,census_date:'2026-06-30',census:1}));
 const historical=await readView('occupancy');assert.equal(historical.coverage,'partial');assert(historical.dataset.rows.every(r=>r.operatingCapacity===null&&r.availableBeds===null),'current operating limits cannot be applied before their effective dates');
+assert.deepEqual(JSON.parse(historical.answer).totals,{census:2,operatingCapacity:null,availableBeds:null,occupancyPercent:null},'unknown capacity is not silently summed as zero');
 console.log('Executive views: scoped admission counties, actual occupancy limits, unavailable history, and aggregate privacy passed.');
 
 // The real weekly briefing owns schedule membership and date boundaries. Ally
@@ -269,12 +448,14 @@ const readPlanned = (ids=['337','344']) => scheduledSources.read({ scope: {...fl
 const planned = validateReportEvidence(await readPlanned(), plannedStep, flowScope);
 assert.equal(planned.period, '2026-11-23–2026-11-29');
 assert.equal(planned.coverage, 'complete');
-assert.deepEqual(planned.dataset.rows, [{community:'San Pablo',plannedAdmissions:2,awaitingDate:1},{community:'Turlock',plannedAdmissions:1,awaitingDate:0}]);
+assert.deepEqual(planned.dataset.rows, [{community:'San Pablo',plannedArrivals:2,awaitingDate:1},{community:'Turlock',plannedArrivals:1,awaitingDate:0}]);
 assert.equal(JSON.parse(planned.answer).total, 3);
 assert.equal(JSON.parse(planned.answer).awaitingDate, 1, 'only accepted active workspaces without dates belong in the unknown-week count');
-assert.match(planned.note, /not confirmed admissions/);
+assert.match(planned.note, /Planned arrivals are not admissions/);
+assert.equal(JSON.parse(planned.answer).plannedArrivals, 3);
+assert.equal(JSON.parse(planned.answer).communities[0].plannedAdmissions, 2, 'deprecated alias kept in the answer');
 assert(!JSON.stringify(planned).match(/PRIVATE_|9000|example\.test|Santa Clarita/), 'only scoped aggregate schedule data may leave Platform');
-assert.deepEqual((await readPlanned(['342'])).dataset.rows, [{community:"Victoria's House",plannedAdmissions:0,awaitingDate:0}], 'covered zero is distinct from missing schedule coverage');
+assert.deepEqual((await readPlanned(['342'])).dataset.rows, [{community:"Victoria's House",plannedArrivals:0,awaitingDate:0}], 'covered zero is distinct from missing schedule coverage');
 schedule.briefing.coverage.moveIns = false;
 await assert.rejects(readPlanned(), /complete planned-admission schedule/);
 schedule.briefing.coverage.moveIns = true;
@@ -297,20 +478,41 @@ const analystSources=createPlatformReportSources({summary:async()=>analystSummar
 const analystAuth={communities:['337'],grant:{capabilities:['platform-data','data-catalog'],slices:['resident_profile','community_operating_summary','notes_summary'],detail:true},receipt:{revision:'a'.repeat(64)}};
 const statisticStep={id:'source-1',capability:'platform-data',input:{slice:'resident_profile',operation:'statistics',measure:'Age'}};
 const statisticEvidence=await analystSources.read({scope,step:statisticStep},analystAuth);
+const badDate=await analystSources.read({scope,step:{...statisticStep,input:{...statisticStep.input,dateField:'Age'}}},analystAuth);
+assert.equal(badDate.status,'unavailable');assert.match(badDate.note,/listed date dimension/);
 assert.deepEqual(statisticEvidence.dataset.rows,[{records:2,known:1,missing:1,mean:20,median:20,minimum:20,maximum:20}]);
 assert(!JSON.stringify(statisticEvidence).includes('OTHER_COMMUNITY'));
 const discovered=JSON.parse((await analystSources.read({scope,step:{id:'catalog',capability:'data-catalog',input:{query:'age'}}},analystAuth)).answer);
+const longSearch=await analystSources.read({scope,step:{id:'catalog',capability:'data-catalog',input:{query:'x'.repeat(241)}}},analystAuth);
+assert.equal(longSearch.status,'unavailable');assert.match(longSearch.note,/1–240 characters/,'invalid model search text is correctable feedback, not a fake source outage');
+assert.equal(longSearch.answer,null);
 assert(discovered.sources.some(s=>s.id==='resident_profile'&&s.numericFields.includes('Age')));
 const aggregateAuth={...analystAuth,grant:{...analystAuth.grant,detail:false,slices:['community_operating_summary']}};
 const aggregateSources=await analystSources.catalog(aggregateAuth);
 assert.deepEqual(aggregateSources.find(s=>s.id==='platform-data').sources.map(s=>s.id),['community_operating_summary']);
 const ageEvidence=await analystSources.read({scope,step:{id:'age',capability:'platform-data',input:{slice:'community_operating_summary',operation:'rows',columns:['Facility_Name','average_age']}}},aggregateAuth);
 assert.equal(ageEvidence.dataset.rows[0].average_age,44.9);assert.equal(ageEvidence.dataset.columns[1].label,'Average age');
-await assert.rejects(analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:null}}},analystAuth),/require a date field/);
+const rejectedDate=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:null}}},analystAuth);
+assert.equal(rejectedDate.status,'unavailable');assert.equal(rejectedDate.answer,null);assert.equal(rejectedDate.dataset,undefined);
+assert.match(rejectedDate.note,/require a date field.*note_date/);
+const correctedDate=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',dateField:'note_date'}}},analystAuth);
+assert.equal(correctedDate.status,'verified');assert.equal(correctedDate.dataset.rows[0].result,1);
 console.log('Analyst discovery, exact missing-age statistics, readable averages, authorized source visibility and mandatory date scope passed.');
+const noteSearch={id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'count',filters:[{field:'note_text',op:'contains',value:'transport'}]}};
+const noMatchingNotes=await analystSources.read({scope,step:noteSearch},analystAuth);
+assert.equal(noMatchingNotes.status,'verified');assert.equal(noMatchingNotes.dataset.rows[0].result,0);
+analystSummary.toolContext.tables.notes_summary[0].note_text=null;
+const unknownMatchingNotes=await analystSources.read({scope,step:noteSearch},analystAuth);
+assert.equal(unknownMatchingNotes.status,'unavailable');assert.equal(unknownMatchingNotes.answer,null);assert.equal(unknownMatchingNotes.dataset,undefined);
+assert.match(unknownMatchingNotes.note,/cannot be determined.*not a zero result/);
+const noteCount=await analystSources.read({scope,step:{...noteSearch,input:{slice:'notes_summary',operation:'count'}}},analystAuth);
+assert.equal(noteCount.dataset.rows[0].result,1,'missing text does not erase the existence of the note');
 analystSummary.toolContext.tables.notes_summary[0].note_text='SOURCE_TEXT_PRIVATE '.repeat(6000);
 const oversized=await analystSources.read({scope,step:{id:'notes',capability:'platform-data',input:{slice:'notes_summary',operation:'rows',limit:1}}},analystAuth);
 assert.equal(oversized.status,'unavailable');assert.equal(oversized.answer,null);assert.match(oversized.note,/fewer rows and columns/);assert(!JSON.stringify(oversized).includes('SOURCE_TEXT_PRIVATE'));
+const shortened=await analystSources.read({scope,step:{id:'excerpt',capability:'platform-data',input:{slice:'notes_summary',operation:'rows',limit:1,columns:['note_text'],textExcerpt:{field:'note_text',query:'',characters:100}}}},analystAuth);
+assert.equal(shortened.status,'verified');assert.equal(shortened.coverage,'partial');
+assert.equal(JSON.parse(shortened.answer).populationCoverage,'partial','a complete page of excerpts is not a complete note review');
 console.log('Oversized source selections produce bounded refinement feedback without exposing their body or inventing an empty result.');
 
 
@@ -325,6 +527,21 @@ const {normalizeKnownCommunityNames}=await import('../shared/community-names.mjs
 assert.equal(leanResult.dataset.rows[0].Facility_Name,normalizeKnownCommunityNames('J.C. Wallace'));
 assert.equal(leanResult.dataset.rows[0].census,7);
 assert(!leanResult.answer.includes('unrelatedClinicalRows'));
+leanPublication.toolContext.tables.community_operating_summary.push({Facility:'337',Facility_Name:'San Pablo',census:8});
+leanPublication.toolContext.manifest[0].row_count=2;
+const pageStep={id:'page',capability:'platform-data',input:{slice:'community_operating_summary',operation:'rows',columns:['Facility_Name','census'],limit:1}};
+const firstPage=await leanSource.read({scope,step:pageStep},leanAuth);
+const continuation=JSON.parse(firstPage.answer);
+assert.equal(continuation.nextOffset,1);assert.equal(continuation.totalRows,2);
+assert.equal(firstPage.coverage,'partial');assert.equal(continuation.populationCoverage,'complete');
+const secondPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:continuation.nextOffset,revision:continuation.revision}}},leanAuth);
+assert.equal(JSON.parse(secondPage.answer).nextOffset,null);assert.equal(secondPage.dataset.rows[0].census,8);
+assert.equal(secondPage.coverage,'partial','The final page is not the entire source population');
+assert.equal(JSON.parse(secondPage.answer).populationCoverage,'complete','both intervals can establish the full population when combined');
+const changedPage=await leanSource.read({scope,step:{...pageStep,input:{...pageStep.input,offset:1,revision:'0'.repeat(64)}}},leanAuth);
+assert.equal(changedPage.status,'unavailable');assert.equal(changedPage.answer,null);
+assert.match(changedPage.note,/source or query changed/);
+console.log('Complete source pages preserve scope and publication identity through the actual report boundary.');
 console.log('Catalog and bounded results skip unrelated clinical rows while preserving readable community names.');
 
 const labelFilter=await leanSource.read({scope,step:{id:'filtered',capability:'platform-data',input:{slice:'community_operating_summary',operation:'count',filters:[{field:'Facility_Name',op:'eq',value:normalizeKnownCommunityNames('J.C. Wallace')}]}}},leanAuth);

@@ -1,3 +1,13 @@
+## November 25 owner-directed change-scoped releases
+
+The owner explicitly requires checks of the changed behavior only and rejects
+whole-site checks for bounded deployments. For Ally-only changes, retain the
+relevant UI/runtime tests, immutable artifact/configuration verification, health
+and authorization boundaries, and actual worker adoption. Do not run the broad
+signed-in route sweep or a new quality benchmark as deployment paperwork.
+Existing required CI/security checks remain applicable. This supersedes the
+whole-site postdeployment sweep below for this bounded scope.
+
 # Ship Checklist
 
 - purpose: define the final Alamo Platform release gate for the rails-only analyst workspace
@@ -12,36 +22,58 @@
   - [data-publishing.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/data-publishing.md)
   - [deployment-operations.md](/Users/eric/CareEngineMain/alamo-platform-app/docs/platform/deployment-operations.md)
 
-## November 23 owner-directed scoped releases
+## November 24 owner-directed five-minute Ally releases
 
-For changes confined to Ally's report UI and governed report adapters, use
-`npm run check:ship:ally:predeploy` (nine stages), then the immutable-image
-configuration/file-diff check and `npm run check:ship:ally:postdeploy` against
-the deployed candidate. Check the actual changed workflow signed in: a real
-question must reach a saved answer or an explicit coverage limit; reopen it and
-exercise History in the normal panel and on a phone. Engine changes additionally
-require engine tests/build/package and the native Functions recovery check.
-After changing worker settings, prove adoption in an actual Durable activity
-before the real question; a successful settings read is insufficient. Reuse
-`assertWorkerBranch` with a stale-run probe that cannot call the model or mutate
-a report. If the process is stale, restart it and verify adoption before retrying.
-Source grant changes require exact before/after registry receipts, denied-scope
-checks and a usable conditional rollback. Never use synthetic model output as
-proof of live model availability or answer accuracy.
+Routine Ally release checks have a **five-minute combined ceiling**: three
+minutes before cutover and two minutes against the deployed candidate. The runner
+enforces those limits, stops its own child processes on timeout, records a failed
+receipt, and rejects skipped stages. A timeout requires investigating that check;
+it never makes a candidate eligible to ship. Do not restart the full app suite
+because the scoped gate timed out.
+The two-minute live budget includes the recorded main-Chrome capture duration,
+not just the later receipt-validation command. The runner subtracts that elapsed
+capture time before starting validation. An over-budget capture fails immediately;
+repeated browser inspection is not outside the release clock.
 
-This is the applicable gate for bounded Ally releases; it supersedes the earlier
-blanket full-suite-before-and-after requirement for this scope. The full suite
-remains for broad shell, authentication, data-publishing or cross-feature changes.
-Historical guided-question generation, unrelated journey fuzzing and repeated
-whole-app browser passes are not repeated for an Ally-only change. Do not weaken
-assertions or suppress a relevant failure. Promote only the tested source/build;
-retain rollback and verify production health, authorization and real behavior.
+- Report UI, governed adapters, and runtime-package updates use
+  `npm run check:ship:ally:predeploy`.
+- Changes to Ally's analytical views or snapshot field mappings use
+  `npm run check:ship:ally-data:predeploy`. This adds the existing field/grant,
+  null-preservation, snapshot transport and cache-revalidation checks.
+- After cutover, use `npm run check:ship:ally:postdeploy` with the authenticated
+  main-Chrome evidence for the deployed candidate. An unavailable sign-in or
+  inspection session is a concrete blocker, not a reason to repeat local checks.
 
-The History regression must assert containment within its clipping panel, not
-merely within the page viewport, with eight long titles, keyboard focus, scroll
-and click access. Source tests must distinguish daily from monthly grain, incomplete
-coverage from zero, source failures from model failures, and retries from duplicate
-work. Revisit this scoped gate when a change touches a shared owner outside Ally.
+Keep dependency security, authorization, source correctness, History containment,
+phone layout, and build checks. Use the existing source/build fingerprints to reuse
+passing evidence for unchanged code; never reuse a receipt across an affected
+source, dependency, configuration or build change. Packaging verifies the immutable
+candidate, its exact changed files/configuration and conditional rollback once.
+Do not repeat packaging or tests solely because a commit message or deployment
+timestamp changed.
+
+The 50-conversation real-data evaluation is a separate quality benchmark. Preserve
+its source dates, actual answers, independent figures, elapsed times and cost;
+synthetic browser fixtures prove interface behavior only. Recheck a real answer,
+its follow-up and saved History on the deployed candidate. Changed engine owners
+also need their focused behavioral tests and build/package checks. Reuse a passing
+native Functions recovery check when its checked implementation is unchanged.
+When worker configuration changes, prove actual Durable activity adoption with
+`assertWorkerBranch` and its no-model stale-run probe. Source grant changes still
+need exact before/after receipts, denial checks and conditional rollback.
+
+For a source publication, run its relevant upstream QA once, verify row counts,
+nulls, monthly/daily grain, completeness, freshness and payload size before
+publishing. The local `ally-data` receipt does not replace those data assertions.
+Publication and migrations are distinct operations, not something to rerun for a
+report UI release. A known material data error must be fixed or isolated.
+
+This policy supersedes the blanket whole-suite-before-and-after rule for the
+bounded Ally scope above. Broader shell, authentication and cross-feature changes
+still require their affected checks and existing CI/security protections. Historical
+guided-question generation, unrelated journey fuzzing and repeated whole-app
+browser passes stay out of routine Ally release checks. Never weaken assertions,
+bless a failure, or present the five-minute ceiling as evidence of answer quality.
 
 ## Ship Gate
 

@@ -2,10 +2,15 @@ import { reportHash, reportObject, reportSubject, validateReportScope } from '@a
 import { EVERYAGENT_TENANT } from '../shared/everyagent-identity.mjs';
 import { ALAMO_FACILITIES } from '../shared/community-names.mjs';
 import { createHttpError } from './http-error-contract.mjs';
+import { planAllyMetricQuery, METRIC_SLICE_ALIASES } from './ally-data-source.mjs';
+import { planDayMeasures } from './ally-measures.mjs';
 
 const facilities = new Set(ALAMO_FACILITIES.map(f => f.facilityId));
-export const REPORT_CAPABILITIES = ['platform-data', 'data-catalog', 'incident-summary', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search'];
-export const REPORT_AGGREGATE_SLICES = new Set(['community_operating_summary', 'incident_monthly_by_community_category', 'census_monthly_by_community', 'census_weekly_by_community', 'resident_flow_weekly_by_community', 'resident_flow_monthly_by_community', 'current_resident_county_by_community', 'mar_daily_by_community_90d']);
+export const REPORT_CAPABILITIES = ['platform-data', 'data-catalog', 'client-records', 'carelog-records', 'proforma-records', 'pipeline-records', 'incident-summary', 'resident-flow', 'pipeline-summary', 'licensing-search', 'proforma-search', 'identity-links', 'measures'];
+export const REPORT_AGGREGATE_SLICES = new Set(['community_operating_summary', 'incident_monthly_by_community_category', 'census_monthly_by_community', 'census_weekly_by_community', 'resident_flow_weekly_by_community', 'resident_flow_monthly_by_community', 'current_resident_county_by_community', 'mar_daily_by_community_90d', 'census_daily_by_community']);
+// Each slice needs its own grant entry; no grant implies another slice.
+/** @param {{slices:string[]}} grant @param {string} slice */
+export const grantHasSlice = (grant, slice) => grant.slices.includes(slice);
 const deny = () => { throw createHttpError(403, 'report_source_denied', 'This report source is unavailable for the requested scope.'); };
 // Aggregate access cannot be turned into a named-person lookup by grouping or
 // probing a private field. New dimensions require a source-owner review here.
@@ -38,16 +43,51 @@ export function authorizePlatformReportSource(identity, input, registry, now = D
   if (grant.revoked || Date.parse(grant.expiresAt) <= now || communities.some(id => !grant.communityIds.includes(id))) deny();
   if (input.step) {
     if (!grant.capabilities.includes(input.step.capability)) deny();
+    // A client can have records in several communities. Full-record reads need
+    // the organizational detail grant rather than leaking a cross-site history
+    // through a narrower aggregate grant. Current executive readers have it.
+    if (['client-records','carelog-records','proforma-records','pipeline-records'].includes(input.step.capability) && (!grant.detail || [...facilities].some(id => !grant.communityIds.includes(id)))) deny();
+    if(input.step.capability==='pipeline-summary' && input.step.input?.view==='current-workspaces' && !grant.detail)deny();
+    if(input.step.capability==='licensing-search' && input.step.input?.reportId!==undefined && !grant.detail)deny();
+    // Resident keys and linked client ids are record identifiers; counts are not.
+    if(input.step.capability==='identity-links' && ['links','resolve'].includes(input.step.input?.view) && !grant.detail)deny();
+    // Governed measures read history slices; each must be granted like an aggregate read.
+    if (input.step.capability === 'measures') {
+      let plan; try { plan = planDayMeasures(input.step.input ?? {}, scope, communities); }
+      catch (error) { const v = /** @type {any} */ (error); if (v?.code !== 'ally_metric_invalid') throw error; throw createHttpError(400, v.metricCode ?? 'query_invalid', 'Choose a valid measure query.', { field: `input.${String(v.field ?? 'query').replace(/^query\./, '')}`, allowed: v.allowed }); }
+      for (const probe of plan.probes) allowPlatformDataQuery(grant, probe.input);
+    }
     if (input.step.capability === 'platform-data') {
       const query = input.step.input;
-      if (!grant.slices.includes(query?.slice) || query.groupBy !== undefined && !Array.isArray(query.groupBy)) deny();
-      if (!grant.detail && (query.operation === 'rows' && !REPORT_AGGREGATE_SLICES.has(query.slice) ||
-          query.columns !== undefined && (!Array.isArray(query.columns) || query.columns.some(field=>!dimensions.has(field)&&!measures.has(field))) ||
-          (query.groupBy ?? []).some(field => !dimensions.has(field)) ||
-          query.filters !== undefined && (!Array.isArray(query.filters) || query.filters.some(filter => !dimensions.has(filter?.field))) ||
-          query.dateField !== undefined && query.dateField !== null && !dimensions.has(query.dateField) ||
-          query.measure !== undefined && !measures.has(query.measure))) deny();
+      allowPlatformDataQuery(grant, query);
+      // W3.2b: a metrics read is authorized as every aggregate read its plan
+      // probes. The same check runs for read, read-batch, authorize and
+      // authorize-batch, so revoking any probed slice denies the step.
+      if (query.operation === 'metrics') for (const probe of planMetricRead(query, scope, communities).probes) allowPlatformDataQuery(grant, probe.input);
     }
   }
   return { grant, communities, receipt: { revision: reportHash(grant), expiresAt: grant.expiresAt, detail: grant.detail } };
+}
+
+function allowPlatformDataQuery(grant, query) {
+  if (!grantHasSlice(grant, query?.slice) || query.groupBy !== undefined && !Array.isArray(query.groupBy)) deny();
+  if (!grant.detail && (query.textExcerpt !== undefined || query.measureExpression !== undefined || query.operation === 'rows' && !REPORT_AGGREGATE_SLICES.has(query.slice) ||
+      query.columns !== undefined && (!Array.isArray(query.columns) || query.columns.some(field=>!dimensions.has(field)&&!measures.has(field))) ||
+      (query.groupBy ?? []).some(field => !dimensions.has(field)) ||
+      query.filters !== undefined && (!Array.isArray(query.filters) || query.filters.some(filter => !dimensions.has(filter?.field))) ||
+      query.dateField !== undefined && query.dateField !== null && !dimensions.has(query.dateField) ||
+      query.measure !== undefined && !measures.has(query.measure))) deny();
+}
+
+/** Plan of a platform-data metrics read; its probes are the grant checks. Invalid plans are structured 400s. */
+export function planMetricRead(query, scope, communities) {
+  let plan;
+  try { plan = planAllyMetricQuery(query.query, scope, communities); }
+  catch (error) {
+    const value = /** @type {any} */ (error);
+    if (value?.code !== 'ally_metric_invalid') throw error;
+    throw createHttpError(400, value.metricCode ?? 'query_invalid', 'Choose a valid metric query.', { field: `input.${value.field ?? 'query'}`, allowed: value.allowed });
+  }
+  if (!plan.slices.includes(query.slice) && !plan.slices.includes(METRIC_SLICE_ALIASES[query.slice])) throw createHttpError(400, 'metric_slice_mismatch', 'Set slice to the source of a requested metric.', { field: 'input.slice', allowed: plan.slices });
+  return plan;
 }

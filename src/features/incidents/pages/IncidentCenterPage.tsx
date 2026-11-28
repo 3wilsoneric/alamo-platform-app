@@ -8,6 +8,7 @@ import {
   ArrowDown,
   ChevronDown,
   ChevronRight,
+  CircleHelp,
   Minus,
   RefreshCw,
   X
@@ -23,10 +24,13 @@ import {
   enrichIncidentsWithResidents,
   formatIncidentAge as timeAgo,
   formatIncidentDateKey as formatDateKey,
+  formatIncidentPriority,
+  INCIDENT_PRIORITY_ORDER,
   getIncidentReceivedDateKey,
   getTodayDateKey,
   matchesIncidentSearch as matchesSearch,
   partitionIncidentsByReviewStage,
+  withResolvedIncidentPriority,
   type IncidentPriority,
   type IncidentRecord
 } from "../incidentCenterModel";
@@ -66,9 +70,18 @@ const PRIORITY_CONFIG: Record<
     accent: "#f7fff9",
     dot: "#2fa866",
     icon: ArrowDown
+  },
+  // Not classifiable: all three recorded flags are blank. Neutral, not a severity.
+  UNKNOWN: {
+    color: "#595959",
+    bg: "#f5f4ef",
+    border: "#d9d9d9",
+    accent: "#fafafa",
+    dot: "#8c8c8c",
+    icon: CircleHelp
   }
 };
-const PRIORITIES: IncidentPriority[] = ["HIGH", "MEDIUM", "LOW"];
+const CLASSIFIED_PRIORITIES: IncidentPriority[] = ["HIGH", "MEDIUM", "LOW"];
 
 function DetailPanel({ incident, onClose, onOpenResident }: {
   incident: IncidentRecord;
@@ -139,7 +152,7 @@ function PriorityHeader({ priority, activeCount }: { priority: IncidentPriority;
   const cfg = PRIORITY_CONFIG[priority];
   const Icon = cfg.icon;
   return <div data-incident-priority={priority} className="incident-priority-heading" style={{ color: cfg.color, borderColor: cfg.border }}>
-    <span><Icon size={18} aria-hidden="true" />{priority[0]}{priority.slice(1).toLowerCase()}</span><strong>{activeCount}</strong>
+    <span><Icon size={18} aria-hidden="true" />{formatIncidentPriority(priority)}</span><strong>{activeCount}</strong>
   </div>;
 }
 
@@ -291,7 +304,7 @@ export default function IncidentCenterPage({
       }
       const enriched = dashboard
         ? enrichIncidentsWithResidents(list, dashboard?.residents ?? [])
-        : list as IncidentRecord[];
+        : withResolvedIncidentPriority(list);
       if (fetchId !== latestFetchId.current) return;
       setIncidents(
         facilityId
@@ -361,22 +374,23 @@ export default function IncidentCenterPage({
     (incident) => getIncidentReceivedDateKey(incident) === previousDateKey && matchesSearch(incident, searchTerm)
   );
 
-  const byPriority: Record<IncidentPriority, IncidentRecord[]> = {
-    HIGH: (contentPage === 0 ? activeDateFiltered : previousDateFiltered)
-      .filter((incident) => incident.priority === "HIGH"),
-    MEDIUM: (contentPage === 0 ? activeDateFiltered : previousDateFiltered)
-      .filter((incident) => incident.priority === "MEDIUM"),
-    LOW: (contentPage === 0 ? activeDateFiltered : previousDateFiltered)
-      .filter((incident) => incident.priority === "LOW")
-  };
+  const windowIncidents = contentPage === 0 ? activeDateFiltered : previousDateFiltered;
+  const byPriority = Object.fromEntries(INCIDENT_PRIORITY_ORDER.map((priority) => [
+    priority,
+    windowIncidents.filter((incident) => incident.priority === priority)
+  ])) as Record<IncidentPriority, IncidentRecord[]>;
+  // Unknown appears only when the window holds unclassifiable incidents.
+  const visiblePriorities: IncidentPriority[] = byPriority.UNKNOWN.length > 0
+    ? [...CLASSIFIED_PRIORITIES, "UNKNOWN"]
+    : CLASSIFIED_PRIORITIES;
+  const selectedMobilePriority = visiblePriorities.includes(mobilePriority) ? mobilePriority : "HIGH";
 
   useEffect(() => {
-    const highestAvailable = PRIORITIES.find((priority) => byPriority[priority].length > 0) ?? "HIGH";
+    const highestAvailable = visiblePriorities.find((priority) => byPriority[priority].length > 0) ?? "HIGH";
     setMobilePriority(highestAvailable);
   }, [activeDateKey, contentPage, selectedFacility, previousDateKey]);
 
-  const selectedDateIncidents = contentPage === 0 ? activeDateFiltered : previousDateFiltered;
-  const totalActive = selectedDateIncidents.filter((incident) => incident.stage !== "reviewed").length;
+  const totalActive = windowIncidents.filter((incident) => incident.stage !== "reviewed").length;
   const freshnessCopy = activeDateKey && activeDateKey !== todayDateKey
     ? `No reports received today. Latest received ${formatDateKey(activeDateKey)}.`
     : activeDateKey ? `${activeDateFiltered.length} received today.` : "No incident dates are loaded in this view.";
@@ -447,39 +461,41 @@ export default function IncidentCenterPage({
       </div> : null}
       {loading ? <div className="incident-empty" role="status">Loading incidents…</div> : isPhoneLayout ? (
         <div>
-          <div role="tablist" aria-label="Incident priority" data-incident-priority-tabs="true" className="incident-priority-tabs">
-            {PRIORITIES.map((priority, index) => (
+          <div role="tablist" aria-label="Incident priority" data-incident-priority-tabs="true" className="incident-priority-tabs"
+            data-incident-priority-count={visiblePriorities.length}>
+            {visiblePriorities.map((priority, index) => (
               <button key={priority} type="button" role="tab"
                 id={`incident-tab-${selectedFacility || "all"}-${priority.toLowerCase()}`}
-                aria-selected={mobilePriority === priority}
-                tabIndex={mobilePriority === priority ? 0 : -1}
+                aria-selected={selectedMobilePriority === priority}
+                tabIndex={selectedMobilePriority === priority ? 0 : -1}
                 aria-controls={`incident-priority-panel-${priority.toLowerCase()}`}
                 onClick={() => setMobilePriority(priority)}
                 onKeyDown={(event) => {
-                  const next = event.key === "ArrowRight" ? (index + 1) % 3
-                    : event.key === "ArrowLeft" ? (index + 2) % 3
-                    : event.key === "Home" ? 0 : event.key === "End" ? 2 : -1;
+                  const count = visiblePriorities.length;
+                  const next = event.key === "ArrowRight" ? (index + 1) % count
+                    : event.key === "ArrowLeft" ? (index + count - 1) % count
+                    : event.key === "Home" ? 0 : event.key === "End" ? count - 1 : -1;
                   if (next < 0) return;
                   event.preventDefault();
-                  setMobilePriority(PRIORITIES[next]!);
+                  setMobilePriority(visiblePriorities[next]!);
                   event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
                 }}
                 style={{ color: PRIORITY_CONFIG[priority].color,
-                  borderColor: mobilePriority === priority ? PRIORITY_CONFIG[priority].color : PRIORITY_CONFIG[priority].border,
-                  background: mobilePriority === priority ? PRIORITY_CONFIG[priority].bg : undefined }}>
-                {priority[0]}{priority.slice(1).toLowerCase()} <span>{partitionIncidentsByReviewStage(byPriority[priority]).active.length}</span>
+                  borderColor: selectedMobilePriority === priority ? PRIORITY_CONFIG[priority].color : PRIORITY_CONFIG[priority].border,
+                  background: selectedMobilePriority === priority ? PRIORITY_CONFIG[priority].bg : undefined }}>
+                {formatIncidentPriority(priority)} <span>{partitionIncidentsByReviewStage(byPriority[priority]).active.length}</span>
               </button>
             ))}
           </div>
-          <div id={`incident-priority-panel-${mobilePriority.toLowerCase()}`} role="tabpanel"
-            aria-label={`${mobilePriority.toLowerCase()} priority incidents`}>
-            <MobilePrioritySection key={`${selectedFacility}-${contentPage}-${mobilePriority}`}
-              priority={mobilePriority} incidents={byPriority[mobilePriority]} onOpenResident={handleOpenResident} />
+          <div id={`incident-priority-panel-${selectedMobilePriority.toLowerCase()}`} role="tabpanel"
+            aria-label={`${selectedMobilePriority.toLowerCase()} priority incidents`}>
+            <MobilePrioritySection key={`${selectedFacility}-${contentPage}-${selectedMobilePriority}`}
+              priority={selectedMobilePriority} incidents={byPriority[selectedMobilePriority]} onOpenResident={handleOpenResident} />
           </div>
         </div>
       ) : (
-        <div className="incident-columns">
-          {PRIORITIES.map((priority) => <PriorityColumn key={priority} priority={priority}
+        <div className="incident-columns" data-incident-priority-count={visiblePriorities.length}>
+          {visiblePriorities.map((priority) => <PriorityColumn key={priority} priority={priority}
             incidents={byPriority[priority]} onOpenResident={handleOpenResident} />)}
         </div>
       )}

@@ -629,7 +629,7 @@ function matchesClientCommunity(row, query) {
     .some((value) => String(value ?? "").toLowerCase().includes(normalized));
 }
 
-function buildClientDirectoryResponse(snapshot, context, clientDatabase, requestUrl, now) {
+function buildClientDirectoryResponse(snapshot, context, clientDatabase, requestUrl, now, selectedCommunities = /** @type {string[] | null} */ (null)) {
   const q = normalizeSearchParameter(requestUrl.searchParams.get("q"), "q");
   const community = normalizeSearchParameter(requestUrl.searchParams.get("community"), "community");
   const limit = parseLimit(requestUrl.searchParams.get("limit"));
@@ -640,7 +640,8 @@ function buildClientDirectoryResponse(snapshot, context, clientDatabase, request
     throw clinicalError(502, "client_database_invalid", "The governed client database metadata is missing.");
   }
   const matching = explorer.rows
-    .filter((row) => row.canonical_client_id && matchesClientQuery(row, q) && matchesClientCommunity(row, community));
+    .filter((row) => row.canonical_client_id && matchesClientQuery(row, q) && matchesClientCommunity(row, community) &&
+      (!selectedCommunities || selectedCommunities.some(name => matchesClientCommunity(row, name))));
   if (offset > matching.length) {
     throw clinicalError(400, "cursor_invalid", "The client-directory cursor is outside the current result set.");
   }
@@ -1167,7 +1168,7 @@ export function buildPipelineClinicalIntelligenceResponse(
   };
 }
 
-export function buildPipelineClinicalApiResponse(snapshot, requestUrl, now = new Date(), clientDatabase = null) {
+export function buildPipelineClinicalApiResponse(snapshot, requestUrl, now = new Date(), clientDatabase = null, { selectedCommunities = /** @type {string[] | null} */ (null) } = {}) {
   const pathname = requestUrl.pathname;
   if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/health`) {
     return buildHealthResponse(snapshot, clientDatabase, now);
@@ -1183,7 +1184,7 @@ export function buildPipelineClinicalApiResponse(snapshot, requestUrl, now = new
   if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/clients`) {
     return {
       statusCode: 200,
-      body: buildClientDirectoryResponse(snapshot, context, clientDatabase, requestUrl, now)
+      body: buildClientDirectoryResponse(snapshot, context, clientDatabase, requestUrl, now, selectedCommunities)
     };
   }
   if (pathname === `${PIPELINE_CLINICAL_API_PREFIX}/medications/summary`) {

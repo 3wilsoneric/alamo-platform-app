@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { gzip as gzipCallback, gunzip as gunzipCallback, gunzipSync } from "node:zlib";
 import { ClientSecretCredential, ManagedIdentityCredential } from "@azure/identity";
 import { BlobServiceClient } from "@azure/storage-blob";
+import { assertToolTableReferences, decodeToolTable, TOOL_TABLE_MAX_BYTES } from './platform-tool-tables.mjs';
 import {
   getBoundedIntegerEnv,
   isProductionLikeRuntime
@@ -57,6 +58,9 @@ let platformClientDatabaseCache = {
 
 /** @type {Map<string, any>} */
 const platformClientIntelligenceCache = new Map();
+const hydratedSnapshots = new WeakMap();
+const toolTableReads = new Map();
+let toolTableCacheBytes = 0;
 
 function getSnapshotCacheTtlMs() {
   return getBoundedIntegerEnv(
@@ -430,6 +434,7 @@ export function assertPlatformSnapshotPayload(payload, source = "unknown source"
   if (payload.clientDatabase !== undefined) {
     assertClientDatabasePointer(payload.clientDatabase, source);
   }
+  assertToolTableReferences(payload.reportsSummary.toolContext);
 
   const facilityIds = payload.communities.facilities.map((facility) => String(facility.facility_id ?? "").trim());
   if (facilityIds.some((facilityId) => !facilityId) || new Set(facilityIds).size !== facilityIds.length) {
@@ -503,6 +508,17 @@ function getAzureSnapshotConfig() {
     root: normalizeSnapshotRoot()
   };
 }
+
+// Dated-publication history (platform-snapshot-history.mjs) reads the same
+// container with the same credentials; it never writes or deletes.
+export function getPlatformSnapshotContainer() {
+  if (shouldPreferLocalSnapshot()) return null;
+  const config = getAzureSnapshotConfig();
+  if (!config) return null;
+  return { container: createBlobServiceClient(config).getContainerClient(config.container), root: config.root };
+}
+export const localSnapshotDirectory = () => snapshotDir;
+export const readPublishedToolTableReference = reference => readPublishedToolTable(reference);
 
 export function getAzureSnapshotStorageSummary() {
   const config = getAzureSnapshotConfig();
@@ -751,10 +767,10 @@ export function getPlatformSnapshotTargets(payload) {
 // reuse. Publishing/refreshing replaces this object; fixtures and callers'
 // mutable objects must continue through the ordinary pure builder.
 export function isCurrentPlatformSnapshot(snapshot) {
-  return Boolean(snapshot && platformSnapshotCache.value === snapshot && platformSnapshotCache.expiresAt > Date.now());
+  return Boolean(snapshot && (platformSnapshotCache.value === snapshot || hydratedSnapshots.get(platformSnapshotCache.value)?.value === snapshot) && platformSnapshotCache.expiresAt > Date.now());
 }
 
-export async function readPlatformSnapshot() {
+async function readPublishedSnapshot() {
   const azureConfigured = Boolean(getAzureSnapshotConfig());
   if (requiresAzureSnapshot() && isAzureSnapshotDeclared() && !azureConfigured) {
     throw new Error("Azure snapshot storage is declared but its server credentials are incomplete.");
@@ -820,6 +836,55 @@ export async function readPlatformSnapshot() {
   };
 
   return promise;
+}
+
+// Existing application readers still receive complete tables. The analyst can
+// ask for only the named table; common census/roster facts remain inline. A new
+// publication points to immutable, checked assets, never an unversioned cache.
+export async function readPlatformSnapshot({ tableNames = /** @type {string[] | null} */ (null) } = {}) {
+  const snapshot = await readPublishedSnapshot();
+  if (!snapshot) return snapshot;
+  const references = assertToolTableReferences(snapshot.reportsSummary?.toolContext);
+  const names = tableNames === null ? Object.keys(references) : tableNames.filter(name => Object.hasOwn(references, name));
+  if (!names.length) return snapshot;
+  if (tableNames === null && hydratedSnapshots.has(snapshot)) return hydratedSnapshots.get(snapshot).promise;
+  const entry = { value: null, promise: /** @type {Promise<any> | null} */ (null) };
+  entry.promise = (async () => {
+    const tables = { ...snapshot.reportsSummary.toolContext.tables };
+    for (let offset = 0; offset < names.length; offset += 2) {
+      await Promise.all(names.slice(offset, offset + 2).map(async name => { tables[name] = await readPublishedToolTable(references[name]); }));
+    }
+    const remaining = Object.fromEntries(Object.entries(references).filter(([name]) => !names.includes(name)));
+    const value = { ...snapshot, reportsSummary: { ...snapshot.reportsSummary, toolContext: { ...snapshot.reportsSummary.toolContext, tables, tableReferences: remaining } } };
+    entry.value = value;
+    return value;
+  })().catch(error => { if (tableNames === null) hydratedSnapshots.delete(snapshot); throw error; });
+  if (tableNames === null) hydratedSnapshots.set(snapshot, entry);
+  return entry.promise;
+}
+
+async function readPublishedToolTable(reference) {
+  const config = getAzureSnapshotConfig();
+  const local = shouldPreferLocalSnapshot();
+  const key = `${local ? 'local' : 'azure'}:${config?.account ?? ''}:${config?.container ?? ''}:${reference.path}:${reference.bytes}:${reference.compressedBytes}:${reference.rows}`;
+  const existing = toolTableReads.get(key);
+  if (existing) return existing.promise;
+  const entry = { bytes: reference.bytes, promise: /** @type {Promise<any> | null} */ (null) };
+  entry.promise = (async () => {
+    let body = local ? await readLocalClientIntelligence(reference.path, TOOL_TABLE_MAX_BYTES) : null;
+    if (!body && config) body = await readAzureClientIntelligence(reference.path, TOOL_TABLE_MAX_BYTES);
+    if (!body) throw Error('A referenced published table is unavailable.');
+    return decodeToolTable(body, reference);
+  })().catch(error => { if (toolTableReads.delete(key)) toolTableCacheBytes -= entry.bytes; throw error; });
+  // Bound serialized data retained by this shared read cache. Current hydrated
+  // app projections also retain their own tables until the publication changes.
+  while (toolTableReads.size && toolTableCacheBytes + entry.bytes > 96 * 1024 * 1024) {
+    const oldest = toolTableReads.keys().next().value;
+    toolTableCacheBytes -= toolTableReads.get(oldest).bytes;
+    toolTableReads.delete(oldest);
+  }
+  toolTableReads.set(key, entry); toolTableCacheBytes += entry.bytes;
+  return entry.promise;
 }
 
 export async function readPlatformClientDatabase(snapshot) {

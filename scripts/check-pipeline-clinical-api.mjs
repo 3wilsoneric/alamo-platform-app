@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertApiClaimsPermission } from "../server/api-auth.mjs";
+import { readAllyClientRecords } from '../server/ally-client-source.mjs';
 import {
   buildPipelineClinicalApiResponse,
   buildPipelineClinicalIntelligenceResponse,
@@ -127,6 +128,35 @@ fixture.reportsSummary.toolContext.tables.resident_episode_history = [
 fixture.communities.residents[0].canonical_client_id = "client-avery";
 fixture.communities.residents[1].canonical_client_id = "client-jordan";
 const checks = [];
+
+check('Ally reads canonical historical records and complete document text without storage paths',async()=>{
+  const documentId='document-sanitized-001';
+  const text='A'.repeat(8000)+'The retained end of the original page.';
+  let intelligenceReads=0;
+  const options={snapshot:fixture,communities:['343'],now:()=>now.getTime(),database:async()=>clientDatabase,
+    intelligence:async()=>{intelligenceReads++;return {pages:[{document_id:documentId,page_number:2,text}],evidence:[]};}};
+  const directory=await readAllyClientRecords({view:'directory'},options);
+  equal(directory.total,1);equal(directory.clients[0].canonical_client_id,'client-history');
+  const episodes=await readAllyClientRecords({view:'episodes',clientId:'client-history'},options);
+  equal(episodes.episodes.length,1);equal(episodes.client.current_resident,false);
+  const docs=await readAllyClientRecords({view:'documents',clientId:'client-history'},options);
+  equal(docs.documents[0].document_id,documentId);assert(!JSON.stringify(docs).includes('thumbnail_path'));
+  const first=await readAllyClientRecords({view:'document-text',clientId:'client-history',documentId,page:2},options);
+  equal(first.text.length,8000);equal(first.nextOffset,8000);
+  const second=await readAllyClientRecords({view:'document-text',clientId:'client-history',documentId,page:2,offset:first.nextOffset,revision:first.revision},options);
+  equal(first.text+second.text,text);equal(second.nextOffset,null);
+  for(const invalid of [{documentId:'not-this-client'},{offset:8000},{offset:8000,revision:'old-snapshot'}]){
+    let rejected=false;
+    try{await readAllyClientRecords({view:'document-text',clientId:'client-history',documentId,page:2,...invalid},options);}catch{rejected=true;}
+    assert(rejected,'Foreign documents and stale or unbound continuations must fail.');
+  }
+  equal(intelligenceReads,2,'Invalid references must not fetch document text.');
+  const missing=await readAllyClientRecords({view:'document-text',clientId:'client-history',documentId,page:3},options);
+  assert(missing.unavailable.includes('unavailable'));assert(!Object.hasOwn(missing,'text'));
+  let outside=false;
+  try{await readAllyClientRecords({view:'profile',clientId:'client-avery'},options);}catch{outside=true;}
+  assert(outside,'Query cohort must still choose the right client.');
+});
 
 check("optional client enrichment cannot disable core clinical projections", () => {
   assert(pipelineClinicalPathRequiresClientDatabase(`${PIPELINE_CLINICAL_API_PREFIX}/clients`));

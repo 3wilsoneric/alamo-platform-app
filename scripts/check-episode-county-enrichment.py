@@ -9,9 +9,9 @@ context = {'source': 'fixture', 'target': 'fixture', 'WINDOW_AS_OF_SQL': "DATE '
            'spark': SimpleNamespace(sql=lambda sql: None), 'create_view': lambda name, sql: queries.update({name: sql}),
            'table_columns': lambda _: {'Facility', 'Res_Number', 'Admit_Date', 'Discharge_Date', 'County_Admitted_From', 'Unique_ID', 'Previous_Living_Status'}}
 for node in tree.body:
-    if isinstance(node, ast.FunctionDef) and node.name in ['_resolve_column','sql_value','sql_safe_date','sql_date','create_resident_episode_views']:
+    if isinstance(node, ast.FunctionDef) and node.name in ['_resolve_column','sql_value','sql_safe_date','sql_date','create_resident_episode_history_view']:
         exec(compile(ast.Module(body=[node], type_ignores=[]), 'notebook-function', 'exec'), context)
-context['create_resident_episode_views']()
+context['create_resident_episode_history_view']()
 query = queries['v_tool_resident_episode_history'].replace('fixture.', '')
 print("""WITH res_admittance_history AS (
  SELECT * FROM VALUES

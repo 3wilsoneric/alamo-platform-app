@@ -22,20 +22,130 @@ assert.throws(() => compileAllyPlatformDataQuery({ slice: "notes_summary", filte
 
 const load = async () => summary;
 const fail = async () => { throw Error("Warehouse unavailable"); };
+const nativePage=rows=>rows.length?rows.map(row=>({...row,__ally_total_rows:rows.length,__ally_result_revision:'a'.repeat(64),__ally_row_present:true})):
+  [{__ally_total_rows:0,__ally_result_revision:'a'.repeat(64),__ally_row_present:null}];
 const rows = await readAllyPlatformData({ slice: "notes_summary", filters: [{ field: "Res_Number", op: "eq", value: "10" }], limit: 1 }, { load, execute: fail });
 assert.equal(rows.returnedRows, 1);
 assert.equal(rows.hasMore, true);
 assert.match(rows.coverage, /partial: 2 of 4/);
+// Complete reviews must traverse every row of the same authorized publication,
+// including duplicate sort keys. Neither a refresh nor changed scope can resume it.
+const pageSummary = structuredClone(summary);
+pageSummary.toolContext.manifest[0].row_count = 119;
+pageSummary.toolContext.manifest[0].generated_at = '2026-11-24T13:00:00Z';
+pageSummary.toolContext.tables.notes_summary = Array.from({length:119},(_,i)=>({Facility:'337',Res_Number:String(i),note_date:'2026-10-01',note_text:'Transport note '+i}));
+const pageQuery={slice:'notes_summary',operation:'rows',columns:['Res_Number','note_text'],limit:20,orderBy:[{field:'Res_Number',direction:'asc'}]};
+const pageOptions={load:async()=>pageSummary,execute:()=>assert.fail('A frozen page must not query the warehouse'),constraints:[{field:'Facility',op:'in',value:['337']}]};
+let page=await readAllyPlatformData(pageQuery,pageOptions), firstPage=page;
+const allRows=[...page.rows];
+while(page.nextOffset!==null) {
+  page=await readAllyPlatformData({...pageQuery,offset:page.nextOffset,revision:page.revision},pageOptions);
+  assert.equal(page.totalRows,119);assert.equal(page.revision,firstPage.revision);
+  allRows.push(...page.rows);
+}
+assert.equal(allRows.length,119);assert.equal(new Set(allRows.map(row=>row.Res_Number)).size,119);
+assert.equal(page.hasMore,false);assert.equal(page.returnedRows,19);
+const longSummary=structuredClone(pageSummary);
+longSummary.toolContext.tables.notes_summary=longSummary.toolContext.tables.notes_summary.slice(0,17).map((row,i)=>({...row,note_text:`Full note ${i}: `+'complete text '.repeat(220)}));
+longSummary.toolContext.manifest[0].row_count=17;
+const longOptions={...pageOptions,load:async()=>longSummary};
+let longPage=await readAllyPlatformData(pageQuery,longOptions);
+assert(longPage.returnedRows<17);assert.equal(longPage.totalRows,17);
+const fullNotes=[...longPage.rows];
+while(longPage.nextOffset!==null){
+  longPage=await readAllyPlatformData({...pageQuery,offset:longPage.nextOffset,revision:longPage.revision},longOptions);
+  fullNotes.push(...longPage.rows);
+}
+assert.equal(fullNotes.length,17);assert.equal(new Set(fullNotes.map(row=>row.Res_Number)).size,17);
+for(const row of fullNotes)assert.equal(row.note_text,longSummary.toolContext.tables.notes_summary.find(original=>original.Res_Number===row.Res_Number).note_text);
+const resume={...pageQuery,offset:firstPage.nextOffset,revision:firstPage.revision};
+await assert.rejects(readAllyPlatformData({...resume,filters:[{field:'Res_Number',op:'eq',value:'1'}]},pageOptions),/source or query changed/);
+await assert.rejects(readAllyPlatformData(resume,{...pageOptions,constraints:[{field:'Facility',op:'in',value:['345']}]}),/source or query changed/);
+await assert.rejects(readAllyPlatformData({...pageQuery,offset:20},pageOptions),/nextOffset and revision/);
+await assert.rejects(readAllyPlatformData({...resume,offset:120},pageOptions),/outside this result/);
+pageSummary.toolContext.tables.notes_summary[118].note_text='Changed after first page';
+await assert.rejects(readAllyPlatformData(resume,pageOptions),/source or query changed/);
+await assert.rejects(readAllyPlatformData(resume,{...pageOptions,load}),/source page is unavailable/,'an unavailable warehouse cannot continue a partial snapshot');
+const smallerPage=await readAllyPlatformData({...pageQuery,limit:10},pageOptions);
+const resizedPage=await readAllyPlatformData({...pageQuery,offset:smallerPage.nextOffset,revision:smallerPage.revision,limit:5},pageOptions);
+assert.equal(resizedPage.rows.length,5);assert.equal(resizedPage.nextOffset,15);
+
+// Full warehouse reads also carry a content-bound revision. A published sample
+// cannot replace a missing page, and changed rows outside the page invalidate it.
+const warehouseRows = Array.from({length:7},(_,i)=>({Res_Number:String(Math.floor(i/2)),note_text:'Transport'}));
+const warehouseFingerprint = 'a'.repeat(64);
+const warehouseOptions = {load,constraints:pageOptions.constraints,execute:async sql=>{
+  assert.match(sql,/WITH _ally_rows AS \(SELECT `Res_Number`, `note_text` FROM alamohealth\.gold\.v_tool_notes_summary WHERE/);
+  assert.match(sql,/sort_array\(collect_list\(sha2\(to_json\(struct\(`Res_Number`, `note_text`\)\), 256\)\)\)/);
+  assert.match(sql,/ORDER BY `Res_Number` ASC NULLS LAST, `note_text` ASC NULLS LAST/);
+  const [,limit,offset]=sql.match(/LIMIT (\d+) OFFSET (\d+)/);
+  const identity={__ally_total_rows:7,__ally_result_revision:warehouseFingerprint};
+  const found=warehouseRows.slice(Number(offset),Number(offset)+Number(limit));
+  return found.length?found.map(row=>({...row,...identity,__ally_row_present:true})):[{...identity,__ally_row_present:null}];
+}};
+const warehouseQuery={...pageQuery,limit:3};
+const warehouseFirst=await readAllyPlatformData(warehouseQuery,warehouseOptions);
+assert.equal(warehouseFirst.readMode,'governed-view');assert.equal(warehouseFirst.totalRows,7);assert.equal(warehouseFirst.nextOffset,3);
+const warehouseResume={...warehouseQuery,offset:3,revision:warehouseFirst.revision};
+const warehouseSecond=await readAllyPlatformData(warehouseResume,warehouseOptions);
+const warehouseLast=await readAllyPlatformData({...warehouseResume,offset:6},warehouseOptions);
+assert.deepEqual([...warehouseFirst.rows,...warehouseSecond.rows,...warehouseLast.rows],warehouseRows,'duplicate rows retain their multiplicity across page boundaries');
+assert.equal(warehouseLast.nextOffset,null);assert.equal(warehouseLast.totalRows,7);
+assert(!JSON.stringify(warehouseFirst.rows).includes('__ally_'),'internal identity fields never reach the answer');
+const warehouseResized=await readAllyPlatformData({...warehouseResume,limit:1},warehouseOptions);
+assert.equal(warehouseResized.nextOffset,4);assert.equal(warehouseResized.revision,warehouseFirst.revision);
+await assert.rejects(readAllyPlatformData({...warehouseResume,filters:[{field:'Res_Number',op:'eq',value:'1'}]},warehouseOptions),/source or query changed/);
+await assert.rejects(readAllyPlatformData(warehouseResume,{...warehouseOptions,constraints:[{field:'Facility',op:'in',value:['345']}]}),/source or query changed/);
+await assert.rejects(readAllyPlatformData(warehouseResume,{...warehouseOptions,execute:async sql=>(await warehouseOptions.execute(sql)).map(row=>({...row,__ally_result_revision:'b'.repeat(64)}))}),/source or query changed/);
+await assert.rejects(readAllyPlatformData(warehouseResume,{...warehouseOptions,execute:fail}),/source page is unavailable/);
+await assert.rejects(readAllyPlatformData({...warehouseResume,offset:8},warehouseOptions),/outside this result/);
+for(const corrupt of [
+  rows=>rows.slice(1),
+  rows=>rows.map(row=>({...row,__ally_result_revision:'invalid'})),
+  rows=>rows.map((row,i)=>({...row,__ally_total_rows:i?8:7})),
+  rows=>rows.map(row=>({...row,__ally_row_present:false}))
+]) await assert.rejects(readAllyPlatformData(warehouseResume,{...warehouseOptions,execute:async sql=>corrupt(await warehouseOptions.execute(sql))}),/source page is unavailable/);
+await assert.rejects(readAllyPlatformData(warehouseResume,{...warehouseOptions,execute:async()=>[]}),/source page is unavailable/);
+const missingIdentity=await readAllyPlatformData(warehouseQuery,{...warehouseOptions,execute:async()=>[]});
+assert.match(missingIdentity.coverage,/partial:/);assert.equal(missingIdentity.readMode,'published-snapshot');
+const warehouseEmpty=await readAllyPlatformData(warehouseQuery,{...warehouseOptions,execute:async()=>[{__ally_total_rows:0,__ally_result_revision:warehouseFingerprint,__ally_row_present:null}]});
+assert.deepEqual(warehouseEmpty.rows,[]);assert.equal(warehouseEmpty.totalRows,0);assert.equal(warehouseEmpty.nextOffset,null);
 await assert.rejects(readAllyPlatformData({ slice: "notes_summary", operation: "count", filters: [{ field: "Facility", op: "eq", value: "337" }] }, { load, execute: fail }), /incomplete published sample/);
 const warehouse = await readAllyPlatformData({ slice: "notes_summary", operation: "count" }, { load, execute: async sql => {
   assert.match(sql, /v_tool_notes_summary/); return [{ result: 4 }];
 } });
 assert.equal(warehouse.coverage, "source-query");
 assert.equal(warehouse.rows[0].result, 4);
+const search={slice:'notes_summary',operation:'rows',filters:[{field:'note_text',op:'contains',value:'transport'},{field:'note_date',op:'gte',value:'2026-10-01'}]};
+const searchConstraints=[{field:'Facility',op:'in',value:['337']},{field:'note_date',op:'day-lte',value:'2026-10-31'}];
+let profiled=0;
+const searchOptions=(known,records=4)=>({load,constraints:searchConstraints,execute:async sql=>{
+  if(!sql.startsWith('SELECT COUNT(*) AS records'))return nativePage([]);
+  profiled++;assert.match(sql,/`Facility`/);assert.match(sql,/substring\(CAST\(`note_date`/);assert.match(sql,/CAST\(`note_date` AS STRING\) >=/);
+  assert.doesNotMatch(sql,/contains\(/,'availability profile keeps scope and dates without applying the searched value');
+  return [{records_0:records,known_0:known}];
+}});
+await assert.rejects(readAllyPlatformData(search,searchOptions(0)),error=>error.code==='ally_field_coverage_unavailable'&&/not a zero result/.test(error.message));
+const trueZero=await readAllyPlatformData(search,searchOptions(4));
+assert.deepEqual(trueZero.rows,[]);assert.equal(trueZero.coverage,'source-query');assert.deepEqual(trueZero.searchCoverage,[{field:'note_text',records:4,known:4}]);
+const partialZero=await readAllyPlatformData(search,searchOptions(3));assert.match(partialZero.coverage,/partial:.*missing/);
+const emptyPeriod=await readAllyPlatformData(search,searchOptions(0,0));assert.equal(emptyPeriod.searchCoverage[0].records,0);
+for(const known of [null,-1,5])await assert.rejects(readAllyPlatformData(search,searchOptions(known)),/coverage could not be verified/);
+await assert.rejects(readAllyPlatformData(search,{...searchOptions(4),execute:async sql=>{if(sql.startsWith('SELECT COUNT(*) AS records'))throw Error('PRIVATE_DB_ERROR');return nativePage([]);}}),error=>error.code==='ally_field_coverage_unavailable'&&!error.message.includes('PRIVATE_DB_ERROR'));
+const beforeProfile=profiled;
+await readAllyPlatformData(search,{...searchOptions(4),execute:async()=>nativePage([{Facility:'337',Res_Number:'10',note_date:'2026-10-01',note_text:'transport'}])});
+assert.equal(profiled,beforeProfile,'a matching query adds no availability query');
+const scopedEmpty=structuredClone(summary);scopedEmpty.toolContext.manifest[0].row_count=3;scopedEmpty.toolContext.manifest[0].generated_at='2026-11-24T13:00:00Z';
+scopedEmpty.toolContext.tables.notes_summary=[{Facility:'337',note_date:'2026-10-01',note_text:null,Res_Number:'10'},{Facility:'345',note_date:'2026-10-01',note_text:'transport',Res_Number:'11'},{Facility:'337',note_date:'2026-09-01',note_text:'transport',Res_Number:'12'}];
+await assert.rejects(readAllyPlatformData(search,{load:async()=>scopedEmpty,execute:fail,constraints:searchConstraints}),/no populated values/,'another community or date cannot establish search coverage within the selected scope');
+const selectedCommunity={...search,filters:[...search.filters,{field:'Facility',op:'eq',value:'337'}]};
+await assert.rejects(readAllyPlatformData(selectedCommunity,{load:async()=>scopedEmpty,execute:fail,constraints:[{field:'Facility',op:'in',value:['337','345']}]}),/no populated values/,'the user-selected community is retained while checking its missing text');
+const selectedSql=compileAllyPlatformDataQuery(selectedCommunity,catalog[0],searchConstraints).populationSql;
+assert.match(selectedSql,/CASE WHEN CAST\(`Facility` AS STRING\) = .* THEN NULLIF\(TRIM\(CAST\(`note_text`/,'warehouse text coverage retains the user-selected community as well as enforced scope');
 const allowedFields=['Facility','note_date'];
 const restricted=await readAllyPlatformData({slice:'notes_summary',operation:'rows'}, {load,execute:async sql=>{
   assert.match(sql,/SELECT `Facility`, `note_date` FROM/);assert.doesNotMatch(sql,/SELECT \*/);
-  return [{Facility:'337',note_date:'2026-10-01',note_text:'PRIVATE_PROBE',undeclared:'UNDECLARED_PROBE'}];
+  return nativePage([{Facility:'337',note_date:'2026-10-01',note_text:'PRIVATE_PROBE',undeclared:'UNDECLARED_PROBE'}]);
 },allowedFields});
 assert.deepEqual(restricted.rows,[{Facility:'337',note_date:'2026-10-01'}]);assert.deepEqual(restricted.source.fields,allowedFields);
 const restrictedFallback=await readAllyPlatformData({slice:'notes_summary',operation:'rows'}, {load,execute:fail,allowedFields});
@@ -82,6 +192,17 @@ const selected=await readAllyPlatformData({slice:'resident_profile',operation:'r
 assert.deepEqual(selected.rows,[{Age:60},{Age:40}]);assert.equal(selected.hasMore,true);
 const groupedSorted=await readAllyPlatformData({slice:'resident_profile',operation:'count',groupBy:['Age'],orderBy:[{field:'Age',direction:'desc'}],limit:1},profileOptions);
 assert.deepEqual(groupedSorted.rows,[{Age:60,result:1}]);
+const redundant=await readAllyPlatformData({slice:'resident_profile',operation:'count',columns:['Age'],limit:1},profileOptions);
+const countSort={slice:'resident_profile',operation:'count',groupBy:['Age'],orderBy:[{field:'count',direction:'desc'}],limit:100};
+const countProfiles=structuredClone(profiles);countProfiles.toolContext.tables.resident_profile[0].Age=60;
+const sortedCounts=await readAllyPlatformData(countSort,{...profileOptions,load:async()=>countProfiles});
+assert.deepEqual(sortedCounts.rows.map(row=>row.result),[2,1,1],'count alias sorts aggregate counts, not input ages');
+assert.match(compileAllyPlatformDataQuery(countSort,listAllyPlatformDataSources(profiles)[0],profileOptions.constraints).sql,/ORDER BY `result` DESC/,'SQL and snapshot use the same unambiguous count alias');
+assert.deepEqual(redundant.rows,[{result:4}],'projection and output limit cannot truncate the scoped input population');
+assert.deepEqual(redundant.query.columns,['result']);
+const ranked=compileAllyPlatformDataQuery({slice:'resident_profile',operation:'average',measure:'Age',groupBy:['Facility'],columns:['Age'],orderBy:[{field:'Age',direction:'desc'}]},listAllyPlatformDataSources(profiles)[0],profileOptions.constraints);
+assert.match(ranked.sql,/ORDER BY `result` DESC/);assert.deepEqual(ranked.columns,['Facility','result']);
+for(const query of [{operation:'count',columns:['password']},{operation:'statistics',measure:'Age',orderBy:[{field:'Age',direction:'desc'}]}])await assert.rejects(readAllyPlatformData({slice:'resident_profile',...query},profileOptions));
 const numeric=compileAllyPlatformDataQuery({slice:'resident_profile',operation:'statistics',measure:'Age',filters:[{field:'Age',op:'number-lte',value:'50'}]},listAllyPlatformDataSources(profiles)[0],profileOptions.constraints);
 assert.match(numeric.sql,/COUNT\(\*\) AS records/);assert.match(numeric.sql,/PERCENTILE_CONT\(0\.5\)/);assert.match(numeric.sql,/try_cast\(`Age` AS DOUBLE\) <= 50/);assert.match(numeric.sql,/`Facility`/);
 for(const query of [{columns:['password']},{orderBy:[{field:'Age; DROP TABLE x',direction:'desc'}]},{filters:[{field:'Age',op:'number-gte',value:'0 OR 1=1'}]}]) await assert.rejects(readAllyPlatformData({slice:'resident_profile',...query},profileOptions));
@@ -118,3 +239,25 @@ const flagQuery={slice:'mar_exception_detail_90d',operation:'count',filters:[{fi
 const flagResult=await readAllyPlatformData(flagQuery,{load:async()=>flags,execute:async()=>[{result:1}]});
 assert.equal(flagResult.readMode,'governed-view');assert.deepEqual(flagResult.rows,[{result:1}]);
 await assert.rejects(readAllyPlatformData(flagQuery,{load:async()=>flags,execute:fail}),/coerced the original numeric flag/);
+
+// Derived measures aggregate complete cohorts before limiting output rows.
+const episodeSource={id:'resident_episode_history',fields:['facility_id','admit_date','discharge_date','discharge_reason'],sourceRows:3};
+const expression={operation:'days-between',left:'admit_date',right:'discharge_date'};
+const derivedQuery={slice:episodeSource.id,operation:'statistics',measureExpression:expression,groupBy:['discharge_reason']};
+const derivedSql=compileAllyPlatformDataQuery(derivedQuery,episodeSource,[{field:'facility_id',op:'in',value:['337']}]);
+assert.match(derivedSql.sql,/DATEDIFF\(try_cast\(`discharge_date` AS DATE\), try_cast\(`admit_date` AS DATE\)\)/);
+assert.match(derivedSql.sql,/COUNT\(\*\) AS records/);assert.match(derivedSql.sql,/GROUP BY `discharge_reason`/);assert.match(derivedSql.sql,/`facility_id`/);
+const episodeSummary={toolContext:{manifest:[{slice_name:episodeSource.id,fields:episodeSource.fields,row_count:3,generated_at:'2026-11-24T12:00:00Z'}],tables:{[episodeSource.id]:[
+ {facility_id:'337',admit_date:'2026-01-01',discharge_date:'2026-01-11',discharge_reason:'Transfer'},
+ {facility_id:'337',admit_date:'2026-01-01',discharge_date:'2026-01-31',discharge_reason:'Transfer'},
+ {facility_id:'337',admit_date:null,discharge_date:'2026-01-31',discharge_reason:'Transfer'}]}}};
+const derived=await readAllyPlatformData(derivedQuery,{load:async()=>episodeSummary,execute:fail,constraints:[{field:'facility_id',op:'in',value:['337']}]});
+assert.deepEqual(derived.rows,[{discharge_reason:'Transfer',records:3,known:2,missing:1,mean:20,median:20,minimum:10,maximum:30}]);
+for(const measureExpression of [{...expression,left:'private'},{...expression,right:'discharge_date); DROP TABLE X'},{...expression,operation:'sql'},{...expression,extra:true}])assert.throws(()=>compileAllyPlatformDataQuery({...derivedQuery,measureExpression},episodeSource));
+assert.throws(()=>compileAllyPlatformDataQuery({...derivedQuery,measure:'admit_date'},episodeSource));
+const longText='a'.repeat(5000)+'transport appointment'+'z'.repeat(5000);
+const excerpt=await readAllyPlatformData({slice:'notes_summary',operation:'rows',columns:['Res_Number','note_text'],textExcerpt:{field:'note_text',query:'transport',characters:500},limit:10},{load,execute:async()=>nativePage([{Res_Number:'10',note_text:longText}])});
+assert(excerpt.rows[0].note_text.includes('transport appointment'));assert.equal(excerpt.rows[0].note_text.length,500);
+assert.equal(excerpt.textExcerpts[0].characters,longText.length);assert.equal(excerpt.textExcerpts[0].complete,false);
+assert.throws(()=>compileAllyPlatformDataQuery({slice:'notes_summary',textExcerpt:{field:'private',query:'x',characters:500}},catalog[0]));
+console.log('Derived cohort statistics and bounded text excerpts preserve source populations, unknowns and field authorization.');

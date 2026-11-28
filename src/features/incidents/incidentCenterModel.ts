@@ -14,11 +14,32 @@ import {
   mapIncidentsWithResidentMatch
 } from "../../shared/data/residentIncidentMatching";
 
-export type IncidentPriority = "HIGH" | "MEDIUM" | "LOW";
+export type IncidentPriority = "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
+export type IncidentPriorityLevel = "high" | "medium" | "low" | "unknown";
+
+// Mirrors shared/incident-priority.mjs INCIDENT_PRIORITIES, in display order.
+export const INCIDENT_PRIORITY_ORDER: readonly IncidentPriority[] = ["HIGH", "MEDIUM", "LOW", "UNKNOWN"];
+
+/**
+ * The shared priority scale arrives as `priority_level` (which can be
+ * "unknown" when all three recorded flags are blank). Older payloads carry only
+ * the legacy HIGH/MEDIUM/LOW `priority`, so fall back to it.
+ */
+export function resolveIncidentPriority(record: { priority?: unknown; priority_level?: unknown }): IncidentPriority {
+  const level = typeof record.priority_level === "string" ? record.priority_level.trim().toUpperCase() : "";
+  if (INCIDENT_PRIORITY_ORDER.includes(level as IncidentPriority)) return level as IncidentPriority;
+  const legacy = typeof record.priority === "string" ? record.priority.trim().toUpperCase() : "";
+  return INCIDENT_PRIORITY_ORDER.includes(legacy as IncidentPriority) ? legacy as IncidentPriority : "UNKNOWN";
+}
+
+export function formatIncidentPriority(priority: IncidentPriority) {
+  return `${priority[0]}${priority.slice(1).toLowerCase()}`;
+}
 
 export interface IncidentRecord {
   id: string;
   priority: IncidentPriority;
+  priority_level?: IncidentPriorityLevel;
   stage?: string;
   facility_id?: string;
   facility_name?: string;
@@ -101,12 +122,16 @@ export function incidentsShareResident(left: IncidentRecord, right: IncidentReco
   return incidentsMatchResident(left, right);
 }
 
+export function withResolvedIncidentPriority(incidents: Array<IncidentRecord | LiveIncidentRecord>): IncidentRecord[] {
+  return incidents.map((incident) => ({ ...incident, priority: resolveIncidentPriority(incident) }) as IncidentRecord);
+}
+
 export function enrichIncidentsWithResidents(
   incidents: Array<IncidentRecord | LiveIncidentRecord>,
   residents: LiveCommunityResidentRecord[]
 ) {
   return mapIncidentsWithResidentMatch(
-    incidents as IncidentRecord[],
+    withResolvedIncidentPriority(incidents),
     residents,
     (incident, resident, residentName) => {
       const residentId = incident.resident_id || resident.res_number;

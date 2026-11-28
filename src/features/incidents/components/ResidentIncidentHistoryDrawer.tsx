@@ -4,6 +4,7 @@ import { displayIncidentLabel } from "../../../../shared/incident-display-labels
 import {
   formatIncidentDateTime,
   incidentsShareResident,
+  INCIDENT_PRIORITY_ORDER,
   type IncidentPriority,
   type IncidentRecord
 } from "../incidentCenterModel";
@@ -63,8 +64,10 @@ export function ResidentIncidentHistoryDrawer({
       counts[item.priority] += 1;
       return counts;
     },
-    { HIGH: 0, MEDIUM: 0, LOW: 0 }
+    { HIGH: 0, MEDIUM: 0, LOW: 0, UNKNOWN: 0 }
   );
+  // Unknown (unclassifiable) is counted only when this resident has any.
+  const summaryPriorities = INCIDENT_PRIORITY_ORDER.filter((priority) => priority !== "UNKNOWN" || priorityCounts.UNKNOWN > 0);
 
   return (
     <dialog ref={dialogRef} className="incident-history-dialog" onCancel={onClose}
@@ -108,7 +111,7 @@ export function ResidentIncidentHistoryDrawer({
 
             <dl className="incident-history-priorities">
               <div className="incident-history-total"><dt>History</dt><dd>{history.length} incident{history.length === 1 ? "" : "s"}</dd></div>
-              {(["HIGH", "MEDIUM", "LOW"] as const).map((priority) => {
+              {summaryPriorities.map((priority) => {
                 const presentation = priorityConfig[priority];
                 return (
                   <div

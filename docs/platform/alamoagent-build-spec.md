@@ -1,3 +1,249 @@
+## November 25 exact medication dates — local candidate
+
+The real medication follow-up could count refusals through November 24 but could
+not retrieve a matching scheduled-dose denominator for that partial month. The
+canonical tool-context publisher now defines an additive community/day/medication
+view over the same governed administration records. The manifest makes its exact
+date coverage discoverable; full population aggregates run in the warehouse, with
+no truncated event snapshot. Scheduled refusals and PRN refusals are separate;
+pending doses are not refusals. No clinical records or existing monthly measures
+change. Medication-level queries retain their existing detail requirement and
+need an explicit source-slice grant.
+
+The actual projection passes executable event-grain tests, including medication
+strength, community/date isolation, weighted denominators, pending and PRN cases.
+An independent read-only query reconciles all eleven January–November monthly
+rollups against the existing monthly view, including the current partial month.
+The authenticated source test verifies manifest discovery, exact date/community
+SQL constraints, grant denial and warehouse-outage failure. Publishing the view,
+manifest and existing executives' slice grants, then a real-model follow-up, remain
+pending. This is source access evidence, not a corrected benchmark answer.
+
+Known ceiling: the current day can contain pending scheduled doses. The catalog
+states that limitation explicitly. A completed-day KPI must exclude that day;
+this view does not redefine an unfinished day as fully observed.
+
+## November 25 canonical record selection — local candidate
+
+Explicitly selecting `/data/records` now retains the same native cursor,
+revisions and requested workspace IDs as the implicit canonical list. Field
+projection remains unchanged. Scalar, search and other-path selections do not
+inherit collection metadata. The real October referral review exposed the lost
+metadata: all requested outcomes were returned but could not establish their
+selected-response completeness. The focused test fails on the prior adapter and
+passes on this candidate; current represented identity, revocation and byte-limit
+tests also pass. Source deployment and real-query retest remain pending.
+
+## November 24 native investigation and calendar — source release, evaluation pending
+
+Selected native fields share one byte budget, retaining whole values instead of
+artificial equal-sized excerpts. Continuation carries the exact response revision;
+changed content, missing fields and shortened oversized values remain explicit.
+Pipeline's workspace-review batches expose full workflow/notes projections and
+requested identities; response-page completeness cannot become population
+completeness. The existing source grants, represented identity and read-only
+transport remain unchanged.
+
+A registered calendar now renders validated source date/name columns. Phone
+layouts show a readable agenda; all dates, long names and undated records remain
+available. Original data tables, known workspace links, keyboard focus and print
+export reuse existing owners. Model-authored HTML remains inert. The calendar
+contract is owned by the independent Ally engine; this host renders that contract.
+Desktop, 390 px and 320 px browser controls and TypeScript checks pass. These are
+rendering controls, not model-quality evidence. Candidate `282a141` is deployed as
+`alamo-platform-prod-web--ally-invest-v12`; the scoped predeployment gate passed
+10/10 in 140 seconds. Source reads and all three current executive grants pass.
+Main-Chrome sign-in and the home screen were observed, but the full live Network
+capture remains pending after browser inspection disconnected. Do not call that
+postdeployment gate complete. The engine remains unchanged pending real-answer
+evaluation. See [deployment operations](deployment-operations.md#november-24-investigation-source-release).
+
+## November 24 investigation usability corrections — local candidate
+
+## Complete note paging — November 24 local candidate
+
+Revision-bound row queries now page by encoded size as well as row count,
+returning whole records and full text. Continuation offsets use the actual
+returned rows, so a long note cannot silently become a shortened population
+review. The existing query/revision, source authorization and 80 KB result ceiling
+remain. An individually oversized note requires its existing document/field read;
+this change does not claim every possible source record fits a report response.
+Focused checks traverse seventeen varied long notes with exact text, no duplicates
+or gaps, and preserve unchanged revision and incomplete-excerpt rules. Source
+checks and server typechecking pass; this source change is included in the release
+recorded above.
+
+
+Saved-report links now accept an explicit validated version through the existing
+report loader, so historical links do not silently open the latest answer.
+
+Real-answer replay exposed literal Markdown headings and table-cell formatting.
+The existing prose renderer now presents headings and the same safe bold, link
+and line-break formatting in desktop tables and phone records. Other HTML remains
+escaped; raw datasets retain literal cell values. No saved wording is changed.
+
+Licensing discovery now links each archived report and permits detail-authorized
+reads through the existing licensing text owner. The report must first match the
+current community/date scope; revision-bound text paging and the source's archive
+coverage remain explicit. Metadata-only grants cannot retrieve text. This closes
+the metadata-only tool gap without another document index or ingestion pipeline.
+
+Invalid native read parameters, missing selections and stale continuation revisions
+now return bounded correction evidence to the analyst, allowing investigation to
+continue through the source catalog. They do not return records or prove an empty
+population. Authentication and authorization denials remain hard failures; grants
+are rechecked before returning even correction feedback. Upstream response bodies
+remain private. Signed HTTP tests distinguish these outcomes from a source outage.
+
+The canonical Pipeline projection now returns list rows together with the native
+cursor and revisions. Response-size paging remains explicit; the model no longer
+needs a paid discovery turn just to enter every page wrapper. Exact pointer,
+search and multi-path reads retain their existing behavior. The catalog describes
+current owner attribution separately from completed-assessment authorship.
+
+The pinned engine contract accepts valid historical periods before 2000 and keeps
+historical date labels out of numeric operands. Source integration tests verify a
+historical read through HTTP and preserve community-denial behavior. These local
+changes do not alter the frozen live 50-conversation benchmark; they require a
+separate real-query retest before deployment.
+
+Incident evidence now includes the existing register/history navigation route.
+Report prose renders those registered links directly, using the shared resolver;
+unknown URLs and HTML remain text. This preserves the current answer layout and
+does not add an extra Sources panel or a new detail page. Browser checks cover
+the real destination and hostile links on desktop and narrow layouts.
+
+## November 24 investigation tools — candidate
+
+The real rebuilt-agent benchmark exposed a query-contract error presented as a
+source outage: removing the date field from dated records returned HTTP 503.
+That selection remains rejected, but now produces bounded correction feedback
+with the required date dimension. Summing census across dates uses the same
+feedback convention. Neither returns rows, relaxes scope, nor fabricates a zero.
+Focused source tests cover rejection and the subsequent valid scoped query.
+This follow-up is local; the running benchmark retains the prior source revision.
+
+The shared native reader now exposes content previews, exact paths, multi-field
+reads and literal passage search instead of only names of large object fields.
+Pipeline defaults to the substantive record and supports its source-owned cohort
+assessment reader. Source identity, grants and response-revision checks remain.
+The existing safe query compiler adds row-level date intervals and arithmetic
+before full-population aggregation, plus explicit text excerpts for long notes.
+Unknown operands stay unknown; source scope is applied before aggregation.
+These are local candidates until immutable source deployment and real evaluation.
+
+## November 24 full-data analyst — source connections deployed, engine evaluation pending
+
+The owner now authorizes full organizational read access for signed-in Ally
+participants across all connected apps. Page community/date filters are query
+context, not additional permission gates. Workload authentication, tenant
+isolation, source receipts and source-owned writes remain separate.
+
+The canonical client connector reuses the existing clinical reader for current
+and historical clients, profiles, episodes, extracted facts, document discovery,
+page search and fact provenance. Document text reads continue with an exact
+source revision and offset. Missing extraction is explicit; it does not imply
+an empty document. Whole-client detail requires the organization-wide read
+grant because histories can span communities. That grant is authorized for the
+executive participants. Its live grant and current/historical directory reads are verified.
+
+Large published tool tables now have immutable gzip assets with checked SHA-256,
+compressed/uncompressed byte counts and row counts. Validation runs on the full
+publication before assets are written and before the latest pointer advances.
+Existing application readers hydrate the complete publication; Ally loads only
+the requested table, keeping census/roster context small. Original monolithic
+publications remain readable. Deploy the reader **before** publishing references;
+rollback restores the prior publication pointer before an old reader image.
+Tables over 64 MiB require smaller source-owned partitions; do not drop rows or
+raise limits silently. References also have a combined 64 MiB decoded budget for
+legacy consumers that hydrate every table. If a real publication exceeds it,
+move those consumers to selective reads before increasing capacity; a failed
+publication keeps the previous complete pointer and never drops records.
+The shared read cache retains at most 96 MiB serialized
+table data; application projections retain their current publication separately.
+
+Protocol, clinical projection, shard-integrity/transport and server checks pass.
+The source image and corrected publication are live: 5.18 MB manifest and 62.79 MB
+of checked immutable table assets. Independent warehouse queries provide the
+answer oracle. The rebuilt engine is not deployed; its full real benchmark,
+semantic review and final runtime release remain unfinished. See the canonical
+Ally build spec and private Suite repair receipts for the execution evidence.
+
+Native Carelog/Fleet discovery and read projection now use the source's exact
+registered GET routes, parameter types, managed workload identity and represented
+executive. Response paging is revision-bound; native list limits are never a
+population denominator. Its companion Carelog change passes 972 unit and 82
+architecture tests and is deployed. The dedicated application role is assigned
+to the exact Platform workload; real catalog and unfinished-document reads pass.
+That last collection returned no rows, so it is not populated clinical-content proof.
+
+The ProForma reader is integrated through the current source-owned service,
+including drafts, publications, retained originals and exact citations. A minimal
+overlay adds only the read projection and prevents its catalog refresh from writing
+source state. The exact deployed runtime passed isolated discovery, paging, citation,
+full-text, search and revocation checks with zero writes; the persisted workspace
+was fictional. This is runtime integration evidence, not a live company-answer test.
+The ordinary browser authoring gate and permissions stay unchanged; the separate
+organizational read grant controls this analyst capability.
+
+`prepare-ally-source-release.mjs` prepares this backend boundary on an exact current
+image, preserving UI, installed source owners and runtime settings. It does not
+activate grants or publish snapshots itself. These source connections and the
+new publication have now been activated with conditional rollout receipts;
+real signed-in answers from the rebuilt engine are still required.
+
+Pipeline now has a companion read-only source on its actual production source
+base (`a8f14b35`). Its canonical readers expose all workspace states except trash,
+full assessment contexts, notes, imported ALLO text, contacts, file metadata,
+retained extraction and bounded activity. A separate source credential and exact
+tenant/represented executive protect the route; the current organizational grant
+is required in Platform. No source credential is supplied to the model. Native
+Carelog and Pipeline responses share one bounded, revision-aware reader, including
+complete-text continuation and sanitized transport errors. The input filters and
+source dates define these reads, not the report page context. Pipeline original
+PDF/image page reads now reuse the existing extraction, malware and OCR owners.
+Current handoff communications use the canonical packet store. Legacy external
+email history and activity beyond the retained event window remain explicit gaps. The adapter, source route, context regressions and route
+policy checks pass. Native Linux OCR and packaged authentication checks passed
+on the immutable deployed image. All three executives passed live source catalog
+authorization and a real directory returned records. Answer quality remains under evaluation.
+
+Workforce's current deployed pilot is configured with placeholder data. Do not
+present that feed as measured staffing or use it as real-data benchmark evidence.
+Locate an authoritative personnel feed before activating executive HR analysis.
+
+Candidate source-error correction (not deployed): the shared native reader keeps
+the owning API's safe HTTP class for invalid queries (400/422), changed revisions
+(409) and lost access (401/403/404), without exposing upstream bodies. Invalid
+selectors and unbound continuations use those same classes. Other failures remain
+unavailable. This lets the engine correct a read instead of treating every rejected
+query as an outage; it does not broaden grants or weaken response validation.
+Pipeline/Carelog boundary tests cover these classes, revision binding and privacy.
+The frozen real benchmark continues against the unchanged deployed source reader.
+
+## November 24 companion repair — candidate
+
+The engine 0.18.19 companion retains conversational context, validates derived
+claims with a bounded repair loop, and executes source-bound chart sorting and
+calculations in the screen and export. Platform pins that package. The new query
+contract accepts redundant, authorized aggregate projections without changing
+the input population; only an unambiguous measure sort maps to its returned
+`result`. Unknown fields, private projections and ambiguous statistics still fail.
+
+Source publication corrects the missing notes Comment mapping, derives note gaps
+from the full current roster, publishes monthly census and preserves nulls.
+Monthly service history now uses the service archive and explicitly separates
+visits and minutes. Its available data ends in April 2026; a November request
+must disclose missing coverage, not report zero activity. Read-only candidate
+queries reconcile with independent source aggregates. The scoped Ally data
+release gate applies because publication changes are in scope.
+
+Four new real-model rounds are retained alongside the frozen 50-conversation
+baseline. They currently use the candidate engine and **old production source**.
+Latest source and cohort-label changes are not yet live-quality evidence. No
+record writes or source-grant changes are made. Release evidence and outstanding
+coverage are tracked in the engine living spec and private Suite repair receipts.
+
 # AlamoAgent build spec — source ownership
 
 - purpose: point to the independent agent engine's single living build spec
@@ -14,6 +260,76 @@ Read its [editing guide](/Users/eric/CareEngineMain/alamoagent/README.md) and
 Update that spec in every relevant change; do not start a competing Platform plan.
 
 Current rollout evidence is recorded in [Ally History and incident recovery](deployment-operations.md#ally-history-and-incident-recovery--november-23-deployed). Older dated entries below retain their historical scope; they do not override the current release.
+
+### November 24 source and reasoning repair — candidate only
+
+The companion engine 0.18.19 candidate is pinned for source/view integration.
+The data connector now describes field availability from complete published
+rows, exposes recoverable query-validation feedback, and honors an explicitly
+filtered full-month interval within a wider page scope. These changes preserve
+community/detail grants and exact source revisions. Metadata is not business
+measurement evidence.
+
+The governed note projection uses ElderMark's actual `Comment` column. Current
+resident note gaps join the full dated note history by facility/resident, not an
+exception-only extract. Monthly census and the already-built enriched roster
+are published under their existing canonical manifests. Candidate SQL yields
+224,180 dated note records with 223,986 populated comments and 545 current
+residents. These are read-only comparisons; production publication is pending.
+
+The client-service projection now reads resident/service/month archives, with
+separate minutes and visits. Employee schedules cannot masquerade as delivered
+client care. Independent raw-source checks match counts, known recipients,
+month ranges, minutes and visits in all eleven source facilities. The five
+operating communities' archives end in April 2026; later periods are explicitly
+unavailable, never zero. Raw cancellation codes do not prove completion. Daily
+QA checks preserve source population, units and missingness; ALTER VIEW retains
+grants. The existing slice stays within current source authorization.
+
+Pipeline's existing monthly portfolio history and whitelisted active workspace
+metadata are available through its canonical protected summary. Historical
+community breakdown is unavailable in that producer and stays unavailable.
+Named workspaces require detail access; clinical content is excluded. Occupancy
+includes its source-calculated percentage. Saved charts can sort by one measure
+while displaying another, with bounded calculated columns shared by browser and
+export, without mutating saved source rows.
+
+Fresh real-model suites and the original failures are both retained. The current
+live model tests still read the deployed source, so they do not certify these
+unpublished feed repairs. Publication needs the scoped data release gate, conditional
+notebook/snapshot recovery and post-publish population checks; the application
+needs the candidate bundle, signed-in question/history checks and real answer
+review. No production changes or broader grants are claimed here.
+
+### November 24 real-data baseline — no deployment change
+
+The owner prioritized all 50 real multi-step conversations before release-gate
+changes. The canonical engine build spec records the full baseline: 156 requests,
+8/50 conversations and 64/156 requests fully delivered, with uncached local-engine
+median/p95 of 15.932/36.973 seconds. Forty independent warehouse query sets and a
+direct protected Pipeline summary support review; the source-owned read-only
+answer-sheet script is [ally-real-expected-facts.py](../../scripts/ally-real-expected-facts.py).
+This script exports aggregates only to a private operator directory. It does not
+change clinical data, feed definitions, grants or application code.
+
+Actual main-Chrome checks reproduced a chart whose text sorted but bars did not.
+The table, composer and History fit 320/390px widths; exact History search and
+reopen work, while the tested semantic search does not. Export repeats source
+records. Final PDF pagination and distinct executive-reader sessions remain
+unverified. The large backend campaign uses isolated local report storage and
+does not prove production queue latency or concurrent executive load. The live
+UI spot check separately saved a real test conversation.
+
+Important source findings: the notes feed has no note text; enrichment lacks
+last-note values although a separate join to note dates evaluates all current
+residents; assessment statuses and service recipient/unit/status fields are
+missing; monthly census and Pipeline detail/history are not fully exposed to
+Ally. These are coverage/connection findings, not proof that the operational
+source systems lack the information. Existing passing checks did not detect
+the observed wrong-period answers or incomplete results. See the engine's
+November 24 entry and private Suite `.state/ally-real-50-report-20261124` report
+for grades, limitations and the ordered fixes. The application and release
+gates were deliberately left unchanged during this baseline.
 
 ### November 23 incident response — deployed and verified
 
@@ -861,3 +1177,180 @@ A final `minimal` probe also returned HTTP 400; the provider explicitly lists
 `low` as this model’s minimum supported effort. Live synthesis already uses it.
 All three rejected experiment reservations remain retained; do not report them
 as settled charges without provider usage receipts.
+
+
+## November 24 analytical repair and release-check budget
+
+Candidate source (not deployed): engine 0.18.19 retains reauthorized conversation
+context, repairs rejected numeric proofs within the existing call budget, supports
+explicit scenario assumptions and derived/sorted report columns. Platform source
+repairs cover complete-population queries, null/coverage distinctions, note text,
+full-roster last-note dates, and monthly service archive mappings. These repairs
+still need real answer-level acceptance; a `ready` status is not a correctness grade.
+
+The full real-data 50-conversation rerun is in progress against the candidate engine
+and currently deployed source endpoints. Its saved results distinguish those
+versions; the newer publisher/adapter changes are not yet live. Initial turns show
+successful answers but still include slow follow-ups and a partial answer. No claim
+of perfect answers or consistent sub-ten-second performance is warranted.
+
+The owner requires routine release checks to finish in about five minutes. The
+[scoped release policy](ship-checklist.md#november-24-owner-directed-five-minute-ally-releases)
+now has enforced 180-second predeploy and 120-second postdeploy budgets. The existing
+focused gate previously completed in 127–151 seconds. Four runner regression checks
+prove normal failure propagation, deadline failure, child-process cleanup and
+rejection of skipped stages. The current candidate `ally-data` gate passed all 12 stages in 66.967 seconds.
+An initial 48-second run caught asynchronous focus restoration racing a new
+composer interaction; the callback now preserves a focus the user has already
+chosen, and the test waits for scheduled restoration before asserting it. The
+320/390/1440 browser pass covers the original return-focus assertion and multiline
+input. No postdeployment check or deployment is implied by this local receipt.
+
+The real rerun also exposed warehouse timestamps being converted to empty objects
+by the shared community-name formatter. The candidate preserves native Date values
+so HTTP serializes them normally; the focused source integration now exercises a
+native warehouse Date through formatting, HTTP and the engine evidence validator.
+Search inputs publish their existing length bounds and oversized queries return
+bounded correction feedback rather than a generic source outage. These source
+fixes are local and are not included in the frozen rerun's deployed adapter.
+The discovery catalog and execution boundary now use the same date-dimension
+classification, excluding numeric measures such as weekly census row counts and
+latest monthly census. Invalid date selectors return query correction feedback.
+
+A zero-match search now checks the population of its predicate fields at the
+canonical data reader, for both warehouse and complete-snapshot queries. It keeps
+enforced community/date scope and the user's other filters. Fully empty fields
+return unavailable evidence, partial missingness is explicit, and a genuinely empty
+period remains a valid zero. Matching queries incur no extra coverage query. Failed
+or malformed population checks cannot become verified zero results.
+
+The real transportation-note search demonstrates why this belongs at that owner:
+the old warehouse projection reports zero populated note text across 31,755 scoped
+notes. The candidate reader correctly refuses to label that as no matches. A
+read-only candidate Comment projection returns 290 matches, identical to an
+independent raw-note query. No view or source record was changed for this proof.
+Focused data/report integration checks and server typechecking pass; this is
+separate from publishing the actual note bodies and is not a live fix claim.
+
+The engine's [November 24 architecture review](/Users/eric/CareEngineMain/ally/docs/build-spec.md#november-24-architecture-review--decisions-not-a-completed-rebuild)
+records the researched system direction, existing canonical owners and missing
+capabilities. No framework dependency or unrestricted SQL endpoint is introduced.
+
+The live release runner now includes main-Chrome capture time in its two-minute
+budget. Validating a receipt quickly cannot conceal a long browser check. Regression
+coverage verifies both the remaining time calculation and a real CLI invocation
+that records timeout without launching any check after a 121-second capture.
+
+
+### Scoped census totals — candidate
+
+The canonical occupancy reader now supplies census/capacity totals for exactly
+the selected authorized communities. Unknown operating capacity remains null,
+including the total, and availability remains the sum of each community's
+nonnegative available beds. This removes a repeated model-side addition for
+ordinary portfolio questions without caching permission or changing the census.
+Focused source tests verify single/multiple communities and historical unknown
+capacity. This small source update is prepared for the integrated release.
+
+
+### Complete record review — November 24 candidate
+
+The canonical analytical reader now exposes revision-bound continuation for complete
+published row sets. The revision binds the publication, authorized scope, query
+and ordered result. Changed content or scope requires restarting; it cannot silently
+skip or duplicate rows. The model receives total result rows and a next offset,
+while each response retains the existing row and context limits. No source records
+change. The first implementation was deployed in `66d35cc`; real verification then
+found that notes publish only 15,000 of 224,180 rows, so published paging alone is
+insufficient. The next candidate queries the canonical warehouse view with a
+deterministic order, whole-result count and sorted content fingerprint in one
+statement. Continuation recomputes and verifies that fingerprint and the exact
+authorized query; changed results require restarting, and an unavailable page
+cannot fall back to a different population. Incomplete fallback results still
+cannot claim a stable cursor. Per-page evidence stays partial; source-issued
+population coverage lets the engine recognize a complete set of matching pages,
+without treating shortened notes or missing fields as complete evidence.
+A 119-row traversal and source-boundary checks cover every record, changed queries,
+revocation scope, refreshed content and page resizing. Real answer quality remains
+a separate pending corrective evaluation. Warehouse continuation is still a
+candidate. It recomputes the filtered fingerprint for each page; if measured
+large-cohort latency becomes unacceptable, use source-owned immutable query
+results instead of relaxing revision checks or silently mixing snapshots.
+
+The warehouse continuation candidate `0d64c785` is now deployed in revision
+`alamo-platform-prod-web--ally-cohorts-1124`. The scoped predeployment gate
+passed 10/10 in 125 seconds; postdeployment passed 2/2 in 46 seconds including
+the main-Chrome capture. That capture checked 15 routes and 12 interactions,
+with no HTTP failures or console errors. This establishes the source/runtime
+release, not the quality of every generated answer. The unchanged 50-conversation,
+156-turn real-data suite is running separately against engine `90b8076`
+(0.18.22, workspace-v10). The production Ally engine has not been cut over.
+See [deployment evidence](deployment-operations.md#complete-cohort-source-release--november-24).
+
+The real-answer phone replay found a separate composer defect: a saved scope
+containing all five explicit community IDs displayed only its first community.
+The candidate now labels the complete set as All communities, preserves a
+multi-community subset as the selected option, and keeps the exact ID set when
+dates change or the user follows up. No source scope or permissions change.
+The 320/390/1440 browser suite passes, including saved empty/all/subset/single
+scope cases and date/follow-up preservation; typechecking passes. This UI fix is
+not yet deployed and does not change the frozen real-model evaluation.
+
+The same frozen real run exposed a second renderer defect in conversation 42:
+its census and incident plots shared one calculated dataset, so the section-based
+renderer selected only the first view. A retained real-answer replay fails with
+one plot instead of two. The candidate now renders every saved view, keeps each
+view's measure selection independent, and preserves those choices in export.
+Source anchors and single-view behavior remain unchanged. Conversation 43 also
+showed workspace destinations as raw strings; data cells now resolve registered
+links through the existing application-link validator and use their column labels.
+Unregistered or executable destinations remain plain text.
+
+The focused 320/390/1440 browser check passes, including independent chart changes,
+PDF output, registered/unregistered links, history and scope regressions; typechecking
+passes. The first real-answer replay passes 93 checks (31 saved answers across
+three widths), including actual chart sort, both trend measures, names and workspace
+links. These are local presentation repairs, not a rerun of the frozen model answers
+and not a production UI deployment. Full evaluation and remaining replay evidence
+will be recorded after the final conversation completes.
+
+The complete unchanged real-model retest has now finished: 50 conversations,
+156 turns, 139 fully delivered turns with the starting renderer. The candidate
+renderer repair resolves the three missing-chart turns, for 142/156 and 40/50
+whole conversations. Fourteen remaining turns are partial; none lacks a substantive
+answer. This score does not turn truthful source gaps into full answers. The native
+Azure median/p95 was 18.176/55.909 seconds, excluding queue/browser time, so the
+engine is still short of the under-ten-second target and remains unpromoted.
+
+Actual saved-answer replays passed 120 unique turn/viewport combinations across
+12 conversations at 320/390/1440 px, with chart scrolling visually inspected.
+The final briefing was exported through the real application and all four PDF
+pages inspected: no essential clipping, but its prompt-like title and separate
+source page still need editorial refinement. Scoped browser regressions and
+source-release proofs remain separate from model quality and live sharing proof.
+Private report and evidence are under
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/retest-full-v10/`.
+The UI repairs remain local; no additional deployment is claimed.
+
+
+### November 25 — local conversation integration correction
+
+The native Codex comparison is running against pinned development sources; no
+production release is authorized. The latest full baseline is retained separately
+in the canonical engine audit. This browser still contained a twelve-answer
+ceiling after the engine removed it. That duplicate restriction and its forced
+new-chat message are removed. Stop now names the displayed question version;
+progress-only revision updates may not invalidate it, and it cannot cancel a
+later question. The local package pin must include engine 0.18.39's matching
+command validation before exercising this protocol. No production flag, source
+write, visual redesign or live package update is implied.
+
+
+November 25 local integration proof: pinned Ally **0.18.40**. The existing report
+UI now keeps a thirteenth answer open for a fourteenth follow-up, preserves its
+first immutable answer, and sends the displayed question version with Stop.
+A progress update injected before Stop no longer invalidates the command.
+The canonical browser check passes at 320/390/1440 pixels, including existing
+history, revoked access, charts, PDF and scope behavior; TypeScript passes.
+These are controlled interface checks, not new model-quality evidence. The
+native executor remains disabled in production, and no Platform release occurred.

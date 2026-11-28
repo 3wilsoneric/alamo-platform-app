@@ -723,6 +723,10 @@ def build_resident_quality_flags(df: DataFrame) -> DataFrame:
             "is_countable_resident",
             (has_res_number & has_valid_admit & ~source_not_a_resident & ~has_bad_discharge_order & ~has_suspect_name).cast("integer"),
         )
+        .withColumn(
+            "current_length_of_stay_days",
+            F.when(F.col("is_countable_resident") == 1, F.col("current_length_of_stay_days")),
+        )
     )
 
 
@@ -781,6 +785,29 @@ def build_resident_flags(df: DataFrame, leave_intervals: DataFrame) -> DataFrame
     )
     df = df.drop("is_on_loa_flag")
     df = df.withColumn("Age", F.floor(F.datediff(as_of_date_col(), F.col("BirthDate_dt")) / 365.25))
+    # Owner-approved length of stay = two named measures:
+    # - current_length_of_stay_days: as_of - admit of the current episode, for
+    #   current residents (nulled for non-countable rows in
+    #   build_resident_quality_flags).
+    # - completed_stay_los_days: discharge - admit for stays that ended on or
+    #   before as_of (attributed to the discharge date downstream).
+    df = df.withColumn(
+        "current_length_of_stay_days",
+        F.when(active_as_of_condition(), F.datediff(as_of_date_col(), F.col("Admit_Date_dt"))),
+    )
+    df = df.withColumn(
+        "completed_stay_los_days",
+        F.when(
+            F.col("Admit_Date_dt").isNotNull()
+            & F.col("Discharge_Date_dt").isNotNull()
+            & (F.col("Discharge_Date_dt") >= F.col("Admit_Date_dt"))
+            & (F.col("Discharge_Date_dt") <= as_of_date_col()),
+            F.datediff(F.col("Discharge_Date_dt"), F.col("Admit_Date_dt")),
+        ),
+    )
+    # DEPRECATED: LOS_Days mixes the two measures (current if active, else
+    # completed). Kept unchanged for gold v_active_residents and legacy readers;
+    # new readers must use the named measures above.
     df = df.withColumn(
         "LOS_Days",
         F.when(
@@ -791,12 +818,57 @@ def build_resident_flags(df: DataFrame, leave_intervals: DataFrame) -> DataFrame
     return df
 
 
-def build_census_snapshot(resident_df: DataFrame) -> DataFrame:
+def build_countable_episodes(resident_df: DataFrame, admittance_df: DataFrame) -> DataFrame:
+    """Countable admission episodes: the single census population.
+
+    Same rule as gold v_tool_resident_episode_history: an episode counts only
+    when its resident matches a Resident row whose is_countable_resident = 1
+    (strict min over duplicate rows). Unmatched episodes are NOT countable.
+    """
+    countable_residents = (
+        resident_df.filter(F.col("Res_Number").isNotNull())
+        .groupBy(
+            F.col("Facility").cast("string").alias("Facility"),
+            F.col("Res_Number").cast("string").alias("Res_Number"),
+        )
+        .agg(F.min(F.coalesce(F.col("is_countable_resident"), F.lit(0))).alias("is_countable_resident"))
+        .filter(F.col("is_countable_resident") == 1)
+        .select("Facility", "Res_Number")
+    )
+    facility_column = next(
+        (column for column in ["Facility", "facility", "__FACILITY_ID"] if column in admittance_df.columns),
+        None,
+    )
+    episode_facility = F.col(facility_column).cast("string") if facility_column else F.lit(None).cast("string")
+    episodes = admittance_df.select(
+        episode_facility.alias("episode_facility"),
+        F.col("Res_Number").cast("string").alias("Res_Number"),
+        F.col("Admit_Date_dt").alias("admit_date"),
+        F.col("Discharge_Date_dt").alias("discharge_date"),
+    ).filter(F.col("Res_Number").isNotNull() & F.col("admit_date").isNotNull())
+    return (
+        episodes.alias("e")
+        .join(
+            countable_residents.alias("c"),
+            (F.col("e.Res_Number") == F.col("c.Res_Number"))
+            & (F.col("e.episode_facility").isNull() | (F.col("e.episode_facility") == F.col("c.Facility"))),
+            "inner",
+        )
+        .select(
+            F.col("c.Facility").alias("Facility"),
+            F.col("e.Res_Number").alias("Res_Number"),
+            F.col("e.admit_date").alias("admit_date"),
+            F.col("e.discharge_date").alias("discharge_date"),
+        )
+    )
+
+
+def build_census_snapshot(resident_df: DataFrame, admittance_df: DataFrame) -> DataFrame:
     census_start = time.perf_counter()
     today = AS_OF_DATE
-    eligible_residents = resident_df.filter(F.col("is_countable_resident") == 1)
+    eligible_episodes = build_countable_episodes(resident_df, admittance_df)
     print("Census_Snapshot: resolving earliest countable admit date.")
-    earliest_row = eligible_residents.select(F.min("Admit_Date_dt").alias("earliest_admit")).first()
+    earliest_row = eligible_episodes.select(F.min("admit_date").alias("earliest_admit")).first()
     earliest_admit = earliest_row["earliest_admit"] if earliest_row else None
     if earliest_admit is None:
         raise RuntimeError("No countable residents with valid admit dates; cannot build Census_Snapshot.")
@@ -826,15 +898,16 @@ def build_census_snapshot(resident_df: DataFrame) -> DataFrame:
         census_dates,
         "month_bucket string, snapshot_date date",
     )
+    # Owner-approved census: month-end census is the canonical DAILY census
+    # (admit_date <= day < coalesce(discharge_date, far future)) on
+    # min(month_end, as_of). Gold v_tool_census_daily_by_community applies the
+    # identical rule; analyst_context_qa fails the publish if they differ.
     resident_months = (
-        eligible_residents.alias("r")
+        eligible_episodes.alias("r")
         .join(
             F.broadcast(census_dates_df).alias("m"),
-            (F.col("r.Admit_Date_dt") <= F.col("m.snapshot_date"))
-            & (
-                F.col("r.Discharge_Date_dt").isNull()
-                | (F.col("r.Discharge_Date_dt") > F.col("m.snapshot_date"))
-            ),
+            (F.col("r.admit_date") <= F.col("m.snapshot_date"))
+            & (F.col("m.snapshot_date") < F.coalesce(F.col("r.discharge_date"), F.lit("9999-12-31").cast("date"))),
             "inner",
         )
         .select(
@@ -1093,11 +1166,12 @@ def transform_table(
 
 def publish_census_snapshot(
     resident_df: DataFrame,
+    admittance_df: DataFrame,
     step_label: str,
 ) -> None:
     census_start = time.perf_counter()
     print(f"Preparing Census_Snapshot ({step_label}) for partition {date_partition}...")
-    census_df = build_census_snapshot(resident_df)
+    census_df = build_census_snapshot(resident_df, admittance_df)
     print(
         "Census_Snapshot: logical frame prepared "
         f"for {CENSUS_HISTORY_MONTHS if CENSUS_HISTORY_MONTHS > 0 else 'full-history'} month setting "
@@ -1115,6 +1189,7 @@ def publish_census_snapshot(
 def main() -> None:
     valid_res_numbers = None
     resident_df = None
+    admittance_df = None
     leave_intervals = build_leave_intervals()
 
     table_total = len(TABLES)
@@ -1128,12 +1203,17 @@ def main() -> None:
         )
         if table_name == "Resident":
             resident_df = transformed_df
+        elif table_name == "Res_Admittance_History":
+            admittance_df = transformed_df
 
     if resident_df is None:
         raise RuntimeError("Resident table did not produce output; cannot build Census_Snapshot.")
+    if admittance_df is None:
+        raise RuntimeError("Res_Admittance_History did not produce output; cannot build episode-based Census_Snapshot.")
 
     publish_census_snapshot(
         resident_df,
+        admittance_df,
         f"{table_total + 1}/{table_total + 1}",
     )
 

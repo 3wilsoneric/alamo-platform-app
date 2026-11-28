@@ -534,6 +534,51 @@ assert.match(intakeJourneySource, /if \(!complete\)/, "the redesigned chart must
 assert.equal(hasCompleteIntakeBoard({board:{cards:[],total:0,truncated:true},metrics:{activeReferrals:0}}),false,"a partial feed must not be charted as a total");
 await import("./check-active-intake-journey.mjs");
 
+// Admission definition (Pipeline contract 3.6): confirmed admissions, assumed
+// arrivals and planned arrivals stay separate; admitted is a deprecated alias.
+assert.equal(summary?.history.monthly[0].confirmedAdmissions, null, "a 3.5 producer has no split: unknown, never guessed");
+assert.equal(summary?.history.monthOutcomes.admissionBasis, "combined-confirmed-or-assumed");
+assert.equal(summary?.briefing.confirmedAdmissionsLastWeek, null);
+assert.equal(summary?.briefing.admittedLastWeek.length, 1, "deprecated combined list still served");
+const split = (row, confirmed, assumed, planned) => ({ ...row, confirmed_admissions: confirmed, assumed_arrivals: assumed, planned_arrivals: planned });
+const v36Payload = {
+  ...pipelinePayload,
+  contract_version: "3.6",
+  briefing: {
+    ...pipelinePayload.briefing,
+    coverage: { ...pipelinePayload.briefing.coverage, confirmed_admissions_last_week_complete: true, assumed_arrivals_last_week_complete: true },
+    confirmed_admissions_last_week: [pipelinePayload.briefing.admitted_last_week[0]],
+    assumed_arrivals_last_week: [{ ...pipelinePayload.briefing.admitted_last_week[0], referral_id: 32, admitted_at: undefined, assumed_at: "2026-09-18" }],
+    admitted_last_week: [{ ...pipelinePayload.briefing.admitted_last_week[0], admission_basis: "confirmed" }],
+    admissions_by_community_last_week: [{ community: "San Pablo", confirmed_admissions: 1, assumed_arrivals: 1, admitted: 2 }],
+    planned_arrivals_by_community_this_week: [{ community: "San Pablo", planned_arrivals: 1 }]
+  },
+  history: {
+    ...pipelinePayload.history,
+    month_outcomes: split(pipelinePayload.history.month_outcomes, 1, 0, 2),
+    monthly: [split(month("2026-08", 15, 6), 0, 0, 1), { ...split(month("2026-09", 12, 5), 3, 1, 2), admitted: undefined }]
+  }
+};
+const v36 = normalizePipelineAdmissionsSummary(v36Payload, "https://pipeline.example");
+assert.equal(v36?.status, "connected");
+assert.deepEqual(v36?.history.monthOutcomes, { month: "2026-09", received: 12, accepted: 5, declined: 2, admitted: 1, confirmedAdmissions: 1, assumedArrivals: 0, plannedArrivals: 2, admissionBasis: "confirmed-assumed-planned" });
+assert.equal(v36?.history.monthly[1].admitted, 4, "missing deprecated alias is confirmed + assumed");
+assert.equal(v36?.briefing.confirmedAdmissionsLastWeek[0].admittedAt, "2026-09-17");
+assert.equal(v36?.briefing.assumedArrivalsLastWeek[0].assumedAt, "2026-09-18");
+assert.equal(v36?.briefing.admittedLastWeek[0].admissionBasis, "confirmed");
+assert.deepEqual(v36?.briefing.admissionsByCommunityLastWeek, [{ community: "San Pablo", facilityId: null, confirmedAdmissions: 1, assumedArrivals: 1, admitted: 2 }]);
+assert.deepEqual(v36?.briefing.plannedArrivalsByCommunityThisWeek, [{ community: "San Pablo", facilityId: null, plannedArrivals: 1 }]);
+assert.equal(v36?.briefing.coverage.confirmedAdmissionsLastWeek, true);
+assert.equal(normalizePipelineAdmissionsSummary({ ...v36Payload, history: { ...v36Payload.history, month_outcomes: { ...v36Payload.history.month_outcomes, assumed_arrivals: -1 } } }), null, "a partial 3.6 split rejects the feed");
+const v36Dashboard = buildAdmissionsDashboard(snapshot, { referralPipeline: v36 });
+assert.equal(v36Dashboard.referral_pipeline.briefing.admissionsByCommunityLastWeek[0].facilityId, "337");
+
+// Occupancy: effective-dated capacity on the census date; null before the first record.
+assert.equal(dashboard.communities.find((row) => row.facilityId === "337").capacityEffectiveFrom, "2026-07-30");
+const earlyDashboard = buildAdmissionsDashboard({ ...snapshot, snapshot: { ...snapshot.snapshot, as_of_date: "2026-07-29" } });
+assert(earlyDashboard.communities.every((row) => row.operatingLimit === null && row.occupancyPct === null), "no capacity before its effective date");
+assert.equal(earlyDashboard.portfolio.occupancyPct, null); assert.equal(earlyDashboard.portfolio.operatingLimit, null);
+
 console.log("admissions dashboard checks passed");
 
 // The synthetic, validated connected fixture is also used by the visual

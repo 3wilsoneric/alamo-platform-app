@@ -15,14 +15,15 @@ process.env.VITE_ALLY_REPORTS_ENABLED='true';process.env.VITE_ALLY_REPORT_PARTIC
 const output=path.resolve('generated/executive-ally-browser');await mkdir(output,{recursive:true});
 const localRoot=await mkdtemp(path.join(os.tmpdir(),'platform-report-browser-'));
 const auth={authenticated:true,mode:'entra-delegated',claims:{tid:EVERYAGENT_TENANT,oid:owner}};
-let sourceReady=true, sourceReads=0, trendFixture=false, proseTableFixture=false;
+let sourceReady=true, sourceReads=0, trendFixture=false, proseTableFixture=false, derivedFixture=false, multipleViews=false;
+const derivedDataset={title:'Occupied beds',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'census',label:'Census',type:'number'},{key:'capacity',label:'Capacity',type:'number'},{key:'workspace',label:'Workspace',type:'string'}],rows:[{community:'Alpha',census:4,capacity:8,workspace:'https://alamo-pipeline.com/?view=referrals&screen=packet&referralId=1&workspaceView=files'},{community:'Beta',census:9,capacity:10,workspace:'https://unregistered.example/'},{community:'Gamma',census:7,capacity:20,workspace:'javascript:alert(1)'}]};
 const proseDataset={title:'Community ages',shape:'records',columns:[{key:'community',label:'Community',type:'string'},{key:'age',label:'Average age',type:'number'},{key:'known',label:'Known ages',type:'number'},{key:'missing',label:'Missing ages',type:'number'}],rows:[{community:'A deliberately long fictional community name',age:44.9,known:136,missing:0},{community:'Another community <img src=x onerror=alert()>',age:40.7,known:138,missing:1}]};
 const trendDataset={title:'Monthly occupied bed-days',shape:'series',columns:[{key:'as_of_date',label:'as_of_date',type:'string'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'}],rows:[{as_of_date:'2026-01-01',occupied_bed_days:-1200},{as_of_date:'2026-02-01',occupied_bed_days:null},{as_of_date:'2026-03-01',occupied_bed_days:150443},{as_of_date:'2026-04-01',occupied_bed_days:130000}]};
 const source={authorize:async()=>sourceReady?{revision:reportHash('fixture-grant'),detail:false}:false,catalog:async()=>[{id:'resident-flow',title:'Resident flow',inputSchema:{type:'object'}}],read:async(subject,scope,step)=>{
   sourceReads++;
-  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:proseTableFixture?JSON.stringify(proseDataset.rows):'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:proseTableFixture?proseDataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
+  return {capability:step.capability,inputHash:reportHash(step.input),scope,revision:reportHash(sourceReads),grantRevision:reportHash('fixture-grant'),requiresDetail:false,observedAt:'2026-11-20T10:00:00Z',period:`${scope.from}–${scope.through}`,grain:'admission episode',status:'verified',coverage:'complete',title:'Admissions and discharges',note:'Fictional records used only for interface checks.',answer:derivedFixture?JSON.stringify(derivedDataset.rows):proseTableFixture?JSON.stringify(proseDataset.rows):'40 admission episodes, 25 discharges and 15 net additions. This is a synthetic fixture.',dataset:derivedFixture?derivedDataset:proseTableFixture?proseDataset:trendFixture?trendDataset:{title:'Community flow',shape:'categories',columns:[{key:'community',label:'Community',type:'string'},{key:'admissions',label:'admissions',type:'number'},{key:'discharges',label:'discharges',type:'number'},{key:'operatingCapacity',label:'operatingCapacity',type:'number'},{key:'occupied_bed_days',label:'occupied_bed_days',type:'number'},{key:'capacityAsOf',label:'capacityAsOf',type:'string'}],rows:[{community:'San Pablo',admissions:15,discharges:8,operatingCapacity:175,occupied_bed_days:150443,capacityAsOf:'2026-07-30'},{community:'Victoria’s House — long community name for layout validation',admissions:4,discharges:3},{community:'JC Wallace House',admissions:8,discharges:6},{community:'Turlock',admissions:5,discharges:4},{community:'Santa Clarita',admissions:8,discharges:4}].map(row=>({operatingCapacity:null,occupied_bed_days:null,capacityAsOf:null,...row}))}};
 }};
-const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:proseTableFixture?'| Community | Average age | Known ages | Missing ages |\n|---|---:|---:|---:|\n| A deliberately long fictional community name | 44.9 | 136 | 0 |\n| Another community <img src=x onerror=alert()> | 40.7 | 138 | 1 |\n\n**Summary**\nThe missing age remains missing.':trendFixture?'Monthly occupied bed-days.\n\n**Context**\n- Missing values stay missing.\n- Negative values stay below zero.\n\n<img src=x onerror=alert()>':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:proseTableFixture?[{id:'ages',componentId:'table',datasetId:'source-1'}]:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
+const model={plan:async()=>({plan:{steps:[{capability:'resident-flow',input:{}}],gaps:[]}}),synthesize:async()=>({findings:[{text:derivedFixture?'Recorded census is 4, 9 and 7.':proseTableFixture?'| Community | Average age | Known ages | Missing ages |\n|---|---:|---:|---:|\n| A deliberately long fictional community name | 44.9 | 136 | 0 |\n| Another community <img src=x onerror=alert()> | 40.7 | 138 | 1 |\n\n**Summary**\nThe missing age remains missing.':trendFixture?'Monthly occupied bed-days.\n\n**Context**\n- Missing values stay missing.\n- Negative values stay below zero.\n\n<img src=x onerror=alert()>':'40 admission episodes and 25 discharges produced 15 net additions.',sourceIds:['source-1']}],views:{version:'1.0',blocks:derivedFixture?[{id:'derived',componentId:'comparison',datasetId:'source-1',measureKey:'census',sort:{key:'derived_occupancy',direction:'desc'},computedColumns:[{key:'derived_occupancy',label:'Occupancy percent',operation:'percent',left:'census',right:'capacity'}]}]:proseTableFixture?[{id:'ages',componentId:'table',datasetId:'source-1'}]:[{id:'flow',componentId:trendFixture?'trend':'comparison',datasetId:'source-1'}]}})};
 try { await withBrowserQa(async browser=>{
   for(const width of [1440,390,320]) {
     console.log(`Executive Ally: checking ${width}px`);
@@ -31,17 +32,18 @@ try { await withBrowserQa(async browser=>{
     const service=createExecutiveReportService({store,source,model,allowedSubjects:[owner,reader],now:()=>fixtureTime});
     const context=await browser.newContext({viewport:{width,height:width===1440?1000:844},hasTouch:width<700,reducedMotion:width===320?'reduce':'no-preference'});
     await context.addInitScript(()=>{window.print=()=>{};});
-    const page=await context.newPage(),errors=[];let loseResponse=false,hold=false,denyHistory=false,currentAuth=auth;
+    const page=await context.newPage(),errors=[];let loseResponse=false,hold=false,denyHistory=false,advanceBeforeStop=false,currentAuth=auth;
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/api/agent/v1/reports*',async route=>{
       try {
         const req=route.request(),url=new URL(req.url());let result;
-        if(req.method()==='POST') {const body=req.postDataJSON();result=await service[body.operation](currentAuth,body.input);if(loseResponse){loseResponse=false;await route.abort();return;}}
+        if(req.method()==='POST') {const body=req.postDataJSON();if(advanceBeforeStop&&body.operation==='command'&&body.input.action==='cancel'){advanceBeforeStop=false;assert.equal(body.input.expectedVersion,1);await service.advance({ownerId:owner,id:body.input.id});}result=await service[body.operation](currentAuth,body.input);if(loseResponse){loseResponse=false;await route.abort();return;}}
         else if(url.searchParams.has('id')) {if(denyHistory && Number(url.searchParams.get('version'))>0 && Number(url.searchParams.get('version'))<3) {await route.fulfill({status:403,json:{code:'source_forbidden'}});return;}const id=url.searchParams.get('id');if(!hold)for(let i=0;i<3;i++)await service.advance({ownerId:owner,id});result=await service.get(currentAuth,url.searchParams.get('ownerId'),id,url.searchParams.has('version')?Number(url.searchParams.get('version')):null);}
         else result={reports:await service.list(currentAuth)};
         // The independent API adds a validated optional measureKey. Keep this
         // wire fixture separate from the host’s older source-runtime package.
-        if (result?.view && result.selectedVersion !== 2) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:trendFixture?'occupied_bed_days':'discharges'}))}};
+        if (result?.view && result.selectedVersion !== 2 && !derivedFixture) result = {...result,view:{...result.view,blocks:result.view.blocks.map(block=>({...block,measureKey:trendFixture?'occupied_bed_days':'discharges'}))}};
+        if (result?.view && multipleViews) result = {...result,view:{...result.view,blocks:[...result.view.blocks,{...result.view.blocks[0],id:'second-measure',measureKey:'admissions'}]}};
         await route.fulfill({status:200,json:result,headers:{'cache-control':'no-store'}});
       } catch(e){await route.fulfill({status:e.statusCode??503,json:{code:e.code??'report_unavailable'}});}
     });
@@ -78,6 +80,9 @@ try { await withBrowserQa(async browser=>{
     assert.equal(await sourceReader.locator('#ally-document-source-1').evaluate(el=>el===document.activeElement),true,'source link focuses the exact saved data view');
     assert.equal(await sourceReader.locator('pre').count(),0);
     await sourceReader.getByRole('button',{name:'Close report'}).click();
+    // closeDocument restores focus on the next animation frame. Check the
+    // observable result, after that scheduled work, rather than racing click().
+    await page.waitForFunction(link=>link===document.activeElement,await sourceLink.elementHandle(),{timeout:1500});
     assert.equal(await sourceLink.evaluate(el=>el===document.activeElement),true,'closing a source returns focus to its link');
     await references.getByText('Sources',{exact:true}).click();
     const overflow=await panel.evaluate(el=>el.scrollWidth-el.clientWidth);assert(overflow<=1,`${width}px panel overflow ${overflow}`);
@@ -159,7 +164,8 @@ try { await withBrowserQa(async browser=>{
       denyHistory=false;await panel.getByRole('button',{name:'Retry',exact:true}).click();await second.getByRole('article',{name:'Report findings'}).waitFor();
       await panel.getByLabel('Saved conversations').click();
       const menu=panel.getByRole('navigation',{name:'Saved reports'});await menu.getByLabel('Search conversations').fill('Explain the net additions');
-      assert.equal(await menu.getByRole('button').count(),1,'history searches the saved conversations');
+      assert.equal(await menu.locator('button:not(.ally-guidance-history)').count(),1,'history searches the saved conversations; the separate guidance command is not a report');
+      assert.equal(await menu.getByRole('button',{name:'Explain the net additions and show the supporting values.',exact:true}).count(),1);
       await page.screenshot({path:path.join(output,'history-1440.png'),fullPage:true});
       await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false,'Escape closes history before the workspace');
 
@@ -174,19 +180,23 @@ try { await withBrowserQa(async browser=>{
     await panel.getByRole('article',{name:'Report findings'}).last().waitFor();
     if(width===1440){await panel.locator('.ally-thread-turn[data-version="2"] article').waitFor();assert.equal(await panel.locator('.ally-thread-question').count(),2,'saved reopening restores the conversation');await page.waitForFunction(()=>{const body=document.querySelector('.executive-ally-body'),turn=document.querySelector('.ally-thread-turn[data-version="3"]');return body&&turn&&turn.getBoundingClientRect().top>=body.getBoundingClientRect().top&&turn.getBoundingClientRect().top<body.getBoundingClientRect().bottom;});}
     if(width===390){await panel.getByRole('button',{name:'Open report',exact:true}).click();const readerView=panel.getByRole('complementary',{name:'Expanded report'});await readerView.waitFor();assert.equal(await panel.locator('.ally-conversation-column').isVisible(),false,'phone report uses one reading surface');await readerView.getByRole('button',{name:'Close report'}).click();assert(await panel.getByRole('textbox',{name:'Follow-up question'}).isVisible());}
-    if(width===320){await panel.getByRole('button',{name:'New chat',exact:true}).click();hold=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
+    if(width===320){await panel.getByRole('button',{name:'New chat',exact:true}).click();hold=true;advanceBeforeStop=true;await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('A cancellable report');await panel.getByRole('button',{name:'Send question'}).click();await panel.getByRole('button',{name:'Stop',exact:true}).click();await panel.getByText('Stopped',{exact:true}).waitFor();hold=false;}
     if(width===320){
-      let full=await service.create(auth,{requestId:crypto.randomUUID(),objective:'At the conversation limit',scope:{communityIds:[],from:'2026-01-01',through:'2026-11-23'}});
-      for(let version=1;version<=12;version++){
+      let full=await service.create(auth,{requestId:crypto.randomUUID(),objective:'An ongoing investigation',scope:{communityIds:[],from:'2026-01-01',through:'2026-11-23'}});
+      for(let version=1;version<=13;version++){
         for(let step=0;step<3;step++)await service.advance({ownerId:owner,id:full.id});
         full=await service.get(auth,owner,full.id);
-        if(version<12)full=await service.command(auth,{ownerId:owner,id:full.id,revision:full.revision,action:'refresh',requestId:crypto.randomUUID()});
+        if(version<13)full=await service.command(auth,{ownerId:owner,id:full.id,revision:full.revision,action:'refresh',requestId:crypto.randomUUID()});
       }
       await page.reload({waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Open Ally chat',exact:true}).filter({visible:true}).click();
-      await panel.getByLabel('Saved conversations').click();await panel.getByRole('button',{name:'At the conversation limit',exact:true}).click();
-      await panel.getByText('Continue in a new chat.',{exact:true}).waitFor();
-      assert.equal(await panel.getByRole('textbox',{name:'Follow-up question'}).isEnabled(),false,'full conversations offer a usable next step before a failed submission');
-      assert.equal(await panel.getByRole('button',{name:'Refresh report',includeHidden:true}).count(),0);
+      await panel.getByLabel('Saved conversations').click();await panel.getByRole('button',{name:'An ongoing investigation',exact:true}).click();
+      const followup=panel.getByRole('textbox',{name:'Follow-up question'});await followup.waitFor();
+      assert(await followup.isEnabled(),'An existing conversation remains usable after twelve answers');
+      const before=await service.get(auth,owner,full.id,1);assert.equal(full.version,13);
+      await followup.fill('Continue the same investigation');await panel.getByRole('button',{name:'Send question'}).click();
+      await panel.locator('.ally-thread-turn[data-version="14"] article').waitFor();
+      assert.equal((await service.get(auth,owner,full.id)).version,14);
+      assert.deepEqual((await service.get(auth,owner,full.id,1)).artifact,before.artifact,'Continuing must preserve the original answer');
       await panel.getByRole('button',{name:'New chat',exact:true}).click();assert(await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).isEnabled());
       assert.equal(await panel.locator('.ally-thread-turn').count(),0,'new chat does not inherit previous questions');
     }
@@ -240,6 +250,51 @@ try { await withBrowserQa(async browser=>{
     }
     await page.screenshot({path:path.join(output,`prose-table-${width}.png`),fullPage:true});
     proseTableFixture=false;
+    fixtureTime+=24*60*60*1000;
+    derivedFixture=true;
+    await panel.getByRole('button',{name:'New chat',exact:true}).click();
+    await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Rank by occupancy, then chart census.');
+    await panel.getByRole('button',{name:'Send question'}).click();
+    await panel.getByText('Recorded census is 4, 9 and 7.',{exact:true}).waitFor();
+    const ranked=panel.getByRole('list',{name:'Census',exact:true});
+    assert.deepEqual(await ranked.locator('li>span').allTextContents(),['Beta','Alpha','Gamma'],'bars use calculated occupancy order, not census order or prose only');
+    assert.deepEqual(await ranked.locator('li>strong').allTextContents(),['9','4','7']);
+    await panel.getByText('View data table',{exact:true}).click();
+    const recordLinks=panel.locator('.ally-report-data-table');
+    assert.equal(await recordLinks.getByRole('link',{name:'Workspace',exact:true}).count(),1,'registered record destinations become readable links');
+    assert.equal(await recordLinks.getByRole('link').count(),1,'unregistered and executable destinations remain plain text');
+    assert.equal(await recordLinks.getByRole('link').getAttribute('href'),'https://alamo-pipeline.com/?view=referrals&screen=packet&referralId=1&workspaceView=files');
+    await panel.getByText('View data table',{exact:true}).click();
+    await panel.getByLabel('Chart measure').selectOption('derived_occupancy');
+    const ratios=panel.getByRole('list',{name:'Occupancy percent',exact:true});
+    assert.deepEqual(await ratios.locator('li>strong').allTextContents(),['90','50','35']);
+    if(width===1440){
+      const opened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const pdf=await opened;
+      const printed=pdf.getByRole('list',{name:'Occupancy percent',exact:true});await printed.waitFor();
+      assert.deepEqual(await printed.locator('li>span').allTextContents(),['Beta','Alpha','Gamma']);
+      await pdf.emulateMedia({media:'print'});
+      assert.equal(await pdf.getByRole('table',{name:'Occupied beds',exact:true}).count(),1,'one exact table prints per chart');
+      await pdf.pdf({path:path.join(output,'Ally derived report.pdf'),format:'A4',printBackground:true});await pdf.close();
+    }
+    await page.screenshot({path:path.join(output,`derived-chart-${width}.png`),fullPage:true});
+    derivedFixture=false;
+    fixtureTime+=24*60*60*1000;
+    multipleViews=true;
+    await panel.getByRole('button',{name:'New chat',exact:true}).click();
+    await panel.getByRole('textbox',{name:'Ask Ally',exact:true}).fill('Show separate charts for discharges and admissions.');
+    await panel.getByRole('button',{name:'Send question'}).click();
+    await panel.getByRole('list',{name:'Admissions',exact:true}).waitFor();
+    const selectors=panel.getByLabel('Chart measure');
+    assert.deepEqual(await selectors.evaluateAll(nodes=>nodes.map(node=>node.value)),['discharges','admissions'],'each view of the same dataset renders');
+    await selectors.nth(1).selectOption('operatingCapacity');
+    assert.deepEqual(await selectors.evaluateAll(nodes=>nodes.map(node=>node.value)),['discharges','operatingCapacity'],'changing one chart must not change its neighbor');
+    if(width===1440){
+      const opened=context.waitForEvent('page');await panel.getByLabel('More report actions').click();await panel.getByRole('button',{name:'Save PDF'}).click();const pdf=await opened;
+      await pdf.getByRole('list',{name:'Operating capacity',exact:true}).waitFor();
+      assert.equal(await pdf.getByRole('list',{name:'Discharges',exact:true}).count(),1,'export retains both views and independent selections');
+      await pdf.close();
+    }
+    multipleViews=false;
     // Dense history in the normal side panel was the production failure. Check
     // clipping ancestors and real hit testing, not just page-level overflow.
     fixtureTime+=24*60*60*1000; // Separate history-layout fixtures from the earlier daily quota tests.
@@ -250,13 +305,33 @@ try { await withBrowserQa(async browser=>{
       if(expanded)await panel.getByRole('button',{name:'Expand Ally to full screen'}).click();
       await panel.getByLabel('Saved conversations').click();
       const menu=panel.getByRole('navigation',{name:'Saved reports'});
-      await menu.getByLabel('Search conversations').fill('History fixture');assert.equal(await menu.getByRole('button').count(),8);
+      await menu.getByLabel('Search conversations').fill('History fixture');assert.equal(await menu.locator('button:not(.ally-guidance-history)').count(),8);
       const bounds=await menu.evaluate(el=>{const r=el.getBoundingClientRect(),p=el.closest('dialog').getBoundingClientRect();return {inside:r.left>=p.left&&r.right<=p.right&&r.bottom<=p.bottom,scrolls:el.scrollHeight>el.clientHeight};});
       assert(bounds.inside&&bounds.scrolls,'long history is contained and independently scrollable');
-      await menu.getByRole('button').last().scrollIntoViewIfNeeded();
-      assert(await menu.getByRole('button').last().evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.left+4,r.top+r.height/2));}),'the start of the title is visible and clickable');
+      await menu.locator('button:not(.ally-guidance-history)').last().scrollIntoViewIfNeeded();
+      assert(await menu.locator('button:not(.ally-guidance-history)').last().evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.left+4,r.top+r.height/2));}),'the start of the title is visible and clickable');
       await page.screenshot({path:path.join(output,`history-dense-${width}-${expanded?'expanded':'panel'}.png`)});
       await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false);assert(await panel.getByLabel('Saved conversations').evaluate(el=>el===document.activeElement));
+    }
+    if(width===320) {
+      for(const [ids,label,choice] of [[[],'All communities',''],[['337','342','343','344','345'],'All communities',''],[['337','345'],'San Pablo, Santa Clarita','selected'],[['343'],'JC Wallace House','343']]) {
+        console.log(`Executive Ally: saved scope ${label}`);
+        fixtureTime+=24*60*60*1000;
+        let scoped=await service.create(auth,{requestId:crypto.randomUUID(),objective:'Check saved community selection',scope:{communityIds:ids,from:'2026-01-01',through:'2026-11-23'}});
+        for(let i=0;i<3;i++)await service.advance({ownerId:owner,id:scoped.id});
+        await page.goto(`${BASE_URL}/admissions?allyReport=${owner}/${scoped.id}`,{waitUntil:'domcontentloaded'});
+        const scopeControl=panel.locator('.ally-report-scope');
+        await scopeControl.getByText(label+' ·', {exact:false}).waitFor();
+        await scopeControl.locator('summary').click();
+        assert.equal(await scopeControl.getByRole('combobox').inputValue(),choice);
+        await scopeControl.getByLabel('Through',{exact:true}).fill('2026-11-24');
+        await panel.getByRole('textbox',{name:'Follow-up question'}).fill('Keep the same communities');
+        await panel.getByRole('button',{name:'Send question'}).click();
+        await panel.locator('.ally-thread-turn[data-version="2"]').waitFor();
+        scoped=await service.get(auth,owner,scoped.id);
+        assert.deepEqual(scoped.scope.communityIds,ids,'editing dates or following up must preserve the full saved community selection');
+        assert.equal(scoped.scope.through,'2026-11-24');
+      }
     }
     assert.deepEqual(errors,[]);await context.close();
   }

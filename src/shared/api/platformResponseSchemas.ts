@@ -221,6 +221,8 @@ function validateIncidentDetailRow(row: Record<string, unknown>, path: string) {
 function validateLiveIncidentRow(row: Record<string, unknown>, path: string) {
   assertString(row.id, "incident stream", `${path}.id`);
   assertString(row.priority, "incident stream", `${path}.priority`);
+  // Shared priority scale (may be "unknown"); optional for older payloads.
+  if (row.priority_level !== undefined) assertString(row.priority_level, "incident stream", `${path}.priority_level`, { nullable: true });
   assertString(row.stage, "incident stream", `${path}.stage`);
   assertString(row.facility_id, "incident stream", `${path}.facility_id`);
   assertString(row.facility_name, "incident stream", `${path}.facility_name`);

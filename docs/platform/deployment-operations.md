@@ -1,3 +1,33 @@
+## November 25: daily medication source staged, application publication pending
+
+Created only the derived warehouse view
+`alamohealth.gold.v_tool_mar_daily_by_community_medication` from the reviewed
+canonical notebook SELECT. Existing source records, views, manifest, nightly
+notebook, application snapshot and source grants were unchanged. `CREATE VIEW`
+was used deliberately, so a concurrent publisher could not be overwritten.
+
+The published view has 13 columns and 391,581 distinct daily community/medication
+groups covering 1,092,085 underlying administration records in January–November
+2026. An independent query reconciles all 11 months to the existing monthly
+medication view. Duplicate grains, missing dates, unknown PRN flags, scheduled
+outcome partition mismatches and scheduled/PRN refusal partition mismatches are
+all zero. Pending outcomes remain separate; medication identity includes the
+source's medication name/strength rather than an invented drug grouping.
+
+This is **not yet available through Ally's published catalog**. The tested
+Platform source-reader candidate remains `936ab032`; its scoped data gate passes
+12 commands in 151.7 seconds. Main-Chrome inspection cannot attach to the existing
+Platform tab, so the live release check remains incomplete. Source publication
+still needs the preserved owner notebook update, manifest entry, current grants
+and snapshot binding, with conditional before/after receipts. Do not assume that
+creating the SQL view enables the application.
+
+Private SQL, source-definition hashes, statement receipts, reconciliation results
+and the derived-view-only rollback are retained under
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/investigation-v14/medication-source/`.
+The source's declared as-of date must be preserved during publication; staging
+this view does not refresh the existing application snapshot.
+
 # Deployment And Operations
 
 ## Ally History and incident recovery — November 23, deployed
@@ -6703,3 +6733,90 @@ census/capacity/incident turns are 11–14s; the initial age turn took 16.341s
 server-side. This is an improvement path, not a consistently sub-ten-second result.
 The successful same-evidence rewrite and the rejected percentage-breakdown case
 are recorded in the living spec; the latter remains an analytical-quality gap.
+
+### Complete cohort source release — November 24
+
+The owner's full real-data retest and existing deployment authorization cover this
+source prerequisite. Candidate `0d64c7850452793c1db118bcb08d80108916576a`
+provides warehouse-backed, revision-bound pages at the canonical analytical reader.
+No business records, identity, participants, environment, secrets or credit
+allowance were changed. The actual deployed image/imports were verified before
+cutover; the frozen evaluation engine remains separate from production Ally.
+
+- Revision: `alamo-platform-prod-web--ally-cohorts-1124`.
+- Image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:350da8d2f55a5d0d3f4abd5a1f06bfbafe2d670e0863f688ee092188ac0e72fa`.
+- Recovery image: `pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:83f4d2cf8abd2ca85f0f574c68109f61e55d561832b8d9f1cb841c3be86525b7`.
+- Scoped predeployment: 10/10 stages, 125 seconds. Postdeployment: 2/2,
+  46 seconds including browser capture; 18/18 production-boundary assertions.
+- Main Chrome: 15 routes, 12 interactions, 622 captured requests, one expected
+  navigation cancellation, no HTTP failures and no console errors.
+
+Private receipts are under
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/investigation-v9/`:
+`platform-intent.json`, `platform-image-proof.log`, `platform-deployed.json`
+and `live-browser/evidence.json`. The retained native warehouse two-page proof
+checks the whole-result count, identical content fingerprint and page boundary.
+Restore only the image after checking the current revision; do not overwrite a
+newer release, source publication or application configuration during recovery.
+
+Full answer quality is being measured in the separate `retest-full-v10` run:
+the original 50 conversations/156 turns, with unchanged questions and private
+artifacts. Navigation and contract passes are not semantic-answer acceptance.
+## November 24 investigation source release
+
+Source commit `282a1417712deb9d496397174007b9386574f985` is deployed as
+`alamo-platform-prod-web--ally-invest-v12`, image
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:95dcd4fab2635d7b6de70fa0c6d9791f257871240a4b69f080f2f2f362f9ea97`.
+Rollback image:
+`pipelineprodacra6qdvl6ebenac.azurecr.io/alamo-platform@sha256:350da8d2f55a5d0d3f4abd5a1f06bfbafe2d670e0863f688ee092188ac0e72fa`.
+
+The pinned overlay changes 46 files for source byte paging, complete native
+field/record collection and the registered calendar renderer. Existing host
+configuration, identity and the other application assets are preserved. The
+scoped gate passed 10/10 in 140 seconds; packaged file hashes/import passed.
+Public production smoke passed 4/4. All three authorized executive source grants
+and the Pipeline batch continuation passed against the deployed APIs.
+
+Main Chrome completed Microsoft sign-in and displayed the authenticated map.
+The native inspection call then timed out and the debugger detached; the full
+Network/navigation capture and `ally-live` receipt are outstanding. This is a
+partially verified release, not a completed release gate. Do not reuse a prior
+browser receipt for this build. The independent engine remains at its existing
+production version while the new candidate is evaluated separately.
+
+Private packaging, before/after configuration, live-source and rollback receipts:
+`/Users/eric/suite-deploy/.state/ally-system-repair-20261124/investigation-v12/`.
+
+
+
+## November 25 — Ally verified runtime update
+
+Owner-authorized deployment: browser source `05e288e`, engine `1b3c5a4` (0.18.41).
+Platform image `3b8d575ab445f11bfecfe606ae554f93e94f249572ae123c72bd35e3a9ab56d3`;
+Ally API image `5540ca879b7030368f1df11ad6b61386a48cc7a610e0a2ff63ecf271dc425b98`;
+worker ZIP SHA-256 `ac74e54a7b7780ed96f95e5a0609a4a5f9301e471f2984f65608265532d3f90d`.
+
+The UI removes the conversation turn ceiling and binds Stop to the selected
+version. Runtime fixes retain parallel investigation state and select refreshed
+evidence. Existing participants, model, allowance, source configuration and
+legacy writer are unchanged. Native Codex is not activated.
+
+The scoped predeployment gate passed 10/10 in 90 seconds; public probes passed
+4/4. Engine behavioral, type, package and native Functions recovery checks pass.
+The dependency scanner was corrected to parse actual imports instead of treating
+an isolated-container executable path as an imported package. Saved History
+opens in signed-in main Chrome, with no captured console errors. All 30 prior
+reports and the prepaid ledger were unchanged before resuming execution.
+
+The first adoption probe caught a warm worker retaining its disabled setting.
+Stopping and restarting with final settings resolved it; the actual Durable
+activity now returns the enabled stale-run result. The smoke question paused
+during that window was resumed; its answer is not counted as a quality result.
+The owner stopped whole-site checking. No full postdeployment site sweep or new
+50-question quality score is claimed.
+
+Private evidence and reader-preserving recovery instructions:
+`/Users/eric/suite-deploy/.state/ally-quick-01841/`. Browser rollback is the prior
+immutable `95dcd4fab2635d7b6de70fa0c6d9791f257871240a4b69f080f2f2f362f9ea97` image.
+After new-format writes, retain the new API readers while stopping/recovering the
+worker; do not blindly restore the old engine over forward-written reports.

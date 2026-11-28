@@ -162,6 +162,7 @@ if (normalizeKnownCommunityNames("Victoria's Place census") !== "Victoria's Hous
 const nestedCommunityValue = {
   title: "Victoria Place profile",
   rows: [{ community: "Victoria's Place" }],
+  observedAt: new Date('2026-11-23T23:41:07.123Z'),
   untouched: 42
 };
 const normalizedCommunityValue = normalizeKnownCommunityNamesDeep(nestedCommunityValue);
@@ -169,6 +170,8 @@ if (
   normalizedCommunityValue.title !== "Victoria's House profile" ||
   normalizedCommunityValue.rows[0]?.community !== "Victoria's House" ||
   normalizedCommunityValue.untouched !== 42 ||
+  normalizedCommunityValue.observedAt !== nestedCommunityValue.observedAt ||
+  JSON.parse(JSON.stringify(normalizedCommunityValue)).observedAt !== '2026-11-23T23:41:07.123Z' ||
   nestedCommunityValue.title !== "Victoria Place profile"
 ) {
   fail("deep community-name normalization changed the wrong values or mutated the source", {

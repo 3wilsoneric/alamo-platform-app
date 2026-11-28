@@ -23,7 +23,8 @@ await withBrowserQa(async browser => {
     let created = false;
     let question = "";
     let reportCreated = false;
-    const reportId = "33333333-3333-4333-8333-333333333333";
+    let requestedReportVersion = null;
+    const reportId = "3".repeat(64);
     const ownerId = "44444444-4444-4444-8444-444444444444";
     const reportSummary = { id: reportId, ownerId, title: "Community admissions and discharges", status: "ready", revision: 1, version: 1, updatedAt: "2026-11-22T15:00:00Z", completedSources: 1, totalSources: 1 };
     const report = { ...reportSummary, selectedVersion: 1, canEdit: true, readers: [], scope: { communityIds: [], from: "2026-01-01", through: "2026-11-22" }, objective: "Compare admissions and discharges across communities", error: null,
@@ -33,6 +34,8 @@ await withBrowserQa(async browser => {
           dataset: { title: "Community flow", shape: "categories", columns: [{ key: "community", label: "Community", type: "string" }, { key: "admissions", label: "Admissions", type: "number" }, { key: "discharges", label: "Discharges", type: "number" }],
             rows: [{ community: "San Pablo", admissions: 18, discharges: 11 }, { community: "Santa Clarita", admissions: 15, discharges: 8 }, { community: "JC Wallace House", admissions: 12, discharges: 12 }, { community: "Turlock", admissions: 10, discharges: 6 }, { community: "Victoria’s House", admissions: 6, discharges: 3 }] } }] },
       view: { blocks: [{ id: "flow-chart", componentId: "comparison", datasetId: "flow", sourceIds: ["flow"] }] } };
+    report.artifact.findings.push({text:'[Open incident history](/incidents/history?facilityId=345)\n\n[Untrusted link](https://attacker.example/)\n\n[Invalid navigation](/incidents?redirect=https://attacker.example/)\n\n<script>window.reportScriptRan=true</script>',sourceIds:['flow']});
+    report.artifact.findings.push({text:'## Planned arrivals\n\n| Monday | Tuesday |\n|---|---|\n| **Fictional Client**<br>San Pablo | <img src=x onerror=window.reportScriptRan=true> |',sourceIds:['flow']});
     const conversation = () => ({
         id, version: 2, createdAt: "2026-11-22T15:00:00Z", workId: null,
         scope: [{ skillId: "admissions-watch", communityIds: [] }],
@@ -50,6 +53,7 @@ await withBrowserQa(async browser => {
       const request = route.request();
       const url = new URL(request.url());
       if (url.pathname.endsWith("/reports")) {
+        if(request.method()==='GET'&&url.searchParams.has('id'))requestedReportVersion=url.searchParams.get('version');
         if (request.method() === "POST") { reportCreated = true; return route.fulfill({ json: reportSummary }); }
         return route.fulfill({ json: url.searchParams.has("id") ? report : { reports: reportCreated ? [reportSummary] : [] } });
       }
@@ -90,6 +94,18 @@ await withBrowserQa(async browser => {
     await initialReport.getByRole("textbox", { name: "Ask Ally" }).fill("Compare admissions and discharges across communities.");
     await initialReport.getByRole("button", { name: "Send question" }).click();
     await initialReport.getByRole("article", { name: "Report findings" }).waitFor();
+    const historyLink=initialReport.getByRole('link',{name:'Open incident history'});
+    assert.equal(await historyLink.getAttribute('href'),'https://www.alamoplatform.com/incidents/history?facilityId=345');
+    assert.equal(await historyLink.getAttribute('rel'),'noopener noreferrer');
+    assert.equal(await initialReport.getByRole('link',{name:'Untrusted link'}).count(),0);
+    assert.equal(await initialReport.getByRole('link',{name:'Invalid navigation'}).count(),0);
+    assert.equal(await page.evaluate(()=>window.reportScriptRan),undefined);
+    assert.equal(await initialReport.getByRole('heading',{name:'Planned arrivals'}).count(),1);
+    const proseTable=initialReport.locator('.ally-report-prose .ally-report-table');
+    assert.equal(await proseTable.locator('strong').innerText(),'Fictional Client');
+    assert.equal(await proseTable.locator('br').count(),1);
+    assert.equal(await initialReport.locator('.ally-report-prose img').count(),0);
+    assert.equal(await initialReport.locator('.ally-report-prose .ally-report-records strong').innerText(),'Fictional Client');
     assert.equal(await initialReport.locator(".ally-report-comparison li").count(), 5);
     await panel.screenshot({ path: path.join(output, `ally-workspace-default-report-${width}.png`) });
     await panel.getByLabel("Saved conversations").click();
@@ -131,6 +147,11 @@ await withBrowserQa(async browser => {
     assert.equal(await panel.evaluate(element => element.scrollLeft), 0, "the phone panel does not scroll sideways");
     assert.deepEqual(errors, []);
     await panel.screenshot({ path: path.join(output, `ally-workspace-report-${width}.png`) });
+    requestedReportVersion=null;
+    await page.goto(`${BASE_URL}/admissions?allyReport=${ownerId}/${reportId}&allyVersion=1`,{waitUntil:'domcontentloaded'});
+    await page.getByRole('article',{name:'Report findings'}).waitFor();
+    assert.equal(requestedReportVersion,'1','A saved version link must request that frozen version');
+    assert.deepEqual(errors,[]);
     await context.close();
   }
 });
